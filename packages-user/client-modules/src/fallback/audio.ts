@@ -17,8 +17,7 @@ export function patchAudio() {
     };
 
     patch.add('playBgm', function (bgm, startTime) {
-        const name = core.getMappedName(bgm) as BgmIds;
-        play(name, startTime);
+        play(bgm, startTime);
     });
     patch.add('pauseBgm', function () {
         pause();

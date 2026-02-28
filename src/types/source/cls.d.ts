@@ -223,4 +223,15 @@ interface IdToCls {
     bearLeft: 'enemy48';
     bearRight: 'enemy48';
     bearUp: 'enemy48';
+    I331: 'items';
+    I332: 'items';
+    I333: 'items';
+    I334: 'items';
+    I335: 'items';
+    I336: 'items';
+    I337: 'items';
+    I338: 'items';
+    I339: 'items';
+    I340: 'items';
+    I341: 'items';
 }

@@ -1,5 +1,5 @@
 import { EnemyInfo } from '@motajs/types';
-import { getHeroStatusOn } from '../state/hero';
+import { getHeroStatusOn } from '../legacy/hero';
 
 export interface SpecialDeclaration {
     code: number;

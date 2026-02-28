@@ -817,7 +817,7 @@ export class TextContentParser {
             return pointer;
         }
         const time = parseInt(param);
-        this.addWaitRenderable(end, time);
+        this.addWaitRenderable(end + 1, time);
         return end;
     }
 
@@ -830,19 +830,19 @@ export class TextContentParser {
         }
         if (/^\d+$/.test(param)) {
             const num = Number(param);
-            this.addIconRenderable(end, num as AllNumbers);
+            this.addIconRenderable(end + 1, num as AllNumbers);
         } else {
             if (/^X\d+$/.test(param)) {
                 // 额外素材
                 const num = Number(param.slice(1));
-                this.addIconRenderable(end, num as AllNumbers);
+                this.addIconRenderable(end + 1, num as AllNumbers);
             } else {
                 const num = texture.idNumberMap[param as AllIds];
                 if (num === void 0) {
                     logger.warn(59, param);
                     return end;
                 }
-                this.addIconRenderable(end, num);
+                this.addIconRenderable(end + 1, num);
             }
         }
         return end;
@@ -960,6 +960,7 @@ export class TextContentParser {
                         break;
                     case 'n':
                         // 在这里预先将换行处理为多个 node，会比在分行时再处理更方便
+                        pointer++;
                         this.addTextNode(pointer + 1, true);
                         break;
                 }
@@ -985,7 +986,9 @@ export class TextContentParser {
             this.resolved += char;
         }
 
-        this.addTextNode(text.length, false);
+        if (this.nodePointer < text.length) {
+            this.addTextNode(text.length, false);
+        }
         return this.splitLines(width);
     }
 

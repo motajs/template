@@ -225,7 +225,7 @@ export abstract class RenderItem<E extends ERenderItemEvent = ERenderItemEvent>
         IRenderTickerSupport,
         IRenderChildable,
         IRenderVueSupport,
-        ITransformUpdatable,
+        ITransformUpdatable<Transform>,
         IRenderEvent
 {
     /** 渲染的全局ticker */
@@ -301,7 +301,7 @@ export abstract class RenderItem<E extends ERenderItemEvent = ERenderItemEvent>
     /** 该元素的变换矩阵 */
     private _transform: Transform = new Transform();
     set transform(value: Transform) {
-        this._transform.bind();
+        this._transform.unbind(this);
         this._transform = value;
         value.bind(this);
     }
@@ -671,10 +671,12 @@ export abstract class RenderItem<E extends ERenderItemEvent = ERenderItemEvent>
         }
     }
 
-    updateTransform() {
+    updateTransform(transform: Transform) {
         // 更新变换矩阵时，不需要更新自身的缓存，直接调用父元素的更新即可
-        this._parent?.update();
-        this.emit('transform', this, this._transform);
+        if (transform === this.transform) {
+            this._parent?.update();
+            this.emit('transform', this, this._transform);
+        }
     }
 
     //#endregion
@@ -796,7 +798,7 @@ export abstract class RenderItem<E extends ERenderItemEvent = ERenderItemEvent>
         this._parent = void 0;
         parent.requestSort();
         parent.update();
-        this._transform.bind();
+        this._transform.unbind(this);
         if (!success) return false;
         this._root?.disconnect(this);
         this._root = void 0;

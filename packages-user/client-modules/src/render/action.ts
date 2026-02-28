@@ -6,7 +6,8 @@ import {
     saveLoad,
     openSettings,
     openViewMap,
-    openReplay
+    openReplay,
+    openStatistics
 } from './ui';
 import { ElementLocator } from '@motajs/render-core';
 
@@ -14,6 +15,9 @@ export function createAction() {
     gameKey
         .realize('save', () => {
             saveSave(mainUIController, FULL_LOC);
+        })
+        .realize('statistics', () => {
+            openStatistics(mainUIController);
         })
         .realize('load', () => {
             saveLoad(mainUIController, FULL_LOC);

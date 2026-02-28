@@ -4,7 +4,7 @@ import { MotaOffscreenCanvas2D } from './canvas2d';
 import { ERenderItemEvent, RenderItem, RenderItemPosition } from './item';
 import { Transform } from './transform';
 import { isWebGL2Supported } from './utils';
-import { SizedCanvasImageSource } from './types';
+import { SizedCanvasImageSource } from '@motajs/render-assets';
 
 export interface IGL2ProgramPrefix {
     readonly VERTEX: string;
@@ -1237,7 +1237,7 @@ export class GL2Program extends EventEmitter<ShaderProgramEvent> {
     }
 
     /**
-     * 设置渲染模式，目前可选 {@link Shader.DRAW_ARRAYS} 至 {@link Shader.DRAW_INSTANCED}
+     * 设置渲染模式，目前可选 {@link GL2.DRAW_ARRAYS} 至 {@link GL2.DRAW_INSTANCED}
      */
     mode(mode: RenderMode) {
         this.renderMode = mode;

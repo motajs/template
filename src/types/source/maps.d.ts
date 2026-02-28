@@ -223,6 +223,17 @@ interface IdToNumber {
     bearLeft: 328;
     bearRight: 329;
     bearUp: 330;
+    I331: 331;
+    I332: 332;
+    I333: 333;
+    I334: 334;
+    I335: 335;
+    I336: 336;
+    I337: 337;
+    I338: 338;
+    I339: 339;
+    I340: 340;
+    I341: 341;
 }
 interface NumberToId {
     1: 'yellowWall';
@@ -449,4 +460,15 @@ interface NumberToId {
     328: 'bearLeft';
     329: 'bearRight';
     330: 'bearUp';
+    331: 'I331';
+    332: 'I332';
+    333: 'I333';
+    334: 'I334';
+    335: 'I335';
+    336: 'I336';
+    337: 'I337';
+    338: 'I338';
+    339: 'I339';
+    340: 'I340';
+    341: 'I341';
 }

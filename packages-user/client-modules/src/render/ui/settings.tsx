@@ -20,6 +20,7 @@ import { generateKeyboardEvent } from '@motajs/system-action';
 import { getVitualKeyOnce } from '@motajs/legacy-ui';
 import { getAllSavesData, getSaveData, syncFromServer } from '../utils';
 import { getInput } from '../components';
+import { openStatistics } from './statistics';
 import { saveWithExist } from './save';
 import { compressToBase64 } from 'lz-string';
 import { ViewMapUI } from './viewmap';
@@ -126,7 +127,7 @@ export const MainSettings = defineComponent<MainSettingsProps>(props => {
             choices={choices}
             width={POP_BOX_WIDTH}
             onChoose={choose}
-            maxHeight={MAIN_HEIGHT - 32}
+            maxHeight={MAIN_HEIGHT - 64}
             interval={8}
             scope={scope}
         />
@@ -245,7 +246,6 @@ export const ReplaySettings = defineComponent<MainSettingsProps>(props => {
             onChoose={choose}
             interval={8}
             scope={scope}
-            maxHeight={MAIN_HEIGHT - 32}
         />
     );
 }, mainSettingsProps);
@@ -275,12 +275,7 @@ export const GameInfo = defineComponent<MainSettingsProps>(props => {
     const choose = async (key: ChoiceKey) => {
         switch (key) {
             case GameInfoChoice.Statistics: {
-                getConfirm(
-                    props.controller,
-                    '数据统计尚未完工',
-                    CENTER_LOC,
-                    POP_BOX_WIDTH
-                );
+                openStatistics(props.controller);
                 break;
             }
             case GameInfoChoice.Project: {

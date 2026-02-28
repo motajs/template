@@ -241,10 +241,10 @@ export const Save = defineComponent<SaveProps, SaveEmits, keyof SaveEmits>(
         };
 
         onMounted(() => {
-            const startIndex = getPosIndex(core.saves.saveIndex - 1);
-            selected.value = startIndex;
+            const startIndex = getPosIndex(core.saves.saveIndex);
+            selected.value = startIndex - 1;
             pageRef.value?.changePage(
-                Math.floor((core.saves.saveIndex - 1) / (grid.value.count - 1))
+                Math.floor(core.saves.saveIndex / (grid.value.count - 1))
             );
             updateDataList(now.value);
         });
@@ -380,10 +380,10 @@ export const Save = defineComponent<SaveProps, SaveEmits, keyof SaveEmits>(
                 '@save_right',
                 () => {
                     const count = grid.value.count;
-                    if (selected.value < count - 1) {
+                    if (selected.value < count) {
                         selected.value++;
                     } else {
-                        selected.value = 1;
+                        selected.value = 0;
                         pageRef.value?.movePage(1);
                     }
                 },

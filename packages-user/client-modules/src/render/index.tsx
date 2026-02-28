@@ -9,21 +9,19 @@ import { createAction } from './action';
 import { sceneController } from './scene';
 import { GameTitleUI } from './ui/title';
 import { createWeather } from './weather';
+import { createMainExtension } from './commonIns';
 
 export function createGameRenderer() {
     const App = defineComponent(_props => {
         return () => (
-            <container noanti width={MAIN_WIDTH} height={MAIN_HEIGHT}>
+            <container width={MAIN_WIDTH} height={MAIN_HEIGHT}>
                 {sceneController.render()}
             </container>
         );
     });
 
-    mainRenderer.setAntiAliasing(false);
     mainRenderer.hide();
     createApp(App).mount(mainRenderer);
-
-    console.log(mainRenderer);
 }
 
 export function createRender() {
@@ -32,9 +30,13 @@ export function createRender() {
     createAction();
     createWeather();
 
-    loading.on('loaded', () => {
+    loading.once('loaded', () => {
         sceneController.open(GameTitleUI, {});
         mainRenderer.show();
+    });
+
+    loading.once('assetBuilt', () => {
+        createMainExtension();
     });
 
     hook.on('restart', () => {
@@ -45,6 +47,7 @@ export function createRender() {
     Font.setDefaults(DEFAULT_FONT);
 }
 
+export * from './commonIns';
 export * from './components';
 export * from './elements';
 export * from './fx';

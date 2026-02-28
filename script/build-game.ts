@@ -13,6 +13,9 @@ import { RequiredData, RequiredIconsData, ResourceType } from './types';
 import { splitResource, SplittedResource } from './build-resource';
 import { formatSize } from './utils';
 
+/** 打包调试 */
+const DEBUG_BUILD = false;
+/** 录像验证调试 */
 const DEBUG_REPLAY = false;
 
 const ansi = {
@@ -52,6 +55,7 @@ async function buildClient(outDir: string) {
         build: {
             outDir,
             copyPublicDir: true,
+            minify: !DEBUG_BUILD,
             rollupOptions: {
                 external: ['@wasm-audio-decoders/opus-ml'],
                 output: {
@@ -568,13 +572,21 @@ async function buildGame() {
             )
         );
 
-        const scripts = archiver('zip');
-        scripts.directory('packages/', resolve(process.cwd(), 'packages'));
+        const scripts = archiver('zip', {
+            store: false,
+            zlib: {
+                level: 9
+            }
+        });
+        scripts.directory(resolve(process.cwd(), 'packages'), 'packages/');
         scripts.directory(
-            'packages-user/',
-            resolve(process.cwd(), 'packages-user')
+            resolve(process.cwd(), 'packages-user'),
+            'packages-user/'
         );
-        scripts.directory('src/', resolve(process.cwd(), 'src'));
+        scripts.directory(resolve(process.cwd(), 'src'), '/src');
+        scripts.file(resolve(process.cwd(), 'public', 'main.js'), {
+            name: 'main.js'
+        });
 
         const output = createWriteStream(resolve(distDir, 'source-code.zip'));
         scripts.pipe(output);
@@ -622,7 +634,11 @@ async function buildGame() {
     try {
         await zip.compressDir(
             resolve(distDir),
-            resolve(process.cwd(), 'dist.zip')
+            resolve(process.cwd(), 'dist.zip'),
+            {
+                compress: true,
+                compressionLevel: 9
+            }
         );
 
         await emptyDir(tempDir);

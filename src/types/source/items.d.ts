@@ -50,4 +50,15 @@ interface ItemDeclaration {
     skill1: 'constants';
     wand: 'items';
     pack: 'items';
+    I331: 'items';
+    I332: 'items';
+    I333: 'items';
+    I334: 'items';
+    I335: 'items';
+    I336: 'items';
+    I337: 'items';
+    I338: 'items';
+    I339: 'items';
+    I340: 'items';
+    I341: 'items';
 }

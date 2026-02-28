@@ -6,6 +6,10 @@ import { createViewport } from './viewport';
 import { Icon, Winskin } from './misc';
 import { Animate } from './animate';
 import { createItemDetail } from './itemDetail';
+import { logger } from '@motajs/common';
+import { MapRender, MapRenderer } from '../map';
+import { state } from '@user/data-state';
+import { materials } from '@user/client-base';
 
 export function createElements() {
     createCache();
@@ -66,6 +70,31 @@ export function createElements() {
         return new Animate();
     });
     tagMap.register('icon', standardElementNoCache(Icon));
+    tagMap.register('map-render', (_0, _1, props) => {
+        if (!props) {
+            logger.error(42);
+            return new MapRender(
+                state.layer,
+                new MapRenderer(materials, state.layer)
+            );
+        }
+        const { layerState, renderer } = props;
+        if (!layerState) {
+            logger.error(42, 'layerState');
+            return new MapRender(
+                state.layer,
+                new MapRenderer(materials, state.layer)
+            );
+        }
+        if (!renderer) {
+            logger.error(42, 'renderer');
+            return new MapRender(
+                state.layer,
+                new MapRenderer(materials, state.layer)
+            );
+        }
+        return new MapRender(layerState, renderer);
+    });
 }
 
 export * from './animate';
