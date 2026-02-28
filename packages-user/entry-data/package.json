@@ -1,0 +1,11 @@
+{
+    "name": "@user/entry-data",
+    "dependencies": {
+        "@motajs/legacy-common": "workspace:*",
+        "@user/data-base": "workspace:*",
+        "@user/data-fallback": "workspace:*",
+        "@user/data-state": "workspace:*",
+        "@user/data-utils": "workspace:*",
+        "@user/legacy-plugin-data": "workspace:*"
+    }
+}

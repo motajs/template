@@ -1,0 +1,17 @@
+vite.config.ts
+public/project/data.js
+story.md
+public/project/floors/*.js
+public/project/items.js
+public/project/floors/*.js
+public/project/maps.js
+public/project/icons.js
+public/project/enemys.js
+public/_server/**/*.js
+script/**/*.js
+public/editor.html
+keyCodes.ts
+src/core/main/setting.ts
+src/core/fx/shadow.ts
+dist/
+docs/.vitepress/apiSidebar.ts

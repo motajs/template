@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv='content-type' content='text/html' charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=Edge, chrome=1'>
+    <meta name='author' content='AncTe'>
+    <meta name='viewport'
+        content='width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=yes'>
+    <title>HTML5魔塔</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="screen-orientation" content="portrait">
+    <meta name="full-screen" content="yes">
+    <meta name="browsermode" content="application">
+    <meta name="x5-orientation" content="portrait">
+    <meta name="x5-fullscreen" content="true">
+    <meta name="x5-page-mode" content="app">
+    <link id="mota-css" type='text/css' href='/styles.css' rel='stylesheet'>
+</head>
+
+<body>
+    <!-- injection -->
+    <div id="game-draw">
+        <canvas id="render-main"></canvas>
+    </div>
+    <div id='inputDiv'>
+        <div id='inputDialog'>
+            <p id="inputMessage">请输入文字...</p>
+            <input id='inputBox' type="text" autocomplete="off" />
+            <button id='inputYes'>确定</button>
+            <button id='inputNo'>取消</button>
+        </div>
+    </div>
+    <div id="root"></div>
+    <!-- injection -->
+    <script src='libs/thirdparty/lz-string.min.js'></script>
+    <script src='libs/thirdparty/priority-queue.min.js'></script>
+    <script src='libs/thirdparty/localforage.min.js'></script>
+    <script src='libs/thirdparty/zip.min.js'></script>
+    <script src="libs/thirdparty/lodash.min.js"></script>
+    <script id='mainScript' src='main.js'></script>
+    <script src="/src/main.ts" type="module"></script>
+
+</body>
+
+</html>

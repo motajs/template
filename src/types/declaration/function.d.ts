@@ -1,0 +1,96 @@
+interface ControlData {
+    /**
+     * 获取保存信息
+     */
+    saveData(fromAutosave: boolean): Save;
+
+    /**
+     * 读取一个存档
+     * @param data 存档信息
+     * @param callback 读取完毕后的回调函数
+     */
+    loadData(data: Save, callback?: () => void): void;
+
+    /**
+     * 立即仅更新状态栏
+     */
+    updateStatusBar(): void;
+
+    /**
+     * 每步移动后执行的函数
+     * @param callback 回调函数（好像没什么必要吧
+     */
+    moveOneStep(callback?: () => void): void;
+
+    /**
+     * 瞬移到某一点
+     * @param x 瞬移至的横坐标
+     * @param y 瞬移至的纵坐标
+     * @param ignoreSteps 忽略的步数，不填则会自动计算
+     */
+    moveDirectly(x: number, y: number, ignoreSteps?: number): boolean;
+}
+
+interface EventData {
+    /**
+     * 重置游戏
+     * @param hero 勇士信息
+     * @param hard 难度信息
+     * @param floorId 勇士所在楼层
+     * @param maps 所有的地图信息
+     * @param values 全局数值信息
+     */
+    resetGame(
+        hero: HeroStatus,
+        hard: string,
+        floorId: FloorIds,
+        maps: GameStatus['maps'],
+        values: Partial<CoreValues>
+    ): void;
+
+    /**
+     * 游戏获胜
+     * @param reason 胜利原因
+     * @param norank 是否不计榜
+     * @param noexit 是否不退出
+     */
+    win(reason: string, norank?: boolean, noexit?: boolean): void;
+
+    /**
+     * 游戏失败
+     * @param reason 失败原因
+     */
+    lose(reason?: string): void;
+
+    /**
+     * 切换楼层中，即屏幕完全变黑的那一刻
+     * @param floorId 目标楼层
+     * @param heroLoc 勇士到达的位置
+     */
+    changingFloor(floorId: FloorIds, heroLoc: Loc): void;
+
+    /**
+     * 切换楼层后
+     * @param floorId 目标楼层
+     */
+    afterChangeFloor(floorId: FloorIds): void;
+
+    /**
+     * 飞往某个楼层
+     * @param toId 目标楼层
+     * @param callback 飞到后的回调函数
+     */
+    flyTo(toId: FloorIds, callback?: () => void): boolean;
+}
+
+interface FunctionsData {
+    /**
+     * 游戏的逻辑信息
+     */
+    control: ControlData;
+
+    /**
+     * 事件信息
+     */
+    events: EventData;
+}

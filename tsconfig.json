@@ -1,0 +1,38 @@
+{
+    "compilerOptions": {
+        "experimentalDecorators": true,
+        "target": "ESNext",
+        "useDefineForClassFields": true,
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "strict": true,
+        "jsx": "preserve",
+        "jsxImportSource": "vue",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "esModuleInterop": true,
+        "lib": ["ESNext", "DOM", "DOM.Iterable"],
+        "skipLibCheck": true,
+        "noEmit": true,
+        "baseUrl": ".",
+        "paths": {
+            "@motajs/*": ["packages/*/src"],
+            "@user/*": ["packages-user/*/src"]
+        }
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.d.ts",
+        "src/**/*.tsx",
+        "packages/**/*.ts",
+        "packages/**/*.d.ts",
+        "packages/**/*.tsx",
+        "packages/**/*.vue",
+        "packages-user/**/*.ts",
+        "packages-user/**/*.d.ts",
+        "packages-user/**/*.tsx",
+        "src/types/**/*.d.ts"
+    ],
+    "references": [{ "path": "./tsconfig.node.json" }]
+}

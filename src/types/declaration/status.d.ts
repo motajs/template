@@ -1,0 +1,856 @@
+interface DamageStatus {
+    /**
+     * v2优化下当前的偏移横坐标，单位格子
+     */
+    posX: number;
+
+    /**
+     * v2优化下当前的偏移纵坐标，单位格子
+     */
+    posY: number;
+
+    /**
+     * 显示的伤害信息
+     */
+    data: DamageStatusData[];
+
+    /**
+     * 地图伤害或其它在地图上显示的文字
+     */
+    extraData: DamageStatusExtraData[];
+}
+
+interface DamageStatusData {
+    /**
+     * 显示的文字
+     */
+    text: string;
+
+    /**
+     * 显示横坐标，单位像素
+     */
+    px: number;
+
+    /**
+     * 显示纵坐标，单位像素
+     */
+    py: number;
+
+    /**
+     * 文字的颜色
+     */
+    color: Color;
+}
+
+interface DamageStatusExtraData extends DamageStatusData {
+    /**
+     * 文字的不透明度
+     */
+    alpha: number;
+}
+
+interface AutomaticRouteStatus {
+    /**
+     * 勇士是否正在移动
+     */
+    autoHeroMove: boolean;
+
+    /**
+     * 不太清楚用处
+     */
+    autoStep: number;
+
+    /**
+     * 自动寻路中已经走过的步数
+     */
+    movedStep: number;
+
+    /**
+     * 自动寻路的总步数
+     */
+    destStep: number;
+
+    /**
+     * 自动寻路的目标横坐标
+     */
+    destX: number;
+
+    /**
+     * 自动寻路的目标纵坐标
+     */
+    destY: number;
+
+    /**
+     * 自动寻路绘图时的偏移横坐标，单位像素
+     */
+    offsetX: number;
+
+    /**
+     * 自动寻路绘图时的偏移纵坐标，单位像素
+     */
+    offsetY: number;
+
+    /**
+     * 自动寻路的路线
+     */
+    autoStepRoutes: AutoStep[];
+
+    /**
+     * 剩下的自动寻路路线
+     */
+    moveStepBeforeStop: AutoStep[];
+
+    /**
+     * 上一步的勇士方向
+     */
+    lastDirection: Dir;
+
+    /**
+     * 光标界面(按下E时的界面)的光标横坐标
+     */
+    cursorX: number;
+
+    /**
+     * 光标界面(按下E时的界面)的光标纵坐标
+     */
+    cursorY: number;
+
+    /**
+     * 是否瞬间移动
+     */
+    moveDirectly: boolean;
+}
+
+interface AutoStep {
+    /**
+     * 当前步的步数
+     */
+    step: number;
+
+    /**
+     * 当前步走向的方向
+     */
+    direction: Dir;
+}
+
+interface ReplaySaveBase {
+    /**
+     * 录像播放时，剩下的要播放的录像内容
+     */
+    toReplay: string[];
+
+    /**
+     * 录像播放时，录像的完整信息
+     */
+    totalList: string[];
+
+    /**
+     * 不太清楚用处，应该是与录像回退有关的
+     */
+    steps: number;
+}
+
+interface ReplayStatus extends ReplaySaveBase {
+    /**
+     * 当前是否正在播放录像，同core.isReplaying()
+     */
+    replaying: boolean;
+
+    /**
+     * 当前录像有没有暂停
+     */
+    pausing: boolean;
+
+    /**
+     * 当前是否正在某段动画中
+     */
+    animate: boolean;
+
+    /**
+     * 录像播放是否失败
+     */
+    failed: boolean;
+
+    /**
+     * 当前的录像播放速度
+     */
+    speed: number;
+
+    /**
+     * 录像的回退信息
+     */
+    save: ReplaySave[];
+}
+
+interface ReplaySave {
+    /**
+     * 回退的存档信息
+     */
+    data: Save;
+
+    /**
+     * 回退的录像信息
+     */
+    replay: ReplaySaveBase;
+}
+
+interface TextAttribute {
+    /**
+     * 文本框的位置
+     */
+    position: TextPosition;
+
+    /**
+     * 文本的左右对齐方式
+     */
+    align: 'left' | 'center' | 'right';
+
+    /**
+     * 偏移像素
+     */
+    offset: number;
+
+    /**
+     * 标题颜色
+     */
+    title: RGBArray;
+
+    /**
+     * 背景颜色
+     */
+    background: RGBArray | ImageIds;
+
+    /**
+     * 文字颜色
+     */
+    text: RGBArray;
+
+    /**
+     * 标题字体大小
+     */
+    titlefont: number;
+
+    /**
+     * 正文字体大小
+     */
+    textfont: number;
+
+    /**
+     * 是否加粗
+     */
+    bold: boolean;
+
+    /**
+     * 打字机时间，每隔多少毫秒显示一个字
+     */
+    time: number;
+
+    /**
+     * 字符间距
+     */
+    letterSpacing: number;
+
+    /**
+     * 淡入淡出时间
+     */
+    animateTime: number;
+
+    /**
+     * 行距
+     */
+    lineHeight: number;
+}
+
+interface StatusStyle {
+    /**
+     * 全局字体
+     */
+    font: string;
+}
+
+interface GlobalAttribute extends StatusStyle {
+    /**
+     * 装备栏名称
+     */
+    equipName: string[];
+}
+
+interface FloorAnimate {
+    /**
+     * 图片的目标画布
+     */
+    canvas: 'bg' | 'fg';
+
+    /**
+     * 图片的名称
+     */
+    name: ImageIds;
+
+    /**
+     * 绘制横坐标
+     */
+    x: number;
+
+    /**
+     * 绘制纵坐标
+     */
+    y: number;
+
+    /**
+     * 裁剪横坐标
+     */
+    sx?: number;
+
+    /**
+     * 裁剪纵坐标
+     */
+    sy?: number;
+
+    /**
+     * 裁剪宽度
+     */
+    w?: number;
+
+    /**
+     * 裁剪高度
+     */
+    h?: number;
+
+    /**
+     * 绘制帧数
+     */
+    frame?: number;
+
+    /**
+     * 图片翻转
+     */
+    reverse?: ':x' | ':y' | ':o';
+
+    /**
+     * 是否禁用
+     */
+    disable?: boolean;
+}
+
+interface BoxAnimate {
+    /**
+     * 动画的帧数
+     */
+    animate: number;
+
+    /**
+     * 背景的高度
+     */
+    bgHeight: number;
+
+    /**
+     * 背景的宽度
+     */
+    bgWidth: number;
+
+    /**
+     * 背景的左上角横坐标
+     */
+    bgx: number;
+
+    /**
+     * 背景的左上角纵坐标
+     */
+    bgy: number;
+
+    /**
+     * 动画图片的高度
+     */
+    height: 32 | 48;
+
+    /**
+     * 图片信息
+     */
+    img: HTMLImageElement;
+
+    /**
+     * 这个图块的图片在其素材图片的纵坐标
+     */
+    pos: number;
+
+    /**
+     * 图块的横坐标
+     */
+    x: number;
+
+    /**
+     * 图块的纵坐标
+     */
+    y: number;
+}
+
+interface BigImageBoxAnimate {
+    /**
+     * 大图片的贴图信息
+     */
+    bigImage: HTMLImageElement;
+
+    /**
+     * 贴图的朝向
+     */
+    face: Dir;
+
+    /**
+     * 中心横坐标
+     */
+    centerX: number;
+
+    /**
+     * 中心纵坐标
+     */
+    centerY: number;
+
+    /**
+     * 最大宽度
+     */
+    max_width: number;
+
+    /**
+     * 绘制到的画布
+     */
+    ctx: CtxRefer;
+}
+
+interface AnimateObj {
+    /**
+     * 动画名称
+     */
+    name: AnimationIds;
+
+    /**
+     * 动画的唯一标识符
+     */
+    id: number;
+
+    /**
+     * 动画信息
+     */
+    animate: Animate;
+
+    /**
+     * 中心横坐标
+     */
+    centerX: number;
+
+    /**
+     * 中心纵坐标
+     */
+    centerY: number;
+
+    /**
+     * 当前帧数
+     */
+    index: number;
+
+    /**
+     * 回调函数
+     */
+    callback: () => void;
+}
+
+interface RouteFolding {
+    /**
+     * 录像折叠信息中的勇士信息
+     */
+    hero: Omit<SelectType<HeroStatus, number>, 'steps'>;
+
+    /**
+     * 折叠的长度
+     */
+    length: number;
+}
+
+/**
+ * 初始游戏状态
+ */
+interface InitGameStatus {
+    /**
+     * 是否开始了游戏
+     */
+    played: boolean;
+
+    /**
+     * 游戏是否结束
+     */
+    gameOver: boolean;
+
+    /**
+     * 所有楼层的地图信息
+     */
+    maps: {
+        [P in FloorIds]: Floor<P>;
+    };
+
+    /**
+     * 背景图块
+     */
+    bgmaps: Record<FloorIds, number[][]>;
+
+    /**
+     * 前景图块
+     */
+    fgmaps: Record<FloorIds, number[][]>;
+
+    /**
+     * 以坐标列举的图块
+     */
+    mapBlockObjs: Record<FloorIds, Record<LocString, Block>>;
+
+    /**
+     * @deprecated 已失效，暂无好用的替代接口，之后可能会新增接口\
+     * 伤害显示信息
+     */
+    damage: DamageStatus;
+
+    /**
+     * 是否锁定了用户控制
+     */
+    lockControl: boolean;
+
+    /**
+     * @deprecated 可能可使用，暂无替代接口\
+     * 勇士移动状态，每个数字干啥的自己去libs翻，这东西太复杂了，不过应该不会有人用这个东西吧（
+     */
+    heroMoving: number;
+
+    /**
+     * @deprecated 可能可使用，暂无替代接口\
+     * 勇士是否停下了
+     */
+    heroStop: boolean;
+
+    /**
+     * 自动寻路状态
+     */
+    automaticRoute: AutomaticRouteStatus;
+
+    /**
+     * 按键按下的时间，用于判定双击
+     */
+    downTime: number;
+
+    /**
+     * ctrl键是否倍按下
+     */
+    ctrlDown: boolean;
+
+    /**
+     * 当前录像信息
+     */
+    route: string[];
+
+    /**
+     * 当前的回放状态
+     */
+    replay: ReplayStatus;
+
+    /**
+     * 当前的所有全局商店
+     */
+    shops: Record<string, ShopEventOf<keyof ShopEventMap>>;
+
+    /**
+     * 当前的事件状态，样板最大的败笔之一，离谱到逆天
+     */
+    event: EventStatusOf;
+
+    /**
+     * 当前的所有自动事件
+     */
+    autoEvents: DeepReadonly<AutoEvent[]>;
+
+    /**
+     * @deprecated 可能已失效，考虑换用 `TextboxStore` 接口\
+     * 当前的全局剧情文本设置
+     */
+    textAttribute: TextAttribute;
+
+    /**
+     * 部分全局属性，会跟随存档
+     */
+    globalAttribute: GlobalAttribute;
+
+    /**
+     * @deprecated 可能可使用，暂无好用的替代接口\
+     * 色调的颜色
+     */
+    curtainColor: Color;
+
+    /**
+     * @deprecated 可能已失效，此接口已经不会被使用到\
+     * 全局动画对象
+     */
+    globalAnimateObjs: Block<
+        IdToNumber[AllIdsOf<Exclude<AnimatableCls, 'autotile'>>]
+    >[];
+
+    /**
+     * @deprecated 可能可使用，暂无替代接口\
+     * 楼层贴图
+     */
+    floorAnimateObjs: FloorAnimate[];
+
+    /**
+     * @deprecated 可能已失效，此接口已经不会被使用到\
+     * 所有的BoxAnimate信息
+     */
+    boxAnimateObjs: (BoxAnimate | BigImageBoxAnimate)[];
+
+    /**
+     * @deprecated 可能已失效，此接口已经不会被使用到\
+     * 所有的自动元件动画
+     */
+    autotileAnimateObjs: Block<IdToNumber[AllIdsOf<'autotile'>]>[];
+
+    /**
+     * @deprecated 可能已失效，此接口已经不会被使用到\
+     * 全局动画状态，每经过一个全局动画时间便加一
+     */
+    globalAnimateStatus: number;
+
+    /**
+     * @deprecated 可能已失效，此接口已经不会被使用到\
+     * 所有绘制的动画
+     */
+    animateObjs: AnimateObj[];
+
+    /**
+     * 当前难度
+     */
+    hard: string;
+
+    /**
+     * @deprecated 可能已失效，此接口已经不会被使用到\
+     * 勇士的中心
+     */
+    heroCenter: Record<'px' | 'py', number>;
+
+    /**
+     * 当前按下的按键
+     */
+    holdingKeys: number[];
+
+    /**
+     * id转数字
+     */
+    id2number: IdToNumber;
+
+    /**
+     * 数字转图块
+     */
+    number2block: {
+        [P in keyof NumberToId]: Block<P>;
+    };
+
+    /**
+     * 录像折叠信息
+     */
+    routeFolding: Record<`${LocString},${FirstCharOf<Dir>}`, RouteFolding>;
+}
+
+/**
+ * 运行时的游戏状态
+ */
+interface GameStatus extends InitGameStatus {
+    /**
+     * 当前层的floorId
+     */
+    floorId: FloorIds;
+
+    /**
+     * 获得当前楼层信息，等价于core.status.maps[core.status.floorId]
+     */
+    thisMap: Floor;
+
+    /**
+     * @deprecated 已失效，考虑换用 `core.status.maps[floorId].mapDamage` 接口\
+     * 地图伤害
+     */
+    checkBlock: void;
+
+    /**
+     * 当前勇士状态信息。例如core.status.hero.atk就是当前勇士的攻击力数值
+     */
+    hero: HeroStatus;
+
+    stepPostfix?: DiredLoc[];
+}
+
+interface HeroStatistics {
+    /**
+     * 击败的怪物数量
+     */
+    battle: number;
+
+    /**
+     * 由于战斗损失的生命值
+     */
+    battleDamage: number;
+
+    /**
+     * 当前游戏时间
+     */
+    currentTime: number;
+
+    /**
+     * 获得的总经验值
+     */
+    exp: number;
+
+    /**
+     * 由于地图伤害损失的生命值
+     */
+    extraDamage: number;
+
+    /**
+     * 总共损失的生命值
+     */
+    hp: number;
+
+    /**
+     * 由于瞬移少走的步数
+     */
+    ignoreSteps: number;
+
+    /**
+     * 总共获得的金币数
+     */
+    money: number;
+
+    /**
+     * 瞬移次数
+     */
+    moveDirectly: number;
+
+    /**
+     * 中毒损失的生命值
+     */
+    poisonDamage: number;
+
+    /**
+     * 本次游戏的开始时间
+     */
+    startTime: number;
+
+    /**
+     * 游戏总时间
+     */
+    totalTime: number;
+}
+
+/**
+ * 勇士状态
+ */
+interface HeroStatus {
+    /**
+     * 勇士停止时及对话框中是否启用帧动画
+     */
+    animate: boolean;
+
+    /**
+     * 勇士生命值
+     */
+    hp: number;
+
+    /**
+     * 勇士生命回复
+     */
+    hpmax: number;
+
+    /**
+     * 勇士的攻击
+     */
+    atk: number;
+
+    /**
+     * 勇士的防御
+     */
+    def: number;
+
+    /**
+     * 勇士的魔防
+     */
+    mdef: number;
+
+    /**
+     * 勇士的等级
+     */
+    lv: number;
+
+    /**
+     * 勇士的经验
+     */
+    exp: number;
+
+    /**
+     * 勇士的金币
+     */
+    money: number;
+
+    /**
+     * 勇士的额外攻击
+     */
+    mana: number;
+
+    /**
+     * 勇士的魔法上限
+     */
+    manamax: number;
+
+    /**
+     * 勇士的名称
+     */
+    name: string;
+
+    /**
+     * 勇士移动过的步数
+     */
+    steps: number;
+
+    /**
+     * 勇士的图片
+     */
+    image: ImageIds;
+
+    /**
+     * 当前勇士的装备
+     */
+    equipment: ItemIdOf<'equips'>[];
+
+    /**
+     * 勇士当前的位置
+     */
+    loc: DiredLoc;
+
+    /**
+     * @deprecated 可使用，暂无替代接口\
+     * 当前的变量
+     */
+    flags: Flags;
+
+    /**
+     * @deprecated 已失效，暂无替代接口\
+     * 勇士的跟随者
+     */
+    followers: [];
+
+    /**
+     * @deprecated 可使用，此接口已经不会被使用到\
+     */
+    statistics: HeroStatistics;
+
+    /**
+     * @deprecated 可使用，暂无替代接口，2.C 会新增替代接口\
+     * 勇士拥有的道具
+     */
+    items: {
+        [P in Exclude<ItemCls, 'items'>]: Record<ItemIdOf<P>, number>;
+    };
+
+    buff: Partial<Record<keyof NumbericHeroStatus, number>>;
+}

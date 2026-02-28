@@ -1,0 +1,88 @@
+/*
+ * 表格配置项。
+ * 在这里可以对表格中的各项显示进行配置，包括表格项、提示内容等内容。具体写法照葫芦画瓢即可。
+ * 本配置项包括：脚本编辑。
+ * 相关文档 _docs/editor.md ~ http://127.0.0.1:1055/_docs/#/editor?id=修改表格
+ */
+
+var functions_comment_c456ea59_6018_45ef_8bcc_211a24c627dc = {
+	_type: 'object',
+	_data: {
+		events: {
+			_type: 'object',
+			_data: {
+				resetGame: {
+					_leaf: true,
+					_type: 'textarea',
+					_lint: true,
+					_data: '重置游戏'
+				},
+				win: {
+					_leaf: true,
+					_type: 'textarea',
+					_lint: true,
+					_data: '游戏获胜'
+				},
+				lose: {
+					_leaf: true,
+					_type: 'textarea',
+					_lint: true,
+					_data: '游戏失败'
+				},
+				changingFloor: {
+					_leaf: true,
+					_type: 'textarea',
+					_lint: true,
+					_data: '切换楼层中'
+				},
+				afterChangeFloor: {
+					_leaf: true,
+					_type: 'textarea',
+					_lint: true,
+					_data: '切换楼层后'
+				},
+				flyTo: {
+					_leaf: true,
+					_type: 'textarea',
+					_lint: true,
+					_data: '楼层飞行'
+				}
+			}
+		},
+		control: {
+			_type: 'object',
+			_data: {
+				saveData: {
+					_leaf: true,
+					_type: 'textarea',
+					_lint: true,
+					_data: '存档操作'
+				},
+				loadData: {
+					_leaf: true,
+					_type: 'textarea',
+					_lint: true,
+					_data: '读档操作'
+				},
+				updateStatusBar: {
+					_leaf: true,
+					_type: 'textarea',
+					_lint: true,
+					_data: '更新状态栏'
+				},
+				moveOneStep: {
+					_leaf: true,
+					_type: 'textarea',
+					_lint: true,
+					_data: '每步后操作'
+				},
+				moveDirectly: {
+					_leaf: true,
+					_type: 'textarea',
+					_lint: true,
+					_data: '瞬间移动'
+				}
+			}
+		}
+	}
+};
