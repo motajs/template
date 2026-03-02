@@ -151,6 +151,10 @@ export class OnMapTextRenderer
         return this.canvas;
     }
 
+    /**
+     * 获取分块所附着的文字数据
+     * @param blockData 分块数据
+     */
     private getAttachedMap(
         blockData: IBlockData<IMapVertexBlock>
     ): Map<number, MapTextArea> {
