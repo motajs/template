@@ -12,6 +12,7 @@ import type {
     LayerMovingRenderable
 } from '@user/client-modules';
 import { sleep } from '@motajs/common';
+import { fromDirectionString, state } from '..';
 
 // todo: 转身功能
 
@@ -468,12 +469,10 @@ export class HeroMover extends ObjectMoverBase {
 
     protected async onMoveStart(controller: IMoveController): Promise<void> {
         this.beforeMoveSpeed = this.moveSpeed;
-        const adapter = HeroMover.adapter;
         const viewport = HeroMover.viewport;
-        if (!adapter || !viewport) return;
-        if (!core.isReplaying() || core.status.replay.speed <= 3) {
-            adapter.sync('startAnimate');
-            await adapter.all('readyMove');
+        if (!viewport) return;
+        if (!core.isReplaying() || core.status.replay.speed <= 12) {
+            state.hero.startMove();
         }
         // 这里要检查前面那一格能不能走，不能走则不触发平滑视角，以避免撞墙上视角卡住
         if (!this.ignoreTerrain) {
@@ -495,11 +494,9 @@ export class HeroMover extends ObjectMoverBase {
     protected async onMoveEnd(controller: IMoveController): Promise<void> {
         this.moveSpeed = this.beforeMoveSpeed;
         this.onSetMoveSpeed(this.moveSpeed, controller);
-        const adapter = HeroMover.adapter;
         const viewport = HeroMover.viewport;
-        if (!adapter || !viewport) return;
-        adapter.sync('endAnimate');
-        await adapter.all('endMove');
+        if (!viewport) return;
+        await state.hero.endMove();
         viewport.sync('endMove');
         core.clearContinueAutomaticRoute();
         core.stopAutomaticRoute();
@@ -607,40 +604,43 @@ export class HeroMover extends ObjectMoverBase {
         speed: number,
         _controller: IMoveController
     ): void {
-        const adapter = HeroMover.adapter;
-        if (!adapter) return;
-        adapter.sync('setMoveSpeed', speed);
+        this.moveSpeed = speed;
     }
 
     /**
      * 移动动画
      * @param x 目标横坐标
      * @param y 目标纵坐标
-     * @param showDir 显示方向
+     * @param _showDir 显示方向
      * @param moveDir 移动方向
      */
     private async moveAnimate(
         x: number,
         y: number,
-        showDir: Dir,
+        _showDir: Dir,
         moveDir: Dir2
     ) {
-        const adapter = HeroMover.adapter;
         const viewport = HeroMover.viewport;
-        if (!adapter || !viewport) return;
+        if (!viewport) return;
         const replay = core.status.replay.speed;
         const speed = replay === 24 ? 1 : this.moveSpeed / replay;
         viewport.all('moveTo', x, y, speed * 1.6);
-        adapter.sync('setAnimateDir', showDir);
-        if (core.isReplaying() && core.status.replay.speed > 3) {
-            adapter.sync('endAnimate');
-            await sleep(speed);
-            await adapter.all('setHeroLoc', x, y);
-        } else {
-            if (core.isReplaying()) {
-                adapter.sync('startAnimate');
+        const replaying = core.isReplaying();
+        if (replaying) {
+            if (core.status.replay.speed > 12) {
+                await state.hero.endMove();
+                await sleep(speed);
+                state.hero.setPosition(x, y);
+            } else {
+                state.hero.startMove();
+                await state.hero.move(
+                    fromDirectionString(moveDir),
+                    this.moveSpeed / core.status.replay.speed
+                );
             }
-            await adapter.all('move', moveDir);
+        } else {
+            state.hero.startMove();
+            await state.hero.move(fromDirectionString(moveDir), this.moveSpeed);
         }
     }
 
@@ -711,10 +711,8 @@ loading.once('coreInit', () => {
 loading.once('coreInit', () => {
     if (main.replayChecking || main.mode === 'editor') return;
     const Adapter = Mota.require('@motajs/render').RenderAdapter;
-    const adapter = Adapter.get<HeroRenderer>('hero-adapter');
     const viewport = Adapter.get<FloorViewport>('viewport');
     const layerAdapter = Adapter.get<Layer>('layer');
-    HeroMover.adapter = adapter;
     HeroMover.viewport = viewport;
     BlockMover.adapter = layerAdapter;
 });

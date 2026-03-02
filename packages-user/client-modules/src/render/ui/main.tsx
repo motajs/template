@@ -35,34 +35,16 @@ import {
     RightStatusBar
 } from './statusBar';
 import { ReplayingStatus } from './toolbar';
-import { getHeroStatusOn } from '@user/data-state';
+import { getHeroStatusOn, state } from '@user/data-state';
 import { hook } from '@user/data-base';
-import { FloorDamageExtends, FloorItemDetail } from '../elements';
 import { FloorChange } from '../legacy/fallback';
 import { mainUIController } from './controller';
-import {
-    ILayerGroupRenderExtends,
-    LayerGroupAnimate,
-    FloorViewport,
-    ILayerRenderExtends,
-    HeroRenderer,
-    LayerDoorAnimate,
-    LayerGroup
-} from '../elements';
+import { LayerGroup } from '../elements';
 import { isNil } from 'lodash-es';
+import { mainMapRenderer } from '../commonIns';
 
 const MainScene = defineComponent(() => {
     //#region 基本定义
-    const layerGroupExtends: ILayerGroupRenderExtends[] = [
-        new FloorDamageExtends(),
-        new FloorItemDetail(),
-        new LayerGroupAnimate(),
-        new FloorViewport()
-    ];
-    const eventExtends: ILayerRenderExtends[] = [
-        new HeroRenderer(),
-        new LayerDoorAnimate()
-    ];
     const mainTextboxProps: Props<typeof Textbox> = {
         text: '',
         hidden: true,
@@ -275,13 +257,11 @@ const MainScene = defineComponent(() => {
                 onMove={moveMap}
                 noanti
             >
-                <layer-group id="layer-main" ex={layerGroupExtends} ref={map}>
-                    <layer layer="bg" zIndex={10}></layer>
-                    <layer layer="bg2" zIndex={20}></layer>
-                    <layer layer="event" zIndex={30} ex={eventExtends}></layer>
-                    <layer layer="fg" zIndex={40}></layer>
-                    <layer layer="fg2" zIndex={50}></layer>
-                </layer-group>
+                <map-render
+                    renderer={mainMapRenderer}
+                    layerState={state.layer}
+                    loc={[0, 0, MAP_WIDTH, MAP_HEIGHT]}
+                />
                 <Textbox id="main-textbox" {...mainTextboxProps}></Textbox>
                 <FloorChange id="floor-change" zIndex={50}></FloorChange>
                 <Tip
