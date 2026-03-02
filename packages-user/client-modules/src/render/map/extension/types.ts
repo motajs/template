@@ -186,18 +186,22 @@ export interface IMapTextRenderable {
     readonly text: string;
     /** 文本字体 */
     readonly font: Font;
+    /** 是否填充 */
+    readonly fill?: boolean;
+    /** 是否描边 */
+    readonly stroke?: boolean;
     /** 文本填充样式 */
-    readonly fillStyle: CanvasStyle;
+    readonly fillStyle?: CanvasStyle;
     /** 文本描边样式 */
-    readonly strokeStyle: CanvasStyle;
+    readonly strokeStyle?: CanvasStyle;
     /** 文本横坐标，注意 {@link IMapTextArea.addTextRenderable} 的相对关系 */
-    readonly px: number;
+    readonly px?: number;
     /** 文本纵坐标，注意 {@link IMapTextArea.addTextRenderable} 的相对关系 */
-    readonly py: number;
+    readonly py?: number;
     /** 文本横向对齐方式 */
-    readonly textAlign: CanvasTextAlign;
+    readonly textAlign?: CanvasTextAlign;
     /** 文本纵向对齐方式 */
-    readonly textBaseline: CanvasTextBaseline;
+    readonly textBaseline?: CanvasTextBaseline;
 }
 
 export interface IMapTextRequested {

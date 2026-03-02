@@ -128,17 +128,17 @@ export class OnMapTextRenderer
                 const baseX = area.mapX * this.renderer.cellWidth;
                 const baseY = area.mapY * this.renderer.cellHeight;
                 for (const renderable of area.getRenderables()) {
-                    const x = baseX + renderable.px - renderWidth / 2;
-                    const y = renderHeight / 2 - (baseY + renderable.py);
+                    const x = baseX + (renderable.px ?? 0) - renderWidth / 2;
+                    const y = renderHeight / 2 - (baseY + (renderable.py ?? 0));
                     ctx.font = renderable.font.string();
-                    ctx.textAlign = renderable.textAlign;
-                    ctx.textBaseline = renderable.textBaseline;
-                    if (renderable.strokeStyle) {
-                        ctx.strokeStyle = renderable.strokeStyle;
+                    ctx.textAlign = renderable.textAlign ?? 'left';
+                    ctx.textBaseline = renderable.textBaseline ?? 'top';
+                    if (renderable.stroke) {
+                        ctx.strokeStyle = renderable.strokeStyle ?? 'black';
                         ctx.strokeText(renderable.text, x, -y);
                     }
-                    if (renderable.fillStyle) {
-                        ctx.fillStyle = renderable.fillStyle;
+                    if (renderable.fill) {
+                        ctx.fillStyle = renderable.fillStyle ?? 'white';
                         ctx.fillText(renderable.text, x, -y);
                     }
                 }
