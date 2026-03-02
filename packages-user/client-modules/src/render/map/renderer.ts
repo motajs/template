@@ -20,6 +20,7 @@ import {
     IMapRenderer,
     IMapRendererPostEffect,
     IMapRendererTicker,
+    IMapRenderResult,
     IMapVertexGenerator,
     IMapViewportController,
     IMovingBlock,
@@ -217,6 +218,7 @@ export class MapRenderer
         this.canvas = document.createElement('canvas');
         this.gl = this.canvas.getContext('webgl2')!;
         this.transform = new Transform();
+        this.transform.bind(this);
         this.layerState = layerState;
         this.layerStateHook = layerState.addHook(
             new RendererLayerStateHook(this)
@@ -1347,12 +1349,15 @@ export class MapRenderer
         this.updateRequired = true;
     }
 
-    render(): HTMLCanvasElement {
+    render(): IMapRenderResult {
         const gl = this.gl;
         const data = this.contextData;
         if (!this.assetData) {
             logger.error(31);
-            return this.canvas;
+            return {
+                canvas: this.canvas,
+                area: { blockList: [], dirty: [], render: [] }
+            };
         }
 
         const {
@@ -1512,7 +1517,7 @@ export class MapRenderer
         this.needUpdateOffsetPool = false;
         this.vertex.renderDynamic();
 
-        return this.canvas;
+        return { canvas: this.canvas, area };
     }
 
     //#endregion

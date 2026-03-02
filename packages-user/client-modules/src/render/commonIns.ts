@@ -19,4 +19,5 @@ export async function createMainExtension() {
         mainMapExtension.addHero(state.hero, layer);
         mainMapExtension.addDoor(layer);
     }
+    mainMapExtension.addText();
 }

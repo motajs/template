@@ -317,6 +317,13 @@ export interface IMapRendererPostEffect {
     ): void;
 }
 
+export interface IMapRenderResult {
+    /** 渲染结果所在的画布 */
+    readonly canvas: HTMLCanvasElement;
+    /** 渲染内容所包含的分块 */
+    readonly area: IMapRenderData;
+}
+
 export interface IMapRenderer {
     /** 地图渲染器使用的资源管理器 */
     readonly manager: IMaterialManager;
@@ -390,7 +397,7 @@ export interface IMapRenderer {
     /**
      * 渲染地图
      */
-    render(): HTMLCanvasElement;
+    render(): IMapRenderResult;
 
     /**
      * 设置地图的变换矩阵
@@ -894,6 +901,25 @@ export interface IMapVertexBlock extends IMapVertexData {
      * @param layer 图层对象
      */
     getLayerData(layer: IMapLayer): IMapVertexData | null;
+
+    /**
+     * 在此分块上附着数据，一般用于拓展地图渲染，比如需要自定义分块渲染的场景
+     * @param symbol 附着数据的标识符
+     * @param data 附着数据内容
+     */
+    attach<T>(symbol: symbol, data: T): void;
+
+    /**
+     * 获取这个分块上指定的附着数据
+     * @param symbol 附着数据的标识符
+     */
+    getAttachedData<T>(symbol: symbol): T | undefined;
+
+    /**
+     * 删除这个分块上指定的附着数据
+     * @param symbol 附着数据的标识符
+     */
+    deleteAttachedData(symbol: symbol): void;
 }
 
 export interface IMapBlockUpdateObject {

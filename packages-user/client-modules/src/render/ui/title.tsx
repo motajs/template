@@ -116,7 +116,7 @@ export const GameTitle = defineComponent<GameTitleProps>(props => {
     const hard = main.levelChoose.map<ButtonOption>(v => {
         return {
             code: v.hard,
-            color: core.arrayToRGBA(v.color),
+            color: core.arrayToRGBA(v.color!),
             name: v.title,
             hard: v.name,
             colorTrans: transitionedColor('#fff', 400, hyper('sin', 'out'))!,

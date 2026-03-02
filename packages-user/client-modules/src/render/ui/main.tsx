@@ -4,18 +4,10 @@ import {
     IActionEvent,
     MotaOffscreenCanvas2D,
     Sprite,
-    onTick,
-    transformCanvas
+    onTick
 } from '@motajs/render';
-import { WeatherController } from '../weather';
-import {
-    defineComponent,
-    onMounted,
-    onUnmounted,
-    reactive,
-    ref,
-    shallowRef
-} from 'vue';
+// import { WeatherController } from '../weather';
+import { defineComponent, onUnmounted, reactive, ref } from 'vue';
 import { Textbox, Tip } from '../components';
 import { GameUI } from '@motajs/system-ui';
 import {
@@ -39,9 +31,8 @@ import { getHeroStatusOn, state } from '@user/data-state';
 import { hook } from '@user/data-base';
 import { FloorChange } from '../legacy/fallback';
 import { mainUIController } from './controller';
-import { LayerGroup } from '../elements';
 import { isNil } from 'lodash-es';
-import { mainMapRenderer } from '../commonIns';
+import { mainMapExtension, mainMapRenderer } from '../commonIns';
 
 const MainScene = defineComponent(() => {
     //#region 基本定义
@@ -60,17 +51,10 @@ const MainScene = defineComponent(() => {
         width: MAP_WIDTH
     };
 
-    const map = shallowRef<LayerGroup>();
     const hideStatus = ref(false);
     const locked = ref(false);
-    const weather = new WeatherController();
-    weather.extern('main');
-
-    onMounted(() => {
-        if (map.value) {
-            weather.bind(map.value);
-        }
-    });
+    // const weather = new WeatherController();
+    // weather.extern('main');
 
     const replayStatus: ReplayingStatus = reactive({
         replaying: false,
@@ -176,9 +160,7 @@ const MainScene = defineComponent(() => {
 
     const renderMapMisc = (canvas: MotaOffscreenCanvas2D) => {
         const step = core.status.stepPostfix;
-        const camera = map.value?.camera;
-        if (!step || !camera) return;
-        transformCanvas(canvas, camera);
+        if (!step) return;
         const ctx = canvas.ctx;
         ctx.fillStyle = '#fff';
         step.forEach(({ x, y, direction }) => {
@@ -260,6 +242,7 @@ const MainScene = defineComponent(() => {
                 <map-render
                     renderer={mainMapRenderer}
                     layerState={state.layer}
+                    extension={mainMapExtension}
                     loc={[0, 0, MAP_WIDTH, MAP_HEIGHT]}
                 />
                 <Textbox id="main-textbox" {...mainTextboxProps}></Textbox>

@@ -12,7 +12,7 @@ import { EAnimateEvent } from './animate';
 import { EIconEvent, EWinskinEvent } from './misc';
 import { IEnemyCollection } from '@motajs/types';
 import { ILayerState } from '@user/data-state';
-import { IMapRenderer } from '../map';
+import { IMapExtensionManager, IMapRenderer, IOnMapTextRenderer } from '../map';
 
 export interface AnimateProps extends BaseProps {}
 
@@ -65,6 +65,8 @@ export interface LayerProps extends BaseProps {
 export interface MapRenderProps extends BaseProps {
     layerState: ILayerState;
     renderer: IMapRenderer;
+    extension: IMapExtensionManager;
+    textExtension?: IOnMapTextRenderer | null;
 }
 
 declare module 'vue/jsx-runtime' {

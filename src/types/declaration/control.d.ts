@@ -1035,7 +1035,7 @@ interface Control {
      * @param bgm 背景音乐的文件名，支持全塔属性中映射前的中文名
      * @param startTime 跳过前多少秒
      */
-    playBgm(bgm: BgmIds | NameMapIn<BgmIds>, startTime?: number): void;
+    playBgm(bgm: BgmIds, startTime?: number): void;
 
     /**
      * @deprecated 可使用，考虑换用新的 `BgmController` 接口\

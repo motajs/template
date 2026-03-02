@@ -1042,8 +1042,13 @@ class MapVertexBlock implements IMapVertexBlock {
 
     readonly instancedStart: number;
 
+    /** 每个图层的渲染偏移量 */
     private readonly indexMap: Map<IMapLayer, number> = new Map();
+    /** 每个图层对应的实例化数组 */
     private readonly instancedMap: Map<IMapLayer, Float32Array> = new Map();
+
+    /** 分块的附着数据 */
+    private readonly attachedData: Map<symbol, unknown> = new Map();
 
     /**
      * 创建分块的顶点数组对象，此对象不能动态扩展，如果地图变化，需要全部重建
@@ -1160,6 +1165,18 @@ class MapVertexBlock implements IMapVertexBlock {
             instancedStart:
                 this.instancedStart + index * this.count * INSTANCED_COUNT
         };
+    }
+
+    attach<T>(symbol: symbol, data: T): void {
+        this.attachedData.set(symbol, data);
+    }
+
+    getAttachedData<T>(symbol: symbol): T | undefined {
+        return this.attachedData.get(symbol) as T;
+    }
+
+    deleteAttachedData(symbol: symbol): void {
+        this.attachedData.delete(symbol);
     }
 }
 

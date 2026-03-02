@@ -3,6 +3,7 @@ import { ILayerState } from '@user/data-state';
 import { IMapRenderer } from './types';
 import { ElementNamespace, ComponentInternalInstance } from 'vue';
 import { CELL_HEIGHT, CELL_WIDTH, MAP_HEIGHT, MAP_WIDTH } from '../shared';
+import { IMapExtensionManager } from './extension';
 
 export class MapRender extends RenderItem {
     /**
@@ -11,7 +12,8 @@ export class MapRender extends RenderItem {
      */
     constructor(
         readonly layerState: ILayerState,
-        readonly renderer: IMapRenderer
+        readonly renderer: IMapRenderer,
+        readonly exManager: IMapExtensionManager
     ) {
         super('static', false, false);
 
@@ -24,7 +26,31 @@ export class MapRender extends RenderItem {
             if (this.renderer.needUpdate()) {
                 this.update();
             }
+            const text = exManager.textRenderer;
+            if (text) {
+                if (text.needResize) {
+                    this.resizeTextRenderer(this.width, this.height);
+                }
+                if (text.needUpdate()) {
+                    this.update();
+                }
+            }
         });
+    }
+
+    private resizeTextRenderer(width: number, height: number) {
+        const ex = this.exManager.textRenderer;
+        if (!ex) return;
+        const ratio = this.highResolution ? devicePixelRatio : 1;
+        const scale = ratio * this.scale;
+        const w = width * scale;
+        const h = height * scale;
+        ex.resize(
+            w,
+            h,
+            w / this.renderer.renderWidth,
+            h / this.renderer.renderHeight
+        );
     }
 
     private sizeGL(width: number, height: number) {
@@ -34,6 +60,14 @@ export class MapRender extends RenderItem {
         const h = height * scale;
         this.renderer.setCanvasSize(w, h);
         this.renderer.setViewport(0, 0, w, h);
+        if (this.exManager.textRenderer) {
+            this.exManager.textRenderer.resize(
+                w,
+                h,
+                w / this.renderer.renderWidth,
+                h / this.renderer.renderHeight
+            );
+        }
     }
 
     onResize(scale: number): void {
@@ -49,7 +83,11 @@ export class MapRender extends RenderItem {
     protected render(canvas: MotaOffscreenCanvas2D): void {
         this.renderer.clear(true, true);
         const map = this.renderer.render();
-        canvas.ctx.drawImage(map, 0, 0, canvas.width, canvas.height);
+        canvas.ctx.drawImage(map.canvas, 0, 0, canvas.width, canvas.height);
+        if (this.exManager.textRenderer) {
+            const text = this.exManager.textRenderer.render(map);
+            canvas.ctx.drawImage(text, 0, 0, canvas.width, canvas.height);
+        }
     }
 
     patchProp(

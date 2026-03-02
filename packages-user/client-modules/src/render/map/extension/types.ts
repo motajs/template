@@ -6,8 +6,16 @@ import {
     IMapLayer
 } from '@user/data-state';
 import { Font } from '@motajs/render-style';
+import { IMapRenderResult } from '../types';
 
 export interface IMapExtensionManager {
+    /** 勇士状态至勇士渲染器的映射 */
+    readonly heroMap: Map<IHeroState, IMapHeroRenderer>;
+    /** 地图图层到门渲染器的映射 */
+    readonly doorMap: Map<IMapLayer, IMapDoorRenderer>;
+    /** 单例的文字渲染拓展（独立图层） */
+    readonly textRenderer: IOnMapTextRenderer | null;
+
     /**
      * 添加勇士渲染拓展
      * @param state 勇士状态
@@ -30,6 +38,16 @@ export interface IMapExtensionManager {
      * 移除开门动画拓展
      */
     removeDoor(layer: IMapLayer): void;
+
+    /**
+     * 添加文字渲染拓展
+     */
+    addText(): IOnMapTextRenderer | null;
+
+    /**
+     * 移除文字渲染拓展
+     */
+    removeText(): void;
 
     /**
      * 摧毁这个拓展管理对象，释放相关资源
@@ -192,17 +210,18 @@ export interface IMapTextRequested {
 
 export interface IMapTextArea {
     /** 图块在地图上的索引 */
-    index: number;
+    readonly index: number;
     /** 图块横坐标 */
-    mapX: number;
+    readonly mapX: number;
     /** 图块纵坐标 */
-    mapY: number;
+    readonly mapY: number;
 
     /**
      * 添加文字可渲染对象。可渲染对象的坐标相对于图块，而非地图。
      * @param renderable 可渲染对象
+     * @returns 添加的可渲染对象的唯一索引标识符
      */
-    addTextRenderable(renderable: IMapTextRenderable): void;
+    addTextRenderable(renderable: IMapTextRenderable): number;
 
     /**
      * 移除指定的文字可渲染对象
@@ -211,23 +230,55 @@ export interface IMapTextArea {
     removeTextRenderable(renderable: IMapTextRenderable): void;
 
     /**
+     * 根据可渲染对象的索引标识符移除文字的可渲染对象
+     * @param index 可渲染对象对应的索引标识符
+     */
+    removeTextRenderableByIndex(index: number): void;
+
+    /**
      * 清除本图块的所有文字可渲染对象
      */
     clear(): void;
 }
 
 export interface IOnMapTextRenderer {
+    /** 是否需要修改画布大小 */
+    readonly needResize: boolean;
+
+    /**
+     * 修改画布的缩放比例，传入的参数包含 `devicePixelRatio` 以及渲染器自身缩放比例
+     * @param width 画布宽度
+     * @param height 画布高度
+     * @param scaleX 画布横向比例
+     * @param scaleY 画布纵向比例
+     */
+    resize(width: number, height: number, scaleX: number, scaleY: number): void;
+
     /**
      * 渲染地图文字，返回的画布就是文字画到的画布
      */
-    render(): HTMLCanvasElement;
+    render(data: IMapRenderResult): HTMLCanvasElement;
 
     /**
-     * 申请指定图块坐标的文字管理对象
+     * 申请指定图块坐标的文字管理对象，如果该点已被申请，则会使用已申请的对象
+     * @param x 图块横坐标
+     * @param y 图块纵坐标
+     * @returns 申请的文字管理对象，如果申请的坐标不在地图上，则会返回 `null`
+     */
+    requireBlockArea(x: number, y: number): Readonly<IMapTextArea> | null;
+
+    /**
+     * 根据图块坐标获取已申请的文字管理对象，如果未申请则返回 `null`
      * @param x 图块横坐标
      * @param y 图块纵坐标
      */
-    requireBlockArea(x: number, y: number): Readonly<IMapTextArea>;
+    getBlockByLoc(x: number, y: number): Readonly<IMapTextArea> | null;
+
+    /**
+     * 根据索引获取已申请的文字管理对象，如果未申请则返回 `null`
+     * @param index 管理对象索引
+     */
+    getBlockByIndex(index: number): Readonly<IMapTextArea> | null;
 
     /**
      * 判断是否需要更新
