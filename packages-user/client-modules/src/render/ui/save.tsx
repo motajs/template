@@ -1,6 +1,5 @@
-import { ElementLocator, IWheelEvent } from '@motajs/render-core';
+import { ElementLocator, IWheelEvent, Font } from '@motajs/render';
 import { DefaultProps } from '@motajs/render-vue';
-import { Font } from '@motajs/render';
 import {
     GameUI,
     IUIMountable,

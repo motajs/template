@@ -1,8 +1,0 @@
-{
-    "name": "@motajs/render-elements",
-    "dependencies": {
-        "@motajs/common": "workspace:*",
-        "@motajs/render-core": "workspace:*",
-        "@motajs/render-style": "workspace:*"
-    }
-}

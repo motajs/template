@@ -2,7 +2,7 @@ import {
     ITransformUpdatable,
     ShaderProgram,
     Transform3D
-} from '@motajs/render-core';
+} from '@motajs/render';
 import { EffectBase } from './base';
 
 export class Image3DEffect

@@ -20,7 +20,7 @@ import {
     TITLE_X,
     TITLE_Y
 } from '../shared';
-import { ElementLocator } from '@motajs/render-core';
+import { ElementLocator, Font } from '@motajs/render';
 import {
     ITransitionedController,
     transitioned,
@@ -28,7 +28,6 @@ import {
     useKey
 } from '../use';
 import { hyper, linear, sleep } from 'mutate-animate';
-import { Font } from '@motajs/render-style';
 import { ExitFullscreen, Fullscreen, SoundVolume } from '../components';
 import { mainSetting, triggerFullscreen } from '@motajs/legacy-ui';
 import { saveLoad } from './save';

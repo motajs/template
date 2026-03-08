@@ -1,4 +1,4 @@
-import { ElementLocator } from '@motajs/render-core';
+import { ElementLocator } from '@motajs/render';
 
 export interface IGridLayoutData {
     /** 有多少列 */

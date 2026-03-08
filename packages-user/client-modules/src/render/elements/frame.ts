@@ -1,5 +1,5 @@
 import EventEmitter from 'eventemitter3';
-import { RenderItem } from '@motajs/render-core';
+import { RenderItem } from '@motajs/render';
 
 export interface IAnimateFrame {
     updateFrameAnimate(frame: number, time: number): void;

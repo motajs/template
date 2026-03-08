@@ -1,8 +1,9 @@
 import { logger } from '@motajs/common';
-import { Font, onTick, MotaOffscreenCanvas2D } from '@motajs/render';
+import { Font, MotaOffscreenCanvas2D } from '@motajs/render';
 import EventEmitter from 'eventemitter3';
 import { isNil } from 'lodash-es';
 import { RenderableData, AutotileRenderable, texture } from '../elements';
+import { onTick } from '@motajs/render-vue';
 
 /** 文字的安全填充，会填充在文字的上侧和下侧，防止削顶和削底 */
 const SAFE_PAD = 1;

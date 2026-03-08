@@ -1,6 +1,11 @@
 import { logger } from '@motajs/common';
-import { ERenderItemEvent, RenderItem } from '@motajs/render-core';
-import { ETextEvent, Text, Comment } from '@motajs/render-elements';
+import {
+    ERenderItemEvent,
+    RenderItem,
+    ETextEvent,
+    Text,
+    Comment
+} from '@motajs/render';
 import {
     ComponentInternalInstance,
     createRenderer,

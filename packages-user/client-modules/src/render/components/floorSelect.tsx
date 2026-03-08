@@ -3,8 +3,7 @@ import { SetupComponentOptions } from '@motajs/system-ui';
 import { clamp, isNil } from 'lodash-es';
 import { computed, defineComponent, onMounted, ref, watch } from 'vue';
 import { Scroll, ScrollExpose } from './scroll';
-import { Font } from '@motajs/render-style';
-import { MotaOffscreenCanvas2D } from '@motajs/render-core';
+import { MotaOffscreenCanvas2D, Font } from '@motajs/render';
 import {
     HALF_STATUS_WIDTH,
     STATUS_BAR_HEIGHT,

@@ -1,4 +1,4 @@
-import { ITexture } from '@motajs/render-assets';
+import { ITexture } from '@motajs/render';
 import { BlockCls } from './types';
 
 export function getClsByString(cls: Cls): BlockCls {

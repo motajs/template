@@ -7,7 +7,7 @@ import {
     IMapVertexBlock
 } from '../types';
 import { IMapTextArea, IMapTextRenderable, IOnMapTextRenderer } from './types';
-import { ITransformUpdatable, Transform } from '@motajs/render-core';
+import { ITransformUpdatable, Transform } from '@motajs/render';
 
 export class OnMapTextRenderer
     implements IOnMapTextRenderer, ITransformUpdatable<Transform>
@@ -116,6 +116,7 @@ export class OnMapTextRenderer
             (e * renderWidth) / 2,
             (f * renderHeight) / 2
         );
+        // 由于 WebGL 坐标系与 Canvas2D 坐标系不一样，所以还需要变换一下
         ctx.scale(1, -1);
 
         // draw text in each block

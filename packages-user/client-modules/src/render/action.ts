@@ -9,7 +9,7 @@ import {
     openReplay,
     openStatistics
 } from './ui';
-import { ElementLocator } from '@motajs/render-core';
+import { ElementLocator } from '@motajs/render';
 
 export function createAction() {
     gameKey

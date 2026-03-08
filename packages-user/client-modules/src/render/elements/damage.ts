@@ -4,7 +4,7 @@ import {
     MotaOffscreenCanvas2D,
     Transform,
     transformCanvas
-} from '@motajs/render-core';
+} from '@motajs/render';
 import { logger } from '@motajs/common';
 import EventEmitter from 'eventemitter3';
 import { isNil } from 'lodash-es';

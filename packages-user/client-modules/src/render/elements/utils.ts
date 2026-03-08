@@ -1,4 +1,4 @@
-import { RenderAdapter } from '@motajs/render-core';
+import { RenderAdapter } from '@motajs/render';
 import { FloorViewport } from './viewport';
 
 export function disableViewport() {

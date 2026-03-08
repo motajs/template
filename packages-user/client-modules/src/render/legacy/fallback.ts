@@ -1,10 +1,10 @@
 import {
-    wrapInstancedComponent,
     MotaOffscreenCanvas2D,
     RenderItem,
     RenderItemPosition,
     Transform
 } from '@motajs/render';
+import { wrapInstancedComponent } from '@motajs/render-vue';
 
 // 渲染端的向后兼容用，会充当两个版本间过渡的作用
 class Change extends RenderItem {

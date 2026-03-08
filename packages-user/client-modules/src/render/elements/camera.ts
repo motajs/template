@@ -1,5 +1,5 @@
 import { Animation, TimingFn, Transition } from 'mutate-animate';
-import { RenderItem, Transform } from '@motajs/render-core';
+import { RenderItem, Transform } from '@motajs/render';
 import { logger } from '@motajs/common';
 import EventEmitter from 'eventemitter3';
 

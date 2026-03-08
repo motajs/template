@@ -1,4 +1,5 @@
-import { DefaultProps, ElementLocator, GraphicPropsBase } from '@motajs/render';
+import { ElementLocator } from '@motajs/render';
+import { DefaultProps, GraphicPropsBase } from '@motajs/render-vue';
 import { SetupComponentOptions } from '@motajs/system-ui';
 import {
     computed,

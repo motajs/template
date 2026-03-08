@@ -1,4 +1,4 @@
-import { RenderItem } from '@motajs/render-core';
+import { RenderItem } from '@motajs/render';
 import { IWeather } from './types';
 
 export abstract class Weather<T extends RenderItem> implements IWeather<T> {

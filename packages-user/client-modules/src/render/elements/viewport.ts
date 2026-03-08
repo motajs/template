@@ -1,4 +1,4 @@
-import { RenderAdapter } from '@motajs/render-core';
+import { RenderAdapter } from '@motajs/render';
 import { HeroRenderer } from './hero';
 import { ILayerGroupRenderExtends, LayerGroup } from './layer';
 import { LayerGroupFloorBinder } from './layer';

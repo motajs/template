@@ -5,7 +5,7 @@ import {
     ITextureRenderable,
     ITextureStore,
     SizedCanvasImageSource
-} from '@motajs/render-assets';
+} from '@motajs/render';
 
 export const enum BlockCls {
     Unknown,

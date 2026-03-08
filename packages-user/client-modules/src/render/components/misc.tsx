@@ -1,12 +1,6 @@
-import {
-    DefaultProps,
-    ElementLocator,
-    onTick,
-    PathProps,
-    Sprite
-} from '@motajs/render';
+import { ElementLocator, Sprite, MotaOffscreenCanvas2D } from '@motajs/render';
+import { DefaultProps, PathProps, onTick } from '@motajs/render-vue';
 import { computed, defineComponent, ref, SetupContext, watch } from 'vue';
-import { MotaOffscreenCanvas2D } from '@motajs/render';
 import { TextContent, TextContentProps } from './textbox';
 import { Scroll, ScrollExpose, ScrollProps } from './scroll';
 import { transitioned } from '../use';

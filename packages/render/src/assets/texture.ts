@@ -4,10 +4,10 @@ import {
     ITexture,
     ITextureComposedData,
     ITextureRenderable,
-    ITextureSplitter,
-    SizedCanvasImageSource
+    ITextureSplitter
 } from './types';
 import { clamp } from 'lodash-es';
+import { SizedCanvasImageSource } from '../types';
 
 export class Texture implements ITexture {
     source: SizedCanvasImageSource;

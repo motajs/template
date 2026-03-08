@@ -1,7 +1,0 @@
-{
-    "name": "@motajs/render-core",
-    "dependencies": {
-        "@motajs/common": "workspace:*",
-        "@motajs/render-assets": "workspace:*"
-    }
-}

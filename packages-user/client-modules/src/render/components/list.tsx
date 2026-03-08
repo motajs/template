@@ -1,8 +1,7 @@
 import { DefaultProps } from '@motajs/render-vue';
 import { computed, defineComponent, ref, SlotsType, VNode } from 'vue';
 import { Selection } from './misc';
-import { ElementLocator } from '@motajs/render-core';
-import { Font } from '@motajs/render-style';
+import { ElementLocator, Font } from '@motajs/render';
 import { SetupComponentOptions } from '@motajs/system-ui';
 import { Scroll } from './scroll';
 

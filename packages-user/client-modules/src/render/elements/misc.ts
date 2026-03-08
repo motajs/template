@@ -4,9 +4,9 @@ import {
     RenderItem,
     RenderItemPosition,
     MotaOffscreenCanvas2D,
-    Transform
-} from '@motajs/render-core';
-import { SizedCanvasImageSource } from '@motajs/render-assets';
+    Transform,
+    SizedCanvasImageSource
+} from '@motajs/render';
 import { isNil } from 'lodash-es';
 import { RenderableData, AutotileRenderable, texture } from './cache';
 import { IAnimateFrame, renderEmits } from './frame';

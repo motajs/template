@@ -1,6 +1,6 @@
 import { EventEmitter } from 'eventemitter3';
 import { logger } from '@motajs/common';
-import { MotaOffscreenCanvas2D, RenderItem } from '@motajs/render-core';
+import { MotaOffscreenCanvas2D, RenderItem } from '@motajs/render';
 
 interface BlockCacherEvent {
     split: [];

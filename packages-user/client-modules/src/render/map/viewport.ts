@@ -1,4 +1,4 @@
-import { Transform } from '@motajs/render-core';
+import { Transform } from '@motajs/render';
 import {
     IBlockData,
     IMapRenderArea,

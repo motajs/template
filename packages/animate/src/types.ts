@@ -8,7 +8,7 @@ export interface IExcitable<T> {
 
 export interface IExcitableController<T> {
     /** 受激励对象 */
-    readonly excitable: T;
+    readonly excitable: IExcitable<T>;
 
     /**
      * 释放此受激励对象，不再受到当前激励源激励，可以换用其他激励源

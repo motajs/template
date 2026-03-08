@@ -1,4 +1,4 @@
-import { createApp, Font } from '@motajs/render';
+import { Font } from '@motajs/render';
 import { defineComponent } from 'vue';
 import { DEFAULT_FONT, MAIN_HEIGHT, MAIN_WIDTH } from './shared';
 import { hook, loading } from '@user/data-base';
@@ -10,6 +10,7 @@ import { sceneController } from './scene';
 import { GameTitleUI } from './ui/title';
 import { createWeather } from './weather';
 import { createMainExtension } from './commonIns';
+import { createApp } from '@motajs/render-vue';
 
 export function createGameRenderer() {
     const App = defineComponent(_props => {

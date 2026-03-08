@@ -1,4 +1,4 @@
-import { DefaultProps, ElementLocator, Font } from '@motajs/render';
+import { ElementLocator, Font } from '@motajs/render';
 import { computed, defineComponent, ref } from 'vue';
 import {
     DoubleArrow,
@@ -25,6 +25,7 @@ import { mainUIController } from './controller';
 import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '../shared';
 import { openReplay, openSettings } from './settings';
 import { openViewMap } from './viewmap';
+import { DefaultProps } from '@motajs/render-vue';
 
 interface ToolbarProps extends DefaultProps {
     loc?: ElementLocator;

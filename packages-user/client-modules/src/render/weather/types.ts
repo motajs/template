@@ -1,4 +1,4 @@
-import { RenderItem } from '@motajs/render-core';
+import { RenderItem } from '@motajs/render';
 
 export interface IWeather<T extends RenderItem = RenderItem> {
     /** 天气的等级，-1 表示未创建 */

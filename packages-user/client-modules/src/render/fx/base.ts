@@ -1,4 +1,4 @@
-import { Shader, ShaderProgram } from '@motajs/render-core';
+import { Shader, ShaderProgram } from '@motajs/render';
 
 export abstract class EffectBase<T> {
     /** 当前使用的程序 */

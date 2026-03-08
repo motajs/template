@@ -2,8 +2,9 @@ import {
     ITextureAnimater,
     ITextureRenderable,
     SizedCanvasImageSource,
-    TextureColumnAnimater
-} from '@motajs/render-assets';
+    TextureColumnAnimater,
+    Transform
+} from '@motajs/render';
 import {
     AutotileProcessor,
     BlockCls,
@@ -45,7 +46,6 @@ import {
     DYNAMIC_RESERVE,
     MOVING_TOLERANCE
 } from '../shared';
-import { Transform } from '@motajs/render-core';
 import { MapViewport } from './viewport';
 import { INSTANCED_COUNT } from './constant';
 import { StaticBlockStatus } from './status';

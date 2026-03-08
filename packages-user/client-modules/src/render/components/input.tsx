@@ -1,15 +1,15 @@
 import { DefaultProps } from '@motajs/render-vue';
 import { computed, defineComponent, onUnmounted, ref, watch } from 'vue';
 import { TextContent, TextContentProps } from './textbox';
-import { RectRCircleParams } from '@motajs/render-elements';
 import {
     Container,
     ElementLocator,
     MotaRenderer,
     RenderItem,
-    Transform
-} from '@motajs/render-core';
-import { Font } from '@motajs/render-style';
+    Transform,
+    Font,
+    RectRCircleParams
+} from '@motajs/render';
 import { transitionedColor, useKey } from '../use';
 import { linear } from 'mutate-animate';
 import { Background, Selection } from './misc';

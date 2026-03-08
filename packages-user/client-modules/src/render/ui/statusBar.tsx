@@ -1,12 +1,7 @@
 import { GameUI, SetupComponentOptions } from '@motajs/system-ui';
 import { computed, ComputedRef, defineComponent, shallowReactive } from 'vue';
 import { TextContent } from '../components';
-import {
-    DefaultProps,
-    ElementLocator,
-    Font,
-    SizedCanvasImageSource
-} from '@motajs/render';
+import { ElementLocator, Font, SizedCanvasImageSource } from '@motajs/render';
 import { MixedToolbar, ReplayingStatus } from './toolbar';
 import { openViewMap } from './viewmap';
 import { mainUIController } from './controller';
@@ -16,6 +11,7 @@ import {
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
 } from '../shared';
+import { DefaultProps } from '@motajs/render-vue';
 
 export interface ILeftHeroStatus {
     /** 楼层 id */

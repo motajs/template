@@ -21,7 +21,7 @@ import { DYNAMIC_RESERVE, MAP_BLOCK_HEIGHT, MAP_BLOCK_WIDTH } from '../shared';
 import { BlockSplitter } from './block';
 import { clamp, isNil } from 'lodash-es';
 import { BlockCls, IMaterialFramedData } from '@user/client-base';
-import { IRect } from '@motajs/render-assets';
+import { IRect } from '@motajs/render';
 import { INSTANCED_COUNT } from './constant';
 
 export interface IMapDataGetter {

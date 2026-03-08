@@ -1,5 +1,4 @@
-import { ElementLocator } from '@motajs/render-core';
-import { Font } from '@motajs/render-style';
+import { ElementLocator, Font } from '@motajs/render';
 
 // 本文件为 UI 配置文件，你可以修改下面的每个常量来控制 UI 的显示参数，每个常量都有注释说明
 

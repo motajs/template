@@ -1,4 +1,4 @@
-import { MotaRenderer } from '@motajs/render-core';
+import { MotaRenderer } from '@motajs/render';
 import { MAIN_WIDTH, MAIN_HEIGHT } from './shared';
 
 export const mainRenderer = new MotaRenderer({

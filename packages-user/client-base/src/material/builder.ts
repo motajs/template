@@ -5,7 +5,7 @@ import {
     ITextureStreamComposer,
     TextureMaxRectsStreamComposer,
     SizedCanvasImageSource
-} from '@motajs/render-assets';
+} from '@motajs/render';
 import { IAssetBuilder, IMaterialGetter, ITrackedAssetData } from './types';
 import { logger, PrivateListDirtyTracker } from '@motajs/common';
 

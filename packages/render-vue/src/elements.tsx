@@ -31,13 +31,11 @@ import {
     RenderItem,
     ESpriteEvent,
     EContainerEvent,
-    EShaderEvent
-} from '@motajs/render-core';
-import {
+    EShaderEvent,
     EImageEvent,
     ETextEvent,
     EGraphicItemEvent
-} from '@motajs/render-elements';
+} from '@motajs/render';
 
 export type WrapEventEmitterEvents<T extends EventEmitter.ValidEventTypes> =
     T extends string | symbol

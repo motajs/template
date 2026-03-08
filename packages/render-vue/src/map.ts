@@ -1,3 +1,4 @@
+import { ElementNamespace, VNodeProps } from 'vue';
 import { logger } from '@motajs/common';
 import {
     ERenderItemEvent,
@@ -7,9 +8,7 @@ import {
     ContainerCustom,
     MotaRenderer,
     Sprite,
-    Shader
-} from '@motajs/render-core';
-import {
+    Shader,
     Comment,
     ETextEvent,
     Image,
@@ -22,8 +21,7 @@ import {
     QuadraticCurve,
     Rect,
     RectR
-} from '@motajs/render-elements';
-import { ElementNamespace, VNodeProps } from 'vue';
+} from '@motajs/render';
 
 type OnItemCreate<
     E extends ERenderItemEvent = ERenderItemEvent,

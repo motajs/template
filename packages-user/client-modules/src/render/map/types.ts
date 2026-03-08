@@ -1,9 +1,9 @@
 import { IDirtyMark, IDirtyTracker } from '@motajs/common';
 import {
     ITextureRenderable,
-    SizedCanvasImageSource
-} from '@motajs/render-assets';
-import { Transform } from '@motajs/render-core';
+    SizedCanvasImageSource,
+    Transform
+} from '@motajs/render';
 import {
     IAutotileProcessor,
     IMaterialFramedData,

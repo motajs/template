@@ -1,4 +1,4 @@
-import { RenderItem } from '@motajs/render-core';
+import { RenderItem } from '@motajs/render';
 import { IWeather, IWeatherController, IWeatherInstance } from './types';
 import { logger } from '@motajs/common';
 import { isNil } from 'lodash-es';

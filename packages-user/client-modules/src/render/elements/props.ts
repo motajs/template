@@ -1,6 +1,5 @@
 import { BaseProps, TagDefine } from '@motajs/render-vue';
-import { ERenderItemEvent, Transform } from '@motajs/render-core';
-import { CanvasStyle } from '@motajs/render-assets';
+import { ERenderItemEvent, Transform, CanvasStyle } from '@motajs/render';
 import {
     ILayerGroupRenderExtends,
     FloorLayer,

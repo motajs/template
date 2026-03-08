@@ -3,8 +3,7 @@ import {
     Font,
     IActionEvent,
     MotaOffscreenCanvas2D,
-    Sprite,
-    onTick
+    Sprite
 } from '@motajs/render';
 // import { WeatherController } from '../weather';
 import { defineComponent, onUnmounted, reactive, ref } from 'vue';
@@ -33,6 +32,7 @@ import { FloorChange } from '../legacy/fallback';
 import { mainUIController } from './controller';
 import { isNil } from 'lodash-es';
 import { mainMapExtension, mainMapRenderer } from '../commonIns';
+import { onTick } from '@motajs/render-vue';
 
 const MainScene = defineComponent(() => {
     //#region 基本定义

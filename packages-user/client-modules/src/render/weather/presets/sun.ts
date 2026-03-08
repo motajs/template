@@ -1,4 +1,4 @@
-import { MotaOffscreenCanvas2D, Sprite } from '@motajs/render-core';
+import { MotaOffscreenCanvas2D, Sprite } from '@motajs/render';
 import { Weather } from '../weather';
 import { clamp } from 'lodash-es';
 

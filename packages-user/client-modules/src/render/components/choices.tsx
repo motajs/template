@@ -1,4 +1,4 @@
-import { DefaultProps, ElementLocator, Font } from '@motajs/render';
+import { ElementLocator, Font } from '@motajs/render';
 import { computed, defineComponent, reactive, ref } from 'vue';
 import { Background, Selection } from './misc';
 import { TextContent, TextContentProps } from './textbox';
@@ -7,6 +7,7 @@ import { Page, PageExpose } from './page';
 import { GameUI, IUIMountable, SetupComponentOptions } from '@motajs/system-ui';
 import { useKey } from '../use';
 import { sleep } from 'mutate-animate';
+import { DefaultProps } from '@motajs/render-vue';
 
 export interface ConfirmBoxProps extends DefaultProps, TextContentProps {
     /** 确认框的提示文本内容 */

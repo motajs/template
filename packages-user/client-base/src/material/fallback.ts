@@ -1,4 +1,4 @@
-import { ITexture } from '@motajs/render-assets';
+import { ITexture } from '@motajs/render';
 import { materials } from './ins';
 import { IBlockIdentifier, IIndexedIdentifier } from './types';
 import { isNil } from 'lodash-es';

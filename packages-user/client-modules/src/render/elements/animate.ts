@@ -5,7 +5,7 @@ import {
     RenderItem,
     Transform,
     MotaOffscreenCanvas2D
-} from '@motajs/render-core';
+} from '@motajs/render';
 import { HeroRenderer } from './hero';
 import { ILayerGroupRenderExtends, LayerGroup } from './layer';
 

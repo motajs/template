@@ -1,5 +1,4 @@
-import { RenderAdapter } from '@motajs/render-core';
-import { SizedCanvasImageSource } from '@motajs/render-assets';
+import { SizedCanvasImageSource, RenderAdapter } from '@motajs/render';
 import { logger } from '@motajs/common';
 import { ILayerRenderExtends, Layer, LayerMovingRenderable } from './layer';
 import EventEmitter from 'eventemitter3';

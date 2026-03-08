@@ -3,8 +3,8 @@ import {
     ERenderItemEvent,
     RenderItem,
     MotaOffscreenCanvas2D
-} from '@motajs/render-core';
-import { CanvasStyle } from '@motajs/render-assets';
+} from '../core';
+import { CanvasStyle } from '../types';
 import { logger } from '@motajs/common';
 import { clamp, isEqual, isNil } from 'lodash-es';
 

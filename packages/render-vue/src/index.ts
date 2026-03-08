@@ -1,4 +1,4 @@
-import { ERenderItemEvent } from '@motajs/render-core';
+import { ERenderItemEvent } from '@motajs/render';
 import { TagDefine } from './elements';
 import { BaseProps } from './props';
 

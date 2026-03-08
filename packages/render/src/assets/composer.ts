@@ -9,14 +9,14 @@ import {
     IRect,
     ITexture,
     ITextureComposedData,
-    ITextureComposer,
-    SizedCanvasImageSource
+    ITextureComposer
 } from './types';
 import vert from './shader/pack.vert?raw';
 import frag from './shader/pack.frag?raw';
 import { logger } from '@motajs/common';
 import { isNil } from 'lodash-es';
 import { compileProgramWith } from '@motajs/client-base';
+import { SizedCanvasImageSource } from '../types';
 
 interface IndexMarkedComposedData {
     /** 组合数据 */

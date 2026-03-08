@@ -9,7 +9,7 @@ import {
     TextureGridSplitter,
     TextureRowSplitter,
     TextureStore
-} from '@motajs/render-assets';
+} from '@motajs/render';
 import {
     IBlockIdentifier,
     IMaterialData,

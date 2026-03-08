@@ -1,5 +1,5 @@
 import { CloudLike } from './cloudLike';
-import { SizedCanvasImageSource } from '@motajs/render-assets';
+import { SizedCanvasImageSource } from '@motajs/render';
 
 export class CloudWeather extends CloudLike {
     getImage(): SizedCanvasImageSource | null {

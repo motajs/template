@@ -6,7 +6,7 @@ import {
     RenderItem,
     Transform,
     RenderAdapter
-} from '@motajs/render-core';
+} from '@motajs/render';
 import { logger } from '@motajs/common';
 import { sleep, TimingFn } from 'mutate-animate';
 import { RenderableData, texture } from './cache';

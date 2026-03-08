@@ -2,7 +2,6 @@ import {
     ElementLocator,
     Font,
     Sprite,
-    DefaultProps,
     Text,
     MotaOffscreenCanvas2D
 } from '@motajs/render';
@@ -32,6 +31,7 @@ import {
 } from './textboxTyper';
 import { SetupComponentOptions } from '@motajs/system-ui';
 import { texture } from '../elements';
+import { DefaultProps } from '@motajs/render-vue';
 
 // todo: TextContent 应该改成渲染元素？
 

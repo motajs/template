@@ -2,7 +2,7 @@ import {
     IRect,
     ITextureRenderable,
     SizedCanvasImageSource
-} from '@motajs/render-assets';
+} from '@motajs/render';
 import {
     AutotileConnection,
     AutotileType,

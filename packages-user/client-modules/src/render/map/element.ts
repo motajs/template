@@ -1,4 +1,4 @@
-import { MotaOffscreenCanvas2D, RenderItem } from '@motajs/render-core';
+import { MotaOffscreenCanvas2D, RenderItem } from '@motajs/render';
 import { ILayerState } from '@user/data-state';
 import { IMapRenderer } from './types';
 import { ElementNamespace, ComponentInternalInstance } from 'vue';

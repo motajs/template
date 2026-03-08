@@ -12,7 +12,6 @@ import {
 } from 'vue';
 import {
     Container,
-    DefaultProps,
     ElementLocator,
     RenderItem,
     Sprite,
@@ -31,6 +30,7 @@ import { hyper, linear, Transition } from 'mutate-animate';
 import { clamp } from 'lodash-es';
 import { transitioned } from '../use';
 import { SetupComponentOptions } from '@motajs/system-ui';
+import { DefaultProps } from '@motajs/render-vue';
 
 export const enum ScrollDirection {
     Horizontal,

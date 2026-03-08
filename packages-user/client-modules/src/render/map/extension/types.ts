@@ -1,11 +1,11 @@
-import { ITexture } from '@motajs/render-assets';
+import { ITexture, Font } from '@motajs/render';
 import {
     FaceDirection,
     HeroAnimateDirection,
     IHeroState,
     IMapLayer
 } from '@user/data-state';
-import { Font } from '@motajs/render-style';
+
 import { IMapRenderResult } from '../types';
 
 export interface IMapExtensionManager {

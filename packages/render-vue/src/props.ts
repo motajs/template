@@ -7,10 +7,8 @@ import {
     ElementLocator,
     ElementScale,
     CustomContainerRenderFn,
-    CustomContainerPropagateFn
-} from '@motajs/render-core';
-import { CanvasStyle } from '@motajs/render-assets';
-import {
+    CustomContainerPropagateFn,
+    CanvasStyle,
     BezierParams,
     CircleParams,
     EllipseParams,
@@ -18,9 +16,9 @@ import {
     LineParams,
     QuadParams,
     RectRCircleParams,
-    RectREllipseParams
-} from '@motajs/render-elements';
-import { Font } from '@motajs/render-style';
+    RectREllipseParams,
+    Font
+} from '@motajs/render';
 
 export interface CustomProps {
     _item: (props: BaseProps) => RenderItem;

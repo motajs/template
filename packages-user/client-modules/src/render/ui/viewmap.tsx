@@ -3,8 +3,9 @@ import {
     IActionEvent,
     IActionEventBase,
     IWheelEvent,
-    MotaOffscreenCanvas2D
-} from '@motajs/render-core';
+    MotaOffscreenCanvas2D,
+    Font
+} from '@motajs/render';
 import { BaseProps } from '@motajs/render-vue';
 import {
     GameUI,
@@ -22,7 +23,7 @@ import {
     shallowRef,
     watch
 } from 'vue';
-import { FloorSelector } from '../components/floorSelect';
+import { FloorSelector } from '../components';
 import {
     ILayerGroupRenderExtends,
     FloorDamageExtends,
@@ -31,7 +32,6 @@ import {
     LayerGroup,
     LayerGroupFloorBinder
 } from '../elements';
-import { Font } from '@motajs/render-style';
 import { clamp, mean } from 'lodash-es';
 import { calculateStatisticsOne, StatisticsDataOneFloor } from './statistics';
 import { Tip, TipExpose } from '../components';

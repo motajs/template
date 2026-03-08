@@ -9,8 +9,9 @@ import {
     watch
 } from 'vue';
 import { clamp, isNil } from 'lodash-es';
-import { DefaultProps, ElementLocator, Font } from '@motajs/render';
+import { ElementLocator, Font } from '@motajs/render';
 import { SetupComponentOptions } from '@motajs/system-ui';
+import { DefaultProps } from '@motajs/render-vue';
 
 /** 圆角矩形页码距离容器的边框大小，与 pageSize 相乘 */
 const RECT_PAD = 0.1;
