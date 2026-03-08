@@ -1,7 +1,39 @@
-import { defineConfig } from 'vitepress';
+import { defineConfig, Plugin } from 'vitepress';
 import { MermaidMarkdown, MermaidPlugin } from 'vitepress-plugin-mermaid';
 import api from './apiSidebar';
 import { join } from 'path';
+import { generateSidebar } from './api';
+
+function listenSidebar(): Plugin {
+    return {
+        name: 'sidebar-listen',
+        configureServer(server) {
+            server.watcher
+                .on('add', filePath => {
+                    console.log(`📄 文件新增: ${filePath}`);
+                    generateSidebar();
+                })
+                .on('unlink', filePath => {
+                    console.log(`❌ 文件删除: ${filePath}`);
+                    generateSidebar();
+                })
+                .on('addDir', dirPath => {
+                    console.log(`📁 目录新增: ${dirPath}`);
+                    generateSidebar();
+                })
+                .on('unlinkDir', dirPath => {
+                    console.log(`📁 目录删除: ${dirPath}`);
+                    generateSidebar();
+                })
+                .on('raw', (event, path, _) => {
+                    if (event === 'rename') {
+                        console.log(`🔄 文件或文件夹重命名: ${path}`);
+                        generateSidebar();
+                    }
+                });
+        }
+    };
+}
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -157,7 +189,7 @@ export default defineConfig({
     },
     vite: {
         // @ts-expect-error 类型错误
-        plugins: [MermaidPlugin()],
+        plugins: [MermaidPlugin(), listenSidebar()],
         optimizeDeps: {
             include: ['mermaid']
         },

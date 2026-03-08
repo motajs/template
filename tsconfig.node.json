@@ -7,5 +7,13 @@
         "allowSyntheticDefaultImports": true,
         "strict": true
     },
-    "include": ["vite.config.ts", "script/**/*.ts", "mota.config.ts"]
+    "include": [
+        "vite.config.ts",
+        "script/**/*.ts",
+        "docs/**/*.ts",
+        "docs/.vitepress/api.ts",
+        "docs/.vitepress/config.ts",
+        "docs/.vitepress/apiSidebar.ts",
+        "docs/.vitepress/init.ts"
+    ]
 }
