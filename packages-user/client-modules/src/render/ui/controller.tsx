@@ -4,7 +4,7 @@ import {
     SetupComponentOptions,
     UIComponentProps,
     UIController
-} from '@motajs/system-ui';
+} from '@motajs/system';
 import { defineComponent } from 'vue';
 import { MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
 

@@ -1,5 +1,5 @@
 import { KeyCode } from '@motajs/client-base';
-import { gameKey, HotkeyJSON } from '@motajs/system-action';
+import { gameKey, HotkeyJSON } from '@motajs/system';
 import { GameStorage } from '@motajs/legacy-system';
 
 export const mainScope = Symbol.for('@key_main');

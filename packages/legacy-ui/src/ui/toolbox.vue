@@ -116,7 +116,7 @@ import { isMobile } from '../use';
 import { type } from '../utils';
 import { hyper } from 'mutate-animate';
 import { Divider, message } from 'ant-design-vue';
-import { gameKey } from '@motajs/system-action';
+import { gameKey } from '@motajs/system';
 import { IMountedVBind } from '../interface';
 import { isNil } from 'lodash-es';
 

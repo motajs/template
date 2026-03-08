@@ -5,7 +5,7 @@ import { transitioned } from '../use';
 import { hyper } from 'mutate-animate';
 import { debounce } from 'lodash-es';
 import { texture } from '../elements';
-import { SetupComponentOptions } from '@motajs/system-ui';
+import { SetupComponentOptions } from '@motajs/system';
 import { DefaultProps } from '@motajs/render-vue';
 
 export interface TipProps extends DefaultProps {

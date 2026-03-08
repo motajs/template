@@ -3,7 +3,7 @@ import {
     GameUI,
     SetupComponentOptions,
     UIComponentProps
-} from '@motajs/system-ui';
+} from '@motajs/system';
 import { defineComponent, nextTick, onMounted, ref } from 'vue';
 import {
     BUTTONS_HEIGHT,

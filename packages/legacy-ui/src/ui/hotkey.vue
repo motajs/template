@@ -36,12 +36,11 @@
 </template>
 
 <script lang="ts" setup>
-import { Hotkey } from '@motajs/system-action';
+import { Hotkey, gameKey } from '@motajs/system';
 import Column from '../components/colomn.vue';
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { KeyCode, KeyCodeUtils } from '@motajs/client-base';
 import { cloneDeep } from 'lodash-es';
-import { gameKey } from '@motajs/system-action';
 import { generateBinary, keycode } from '@motajs/legacy-common';
 import { IMountedVBind } from '../interface';
 

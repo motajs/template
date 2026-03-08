@@ -1,5 +1,5 @@
 import { KeyCode } from '@motajs/client-base';
-import { KeyboardEmits, Keyboard, isAssist } from '@motajs/system-action';
+import { KeyboardEmits, Keyboard, isAssist } from '@motajs/system';
 import { mainUi } from './preset/uiIns';
 
 /**

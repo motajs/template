@@ -5,7 +5,7 @@ import {
     IUIMountable,
     SetupComponentOptions,
     UIComponentProps
-} from '@motajs/system-ui';
+} from '@motajs/system';
 import {
     defineComponent,
     ref,

@@ -701,7 +701,7 @@ loading.once('coreInit', () => {
     // 注册按键操作
     Mota.r(() => {
         const { HeroKeyMover } = Mota.require('@user/client-modules');
-        const { gameKey } = Mota.require('@motajs/system-action');
+        const { gameKey } = Mota.require('@motajs/system');
         const keyMover = new HeroKeyMover(gameKey, heroMover);
         heroMoveCollection.keyMover = keyMover;
     });

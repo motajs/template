@@ -8,8 +8,7 @@
         "@motajs/legacy-common": "workspace:*",
         "@motajs/legacy-ui": "workspace:*",
         "@motajs/types": "workspace:*",
-        "@motajs/system-action": "workspace:*",
-        "@motajs/system-ui": "workspace:*",
+        "@motajs/system": "workspace:*",
         "@user/data-base": "workspace:*",
         "@user/data-state": "workspace:*",
         "@user/legacy-plugin-data": "workspace:*"

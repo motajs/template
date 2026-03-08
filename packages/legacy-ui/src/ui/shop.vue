@@ -172,7 +172,7 @@ import {
 import { splitText } from '../utils';
 import Scroll from '../components/scroll.vue';
 import BoxAnimate from '../components/boxAnimate.vue';
-import { gameKey } from '@motajs/system-action';
+import { gameKey } from '@motajs/system';
 import { IMountedVBind } from '../interface';
 import { tip } from '../use';
 import { Divider } from 'ant-design-vue';

@@ -2,7 +2,7 @@ import { DefaultProps } from '@motajs/render-vue';
 import { computed, defineComponent, ref, SlotsType, VNode } from 'vue';
 import { Selection } from './misc';
 import { ElementLocator, Font } from '@motajs/render';
-import { SetupComponentOptions } from '@motajs/system-ui';
+import { SetupComponentOptions } from '@motajs/system';
 import { Scroll } from './scroll';
 
 export interface ListProps extends DefaultProps {

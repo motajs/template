@@ -8,7 +8,7 @@ import {
 // import { WeatherController } from '../weather';
 import { defineComponent, onUnmounted, reactive, ref } from 'vue';
 import { Textbox, Tip } from '../components';
-import { GameUI } from '@motajs/system-ui';
+import { GameUI } from '@motajs/system';
 import {
     ENABLE_RIGHT_STATUS_BAR,
     MAIN_HEIGHT,

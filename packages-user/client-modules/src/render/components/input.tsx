@@ -13,7 +13,7 @@ import {
 import { transitionedColor, useKey } from '../use';
 import { linear } from 'mutate-animate';
 import { Background, Selection } from './misc';
-import { GameUI, IUIMountable, SetupComponentOptions } from '@motajs/system-ui';
+import { GameUI, IUIMountable, SetupComponentOptions } from '@motajs/system';
 import { KeyCode } from '@motajs/client-base';
 
 export interface InputProps extends DefaultProps, Partial<TextContentProps> {

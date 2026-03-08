@@ -1,4 +1,4 @@
-import { Hotkey, gameKey } from '@motajs/system-action';
+import { Hotkey, gameKey } from '@motajs/system';
 import { loading } from '@user/data-base';
 import { TimingFn, Transition } from 'mutate-animate';
 import {

@@ -10,7 +10,7 @@ import {
 } from 'vue';
 import { clamp, isNil } from 'lodash-es';
 import { ElementLocator, Font } from '@motajs/render';
-import { SetupComponentOptions } from '@motajs/system-ui';
+import { SetupComponentOptions } from '@motajs/system';
 import { DefaultProps } from '@motajs/render-vue';
 
 /** 圆角矩形页码距离容器的边框大小，与 pageSize 相乘 */

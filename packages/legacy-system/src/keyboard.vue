@@ -21,7 +21,7 @@
 </template>
 
 <script lang="ts" setup>
-import { checkAssist, Keyboard, KeyboardEmits } from '@motajs/system-action';
+import { checkAssist, Keyboard, KeyboardEmits } from '@motajs/system';
 import { KeyCodeUtils } from '@motajs/client-base';
 import { nextTick, onUnmounted, ref } from 'vue';
 

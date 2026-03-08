@@ -84,7 +84,7 @@ import { RightOutlined, LeftOutlined } from '@ant-design/icons-vue';
 import { splitText } from '../utils';
 import Scroll from '../components/scroll.vue';
 import { isMobile } from '../use';
-import { gameKey } from '@motajs/system-action';
+import { gameKey } from '@motajs/system';
 import { IMountedVBind } from '../interface';
 import { Divider } from 'ant-design-vue';
 

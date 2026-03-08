@@ -1,5 +1,5 @@
 import { DefaultProps } from '@motajs/render-vue';
-import { SetupComponentOptions } from '@motajs/system-ui';
+import { SetupComponentOptions } from '@motajs/system';
 import { clamp, isNil } from 'lodash-es';
 import { computed, defineComponent, onMounted, ref, watch } from 'vue';
 import { Scroll, ScrollExpose } from './scroll';

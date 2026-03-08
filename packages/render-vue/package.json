@@ -3,6 +3,6 @@
     "dependencies": {
         "@motajs/common": "workspace:*",
         "@motajs/render": "workspace:*",
-        "@motajs/system-action": "workspace:*"
+        "@motajs/system": "workspace:*"
     }
 }

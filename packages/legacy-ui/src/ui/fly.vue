@@ -99,7 +99,7 @@ import {
 } from '@ant-design/icons-vue';
 import { debounce } from 'lodash-es';
 import { tip } from '../use';
-import { gameKey } from '@motajs/system-action';
+import { gameKey } from '@motajs/system';
 import { createChangable } from '../tools/common';
 import { mainSetting } from '../preset/settingIns';
 import { GameStorage } from '@motajs/legacy-system';

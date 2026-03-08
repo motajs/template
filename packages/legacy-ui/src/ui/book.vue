@@ -45,7 +45,7 @@ import BookDetail from './bookDetail.vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import { ToShowEnemy, detailInfo } from '../tools/book';
 import { getDetailedEnemy } from '../tools/fixed';
-import { gameKey } from '@motajs/system-action';
+import { gameKey } from '@motajs/system';
 import { mainSetting } from '../preset/settingIns';
 import { isMobile } from '../use';
 import { IMountedVBind } from '../interface';

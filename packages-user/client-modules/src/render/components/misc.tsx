@@ -6,7 +6,7 @@ import { Scroll, ScrollExpose, ScrollProps } from './scroll';
 import { transitioned } from '../use';
 import { hyper } from 'mutate-animate';
 import { logger } from '@motajs/common';
-import { GameUI, IUIMountable, SetupComponentOptions } from '@motajs/system-ui';
+import { GameUI, IUIMountable, SetupComponentOptions } from '@motajs/system';
 import { clamp } from 'lodash-es';
 
 interface ProgressProps extends DefaultProps {

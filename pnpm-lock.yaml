@@ -223,6 +223,15 @@ importers:
         specifier: ^8.18.1
         version: 8.18.3
 
+  packages-user/client-base:
+    dependencies:
+      '@motajs/client-base':
+        specifier: workspace:*
+        version: link:../../packages/client-base
+      '@motajs/render':
+        specifier: workspace:*
+        version: link:../../packages/render
+
   packages-user/client-modules:
     dependencies:
       '@motajs/client-base':
@@ -240,15 +249,12 @@ importers:
       '@motajs/render':
         specifier: workspace:*
         version: link:../../packages/render
-      '@motajs/render-core':
+      '@motajs/render-vue':
         specifier: workspace:*
-        version: link:../../packages/render-core
-      '@motajs/system-action':
+        version: link:../../packages/render-vue
+      '@motajs/system':
         specifier: workspace:*
-        version: link:../../packages/system-action
-      '@motajs/system-ui':
-        specifier: workspace:*
-        version: link:../../packages/system-ui
+        version: link:../../packages/system
       '@motajs/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -333,27 +339,15 @@ importers:
       '@motajs/render':
         specifier: workspace:*
         version: link:../../packages/render
-      '@motajs/render-core':
-        specifier: workspace:*
-        version: link:../../packages/render-core
-      '@motajs/render-elements':
-        specifier: workspace:*
-        version: link:../../packages/render-elements
-      '@motajs/render-style':
-        specifier: workspace:*
-        version: link:../../packages/render-style
       '@motajs/render-vue':
         specifier: workspace:*
         version: link:../../packages/render-vue
       '@motajs/system':
         specifier: workspace:*
         version: link:../../packages/system
-      '@motajs/system-action':
+      '@user/client-base':
         specifier: workspace:*
-        version: link:../../packages/system-action
-      '@motajs/system-ui':
-        specifier: workspace:*
-        version: link:../../packages/system-ui
+        version: link:../client-base
       '@user/client-modules':
         specifier: workspace:*
         version: link:../client-modules
@@ -440,9 +434,9 @@ importers:
 
   packages/legacy-system:
     dependencies:
-      '@motajs/system-action':
+      '@motajs/system':
         specifier: workspace:*
-        version: link:../system-action
+        version: link:../system
 
   packages/legacy-ui:
     dependencies:
@@ -461,9 +455,9 @@ importers:
       '@motajs/render':
         specifier: workspace:*
         version: link:../render
-      '@motajs/system-action':
+      '@motajs/system':
         specifier: workspace:*
-        version: link:../system-action
+        version: link:../system
 
   packages/render:
     dependencies:
@@ -483,70 +477,7 @@ importers:
         specifier: ^3.5.13
         version: 3.5.20(typescript@5.9.2)
 
-  packages/render-assets:
-    dependencies:
-      '@motajs/client-base':
-        specifier: workspace:*
-        version: link:../client-base
-
-  packages/render-core:
-    dependencies:
-      '@motajs/common':
-        specifier: workspace:*
-        version: link:../common
-
-  packages/render-elements:
-    dependencies:
-      '@motajs/common':
-        specifier: workspace:*
-        version: link:../common
-      '@motajs/render-core':
-        specifier: workspace:*
-        version: link:../render-core
-      '@motajs/render-style':
-        specifier: workspace:*
-        version: link:../render-style
-
-  packages/render-style:
-    dependencies:
-      '@motajs/common':
-        specifier: workspace:*
-        version: link:../common
-
   packages/render-vue:
-    dependencies:
-      '@motajs/common':
-        specifier: workspace:*
-        version: link:../common
-      '@motajs/render-core':
-        specifier: workspace:*
-        version: link:../render-core
-      '@motajs/render-elements':
-        specifier: workspace:*
-        version: link:../render-elements
-      '@motajs/render-style':
-        specifier: workspace:*
-        version: link:../render-style
-      '@motajs/system-action':
-        specifier: workspace:*
-        version: link:../system-action
-
-  packages/system:
-    dependencies:
-      '@motajs/system-action':
-        specifier: workspace:*
-        version: link:../system-action
-      '@motajs/system-ui':
-        specifier: workspace:*
-        version: link:../system-ui
-
-  packages/system-action:
-    dependencies:
-      '@motajs/common':
-        specifier: workspace:*
-        version: link:../common
-
-  packages/system-ui:
     dependencies:
       '@motajs/common':
         specifier: workspace:*
@@ -554,6 +485,15 @@ importers:
       '@motajs/render':
         specifier: workspace:*
         version: link:../render
+      '@motajs/system':
+        specifier: workspace:*
+        version: link:../system
+
+  packages/system:
+    dependencies:
+      '@motajs/common':
+        specifier: workspace:*
+        version: link:../common
 
   packages/types: {}
 

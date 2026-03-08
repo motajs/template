@@ -4,7 +4,7 @@ import { Background, Selection } from './misc';
 import { TextContent, TextContentProps } from './textbox';
 import { TextAlign } from './textboxTyper';
 import { Page, PageExpose } from './page';
-import { GameUI, IUIMountable, SetupComponentOptions } from '@motajs/system-ui';
+import { GameUI, IUIMountable, SetupComponentOptions } from '@motajs/system';
 import { useKey } from '../use';
 import { sleep } from 'mutate-animate';
 import { DefaultProps } from '@motajs/render-vue';

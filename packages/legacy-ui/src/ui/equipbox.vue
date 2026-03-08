@@ -184,7 +184,7 @@ import BoxAnimate from '../components/boxAnimate.vue';
 import { type, getStatusLabel } from '../utils';
 import { cancelGlobalDrag, isMobile, tip, useDrag } from '../use';
 import { hyper } from 'mutate-animate';
-import { gameKey } from '@motajs/system-action';
+import { gameKey } from '@motajs/system';
 import { IMountedVBind } from '../interface';
 import { isNil } from 'lodash-es';
 import { Divider, Select, SelectOption } from 'ant-design-vue';

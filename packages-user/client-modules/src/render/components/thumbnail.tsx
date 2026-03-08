@@ -1,7 +1,7 @@
 import { ElementLocator, MotaOffscreenCanvas2D, Sprite } from '@motajs/render';
 import { SpriteProps } from '@motajs/render-vue';
 import { defineComponent, ref, watch } from 'vue';
-import { SetupComponentOptions } from '@motajs/system-ui';
+import { SetupComponentOptions } from '@motajs/system';
 
 export interface ThumbnailProps extends SpriteProps {
     /** 缩略图的位置 */

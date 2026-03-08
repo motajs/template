@@ -29,7 +29,7 @@ import {
 import { hyper, linear, Transition } from 'mutate-animate';
 import { clamp } from 'lodash-es';
 import { transitioned } from '../use';
-import { SetupComponentOptions } from '@motajs/system-ui';
+import { SetupComponentOptions } from '@motajs/system';
 import { DefaultProps } from '@motajs/render-vue';
 
 export const enum ScrollDirection {

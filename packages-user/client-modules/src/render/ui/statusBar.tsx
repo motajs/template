@@ -1,4 +1,4 @@
-import { GameUI, SetupComponentOptions } from '@motajs/system-ui';
+import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { computed, ComputedRef, defineComponent, shallowReactive } from 'vue';
 import { TextContent } from '../components';
 import { ElementLocator, Font, SizedCanvasImageSource } from '@motajs/render';

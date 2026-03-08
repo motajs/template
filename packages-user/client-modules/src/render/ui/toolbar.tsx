@@ -12,14 +12,13 @@ import {
     ViewMapIcon
 } from '../components/icons';
 import { getVitualKeyOnce } from '@motajs/legacy-ui';
-import { gameKey } from '@motajs/system-action';
-import { generateKeyboardEvent } from '@motajs/system-action';
+import { gameKey, generateKeyboardEvent } from '@motajs/system';
 import { transitioned } from '../use';
 import { linear } from 'mutate-animate';
 import { KeyCode } from '@motajs/client-base';
 import { Progress } from '../components/misc';
 import { generateBinary } from '@motajs/legacy-common';
-import { SetupComponentOptions } from '@motajs/system-ui';
+import { SetupComponentOptions } from '@motajs/system';
 import { saveSave, saveLoad } from './save';
 import { mainUIController } from './controller';
 import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '../shared';

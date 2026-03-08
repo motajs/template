@@ -1657,7 +1657,7 @@ events.prototype._action_setText = function (data) {
     const { textbox = 'main-textbox' } = data;
     const Store = Mota.require('@user/client-modules').TextboxStore;
     const { TextAlign, WordBreak } = Mota.require('@user/client-modules');
-    const Font = Mota.require('@motajs/render-style').Font;
+    const Font = Mota.require('@motajs/render').Font;
     const store = Store.get(textbox);
     if (!store) {
         core.doAction();

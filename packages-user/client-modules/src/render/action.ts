@@ -1,4 +1,4 @@
-import { gameKey } from '@motajs/system-action';
+import { gameKey } from '@motajs/system';
 import { POP_BOX_WIDTH, CENTER_LOC, FULL_LOC } from './shared';
 import {
     saveSave,

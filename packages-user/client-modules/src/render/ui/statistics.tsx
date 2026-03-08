@@ -3,7 +3,7 @@ import {
     IUIMountable,
     SetupComponentOptions,
     UIComponentProps
-} from '@motajs/system-ui';
+} from '@motajs/system';
 import { defineComponent } from 'vue';
 import { waitbox, ListPage, TextContent } from '../components';
 import { DefaultProps } from '@motajs/render-vue';

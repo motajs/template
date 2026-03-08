@@ -4,7 +4,7 @@ import {
     IUIMountable,
     SetupComponentOptions,
     UIComponentProps
-} from '@motajs/system-ui';
+} from '@motajs/system';
 import { defineComponent } from 'vue';
 import {
     ChoiceItem,
@@ -15,8 +15,7 @@ import {
     waitbox
 } from '../components';
 import { mainUi } from '@motajs/legacy-ui';
-import { gameKey } from '@motajs/system-action';
-import { generateKeyboardEvent } from '@motajs/system-action';
+import { gameKey, generateKeyboardEvent } from '@motajs/system';
 import { getVitualKeyOnce } from '@motajs/legacy-ui';
 import { getAllSavesData, getSaveData, syncFromServer } from '../utils';
 import { getInput } from '../components';

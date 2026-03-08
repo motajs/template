@@ -77,7 +77,7 @@ import EnemySpecial from '../panel/enemySpecial.vue';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons-vue';
 import EnemyCritical from '../panel/enemyCritical.vue';
 import { detailInfo } from '../tools/book';
-import { gameKey } from '@motajs/system-action';
+import { gameKey } from '@motajs/system';
 import { Divider } from 'ant-design-vue';
 
 const props = defineProps<{

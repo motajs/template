@@ -1,2 +1,2 @@
-export * from '@motajs/system-action';
-export * from '@motajs/system-ui';
+export * from './action';
+export * from './ui';

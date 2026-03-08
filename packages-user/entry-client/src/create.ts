@@ -7,8 +7,6 @@ import * as LegacyUI from '@motajs/legacy-ui';
 import * as Render from '@motajs/render';
 import * as RenderVue from '@motajs/render-vue';
 import * as System from '@motajs/system';
-import * as SystemAction from '@motajs/system-action';
-import * as SystemUI from '@motajs/system-ui';
 import * as UserClientBase from '@user/client-base';
 import * as ClientModules from '@user/client-modules';
 import * as LegacyPluginClient from '@user/legacy-plugin-client';
@@ -28,8 +26,6 @@ export function create() {
     Mota.register('@motajs/render', Render);
     Mota.register('@motajs/render-vue', RenderVue);
     Mota.register('@motajs/system', System);
-    Mota.register('@motajs/system-action', SystemAction);
-    Mota.register('@motajs/system-ui', SystemUI);
     Mota.register('@user/client-base', UserClientBase);
     Mota.register('@user/client-modules', ClientModules);
     Mota.register('@user/legacy-plugin-client', LegacyPluginClient);

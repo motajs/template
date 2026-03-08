@@ -8,8 +8,6 @@ import type * as LegacyUI from '@motajs/legacy-ui';
 import type * as Render from '@motajs/render';
 import type * as RenderVue from '@motajs/render-vue';
 import type * as System from '@motajs/system';
-import type * as SystemAction from '@motajs/system-action';
-import type * as SystemUI from '@motajs/system-ui';
 import type * as ClientModules from '@user/client-modules';
 import type * as DataBase from '@user/data-base';
 import type * as DataFallback from '@user/data-fallback';
@@ -33,8 +31,6 @@ interface ModuleInterface {
     '@motajs/render': typeof Render;
     '@motajs/render-vue': typeof RenderVue;
     '@motajs/system': typeof System;
-    '@motajs/system-action': typeof SystemAction;
-    '@motajs/system-ui': typeof SystemUI;
     '@user/client-modules': typeof ClientModules;
     '@user/data-base': typeof DataBase;
     '@user/data-fallback': typeof DataFallback;

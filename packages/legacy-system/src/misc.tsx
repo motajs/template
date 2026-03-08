@@ -1,4 +1,4 @@
-import { Keyboard } from '@motajs/system-action';
+import { Keyboard } from '@motajs/system';
 import KeyboardUI from './keyboard.vue';
 
 interface VirtualKeyProps {

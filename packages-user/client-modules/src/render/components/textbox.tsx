@@ -29,7 +29,7 @@ import {
     WordBreak,
     TextAlign
 } from './textboxTyper';
-import { SetupComponentOptions } from '@motajs/system-ui';
+import { SetupComponentOptions } from '@motajs/system';
 import { texture } from '../elements';
 import { DefaultProps } from '@motajs/render-vue';
 

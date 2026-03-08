@@ -1,5 +1,5 @@
 import { KeyCode } from '@motajs/client-base';
-import { Keyboard } from '@motajs/system-action';
+import { Keyboard } from '@motajs/system';
 
 const qweKey = new Keyboard('qwe'); // 字母键盘，A-Z
 const numKey = new Keyboard('num'); // 数字键盘，1-0
