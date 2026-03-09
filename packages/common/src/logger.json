@@ -47,6 +47,8 @@
         "45": "Cannot add $1 map renderer extension, since $1 already exists for the given state.",
         "46": "Cannot execute close door action on $1,$2, since the given position is not empty.",
         "47": "Cannot require text area outside the target map.",
+        "48": "Cannot $1 excitables on destroyed excitation.",
+        "49": "Cannot $1 on variator without excitation binding.",
         "1201": "Floor-damage extension needs 'floor-binder' extension as dependency."
     },
     "warn": {

@@ -6,6 +6,7 @@ import {
     IBlockSplitter,
     IBlockSplitterConfig
 } from './types';
+import { ISearchable8Dir } from '@motajs/common';
 
 export class BlockSplitter<T> implements IBlockSplitter<T> {
     blockWidth: number = 0;
@@ -288,7 +289,7 @@ export class BlockSplitter<T> implements IBlockSplitter<T> {
     }
 }
 
-class SplittedBlockData<T> implements IBlockData<T> {
+class SplittedBlockData<T> implements IBlockData<T>, ISearchable8Dir {
     width: number;
     height: number;
     x: number;

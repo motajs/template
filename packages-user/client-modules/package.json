@@ -1,6 +1,7 @@
 {
     "name": "@user/client-modules",
     "dependencies": {
+        "@motajs/animate": "workspace:*",
         "@motajs/client-base": "workspace:*",
         "@motajs/common": "workspace:*",
         "@motajs/render": "workspace:*",
