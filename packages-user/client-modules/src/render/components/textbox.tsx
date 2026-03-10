@@ -38,8 +38,7 @@ import { DefaultProps } from '@motajs/render-vue';
 //#region TextContent
 
 export interface TextContentProps
-    extends DefaultProps,
-        Partial<ITextContentConfig> {
+    extends DefaultProps, Partial<ITextContentConfig> {
     /** 显示的文字 */
     text?: string;
     /** 是否填充 */

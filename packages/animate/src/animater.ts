@@ -79,6 +79,8 @@ export class Animater implements IAnimater {
     private groupStore: Map<number, IAnimaterPlanGroup> = new Map();
     /** 需要执行的计划队列 */
     private pendingGroups: number[] = [];
+    /** 是否已经因为没有结束计划组而报错 */
+    private planErrored: boolean = false;
 
     /** 当前所有正在等待执行的 `when` 操作 */
     private whens: Set<IAnimaterResolvedTimedInfo> = new Set();
@@ -164,7 +166,11 @@ export class Animater implements IAnimater {
         return this;
     }
 
-    to(value: number, time: number, end: EndRelation = EndRelation.Self): this {
+    to(
+        value: number,
+        time: number,
+        end: EndRelation = EndRelation.Target
+    ): this {
         if (!this.animatableStatus || !this.currentAnimatable) return this;
         this.planning = true;
         // 定义动画计划
@@ -281,9 +287,10 @@ export class Animater implements IAnimater {
         content: IAnimatable,
         index: number,
         plan: number = this.executingGroup
-    ): Promise<void> | undefined {
+    ): Promise<void> {
         const raw = this.query(content, index, plan);
-        return raw?.promise;
+        if (!raw) return Promise.resolve();
+        else return raw.promise;
     }
 
     planEnd(preTime: number = 0, postTime: number = 0): number {
@@ -306,6 +313,7 @@ export class Animater implements IAnimater {
         this.groupStore.set(index, group);
         this.pendingGroups.push(index);
         this.startPlanGroup();
+        this.planErrored = false;
         return index;
     }
 
@@ -315,7 +323,10 @@ export class Animater implements IAnimater {
 
     excited(payload: number): void {
         if (this.planning) {
-            logger.error(50);
+            if (!this.planErrored) {
+                logger.error(50);
+                this.planErrored = true;
+            }
             return;
         }
         // 计划组未执行
@@ -369,7 +380,7 @@ export class Animater implements IAnimater {
             const content = anim.identifier.content;
             if (progress >= 1) {
                 // 动画结束
-                if (anim.end === EndRelation.Self) {
+                if (anim.end === EndRelation.Target) {
                     content.value = anim.targetValue;
                 } else {
                     content.value = anim.startValue + anim.curve(1) * anim.diff;
@@ -417,14 +428,26 @@ export class Animater implements IAnimater {
         if (!plan) return;
         // 冲突检测
         if (this.executingMap.has(identifier.content)) {
-            const current = this.executingMap.get(identifier.content)!;
-            if (current.startTime === this.excitation?.payload()) {
+            const curr = this.executingMap.get(identifier.content)!;
+            const now = this.excitation.payload();
+            if (curr.startTime === now) {
                 logger.error(51);
                 return;
             }
             // 终止前一个动画
-            current.resolve();
-            this.executing.delete(current);
+            curr.resolve();
+            // 这里也需要
+            const anim = curr.identifier.content;
+            if (curr.end === EndRelation.Target) {
+                anim.value = curr.targetValue;
+            } else if (curr.end === EndRelation.Curve) {
+                anim.value = curr.startValue + curr.curve(1) * curr.diff;
+            } else {
+                const elapsed = this.excitation.payload() - curr.startTime;
+                const curveValue = curr.curve(elapsed / curr.time);
+                anim.value = curr.startValue + curr.diff * curveValue;
+            }
+            this.executing.delete(curr);
         }
         // 记录动画初始值和开始时间
         const startValue = identifier.content.value;

@@ -1,5 +1,4 @@
 import {
-    Props,
     Font,
     IActionEvent,
     MotaOffscreenCanvas2D,
@@ -7,7 +6,7 @@ import {
 } from '@motajs/render';
 // import { WeatherController } from '../weather';
 import { defineComponent, onUnmounted, reactive, ref } from 'vue';
-import { Textbox, Tip } from '../components';
+import { Textbox, TextboxProps, Tip } from '../components';
 import { GameUI } from '@motajs/system';
 import {
     ENABLE_RIGHT_STATUS_BAR,
@@ -36,7 +35,7 @@ import { onTick } from '@motajs/render-vue';
 
 const MainScene = defineComponent(() => {
     //#region 基本定义
-    const mainTextboxProps: Props<typeof Textbox> = {
+    const mainTextboxProps: TextboxProps = {
         text: '',
         hidden: true,
         loc: [0, MAP_HEIGHT - 150, MAP_WIDTH, 150],

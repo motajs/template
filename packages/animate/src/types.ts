@@ -15,7 +15,7 @@ export type ExcitationCurve2D = (progress: number) => [number, number];
 export type ExcitationCurve3D = (progress: number) => [number, number, number];
 
 /**
- * `n` 维动画速率曲线，输入时间完成度，输出三个值。可由 `n` 个一维曲线组合而成（本质是参数方程）
+ * `n` 维动画速率曲线，输入时间完成度，输出 `n` 个值。可由 `n` 个一维曲线组合而成（本质是参数方程）
  */
 export type GeneralExcitationCurve = (progress: number) => number[];
 
@@ -154,10 +154,22 @@ export interface IAnimationPlan {
 }
 
 export const enum EndRelation {
-    /** 以动画目标值为动画终值 */
-    Self,
-    /** 以曲线 `curve(1)` 乘以传入的终值与初值的差作为动画终值 */
-    Curve
+    /**
+     * 以传入的动画目标值为动画终值。
+     */
+    Target,
+
+    /**
+     * 设动画初值为 `a`, 传入的终值为 `b`, 曲线为 `f(x)`，则动画终值为 `(b - a) * f(1) + a`。
+     * 此时如果不希望动画结束时变为传入终值（比如内容原地震动），就可以使用此模式。
+     */
+    Curve,
+
+    /**
+     * 以动画结束时刻的值作为动画终值。如果动画正常结束，此值效果与 `Curve` 模式相同，
+     * 如果动画提前结束，那么将会使用提前结束时的值作为终值。
+     */
+    Self
 }
 
 export interface IAnimater extends IExcitable<number> {
@@ -189,6 +201,7 @@ export interface IAnimater extends IExcitable<number> {
      * 如果动画开始时当前动画对象有动画正在执行，那么会立刻结束正在执行的动画，开始执行当前动画。
      * @param value 目标值
      * @param time 动画时长
+     * @param end 动画结束参考方式，决定着动画结束时的值应该是多少，具体参考 {@link EndRelation}
      */
     to(value: number, time: number, end?: EndRelation): this;
 
@@ -222,7 +235,7 @@ export interface IAnimater extends IExcitable<number> {
      *   .to(100, 500)
      *   .animate(obj2)
      *   .to(200, 200)
-     *   .afterObject(obj1, 1)
+     *   .afterPlan(obj1, 1)
      *   ...
      *   .planEnd();
      * ```
@@ -281,16 +294,13 @@ export interface IAnimater extends IExcitable<number> {
     ): IAnimationPlan | null;
 
     /**
-     * 等待指定动画计划执行完毕，参考 {@link query} 的描述
+     * 等待指定动画计划执行完毕，参考 {@link query} 的描述。
+     * 如果对象没有正在执行动画或在指定计划中不存在，那么返回的 `Promise` 会立刻兑现。
      * @param content 动画对象
      * @param index 动画计划索引
      * @param plan 计划组索引，不填时表示当前正在执行动画的计划组。
      */
-    wait(
-        content: IAnimatable,
-        index: number,
-        plan?: number
-    ): Promise<void> | undefined;
+    wait(content: IAnimatable, index: number, plan?: number): Promise<void>;
 
     /**
      * 结束当前动画计划的定义，形成动画计划组。该函数必须在动画计划定义完毕后立刻执行来进行必要的处理工作。
@@ -300,4 +310,48 @@ export interface IAnimater extends IExcitable<number> {
      * @param postTime 计划执行后的等待时长，等待这么长时间之后计划才真正结束
      */
     planEnd(preTime?: number, postTime?: number): number;
+}
+
+export interface ITransition extends IExcitable<number> {
+    /**
+     * 在动画执行器上绑定激励源
+     * @param excitation 绑定的激励源
+     */
+    bindExcitation(excitation: IExcitation<number>): void;
+
+    /**
+     * 取消绑定激励源
+     */
+    unbindExcitation(): void;
+
+    /**
+     * 设置当前的速率曲线
+     * @param curve 速率曲线
+     */
+    curve(curve: ExcitationCurve): this;
+
+    /**
+     * 绑定渐变对象，之后的渐变操作都会作用在此对象上
+     * @param animatable 渐变对象
+     */
+    transite(animatable: IAnimatable): this;
+
+    /**
+     * 将当前绑定的值立刻缓慢渐变至目标值
+     * @param value 目标值
+     * @param time 渐变时长
+     * @param end 结尾参考方式
+     */
+    to(value: number, time: number, end?: EndRelation): this;
+
+    /**
+     * 等待指定动画对象的渐变执行完成，如果对象没有正在执行渐变，那么返回的 `Promise` 会立刻兑现。
+     * @param animatable 要等待的动画对象
+     */
+    wait(animatable: IAnimatable): Promise<void>;
+
+    /**
+     * 释放当前绑定的渐变对象，防止绑定的渐变对象一直不会被垃圾回收
+     */
+    revoke(): void;
 }
