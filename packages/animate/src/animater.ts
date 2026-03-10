@@ -6,7 +6,8 @@ import {
     IAnimationPlan,
     IExcitableController,
     IExcitation,
-    IAnimatePlanIdentifier
+    IAnimatePlanIdentifier,
+    EndRelation
 } from './types';
 import { linear } from './utils';
 
@@ -27,6 +28,8 @@ interface IAnimaterRawPlan extends IAnimationPlan {
     readonly after: Set<IAnimaterTimedInfo>;
     /** 兑现函数，当本次动画计划执行完毕后执行 */
     readonly resolve: () => void;
+    /** 终值参考模式 */
+    readonly end: EndRelation;
 }
 
 interface IAnimatingContent extends IAnimaterRawPlan {
@@ -161,7 +164,7 @@ export class Animater implements IAnimater {
         return this;
     }
 
-    to(value: number, time: number): this {
+    to(value: number, time: number, end: EndRelation = EndRelation.Self): this {
         if (!this.animatableStatus || !this.currentAnimatable) return this;
         this.planning = true;
         // 定义动画计划
@@ -171,6 +174,7 @@ export class Animater implements IAnimater {
             identifier: { content: this.currentAnimatable, index },
             curve: this.curveStatus,
             targetValue: value,
+            end,
             time,
             promise,
             resolve,
@@ -365,16 +369,20 @@ export class Animater implements IAnimater {
             const content = anim.identifier.content;
             if (progress >= 1) {
                 // 动画结束
-                content.value = anim.targetValue;
+                if (anim.end === EndRelation.Self) {
+                    content.value = anim.targetValue;
+                } else {
+                    content.value = anim.startValue + anim.curve(1) * anim.diff;
+                }
                 anim.resolve();
                 endedAnimate.add(anim);
-                // 检查 after
                 anim.after.forEach(v => afters.add(v));
             } else {
                 const completion = anim.curve(progress);
                 content.value = completion * anim.diff + anim.startValue;
             }
         }
+        // 检查 after
         afters.forEach(v => {
             this.startAfter({ ...v, arousedTime: payload });
         });

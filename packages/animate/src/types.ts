@@ -153,6 +153,13 @@ export interface IAnimationPlan {
     readonly promise: Promise<void>;
 }
 
+export const enum EndRelation {
+    /** 以动画目标值为动画终值 */
+    Self,
+    /** 以曲线 `curve(1)` 乘以传入的终值与初值的差作为动画终值 */
+    Curve
+}
+
 export interface IAnimater extends IExcitable<number> {
     /**
      * 在动画执行器上绑定激励源
@@ -183,7 +190,7 @@ export interface IAnimater extends IExcitable<number> {
      * @param value 目标值
      * @param time 动画时长
      */
-    to(value: number, time: number): this;
+    to(value: number, time: number, end?: EndRelation): this;
 
     /**
      * 在刚刚定义的动画结束后指定时长再开始后续计划。

@@ -4,6 +4,7 @@ import {
     ExcitationCurve2D,
     ExcitationCurve3D,
     GeneralExcitationCurve,
+    IAnimatable,
     IExcitable
 } from './types';
 
@@ -25,12 +26,20 @@ export function excited<T>(
     }
 }
 
+/**
+ * 将一个数值转换为可动画对象。注意对象中的值改变时原数值不会跟着变
+ * @param value 需要转换为的数值
+ */
+export function excitable(value: number): IAnimatable {
+    return { value };
+}
+
 //#endregion
 
 //#region 曲线计算
 
 /**
- * 曲线相加 `a(p) + b(p)`
+ * 曲线相加 `h(x) = f(x) + g(x)`
  * @param curve1 加数
  * @param curve2 加数
  */
@@ -42,7 +51,7 @@ export function addCurve(
 }
 
 /**
- * 曲线相减 `a(p) - b(p)`
+ * 曲线相减 `h(x) = f(x) - g(x)`
  * @param curve1 被减数
  * @param curve2 减数
  */
@@ -54,7 +63,7 @@ export function subCurve(
 }
 
 /**
- * 曲线相乘 `a(p) * b(p)`
+ * 曲线相乘 `h(x) = f(x) * g(x)`
  * @param curve1 乘数
  * @param curve2 乘数
  */
@@ -66,7 +75,7 @@ export function mulCurve(
 }
 
 /**
- * 曲线相除 `a(p) / b(p)`
+ * 曲线相除 `h(x) = f(x) / g(x)`
  * @param curve1 乘数
  * @param curve2 乘数
  */
@@ -78,7 +87,7 @@ export function divCurve(
 }
 
 /**
- * 曲线取幂 `a(p) ** b(p)`
+ * 曲线取幂 `h(x) = f(x) ** g(x)`
  * @param curve1 底数
  * @param curve2 指数
  */
@@ -90,7 +99,7 @@ export function powCurve(
 }
 
 /**
- * 曲线组合，`a(b(p))`
+ * 曲线组合，`h(x) = f(g(x))`
  * @param curve1 外层曲线
  * @param curve2 内层曲线
  */
@@ -102,7 +111,7 @@ export function compositeCurve(
 }
 
 /**
- * 平移曲线，`a(p) + b`
+ * 平移曲线，`g(x) = a(x) + b`
  * @param curve 曲线
  * @param move 纵轴平移量
  */
@@ -114,7 +123,7 @@ export function moveCurve(
 }
 
 /**
- * 曲线求相反数并平移，`b - a(p)`
+ * 曲线求相反数并平移，`g(x) = b - f(x)`
  * @param curve 曲线
  * @param move 纵轴平移量
  */
@@ -126,7 +135,7 @@ export function oppsiteCurve(
 }
 
 /**
- * 纵向缩放曲线，`a(p) * b`
+ * 纵向缩放曲线，`g(x) = f(x) * b`
  * @param curve 曲线
  * @param scale 缩放比例
  */
@@ -322,7 +331,7 @@ export function applyCurveMode(func: ExcitationCurve, mode: CurveMode) {
     }
 }
 
-/** f(x) = 1 - cos(x * pi/2), x∈[0,1], f(x)∈[0,1] */
+/** `f(x) = 1 - cos(x * pi/2), x∈[0,1], f(x)∈[0,1]` */
 const sinfunc: ExcitationCurve = p => 1 - Math.cos((p * Math.PI) / 2);
 
 /**
@@ -333,7 +342,7 @@ export function sin(mode: CurveMode = CurveMode.EaseIn): ExcitationCurve {
     return applyCurveMode(sinfunc, mode);
 }
 
-/** f(x) = tan(x * pi/4), x∈[0,1], f(x)∈[0,1] */
+/** `f(x) = tan(x * pi/4), x∈[0,1], f(x)∈[0,1]` */
 const tanfunc: ExcitationCurve = p => Math.tan((p * Math.PI) / 4);
 
 /**
@@ -344,7 +353,7 @@ export function tan(mode: CurveMode = CurveMode.EaseIn): ExcitationCurve {
     return applyCurveMode(tanfunc, mode);
 }
 
-/** f(x) = sec(x * pi/3) - 1, x∈[0,1], f(x)∈[0,1] */
+/** `f(x) = sec(x * pi/3) - 1, x∈[0,1], f(x)∈[0,1]` */
 const secfunc: ExcitationCurve = p => 1 / Math.cos((p * Math.PI) / 3) - 1;
 
 /**
