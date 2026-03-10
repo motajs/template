@@ -214,8 +214,10 @@ export class ExcitationVariator
             return;
         }
 
+        const now = excitation.payload();
         this.source = excitation;
-        this.sourceTs = excitation.payload();
+        this.sourceTs = now;
+        this.now = now;
         this.selfTs = this.sourceTs;
         this.speed = 1;
 
@@ -271,14 +273,14 @@ export class ExcitationVariator
             return Promise.resolve();
         }
 
-        return new Promise<void>(resolve => {
-            this.curveQueue.push({ curve, time, mode, resolve });
+        const { promise, resolve } = Promise.withResolvers<void>();
+        this.curveQueue.push({ curve, time, mode, resolve });
+        // 如果没有正在执行的曲线，立即开始
+        if (this.currentCurve === null) {
+            this.startNextCurve();
+        }
 
-            // 如果没有正在执行的曲线，立即开始
-            if (this.currentCurve === null) {
-                this.startNextCurve();
-            }
-        });
+        return promise;
     }
 
     private startNextCurve(): void {

@@ -49,6 +49,8 @@
         "47": "Cannot require text area outside the target map.",
         "48": "Cannot $1 excitables on destroyed excitation.",
         "49": "Cannot $1 on variator without excitation binding.",
+        "50": "Expected a planEnd call after animation plan calling.",
+        "51": "Animatable object cannot be animated by plans with the same start time.",
         "1201": "Floor-damage extension needs 'floor-binder' extension as dependency."
     },
     "warn": {

@@ -5,6 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "tsx script/dev.ts",
+        "test": "vitest",
         "preview": "vite preview",
         "declare": "tsx script/declare.ts",
         "type": "vue-tsc --noEmit",
@@ -87,6 +88,7 @@
         "vite-plugin-dts": "^4.5.4",
         "vitepress": "^1.6.4",
         "vitepress-plugin-mermaid": "^2.0.17",
+        "vitest": "^4.0.18",
         "vue-tsc": "^2.2.12",
         "ws": "^8.19.0"
     }

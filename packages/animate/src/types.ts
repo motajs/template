@@ -127,3 +127,170 @@ export interface IExcitationVariator extends IExcitation<number> {
      */
     endAllCurves(): void;
 }
+
+export interface IAnimatable {
+    /** 动画数值 */
+    value: number;
+}
+
+export interface IAnimatePlanIdentifier {
+    /** 动画对象 */
+    readonly content: IAnimatable;
+    /** 动画对象对应的动画计划 */
+    readonly index: number;
+}
+
+export interface IAnimationPlan {
+    /** 动画计划的标识符 */
+    readonly identifier: IAnimatePlanIdentifier;
+    /** 动画的速率曲线 */
+    readonly curve: ExcitationCurve;
+    /** 动画的目标值 */
+    readonly targetValue: number;
+    /** 动画时长 */
+    readonly time: number;
+    /** 动画结束后兑现的 `Promise` */
+    readonly promise: Promise<void>;
+}
+
+export interface IAnimater extends IExcitable<number> {
+    /**
+     * 在动画执行器上绑定激励源
+     * @param excitation 绑定的激励源
+     */
+    bindExcitation(excitation: IExcitation<number>): void;
+
+    /**
+     * 取消绑定激励源
+     */
+    unbindExcitation(): void;
+
+    /**
+     * 绑定动画对象，之后的接口调用都将施加在此对象上
+     * @param content 动画对象
+     */
+    animate(content: IAnimatable): this;
+
+    /**
+     * 设置当前的速率曲线
+     * @param curve 速率曲线
+     */
+    curve(curve: ExcitationCurve): this;
+
+    /**
+     * 将动画对象的值按照当前设置改变至目标值，为一次动画操作，计入动画索引（参考 {@link query} 的描述）。
+     * 如果动画开始时当前动画对象有动画正在执行，那么会立刻结束正在执行的动画，开始执行当前动画。
+     * @param value 目标值
+     * @param time 动画时长
+     */
+    to(value: number, time: number): this;
+
+    /**
+     * 在刚刚定义的动画结束后指定时长再开始后续计划。
+     *
+     * ```ts
+     * const obj1 = { value: 0 };
+     * const obj2 = { value: 0 };
+     * animater.animate(obj1)
+     *   .curve(linear())
+     *   .to(100, 500)
+     *   .animate(obj2)
+     *   .after()
+     *   .to(200, 200)
+     *   .planEnd();
+     * ```
+     *
+     * @param time 等待时长，默认为 0
+     */
+    after(time?: number): this;
+
+    /**
+     * 在指定动画结束后指定时长再开始后续计划。计划索引参考 {@link query} 的定义。
+     *
+     * ```ts
+     * const obj1 = { value: 0 };
+     * const obj2 = { value: 0 };
+     * animater.animate(obj1)
+     *   .curve(linear())
+     *   .to(100, 500)
+     *   .animate(obj2)
+     *   .to(200, 200)
+     *   .afterObject(obj1, 1)
+     *   ...
+     *   .planEnd();
+     * ```
+     *
+     * @param content 动画对象
+     * @param index 动画对象对应的计划索引
+     * @param time 等待时长，默认为 0
+     */
+    afterPlan(content: IAnimatable, index: number, time?: number): this;
+
+    /**
+     * 等待刚刚定义的动画开始指定时长后再开始后续计划，与 {@link after} 类似，但是是以刚刚定义的动画开始执行为基准
+     * @param time 等待时长
+     */
+    when(time?: number): this;
+
+    /**
+     * 等待指定动画计划开始指定时长后再开始后续计划，与 {@link afterPlan} 类似，但是是以指定动画开始执行为基准
+     * @param content 动画对象
+     * @param index 动画对象对应的计划索引
+     * @param time 等待时长，默认为 0
+     */
+    whenPlan(content: IAnimatable, index: number, time?: number): this;
+
+    /**
+     * 查询动画计划。
+     *
+     * 动画计划采用计划组的方式查询，每个计划组之间的动画计划互不干扰。`plan` 描述需要查询的计划组，
+     * `index` 表示在这个计划组内的动画计划索引，`content` 表示要查询哪个动画对象的动画计划。
+     * 动画计划索引描述的是该动画对象在本计划组中的第几次动画计划，从 1 开始计算。举例来说：
+     *
+     * ```ts
+     * const obj = { value: 0 };
+     * animater.animate()
+     *   .curve(linear())
+     *   .to(100, 1000) // 索引为 1
+     *   .after()
+     *   .curve(sin(CurveMode.EaseOut))
+     *   .to(200, 500) // 索引为 2
+     *   .animate(obj2)
+     *   ...
+     *   .animate(obj)
+     *   .to(100, 500) // 索引为 3
+     *   .planEnd();
+     * ```
+     *
+     * @param content 动画对象
+     * @param index 动画计划索引
+     * @param plan 计划组索引，不填时表示当前正在计划中的计划组，即从上一次调用 `planEnd` 至现在的这个区间，
+     *             如果期间没有没有任何动画计划，那么会返回 `null`，并不会自动回退到上一次定义的的计划组。
+     */
+    query(
+        content: IAnimatable,
+        index: number,
+        plan?: number
+    ): IAnimationPlan | null;
+
+    /**
+     * 等待指定动画计划执行完毕，参考 {@link query} 的描述
+     * @param content 动画对象
+     * @param index 动画计划索引
+     * @param plan 计划组索引，不填时表示当前正在执行动画的计划组。
+     */
+    wait(
+        content: IAnimatable,
+        index: number,
+        plan?: number
+    ): Promise<void> | undefined;
+
+    /**
+     * 结束当前动画计划的定义，形成动画计划组。该函数必须在动画计划定义完毕后立刻执行来进行必要的处理工作。
+     * 后面的计划组会等待前面的计划组的动画全部执行完毕后再开始执行。
+     * 参考 {@link query} 中对计划组的描述。
+     * @param preTime 计划执行前的等待时长，等待这么长时间之后开始执行首个动画
+     * @param postTime 计划执行后的等待时长，等待这么长时间之后计划才真正结束
+     */
+    planEnd(preTime?: number, postTime?: number): number;
+}
