@@ -1,13 +1,18 @@
-import { ElementLocator, Sprite, MotaOffscreenCanvas2D } from '@motajs/render';
-import { DefaultProps, PathProps, onTick } from '@motajs/render-vue';
+import {
+    ElementLocator,
+    CustomRenderItem,
+    MotaOffscreenCanvas2D
+} from '@motajs/render';
+import { DefaultProps, PathProps } from '@motajs/render-vue';
 import { computed, defineComponent, ref, SetupContext, watch } from 'vue';
 import { TextContent, TextContentProps } from './textbox';
 import { Scroll, ScrollExpose, ScrollProps } from './scroll';
 import { transitioned } from '../use';
-import { hyper } from 'mutate-animate';
 import { logger } from '@motajs/common';
 import { GameUI, IUIMountable, SetupComponentOptions } from '@motajs/system';
 import { clamp } from 'lodash-es';
+import { using } from '../renderer';
+import { cosh, CurveMode } from '@motajs/animate';
 
 interface ProgressProps extends DefaultProps {
     /** 进度条的位置 */
@@ -37,7 +42,7 @@ const progressProps = {
  * ```
  */
 export const Progress = defineComponent<ProgressProps>(props => {
-    const element = ref<Sprite>();
+    const element = ref<CustomRenderItem>();
 
     const render = (canvas: MotaOffscreenCanvas2D) => {
         const { ctx } = canvas;
@@ -67,7 +72,7 @@ export const Progress = defineComponent<ProgressProps>(props => {
     });
 
     return () => {
-        return <sprite ref={element} loc={props.loc} render={render}></sprite>;
+        return <custom ref={element} loc={props.loc} render={render}></custom>;
     };
 }, progressProps);
 
@@ -217,7 +222,7 @@ export const ScrollText = defineComponent<
     let paused = false;
     let nowScroll = 0;
 
-    onTick(() => {
+    using.onExcitedFunc(() => {
         if (paused || !scroll.value) return;
         const now = Date.now();
         const dt = now - lastFixedTime;
@@ -296,7 +301,11 @@ const selectionProps = {
 export const Selection = defineComponent<SelectionProps>(props => {
     const minAlpha = computed(() => props.alphaRange?.[0] ?? 0.25);
     const maxAlpha = computed(() => props.alphaRange?.[1] ?? 0.55);
-    const alpha = transitioned(minAlpha.value, 2000, hyper('sin', 'in-out'))!;
+    const alpha = transitioned(
+        minAlpha.value,
+        2000,
+        cosh(2, CurveMode.EaseInOut)
+    )!;
 
     const isWinskin = computed(() => !!props.winskin);
     const winskinImage = computed(() =>
@@ -326,7 +335,7 @@ export const Selection = defineComponent<SelectionProps>(props => {
         ctx.drawImage(image, 158, 66, 2, 28, width - 2, 2, 2, height - 4);
     };
 
-    onTick(() => {
+    using.onExcitedFunc(() => {
         if (alpha.value === maxAlpha.value) {
             alpha.set(minAlpha.value);
         }
@@ -337,7 +346,7 @@ export const Selection = defineComponent<SelectionProps>(props => {
 
     return () =>
         isWinskin.value ? (
-            <sprite
+            <custom
                 loc={props.loc}
                 render={renderWinskin}
                 alpha={alpha.ref.value}
@@ -386,7 +395,7 @@ export const Background = defineComponent<BackgroundProps>(props => {
 
     return () =>
         isWinskin.value ? (
-            <winskin image={props.winskin!} loc={props.loc} noanti />
+            <winskin imageName={props.winskin!} loc={props.loc} noanti />
         ) : (
             <g-rectr
                 loc={fixedLoc.value}
@@ -401,8 +410,7 @@ export const Background = defineComponent<BackgroundProps>(props => {
 }, backgroundProps);
 
 export interface WaitBoxProps<T>
-    extends Partial<BackgroundProps>,
-        Partial<TextContentProps> {
+    extends Partial<BackgroundProps>, Partial<TextContentProps> {
     loc: ElementLocator;
     width: number;
     promise?: Promise<T>;

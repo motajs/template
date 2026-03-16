@@ -1,7 +1,5 @@
-import type { RenderAdapter } from '@motajs/render';
 import type { TimingFn } from 'mutate-animate';
 import {
-    BlockMover,
     fromDirectionString,
     heroMoveCollection,
     MoveStep,
@@ -9,37 +7,12 @@ import {
 } from '@user/data-state';
 import { hook, loading } from '@user/data-base';
 import { Patch, PatchClass } from '@motajs/legacy-common';
-import type {
-    LayerDoorAnimate,
-    LayerGroupAnimate,
-    FloorViewport,
-    LayerGroup
-} from '@user/client-modules';
 import { isNil } from 'lodash-es';
 
 // 向后兼容用，会充当两个版本间过渡的作用
 
-interface Adapters {
-    'door-animate'?: RenderAdapter<LayerDoorAnimate>;
-    animate?: RenderAdapter<LayerGroupAnimate>;
-    viewport?: RenderAdapter<FloorViewport>;
-}
-
-const adapters: Adapters = {};
-
 export function initFallback() {
     let fallbackIds: number = 1e8;
-
-    if (!main.replayChecking && main.mode === 'play') {
-        const Adapter = Mota.require('@motajs/render').RenderAdapter;
-        const doorAnimate = Adapter.get<LayerDoorAnimate>('door-animate');
-        const animate = Adapter.get<LayerGroupAnimate>('animate');
-        const viewport = Adapter.get<FloorViewport>('viewport');
-
-        adapters['door-animate'] = doorAnimate;
-        adapters['animate'] = animate;
-        adapters['viewport'] = viewport;
-    }
 
     const { mover: heroMover } = heroMoveCollection;
 
@@ -86,8 +59,7 @@ export function initFallback() {
 
     Mota.r(() => {
         // ----- 引入
-        const { MotaRenderer: Renderer } = Mota.require('@motajs/render');
-        const { Camera } = Mota.require('@user/client-modules');
+        const { mainRenderer } = Mota.require('@user/client-modules');
         const Animation = Mota.require('MutateAnimate');
 
         const patch = new Patch(PatchClass.Control);
@@ -177,7 +149,7 @@ export function initFallback() {
                 noGather?: boolean
             ) {
                 if (!core.status.hero) return;
-                // @ts-ignore
+                // @ts-expect-error todo
                 core.status.hero.loc[name] = value;
                 if (name === 'direction') {
                     const dir = fromDirectionString(value as Dir);
@@ -375,9 +347,9 @@ export function initFallback() {
             function (x: number, y: number, id: AllIds, callback?: () => void) {
                 id = id || '';
                 if (
-                    // @ts-ignore
+                    // @ts-expect-error todo
                     (isNil(core.material.icons.animates[id]) &&
-                        // @ts-ignore
+                        // @ts-expect-error todo
                         isNil(core.material.icons.npc48[id])) ||
                     !isNil(core.getBlock(x, y))
                 ) {
@@ -427,10 +399,10 @@ export function initFallback() {
                 name: AnimationIds,
                 x: number,
                 y: number,
-                alignWindow?: boolean,
+                _alignWindow?: boolean,
                 callback?: () => void
             ) {
-                // @ts-ignore
+                // @ts-expect-error todo
                 name = core.getMappedName(name);
 
                 // 正在播放录像：不显示动画
@@ -444,24 +416,24 @@ export function initFallback() {
                     return -1;
                 }
 
-                adapters.animate
-                    ?.all(
-                        'drawAnimate',
-                        name,
-                        x * 32 + 16,
-                        y * 32 + 16,
-                        alignWindow ?? false
-                    )
-                    .then(() => {
-                        callback?.();
-                    });
+                // adapters.animate
+                //     ?.all(
+                //         'drawAnimate',
+                //         name,
+                //         x * 32 + 16,
+                //         y * 32 + 16,
+                //         alignWindow ?? false
+                //     )
+                //     .then(() => {
+                //         callback?.();
+                //     });
             }
         );
 
         patch3.add(
             'drawHeroAnimate',
             function (name: AnimationIds, callback?: () => void) {
-                // @ts-ignore
+                // @ts-expect-error todo
                 name = core.getMappedName(name);
 
                 // 正在播放录像或动画不存在：不显示动画
@@ -470,9 +442,9 @@ export function initFallback() {
                     return -1;
                 }
 
-                adapters.animate?.global('drawHeroAnimate', name).then(() => {
-                    callback?.();
-                });
+                // adapters.animate?.global('drawHeroAnimate', name).then(() => {
+                //     callback?.();
+                // });
             }
         );
 
@@ -495,31 +467,31 @@ export function initFallback() {
                     callback?.();
                     return;
                 }
-                const mover = new BlockMover(
-                    x,
-                    y,
-                    core.status.floorId,
-                    'event'
-                );
-                const moveSteps = getMoveSteps(steps);
-                const resolved = moveSteps.map<MoveStep>(v => {
-                    if (v.startsWith('speed')) {
-                        return { type: 'speed', value: Number(v.slice(6)) };
-                    } else {
-                        return { type: 'dir', value: v as Move2 };
-                    }
-                });
-                const start: MoveStep = { type: 'speed', value: time };
-                mover.insertMove(...[start, ...resolved]);
-                const controller = mover.startMove();
+                // const mover = new BlockMover(
+                //     x,
+                //     y,
+                //     core.status.floorId,
+                //     'event'
+                // );
+                // const moveSteps = getMoveSteps(steps);
+                // const resolved = moveSteps.map<MoveStep>(v => {
+                //     if (v.startsWith('speed')) {
+                //         return { type: 'speed', value: Number(v.slice(6)) };
+                //     } else {
+                //         return { type: 'dir', value: v as Move2 };
+                //     }
+                // });
+                // const start: MoveStep = { type: 'speed', value: time };
+                // mover.insertMove(...[start, ...resolved]);
+                // const controller = mover.startMove();
 
-                if (controller) {
-                    await controller.onEnd;
-                }
+                // if (controller) {
+                //     await controller.onEnd;
+                // }
 
-                if (!keep) {
-                    core.removeBlock(mover.x, mover.y);
-                }
+                // if (!keep) {
+                //     core.removeBlock(mover.x, mover.y);
+                // }
                 callback?.();
             }
         );
@@ -584,7 +556,7 @@ export function initFallback() {
             ) {
                 if (heroMover.moving) return;
 
-                adapters.viewport?.all('mutateTo', ex, ey, time);
+                // adapters.viewport?.all('mutateTo', ex, ey, time);
 
                 const locked = core.status.lockControl;
                 core.lockControl();
@@ -608,7 +580,7 @@ export function initFallback() {
             function (destX: number, destY: number, ignoreSteps: number) {
                 const data = core.control.controldata;
                 const success = data.moveDirectly(destX, destY, ignoreSteps);
-                if (success) adapters.viewport?.all('mutateTo', destX, destY);
+                // if (success) adapters.viewport?.all('mutateTo', destX, destY);
                 return success;
             }
         );
@@ -622,45 +594,7 @@ export function initFallback() {
                 time: number = 1,
                 callback?: () => void
             ) {
-                const main = Renderer.get('render-main');
-                const layer = main?.getElementById('layer-main') as LayerGroup;
-                if (!layer) return;
-                const camera = Camera.for(layer);
-                camera.clearOperation();
-                const translate = camera.addTranslate();
-
-                const animateTime =
-                    time / Math.max(core.status.replay.speed, 1);
-                const animate = new Animation.Animation();
-                animate
-                    .absolute()
-                    .time(1)
-                    .mode(Animation.linear())
-                    .move(core.bigmap.offsetX, core.bigmap.offsetY);
-                animate.time(animateTime).move(x * 32, y * 32);
-
-                camera.applyTranslateAnimation(
-                    translate,
-                    animate,
-                    animateTime + 50
-                );
-                camera.transform = layer.camera;
-
-                const end = () => {
-                    core.bigmap.offsetX = x * 32;
-                    core.bigmap.offsetY = y * 32;
-                    camera.destroy();
-                    callback?.();
-                };
-
-                const timeout = window.setTimeout(end, animateTime + 50);
-
-                const id = fallbackIds++;
-                core.animateFrame.lastAsyncId = id;
-                core.animateFrame.asyncId[id] = () => {
-                    end();
-                    clearTimeout(timeout);
-                };
+                // todo
             }
         );
     });

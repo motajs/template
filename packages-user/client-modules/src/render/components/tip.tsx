@@ -106,7 +106,7 @@ export const Tip = defineComponent<TipProps>((props, { expose }) => {
         hide();
     };
 
-    const onSetText = (_: string, width: number) => {
+    const onSetText = (width: number) => {
         textWidth.value = width;
     };
 
@@ -137,7 +137,7 @@ export const Tip = defineComponent<TipProps>((props, { expose }) => {
             <text
                 loc={textLoc.value}
                 text={text.value}
-                onSetText={onSetText}
+                onResize={onSetText}
                 font={font}
             />
         </container>

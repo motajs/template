@@ -1,8 +1,8 @@
-import { MotaOffscreenCanvas2D, Sprite } from '@motajs/render';
+import { MotaOffscreenCanvas2D, CustomRenderItem } from '@motajs/render';
 import { Weather } from '../weather';
 import { clamp } from 'lodash-es';
 
-export class SunWeather extends Weather<Sprite> {
+export class SunWeather extends Weather<CustomRenderItem> {
     /** 阳光图片 */
     private image: HTMLImageElement | null = null;
     /** 阳光图片的不透明度 */
@@ -41,8 +41,8 @@ export class SunWeather extends Weather<Sprite> {
         }
     }
 
-    createElement(level: number): Sprite {
-        const element = new Sprite('static', true);
+    createElement(level: number): CustomRenderItem {
+        const element = new CustomRenderItem(true);
         element.setRenderFn(canvas => this.drawSun(canvas));
         this.maxAlpha = level / 10;
         this.minAlpha = level / 20;

@@ -219,7 +219,7 @@ export const FloorSelector = defineComponent<
                     lineWidth={1}
                     strokeStyle="#aaa"
                 />
-                <sprite
+                <custom
                     zIndex={20}
                     loc={[0, 0, 144, SCROLL_HEIGHT]}
                     nocache

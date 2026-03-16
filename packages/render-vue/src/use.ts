@@ -1,54 +1,66 @@
-import { Animation, Ticker, Transition } from 'mutate-animate';
-import { ERenderItemEvent, RenderItem } from '@motajs/render';
+import { ERenderItemEvent, IRenderItem, IRenderTreeRoot } from '@motajs/render';
 import { onMounted, onUnmounted } from 'vue';
 import EventEmitter from 'eventemitter3';
+import { IRendererUsing } from './types';
+import {
+    IExcitable,
+    IAnimater,
+    ITransition,
+    Animater,
+    IExcitation,
+    Transition,
+    excited
+} from '@motajs/animate';
 
-const ticker = new Ticker();
+export class RendererUsing implements IRendererUsing {
+    constructor(readonly renderer: IRenderTreeRoot) {}
 
-/**
- * 在组件中每帧执行一次函数
- * @param fn 每帧执行的函数
- */
-export function onTick(fn: (time: number) => void) {
-    onMounted(() => {
-        ticker.add(fn);
-    });
-    onUnmounted(() => {
-        ticker.remove(fn);
-    });
-}
+    onExcited(excitable: IExcitable<number>): void {
+        onMounted(() => {
+            this.renderer.excitation.add(excitable);
+        });
+        onUnmounted(() => {
+            this.renderer.excitation.remove(excitable);
+        });
+    }
 
-type AnimationUsing = [Animation];
-type TransitionUsing = [Transition];
+    onExcitedFunc(fn: (payload: number) => void): void {
+        this.onExcited(excited(fn));
+    }
 
-/**
- * 在组件中创建一个动画实例
- */
-export function useAnimation(): AnimationUsing {
-    const ani = new Animation();
-    onUnmounted(() => {
-        ani.ticker.destroy();
-    });
-    return [ani];
-}
+    listenEvent<
+        T extends ERenderItemEvent,
+        K extends EventEmitter.EventNames<T>
+    >(
+        item: IRenderItem,
+        key: K,
+        listener: EventEmitter.EventListener<T, K>
+    ): void {
+        item.on(key, listener);
+        onUnmounted(() => {
+            item.off(key, listener);
+        });
+    }
 
-/**
- * 在组件中创建一个渐变实例
- */
-export function useTransition(): TransitionUsing {
-    const tran = new Transition();
-    onUnmounted(() => {
-        tran.ticker.destroy();
-    });
-    return [tran];
-}
+    useAnimater(excitation: IExcitation<number>): IAnimater {
+        const anim = new Animater();
+        onMounted(() => {
+            anim.bindExcitation(excitation);
+        });
+        onUnmounted(() => {
+            anim.unbindExcitation();
+        });
+        return anim;
+    }
 
-export function onEvent<
-    T extends ERenderItemEvent,
-    K extends EventEmitter.EventNames<T>
->(item: RenderItem<T>, key: K, listener: EventEmitter.EventListener<T, K>) {
-    item.on(key, listener);
-    onUnmounted(() => {
-        item.off(key, listener);
-    });
+    useTransition(excitation: IExcitation<number>): ITransition {
+        const tran = new Transition();
+        onMounted(() => {
+            tran.bindExcitation(excitation);
+        });
+        onUnmounted(() => {
+            tran.unbindExcitation();
+        });
+        return tran;
+    }
 }

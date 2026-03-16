@@ -1,18 +1,20 @@
-import { RenderItem } from '@motajs/render';
+import { IRenderTreeRoot, RenderItem } from '@motajs/render';
 import { IWeather, IWeatherController, IWeatherInstance } from './types';
 import { logger } from '@motajs/common';
 import { isNil } from 'lodash-es';
-import { Ticker } from 'mutate-animate';
+import { IExcitable } from '@motajs/animate';
 
 type WeatherConstructor = new () => IWeather;
 
-export class WeatherController implements IWeatherController {
+// todo: refactor?
+
+export class WeatherController
+    implements IWeatherController, IExcitable<number>
+{
     /** 暴露到全局的控制器 */
     static extern: Map<string, IWeatherController> = new Map();
     /** 注册的天气 */
     static weathers: Map<string, WeatherConstructor> = new Map();
-
-    private static ticker: Ticker = new Ticker();
 
     /** 暴露至全局的 id */
     private externId?: string;
@@ -23,13 +25,13 @@ export class WeatherController implements IWeatherController {
 
     container: RenderItem | null = null;
 
-    constructor() {
-        WeatherController.ticker.add(this.tick);
+    constructor(readonly renderer: IRenderTreeRoot) {
+        renderer.delegateExcitable(this);
     }
 
-    private tick = (time: number) => {
-        this.active.forEach(v => v.weather.tick(time));
-    };
+    excited(payload: number): void {
+        this.active.forEach(v => v.weather.tick(payload));
+    }
 
     /**
      * 设置天气元素纵深，第一个天气会被设置为 `zIndex`，之后依次是 `zIndex+1` `zIndex+2` ...
@@ -111,7 +113,6 @@ export class WeatherController implements IWeatherController {
 
     destroy() {
         this.clearWeather();
-        WeatherController.ticker.remove(this.tick);
         if (!isNil(this.externId)) {
             WeatherController.extern.delete(this.externId);
         }
@@ -138,8 +139,7 @@ export class WeatherController implements IWeatherController {
 export class WeatherInstance<
     R extends RenderItem = RenderItem,
     T extends IWeather<R> = IWeather<R>
-> implements IWeatherInstance<R, T>
-{
+> implements IWeatherInstance<R, T> {
     constructor(
         readonly weather: T,
         readonly element: R

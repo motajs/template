@@ -15,10 +15,9 @@
         "lib": ["ESNext", "DOM", "DOM.Iterable"],
         "skipLibCheck": true,
         "noEmit": true,
-        "baseUrl": ".",
         "paths": {
-            "@motajs/*": ["packages/*/src"],
-            "@user/*": ["packages-user/*/src"]
+            "@motajs/*": ["./packages/*/src"],
+            "@user/*": ["./packages-user/*/src"]
         }
     },
     "include": [

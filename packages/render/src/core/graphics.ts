@@ -1,100 +1,23 @@
-import {
-    Transform,
-    ERenderItemEvent,
-    RenderItem,
-    MotaOffscreenCanvas2D
-} from '../core';
+import { Transform, RenderItem, MotaOffscreenCanvas2D } from '.';
 import { CanvasStyle } from '../types';
 import { logger } from '@motajs/common';
 import { clamp, isEqual, isNil } from 'lodash-es';
-
-export type CircleParams = [
-    cx?: number,
-    cy?: number,
-    radius?: number,
-    start?: number,
-    end?: number
-];
-export type EllipseParams = [
-    cx?: number,
-    cy?: number,
-    radiusX?: number,
-    radiusY?: number,
-    start?: number,
-    end?: number
-];
-export type LineParams = [x1: number, y1: number, x2: number, y2: number];
-export type BezierParams = [
-    sx: number,
-    sy: number,
-    cp1x: number,
-    cp1y: number,
-    cp2x: number,
-    cp2y: number,
-    ex: number,
-    ey: number
-];
-export type QuadParams = [
-    sx: number,
-    sy: number,
-    cpx: number,
-    cpy: number,
-    ex: number,
-    ey: number
-];
-export type RectRCircleParams = [
-    r1: number,
-    r2?: number,
-    r3?: number,
-    r4?: number
-];
-export type RectREllipseParams = [
-    rx1: number,
-    ry1: number,
-    rx2?: number,
-    ry2?: number,
-    rx3?: number,
-    ry3?: number,
-    rx4?: number,
-    ry4?: number
-];
-
-export interface ILineProperty {
-    /** 线宽 */
-    lineWidth: number;
-    /** 线的虚线设置 */
-    lineDash?: number[];
-    /** 虚线偏移量 */
-    lineDashOffset?: number;
-    /** 线的连接样式 */
-    lineJoin: CanvasLineJoin;
-    /** 线的顶端样式 */
-    lineCap: CanvasLineCap;
-    /** 线的斜接限制，当连接为miter类型时可填，默认为10 */
-    miterLimit: number;
-}
-
-export interface IGraphicProperty extends ILineProperty {
-    /** 渲染模式，参考 {@link GraphicMode} */
-    mode: GraphicMode;
-    /** 填充样式 */
-    fill: CanvasStyle;
-    /** 描边样式 */
-    stroke: CanvasStyle;
-    /** 填充算法 */
-    fillRule: CanvasFillRule;
-}
-
-export const enum GraphicMode {
-    /** 仅填充 */
-    Fill,
-    /** 仅描边 */
-    Stroke,
-    /** 先填充，然后描边 */
-    FillAndStroke,
-    /** 先描边，然后填充 */
-    StrokeAndFill
-}
+import {
+    ILineProperty,
+    GraphicMode,
+    IGraphicRenderItem,
+    IGraphicCircle,
+    IGraphicEllipse,
+    IGraphicLine,
+    IGraphicBezierCurve,
+    IGraphicQuadBezierCurve,
+    IGraphicPath,
+    RectRCorner,
+    CircleParams,
+    EllipseParams,
+    RectRCircleParams,
+    RectREllipseParams
+} from './types';
 
 const enum GraphicModeProp {
     Fill,
@@ -102,11 +25,13 @@ const enum GraphicModeProp {
     StrokeAndFill
 }
 
-export interface EGraphicItemEvent extends ERenderItemEvent {}
+/** 用于点击检测的画布 */
+const testCanvas = new MotaOffscreenCanvas2D(false);
+testCanvas.size(1, 1);
 
 export abstract class GraphicItemBase
-    extends RenderItem<EGraphicItemEvent>
-    implements Required<ILineProperty>
+    extends RenderItem
+    implements Required<ILineProperty>, IGraphicRenderItem
 {
     mode: GraphicMode = GraphicMode.Fill;
     fill: CanvasStyle = '#ddd';
@@ -118,7 +43,6 @@ export abstract class GraphicItemBase
     lineCap: CanvasLineCap = 'butt';
     miterLimit: number = 10;
     fillRule: CanvasFillRule = 'nonzero';
-    enableCache: boolean = false;
 
     private propFill: boolean = true;
     private propStroke: boolean = false;
@@ -128,6 +52,10 @@ export abstract class GraphicItemBase
     private actionStroke: boolean = false;
     private cachePath?: Path2D;
     protected pathDirty: boolean = true;
+
+    constructor(enableCache: boolean = false) {
+        super(enableCache);
+    }
 
     /**
      * 获取这个元素的绘制路径
@@ -166,7 +94,7 @@ export abstract class GraphicItemBase
     }
 
     protected isActionInElement(x: number, y: number): boolean {
-        const ctx = this.cache.ctx;
+        const ctx = testCanvas.ctx;
         if (this.pathDirty) {
             this.cachePath = this.getPath();
             this.pathDirty = false;
@@ -387,7 +315,7 @@ export class Rect extends GraphicItemBase {
     }
 }
 
-export class Circle extends GraphicItemBase {
+export class Circle extends GraphicItemBase implements IGraphicCircle {
     radius: number = 10;
     start: number = 0;
     end: number = Math.PI * 2;
@@ -462,7 +390,7 @@ export class Circle extends GraphicItemBase {
     }
 }
 
-export class Ellipse extends GraphicItemBase {
+export class Ellipse extends GraphicItemBase implements IGraphicEllipse {
     radiusX: number = 10;
     radiusY: number = 10;
     start: number = 0;
@@ -552,7 +480,7 @@ export class Ellipse extends GraphicItemBase {
     }
 }
 
-export class Line extends GraphicItemBase {
+export class Line extends GraphicItemBase implements IGraphicLine {
     x1: number = 0;
     y1: number = 0;
     x2: number = 0;
@@ -633,7 +561,10 @@ export class Line extends GraphicItemBase {
     }
 }
 
-export class BezierCurve extends GraphicItemBase {
+export class BezierCurve
+    extends GraphicItemBase
+    implements IGraphicBezierCurve
+{
     sx: number = 0;
     sy: number = 0;
     cp1x: number = 0;
@@ -700,10 +631,6 @@ export class BezierCurve extends GraphicItemBase {
         this.update();
     }
 
-    protected isActionInElement(x: number, y: number): boolean {
-        return x >= 0 && x < this.width && y >= 0 && y < this.height;
-    }
-
     private fitRect() {
         const left = Math.min(this.sx, this.cp1x, this.cp2x, this.ex);
         const top = Math.min(this.sy, this.cp1y, this.cp2y, this.ey);
@@ -767,7 +694,10 @@ export class BezierCurve extends GraphicItemBase {
     }
 }
 
-export class QuadraticCurve extends GraphicItemBase {
+export class QuadraticCurve
+    extends GraphicItemBase
+    implements IGraphicQuadBezierCurve
+{
     sx: number = 0;
     sy: number = 0;
     cpx: number = 0;
@@ -842,10 +772,6 @@ export class QuadraticCurve extends GraphicItemBase {
         this.pathDirty = true;
     }
 
-    protected isActionInElement(x: number, y: number): boolean {
-        return x >= 0 && x < this.width && y >= 0 && y < this.height;
-    }
-
     protected handleProps(
         key: string,
         prevValue: any,
@@ -890,7 +816,7 @@ export class QuadraticCurve extends GraphicItemBase {
     }
 }
 
-export class Path extends GraphicItemBase {
+export class Path extends GraphicItemBase implements IGraphicPath {
     /** 路径 */
     path: Path2D = new Path2D();
 
@@ -902,6 +828,14 @@ export class Path extends GraphicItemBase {
     }
 
     /**
+     * 重置此元素的路径
+     */
+    resetPath() {
+        this.path = new Path2D();
+        this.update();
+    }
+
+    /**
      * 为路径添加路径
      * @param path 要添加的路径
      */
@@ -909,10 +843,6 @@ export class Path extends GraphicItemBase {
         this.path.addPath(path);
         this.pathDirty = true;
         this.update();
-    }
-
-    protected isActionInElement(x: number, y: number): boolean {
-        return x >= 0 && x < this.width && y >= 0 && y < this.height;
     }
 
     protected handleProps(
@@ -930,13 +860,6 @@ export class Path extends GraphicItemBase {
         }
         return super.handleProps(key, prevValue, nextValue);
     }
-}
-
-export const enum RectRCorner {
-    TopLeft,
-    TopRight,
-    BottomRight,
-    BottomLeft
 }
 
 export class RectR extends GraphicItemBase {

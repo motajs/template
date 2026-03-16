@@ -5,7 +5,8 @@ import {
     IExcitableController,
     IExcitationVariator,
     ExcitationCurve,
-    VariatorCurveMode
+    VariatorCurveMode,
+    IExcitationDivider
 } from './types';
 import { excited } from './utils';
 
@@ -321,5 +322,65 @@ export class ExcitationVariator
     override destroy(): void {
         this.unbindExcitation();
         super.destroy();
+    }
+}
+
+export class ExcitationDivider<T>
+    extends ExcitationBase<T>
+    implements IExcitationDivider<T>
+{
+    divider: number = 1;
+    source: IExcitation<T> | null = null;
+
+    /** 当前的激励对象控制器 */
+    private controller: IExcitableController<T> | null = null;
+    /** 当前的激励负载 */
+    private nowPayload: T | null = null;
+    /** 分频计数器 */
+    private counter: number = 0;
+
+    payload(): T {
+        if (!this.source) {
+            logger.error(52);
+            throw new Error('Expected an excitation binding');
+        }
+        return this.nowPayload ?? this.source.payload();
+    }
+
+    /**
+     * 激励当前所有的激励源
+     * @param payload 激励负载
+     */
+    excite(payload: T) {
+        this.counter++;
+        if (this.counter >= this.divider) {
+            this.counter = 0;
+            this.nowPayload = payload;
+            super.excite(payload);
+        }
+    }
+
+    bindExcitation(excitation: IExcitation<T>): void {
+        this.unbindExcitation();
+        this.source = excitation;
+        this.divider = 1;
+        this.counter = this.divider - 1;
+        this.nowPayload = excitation.payload();
+        const controller = excitation.add(
+            excited(payload => this.excite(payload))
+        );
+        this.controller = controller;
+    }
+
+    unbindExcitation(): void {
+        this.controller?.revoke();
+        this.counter = 0;
+        this.divider = 1;
+    }
+
+    setDivider(divider: number): void {
+        if (!this.source) return;
+        this.divider = divider;
+        this.counter = divider - 1;
     }
 }

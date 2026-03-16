@@ -27,8 +27,7 @@ import { CENTER_LOC, FULL_LOC, MAIN_HEIGHT, POP_BOX_WIDTH } from '../shared';
 import { useKey } from '../use';
 
 export interface MainSettingsProps
-    extends Partial<ChoicesProps>,
-        UIComponentProps {
+    extends Partial<ChoicesProps>, UIComponentProps {
     loc: ElementLocator;
 }
 

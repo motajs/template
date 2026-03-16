@@ -2,15 +2,7 @@ import EventEmitter from 'eventemitter3';
 import { backDir, toDir } from './utils';
 import { loading } from '@user/data-base';
 import type { RenderAdapter } from '@motajs/render';
-import type {
-    FloorLayer,
-    FloorViewport,
-    HeroKeyMover,
-    HeroRenderer,
-    Layer,
-    LayerFloorBinder,
-    LayerMovingRenderable
-} from '@user/client-modules';
+import type { HeroKeyMover } from '@user/client-modules';
 import { sleep } from '@motajs/common';
 import { fromDirectionString, state } from '..';
 
@@ -235,176 +227,7 @@ export abstract class ObjectMoverBase extends EventEmitter<EObjectMovingEvent> {
     }
 }
 
-const enum BlockMoveCode {
-    Step
-}
-
-export class BlockMover extends ObjectMoverBase {
-    /** 楼层渲染适配器，用于显示动画 */
-    static adapter?: RenderAdapter<Layer>;
-
-    x: number;
-    y: number;
-    floorId: FloorIds;
-    layer: FloorLayer;
-
-    /** 本次移动中需要进行动画移动的楼层渲染组件 */
-    private layerItems: Layer[] = [];
-    /** 本次移动过程中的移动renderable实例 */
-    private renderable?: LayerMovingRenderable;
-    /** 本次移动的图块id */
-    private blockNum: number = 0;
-
-    constructor(
-        x: number,
-        y: number,
-        floorId: FloorIds,
-        layer: FloorLayer,
-        dir: Dir = 'down'
-    ) {
-        super();
-
-        this.x = x;
-        this.y = y;
-        this.floorId = floorId;
-        this.moveDir = dir;
-        this.layer = layer;
-    }
-
-    /**
-     * 绑定移动点
-     * @param x 绑定点横坐标
-     * @param y 绑定点纵坐标
-     * @param floorId 绑定点楼层
-     * @returns 是否绑定成功，例如如果当前绑定点正在移动，那么就会绑定失败
-     */
-    bind(
-        x: number,
-        y: number,
-        floorId: FloorIds,
-        layer: FloorLayer,
-        dir: Dir = 'down'
-    ) {
-        if (this.moving) return false;
-        this.x = x;
-        this.y = y;
-        this.floorId = floorId;
-        this.moveDir = dir;
-        this.layer = layer;
-        return true;
-    }
-
-    protected async onMoveStart(_controller: IMoveController): Promise<void> {
-        const adapter = BlockMover.adapter;
-        if (adapter) {
-            const list = adapter.items;
-            const items = [...list].filter(v => {
-                if (v.layer !== this.layer) return false;
-                const ex = v.getExtends('floor-binder') as LayerFloorBinder;
-                if (!ex) return false;
-                return ex.getFloor() === core.status.floorId;
-            });
-            this.layerItems = items;
-        }
-
-        let blockNum: number = 0;
-        if (this.layer === 'event') {
-            blockNum = core.status.maps[this.floorId].map[this.y][this.x];
-        } else {
-            const array = core.maps._getBgFgMapArray(this.layer, this.floorId);
-            blockNum = array[this.y][this.x];
-        }
-        this.blockNum = blockNum;
-
-        Mota.r(() => {
-            const { Layer } = Mota.require('@user/client-modules');
-            const r = Layer.getMovingRenderable(blockNum, this.x, this.y);
-
-            if (r) {
-                this.renderable = r;
-                this.layerItems.forEach(v => {
-                    v.moving.add(r);
-                });
-            }
-        });
-
-        if (this.layer === 'event') {
-            core.removeBlock(this.x, this.y, this.floorId);
-        }
-    }
-
-    protected async onMoveEnd(_controller: IMoveController): Promise<void> {
-        if (this.renderable) {
-            this.layerItems.forEach(v => {
-                v.moving.delete(this.renderable!);
-            });
-        }
-
-        this.layerItems = [];
-        this.renderable = void 0;
-
-        if (this.layer === 'event') {
-            core.setBlock(this.blockNum as AllNumbers, this.x, this.y);
-        }
-    }
-
-    protected async onStepStart(
-        step: MoveStepDir,
-        _controller: IMoveController
-    ): Promise<BlockMoveCode> {
-        await this.moveAnimate(step);
-        const { x: dx, y: dy } = core.utils.scan2[this.moveDir];
-        this.x += dx;
-        this.y += dy;
-
-        return BlockMoveCode.Step;
-    }
-
-    protected async onStepEnd(
-        _step: MoveStepDir,
-        _code: BlockMoveCode,
-        _controller: IMoveController
-    ): Promise<void> {}
-
-    protected onSetMoveSpeed(
-        _speed: number,
-        _controller: IMoveController
-    ): void {}
-
-    private moveAnimate(_step: MoveStepDir) {
-        const layer = this.layerItems[0];
-        if (!layer) return;
-        if (!this.renderable) return;
-        const data = this.renderable;
-        const fx = this.x;
-        const fy = this.y;
-        const { x: dx, y: dy } = core.utils.scan2[this.moveDir];
-        const start = Date.now();
-        const replay = core.status.replay.speed ?? 1;
-        const time = replay === 24 ? 1 : this.moveSpeed / replay;
-
-        return new Promise<void>(res => {
-            layer.delegateTicker(
-                () => {
-                    const now = Date.now() - start;
-                    const progress = now / time;
-                    data.x = fx + dx * progress;
-                    data.y = fy + dy * progress;
-                    this.layerItems.forEach(v => {
-                        v.update(v);
-                    });
-                },
-                this.moveSpeed,
-                () => {
-                    data.x = fx + dx;
-                    data.y = fy + dy;
-                    data.zIndex = fy + dy;
-                    res();
-                }
-            );
-        });
-    }
-}
+// todo: refactor
 
 interface CanMoveStatus {
     /** 由CannotIn和CannotOut计算出的信息，不可移动时不会触发触发器 */
@@ -423,11 +246,6 @@ const enum HeroMoveCode {
 }
 
 export class HeroMover extends ObjectMoverBase {
-    /** 勇士渲染适配器，用于等待动画等操作 */
-    static adapter?: RenderAdapter<HeroRenderer>;
-    /** 视角适配器 */
-    static viewport?: RenderAdapter<FloorViewport>;
-
     /** 当前移动是否忽略地形 */
     private ignoreTerrain: boolean = false;
     /** 当前移动是否不计入录像 */
@@ -469,8 +287,6 @@ export class HeroMover extends ObjectMoverBase {
 
     protected async onMoveStart(controller: IMoveController): Promise<void> {
         this.beforeMoveSpeed = this.moveSpeed;
-        const viewport = HeroMover.viewport;
-        if (!viewport) return;
         if (!core.isReplaying() || core.status.replay.speed <= 12) {
             state.hero.startMove();
         }
@@ -483,21 +299,19 @@ export class HeroMover extends ObjectMoverBase {
             if (firstDir && firstDir !== 'backward' && firstDir !== 'forward') {
                 const data = this.checkCanMove(x, y, toDir(firstDir as Dir));
                 if (data.canMove && !data.noPass) {
-                    viewport.sync('startMove');
+                    // viewport.sync('startMove');
                 }
             }
         } else {
-            viewport.sync('startMove');
+            // viewport.sync('startMove');
         }
     }
 
     protected async onMoveEnd(controller: IMoveController): Promise<void> {
         this.moveSpeed = this.beforeMoveSpeed;
         this.onSetMoveSpeed(this.moveSpeed, controller);
-        const viewport = HeroMover.viewport;
-        if (!viewport) return;
         await state.hero.endMove();
-        viewport.sync('endMove');
+        // viewport.sync('endMove');
         core.clearContinueAutomaticRoute();
         core.stopAutomaticRoute();
     }
@@ -620,11 +434,11 @@ export class HeroMover extends ObjectMoverBase {
         _showDir: Dir,
         moveDir: Dir2
     ) {
-        const viewport = HeroMover.viewport;
-        if (!viewport) return;
+        // const viewport = HeroMover.viewport;
+        // if (!viewport) return;
         const replay = core.status.replay.speed;
         const speed = replay === 24 ? 1 : this.moveSpeed / replay;
-        viewport.all('moveTo', x, y, speed * 1.6);
+        // viewport.all('moveTo', x, y, speed * 1.6);
         const replaying = core.isReplaying();
         if (replaying) {
             if (core.status.replay.speed > 12) {
@@ -705,14 +519,4 @@ loading.once('coreInit', () => {
         const keyMover = new HeroKeyMover(gameKey, heroMover);
         heroMoveCollection.keyMover = keyMover;
     });
-});
-
-// Adapter初始化
-loading.once('coreInit', () => {
-    if (main.replayChecking || main.mode === 'editor') return;
-    const Adapter = Mota.require('@motajs/render').RenderAdapter;
-    const viewport = Adapter.get<FloorViewport>('viewport');
-    const layerAdapter = Adapter.get<Layer>('layer');
-    HeroMover.viewport = viewport;
-    BlockMover.adapter = layerAdapter;
 });

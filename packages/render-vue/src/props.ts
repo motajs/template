@@ -1,28 +1,23 @@
 import {
-    RenderFunction,
-    RenderItem,
-    RenderItemPosition,
     Transform,
     ElementAnchor,
     ElementLocator,
     ElementScale,
+    CanvasStyle,
+    Font,
+    RenderPosition,
+    CustomRenderFunction,
     CustomContainerRenderFn,
     CustomContainerPropagateFn,
-    CanvasStyle,
+    ILineProperty,
     BezierParams,
     CircleParams,
     EllipseParams,
-    ILineProperty,
     LineParams,
     QuadParams,
     RectRCircleParams,
-    RectREllipseParams,
-    Font
+    RectREllipseParams
 } from '@motajs/render';
-
-export interface CustomProps {
-    _item: (props: BaseProps) => RenderItem;
-}
 
 export interface BaseProps {
     /** 元素的横坐标 */
@@ -51,8 +46,8 @@ export interface BaseProps {
     hidden?: boolean;
     /** 元素的变换矩阵 */
     transform?: Transform;
-    /** 元素的定位模式，static 表示常规定位，absolute 定位模式下元素位置始终处于左上角 */
-    type?: RenderItemPosition;
+    /** 元素的定位模式 */
+    type?: RenderPosition;
     /** 是否启用缓存，用处较少，主要用于一些默认不启用缓存的元素的特殊优化 */
     cache?: boolean;
     /** 是否不启用缓存，优先级大于 cache，用处较少，主要用于一些特殊优化 */
@@ -83,9 +78,9 @@ export interface BaseProps {
     noevent?: boolean;
 }
 
-export interface SpriteProps extends BaseProps {
+export interface CustomProps extends BaseProps {
     /** 自定义的渲染函数 */
-    render?: RenderFunction;
+    render?: CustomRenderFunction;
 }
 
 export interface ContainerProps extends BaseProps {}

@@ -139,11 +139,11 @@ export const ConfirmBox = defineComponent<
         height.value = textHeight + pad.value * 4;
     };
 
-    const setYes = (_: string, width: number, height: number) => {
+    const setYes = (width: number, height: number) => {
         yesSize.value = [width, height];
     };
 
-    const setNo = (_: string, width: number, height: number) => {
+    const setNo = (width: number, height: number) => {
         noSize.value = [width, height];
     };
 
@@ -190,7 +190,7 @@ export const ConfirmBox = defineComponent<
                 zIndex={15}
                 onClick={() => emit('yes')}
                 onEnter={() => (selected.value = true)}
-                onSetText={setYes}
+                onResize={setYes}
             />
             <text
                 loc={noLoc.value}
@@ -201,7 +201,7 @@ export const ConfirmBox = defineComponent<
                 zIndex={15}
                 onClick={() => emit('no')}
                 onEnter={() => (selected.value = false)}
-                onSetText={setNo}
+                onResize={setNo}
             />
         </container>
     );
@@ -459,7 +459,7 @@ export const Choices = defineComponent<
         contentHeight.value = height;
     };
 
-    const updateTitleHeight = (_0: string, _1: number, height: number) => {
+    const updateTitleHeight = (_: number, height: number) => {
         titleHeight.value = height;
     };
 
@@ -519,7 +519,7 @@ export const Choices = defineComponent<
                 font={props.titleFont ?? new Font(void 0, 18)}
                 fillStyle={props.titleFill ?? 'gold'}
                 zIndex={5}
-                onSetText={updateTitleHeight}
+                onResize={updateTitleHeight}
             />
             <TextContent
                 {...attrs}
@@ -556,7 +556,7 @@ export const Choices = defineComponent<
                                 zIndex={5}
                                 fillStyle={props.selFill}
                                 onClick={() => emit('choose', v[0])}
-                                onSetText={(_, width, height) =>
+                                onResize={(width, height) =>
                                     updateChoiceSize(i, width, height)
                                 }
                                 onEnter={() => (selected.value = i)}

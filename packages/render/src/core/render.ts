@@ -1,6 +1,6 @@
 import { logger } from '@motajs/common';
 import { MotaOffscreenCanvas2D } from './canvas2d';
-import { Container } from './container';
+import { Container, CustomContainer } from './container';
 import {
     ActionType,
     IActionEvent,
@@ -9,41 +9,68 @@ import {
     MouseType,
     WheelType
 } from './event';
-import { IRenderTreeRoot, RenderItem } from './item';
-import { Transform } from './transform';
+import {
+    IMotaRendererConfig,
+    RenderItemTags,
+    IRenderItem,
+    IRenderItemInstanceMap,
+    IRenderItemParameterMap,
+    IRenderTreeRoot,
+    RenderItemConstructor,
+    ExcitableDelegation
+} from './types';
+import { IExcitable, IExcitation, RafExcitation } from '@motajs/animate';
+import { CustomRenderItem } from './custom';
+import { Comment, Image, Text } from './misc';
+import { Shader } from './shader';
+import {
+    BezierCurve,
+    Circle,
+    Ellipse,
+    Line,
+    Path,
+    QuadraticCurve,
+    Rect,
+    RectR
+} from './graphics';
 
 interface TouchInfo {
     /** 这次触摸在渲染系统的标识符 */
-    identifier: number;
+    readonly identifier: number;
     /** 浏览器的 clientX，用于判断这个触点有没有移动 */
-    clientX: number;
+    readonly clientX: number;
     /** 浏览器的 clientY，用于判断这个触点有没有移动 */
-    clientY: number;
+    readonly clientY: number;
     /** 是否覆盖在了当前元素上 */
-    hovered: boolean;
+    readonly hovered: boolean;
 }
 
 interface MouseInfo {
     /** 这个鼠标按键的标识符 */
-    identifier: number;
+    readonly identifier: number;
 }
 
-export interface MotaRendererConfig {
-    /** 要挂载到哪个画布上，可以填 css 选择器或画布元素本身 */
-    canvas: string | HTMLCanvasElement;
-    /** 画布的宽度，所有渲染操作会自行适配缩放 */
-    width: number;
-    /** 画布的高度，所有渲染操作会自行适配缩放 */
-    height: number;
-    /** 是否启用不透明度通道，默认启用 */
-    alpha?: boolean;
+interface DelegatedExcitable extends IExcitable<number> {
+    /** 委托内容的 id */
+    readonly id: number;
+    /** 委托内容的原始对象 */
+    readonly obj: ExcitableDelegation;
+    /** 委托 excitable 是否永久执行 */
+    readonly forever: boolean;
+    /** 委托 excitable 的开始时刻 */
+    readonly startTime: number;
+    /** 委托 excitable 的持续时间 */
+    readonly time: number;
+    /** 委托结束时执行的函数 */
+    readonly end?: () => void;
 }
 
-export class MotaRenderer extends Container implements IRenderTreeRoot {
-    static list: Map<string, MotaRenderer> = new Map();
-
+export class MotaRenderer
+    extends Container
+    implements IRenderTreeRoot, IExcitable<number>
+{
     /** 所有连接到此根元素的渲染元素的 id 到元素自身的映射 */
-    protected idMap: Map<string, RenderItem> = new Map();
+    protected readonly idMap: Map<string, IRenderItem> = new Map();
 
     /** 最后一次按下的鼠标按键，用于处理鼠标移动 */
     private lastMouse: MouseType = MouseType.None;
@@ -61,16 +88,40 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
     /** 根据捕获行为判断光标样式 */
     private targetCursor: string = 'auto';
     /** 当前鼠标覆盖的元素 */
-    private hoveredElement: Set<RenderItem> = new Set();
+    private hoveredElement: Set<IRenderItem> = new Set();
     /** 本次交互前鼠标覆盖的元素 */
-    private beforeHovered: Set<RenderItem> = new Set();
+    private beforeHovered: Set<IRenderItem> = new Set();
 
-    target!: MotaOffscreenCanvas2D;
-
+    /** 渲染至的目标画布 */
+    readonly target!: MotaOffscreenCanvas2D;
+    /** 当前元素是根元素 */
     readonly isRoot = true;
 
-    constructor(config: MotaRendererConfig) {
-        super('static', false);
+    /** 当前元素的激励源 */
+    readonly excitation!: IExcitation<number>;
+
+    /** 下一帧之前需要执行的内容 */
+    private readonly beforeFrame: Set<() => void> = new Set();
+    /** 下一帧之后需要执行的内容 */
+    private readonly afterFrame: Set<() => void> = new Set();
+    /** 委托 excitables 的计数器 */
+    private delegationCounter: number = 0;
+    /** 委托执行的 excitables */
+    private readonly excitables: Map<number, DelegatedExcitable> = new Map();
+    /** 委托执行的 excitables 到其 id 的映射 */
+    private readonly excitablesMap: Map<
+        ExcitableDelegation,
+        DelegatedExcitable
+    > = new Map();
+    /** 执行完毕需要删除的 excitables */
+    private readonly toDeleteExcitables: Set<number> = new Set();
+
+    /** 标签注册信息 */
+    private readonly tagRegistry: Map<string, RenderItemConstructor> =
+        new Map();
+
+    constructor(config: IMotaRendererConfig) {
+        super(false);
 
         const canvas = this.getMountCanvas(config.canvas);
         if (!canvas) {
@@ -80,23 +131,131 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
         this.target = new MotaOffscreenCanvas2D(config.alpha ?? true, canvas);
         this.size(config.width, config.height);
         this.target.setAntiAliasing(false);
+        if (config.excitaion) {
+            this.excitation = config.excitaion;
+        } else {
+            this.excitation = new RafExcitation();
+        }
 
         this.setAnchor(0.5, 0.5);
-
-        MotaRenderer.list.set(canvas.id, this);
-
-        const update = () => {
-            this.requestRenderFrame(() => {
-                this.refresh();
-                update();
-            });
-        };
-
-        update();
         this.listen();
-
         this.setScale(1);
+        this.excited = this.excited.bind(this);
+        this.excitation.add(this);
+        this.registerIntrinsicTags();
     }
+
+    //#region 渲染相关
+
+    excited(payload: number): void {
+        this.beforeFrame.forEach(v => v());
+        this.beforeFrame.clear();
+        this.refresh();
+        this.afterFrame.forEach(v => v());
+        this.afterFrame.clear();
+
+        this.excitables.forEach((ex, key) => {
+            if (!ex.forever && payload - ex.startTime >= ex.time) {
+                this.toDeleteExcitables.add(key);
+                ex.end?.();
+            } else {
+                ex.excited(payload);
+            }
+        });
+        this.toDeleteExcitables.forEach(key => this.excitables.delete(key));
+    }
+
+    private getMountCanvas(
+        canvas: string | HTMLCanvasElement
+    ): HTMLCanvasElement | undefined {
+        if (typeof canvas === 'string') {
+            return document.querySelector(canvas) as HTMLCanvasElement;
+        } else {
+            return canvas;
+        }
+    }
+
+    update(_item: IRenderItem = this) {
+        this.cacheDirty = true;
+    }
+
+    protected refresh(): void {
+        if (!this.cacheDirty) return;
+        this.target.clear();
+        this.renderContent(this.target);
+    }
+
+    getCanvas(): HTMLCanvasElement {
+        return this.target.canvas;
+    }
+
+    //#endregion
+
+    //#region 标签元素
+
+    createElement<K extends RenderItemTags>(
+        tag: K,
+        ...params: IRenderItemParameterMap[K]
+    ): IRenderItemInstanceMap[K];
+    createElement<P extends any[], I extends IRenderItem>(
+        ele: new (...params: P) => I,
+        ...params: P
+    ): I;
+    createElement(
+        ele: RenderItemTags | RenderItemConstructor,
+        ...params: any[]
+    ): IRenderItem {
+        if (typeof ele === 'string') {
+            const Cons = this.tagRegistry.get(ele);
+            if (!Cons) {
+                logger.error(15, ele);
+                return new Container(false);
+            } else {
+                return new Cons(...params);
+            }
+        } else {
+            return new ele(...params);
+        }
+    }
+
+    registerElement(tag: string, cons: RenderItemConstructor): void {
+        if (this.tagRegistry.has(tag)) {
+            logger.error(14);
+            return;
+        } else {
+            this.tagRegistry.set(tag, cons);
+        }
+    }
+
+    hasTag(tag: string): boolean {
+        return this.tagRegistry.has(tag);
+    }
+
+    /**
+     * 注册内置渲染标签
+     */
+    private registerIntrinsicTags() {
+        this.registerElement('container', Container);
+        this.registerElement('custom', CustomRenderItem);
+        this.registerElement('text', Text);
+        this.registerElement('image', Image);
+        this.registerElement('shader', Shader);
+        this.registerElement('comment', Comment);
+        this.registerElement('template', Container);
+        this.registerElement('custom-container', CustomContainer);
+        this.registerElement('g-rect', Rect);
+        this.registerElement('g-circle', Circle);
+        this.registerElement('g-ellipse', Ellipse);
+        this.registerElement('g-line', Line);
+        this.registerElement('g-bezier', BezierCurve);
+        this.registerElement('g-quad', QuadraticCurve);
+        this.registerElement('g-path', Path);
+        this.registerElement('g-rectr', RectR);
+    }
+
+    //#endregion
+
+    //#region 尺寸缩放
 
     /**
      * 设置这个渲染器的缩放比
@@ -104,6 +263,10 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
      */
     setScale(scale: number) {
         this.onResize(scale);
+    }
+
+    getScale() {
+        return this.target.scale;
     }
 
     onResize(scale: number): void {
@@ -115,23 +278,20 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
         super.onResize(scale);
     }
 
-    private getMountCanvas(canvas: string | HTMLCanvasElement) {
-        if (typeof canvas === 'string') {
-            return document.querySelector(canvas) as HTMLCanvasElement;
-        } else {
-            return canvas;
-        }
-    }
-
     size(width: number, height: number): void {
         super.size(width, height);
         this.target.size(width, height);
         this.transform.setTranslate(width / 2, height / 2);
     }
 
+    //#endregion
+
+    //#region 事件处理
+
     private listen() {
         // 画布监听
         const canvas = this.target.canvas;
+
         canvas.addEventListener('mousedown', ev => {
             const mouse = this.getMouseType(ev);
             this.lastMouse = mouse;
@@ -178,47 +338,6 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
             this.hoveredElement.clear();
             this.beforeHovered.clear();
         });
-        document.addEventListener('touchstart', ev => {
-            this.createTouchAction(ev, ActionType.Down).forEach(v => {
-                this.captureEvent(ActionType.Down, v);
-            });
-        });
-        document.addEventListener('touchend', ev => {
-            this.createTouchAction(ev, ActionType.Up).forEach(v => {
-                this.captureEvent(ActionType.Up, v);
-                this.captureEvent(ActionType.Click, v);
-            });
-            [...ev.touches].forEach(v => {
-                this.touchInfo.delete(v.identifier);
-            });
-        });
-        document.addEventListener('touchcancel', ev => {
-            this.createTouchAction(ev, ActionType.Up).forEach(v => {
-                this.captureEvent(ActionType.Up, v);
-            });
-            [...ev.touches].forEach(v => {
-                this.touchInfo.delete(v.identifier);
-            });
-        });
-        document.addEventListener('touchmove', ev => {
-            this.createTouchAction(ev, ActionType.Move).forEach(v => {
-                const list = this.touchInfo.values();
-                if (!list.some(vv => v.identifier === vv.identifier)) {
-                    return;
-                }
-                const temp = this.beforeHovered;
-                temp.clear();
-                this.beforeHovered = this.hoveredElement;
-                this.hoveredElement = temp;
-                this.captureEvent(ActionType.Move, v);
-                this.checkTouchEnterLeave(
-                    ev,
-                    v,
-                    this.beforeHovered,
-                    this.hoveredElement
-                );
-            });
-        });
         canvas.addEventListener('wheel', ev => {
             this.captureEvent(
                 ActionType.Wheel,
@@ -240,6 +359,70 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
         document.addEventListener('click', clear, { signal });
         document.addEventListener('mouseenter', clear, { signal });
         document.addEventListener('mouseleave', clear, { signal });
+        window.addEventListener(
+            'resize',
+            () => {
+                this.requestAfterFrame(() => this.refreshAllChildren());
+            },
+            { signal }
+        );
+        document.addEventListener(
+            'touchstart',
+            ev => {
+                this.createTouchAction(ev, ActionType.Down).forEach(v => {
+                    this.captureEvent(ActionType.Down, v);
+                });
+            },
+            { signal }
+        );
+        document.addEventListener(
+            'touchend',
+            ev => {
+                this.createTouchAction(ev, ActionType.Up).forEach(v => {
+                    this.captureEvent(ActionType.Up, v);
+                    this.captureEvent(ActionType.Click, v);
+                });
+                [...ev.touches].forEach(v => {
+                    this.touchInfo.delete(v.identifier);
+                });
+            },
+            { signal }
+        );
+        document.addEventListener(
+            'touchcancel',
+            ev => {
+                this.createTouchAction(ev, ActionType.Up).forEach(v => {
+                    this.captureEvent(ActionType.Up, v);
+                });
+                [...ev.touches].forEach(v => {
+                    this.touchInfo.delete(v.identifier);
+                });
+            },
+            { signal }
+        );
+        document.addEventListener(
+            'touchmove',
+            ev => {
+                this.createTouchAction(ev, ActionType.Move).forEach(v => {
+                    const list = this.touchInfo.values();
+                    if (!list.some(vv => v.identifier === vv.identifier)) {
+                        return;
+                    }
+                    const temp = this.beforeHovered;
+                    temp.clear();
+                    this.beforeHovered = this.hoveredElement;
+                    this.hoveredElement = temp;
+                    this.captureEvent(ActionType.Move, v);
+                    this.checkTouchEnterLeave(
+                        ev,
+                        v,
+                        this.beforeHovered,
+                        this.hoveredElement
+                    );
+                });
+            },
+            { signal }
+        );
     }
 
     private isTouchInCanvas(clientX: number, clientY: number) {
@@ -312,7 +495,7 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
     private createMouseActionBase(
         event: MouseEvent,
         id: number,
-        target: RenderItem = this,
+        target: IRenderItem = this,
         mouse: MouseType = this.getMouseType(event)
     ): IActionEventBase {
         return {
@@ -331,7 +514,7 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
     private createTouchActionBase(
         event: TouchEvent,
         id: number,
-        target: RenderItem
+        target: IRenderItem
     ): IActionEventBase {
         return {
             identifier: id,
@@ -488,8 +671,8 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
     private checkMouseEnterLeave(
         event: MouseEvent,
         ev: IActionEvent,
-        before: Set<RenderItem>,
-        now: Set<RenderItem>
+        before: Set<IRenderItem>,
+        now: Set<IRenderItem>
     ) {
         // 先 leave，再 enter
         before.forEach(v => {
@@ -513,8 +696,8 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
     private checkTouchEnterLeave(
         event: TouchEvent,
         ev: IActionEvent,
-        before: Set<RenderItem>,
-        now: Set<RenderItem>
+        before: Set<IRenderItem>,
+        now: Set<IRenderItem>
     ) {
         // 先 leave，再 enter
         before.forEach(v => {
@@ -535,22 +718,16 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
         });
     }
 
-    update(_item: RenderItem = this) {
-        this.cacheDirty = true;
-    }
+    //#endregion
 
-    protected refresh(): void {
-        if (!this.cacheDirty) return;
-        this.target.clear();
-        this.renderContent(this.target, Transform.identity);
-    }
+    //#region 元素处理
 
     /**
      * 根据渲染元素的id获取一个渲染元素
      * @param id 要获取的渲染元素id
      * @returns
      */
-    getElementById(id: string): RenderItem | null {
+    getElementById(id: string): IRenderItem | null {
         if (id.length === 0) return null;
         const item = this.idMap.get(id);
         if (item) return item;
@@ -563,7 +740,7 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
         }
     }
 
-    private searchElement(ele: RenderItem, id: string): RenderItem | null {
+    private searchElement(ele: IRenderItem, id: string): IRenderItem | null {
         for (const child of ele.children) {
             if (child.id === id) return child;
             else {
@@ -574,7 +751,7 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
         return null;
     }
 
-    connect(item: RenderItem): void {
+    connect(item: IRenderItem): void {
         if (item.id.length === 0) return;
         const existed = this.idMap.get(item.id);
         if (existed) {
@@ -585,11 +762,11 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
         }
     }
 
-    disconnect(item: RenderItem): void {
+    disconnect(item: IRenderItem): void {
         this.idMap.delete(item.id);
     }
 
-    modifyId(item: RenderItem, previous: string, current: string): void {
+    modifyId(item: IRenderItem, previous: string, current: string): void {
         this.idMap.delete(previous);
         if (current.length !== 0) {
             if (this.idMap.has(item.id)) {
@@ -600,24 +777,93 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
         }
     }
 
-    getCanvas(): HTMLCanvasElement {
-        return this.target.canvas;
-    }
-
-    hoverElement(element: RenderItem): void {
+    hoverElement(element: IRenderItem): void {
         if (element.cursor !== 'inherit') {
             this.targetCursor = element.cursor;
         }
         this.hoveredElement.add(element);
     }
 
+    //#endregion
+
+    //#region 渲染绑定
+
+    requestBeforeFrame(fn: () => void): void {
+        this.beforeFrame.add(fn);
+    }
+
+    requestAfterFrame(fn: () => void): void {
+        this.afterFrame.add(fn);
+    }
+
+    delegateExcitable(
+        fn: ExcitableDelegation,
+        time?: number,
+        end?: () => void
+    ): number {
+        const index = this.delegationCounter++;
+        const info: DelegatedExcitable = {
+            id: index,
+            obj: fn,
+            excited: typeof fn === 'function' ? fn : fn.excited,
+            startTime: this.excitation.payload(),
+            time: time ?? 0,
+            forever: time === void 0,
+            end
+        };
+        this.excitables.set(index, info);
+        this.excitablesMap.set(fn, info);
+        return index;
+    }
+
+    removeExcitable(id: number, callEnd: boolean = true): boolean {
+        const info = this.excitables.get(id);
+        if (!info) return false;
+        if (callEnd) {
+            info.end?.();
+        }
+        this.excitables.delete(id);
+        this.excitablesMap.delete(info.obj);
+        return true;
+    }
+
+    removeExcitableObject(
+        excitable: ExcitableDelegation,
+        callEnd: boolean = true
+    ): boolean {
+        const info = this.excitablesMap.get(excitable);
+        if (!info) return false;
+        if (callEnd) {
+            info.end?.();
+        }
+        this.excitables.delete(info.id);
+        this.excitablesMap.delete(info.obj);
+        return true;
+    }
+
+    hasExcitable(id: number): boolean {
+        return this.excitables.has(id);
+    }
+
+    //#endregion
+
+    //#region 元素销毁
+
     destroy() {
         super.destroy();
-        MotaRenderer.list.delete(this.id);
+        this.excitation.destroy();
         this.abort?.abort();
     }
 
-    private toTagString(item: RenderItem, space: number, deep: number): string {
+    //#endregion
+
+    //#region 调试功能
+
+    private toTagString(
+        item: IRenderItem,
+        space: number,
+        deep: number
+    ): string {
         if (item.isComment) return '';
         const name = item.constructor.name;
         if (item.children.size === 0) {
@@ -647,18 +893,5 @@ export class MotaRenderer extends Container implements IRenderTreeRoot {
         return this.toTagString(this, space, 0);
     }
 
-    static get(id: string) {
-        return this.list.get(id);
-    }
+    //#endregion
 }
-
-window.addEventListener('resize', () => {
-    MotaRenderer.list.forEach(v =>
-        v.requestAfterFrame(() => v.refreshAllChildren())
-    );
-});
-
-// @ts-expect-error debug
-window.logTagTree = () => {
-    console.log(MotaRenderer.get('render-main')?.toTagTree());
-};

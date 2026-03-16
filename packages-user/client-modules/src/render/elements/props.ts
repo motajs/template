@@ -1,29 +1,7 @@
 import { BaseProps, TagDefine } from '@motajs/render-vue';
-import { ERenderItemEvent, Transform, CanvasStyle } from '@motajs/render';
-import {
-    ILayerGroupRenderExtends,
-    FloorLayer,
-    ILayerRenderExtends,
-    ELayerEvent,
-    ELayerGroupEvent
-} from './layer';
-import { EAnimateEvent } from './animate';
-import { EIconEvent, EWinskinEvent } from './misc';
-import { IEnemyCollection } from '@motajs/types';
+import { ERenderItemEvent, SizedCanvasImageSource } from '@motajs/render';
 import { ILayerState } from '@user/data-state';
-import { IMapExtensionManager, IMapRenderer, IOnMapTextRenderer } from '../map';
-
-export interface AnimateProps extends BaseProps {}
-
-export interface DamageProps extends BaseProps {
-    mapWidth?: number;
-    mapHeight?: number;
-    cellSize?: number;
-    enemy?: IEnemyCollection;
-    font?: string;
-    strokeStyle?: CanvasStyle;
-    strokeWidth?: number;
-}
+import { IMapExtensionManager, IMapRenderer } from '../map';
 
 export interface IconProps extends BaseProps {
     /** 图标 id 或数字 */
@@ -32,50 +10,30 @@ export interface IconProps extends BaseProps {
     frame?: number;
     /** 是否开启动画，开启后 frame 参数无效 */
     animate?: boolean;
+    /** 动画速度 */
+    speed?: number;
 }
 
 export interface WinskinProps extends BaseProps {
-    /** winskin 的图片 id */
-    image: ImageIds;
+    /** 直接设置 winskin 图片 */
+    image?: SizedCanvasImageSource;
+    /** 根据图片名称设置 winskin 图片 */
+    imageName?: string;
     /** 边框大小 */
     borderSize?: number;
-}
-
-export interface LayerGroupProps extends BaseProps {
-    cellSize?: number;
-    blockSize?: number;
-    floorId?: FloorIds;
-    bindThisFloor?: boolean;
-    camera?: Transform;
-    ex?: readonly ILayerGroupRenderExtends[];
-    layers?: readonly FloorLayer[];
-}
-
-export interface LayerProps extends BaseProps {
-    layer?: FloorLayer;
-    mapWidth?: number;
-    mapHeight?: number;
-    cellSize?: number;
-    background?: AllNumbers;
-    floorImage?: FloorAnimate[];
-    ex?: readonly ILayerRenderExtends[];
 }
 
 export interface MapRenderProps extends BaseProps {
     layerState: ILayerState;
     renderer: IMapRenderer;
     extension: IMapExtensionManager;
-    textExtension?: IOnMapTextRenderer | null;
 }
 
 declare module 'vue/jsx-runtime' {
     namespace JSX {
         export interface IntrinsicElements {
-            layer: TagDefine<LayerProps, ELayerEvent>;
-            'layer-group': TagDefine<LayerGroupProps, ELayerGroupEvent>;
-            animation: TagDefine<AnimateProps, EAnimateEvent>;
-            icon: TagDefine<IconProps, EIconEvent>;
-            winskin: TagDefine<WinskinProps, EWinskinEvent>;
+            icon: TagDefine<IconProps, ERenderItemEvent>;
+            winskin: TagDefine<WinskinProps, ERenderItemEvent>;
             'map-render': TagDefine<MapRenderProps, ERenderItemEvent>;
         }
     }

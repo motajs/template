@@ -1,6 +1,6 @@
 import { MotaOffscreenCanvas2D } from './canvas2d';
-import { EGL2Event, GL2, GL2Program, IGL2ProgramPrefix } from './gl2';
-import { RenderItemPosition } from './item';
+import { GL2, GL2Program } from './gl2';
+import { IGL2ProgramPrefix, IWebGL2RenderItem } from './types';
 
 const SHADER_PREFIX: IGL2ProgramPrefix = {
     VERTEX: /* glsl */ `#version 300 es
@@ -34,15 +34,7 @@ void main() {
 }
 `;
 
-export interface EShaderEvent extends EGL2Event {}
-
-export class Shader<E extends EShaderEvent = EShaderEvent> extends GL2<
-    EShaderEvent | E
-> {
-    constructor(type: RenderItemPosition = 'static') {
-        super(type);
-    }
-
+export class Shader extends GL2 {
     protected drawScene(
         canvas: MotaOffscreenCanvas2D,
         gl: WebGL2RenderingContext
@@ -57,7 +49,7 @@ export class Shader<E extends EShaderEvent = EShaderEvent> extends GL2<
 export class ShaderProgram extends GL2Program {
     protected readonly prefix: IGL2ProgramPrefix = SHADER_PREFIX;
 
-    constructor(gl2: GL2, vs?: string, fs?: string) {
+    constructor(gl2: IWebGL2RenderItem, vs?: string, fs?: string) {
         super(gl2, vs, fs);
         if (!vs) this.vs(DEFAULT_VS);
         if (!fs) this.fs(DEFAULT_FS);

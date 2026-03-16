@@ -27,12 +27,13 @@ import {
     transitionedColor,
     useKey
 } from '../use';
-import { hyper, linear, sleep } from 'mutate-animate';
 import { ExitFullscreen, Fullscreen, SoundVolume } from '../components';
 import { mainSetting, triggerFullscreen } from '@motajs/legacy-ui';
 import { saveLoad } from './save';
 import { MainSceneUI } from './main';
 import { adjustCover } from '../utils';
+import { cosh, CurveMode, linear } from '@motajs/animate';
+import { sleep } from '@motajs/common';
 
 const enum TitleButton {
     StartGame,
@@ -106,8 +107,12 @@ export const GameTitle = defineComponent<GameTitleProps>(props => {
             color: v.color,
             name: v.name,
             hard: '',
-            colorTrans: transitionedColor('#fff', 400, hyper('sin', 'out'))!,
-            scale: transitioned(1, 400, hyper('sin', 'out'))!
+            colorTrans: transitionedColor(
+                '#fff',
+                400,
+                cosh(2, CurveMode.EaseOut)
+            )!,
+            scale: transitioned(1, 400, cosh(2, CurveMode.EaseOut))!
         };
     });
 
@@ -118,8 +123,12 @@ export const GameTitle = defineComponent<GameTitleProps>(props => {
             color: core.arrayToRGBA(v.color!),
             name: v.title,
             hard: v.name,
-            colorTrans: transitionedColor('#fff', 400, hyper('sin', 'out'))!,
-            scale: transitioned(1, 400, hyper('sin', 'out'))!
+            colorTrans: transitionedColor(
+                '#fff',
+                400,
+                cosh(2, CurveMode.EaseOut)
+            )!,
+            scale: transitioned(1, 400, cosh(2, CurveMode.EaseOut))!
         };
     });
     // 返回按钮
@@ -128,11 +137,15 @@ export const GameTitle = defineComponent<GameTitleProps>(props => {
         color: '#aaa',
         name: '返回',
         hard: '',
-        colorTrans: transitionedColor('#fff', 400, hyper('sin', 'out'))!
+        colorTrans: transitionedColor('#fff', 400, cosh(2, CurveMode.EaseOut))!
     });
 
     /** 声音设置按钮的颜色 */
-    const soundColor = transitionedColor('#ddd', 400, hyper('sin', 'out'))!;
+    const soundColor = transitionedColor(
+        '#ddd',
+        400,
+        cosh(2, CurveMode.EaseOut)
+    )!;
 
     /** 开始界面按钮的不透明度，选择难度界面的不透明度使用 `1-buttonsAlpha` 计算 */
     const buttonsAlpha = transitioned(1, 300, linear())!;
@@ -152,7 +165,11 @@ export const GameTitle = defineComponent<GameTitleProps>(props => {
     /** 选择难度界面按钮的高度 */
     const hardHeight = (hard.length - 1) * 40 + 60;
     /** 按钮的背景框高度 */
-    const rectHeight = transitioned(buttonHeight, 600, hyper('sin', 'in-out'))!;
+    const rectHeight = transitioned(
+        buttonHeight,
+        600,
+        cosh(2, CurveMode.EaseOut)
+    )!;
 
     //#region 按钮功能
 

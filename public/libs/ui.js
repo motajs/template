@@ -2375,7 +2375,7 @@ ui.prototype._drawQuickShop = function () {
         };
     });
     choices.push('返回游戏');
-    this.drawChoices(null, choices, void 0, true);
+    this.drawChoices2(null, choices, void 0, true);
 };
 
 ui.prototype._drawSyncSave = function () {

@@ -1,103 +1,114 @@
 import { logger } from '@motajs/common';
 import {
-    ERenderItemEvent,
     RenderItem,
-    ETextEvent,
     Text,
-    Comment
+    Comment,
+    IRenderItem,
+    IRenderTreeRoot
 } from '@motajs/render';
 import {
     ComponentInternalInstance,
+    CreateAppFunction,
     createRenderer,
     ElementNamespace,
+    RootRenderFunction,
     VNodeProps
 } from 'vue';
-import { tagMap } from './map';
+import { IRenderTagManager } from './types';
+import { RenderTagManager } from './tag';
 
-export const { createApp, render } = createRenderer<RenderItem, RenderItem>({
-    patchProp: function (
-        el: RenderItem,
-        key: string,
-        prevValue: any,
-        nextValue: any,
-        namespace?: ElementNamespace,
-        parentComponent?: ComponentInternalInstance | null
-    ): void {
-        el.patchProp(key, prevValue, nextValue, namespace, parentComponent);
-    },
+export interface RendererData {
+    render: RootRenderFunction<IRenderItem>;
+    createApp: CreateAppFunction<IRenderItem>;
+    tagManager: IRenderTagManager;
+}
 
-    insert: function (
-        el: RenderItem<ERenderItemEvent>,
-        parent: RenderItem,
-        _anchor?: RenderItem<ERenderItemEvent> | null
-    ): void {
-        parent.appendChild(el);
-    },
+export function createRendererFor(renderer: IRenderTreeRoot) {
+    const tagManager = new RenderTagManager(renderer);
 
-    remove: function (el: RenderItem<ERenderItemEvent>): void {
-        el.destroy();
-    },
+    const { createApp, render } = createRenderer<IRenderItem, IRenderItem>({
+        patchProp: function (
+            el: RenderItem,
+            key: string,
+            prevValue: any,
+            nextValue: any,
+            namespace?: ElementNamespace,
+            parentComponent?: ComponentInternalInstance | null
+        ): void {
+            el.patchProp(key, prevValue, nextValue, namespace, parentComponent);
+        },
 
-    createElement: function (
-        type: string,
-        namespace?: ElementNamespace,
-        isCustomizedBuiltIn?: string,
-        vnodeProps?: (VNodeProps & { [key: string]: any }) | null
-    ): RenderItem {
-        const onCreate = tagMap.get(type);
-        if (!onCreate) {
-            logger.error(20, type);
-            throw new Error(`Cannot create element '${type}'`);
+        insert: function (
+            el: IRenderItem,
+            parent: RenderItem,
+            _anchor?: IRenderItem | null
+        ): void {
+            parent.appendChild(el);
+        },
+
+        remove: function (el: IRenderItem): void {
+            el.destroy();
+        },
+
+        createElement: function (
+            type: string,
+            _namespace?: ElementNamespace,
+            _isCustomizedBuiltIn?: string,
+            vnodeProps?: (VNodeProps & { [key: string]: any }) | null
+        ): IRenderItem {
+            const tag = tagManager.getTag(type);
+            if (!tag) {
+                logger.error(20, type);
+                throw new Error(`Cannot create element '${type}'`);
+            }
+            return tag.onCreate(vnodeProps);
+        },
+
+        createText: function (text: string): IRenderItem {
+            if (/^\s*$/.test(text)) {
+                return new Comment();
+            } else {
+                logger.warn(38);
+            }
+            return new Text(text);
+        },
+
+        createComment: function (text: string): IRenderItem {
+            return renderer.createElement('comment', text);
+        },
+
+        setText: function (node: IRenderItem, text: string): void {
+            if (node instanceof Text) {
+                node.setText(text);
+            } else {
+                logger.warn(39);
+            }
+        },
+
+        setElementText: function (node: IRenderItem, text: string): void {
+            if (node instanceof Text) {
+                node.setText(text);
+            } else {
+                logger.warn(39);
+            }
+        },
+
+        parentNode: function (node: IRenderItem): IRenderItem | null {
+            return node.parent ?? null;
+        },
+
+        nextSibling: function (node: IRenderItem): IRenderItem | null {
+            if (!node) return null;
+            if (!node.parent) {
+                return null;
+            } else {
+                const parent = node.parent;
+                const list = [...parent.children];
+                const index = list.indexOf(node);
+                return list[index] ?? null;
+            }
         }
-        return onCreate(namespace, isCustomizedBuiltIn, vnodeProps);
-    },
+    });
 
-    createText: function (text: string): RenderItem<ETextEvent> {
-        if (/^\s*$/.test(text)) {
-            return new Comment();
-        } else {
-            logger.warn(38);
-        }
-        return new Text(text);
-    },
-
-    createComment: function (text: string): RenderItem<ERenderItemEvent> {
-        return new Comment(text);
-    },
-
-    setText: function (node: RenderItem<ERenderItemEvent>, text: string): void {
-        if (node instanceof Text) {
-            node.setText(text);
-        } else {
-            logger.warn(39);
-        }
-    },
-
-    setElementText: function (node: RenderItem, text: string): void {
-        if (node instanceof Text) {
-            node.setText(text);
-        } else {
-            logger.warn(39);
-        }
-    },
-
-    parentNode: function (
-        node: RenderItem<ERenderItemEvent>
-    ): RenderItem | null {
-        return node.parent ?? null;
-    },
-
-    nextSibling: function (
-        node: RenderItem<ERenderItemEvent>
-    ): RenderItem<ERenderItemEvent> | null {
-        if (!node) return null;
-        if (!node.parent) {
-            return null;
-        } else {
-            const parent = node.parent;
-            const list = [...parent.children];
-            const index = list.indexOf(node);
-            return list[index] ?? null;
-        }
-    }
-});
+    return { tagManager, createApp, render };
+}

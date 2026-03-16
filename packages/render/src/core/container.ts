@@ -1,44 +1,29 @@
 import { MotaOffscreenCanvas2D } from './canvas2d';
 import { ActionType, EventProgress, ActionEventMap } from './event';
-import {
-    ERenderItemEvent,
-    IRenderChildable,
-    RenderItem,
-    RenderItemPosition
-} from './item';
+import { RenderItem } from './item';
 import { Transform } from './transform';
+import {
+    CustomContainerPropagateFn,
+    CustomContainerRenderFn,
+    IRenderItem
+} from './types';
 
-export interface EContainerEvent extends ERenderItemEvent {}
-
-export class Container<E extends EContainerEvent = EContainerEvent>
-    extends RenderItem<E | EContainerEvent>
-    implements IRenderChildable
-{
+export class Container extends RenderItem {
     sortedChildren: RenderItem[] = [];
 
     private needSort: boolean = false;
 
-    /**
-     * 创建一个容器，容器中可以包含其他渲染对象
-     * @param type 渲染模式，absolute表示绝对位置，static表示跟随摄像机移动
-     * @param cache 是否启用缓存机制
-     */
-    constructor(
-        type: RenderItemPosition = 'static',
-        cache: boolean = true,
-        fall: boolean = false
-    ) {
-        super(type, cache, fall);
-        this.type = type;
-    }
-
     protected render(
         canvas: MotaOffscreenCanvas2D,
-        transform: Transform
+        _transform: Transform
     ): void {
+        if (this.needSort) {
+            this.sortChildren();
+            this.needSort = false;
+        }
         this.sortedChildren.forEach(v => {
             if (v.hidden) return;
-            v.renderContent(canvas, transform);
+            v.renderContent(canvas);
         });
     }
 
@@ -48,28 +33,22 @@ export class Container<E extends EContainerEvent = EContainerEvent>
     }
 
     requestSort() {
-        if (!this.needSort) {
-            this.needSort = true;
-            this.requestBeforeFrame(() => {
-                this.needSort = false;
-                this.sortChildren();
-            });
-        }
+        this.needSort = true;
     }
 
     /**
      * 添加子元素到这个容器上，然后在下一个tick执行更新
      * @param children 要添加的子元素
      */
-    appendChild(...children: RenderItem<any>[]) {
+    appendChild(...children: IRenderItem[]) {
         children.forEach(v => {
             v.appendTo(this);
         });
         this.requestSort();
-        this.update(this);
+        this.update();
     }
 
-    removeChild(...child: RenderItem<any>[]): void {
+    removeChild(...child: IRenderItem[]): void {
         let changed = false;
         child.forEach(v => {
             if (v.parent !== this) return;
@@ -79,7 +58,7 @@ export class Container<E extends EContainerEvent = EContainerEvent>
             }
         });
         if (changed) this.requestSort();
-        this.update(this);
+        this.update();
     }
 
     appendTo(parent: RenderItem): void {
@@ -96,7 +75,7 @@ export class Container<E extends EContainerEvent = EContainerEvent>
      * 遍历这个元素中的每个子元素，并执行传入的函数
      * @param fn 对每个元素执行的函数
      */
-    forEachChild(fn: (ele: RenderItem) => void) {
+    protected forEachChild(fn: (ele: RenderItem) => void) {
         const stack: RenderItem[] = [this];
         while (stack.length > 0) {
             const ele = stack.pop()!;
@@ -109,7 +88,6 @@ export class Container<E extends EContainerEvent = EContainerEvent>
         this.sortedChildren = [...this.children]
             .filter(v => !v.isComment)
             .sort((a, b) => a.zIndex - b.zIndex);
-        this.update();
     }
 
     protected propagateEvent<T extends ActionType>(
@@ -145,27 +123,7 @@ export class Container<E extends EContainerEvent = EContainerEvent>
     }
 }
 
-export type CustomContainerRenderFn = (
-    canvas: MotaOffscreenCanvas2D,
-    children: RenderItem[],
-    transform: Transform
-) => void;
-
-export type CustomContainerPropagateOrigin = <T extends ActionType>(
-    type: T,
-    progress: EventProgress,
-    event: ActionEventMap[T]
-) => void;
-
-export type CustomContainerPropagateFn = <T extends ActionType>(
-    type: T,
-    progress: EventProgress,
-    event: ActionEventMap[T],
-    container: ContainerCustom,
-    origin: CustomContainerPropagateOrigin
-) => void;
-
-export class ContainerCustom extends Container {
+export class CustomContainer extends Container {
     private renderFn?: CustomContainerRenderFn;
     private propagateFn?: CustomContainerPropagateFn;
 

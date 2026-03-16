@@ -1,9 +1,13 @@
-import { ElementLocator, MotaOffscreenCanvas2D, Sprite } from '@motajs/render';
-import { SpriteProps } from '@motajs/render-vue';
+import {
+    ElementLocator,
+    MotaOffscreenCanvas2D,
+    CustomRenderItem
+} from '@motajs/render';
+import { CustomProps } from '@motajs/render-vue';
 import { defineComponent, ref, watch } from 'vue';
 import { SetupComponentOptions } from '@motajs/system';
 
-export interface ThumbnailProps extends SpriteProps {
+export interface ThumbnailProps extends CustomProps {
     /** 缩略图的位置 */
     loc: ElementLocator;
     /** 楼层 ID */
@@ -37,7 +41,7 @@ const thumbnailProps = {
 } satisfies SetupComponentOptions<ThumbnailProps>;
 
 export const Thumbnail = defineComponent<ThumbnailProps>(props => {
-    const spriteRef = ref<Sprite>();
+    const spriteRef = ref<CustomRenderItem>();
 
     const update = () => {
         spriteRef.value?.update();
@@ -75,6 +79,6 @@ export const Thumbnail = defineComponent<ThumbnailProps>(props => {
     watch(props, update);
 
     return () => (
-        <sprite noanti ref={spriteRef} loc={props.loc} render={drawThumbnail} />
+        <custom noanti ref={spriteRef} loc={props.loc} render={drawThumbnail} />
     );
 }, thumbnailProps);

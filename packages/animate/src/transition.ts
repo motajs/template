@@ -33,7 +33,7 @@ interface ITransitionData {
 
 export class Transition implements ITransition {
     /** 当前绑定的激励源 */
-    private excitation: IExcitation<number> | null = null;
+    excitation: IExcitation<number> | null = null;
     /** 当前定义在绑定激励源上的可激励对象 */
     private controller: IExcitableController<number> | null = null;
 
@@ -64,7 +64,7 @@ export class Transition implements ITransition {
         return this;
     }
 
-    transite(animatable: IAnimatable): this {
+    transition(animatable: IAnimatable): this {
         this.animatableStatus = animatable;
         return this;
     }
@@ -112,6 +112,12 @@ export class Transition implements ITransition {
     }
 
     revoke(): void {
+        this.animatableStatus = null;
+    }
+
+    destroy(): void {
+        this.controller?.revoke();
+        this.unbindExcitation();
         this.animatableStatus = null;
     }
 

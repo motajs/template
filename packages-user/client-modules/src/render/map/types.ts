@@ -997,8 +997,7 @@ export interface IMapVertexStatus {
  * 脏标记表示顶点数组的长度是否发生变化
  */
 export interface IMapVertexGenerator
-    extends IDirtyTracker<boolean>,
-        IMapVertexStatus {
+    extends IDirtyTracker<boolean>, IMapVertexStatus {
     /** 地图渲染器 */
     readonly renderer: IMapRenderer;
     /** 地图分块 */

@@ -10,7 +10,7 @@ import { sceneController } from './scene';
 import { GameTitleUI } from './ui/title';
 import { createWeather } from './weather';
 import { createMainExtension } from './commonIns';
-import { createApp } from '@motajs/render-vue';
+import { createApp } from './renderer';
 
 export function createGameRenderer() {
     const App = defineComponent(_props => {

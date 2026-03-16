@@ -24,16 +24,8 @@ import {
     watch
 } from 'vue';
 import { FloorSelector } from '../components';
-import {
-    ILayerGroupRenderExtends,
-    FloorDamageExtends,
-    FloorItemDetail,
-    LayerGroupAnimate,
-    LayerGroup,
-    LayerGroupFloorBinder
-} from '../elements';
 import { clamp, mean } from 'lodash-es';
-import { calculateStatisticsOne, StatisticsDataOneFloor } from './statistics';
+import { StatisticsDataOneFloor } from './statistics';
 import { Tip, TipExpose } from '../components';
 import { useKey } from '../use';
 import {
@@ -61,11 +53,11 @@ const viewMapProps = {
 export const ViewMap = defineComponent<ViewMapProps>(props => {
     const nowFloorId = core.status.floorId;
 
-    const layerGroupExtends: ILayerGroupRenderExtends[] = [
-        new FloorDamageExtends(),
-        new FloorItemDetail(),
-        new LayerGroupAnimate()
-    ];
+    // const layerGroupExtends: ILayerGroupRenderExtends[] = [
+    //     new FloorDamageExtends(),
+    //     new FloorItemDetail(),
+    //     new LayerGroupAnimate()
+    // ];
 
     const restHeight = STATUS_BAR_HEIGHT - 292;
     const col = restHeight / 4;
@@ -84,7 +76,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
         })
     );
 
-    const group = ref<LayerGroup>();
+    // const group = ref<LayerGroup>();
     const tip = ref<TipExpose>();
     const statistics = shallowRef<StatisticsDataOneFloor>();
 
@@ -107,7 +99,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
         .realize('@viewMap_down_ten', () => changeFloor(-10))
         .realize('@viewMap_book', () => openBook())
         .realize('@viewMap_fly', () => fly())
-        .realize('@viewMap_reset', () => resetCamera())
+        // .realize('@viewMap_reset', () => resetCamera())
         .realize('confirm', () => close())
         .realize('exit', (_, code, assist) => {
             // 如果按键不能触发怪物手册，则关闭界面，因为怪物手册和退出默认使用同一个按键，需要特判
@@ -145,10 +137,10 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
         else tip.value?.drawTip(`无法飞往${core.floors[id].title}`);
     };
 
-    const resetCamera = () => {
-        group.value?.camera.reset();
-        group.value?.update();
-    };
+    // const resetCamera = () => {
+    //     group.value?.camera.reset();
+    //     group.value?.update();
+    // };
 
     //#region 渐变渲染
 
@@ -195,33 +187,33 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
 
     //#region 地图渲染
 
-    const renderLayer = (floorId: FloorIds) => {
-        const binder = group.value?.getExtends(
-            'floor-binder'
-        ) as LayerGroupFloorBinder;
-        binder.bindFloor(floorId);
-        group.value?.camera.reset();
-        core.status.floorId = floorId;
-        core.status.thisMap = core.status.maps[floorId];
-        statistics.value = calculateStatisticsOne(floorId);
-    };
+    // const renderLayer = (floorId: FloorIds) => {
+    //     const binder = group.value?.getExtends(
+    //         'floor-binder'
+    //     ) as LayerGroupFloorBinder;
+    //     binder.bindFloor(floorId);
+    //     group.value?.camera.reset();
+    //     core.status.floorId = floorId;
+    //     core.status.thisMap = core.status.maps[floorId];
+    //     statistics.value = calculateStatisticsOne(floorId);
+    // };
 
-    const moveCamera = (dx: number, dy: number) => {
-        const camera = group.value?.camera;
-        if (!camera) return;
-        camera.translate(dx / camera.scaleX, dy / camera.scaleX);
-        group.value?.update();
-    };
+    // const moveCamera = (dx: number, dy: number) => {
+    //     const camera = group.value?.camera;
+    //     if (!camera) return;
+    //     camera.translate(dx / camera.scaleX, dy / camera.scaleX);
+    //     group.value?.update();
+    // };
 
-    const scaleCamera = (scale: number, x: number, y: number) => {
-        const camera = group.value?.camera;
-        if (!camera) return;
-        const [cx, cy] = camera.untransformed(x, y);
-        camera.translate(cx, cy);
-        camera.scale(scale);
-        camera.translate(-cx, -cy);
-        group.value?.update();
-    };
+    // const scaleCamera = (scale: number, x: number, y: number) => {
+    //     const camera = group.value?.camera;
+    //     if (!camera) return;
+    //     const [cx, cy] = camera.untransformed(x, y);
+    //     camera.translate(cx, cy);
+    //     camera.scale(scale);
+    //     camera.translate(-cx, -cy);
+    //     group.value?.update();
+    // };
 
     //#region 事件监听
 
@@ -230,7 +222,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
         if (ev.offsetX < col * 2) {
             changeFloor(1);
         } else {
-            resetCamera();
+            // resetCamera();
         }
     };
 
@@ -293,7 +285,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
             const dx = ev.offsetX - lastMoveX;
             const dy = ev.offsetY - lastMoveY;
             movement += Math.hypot(dx, dy);
-            moveCamera(dx, dy);
+            // moveCamera(dx, dy);
         }
         moved = true;
         lastMoveX = ev.offsetX;
@@ -322,7 +314,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
                     return;
                 }
                 if (!isFinite(scale) || scale === 0) return;
-                scaleCamera(scale, cx, cy);
+                // scaleCamera(scale, cx, cy);
             }
         } else {
             if (mouseDown) {
@@ -341,8 +333,8 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
 
     const wheelMap = (ev: IWheelEvent) => {
         if (ev.altKey) {
-            const scale = ev.wheelY < 0 ? 1.1 : 0.9;
-            scaleCamera(scale, ev.offsetX, ev.offsetY);
+            // const scale = ev.wheelY < 0 ? 1.1 : 0.9;
+            // scaleCamera(scale, ev.offsetX, ev.offsetY);
         } else if (ev.ctrlKey) {
             changeFloor(-Math.sign(ev.wheelY) * 10);
         } else {
@@ -362,7 +354,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
     };
 
     onMounted(() => {
-        renderLayer(floorId.value);
+        // renderLayer(floorId.value);
     });
 
     onUnmounted(() => {
@@ -371,7 +363,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
     });
 
     watch(floorId, value => {
-        renderLayer(value);
+        // renderLayer(value);
     });
 
     //#region 组件树
@@ -394,7 +386,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
                 v-model:now={now.value}
                 onClose={close}
             />
-            <layer-group
+            {/* <layer-group
                 ref={group}
                 ex={layerGroupExtends}
                 loc={[STATUS_BAR_WIDTH, 0, MAP_WIDTH, MAP_HEIGHT]}
@@ -410,7 +402,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
                 <layer layer="event" zIndex={30}></layer>
                 <layer layer="fg" zIndex={40}></layer>
                 <layer layer="fg2" zIndex={50}></layer>
-            </layer-group>
+            </layer-group> */}
             <Tip
                 ref={tip}
                 zIndex={40}
@@ -418,7 +410,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
                 pad={[12, 6]}
                 corner={16}
             />
-            <sprite
+            <custom
                 loc={[STATUS_BAR_WIDTH, 0, MAP_WIDTH, 64]}
                 render={renderTop}
                 alpha={topAlpha.value}
@@ -428,7 +420,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
                 onLeave={leaveTop}
                 onClick={clickTop}
             />
-            <sprite
+            <custom
                 loc={[STATUS_BAR_WIDTH, MAP_HEIGHT - 64, MAP_WIDTH, 64]}
                 render={renderBottom}
                 alpha={bottomAlpha.value}
@@ -554,7 +546,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
                     loc={loc3}
                     anc={[0.5, 0.5]}
                     cursor="pointer"
-                    onClick={resetCamera}
+                    // onClick={resetCamera}
                 />
             </container>
         </container>

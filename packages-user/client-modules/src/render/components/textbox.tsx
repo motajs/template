@@ -1,7 +1,7 @@
 import {
     ElementLocator,
     Font,
-    Sprite,
+    CustomRenderItem,
     Text,
     MotaOffscreenCanvas2D
 } from '@motajs/render';
@@ -171,7 +171,7 @@ export const TextContent = defineComponent<
 
     expose<TextContentExpose>({ retype, showAll, getHeight });
 
-    const spriteElement = shallowRef<Sprite>();
+    const spriteElement = shallowRef<CustomRenderItem>();
     const renderContent = (canvas: MotaOffscreenCanvas2D) => {
         const ctx = canvas.ctx;
         ctx.textBaseline = 'top';
@@ -225,11 +225,11 @@ export const TextContent = defineComponent<
 
     return () => {
         return (
-            <sprite
+            <custom
                 loc={loc.value}
                 ref={spriteElement}
                 render={renderContent}
-            ></sprite>
+            ></custom>
         );
     };
 }, textContentOptions);
@@ -493,7 +493,7 @@ export const Textbox = defineComponent<
                         slots.title(data)
                     ) : props.winskin ? (
                         <winskin
-                            image={props.winskin}
+                            imageName={props.winskin}
                             loc={[0, 0, tw.value, th.value]}
                         ></winskin>
                     ) : (
@@ -514,7 +514,7 @@ export const Textbox = defineComponent<
                 slots.default(data)
             ) : props.winskin ? (
                 <winskin
-                    image={props.winskin}
+                    imageName={props.winskin}
                     loc={[0, contentY.value, data.width!, backHeight.value]}
                 ></winskin>
             ) : (

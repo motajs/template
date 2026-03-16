@@ -1,11 +1,11 @@
 import {
     MotaOffscreenCanvas2D,
-    Sprite,
+    CustomRenderItem,
     SizedCanvasImageSource
 } from '@motajs/render';
 import { Weather } from '../weather';
 
-export abstract class CloudLike extends Weather<Sprite> {
+export abstract class CloudLike extends Weather<CustomRenderItem> {
     /** 不透明度 */
     private alpha: number = 0;
     /** 水平速度 */
@@ -78,8 +78,8 @@ export abstract class CloudLike extends Weather<Sprite> {
         this.cy %= this.image.height;
     }
 
-    createElement(level: number): Sprite {
-        const element = new Sprite('static', true);
+    createElement(level: number): CustomRenderItem {
+        const element = new CustomRenderItem(true);
         element.setRenderFn(canvas => this.drawImage(canvas));
         this.maxSpeed = Math.sqrt(level) * 100;
         this.vx = ((Math.random() - 0.5) * this.maxSpeed) / 2;

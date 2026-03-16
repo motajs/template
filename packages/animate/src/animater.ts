@@ -67,7 +67,7 @@ export class Animater implements IAnimater {
     private planning: boolean = false;
 
     /** 当前绑定的激励源 */
-    private excitation: IExcitation<number> | null = null;
+    excitation: IExcitation<number> | null = null;
     /** 当前定义在绑定激励源上的可激励对象 */
     private controller: IExcitableController<number> | null = null;
 
@@ -315,6 +315,22 @@ export class Animater implements IAnimater {
         this.startPlanGroup();
         this.planErrored = false;
         return index;
+    }
+
+    destroy(): void {
+        this.unbindExcitation();
+        this.animatableStatus = null;
+        this.currentAnimatable = null;
+        this.planningStore.clear();
+        this.groupStore.clear();
+        this.whens.clear();
+        this.afters.clear();
+        this.executingGroupObj = null;
+        this.executing.clear();
+        this.executingMap.clear();
+        this.planningStart.clear();
+        this.whenBind = null;
+        this.afterBind = null;
     }
 
     //#endregion

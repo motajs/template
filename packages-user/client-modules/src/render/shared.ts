@@ -2,6 +2,25 @@ import { ElementLocator, Font } from '@motajs/render';
 
 // 本文件为 UI 配置文件，你可以修改下面的每个常量来控制 UI 的显示参数，每个常量都有注释说明
 
+//#region 调试用参数
+
+/**
+ * 渲染器的激励源是否使用变速器，使用后可以通过 {@link VARIATOR_DEBUG_SPEED} 调整激励源速度，
+ * 从而调整动画等内容的执行速度，方便调试
+ */
+export const DEBUG_VARIATOR = false;
+/** 当使用变速器作为激励源调试时，变速器的速度 */
+export const VARIATOR_DEBUG_SPEED = 0.2;
+/**
+ * 是否使用分频器调试，使用后可以通过 {@link DIVIDER_DEBUG_DIVIDER} 调整分配比例，
+ * 降低画面刷新频率及每帧执行函数的执行频率，方便调试
+ */
+export const DEBUG_DIVIDER = false;
+/** 当使用分频器调试时，分配比例 */
+export const DIVIDER_DEBUG_DIVIDER = 60;
+
+//#endregion
+
 //#region 地图
 
 /** 每个格子的默认宽度，现阶段用处不大 */

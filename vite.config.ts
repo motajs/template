@@ -6,9 +6,8 @@ import postcssPresetEnv from 'postcss-preset-env';
 import * as glob from 'glob';
 
 const custom = [
-    'container', 'image', 'sprite', 'shader', 'text', 'comment', 'custom', 
-    'layer', 'layer-group', 'animate', 'damage', 'graphics', 'icon', 'winskin',
-    'container-custom', 'map-render'
+    'container', 'custom', 'text', 'image', 'shader', 'comment', 'custom-container',
+    'map-render', 'animate', 'damage', 'graphics', 'icon', 'winskin',
 ];
 
 const aliases = glob.sync('packages/*/src').map((srcPath) => {

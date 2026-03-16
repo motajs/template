@@ -1,3 +1,5 @@
+//#region 激励对象
+
 /**
  * 动画速率曲线，输入时间完成度，输出一个值，时间完成度范围在 `0-1` 之间，而输出值没有范围限制。
  * 在不同场景下，速率曲线返回值的含义可能不同，有的可能表示动画完成度，有的可能表示绝对的坐标值。
@@ -42,6 +44,10 @@ export interface IExcitableController<T> {
      */
     excite(payload: T): void;
 }
+
+//#endregion
+
+//#region 激励源
 
 export interface IExcitation<T> {
     /**
@@ -94,7 +100,7 @@ export interface IExcitationVariator extends IExcitation<number> {
     readonly source: IExcitation<number> | null;
 
     /**
-     * 绑定激励源对象，变速器将以此激励源为基础实施变速
+     * 绑定激励源对象，变速器将以此激励源为基础实施变速。绑定后当前速度值会被设为 1。
      * @param excitation 绑定的激励源
      */
     bindExcitation(excitation: IExcitation<number>): void;
@@ -127,6 +133,34 @@ export interface IExcitationVariator extends IExcitation<number> {
      */
     endAllCurves(): void;
 }
+
+export interface IExcitationDivider<T> extends IExcitation<T> {
+    /** 分频器当前的分频比例 */
+    readonly divider: number;
+    /** 当前绑定的激励源 */
+    readonly source: IExcitation<T> | null;
+
+    /**
+     * 绑定激励源对象，分配器将以此激励源为基础实施分配。绑定后分频比例会设为 1。
+     * @param excitation 绑定的激励源
+     */
+    bindExcitation(excitation: IExcitation<T>): void;
+
+    /**
+     * 取消绑定当前的激励源
+     */
+    unbindExcitation(): void;
+
+    /**
+     * 设置当前分频器的分配比例。设置后会在下一次激励源被激励时便触发一次激励，然后按照分配比例触发。
+     * @param divider 分配比例
+     */
+    setDivider(divider: number): void;
+}
+
+//#endregion
+
+//#region 动画类
 
 export interface IAnimatable {
     /** 动画数值 */
@@ -173,6 +207,9 @@ export const enum EndRelation {
 }
 
 export interface IAnimater extends IExcitable<number> {
+    /** 渐变对象绑定的激励源 */
+    readonly excitation: IExcitation<number> | null;
+
     /**
      * 在动画执行器上绑定激励源
      * @param excitation 绑定的激励源
@@ -310,9 +347,17 @@ export interface IAnimater extends IExcitable<number> {
      * @param postTime 计划执行后的等待时长，等待这么长时间之后计划才真正结束
      */
     planEnd(preTime?: number, postTime?: number): number;
+
+    /**
+     * 销毁此动画对象
+     */
+    destroy(): void;
 }
 
 export interface ITransition extends IExcitable<number> {
+    /** 渐变对象绑定的激励源 */
+    readonly excitation: IExcitation<number> | null;
+
     /**
      * 在动画执行器上绑定激励源
      * @param excitation 绑定的激励源
@@ -334,7 +379,7 @@ export interface ITransition extends IExcitable<number> {
      * 绑定渐变对象，之后的渐变操作都会作用在此对象上
      * @param animatable 渐变对象
      */
-    transite(animatable: IAnimatable): this;
+    transition(animatable: IAnimatable): this;
 
     /**
      * 将当前绑定的值立刻缓慢渐变至目标值
@@ -351,7 +396,14 @@ export interface ITransition extends IExcitable<number> {
     wait(animatable: IAnimatable): Promise<void>;
 
     /**
-     * 释放当前绑定的渐变对象，防止绑定的渐变对象一直不会被垃圾回收
+     * 释放当前使用 {@link transition} 绑定的渐变对象，防止当前被绑定的渐变对象一直不会被垃圾回收。
      */
     revoke(): void;
+
+    /**
+     * 销毁当前渐变执行器
+     */
+    destroy(): void;
 }
+
+//#endregion

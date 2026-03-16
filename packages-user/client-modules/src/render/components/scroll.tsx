@@ -13,8 +13,7 @@ import {
 import {
     Container,
     ElementLocator,
-    RenderItem,
-    Sprite,
+    CustomRenderItem,
     Transform,
     MotaOffscreenCanvas2D,
     IActionEvent,
@@ -22,9 +21,10 @@ import {
     MouseType,
     EventProgress,
     ActionEventMap,
-    ContainerCustom,
     ActionType,
-    CustomContainerPropagateOrigin
+    CustomContainerPropagateOrigin,
+    IRenderItem,
+    ICustomContainer
 } from '@motajs/render';
 import { hyper, linear, Transition } from 'mutate-animate';
 import { clamp } from 'lodash-es';
@@ -110,10 +110,10 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
         /** 滚动条的定位 */
         const sp = ref<ElementLocator>([0, 0, 1, 1]);
 
-        const listenedChild: Set<RenderItem> = new Set();
-        const areaMap: Map<RenderItem, [number, number]> = new Map();
+        const listenedChild: Set<IRenderItem> = new Set();
+        const areaMap: Map<IRenderItem, [number, number]> = new Map();
         const content = ref<Container>();
-        const scroll = ref<Sprite>();
+        const scroll = ref<CustomRenderItem>();
 
         const scrollAlpha = transitioned(0.5, 100, linear())!;
 
@@ -187,7 +187,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
         /**
          * 计算一个元素会在画面上显示的区域
          */
-        const getArea = (item: RenderItem, rect: DOMRectReadOnly) => {
+        const getArea = (item: IRenderItem, rect: DOMRectReadOnly) => {
             if (direction.value === ScrollDirection.Horizontal) {
                 areaMap.set(item, [rect.left - width.value, rect.right]);
             } else {
@@ -198,7 +198,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
         /**
          * 检查一个元素是否需要显示，不需要则隐藏
          */
-        const checkItem = (item: RenderItem) => {
+        const checkItem = (item: IRenderItem) => {
             const area = areaMap.get(item);
             if (!area) {
                 item.show();
@@ -222,7 +222,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
         /**
          * 当一个元素的矩阵发生变换时执行，检查其显示区域
          */
-        const onTransform = (item: RenderItem) => {
+        const onTransform = (item: IRenderItem) => {
             const rect = item.getBoundingRect();
             const pad = props.padEnd ?? 0;
             if (item.parent === content.value) {
@@ -340,7 +340,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
 
         const renderContent = (
             canvas: MotaOffscreenCanvas2D,
-            children: RenderItem[],
+            children: IRenderItem[],
             transform: Transform
         ) => {
             const ctx = canvas.ctx;
@@ -367,7 +367,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
             type: T,
             progress: EventProgress,
             event: ActionEventMap[T],
-            _: ContainerCustom,
+            _: ICustomContainer,
             origin: CustomContainerPropagateOrigin
         ) => {
             if (progress === EventProgress.Capture) {
@@ -562,7 +562,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
                     >
                         {slots.default?.()}
                     </container-custom>
-                    <sprite
+                    <custom
                         nocache
                         hidden={props.noscroll}
                         loc={sp.value}
@@ -573,7 +573,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
                         zIndex={10}
                         onEnter={enter}
                         onLeave={leave}
-                    ></sprite>
+                    ></custom>
                 </container>
             );
         };

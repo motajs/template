@@ -2,7 +2,7 @@ import {
     Font,
     IActionEvent,
     MotaOffscreenCanvas2D,
-    Sprite
+    CustomRenderItem
 } from '@motajs/render';
 // import { WeatherController } from '../weather';
 import { defineComponent, onUnmounted, reactive, ref } from 'vue';
@@ -27,11 +27,10 @@ import {
 import { ReplayingStatus } from './toolbar';
 import { getHeroStatusOn, state } from '@user/data-state';
 import { hook } from '@user/data-base';
-import { FloorChange } from '../legacy/fallback';
 import { mainUIController } from './controller';
 import { isNil } from 'lodash-es';
 import { mainMapExtension, mainMapRenderer } from '../commonIns';
-import { onTick } from '@motajs/render-vue';
+import { using } from '../renderer';
 
 const MainScene = defineComponent(() => {
     //#region 基本定义
@@ -147,7 +146,7 @@ const MainScene = defineComponent(() => {
     //#region sprite 渲染
 
     let lastLength = 0;
-    onTick(() => {
+    using.onExcitedFunc(() => {
         const len = core.status.stepPostfix?.length ?? 0;
         if (len !== lastLength) {
             mapMiscSprite.value?.update();
@@ -155,7 +154,7 @@ const MainScene = defineComponent(() => {
         }
     });
 
-    const mapMiscSprite = ref<Sprite>();
+    const mapMiscSprite = ref<CustomRenderItem>();
 
     const renderMapMisc = (canvas: MotaOffscreenCanvas2D) => {
         const step = core.status.stepPostfix;
@@ -245,7 +244,7 @@ const MainScene = defineComponent(() => {
                     loc={[0, 0, MAP_WIDTH, MAP_HEIGHT]}
                 />
                 <Textbox id="main-textbox" {...mainTextboxProps}></Textbox>
-                <FloorChange id="floor-change" zIndex={50}></FloorChange>
+                {/* <FloorChange id="floor-change" zIndex={50}></FloorChange> */}
                 <Tip
                     id="main-tip"
                     zIndex={80}
@@ -253,7 +252,7 @@ const MainScene = defineComponent(() => {
                     pad={[12, 6]}
                     corner={16}
                 />
-                <sprite
+                <custom
                     noevent
                     loc={[0, 0, MAP_WIDTH, MAP_HEIGHT]}
                     ref={mapMiscSprite}

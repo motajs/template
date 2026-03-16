@@ -1,21 +1,12 @@
-import {
-    ERenderItemEvent,
-    RenderItem,
-    RenderItemPosition,
-    Transform,
-    MotaOffscreenCanvas2D
-} from '../core';
+import { RenderItem, Transform, MotaOffscreenCanvas2D } from '.';
 import { CanvasStyle } from '../types';
 import { Font } from '../style';
+import { IRenderImage, IRenderText } from './types';
 
 /** 文字的安全填充，会填充在文字的上侧和下侧，防止削顶和削底 */
 const SAFE_PAD = 1;
 
-export interface ETextEvent extends ERenderItemEvent {
-    setText: [text: string, width: number, height: number];
-}
-
-export class Text extends RenderItem<ETextEvent> {
+export class Text extends RenderItem implements IRenderText {
     text: string;
 
     fillStyle?: CanvasStyle = '#fff';
@@ -28,14 +19,13 @@ export class Text extends RenderItem<ETextEvent> {
 
     private static measureCanvas = new MotaOffscreenCanvas2D();
 
-    constructor(text: string = '', type: RenderItemPosition = 'static') {
-        super(type, false);
+    constructor(text: string = '', enableCache: boolean = false) {
+        super(enableCache);
 
         this.text = text;
         if (text.length > 0) {
             this.requestBeforeFrame(() => {
                 this.calBox();
-                this.emit('setText', text, this.width, this.height);
             });
         }
     }
@@ -79,8 +69,7 @@ export class Text extends RenderItem<ETextEvent> {
     setText(text: string) {
         this.text = text;
         this.calBox();
-        this.update(this);
-        this.emit('setText', text, this.width, this.height);
+        this.update();
     }
 
     /**
@@ -157,13 +146,11 @@ export class Text extends RenderItem<ETextEvent> {
     }
 }
 
-export interface EImageEvent extends ERenderItemEvent {}
-
-export class Image extends RenderItem<EImageEvent> {
+export class Image extends RenderItem implements IRenderImage {
     image: CanvasImageSource;
 
-    constructor(image: CanvasImageSource, type: RenderItemPosition = 'static') {
-        super(type, false);
+    constructor(image: CanvasImageSource, enableCache: boolean = false) {
+        super(enableCache);
         this.image = image;
         if (image instanceof VideoFrame || image instanceof SVGElement) {
             this.size(200, 200);
@@ -207,7 +194,7 @@ export class Comment extends RenderItem {
     readonly isComment: boolean = true;
 
     constructor(public text: string = '') {
-        super('static', false, false);
+        super(false);
         this.hide();
     }
 
@@ -219,8 +206,4 @@ export class Comment extends RenderItem {
         _canvas: MotaOffscreenCanvas2D,
         _transform: Transform
     ): void {}
-
-    protected handleProps(): boolean {
-        return false;
-    }
 }

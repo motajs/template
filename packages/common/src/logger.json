@@ -13,8 +13,8 @@
         "11": "Cache depth cannot larger than 31.",
         "12": "Cannot move while status is not 'moving'. Call 'readyMove' first.",
         "13": "Cannot compile $1 shader. Error info: $2",
-        "14": "",
-        "15": "",
+        "14": "Cannot register render tag, since the tag name has been used.",
+        "15": "Render tag '$1' not registed.",
         "16": "Cannot find log message for $1 code $2.",
         "17": "Cannot use shader program for shader element that does not belong to it.",
         "18": "Cannot delete shader program for shader element that does not belong to it.",
@@ -51,6 +51,7 @@
         "49": "Cannot $1 on variator without excitation binding.",
         "50": "Expected a planEnd call after animation plan calling.",
         "51": "Animatable object cannot be animated by plans with the same start time.",
+        "52": "To get divider payload, an excitation binding is expected.",
         "1201": "Floor-damage extension needs 'floor-binder' extension as dependency."
     },
     "warn": {
@@ -147,6 +148,7 @@
         "91": "Cannot add follower, since specified follower number $1 does not exist.",
         "92": "Followers can only be added when the last follower is not moving.",
         "93": "Followers can only be removed when the last follower is not moving.",
+        "94": "Expecting an excitation binding when using '$1'",
         "1001": "Item-detail extension needs 'floor-binder' and 'floor-damage' extension as dependency."
     }
 }

@@ -250,15 +250,15 @@ export function stackCurve(curves: ExcitationCurve[]): GeneralExcitationCurve {
 /**
  * 对速率曲线归一化，此函数假设传入的曲线单调，会使用 `curve(0)` 和 `curve(1)` 作为最大值或最小值。
  *
- * - `f(0) > f(1)`: `g(x) = (f(x) - f(0)) / (f(0) - f(1))`
- * - `f(0) < f(1)`: `g(x) = (f(x) - f(1)) / (f(1) - f(0))`
+ * - `f(0) > f(1)`: `g(x) = (f(x) - f(1)) / (f(0) - f(1))`
+ * - `f(0) < f(1)`: `g(x) = (f(x) - f(0)) / (f(1) - f(0))`
  * - `f(0) = f(1)`: `g(x) = f(x)`
  * @param curve 需要归一化的曲线
  * @returns
  */
 export function normalize(curve: ExcitationCurve): ExcitationCurve {
-    const head = curve(1);
-    const tail = curve(0);
+    const head = curve(0);
+    const tail = curve(1);
     if (head > tail) {
         const diff = head - tail;
         return p => (curve(p) - tail) / diff;

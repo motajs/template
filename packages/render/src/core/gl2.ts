@@ -1,15 +1,33 @@
-import EventEmitter from 'eventemitter3';
 import { logger } from '@motajs/common';
 import { MotaOffscreenCanvas2D } from './canvas2d';
-import { ERenderItemEvent, RenderItem, RenderItemPosition } from './item';
+import { RenderItem } from './item';
 import { Transform } from './transform';
 import { isWebGL2Supported } from './utils';
 import { SizedCanvasImageSource } from '../types';
-
-export interface IGL2ProgramPrefix {
-    readonly VERTEX: string;
-    readonly FRAGMENT: string;
-}
+import {
+    AttribSetFn,
+    AttribType,
+    DrawArraysInstancedParam,
+    DrawArraysParam,
+    DrawElementsInstancedParam,
+    DrawElementsParam,
+    DrawParamsMap,
+    IGL2Program,
+    IGL2ProgramPrefix,
+    IShaderAttrib,
+    IShaderAttribArray,
+    IShaderIndices,
+    IShaderTexture2D,
+    IShaderUniform,
+    IShaderUniformBlock,
+    IShaderUniformMatrix,
+    IWebGL2RenderItem,
+    ProgramConstructor,
+    RenderMode,
+    UniformMatrix,
+    UniformSetFn,
+    UniformType
+} from './types';
 
 const GL2_PREFIX: IGL2ProgramPrefix = {
     VERTEX: /* glsl */ `#version 300 es
@@ -25,78 +43,7 @@ interface CompiledShader {
     fragment: WebGLShader;
 }
 
-const enum RenderMode {
-    Arrays,
-    Elements,
-    ArraysInstanced,
-    ElementsInstanced
-}
-
-export const enum UniformType {
-    Uniform1f,
-    Uniform1fv,
-    Uniform1i,
-    Uniform1iv,
-    Uniform1ui,
-    Uniform1uiv,
-    Uniform2f,
-    Uniform2fv,
-    Uniform2i,
-    Uniform2iv,
-    Uniform2ui,
-    Uniform2uiv,
-    Uniform3f,
-    Uniform3fv,
-    Uniform3i,
-    Uniform3iv,
-    Uniform3ui,
-    Uniform3uiv,
-    Uniform4f,
-    Uniform4fv,
-    Uniform4i,
-    Uniform4iv,
-    Uniform4ui,
-    Uniform4uiv
-}
-
-export const enum UniformMatrix {
-    UMatrix2x2,
-    UMatrix2x3,
-    UMatrix2x4,
-    UMatrix3x2,
-    UMatrix3x3,
-    UMatrix3x4,
-    UMatrix4x2,
-    UMatrix4x3,
-    UMatrix4x4
-}
-
-export const enum AttribType {
-    Attrib1f,
-    Attrib1fv,
-    Attrib2f,
-    Attrib2fv,
-    Attrib3f,
-    Attrib3fv,
-    Attrib4f,
-    Attrib4fv,
-    AttribI4i,
-    AttribI4iv,
-    AttribI4ui,
-    AttribI4uiv
-}
-
-export type ProgramConstructor<T extends GL2Program> = new (
-    gl2: GL2,
-    vs?: string,
-    fs?: string
-) => T;
-
-export interface EGL2Event extends ERenderItemEvent {}
-
-export abstract class GL2<E extends EGL2Event = EGL2Event> extends RenderItem<
-    EGL2Event | E
-> {
+export abstract class GL2 extends RenderItem {
     /** 是否支持此组件 */
     static readonly support: boolean = isWebGL2Supported();
 
@@ -161,14 +108,14 @@ export abstract class GL2<E extends EGL2Event = EGL2Event> extends RenderItem<
     gl: WebGL2RenderingContext;
 
     /** webgl使用的程序 */
-    protected program: GL2Program | null = null;
+    protected program: IGL2Program | null = null;
     /** 当前渲染实例的所有着色器程序 */
-    protected programs: Set<GL2Program> = new Set();
+    protected programs: Set<IGL2Program> = new Set();
     /** framebuffer 映射 */
     protected framebufferMap: Map<string, WebGLFramebuffer> = new Map();
 
-    constructor(type: RenderItemPosition = 'static') {
-        super(type, false);
+    constructor() {
+        super(false);
 
         this.canvas = document.createElement('canvas');
         const gl = this.canvas.getContext('webgl2')!;
@@ -258,7 +205,7 @@ export abstract class GL2<E extends EGL2Event = EGL2Event> extends RenderItem<
      * @param gl 当前正在渲染的 gl2 画布
      * @param program 当前元素正在使用的着色器程序
      */
-    draw(gl: WebGL2RenderingContext, program: GL2Program) {
+    protected draw(gl: WebGL2RenderingContext, program: IGL2Program) {
         const indices = program.usingIndices;
         const param = program.getDrawParams(program.renderMode);
         if (!param) return;
@@ -367,7 +314,7 @@ export abstract class GL2<E extends EGL2Event = EGL2Event> extends RenderItem<
      * 切换着色器程序
      * @param program 着色器程序
      */
-    useProgram(program: GL2Program) {
+    useProgram(program: IGL2Program) {
         if (!this.gl) return;
         if (program.element !== this) {
             logger.error(17);
@@ -386,11 +333,11 @@ export abstract class GL2<E extends EGL2Event = EGL2Event> extends RenderItem<
      * @param vs 顶点着色器，可选
      * @param fs 片元着色器，可选
      */
-    createProgram<T extends GL2Program>(
+    createProgram<T extends IGL2Program>(
         Program: ProgramConstructor<T>,
         vs?: string,
         fs?: string
-    ) {
+    ): T {
         const program = new Program(this, vs, fs);
         this.programs.add(program);
         return program;
@@ -400,7 +347,7 @@ export abstract class GL2<E extends EGL2Event = EGL2Event> extends RenderItem<
      * 删除一个着色器程序
      * @param program 要删除的着色器程序
      */
-    deleteProgram(program: GL2Program) {
+    deleteProgram(program: IGL2Program) {
         if (program.element !== this) {
             logger.error(18);
             return;
@@ -411,311 +358,10 @@ export abstract class GL2<E extends EGL2Event = EGL2Event> extends RenderItem<
 
     destroy(): void {
         this.programs.forEach(v => v.destroy());
+        this.programs.clear();
         this.canvas.remove();
         super.destroy();
     }
-}
-
-type _U1 = [x0: number];
-type _U2 = [x0: number, x1: number];
-type _U3 = [x0: number, x1: number, x2: number];
-type _U4 = [x0: number, x1: number, x2: number, x3: number];
-type _UV<T> = [data: T, srcOffset?: number, srcLength?: number];
-type _A<T> = [data: T];
-
-interface UniformSetFn {
-    [UniformType.Uniform1f]: _U1;
-    [UniformType.Uniform1fv]: _UV<Float32List>;
-    [UniformType.Uniform1i]: _U1;
-    [UniformType.Uniform1iv]: _UV<Int32List>;
-    [UniformType.Uniform1ui]: _U1;
-    [UniformType.Uniform1uiv]: _UV<Uint32List>;
-    [UniformType.Uniform2f]: _U2;
-    [UniformType.Uniform2fv]: _UV<Float32List>;
-    [UniformType.Uniform2i]: _U2;
-    [UniformType.Uniform2iv]: _UV<Int32List>;
-    [UniformType.Uniform2ui]: _U2;
-    [UniformType.Uniform2uiv]: _UV<Uint32List>;
-    [UniformType.Uniform3f]: _U3;
-    [UniformType.Uniform3fv]: _UV<Float32List>;
-    [UniformType.Uniform3i]: _U3;
-    [UniformType.Uniform3iv]: _UV<Int32List>;
-    [UniformType.Uniform3ui]: _U3;
-    [UniformType.Uniform3uiv]: _UV<Uint32List>;
-    [UniformType.Uniform4f]: _U4;
-    [UniformType.Uniform4fv]: _UV<Float32List>;
-    [UniformType.Uniform4i]: _U4;
-    [UniformType.Uniform4iv]: _UV<Int32List>;
-    [UniformType.Uniform4ui]: _U4;
-    [UniformType.Uniform4uiv]: _UV<Uint32List>;
-}
-
-interface AttribSetFn {
-    [AttribType.Attrib1f]: _U1;
-    [AttribType.Attrib1fv]: _A<Float32List>;
-    [AttribType.Attrib2f]: _U2;
-    [AttribType.Attrib2fv]: _A<Float32List>;
-    [AttribType.Attrib3f]: _U3;
-    [AttribType.Attrib3fv]: _A<Float32List>;
-    [AttribType.Attrib4f]: _U4;
-    [AttribType.Attrib4fv]: _A<Float32List>;
-    [AttribType.AttribI4i]: _U4;
-    [AttribType.AttribI4iv]: _A<Int32List>;
-    [AttribType.AttribI4ui]: _U4;
-    [AttribType.AttribI4uiv]: _A<Uint32List>;
-}
-
-export interface IShaderUniform<T extends UniformType> {
-    /** 这个 uniform 变量的内存位置 */
-    readonly location: WebGLUniformLocation;
-    /** 这个 uniform 变量的类型 */
-    readonly type: T;
-    /** 这个量所处的着色器程序 */
-    readonly program: GL2Program;
-    /**
-     * 设置这个 uniform 变量的值，
-     * 参考 https://developer.mozilla.org/zh-CN/docs/Web/API/WebGL2RenderingContext/uniform
-     * @param params 要传递的参数，例如 uniform2f 就要传递 x0 x1 两个参数等，可以参考 mdn 文档
-     */
-    set(...params: UniformSetFn[T]): void;
-}
-
-export interface IShaderAttrib<T extends AttribType> {
-    /** 这个 attribute 常量的内存位置 */
-    readonly location: number;
-    /** 这个 attribute 常量的类型 */
-    readonly type: T;
-    /** 这个量所处的着色器程序 */
-    readonly program: GL2Program;
-    /**
-     * 设置这个 attribute 常量的值，
-     * 浮点数参考 https://developer.mozilla.org/zh-CN/docs/Web/API/WebGLRenderingContext/vertexAttrib
-     * 整数参考 https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/vertexAttribI
-     * @param params 要传递的参数
-     */
-    set(...params: AttribSetFn[T]): void;
-}
-
-export interface IShaderAttribArray {
-    /** 这个 attribute 常量的内存位置 */
-    readonly location: number;
-    /** 这个 attribute 所用的缓冲区信息 */
-    readonly data: WebGLBuffer;
-    /** 这个量所处的着色器程序 */
-    readonly program: GL2Program;
-    /**
-     * 修改缓冲区数据，会更改数据大小，重新分配内存，不更改数据大小的情况下建议使用 {@link sub} 代替。
-     * 参考 https://developer.mozilla.org/zh-CN/docs/Web/API/WebGLRenderingContext/bufferData
-     * @param data 数据
-     * @param usage 用途
-     */
-    buffer(data: AllowSharedBufferSource | null, usage: GLenum): void;
-    /**
-     * 修改缓冲区数据，会更改数据大小，重新分配内存，不更改数据大小的情况下建议使用 {@link sub} 代替。
-     * 参考 https://developer.mozilla.org/zh-CN/docs/Web/API/WebGLRenderingContext/bufferData
-     * @param data 数据
-     * @param usage 用途
-     * @param srcOffset 数据偏移量
-     * @param length 数据长度
-     */
-    buffer(
-        data: ArrayBufferView,
-        usage: GLenum,
-        srcOffset: number,
-        length?: number
-    ): void;
-    /**
-     * 修改缓冲区数据，但是不修改数据大小，不重新分配内存。
-     * 参考 https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferSubData
-     * @param dstByteOffset 数据修改的起始位置
-     * @param srcData 数据
-     */
-    sub(dstByteOffset: GLintptr, srcData: AllowSharedBufferSource): void;
-    /**
-     * 修改缓冲区数据，但是不修改数据大小，不重新分配内存。
-     * 参考 https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferSubData
-     * @param dstByteOffset 数据修改的起始位置
-     * @param srcData 数据
-     * @param srcOffset 数据偏移量
-     * @param length 数据长度
-     */
-    sub(
-        dstByteOffset: GLintptr,
-        srcData: ArrayBufferView,
-        srcOffset: number,
-        length?: GLuint
-    ): void;
-    /**
-     * 告诉 gpu 将读取此 attribute 数据
-     * 参考 https://developer.mozilla.org/zh-CN/docs/Web/API/WebGLRenderingContext/vertexAttribPointer
-     * @param size 单个数据大小
-     * @param type 数据类型
-     * @param normalized 是否要经过归一化处理
-     * @param stride 每一部分字节偏移量
-     * @param offset 第一部分字节偏移量
-     */
-    pointer(
-        size: GLint,
-        type: GLenum,
-        normalized: GLboolean,
-        stride: GLsizei,
-        offset: GLintptr
-    ): void;
-    /**
-     * 告诉 gpu 将由整数类型读取此 attribute 数据
-     * 参考 https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/vertexAttribIPointer
-     * @param size 单个数据大小
-     * @param type 数据类型
-     * @param stride 每一部分字节偏移量
-     * @param offset 第一部分字节偏移量
-     */
-    pointerI(
-        size: GLint,
-        type: GLenum,
-        stride: GLsizei,
-        offset: GLintptr
-    ): void;
-    /**
-     * 设置顶点指针更新时刻。
-     * 参考 https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/vertexAttribDivisor
-     * @param divisor 每多少个实例更新一次，0表示每个顶点都更新
-     */
-    divisor(divisor: number): void;
-    /**
-     * 启用这个顶点数据
-     */
-    enable(): void;
-    /**
-     * 禁用这个顶点数据
-     */
-    disable(): void;
-}
-
-export interface IShaderIndices {
-    /** 这个顶点索引所用的缓冲区信息 */
-    readonly data: WebGLBuffer;
-    /** 这个量所处的着色器程序 */
-    readonly program: GL2Program;
-    /**
-     * 修改缓冲区数据，会更改数据大小，重新分配内存，不更改数据大小的情况下建议使用 {@link sub} 代替。
-     * 参考 https://developer.mozilla.org/zh-CN/docs/Web/API/WebGLRenderingContext/bufferData
-     * @param data 数据
-     * @param usage 用途
-     */
-    buffer(data: AllowSharedBufferSource | null, usage: GLenum): void;
-    /**
-     * 修改缓冲区数据，会更改数据大小，重新分配内存，不更改数据大小的情况下建议使用 {@link sub} 代替。
-     * 参考 https://developer.mozilla.org/zh-CN/docs/Web/API/WebGLRenderingContext/bufferData
-     * @param data 数据
-     * @param usage 用途
-     * @param srcOffset 数据偏移量
-     * @param length 数据长度
-     */
-    buffer(
-        data: ArrayBufferView,
-        usage: GLenum,
-        srcOffset: number,
-        length?: number
-    ): void;
-    /**
-     * 修改缓冲区数据，但是不修改数据大小，不重新分配内存。
-     * 参考 https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferSubData
-     * @param dstByteOffset 数据修改的起始位置
-     * @param srcData 数据
-     */
-    sub(dstByteOffset: GLintptr, srcData: AllowSharedBufferSource): void;
-    /**
-     * 修改缓冲区数据，但是不修改数据大小，不重新分配内存。
-     * 参考 https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferSubData
-     * @param dstByteOffset 数据修改的起始位置
-     * @param srcData 数据
-     * @param srcOffset 数据偏移量
-     * @param length 数据长度
-     */
-    sub(
-        dstByteOffset: GLintptr,
-        srcData: ArrayBufferView,
-        srcOffset: number,
-        length?: GLuint
-    ): void;
-}
-
-export interface IShaderUniformMatrix {
-    /** 矩阵的内存位置 */
-    readonly location: WebGLUniformLocation;
-    /** 矩阵类型 */
-    readonly type: UniformMatrix;
-    /** 这个量所处的着色器程序 */
-    readonly program: GL2Program;
-    /**
-     * 设置矩阵的值，参考 https://developer.mozilla.org/zh-CN/docs/Web/API/WebGL2RenderingContext/uniformMatrix
-     * @param transpose 是否转置矩阵
-     * @param data 矩阵数据，列主序
-     * @param srcOffset 数据偏移量
-     * @param srcLength 数据长度
-     */
-    set(
-        transpose: GLboolean,
-        data: Float32List,
-        srcOffset?: number,
-        srcLength?: number
-    ): void;
-}
-
-export interface IShaderUniformBlock {
-    /** 这个 uniform block 的内存地址 */
-    readonly location: GLuint;
-    /** 与这个 uniform block 所绑定的缓冲区 */
-    readonly buffer: WebGLBuffer;
-    /** 这个 uniform block 的大小 */
-    readonly size: number;
-    /** 这个量所处的着色器程序 */
-    readonly program: GL2Program;
-    /**
-     * 参考 https://developer.mozilla.org/zh-CN/docs/Web/API/WebGL2RenderingContext/bindBufferBase
-     * @param srcData 要设置为的值
-     */
-    set(srcData: AllowSharedBufferSource | null): void;
-    /**
-     * 参考 https://developer.mozilla.org/zh-CN/docs/Web/API/WebGL2RenderingContext/bindBufferBase
-     * @param srcData 要设置为的值
-     * @param srcOffset 数据偏移量
-     * @param length 数据长度
-     */
-    set(srcData: ArrayBufferView, srcOffset: number, length?: number): void;
-}
-
-export interface IShaderTexture2D {
-    /** 纹理对象 */
-    readonly texture: WebGLTexture;
-    /** 宽度 */
-    readonly width: number;
-    /** 高度 */
-    readonly height: number;
-    /** 纹理所属索引 */
-    readonly index: number;
-    /** 这个量所处的着色器程序 */
-    readonly program: GL2Program;
-    /**
-     * 设置这个纹理的图像，不建议使用，会修改宽高
-     * @param source 要设置成的图像源
-     */
-    set(source: TexImageSource): void;
-    /**
-     * 设置纹理的一部分信息，不会修改宽高
-     * @param source 要设置的图像源
-     * @param x 要设置到的起始点横坐标
-     * @param y 要设置到的起始点纵坐标
-     * @param width 宽度
-     * @param height 高度
-     */
-    sub(
-        source: TexImageSource,
-        x: number,
-        y: number,
-        width: number,
-        height: number
-    ): void;
 }
 
 class ShaderUniform<T extends UniformType> implements IShaderUniform<T> {
@@ -723,7 +369,7 @@ class ShaderUniform<T extends UniformType> implements IShaderUniform<T> {
         readonly type: T,
         readonly location: WebGLUniformLocation,
         readonly gl: WebGL2RenderingContext,
-        readonly program: GL2Program
+        readonly program: IGL2Program
     ) {}
 
     set(...params: UniformSetFn[T]): void {
@@ -812,7 +458,7 @@ class ShaderAttrib<T extends AttribType> implements IShaderAttrib<T> {
         readonly type: T,
         readonly location: number,
         readonly gl: WebGL2RenderingContext,
-        readonly program: GL2Program
+        readonly program: IGL2Program
     ) {}
 
     set(...params: AttribSetFn[T]) {
@@ -869,7 +515,7 @@ class ShaderAttribArray implements IShaderAttribArray {
         readonly data: WebGLBuffer,
         readonly location: number,
         readonly gl: WebGL2RenderingContext,
-        readonly program: GL2Program
+        readonly program: IGL2Program
     ) {}
 
     buffer(data: AllowSharedBufferSource | null, usage: GLenum): void;
@@ -954,7 +600,7 @@ class ShaderIndices implements IShaderIndices {
     constructor(
         readonly data: WebGLBuffer,
         readonly gl: WebGL2RenderingContext,
-        readonly program: GL2Program
+        readonly program: IGL2Program
     ) {}
 
     buffer(data: AllowSharedBufferSource | null, usage: GLenum): void;
@@ -999,7 +645,7 @@ class ShaderUniformMatrix implements IShaderUniformMatrix {
         readonly type: UniformMatrix,
         readonly location: WebGLUniformLocation,
         readonly gl: WebGL2RenderingContext,
-        readonly program: GL2Program
+        readonly program: IGL2Program
     ) {}
 
     set(x2: GLboolean, x3: Float32List, x4?: number, x5?: number): void {
@@ -1043,7 +689,7 @@ class ShaderUniformBlock implements IShaderUniformBlock {
         readonly buffer: WebGLBuffer,
         readonly binding: number,
         readonly gl: WebGL2RenderingContext,
-        readonly program: GL2Program
+        readonly program: IGL2Program
     ) {}
 
     set(srcData: AllowSharedBufferSource | null): void;
@@ -1070,7 +716,7 @@ class ShaderTexture2D implements IShaderTexture2D {
         readonly index: number,
         readonly uniform: IShaderUniform<UniformType.Uniform1i>,
         readonly gl: WebGL2RenderingContext,
-        readonly program: GL2Program,
+        readonly program: IGL2Program,
         public width: number = 0,
         public height: number = 0
     ) {
@@ -1136,47 +782,7 @@ class ShaderTexture2D implements IShaderTexture2D {
     }
 }
 
-interface DrawArraysParam {
-    mode: GLenum;
-    first: number;
-    count: number;
-}
-
-interface DrawElementsParam {
-    mode: GLenum;
-    count: number;
-    type: GLenum;
-    offset: GLintptr;
-}
-
-interface DrawArraysInstancedParam {
-    mode: GLenum;
-    first: number;
-    count: number;
-    instanceCount: number;
-}
-
-interface DrawElementsInstancedParam {
-    mode: GLenum;
-    count: number;
-    type: GLenum;
-    offset: GLintptr;
-    instanceCount: number;
-}
-
-export interface DrawParamsMap {
-    [RenderMode.Arrays]: DrawArraysParam;
-    [RenderMode.ArraysInstanced]: DrawArraysInstancedParam;
-    [RenderMode.Elements]: DrawElementsParam;
-    [RenderMode.ElementsInstanced]: DrawElementsInstancedParam;
-}
-
-interface ShaderProgramEvent {
-    load: [];
-    unload: [];
-}
-
-export class GL2Program extends EventEmitter<ShaderProgramEvent> {
+export class GL2Program implements IGL2Program {
     /** 顶点着色器 */
     private vertex: string = '';
     /** 片元着色器 */
@@ -1184,7 +790,7 @@ export class GL2Program extends EventEmitter<ShaderProgramEvent> {
     /** webgl2上下文 */
     gl: WebGL2RenderingContext;
     /** 当前着色器程序的着色器渲染元素 */
-    element: GL2;
+    element: IWebGL2RenderItem;
 
     /** uniform存放地址 */
     private uniform: Map<string, IShaderUniform<UniformType>> = new Map();
@@ -1220,8 +826,7 @@ export class GL2Program extends EventEmitter<ShaderProgramEvent> {
     /** 着色器代码的前缀，会在设置时自动添加至代码前 */
     protected readonly prefix: IGL2ProgramPrefix = GL2_PREFIX;
 
-    constructor(shader: GL2, vs?: string, fs?: string) {
-        super();
+    constructor(shader: IWebGL2RenderItem, vs?: string, fs?: string) {
         if (vs) this.vs(vs);
         if (fs) this.fs(fs);
         this.element = shader;
@@ -1377,6 +982,7 @@ export class GL2Program extends EventEmitter<ShaderProgramEvent> {
     /**
      * 检查当前是否需要重新编译着色器，如果需要，则重新编译
      * @param force 是否强制重新编译
+     * @returns 是否执行了编译操作
      */
     requestCompile(force: boolean = false): boolean {
         if (!force && !this.shaderDirty) return false;
@@ -1408,7 +1014,6 @@ export class GL2Program extends EventEmitter<ShaderProgramEvent> {
         this.attribArray.forEach(v => {
             v.disable();
         });
-        this.emit('load');
     }
 
     /**
@@ -1418,7 +1023,6 @@ export class GL2Program extends EventEmitter<ShaderProgramEvent> {
         this.attribArray.forEach(v => {
             v.enable();
         });
-        this.emit('unload');
     }
 
     /**

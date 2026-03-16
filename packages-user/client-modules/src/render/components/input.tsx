@@ -5,10 +5,11 @@ import {
     Container,
     ElementLocator,
     MotaRenderer,
-    RenderItem,
     Transform,
     Font,
-    RectRCircleParams
+    RectRCircleParams,
+    IRenderItem,
+    IRenderTreeRoot
 } from '@motajs/render';
 import { transitionedColor, useKey } from '../use';
 import { linear } from 'mutate-animate';
@@ -161,9 +162,9 @@ export const Input = defineComponent<InputProps, InputEmits, keyof InputEmits>(
             if (!ele) return;
             // 计算当前绝对位置
 
-            const chain: RenderItem[] = [];
-            let now: RenderItem | undefined = root.value;
-            let renderer: MotaRenderer | undefined;
+            const chain: IRenderItem[] = [];
+            let now: IRenderItem | null = root.value ?? null;
+            let renderer: IRenderTreeRoot | null = null;
             if (!now) return;
             while (now) {
                 chain.unshift(now);
@@ -441,11 +442,11 @@ export const InputBox = defineComponent<
         emit('input', value);
     };
 
-    const setYes = (_: string, width: number, height: number) => {
+    const setYes = (width: number, height: number) => {
         yesSize.value = [width, height];
     };
 
-    const setNo = (_: string, width: number, height: number) => {
+    const setNo = (width: number, height: number) => {
         noSize.value = [width, height];
     };
 
@@ -500,7 +501,7 @@ export const InputBox = defineComponent<
                 zIndex={15}
                 onClick={confirm}
                 onEnter={() => (selected.value = true)}
-                onSetText={setYes}
+                onResize={setYes}
             />
             <text
                 loc={noLoc.value}
@@ -511,7 +512,7 @@ export const InputBox = defineComponent<
                 zIndex={15}
                 onClick={cancel}
                 onEnter={() => (selected.value = false)}
-                onSetText={setNo}
+                onResize={setNo}
             />
         </container>
     );

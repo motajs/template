@@ -3,7 +3,7 @@ import { Font, MotaOffscreenCanvas2D } from '@motajs/render';
 import EventEmitter from 'eventemitter3';
 import { isNil } from 'lodash-es';
 import { RenderableData, AutotileRenderable, texture } from '../elements';
-import { onTick } from '@motajs/render-vue';
+import { using } from '../renderer';
 
 /** 文字的安全填充，会填充在文字的上侧和下侧，防止削顶和削底 */
 const SAFE_PAD = 1;
@@ -151,8 +151,7 @@ interface ISizedTextContentBlock {
 }
 
 export interface ITextContentTextBlock
-    extends ITextContentBlockBase,
-        ISizedTextContentBlock {
+    extends ITextContentBlockBase, ISizedTextContentBlock {
     readonly type: TextContentType.Text;
     /** 文本 block 的文字内容 */
     readonly text: string;
@@ -165,8 +164,7 @@ export interface ITextContentTextBlock
 }
 
 export interface ITextContentIconBlock
-    extends ITextContentBlockBase,
-        ISizedTextContentBlock {
+    extends ITextContentBlockBase, ISizedTextContentBlock {
     readonly type: TextContentType.Icon;
     /** 图标 block 显示的图标 */
     readonly icon: AllNumbers;
@@ -200,8 +198,7 @@ export interface ITyperRenderableBase {
 }
 
 export interface ITyperTextRenderable
-    extends ITextContentTextBlock,
-        ITyperRenderableBase {
+    extends ITextContentTextBlock, ITyperRenderableBase {
     /** 文本左上角的横坐标 */
     readonly x: number;
     /** 文本左上角的纵坐标 */
@@ -211,8 +208,7 @@ export interface ITyperTextRenderable
 }
 
 export interface ITyperIconRenderable
-    extends ITextContentIconBlock,
-        ITyperRenderableBase {
+    extends ITextContentIconBlock, ITyperRenderableBase {
     /** 图标左上角的横坐标 */
     readonly x: number;
     /** 图标左上角的纵坐标 */
@@ -220,8 +216,7 @@ export interface ITyperIconRenderable
 }
 
 export interface ITyperWaitRenderable
-    extends ITextContentWaitBlock,
-        ITyperRenderableBase {
+    extends ITextContentWaitBlock, ITyperRenderableBase {
     /** 当然是否已经等待了多少个字符 */
     waited: number;
 }
@@ -314,7 +309,7 @@ export class TextContentTyper extends EventEmitter<TextContentTyperEvent> {
             this.config
         );
 
-        onTick(() => this.tick());
+        using.onExcitedFunc(() => this.tick());
     }
 
     /**

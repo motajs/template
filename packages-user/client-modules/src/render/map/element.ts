@@ -5,7 +5,7 @@ import { ElementNamespace, ComponentInternalInstance } from 'vue';
 import { CELL_HEIGHT, CELL_WIDTH, MAP_HEIGHT, MAP_WIDTH } from '../shared';
 import { IMapExtensionManager } from './extension';
 
-export class MapRender extends RenderItem {
+export class MapRenderItem extends RenderItem {
     /**
      * @param layerState 地图状态对象
      * @param renderer 地图渲染器对象
@@ -15,13 +15,14 @@ export class MapRender extends RenderItem {
         readonly renderer: IMapRenderer,
         readonly exManager: IMapExtensionManager
     ) {
-        super('static', false, false);
+        super(false);
 
         renderer.setLayerState(layerState);
         renderer.setCellSize(CELL_WIDTH, CELL_HEIGHT);
         renderer.setRenderSize(MAP_WIDTH, MAP_HEIGHT);
 
-        this.delegateTicker(time => {
+        // 元素被销毁时会自动删除所有的激励对象，所以不需要担心会内存泄漏
+        this.delegateExcitable(time => {
             this.renderer.tick(time);
             if (this.renderer.needUpdate()) {
                 this.update();

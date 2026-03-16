@@ -1,6 +1,15 @@
+import {
+    ExcitationCurve,
+    excited,
+    IAnimatable,
+    IExcitableController,
+    ITransition,
+    Transition
+} from '@motajs/animate';
+import { logger } from '@motajs/common';
+import { IRenderItem, IRenderTreeRoot } from '@motajs/render';
 import { Hotkey, gameKey } from '@motajs/system';
 import { loading } from '@user/data-base';
-import { TimingFn, Transition } from 'mutate-animate';
 import {
     ComponentInternalInstance,
     getCurrentInstance,
@@ -107,7 +116,7 @@ export interface ITransitionedController<T> {
      * 设置动画的速率曲线
      * @param timing 速率曲线
      */
-    mode(timing: TimingFn): void;
+    mode(timing: ExcitationCurve): void;
 
     /**
      * 设置动画的动画时长
@@ -117,37 +126,29 @@ export interface ITransitionedController<T> {
 }
 
 class RenderTransition implements ITransitionedController<number> {
-    private static key: number = 0;
-
-    private readonly key: string = `$${RenderTransition.key++}`;
-
     public readonly ref: Ref<number>;
 
     set value(v: number) {
-        this.transition.transition(this.key, v);
+        this.set(v);
     }
     get value() {
-        return this.transition.value[this.key];
+        return this.ref.value;
     }
 
     constructor(
         value: number,
-        public readonly transition: Transition,
+        public readonly transition: ITransition,
         public time: number,
-        public curve: TimingFn
+        public curve: ExcitationCurve
     ) {
         this.ref = ref(value);
-        transition.value[this.key] = value;
-        transition.ticker.add(() => {
-            this.ref.value = transition.value[this.key];
-        });
     }
 
     set(value: number, time: number = this.time): void {
-        this.transition.time(time).mode(this.curve).transition(this.key, value);
+        this.transition.curve(this.curve).transition(this.ref).to(value, time);
     }
 
-    mode(timing: TimingFn): void {
+    mode(timing: ExcitationCurve): void {
         this.curve = timing;
     }
 
@@ -166,6 +167,13 @@ class RenderColorTransition implements ITransitionedController<string> {
     private readonly keyB: string = `$colorB${RenderColorTransition.key++}`;
     private readonly keyA: string = `$colorA${RenderColorTransition.key++}`;
 
+    private readonly rValue: IAnimatable;
+    private readonly gValue: IAnimatable;
+    private readonly bValue: IAnimatable;
+    private readonly aValue: IAnimatable;
+
+    private readonly controller: IExcitableController<number> | null = null;
+
     public readonly ref: Ref<string>;
 
     set value(v: string) {
@@ -177,26 +185,32 @@ class RenderColorTransition implements ITransitionedController<string> {
 
     constructor(
         value: string,
-        public readonly transition: Transition,
+        public readonly transition: ITransition,
         public time: number,
-        public curve: TimingFn
+        public curve: ExcitationCurve
     ) {
         this.ref = ref(value);
         const [r, g, b, a] = this.decodeColor(value);
-        transition.value[this.keyR] = r;
-        transition.value[this.keyG] = g;
-        transition.value[this.keyB] = b;
-        transition.value[this.keyA] = a;
-        transition.ticker.add(() => {
-            this.ref.value = this.encodeColor();
-        });
+        this.rValue = { value: r };
+        this.gValue = { value: g };
+        this.bValue = { value: b };
+        this.aValue = { value: a };
+        if (!transition.excitation) {
+            logger.warn(94, 'transitionedColor');
+        } else {
+            this.controller = transition.excitation.add(
+                excited(() => {
+                    this.ref.value = this.encodeColor();
+                })
+            );
+        }
     }
 
     set(value: string, time: number = this.time): void {
         this.transitionColor(this.decodeColor(value), time);
     }
 
-    mode(timing: TimingFn): void {
+    mode(timing: ExcitationCurve): void {
         this.curve = timing;
     }
 
@@ -206,12 +220,15 @@ class RenderColorTransition implements ITransitionedController<string> {
 
     private transitionColor([r, g, b, a]: ColorRGBA, time: number) {
         this.transition
-            .mode(this.curve)
-            .time(time)
-            .transition(this.keyR, r)
-            .transition(this.keyG, g)
-            .transition(this.keyB, b)
-            .transition(this.keyA, a);
+            .curve(this.curve)
+            .transition(this.rValue)
+            .to(r, time)
+            .transition(this.gValue)
+            .to(g, time)
+            .transition(this.bValue)
+            .to(b, time)
+            .transition(this.aValue)
+            .to(a, time);
     }
 
     private decodeColor(color: string): ColorRGBA {
@@ -272,31 +289,37 @@ class RenderColorTransition implements ITransitionedController<string> {
     }
 
     private encodeColor() {
-        const r = this.transition.value[this.keyR];
-        const g = this.transition.value[this.keyG];
-        const b = this.transition.value[this.keyB];
-        const a = this.transition.value[this.keyA];
+        const r = this.rValue.value;
+        const g = this.gValue.value;
+        const b = this.bValue.value;
+        const a = this.aValue.value;
         return `rgba(${r},${g},${b},${a})`;
     }
 }
 
-const transitionMap = new Map<ComponentInternalInstance, Transition>();
+const transitionMap = new Map<ComponentInternalInstance, ITransition>();
 
 function checkTransition() {
     const instance = getCurrentInstance();
     if (!instance) return null;
+    const root = instance.root;
+    if (!root) return null;
+    const el = root.vnode.el as IRenderItem;
+    const renderer = el.parent as IRenderTreeRoot;
+    if (!renderer) return null;
     if (instance.isUnmounted) {
         const tran = transitionMap.get(instance);
-        tran?.ticker.destroy();
+        tran?.destroy();
         transitionMap.delete(instance);
         return null;
     }
     if (!transitionMap.has(instance)) {
         const tran = new Transition();
+        tran.bindExcitation(renderer.excitation);
         transitionMap.set(instance, tran);
         onUnmounted(() => {
             transitionMap.delete(instance);
-            tran.ticker.destroy();
+            tran.destroy();
         });
     }
     const tran = transitionMap.get(instance);
@@ -320,7 +343,7 @@ function checkTransition() {
 export function transitioned(
     value: number,
     time: number,
-    curve: TimingFn
+    curve: ExcitationCurve
 ): ITransitionedController<number> | null {
     const tran = checkTransition();
     if (!tran) return null;
@@ -344,7 +367,7 @@ export function transitioned(
 export function transitionedColor(
     color: string,
     time: number,
-    curve: TimingFn
+    curve: ExcitationCurve
 ): ITransitionedController<string> | null {
     const tran = checkTransition();
     if (!tran) return null;

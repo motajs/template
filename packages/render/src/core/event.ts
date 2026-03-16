@@ -1,4 +1,4 @@
-import type { RenderItem } from './item';
+import { IRenderItem } from './types';
 
 export const enum MouseType {
     /** 没有按键按下 */
@@ -51,7 +51,7 @@ export const enum EventProgress {
 
 export interface IActionEventBase {
     /** 当前事件是监听的哪个元素 */
-    target: RenderItem;
+    target: IRenderItem;
     /** 是触摸操作还是鼠标操作 */
     touch: boolean;
     /**

@@ -8,12 +8,12 @@
         "strict": true
     },
     "include": [
-        "vite.config.ts",
-        "script/**/*.ts",
-        "docs/**/*.ts",
-        "docs/.vitepress/api.ts",
-        "docs/.vitepress/config.ts",
-        "docs/.vitepress/apiSidebar.ts",
-        "docs/.vitepress/init.ts"
+        "./vite.config.ts",
+        "./script/**/*.ts",
+        "./docs/**/*.ts",
+        "./docs/.vitepress/api.ts",
+        "./docs/.vitepress/config.ts",
+        "./docs/.vitepress/apiSidebar.ts",
+        "./docs/.vitepress/init.ts"
     ]
 }
