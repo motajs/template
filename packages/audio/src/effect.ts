@@ -1,23 +1,26 @@
 import { isNil } from 'lodash-es';
-import { sleep } from 'mutate-animate';
+import {
+    IAudioEffect,
+    IAudioInput,
+    IAudioStereoEffect,
+    IAudioChannelVolumeEffect,
+    IAudioDelayEffect,
+    IMotaAudioContext,
+    IAudioEchoEffect
+} from './types';
+import { sleep } from '@motajs/common';
 
-export interface IAudioInput {
-    /** 输入节点 */
-    input: AudioNode;
-}
-
-export interface IAudioOutput {
-    /** 输出节点 */
-    output: AudioNode;
-}
-
-export abstract class AudioEffect implements IAudioInput, IAudioOutput {
+export abstract class AudioEffect implements IAudioEffect {
     /** 输出节点 */
     abstract output: AudioNode;
     /** 输入节点 */
     abstract input: AudioNode;
 
-    constructor(public readonly ac: AudioContext) {}
+    readonly ac: AudioContext;
+
+    constructor(public readonly motaAC: IMotaAudioContext) {
+        this.ac = motaAC.ac;
+    }
 
     /**
      * 当音频播放结束时触发，可以用于节点结束后处理
@@ -66,13 +69,13 @@ export abstract class AudioEffect implements IAudioInput, IAudioOutput {
     }
 }
 
-export class StereoEffect extends AudioEffect {
+export class StereoEffect extends AudioEffect implements IAudioStereoEffect {
     output: PannerNode;
     input: PannerNode;
 
-    constructor(ac: AudioContext) {
+    constructor(ac: IMotaAudioContext) {
         super(ac);
-        const panner = ac.createPanner();
+        const panner = ac.ac.createPanner();
         this.input = panner;
         this.output = panner;
     }
@@ -110,9 +113,9 @@ export class VolumeEffect extends AudioEffect {
     output: GainNode;
     input: GainNode;
 
-    constructor(ac: AudioContext) {
+    constructor(ac: IMotaAudioContext) {
         super(ac);
-        const gain = ac.createGain();
+        const gain = ac.ac.createGain();
         this.input = gain;
         this.output = gain;
     }
@@ -137,21 +140,24 @@ export class VolumeEffect extends AudioEffect {
     start(): void {}
 }
 
-export class ChannelVolumeEffect extends AudioEffect {
+export class ChannelVolumeEffect
+    extends AudioEffect
+    implements IAudioChannelVolumeEffect
+{
     output: ChannelMergerNode;
     input: ChannelSplitterNode;
 
     /** 所有的音量控制节点 */
     private readonly gain: GainNode[] = [];
 
-    constructor(ac: AudioContext) {
+    constructor(ac: IMotaAudioContext) {
         super(ac);
-        const splitter = ac.createChannelSplitter();
-        const merger = ac.createChannelMerger();
+        const splitter = ac.ac.createChannelSplitter();
+        const merger = ac.ac.createChannelMerger();
         this.output = merger;
         this.input = splitter;
         for (let i = 0; i < 6; i++) {
-            const gain = ac.createGain();
+            const gain = ac.ac.createGain();
             splitter.connect(gain, i);
             gain.connect(merger, 0, i);
             this.gain.push(gain);
@@ -182,13 +188,13 @@ export class ChannelVolumeEffect extends AudioEffect {
     start(): void {}
 }
 
-export class DelayEffect extends AudioEffect {
+export class DelayEffect extends AudioEffect implements IAudioDelayEffect {
     output: DelayNode;
     input: DelayNode;
 
-    constructor(ac: AudioContext) {
+    constructor(ac: IMotaAudioContext) {
         super(ac);
-        const delay = ac.createDelay();
+        const delay = ac.ac.createDelay();
         this.input = delay;
         this.output = delay;
     }
@@ -213,7 +219,7 @@ export class DelayEffect extends AudioEffect {
     start(): void {}
 }
 
-export class EchoEffect extends AudioEffect {
+export class EchoEffect extends AudioEffect implements IAudioEchoEffect {
     output: GainNode;
     input: GainNode;
 
@@ -226,10 +232,10 @@ export class EchoEffect extends AudioEffect {
     /** 是否正在播放 */
     private playing: boolean = false;
 
-    constructor(ac: AudioContext) {
+    constructor(ac: IMotaAudioContext) {
         super(ac);
-        const delay = ac.createDelay();
-        const gain = ac.createGain();
+        const delay = ac.ac.createDelay();
+        const gain = ac.ac.createGain();
         gain.gain.value = 0.5;
         delay.delayTime.value = 0.05;
         delay.connect(gain);

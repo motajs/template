@@ -1,0 +1,6 @@
+{
+    "name": "@motajs/loader",
+    "dependencies": {
+        "@motajs/common": "workspace:*"
+    }
+}

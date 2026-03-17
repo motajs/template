@@ -6,7 +6,8 @@ import {
     IExcitationVariator,
     ExcitationCurve,
     VariatorCurveMode,
-    IExcitationDivider
+    IExcitationDivider,
+    IIntervalExcitation
 } from './types';
 import { excited } from './utils';
 
@@ -105,6 +106,30 @@ export class RafExcitation extends ExcitationBase<number> {
             this.rafId = -1;
         }
         super.destroy();
+    }
+}
+
+export class IntervalExcitation
+    extends ExcitationBase<number>
+    implements IIntervalExcitation
+{
+    private now: number = 0;
+    private readonly id: number;
+
+    constructor(readonly interval: number) {
+        super();
+        this.id = window.setInterval(() => {
+            this.excite(this.now);
+            this.now += interval;
+        }, interval);
+    }
+
+    payload(): number {
+        return this.now;
+    }
+
+    override destroy(): void {
+        window.clearInterval(this.id);
     }
 }
 

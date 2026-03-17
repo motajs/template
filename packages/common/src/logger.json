@@ -24,7 +24,7 @@
         "22": "Incorrect props for custom tag. Please ensure you have delivered 'item' prop and other required props.",
         "23": "Cannot get reader when fetching '$1'.",
         "24": "Cannot decode source type of '$1', since there is no registered decoder for that type.",
-        "25": "Unknown audio type. Header: '$1'",
+        "25": "Cannot decode audio binary, since the audio format may not be supported. File header: '$1'",
         "26": "Uncaught error when fetching stream data from '$1'. Error info: $2.",
         "27": "No autotile connection data, please ensure you have created autotile connection map.",
         "28": "Cannot compile map render shader.",

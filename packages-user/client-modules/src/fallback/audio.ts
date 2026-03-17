@@ -1,7 +1,7 @@
 import { Patch, PatchClass } from '@motajs/legacy-common';
-import { audioPlayer, bgmController, soundPlayer } from '../audio';
+import { audioContext, bgmPlayer, soundPlayer } from '@user/client-base';
 import { mainSetting } from '@motajs/legacy-ui';
-import { sleep } from 'mutate-animate';
+import { sleep } from '@motajs/common';
 import { isNil } from 'lodash-es';
 
 // todo: 添加弃用警告 logger.warn(56)
@@ -10,10 +10,10 @@ export function patchAudio() {
     const patch = new Patch(PatchClass.Control);
 
     const play = (bgm: BgmIds, when?: number) => {
-        bgmController.play(bgm, when);
+        bgmPlayer.play(bgm, when);
     };
     const pause = () => {
-        bgmController.pause();
+        bgmPlayer.pause();
     };
 
     patch.add('playBgm', function (bgm, startTime) {
@@ -23,13 +23,13 @@ export function patchAudio() {
         pause();
     });
     patch.add('resumeBgm', function () {
-        bgmController.resume();
+        bgmPlayer.resume();
     });
     patch.add('checkBgm', function () {
-        if (bgmController.playing) return;
+        if (bgmPlayer.playing) return;
         if (mainSetting.getValue('audio.bgmEnabled')) {
-            if (bgmController.playingBgm) {
-                bgmController.play(bgmController.playingBgm);
+            if (bgmPlayer.playingBgm) {
+                bgmPlayer.play(bgmPlayer.playingBgm);
             } else {
                 play(main.startBgm, 0);
             }
@@ -38,8 +38,8 @@ export function patchAudio() {
         }
     });
     patch.add('triggerBgm', function () {
-        if (bgmController.playing) bgmController.pause();
-        else bgmController.resume();
+        if (bgmPlayer.playing) bgmPlayer.pause();
+        else bgmPlayer.resume();
     });
 
     patch.add(
@@ -47,7 +47,7 @@ export function patchAudio() {
         function (sound, _pitch, callback, position, orientation) {
             const name = core.getMappedName(sound) as SoundIds;
             const num = soundPlayer.play(name, position, orientation);
-            const route = audioPlayer.getRoute(`sounds.${num}`);
+            const route = audioContext.getRoute(`sounds.${num}`);
             if (!route) {
                 callback?.();
                 return -1;

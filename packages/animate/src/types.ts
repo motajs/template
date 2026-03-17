@@ -158,6 +158,11 @@ export interface IExcitationDivider<T> extends IExcitation<T> {
     setDivider(divider: number): void;
 }
 
+export interface IIntervalExcitation extends IExcitation<number> {
+    /** 两次触发之间的时间间隔 */
+    readonly interval: number;
+}
+
 //#endregion
 
 //#region 动画类

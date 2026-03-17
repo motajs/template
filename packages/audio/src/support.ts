@@ -1,15 +1,8 @@
+import { AudioType } from './types';
+
 const audio = new Audio();
 
 const supportMap = new Map<string, boolean>();
-
-export const enum AudioType {
-    Mp3 = 'audio/mpeg',
-    Wav = 'audio/wav; codecs="1"',
-    Flac = 'audio/flac',
-    Opus = 'audio/ogg; codecs="opus"',
-    Ogg = 'audio/ogg; codecs="vorbis"',
-    Aac = 'audio/aac'
-}
 
 /**
  * 检查一种音频类型是否能被播放

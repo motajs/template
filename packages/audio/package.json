@@ -1,0 +1,7 @@
+{
+    "name": "@motajs/audio",
+    "dependencies": {
+        "@motajs/common": "workspace:*",
+        "@motajs/loader": "workspace:*"
+    }
+}

@@ -5,3 +5,5 @@ export function create() {
 }
 
 export * from './material';
+
+export * from './ins';

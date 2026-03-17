@@ -530,7 +530,7 @@ export function loadDefaultResource() {
         const res = LoadTask.add('byte', `byte/project/sounds/${v}`);
         Mota.r(() => {
             res.once('load', res => {
-                const { soundPlayer } = Mota.require('@user/client-modules');
+                const { soundPlayer } = Mota.require('@user/client-base');
                 soundPlayer.add(v, res.resource!);
             });
         });
@@ -696,9 +696,8 @@ export async function loadCompressedResource() {
                             new FontFace(name.slice(0, -4), font)
                         );
                     } else if (usage === 'sound' && main.mode === 'play') {
-                        const { soundPlayer } = Mota.require(
-                            '@user/client-modules'
-                        );
+                        const { soundPlayer } =
+                            Mota.require('@user/client-base');
                         soundPlayer.add(name as SoundIds, value as Uint8Array);
                     } else if (usage === 'animate') {
                         const ani = value as string;

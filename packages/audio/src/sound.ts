@@ -1,15 +1,9 @@
-import EventEmitter from 'eventemitter3';
-import { audioPlayer, AudioPlayer } from './player';
 import { logger } from '@motajs/common';
-import { VolumeEffect } from './effect';
+import { IAudioVolumeEffect, IMotaAudioContext } from './types';
 
 type LocationArray = [number, number, number];
 
-interface SoundPlayerEvent {}
-
-export class SoundPlayer<
-    T extends string = SoundIds
-> extends EventEmitter<SoundPlayerEvent> {
+export class SoundPlayer<T extends string = SoundIds> {
     /** 每个音效的唯一标识符 */
     private num: number = 0;
 
@@ -18,14 +12,13 @@ export class SoundPlayer<
     /** 所有正在播放的音乐 */
     readonly playing: Set<number> = new Set();
     /** 音量节点 */
-    readonly gain: VolumeEffect;
+    readonly gain: IAudioVolumeEffect;
 
     /** 是否已经启用 */
     enabled: boolean = true;
 
-    constructor(public readonly player: AudioPlayer) {
-        super();
-        this.gain = player.createVolumeEffect();
+    constructor(public readonly ac: IMotaAudioContext) {
+        this.gain = ac.createVolumeEffect();
     }
 
     /**
@@ -58,7 +51,7 @@ export class SoundPlayer<
      * @param data 音效的Uint8Array数据
      */
     async add(id: T, data: Uint8Array) {
-        const buffer = await this.player.decodeAudioData(data);
+        const buffer = await this.ac.decodeToAudioBuffer(data);
         if (!buffer) {
             logger.warn(51, id);
             return;
@@ -84,19 +77,19 @@ export class SoundPlayer<
             return -1;
         }
         const soundNum = this.num++;
-        const source = this.player.createBufferSource();
+        const source = this.ac.createBufferSource();
         source.setBuffer(buffer);
-        const route = this.player.createRoute(source);
-        const stereo = this.player.createStereoEffect();
+        const route = this.ac.createRoute(source);
+        const stereo = this.ac.createStereoEffect();
         stereo.setPosition(position[0], position[1], position[2]);
         stereo.setOrientation(orientation[0], orientation[1], orientation[2]);
         route.addEffect([stereo, this.gain]);
-        this.player.addRoute(`sounds.${soundNum}`, route);
+        this.ac.addRoute(`sounds.${soundNum}`, route);
         route.play();
         // 清理垃圾
         source.output.addEventListener('ended', () => {
             this.playing.delete(soundNum);
-            this.player.removeRoute(`sounds.${soundNum}`);
+            this.ac.removeRoute(`sounds.${soundNum}`);
         });
         this.playing.add(soundNum);
         return soundNum;
@@ -108,10 +101,10 @@ export class SoundPlayer<
      */
     stop(num: number) {
         const id = `sounds.${num}`;
-        const route = this.player.getRoute(id);
+        const route = this.ac.getRoute(id);
         if (route) {
             route.stop();
-            this.player.removeRoute(id);
+            this.ac.removeRoute(id);
             this.playing.delete(num);
         }
     }
@@ -122,14 +115,12 @@ export class SoundPlayer<
     stopAllSounds() {
         this.playing.forEach(v => {
             const id = `sounds.${v}`;
-            const route = this.player.getRoute(id);
+            const route = this.ac.getRoute(id);
             if (route) {
                 route.stop();
-                this.player.removeRoute(id);
+                this.ac.removeRoute(id);
             }
         });
         this.playing.clear();
     }
 }
-
-export const soundPlayer = new SoundPlayer<SoundIds>(audioPlayer);

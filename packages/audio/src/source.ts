@@ -1,61 +1,22 @@
-import EventEmitter from 'eventemitter3';
-import { IStreamController, IStreamReader } from '../loader';
-import { IAudioInput, IAudioOutput } from './effect';
+import { IStreamController, IStreamReader } from '@motajs/loader';
 import { logger } from '@motajs/common';
-import { AudioType } from './support';
 import CodecParser, { CodecFrame, MimeType, OggPage } from 'codec-parser';
 import { isNil } from 'lodash-es';
-import { IAudioDecodeData, AudioDecoder, checkAudioType } from './decoder';
+import {
+    AudioType,
+    EAudioSourceEvent,
+    IAudioBufferSource,
+    IAudioDecodeData,
+    IAudioDecoder,
+    IAudioElementSource,
+    IAudioInput,
+    IAudioStreamSource,
+    IMotaAudioContext
+} from './types';
+import EventEmitter from 'eventemitter3';
 
-interface AudioSourceEvent {
-    play: [];
-    end: [];
-}
-
-export abstract class AudioSource
-    extends EventEmitter<AudioSourceEvent>
-    implements IAudioOutput
-{
-    /** 音频源的输出节点 */
-    abstract readonly output: AudioNode;
-
-    /** 是否正在播放 */
-    playing: boolean = false;
-
-    /** 获取音频时长 */
-    abstract get duration(): number;
-    /** 获取当前音频播放了多长时间 */
-    abstract get currentTime(): number;
-
-    constructor(public readonly ac: AudioContext) {
-        super();
-    }
-
-    /**
-     * 开始播放这个音频源
-     */
-    abstract play(when?: number): void;
-
-    /**
-     * 停止播放这个音频源
-     * @returns 音频暂停的时刻
-     */
-    abstract stop(): number;
-
-    /**
-     * 连接到音频路由图上，每次调用播放的时候都会执行一次
-     * @param target 连接至的目标
-     */
-    abstract connect(target: IAudioInput): void;
-
-    /**
-     * 设置是否循环播放
-     * @param loop 是否循环
-     */
-    abstract setLoop(loop: boolean): void;
-}
-
-const mimeTypeMap: Record<AudioType, MimeType> = {
+const mimeTypeMap: Record<AudioType, MimeType | 'unknown'> = {
+    [AudioType.Unknown]: 'unknown',
     [AudioType.Aac]: 'audio/aac',
     [AudioType.Flac]: 'audio/flac',
     [AudioType.Mp3]: 'audio/mpeg',
@@ -68,11 +29,16 @@ function isOggPage(data: any): data is OggPage {
     return !isNil(data.isFirstPage);
 }
 
-export class AudioStreamSource extends AudioSource implements IStreamReader {
+export class AudioStreamSource
+    extends EventEmitter<EAudioSourceEvent>
+    implements IAudioStreamSource, IStreamReader
+{
+    readonly ac: AudioContext;
+    /** 音频源节点 */
     output: AudioBufferSourceNode;
 
     /** 音频数据 */
-    buffer?: AudioBuffer;
+    buffer: AudioBuffer | null = null;
 
     /** 是否已经完全加载完毕 */
     loaded: boolean = false;
@@ -80,6 +46,8 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
     buffered: number = 0;
     /** 已经缓冲的采样点数量 */
     bufferedSamples: number = 0;
+    /** 当前是否正在播放 */
+    playing: boolean = false;
     /** 歌曲时长，加载完毕之前保持为 0 */
     duration: number = 0;
     /** 当前已经播放了多长时间 */
@@ -91,7 +59,7 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
     /** 音频的采样率，未成功解析出之前保持为 0 */
     sampleRate: number = 0;
 
-    private controller?: IStreamController;
+    private controller: IStreamController | null = null;
     private loop: boolean = false;
 
     private target?: IAudioInput;
@@ -108,9 +76,9 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
     /** 音频类型 */
     private audioType: AudioType | '' = '';
     /** 音频解码器 */
-    private decoder?: AudioDecoder;
+    private decoder: IAudioDecoder | null = null;
     /** 音频解析器 */
-    private parser?: CodecParser;
+    private parser: CodecParser | null = null;
     /** 每多长时间组成一个缓存 Float32Array */
     private bufferChunkSize: number = 10;
     /** 缓存音频数据，每 bufferChunkSize 秒钟组成一个 Float32Array，用于流式解码 */
@@ -118,9 +86,10 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
 
     private errored: boolean = false;
 
-    constructor(context: AudioContext) {
-        super(context);
-        this.output = context.createBufferSource();
+    constructor(readonly motaAC: IMotaAudioContext) {
+        super();
+        this.ac = motaAC.ac;
+        this.output = motaAC.ac.createBufferSource();
     }
 
     /**
@@ -132,6 +101,24 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
         this.bufferChunkSize = size;
     }
 
+    free(): void {
+        this.stop();
+        this.audioData = [];
+        this.decoder?.destroy();
+        this.decoder = null;
+        this.parser = null;
+        this.audioType = '';
+        this.headerRecieved = false;
+        this.errored = false;
+        this.duration = 0;
+        this.buffered = 0;
+        this.bufferedSamples = 0;
+        this.loaded = false;
+        this.sampleRate = 0;
+        this.buffer = null;
+        this.output.buffer = null;
+    }
+
     piped(controller: IStreamController): void {
         this.controller = controller;
     }
@@ -141,8 +128,9 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
         if (!this.headerRecieved) {
             // 检查头文件获取音频类型，仅检查前256个字节
             const toCheck = data.slice(0, 256);
-            this.audioType = checkAudioType(data);
-            if (!this.audioType) {
+            const type = this.motaAC.getAudioTypeFromData(data);
+            this.audioType = type;
+            if (type === AudioType.Unknown) {
                 logger.error(
                     25,
                     [...toCheck]
@@ -152,22 +140,23 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
                 );
                 return;
             }
-            // 创建解码器
-            const Decoder = AudioDecoder.decoderMap.get(this.audioType);
-            if (!Decoder) {
+            const decoder = this.motaAC.createDecoder(type);
+            if (!decoder) {
                 this.errored = true;
                 logger.error(24, this.audioType);
                 return Promise.reject(
                     `Cannot decode stream source type of '${this.audioType}', since there is no registered decoder for that type.`
                 );
             }
-            this.decoder = new Decoder();
+            this.decoder = decoder;
             // 创建数据解析器
             const mime = mimeTypeMap[this.audioType];
-            const parser = new CodecParser(mime);
-            this.parser = parser;
-            await this.decoder.create();
-            this.headerRecieved = true;
+            if (mime !== 'unknown') {
+                const parser = new CodecParser(mime);
+                this.parser = parser;
+                await decoder.create();
+                this.headerRecieved = true;
+            }
         }
 
         const decoder = this.decoder;
@@ -209,7 +198,7 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
      */
     private async decodeData(
         data: Uint8Array,
-        decoder: AudioDecoder,
+        decoder: IAudioDecoder,
         parser: CodecParser
     ) {
         // 解析音频数据
@@ -230,7 +219,7 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
     /**
      * 解码剩余数据
      */
-    private async decodeFlushData(decoder: AudioDecoder, parser: CodecParser) {
+    private async decodeFlushData(decoder: IAudioDecoder, parser: CodecParser) {
         const audioData = await decoder.flush();
         if (!audioData) return;
         // @ts-expect-error 库类型声明错误
@@ -348,7 +337,7 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
     }
 
     async start() {
-        delete this.buffer;
+        this.buffer = null;
         this.headerRecieved = false;
         this.audioType = '';
         this.errored = false;
@@ -365,13 +354,14 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
     end(done: boolean, reason?: string): void {
         if (done && this.buffer) {
             this.loaded = true;
-            delete this.controller;
+            this.controller = null;
             this.mergeBuffers();
             this.duration = this.buffered;
             this.audioData = [];
             this.decoder?.destroy();
-            delete this.decoder;
-            delete this.parser;
+            this.decoder = null;
+            this.parser = null;
+            this.emit('load');
         } else {
             logger.warn(44, reason ?? '');
         }
@@ -381,14 +371,14 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
         if (!this.buffer) return;
         this.lastStartTime = this.ac.currentTime;
         if (this.playing) this.output.stop();
-        this.emit('play');
         this.createSourceNode(this.buffer);
         this.output.start(0, when);
         this.playing = true;
+        this.emit('play');
         this.output.addEventListener('ended', () => {
             this.playing = false;
-            this.emit('end');
             if (this.loop && !this.output.loop) this.play(0);
+            this.emit('end');
         });
     }
 
@@ -428,8 +418,15 @@ export class AudioStreamSource extends AudioSource implements IStreamReader {
     }
 }
 
-export class AudioElementSource extends AudioSource {
+export class AudioElementSource
+    extends EventEmitter<EAudioSourceEvent>
+    implements IAudioElementSource
+{
+    readonly ac: AudioContext;
     output: MediaElementAudioSourceNode;
+
+    /** 当前是否正在播放 */
+    playing: boolean = false;
 
     /** audio 元素 */
     readonly audio: HTMLAudioElement;
@@ -441,11 +438,12 @@ export class AudioElementSource extends AudioSource {
         return this.audio.currentTime;
     }
 
-    constructor(context: AudioContext) {
-        super(context);
+    constructor(readonly motaAC: IMotaAudioContext) {
+        super();
+        this.ac = motaAC.ac;
         const audio = new Audio();
         audio.preload = 'none';
-        this.output = context.createMediaElementSource(audio);
+        this.output = motaAC.ac.createMediaElementSource(audio);
         this.audio = audio;
         audio.addEventListener('play', () => {
             this.playing = true;
@@ -454,6 +452,11 @@ export class AudioElementSource extends AudioSource {
         audio.addEventListener('ended', () => {
             this.playing = false;
             this.emit('end');
+        });
+        audio.addEventListener('load', () => {
+            if (audio.src.length > 0) {
+                this.emit('load');
+            }
         });
     }
 
@@ -465,6 +468,12 @@ export class AudioElementSource extends AudioSource {
         this.audio.src = url;
     }
 
+    free(): void {
+        this.stop();
+        this.audio.src = '';
+        this.audio.load();
+    }
+
     play(when: number = 0): void {
         if (this.playing) return;
         this.audio.currentTime = when;
@@ -474,7 +483,6 @@ export class AudioElementSource extends AudioSource {
     stop(): number {
         this.audio.pause();
         this.playing = false;
-        this.emit('end');
         return this.audio.currentTime;
     }
 
@@ -487,13 +495,20 @@ export class AudioElementSource extends AudioSource {
     }
 }
 
-export class AudioBufferSource extends AudioSource {
+export class AudioBufferSource
+    extends EventEmitter<EAudioSourceEvent>
+    implements IAudioBufferSource
+{
+    readonly ac: AudioContext;
     output: AudioBufferSourceNode;
 
     /** 音频数据 */
-    buffer?: AudioBuffer;
+    buffer: AudioBuffer | null = null;
     /** 是否循环 */
     private loop: boolean = false;
+
+    /** 当前是否正在播放 */
+    playing: boolean = false;
 
     duration: number = 0;
     get currentTime(): number {
@@ -506,9 +521,10 @@ export class AudioBufferSource extends AudioSource {
     private lastStartTime: number = 0;
     private target?: IAudioInput;
 
-    constructor(context: AudioContext) {
-        super(context);
-        this.output = context.createBufferSource();
+    constructor(readonly motaAC: IMotaAudioContext) {
+        super();
+        this.ac = motaAC.ac;
+        this.output = motaAC.ac.createBufferSource();
     }
 
     /**
@@ -522,19 +538,26 @@ export class AudioBufferSource extends AudioSource {
             this.buffer = buffer;
         }
         this.duration = this.buffer.duration;
+        this.emit('load');
+    }
+
+    free(): void {
+        this.stop();
+        this.output.buffer = null;
+        this.buffer = null;
     }
 
     play(when?: number): void {
         if (this.playing || !this.buffer) return;
         this.playing = true;
         this.lastStartTime = this.ac.currentTime;
-        this.emit('play');
         this.createSourceNode(this.buffer);
         this.output.start(0, when);
+        this.emit('play');
         this.output.addEventListener('ended', () => {
             this.playing = false;
-            this.emit('end');
             if (this.loop && !this.output.loop) this.play(0);
+            this.emit('end');
         });
     }
 
