@@ -48,7 +48,7 @@ type SoundIds =
 type BgmIds =
     | 'bgm.opus'
 
-type FontIds = never
+type FontIds = string;
 
 interface NameMap {
     '确定': 'confirm.opus';

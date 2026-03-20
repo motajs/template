@@ -76,33 +76,33 @@ type MaterialImages = {
     /**
      * 各个类型的图块的图片
      */
-    [C in Exclude<Cls, 'tileset' | 'autotile'>]: HTMLImageElement;
+    [C in Exclude<Cls, 'tileset' | 'autotile'>]: ImageBitmap;
 } & {
     /**
      * 空气墙
      */
-    airwall: HTMLImageElement;
+    airwall: ImageBitmap;
 
     /**
      * 自动元件
      */
-    autotile: Record<AllIdsOf<'autotile'>, HTMLImageElement>;
+    autotile: Record<AllIdsOf<'autotile'>, ImageBitmap>;
 
     /**
      * 全塔属性注册的图片
      */
-    images: Record<ImageIds, HTMLImageElement>;
+    images: Record<ImageIds, ImageBitmap>;
 
     /**
      * 额外素材
      */
-    tilesets: Record<string, HTMLImageElement>;
+    tilesets: Record<string, ImageBitmap>;
 
-    keyboard: HTMLImageElement;
+    keyboard: ImageBitmap;
 
-    hero: HTMLImageElement;
+    hero: ImageBitmap;
 
-    icons: HTMLImageElement;
+    icons: ImageBitmap;
 };
 
 interface Material {
@@ -694,25 +694,6 @@ interface CoreValues {
     floorChangeTime: number;
 }
 
-type CoreStatusBarElements = {
-    /**
-     * @deprecated 已失效，此接口已经不会被使用到\
-     * 状态栏图标信息
-     */
-    readonly icons: Record<string, HTMLImageElement>;
-
-    /**
-     * @deprecated 已失效，此接口已经不会被使用到\
-     * 状态栏的图标元素
-     */
-    readonly image: Record<string, HTMLImageElement>;
-} & {
-    /**
-     * @deprecated 已失效，此接口已经不会被使用到\
-     */
-    readonly [key: string]: HTMLElement;
-};
-
 type Materials = [
     'animates',
     'enemys',
@@ -1095,12 +1076,6 @@ interface Main extends MainData {
     readonly bgmRemoteRoot: string;
 
     /**
-     * @deprecated 已失效，此接口已经不会被使用到\
-     * 所有的系统画布
-     */
-    readonly canvas: Record<string, CanvasRenderingContext2D>;
-
-    /**
      * 获得所有楼层的信息，等同于core.floors，但两者不是引用关系
      */
     readonly floors: DeepReadonly<{
@@ -1140,11 +1115,6 @@ interface Main extends MainData {
      * 当前启动服务是否支持高层塔优化
      */
     readonly supportBunch: boolean;
-
-    /**
-     * 状态栏的图标信息
-     */
-    readonly statusBar: CoreStatusBarElements;
 
     /**
      * 游戏版本

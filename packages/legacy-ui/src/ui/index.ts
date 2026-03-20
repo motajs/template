@@ -6,4 +6,3 @@ export { default as Settings } from './settings.vue';
 export { default as Shop } from './shop.vue';
 export { default as Toolbox } from './toolbox.vue';
 export { default as Hotkey } from './hotkey.vue';
-export { default as Load } from './load.vue';

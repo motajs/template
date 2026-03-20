@@ -12,6 +12,7 @@ import { DefineComponent, DefineSetupFnComponent } from 'vue';
 import { JSX } from 'vue/jsx-runtime';
 import EventEmitter from 'eventemitter3';
 import { SizedCanvasImageSource } from '../types';
+import { ITexture } from '../assets';
 
 //#region 功能类型
 
@@ -572,13 +573,13 @@ export interface IRenderText extends IRenderItem {
 
 export interface IRenderImage extends IRenderItem {
     /** 当前元素的图片内容 */
-    readonly image: CanvasImageSource;
+    readonly image: ITexture | null;
 
     /**
      * 设置图片资源
      * @param image 图片资源
      */
-    setImage(image: CanvasImageSource): void;
+    setImage(image: ITexture): void;
 }
 
 //#endregion

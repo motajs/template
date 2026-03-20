@@ -11,6 +11,7 @@ import { GameTitleUI } from './ui/title';
 import { createWeather } from './weather';
 import { createMainExtension } from './commonIns';
 import { createApp } from './renderer';
+import { LoadSceneUI } from './ui/load';
 
 export function createGameRenderer() {
     const App = defineComponent(_props => {
@@ -23,6 +24,9 @@ export function createGameRenderer() {
 
     mainRenderer.hide();
     createApp(App).mount(mainRenderer);
+
+    sceneController.open(LoadSceneUI, {});
+    mainRenderer.show();
 }
 
 export function createRender() {
@@ -30,11 +34,6 @@ export function createRender() {
     createUI();
     createAction();
     createWeather();
-
-    loading.once('loaded', () => {
-        sceneController.open(GameTitleUI, {});
-        mainRenderer.show();
-    });
 
     loading.once('assetBuilt', () => {
         createMainExtension();

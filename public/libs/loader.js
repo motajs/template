@@ -139,6 +139,7 @@ loader.prototype._loadMaterials_async = function (onprogress, onfinished) {
 };
 
 loader.prototype._loadMaterials_afterLoad = function () {
+    if (main.mode === 'play') return;
     var images = core.splitImage(core.material.images['icons']);
     for (var key in core.statusBar.icons) {
         if (typeof core.statusBar.icons[key] == 'number') {
@@ -602,11 +603,11 @@ loader.prototype.freeBgm = function (name) {
     name = core.getMappedName(name);
     if (!core.material.bgms[name]) return;
     // 从cachedBgms中删除
-    core.musicStatus.cachedBgms = core.musicStatus.cachedBgms.filter(function (
-        t
-    ) {
-        return t != name;
-    });
+    core.musicStatus.cachedBgms = core.musicStatus.cachedBgms.filter(
+        function (t) {
+            return t != name;
+        }
+    );
     // 清掉缓存
     core.material.bgms[name].removeAttribute('src');
     core.material.bgms[name].load();

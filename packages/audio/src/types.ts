@@ -611,7 +611,7 @@ export interface ISoundPlayer<T extends string> {
      * @param id 音效名称
      * @param data 音效的Uint8Array数据
      */
-    add(id: T, data: Uint8Array): Promise<void>;
+    add(id: T, data: Uint8Array | AudioBuffer): Promise<void>;
 
     /**
      * 播放一个音效

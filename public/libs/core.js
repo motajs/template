@@ -297,18 +297,6 @@ core.prototype.init = async function (coreData, callback) {
                 core._afterLoadResources(callback);
             });
         }
-    } else {
-        if (main.renderLoaded)
-            Mota.require('@motajs/legacy-ui').fixedUi.open('load', {
-                callback
-            });
-        else {
-            Mota.require('@user/data-base').hook.once('renderLoaded', () => {
-                Mota.require('@motajs/legacy-ui').fixedUi.open('load', {
-                    callback
-                });
-            });
-        }
     }
 };
 

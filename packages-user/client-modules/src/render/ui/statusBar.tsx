@@ -1,7 +1,7 @@
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { computed, ComputedRef, defineComponent, shallowReactive } from 'vue';
 import { TextContent } from '../components';
-import { ElementLocator, Font, SizedCanvasImageSource } from '@motajs/render';
+import { ElementLocator, Font, ITexture } from '@motajs/render';
 import { MixedToolbar, ReplayingStatus } from './toolbar';
 import { openViewMap } from './viewmap';
 import { mainUIController } from './controller';
@@ -12,6 +12,7 @@ import {
     STATUS_BAR_WIDTH
 } from '../shared';
 import { DefaultProps } from '@motajs/render-vue';
+import { materials } from '@user/client-base';
 
 export interface ILeftHeroStatus {
     /** 楼层 id */
@@ -69,27 +70,27 @@ export interface IRightHeroStatus {
 
 interface StatusInfo {
     /** 图标 */
-    icon: SizedCanvasImageSource;
+    readonly icon: ITexture | null;
     /** 属性值，经过格式化 */
-    value: ComputedRef<string>;
+    readonly value: ComputedRef<string>;
     /** 字体 */
-    font: Font;
+    readonly font: Font;
     /** 文字颜色 */
-    color: CanvasStyle;
+    readonly color: CanvasStyle;
 }
 
 interface KeyLikeItem {
     /** 属性值，经过格式化 */
-    value: ComputedRef<string>;
+    readonly value: ComputedRef<string>;
     /** 字体 */
-    font: Font;
+    readonly font: Font;
     /** 文字颜色 */
-    color: CanvasStyle;
+    readonly color: CanvasStyle;
 }
 
 interface KeyLikeInfo {
     /** 这一行包含的内容 */
-    items: KeyLikeItem[];
+    readonly items: KeyLikeItem[];
 }
 
 interface StatusBarProps<T> extends DefaultProps {
@@ -115,15 +116,15 @@ export const LeftStatusBar = defineComponent<StatusBarProps<ILeftHeroStatus>>(
         /** 状态属性的开始纵坐标 */
         const STATUS_Y = TITLE_HEIGHT + STATUS_PAD;
 
-        // 可以换成 core.material.images.images['xxx.png'] 来使用全塔属性注册的图片
-        const hpIcon = core.statusBar.icons.hp;
-        const atkIcon = core.statusBar.icons.atk;
-        const defIcon = core.statusBar.icons.def;
-        const mdefIcon = core.statusBar.icons.mdef;
-        const moneyIcon = core.statusBar.icons.money;
-        const expIcon = core.statusBar.icons.exp;
-        const manaIcon = core.statusBar.icons.mana;
-        const lvIcon = core.statusBar.icons.lv;
+        // 可以换成 materials.getImageByAlias('xxx.png') 来使用全塔属性注册的图片
+        const hpIcon = materials.getImageByAlias('icon-hp');
+        const atkIcon = materials.getImageByAlias('icon-atk');
+        const defIcon = materials.getImageByAlias('icon-def');
+        const mdefIcon = materials.getImageByAlias('icon-mdef');
+        const moneyIcon = materials.getImageByAlias('icon-money');
+        const expIcon = materials.getImageByAlias('icon-exp');
+        const manaIcon = materials.getImageByAlias('icon-mana');
+        const lvIcon = materials.getImageByAlias('icon-lv');
 
         const s = p.status;
 

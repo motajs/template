@@ -149,6 +149,7 @@
         "92": "Followers can only be added when the last follower is not moving.",
         "93": "Followers can only be removed when the last follower is not moving.",
         "94": "Expecting an excitation binding when using '$1'",
+        "95": "Task adding is required before start loading.",
         "1001": "Item-detail extension needs 'floor-binder' and 'floor-damage' extension as dependency."
     }
 }

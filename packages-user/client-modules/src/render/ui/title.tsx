@@ -14,6 +14,7 @@ import {
     HALF_WIDTH,
     MAIN_HEIGHT,
     MAIN_WIDTH,
+    TITLE_BACKGROUND_IMAGE,
     TITLE_FILL,
     TITLE_STROKE,
     TITLE_STROKE_WIDTH,
@@ -34,6 +35,7 @@ import { MainSceneUI } from './main';
 import { adjustCover } from '../utils';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { sleep } from '@motajs/common';
+import { materials } from '@user/client-base';
 
 const enum TitleButton {
     StartGame,
@@ -62,12 +64,12 @@ const gameTitleProps = {
 } satisfies SetupComponentOptions<GameTitleProps>;
 
 export const GameTitle = defineComponent<GameTitleProps>(props => {
-    const bg = core.material.images.images['bg.jpg'];
+    const bg = materials.getImageByAlias(TITLE_BACKGROUND_IMAGE);
 
     //#region 计算背景图
     const [width, height] = adjustCover(
-        bg.width,
-        bg.height,
+        bg?.width ?? MAIN_WIDTH,
+        bg?.height ?? MAIN_HEIGHT,
         MAIN_WIDTH,
         MAIN_HEIGHT
     );

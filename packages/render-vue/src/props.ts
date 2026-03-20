@@ -16,8 +16,10 @@ import {
     LineParams,
     QuadParams,
     RectRCircleParams,
-    RectREllipseParams
+    RectREllipseParams,
+    ITexture
 } from '@motajs/render';
+import { Ref } from 'vue';
 
 export interface BaseProps {
     /** 元素的横坐标 */
@@ -81,6 +83,8 @@ export interface BaseProps {
 export interface CustomProps extends BaseProps {
     /** 自定义的渲染函数 */
     render?: CustomRenderFunction;
+    /** 更新绑定，当数组中的任意一项更新时将会自动更新此元素的渲染 */
+    bindings?: Ref<any>[];
 }
 
 export interface ContainerProps extends BaseProps {}
@@ -111,7 +115,7 @@ export interface TextProps extends BaseProps {
 
 export interface ImageProps extends BaseProps {
     /** 图片对象 */
-    image: CanvasImageSource;
+    image?: ITexture | null;
 }
 
 export interface CommentProps extends BaseProps {

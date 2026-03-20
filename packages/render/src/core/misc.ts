@@ -2,6 +2,7 @@ import { RenderItem, Transform, MotaOffscreenCanvas2D } from '.';
 import { CanvasStyle } from '../types';
 import { Font } from '../style';
 import { IRenderImage, IRenderText } from './types';
+import { ITexture } from '../assets';
 
 /** 文字的安全填充，会填充在文字的上侧和下侧，防止削顶和削底 */
 const SAFE_PAD = 1;
@@ -147,31 +148,31 @@ export class Text extends RenderItem implements IRenderText {
 }
 
 export class Image extends RenderItem implements IRenderImage {
-    image: CanvasImageSource;
+    image: ITexture | null;
 
-    constructor(image: CanvasImageSource, enableCache: boolean = false) {
+    constructor(enableCache: boolean = false) {
         super(enableCache);
-        this.image = image;
-        if (image instanceof VideoFrame || image instanceof SVGElement) {
-            this.size(200, 200);
-        } else {
-            this.size(image.width, image.height);
-        }
+        this.image = null;
     }
 
     protected render(
         canvas: MotaOffscreenCanvas2D,
         _transform: Transform
     ): void {
+        if (!this.image) return;
         const ctx = canvas.ctx;
-        ctx.drawImage(this.image, 0, 0, this.width, this.height);
+        const {
+            source,
+            rect: { x, y, w, h }
+        } = this.image.render();
+        ctx.drawImage(source, x, y, w, h, 0, 0, this.width, this.height);
     }
 
     /**
      * 设置图片资源
      * @param image 图片资源
      */
-    setImage(image: CanvasImageSource) {
+    setImage(image: ITexture | null) {
         this.image = image;
         this.update();
     }
@@ -183,7 +184,8 @@ export class Image extends RenderItem implements IRenderImage {
     ): boolean {
         switch (key) {
             case 'image':
-                this.setImage(nextValue);
+                if (!nextValue) this.setImage(null);
+                else this.setImage(nextValue);
                 return true;
         }
         return false;

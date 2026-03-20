@@ -73,11 +73,11 @@ import fs from 'fs/promises';
         './src/types/source/data.d.ts',
         `
 ${floorId}
-${d.images.length > 0 ? imgs : 'type ImageIds = never\n'}
-${d.animates.length > 0 ? anis : 'type AnimationIds = never\n'}
-${d.sounds.length > 0 ? sounds : 'type SoundIds = never\n'}
-${d.bgms.length > 0 ? bgms : 'type BgmIds = never\n'}
-${d.fonts.length > 0 ? fonts : 'type FontIds = never\n'}
+${d.images.length > 0 ? imgs : 'type ImageIds = string;\n'}
+${d.animates.length > 0 ? anis : 'type AnimationIds = string;\n'}
+${d.sounds.length > 0 ? sounds : 'type SoundIds = string;\n'}
+${d.bgms.length > 0 ? bgms : 'type BgmIds = string;\n'}
+${d.fonts.length > 0 ? fonts : 'type FontIds = string;\n'}
 ${names}
 `,
         'utf-8'

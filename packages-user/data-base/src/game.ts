@@ -49,7 +49,7 @@ class GameLoading extends EventEmitter<GameLoadEvent> {
      * @param autotiles 自动元件数组
      */
     onAutotileLoaded(
-        autotiles: Partial<Record<AllIdsOf<'autotile'>, HTMLImageElement>>
+        autotiles: Partial<Record<AllIdsOf<'autotile'>, ImageBitmap>>
     ) {
         if (this.autotileListened) return;
         this.autotileListened = true;

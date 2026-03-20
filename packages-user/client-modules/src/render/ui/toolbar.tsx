@@ -25,6 +25,7 @@ import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '../shared';
 import { openReplay, openSettings } from './settings';
 import { openViewMap } from './viewmap';
 import { DefaultProps } from '@motajs/render-vue';
+import { materials } from '@user/client-base';
 
 interface ToolbarProps extends DefaultProps {
     loc?: ElementLocator;
@@ -73,15 +74,15 @@ export const PlayingToolbar = defineComponent<
     ToolbarEmits,
     keyof ToolbarEmits
 >((props, { emit }) => {
-    const bookIcon = core.statusBar.icons.book;
-    const flyIcon = core.statusBar.icons.fly;
-    const toolIcon = core.statusBar.icons.toolbox;
-    const equipIcon = core.statusBar.icons.equipbox;
-    const keyIcon = core.statusBar.icons.keyboard;
-    const shopIcon = core.statusBar.icons.shop;
-    const saveIcon = core.statusBar.icons.save;
-    const loadIcon = core.statusBar.icons.load;
-    const setIcon = core.statusBar.icons.settings;
+    const bookIcon = materials.getImageByAlias('icon-book');
+    const flyIcon = materials.getImageByAlias('icon-fly');
+    const toolIcon = materials.getImageByAlias('icon-toolbox');
+    const equipIcon = materials.getImageByAlias('icon-equipbox');
+    const keyIcon = materials.getImageByAlias('icon-keyboard');
+    const shopIcon = materials.getImageByAlias('icon-shop');
+    const saveIcon = materials.getImageByAlias('icon-save');
+    const loadIcon = materials.getImageByAlias('icon-load');
+    const setIcon = materials.getImageByAlias('icon-settings');
 
     const iconFont = new Font('Verdana', 12);
 
@@ -170,8 +171,8 @@ const replayingProps = {
 export const ReplayingToolbar = defineComponent<ReplayingProps>(props => {
     const status = props.status;
 
-    const bookIcon = core.statusBar.icons.book;
-    const saveIcon = core.statusBar.icons.save;
+    const bookIcon = materials.getImageByAlias('icon-book');
+    const saveIcon = materials.getImageByAlias('icon-save');
     const font1 = Font.defaults({ size: 16 });
     const font2 = new Font('Verdana', 12);
 

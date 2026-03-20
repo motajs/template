@@ -2046,9 +2046,6 @@ control.prototype._doSL_load = function (id, callback) {
             core.saves.autosave.now,
             1
         )[0];
-        if (!main.replayChecking) {
-            Mota.require('@motajs/legacy-ui').fixedUi.closeByName('start');
-        }
         if (core.isPlaying() && !core.status.gameOver) {
             core.control.autosave(0);
             core.saves.autosave.now -= 1;
@@ -2063,11 +2060,6 @@ control.prototype._doSL_load = function (id, callback) {
             id == 'autoSave' ? id : 'save' + id,
             null,
             function (data) {
-                if (!main.replayChecking && data) {
-                    Mota.require('@motajs/legacy-ui').fixedUi.closeByName(
-                        'start'
-                    );
-                }
                 if (id == 'autoSave' && data != null) {
                     core.saves.autosave.data = data;
                     if (!(core.saves.autosave.data instanceof Array)) {

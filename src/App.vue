@@ -16,21 +16,12 @@
                 </div>
             </div>
         </div>
-        <div id="ui-fixed">
-            <template v-for="ui of fixedUi.stack" :key="ui.num">
-                <component
-                    :is="ui.ui.component"
-                    v-bind="ui.vBind ?? {}"
-                    v-on="ui.vOn ?? {}"
-                ></component>
-            </template>
-        </div>
     </div>
 </template>
 
 <script lang="ts" setup>
 import { onMounted } from 'vue';
-import { mainUi, fixedUi } from '@motajs/legacy-ui';
+import { mainUi } from '@motajs/legacy-ui';
 
 onMounted(() => {
     const { hook } = Mota.require('@user/data-base');

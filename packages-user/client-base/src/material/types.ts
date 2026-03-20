@@ -102,8 +102,7 @@ export interface IMaterialFramedData {
 }
 
 export interface IMaterialAsset
-    extends IDirtyTracker<boolean>,
-        IDirtyMarker<void> {
+    extends IDirtyTracker<boolean>, IDirtyMarker<void> {
     /** 图集的贴图数据 */
     readonly data: ITextureComposedData;
 }
@@ -290,8 +289,7 @@ export interface IMaterialAliasGetter {
 }
 
 export interface IMaterialManager
-    extends IMaterialGetter,
-        IMaterialAliasGetter {
+    extends IMaterialGetter, IMaterialAliasGetter {
     /** 贴图存储，把 terrains 等内容单独分开存储 */
     readonly tileStore: ITextureStore;
     /** tilesets 贴图存储，每个 tileset 是一个贴图对象 */
@@ -331,7 +329,6 @@ export interface IMaterialManager
     addRowAnimate(
         source: SizedCanvasImageSource,
         map: ArrayLike<IBlockIdentifier>,
-        frames: number,
         height: number
     ): Iterable<IMaterialData>;
 

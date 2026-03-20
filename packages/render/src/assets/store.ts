@@ -2,9 +2,9 @@ import { isNil } from 'lodash-es';
 import { ITexture, ITextureStore } from './types';
 import { logger } from '@motajs/common';
 
-export class TextureStore<T extends ITexture = ITexture>
-    implements ITextureStore<T>
-{
+export class TextureStore<
+    T extends ITexture = ITexture
+> implements ITextureStore<T> {
     private readonly texMap: Map<number, T> = new Map();
     private readonly invMap: Map<T, number> = new Map();
     private readonly aliasMap: Map<string, number> = new Map();

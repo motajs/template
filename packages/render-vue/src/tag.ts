@@ -9,13 +9,15 @@ import {
     Image,
     IRenderItem,
     IRenderTreeRoot,
+    ITexture,
     Line,
     Path,
     QuadraticCurve,
     Rect,
     RectR,
     Shader,
-    Text
+    Text,
+    Texture
 } from '@motajs/render';
 import { IRenderTagInfo, IRenderTagManager, TagCreateFunction } from './types';
 import { logger } from '@motajs/common';
@@ -24,13 +26,13 @@ export class RenderTagManager implements IRenderTagManager {
     /** 标签注册映射 */
     private readonly tagRegistry: Map<string, IRenderTagInfo> = new Map();
     /** 空图片 */
-    private readonly emptyImg: HTMLCanvasElement;
+    private readonly emptyImg: ITexture;
 
     constructor(readonly renderer: IRenderTreeRoot) {
         const emptyImage = document.createElement('canvas');
         emptyImage.width = 1;
         emptyImage.height = 1;
-        this.emptyImg = emptyImage;
+        this.emptyImg = new Texture(emptyImage);
 
         this.resgiterIntrinsicTags();
     }
@@ -52,17 +54,7 @@ export class RenderTagManager implements IRenderTagManager {
             const { text = '', nocache = true, cache = false } = props;
             return this.renderer.createElement(Text, text, cache && !nocache);
         });
-        this.registerTag('image', props => {
-            if (!props) {
-                return this.renderer.createElement(Image, this.emptyImg, false);
-            }
-            const {
-                image = this.emptyImg,
-                nocache = true,
-                cache = false
-            } = props;
-            return this.renderer.createElement(Image, image, cache && !nocache);
-        });
+        this.registerTag('image', this.createStandardElement(false, Image));
         this.registerTag('shader', this.createNoParamElement(Shader));
         this.registerTag('comment', props => {
             if (!props) return this.renderer.createElement(Comment);

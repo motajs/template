@@ -3,8 +3,7 @@
 export function initUI() {
     if (main.mode === 'editor') return;
     if (!main.replayChecking) {
-        const { mainUi, fixedUi, mainSetting } =
-            Mota.require('@motajs/legacy-ui');
+        const { mainUi } = Mota.require('@motajs/legacy-ui');
 
         ui.prototype.drawBook = function () {
             if (!core.isReplaying()) return mainUi.open('book');
@@ -25,11 +24,6 @@ export function initUI() {
         control.prototype.showStatusBar = function () {
             if (main.mode === 'editor') return;
             core.removeFlag('hideStatusBar');
-            if (mainSetting.getValue('ui.tips')) {
-                if (!fixedUi.hasName('tips')) {
-                    fixedUi.open('tips');
-                }
-            }
             core.updateStatusBar();
         };
 
@@ -39,8 +33,6 @@ export function initUI() {
             // 如果原本就是隐藏的，则先显示
             if (!core.domStyle.showStatusBar) this.showStatusBar();
             if (core.isReplaying()) showToolbox = true;
-            fixedUi.closeByName('tips');
-
             core.setFlag('hideStatusBar', true);
             core.setFlag('showToolbox', showToolbox || null);
             core.updateStatusBar();

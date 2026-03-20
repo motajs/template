@@ -1,9 +1,11 @@
 import { logger } from '@motajs/common';
-import { IAudioVolumeEffect, IMotaAudioContext } from './types';
+import { IAudioVolumeEffect, IMotaAudioContext, ISoundPlayer } from './types';
 
 type LocationArray = [number, number, number];
 
-export class SoundPlayer<T extends string = SoundIds> {
+export class SoundPlayer<
+    T extends string = SoundIds
+> implements ISoundPlayer<T> {
     /** 每个音效的唯一标识符 */
     private num: number = 0;
 
@@ -50,13 +52,17 @@ export class SoundPlayer<T extends string = SoundIds> {
      * @param id 音效名称
      * @param data 音效的Uint8Array数据
      */
-    async add(id: T, data: Uint8Array) {
-        const buffer = await this.ac.decodeToAudioBuffer(data);
-        if (!buffer) {
-            logger.warn(51, id);
-            return;
+    async add(id: T, data: Uint8Array | AudioBuffer) {
+        if (data instanceof Uint8Array) {
+            const buffer = await this.ac.decodeToAudioBuffer(data);
+            if (!buffer) {
+                logger.warn(51, id);
+                return;
+            }
+            this.buffer.set(id, buffer);
+        } else {
+            this.buffer.set(id, data);
         }
-        this.buffer.set(id, buffer);
     }
 
     /**

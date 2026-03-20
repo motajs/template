@@ -5,7 +5,7 @@ import { MotaOffscreenCanvas2D, SizedCanvasImageSource } from '@motajs/render';
 // 得出结论，ImageBitmap和Canvas的绘制性能不如Image，于是直接画Image就行，所以缓存基本上就是存Image
 
 type ImageMapKeys = Exclude<Cls, 'tileset' | 'autotile'>;
-type ImageMap = Record<ImageMapKeys, HTMLImageElement>;
+type ImageMap = Record<ImageMapKeys, ImageBitmap>;
 
 const i = (img: ImageMapKeys) => {
     return core.material.images[img];
@@ -21,10 +21,10 @@ interface AutotileCache {
 type AutotileCaches = Record<AllNumbersOf<'autotile'>, AutotileCache>;
 
 interface TextureRequire {
-    tileset: Record<string, HTMLImageElement>;
-    material: Record<ImageMapKeys, HTMLImageElement>;
+    tileset: Record<string, ImageBitmap>;
+    material: Record<ImageMapKeys, ImageBitmap>;
     autotile: AutotileCaches;
-    images: Record<ImageIds, HTMLImageElement>;
+    images: Record<ImageIds, ImageBitmap>;
 }
 
 interface RenderableDataBase {
@@ -49,10 +49,10 @@ export interface AutotileRenderable extends RenderableDataBase {
 }
 
 class TextureCache {
-    tileset!: Record<string, HTMLImageElement>;
-    material: Record<ImageMapKeys, HTMLImageElement>;
+    tileset!: Record<string, ImageBitmap>;
+    material: Record<ImageMapKeys, ImageBitmap>;
     autotile!: AutotileCaches;
-    images!: Record<ImageIds, HTMLImageElement>;
+    images!: Record<ImageIds, ImageBitmap>;
 
     idNumberMap!: IdToNumber;
 
@@ -76,7 +76,7 @@ class TextureCache {
     characterTurn2: Dir2[] = ['leftup', 'rightup', 'rightdown', 'leftdown'];
 
     constructor() {
-        this.material = imageMap as Record<ImageMapKeys, HTMLImageElement>;
+        this.material = imageMap as Record<ImageMapKeys, ImageBitmap>;
     }
 
     init() {

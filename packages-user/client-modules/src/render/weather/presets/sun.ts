@@ -4,7 +4,7 @@ import { clamp } from 'lodash-es';
 
 export class SunWeather extends Weather<CustomRenderItem> {
     /** 阳光图片 */
-    private image: HTMLImageElement | null = null;
+    private image: ImageBitmap | null = null;
     /** 阳光图片的不透明度 */
     private alpha: number = 0;
     /** 阳光的最大不透明度 */

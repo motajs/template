@@ -14,7 +14,3 @@ mainUi.register(
     new GameUi('virtualKey', VirtualKey)
 );
 mainUi.showAll();
-
-export const fixedUi = new UiController(true);
-fixedUi.register(new GameUi('load', UI.Load));
-fixedUi.showAll();

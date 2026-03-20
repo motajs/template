@@ -123,6 +123,12 @@ export class AudioStreamSource
         this.controller = controller;
     }
 
+    unpiped(controller: IStreamController): void {
+        if (this.controller === controller) {
+            this.controller = null;
+        }
+    }
+
     async pump(data: Uint8Array | undefined, done: boolean): Promise<void> {
         if (!data || this.errored) return;
         if (!this.headerRecieved) {

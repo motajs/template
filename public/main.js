@@ -20,6 +20,7 @@ function main() {
 
     this.dom = {
         body: document.body,
+        // 这些是给编辑器留的
         gameDraw: document.getElementById('game-draw'),
         gameCanvas: document.getElementsByClassName('gameCanvas'),
         inputDiv: document.getElementById('inputDiv'),
@@ -64,6 +65,8 @@ function main() {
         'icons'
     ];
 
+    // 这些也是给编辑器留的
+    this.canvas = {};
     this.statusBar = {
         image: {},
         icons: {
@@ -105,8 +108,8 @@ function main() {
             btn8: 34
         }
     };
+
     this.floors = {};
-    this.canvas = {};
 
     this.__VERSION__ = '2.10.0';
     this.__VERSION_CODE__ = 610;

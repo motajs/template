@@ -1,6 +1,9 @@
 import { ITexture } from '@motajs/render';
-import { materials } from './ins';
-import { IBlockIdentifier, IIndexedIdentifier } from './types';
+import {
+    IBlockIdentifier,
+    IIndexedIdentifier,
+    IMaterialManager
+} from './types';
 import { isNil } from 'lodash-es';
 
 function extractClsBlocks<C extends Exclude<Cls, 'tileset'>>(
@@ -47,7 +50,7 @@ function addAutotile(set: Set<number>, map?: readonly (readonly number[])[]) {
 /**
  * 兼容旧版加载
  */
-export function fallbackLoad() {
+export function fallbackLoad(materials: IMaterialManager) {
     // 基本素材
     const icons = core.icons.icons;
     const images = core.material.images;
@@ -100,12 +103,6 @@ export function fallbackLoad() {
             alias: v
         };
         materials.addTileset(img, identifier);
-    });
-
-    // Images
-    core.images.forEach((v, i) => {
-        const img = core.material.images.images[v];
-        materials.addImage(img, { index: i, alias: v });
     });
 
     // 地图上出现过的 tileset

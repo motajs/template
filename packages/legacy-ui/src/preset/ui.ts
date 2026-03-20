@@ -4,7 +4,7 @@ import { isMobile } from '../use';
 import { MotaSetting } from '../setting';
 import { triggerFullscreen } from '../utils';
 import settingsText from '../data/settings.json';
-import { fixedUi, mainUi } from './uiIns';
+import { mainUi } from './uiIns';
 import { mainSetting } from './settingIns';
 
 //#region legacy-ui
@@ -13,8 +13,6 @@ export function createUI() {
     const { hook } = Mota.require('@user/data-base');
     hook.once('mounted', () => {
         const ui = document.getElementById('ui-main')!;
-        const fixed = document.getElementById('ui-fixed')!;
-
         const blur = mainSetting.getSetting('screen.blur');
 
         mainUi.on('start', () => {
@@ -33,12 +31,6 @@ export function createUI() {
             if (!noClosePanel) {
                 core.closePanel();
             }
-        });
-        fixedUi.on('start', () => {
-            fixed.style.display = 'block';
-        });
-        fixedUi.on('end', () => {
-            fixed.style.display = 'none';
         });
     });
 }
@@ -123,21 +115,11 @@ function handleAudioSetting<T extends number | boolean>(
     }
 }
 
-function handleUiSetting<T extends number | boolean>(key: string, n: T, _o: T) {
-    if (key === 'danmaku') {
-        if (n) {
-            fixedUi.open('danmaku');
-        } else {
-            fixedUi.closeByName('danmaku');
-        }
-    } else if (key === 'tips') {
-        if (n && core.isPlaying()) {
-            fixedUi.open('tips');
-        } else {
-            fixedUi.closeByName('tips');
-        }
-    }
-}
+function handleUiSetting<T extends number | boolean>(
+    _key: string,
+    _n: T,
+    _o: T
+) {}
 
 // ----- 游戏的所有设置项
 mainSetting

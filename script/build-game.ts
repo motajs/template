@@ -9,8 +9,13 @@ import { transformAsync } from '@babel/core';
 import archiver from 'archiver';
 import { createWriteStream } from 'fs';
 import { zip } from 'compressing';
-import { RequiredData, RequiredIconsData, ResourceType } from './types';
-import { splitResource, SplittedResource } from './build-resource';
+import { RequiredData, RequiredIconsData } from './types';
+import {
+    CompressedUsage,
+    LoadDataType,
+    splitResource,
+    SplittedResource
+} from './build-resource';
 import { formatSize } from './utils';
 
 /** 打包调试 */
@@ -292,9 +297,9 @@ async function getAllChars(client: RollupOutput[]) {
 }
 
 interface CompressedLoadListItem {
-    type: ResourceType;
-    name: string;
-    usage: string;
+    readonly readAs: LoadDataType;
+    readonly name: string;
+    readonly usage: CompressedUsage;
 }
 
 type CompressedLoadList = Record<string, CompressedLoadListItem[]>;
@@ -309,7 +314,7 @@ function generateResourceJSON(resources: SplittedResource[]) {
         const uri = `project/resource/${file.fileName}`;
         file.content.forEach(content => {
             const item: CompressedLoadListItem = {
-                type: content.type,
+                readAs: content.readAs,
                 name: content.name,
                 usage: content.usage
             };
@@ -468,7 +473,7 @@ async function buildGame() {
     await Promise.all(
         fonts.map(v => {
             const fontmin = new Fontmin();
-            const src = resolve(tempDir, 'client/project/fonts', `${v}.ttf`);
+            const src = resolve(tempDir, 'client/project/fonts', v);
             const dest = resolve(tempDir, 'fonts');
             const plugin = Fontmin.glyph({
                 text: [...chars].join('')
