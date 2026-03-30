@@ -57,8 +57,6 @@ export interface IMotaAssetsLoader {
     >;
     /** 文字处理器 */
     readonly textProcessor: ILoadTaskProcessor<LoadDataType.Text, string>;
-    /** JSON 处理器 */
-    readonly jsonProcessor: ILoadTaskProcessor<LoadDataType.JSON, any>;
     /** `zip` 压缩包处理器 */
     readonly zipProcessor: ILoadTaskProcessor<LoadDataType.ArrayBuffer, JSZip>;
 
@@ -82,5 +80,5 @@ export interface IMotaAssetsLoader {
      * 开始所有加载任务的加载工作
      * @returns 一个 `Promise`，当所有加载任务加载完成后兑现
      */
-    load(): Promise<any[]>;
+    load(): Promise<void>;
 }

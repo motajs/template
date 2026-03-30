@@ -8,7 +8,7 @@ import {
 } from '@motajs/audio';
 import { MotaAssetsLoader } from './load/loader';
 import { AutotileProcessor, MaterialManager } from './material';
-import { loadProgress } from '@user/data-base';
+import { dataLoader, loadProgress } from '@user/data-base';
 
 //#region 音频实例
 
@@ -35,9 +35,10 @@ export const autotile = new AutotileProcessor(materials);
 
 //#region 加载实例
 
-/** 全局加载实例 */
+/** 客户端加载实例 */
 export const loader = new MotaAssetsLoader(
     loadProgress,
+    dataLoader,
     audioContext,
     soundPlayer,
     materials

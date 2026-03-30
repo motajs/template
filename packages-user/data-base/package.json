@@ -1,6 +1,7 @@
 {
     "name": "@user/data-base",
     "dependencies": {
-        "@motajs/types": "workspace:*"
+        "@motajs/types": "workspace:*",
+        "@motajs/loader": "workspace:*"
     }
 }

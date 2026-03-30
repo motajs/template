@@ -3,6 +3,7 @@
     "dependencies": {
         "@motajs/audio": "workspace:*",
         "@motajs/render": "workspace:*",
-        "@motajs/client-base": "workspace:*"
+        "@motajs/client-base": "workspace:*",
+        "@user/data-base": "workspace:*"
     }
 }

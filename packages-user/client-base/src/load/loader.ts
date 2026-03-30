@@ -17,26 +17,15 @@ import {
     LoadAudioProcessor,
     LoadFontProcessor,
     LoadImageProcessor,
-    LoadJSONProcessor,
     LoadTextProcessor,
     LoadZipProcessor
-} from './processor';
+} from '@user/data-base';
 import { IMotaAudioContext, ISoundPlayer } from '@motajs/audio';
 import { loading } from '@user/data-base';
 import { IMaterialManager } from '../material';
 import { ITextureSplitter, Texture, TextureRowSplitter } from '@motajs/render';
 import { iconNames } from './data';
-
-interface LoadTaskStore<T extends LoadDataType = LoadDataType, R = any> {
-    /** 加载任务对象 */
-    readonly task: ILoadTask<T, R>;
-    /** 当 `onLoaded` 兑现后兑现的 `Promise` */
-    readonly loadPromise: Promise<R>;
-    /** 兑现 `loadPromise` */
-    readonly loadResolve: (data: R) => void;
-    /** 当加载任务完成时执行的函数 */
-    readonly onLoaded: CustomLoadFunc<R>;
-}
+import { IMotaDataLoader } from '@user/data-base';
 
 export class MotaAssetsLoader implements IMotaAssetsLoader {
     /** 当前是否正在进行加载 */
@@ -54,11 +43,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
         FontFace
     >;
     readonly textProcessor: ILoadTaskProcessor<LoadDataType.Text, string>;
-    readonly jsonProcessor: ILoadTaskProcessor<LoadDataType.JSON, any>;
     readonly zipProcessor: ILoadTaskProcessor<LoadDataType.ArrayBuffer, JSZip>;
-
-    /** 当前已添加的加载任务 */
-    private readonly tasks: Set<LoadTaskStore> = new Set();
 
     /** 素材索引 */
     private materialsCounter: number = 0;
@@ -67,6 +52,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
 
     constructor(
         readonly progress: ILoadProgressTotal,
+        private readonly dataLoader: IMotaDataLoader,
         private readonly ac: IMotaAudioContext,
         private readonly sounds: ISoundPlayer<SoundIds>,
         private readonly materials: IMaterialManager
@@ -75,7 +61,6 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
         this.audioProcessor = new LoadAudioProcessor(ac);
         this.fontProcessor = new LoadFontProcessor();
         this.textProcessor = new LoadTextProcessor();
-        this.jsonProcessor = new LoadJSONProcessor();
         this.zipProcessor = new LoadZipProcessor();
         this.rowSplitter = new TextureRowSplitter();
     }
@@ -469,7 +454,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
             url: `loadList.json`,
             dataType: LoadDataType.JSON,
             identifier: '@system-loadList',
-            processor: this.jsonProcessor,
+            processor: this.dataLoader.jsonProcessor,
             progress: { onProgress() {} }
         });
 
@@ -505,27 +490,15 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
         task: ILoadTask<LoadDataType, R>,
         onLoaded: CustomLoadFunc<R>
     ): Promise<R> {
-        this.progress.addTask(task);
-        const { promise, resolve } = Promise.withResolvers<R>();
-        const store: LoadTaskStore<LoadDataType, R> = {
-            task,
-            onLoaded,
-            loadPromise: promise,
-            loadResolve: resolve
-        };
-        this.tasks.add(store);
-        return promise;
+        return this.dataLoader.addCustomLoadTask(task, onLoaded);
     }
 
-    load(): Promise<any[]> {
-        const tasks = [...this.tasks].map(async task => {
-            task.task.start();
-            const data = await task.task.loaded();
-            await task.onLoaded(data);
-            task.loadResolve(data);
-            return data;
-        });
-        return Promise.all(tasks);
+    async load(): Promise<void> {
+        this.loading = true;
+        this.loaded = false;
+        await this.dataLoader.load();
+        this.loading = false;
+        this.loaded = true;
     }
 
     //#endregion
