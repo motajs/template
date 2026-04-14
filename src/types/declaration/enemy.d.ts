@@ -15,42 +15,14 @@ type PartialNumbericEnemyProperty =
     | 'purify'
     | 'atkValue'
     | 'defValue'
-    | 'damage'
-    | 'iceDecline'
-    | 'iceCore'
-    | 'fireCore'
-    | 'together'
-    | 'hungry'
-    | 'ice'
-    | 'crit'
-    | 'courage'
-    | 'charge'
-    | 'paleShield'
-    | 'iceHalo'
-    | 'day'
-    | 'night'
-    | 'melt'
-    | 'hpHalo'
-    | 'assimilateRange';
+    | 'damage';
 
 type BooleanEnemyProperty =
     | 'zoneSquare'
     | 'haloSquare'
     | 'notBomb'
     | 'add'
-    | 'haloAdd'
-    | 'specialMultiply';
-
-type DetailedEnemy<I extends EnemyIds = EnemyIds> = {
-    specialText: string[];
-    toShowSpecial: string[];
-    toShowColor: Color[];
-    specialColor: Color[];
-    damageColor: Color;
-    criticalDamage: number;
-    critical: number;
-    defDamage: number;
-} & Enemy<I>;
+    | 'haloAdd';
 
 type Enemy<I extends EnemyIds = EnemyIds> = {
     /**
@@ -88,11 +60,6 @@ type Enemy<I extends EnemyIds = EnemyIds> = {
      * 战后事件
      */
     afterBattle: MotaEvent;
-
-    specialHalo?: number[];
-    translation?: [number, number];
-    /** 战争号角 */
-    horn?: [number, number, number];
 
     /** 大怪物绑定贴图 */
     bigImage?: ImageIds;
@@ -133,6 +100,17 @@ interface EnemyInfoBase extends EnemySpecialBase {
      */
     point: number;
 }
+
+type DetailedEnemy<I extends EnemyIds = EnemyIds> = {
+    specialText: string[];
+    toShowSpecial: string[];
+    toShowColor: Color[];
+    specialColor: Color[];
+    damageColor: Color;
+    criticalDamage: number;
+    critical: number;
+    defDamage: number;
+} & Enemy<I>;
 
 /**
  * 怪物的特殊属性定义

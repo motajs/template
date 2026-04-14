@@ -1,0 +1,358 @@
+import {
+    DirectionMapper,
+    IDirectionDescriptor,
+    InternalDirectionGroup,
+    IManhattanRangeParam,
+    IRange,
+    IRayRangeParam,
+    IRectRangeParam,
+    ManhattanRange,
+    RayRange,
+    RectRange
+} from '@motajs/common';
+import { ITileLocator } from '@user/types';
+import { IReadonlyEnemy, ISpecial } from '@user/data-base';
+import {
+    IEnemyContext,
+    IMapDamageConverter,
+    IMapDamageInfo,
+    IMapDamageInfoExtra,
+    IMapDamageReducer,
+    IMapDamageView
+} from '@user/data-base';
+import { IZoneValue } from './special';
+import { MapDamageType } from './types';
+
+const RECT_RANGE = new RectRange();
+const MANHATTAN_RANGE = new ManhattanRange();
+const RAY_RANGE = new RayRange();
+
+const DIRECTION_MAPPER = new DirectionMapper();
+const DIR4 = [...DIRECTION_MAPPER.map(InternalDirectionGroup.Dir4)];
+
+//#region 地图伤害
+
+abstract class BaseMapDamageView<T> implements IMapDamageView<T> {
+    constructor(protected readonly context: IEnemyContext) {}
+
+    abstract getRange(): IRange<T>;
+
+    abstract getRangeParam(): T;
+
+    getDamageAt(locator: ITileLocator): Readonly<IMapDamageInfo> | null {
+        const range = this.getRange();
+        const param = this.getRangeParam();
+        range.bindHost(this.context);
+        if (!range.inRange(locator.x, locator.y, param)) {
+            return null;
+        }
+
+        return this.getDamageWithoutCheck(locator);
+    }
+
+    abstract getDamageWithoutCheck(
+        locator: ITileLocator
+    ): Readonly<IMapDamageInfo> | null;
+
+    /**
+     * 创建伤害信息
+     * @param damage 伤害值
+     * @param type 伤害类型
+     * @param extra 额外信息
+     */
+    protected createInfo(
+        damage: number,
+        type: number,
+        extra?: Partial<IMapDamageInfoExtra>
+    ): IMapDamageInfo {
+        return {
+            damage,
+            type,
+            extra: {
+                catch: extra?.catch ?? new Set(),
+                repulse: extra?.repulse ?? new Set()
+            }
+        };
+    }
+
+    /**
+     * 判断一个点是否在上下文范围内
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    protected isInBounds(x: number, y: number): boolean {
+        return (
+            x >= 0 &&
+            y >= 0 &&
+            x < this.context.width &&
+            y < this.context.height
+        );
+    }
+}
+
+export class ZoneDamageView extends BaseMapDamageView<
+    IRectRangeParam | IManhattanRangeParam
+> {
+    constructor(
+        context: IEnemyContext,
+        private readonly locator: Readonly<ITileLocator>,
+        private readonly special: Readonly<ISpecial<IZoneValue>>
+    ) {
+        super(context);
+    }
+
+    getRange(): IRange<IRectRangeParam | IManhattanRangeParam> {
+        return this.special.value.zoneSquare ? RECT_RANGE : MANHATTAN_RANGE;
+    }
+
+    getRangeParam(): IRectRangeParam | IManhattanRangeParam {
+        if (this.special.value.zoneSquare) {
+            return {
+                h: this.special.value.range * 2 + 1,
+                w: this.special.value.range * 2 + 1,
+                x: this.locator.x - this.special.value.range,
+                y: this.locator.y - this.special.value.range
+            };
+        }
+
+        return {
+            cx: this.locator.x,
+            cy: this.locator.y,
+            radius: this.special.value.range
+        };
+    }
+
+    getDamageWithoutCheck(
+        _locator: ITileLocator
+    ): Readonly<IMapDamageInfo> | null {
+        return this.createInfo(this.special.value.zone, MapDamageType.Zone);
+    }
+}
+
+export class RepulseDamageView extends BaseMapDamageView<IManhattanRangeParam> {
+    constructor(
+        context: IEnemyContext,
+        private readonly locator: Readonly<ITileLocator>,
+        private readonly special: Readonly<ISpecial<number>>
+    ) {
+        super(context);
+    }
+
+    getRange(): IRange<IManhattanRangeParam> {
+        return MANHATTAN_RANGE;
+    }
+
+    getRangeParam(): IManhattanRangeParam {
+        return {
+            cx: this.locator.x,
+            cy: this.locator.y,
+            radius: 1
+        };
+    }
+
+    getDamageWithoutCheck(
+        locator: ITileLocator
+    ): Readonly<IMapDamageInfo> | null {
+        if (locator.x === this.locator.x && locator.y === this.locator.y) {
+            return null;
+        }
+
+        return this.createInfo(this.special.value, MapDamageType.Repulse, {
+            repulse: new Set([this.locator])
+        });
+    }
+}
+
+export class LaserDamageView extends BaseMapDamageView<IRayRangeParam> {
+    constructor(
+        context: IEnemyContext,
+        private readonly locator: Readonly<ITileLocator>,
+        private readonly special: Readonly<ISpecial<number>>,
+        private readonly dir: IDirectionDescriptor[] = DIR4
+    ) {
+        super(context);
+    }
+
+    getRange(): IRange<IRayRangeParam> {
+        return RAY_RANGE;
+    }
+
+    getRangeParam(): IRayRangeParam {
+        return {
+            cx: this.locator.x,
+            cy: this.locator.y,
+            dir: this.dir
+        };
+    }
+
+    getDamageWithoutCheck(
+        locator: ITileLocator
+    ): Readonly<IMapDamageInfo> | null {
+        if (locator.x === this.locator.x && locator.y === this.locator.y) {
+            return null;
+        }
+
+        return this.createInfo(this.special.value, MapDamageType.Layer);
+    }
+}
+
+export class BetweenDamageView extends BaseMapDamageView<IManhattanRangeParam> {
+    private static readonly DAMAGE = 1;
+
+    constructor(
+        context: IEnemyContext,
+        private readonly locator: Readonly<ITileLocator>
+    ) {
+        super(context);
+    }
+
+    getRange(): IRange<IManhattanRangeParam> {
+        return MANHATTAN_RANGE;
+    }
+
+    getRangeParam(): IManhattanRangeParam {
+        return {
+            cx: this.locator.x,
+            cy: this.locator.y,
+            radius: 1
+        };
+    }
+
+    getDamageWithoutCheck(
+        locator: ITileLocator
+    ): Readonly<IMapDamageInfo> | null {
+        const deltaX = locator.x - this.locator.x;
+        const deltaY = locator.y - this.locator.y;
+        if (Math.abs(deltaX) + Math.abs(deltaY) !== 1) {
+            return null;
+        }
+        if (deltaX <= 0 && deltaY <= 0) {
+            return null;
+        }
+
+        const otherX = locator.x + deltaX;
+        const otherY = locator.y + deltaY;
+        if (!this.isInBounds(otherX, otherY)) {
+            return null;
+        }
+
+        const other = this.context.getEnemyByLoc(otherX, otherY);
+        if (!other) {
+            return null;
+        }
+        if (!other.getComputedEnemy().hasSpecial(16)) {
+            return null;
+        }
+
+        return this.createInfo(BetweenDamageView.DAMAGE, MapDamageType.Between);
+    }
+}
+
+export class AmbushDamageView extends BaseMapDamageView<IManhattanRangeParam> {
+    constructor(
+        context: IEnemyContext,
+        private readonly locator: Readonly<ITileLocator>
+    ) {
+        super(context);
+    }
+
+    getRange(): IRange<IManhattanRangeParam> {
+        return MANHATTAN_RANGE;
+    }
+
+    getRangeParam(): IManhattanRangeParam {
+        return {
+            cx: this.locator.x,
+            cy: this.locator.y,
+            radius: 1
+        };
+    }
+
+    getDamageWithoutCheck(
+        locator: ITileLocator
+    ): Readonly<IMapDamageInfo> | null {
+        if (locator.x === this.locator.x && locator.y === this.locator.y) {
+            return null;
+        }
+
+        return this.createInfo(0, MapDamageType.Unknown, {
+            catch: new Set([this.locator])
+        });
+    }
+}
+
+//#endregion
+
+//#region 转换器
+
+export class MainMapDamageConverter implements IMapDamageConverter {
+    convert(
+        enemy: IReadonlyEnemy,
+        locator: ITileLocator,
+        context: IEnemyContext
+    ): IMapDamageView<any>[] {
+        const views: IMapDamageView<any>[] = [];
+
+        const zone = enemy.getSpecial<IZoneValue>(15);
+        if (zone) {
+            views.push(new ZoneDamageView(context, locator, zone));
+        }
+
+        if (enemy.hasSpecial(16)) {
+            views.push(new BetweenDamageView(context, locator));
+        }
+
+        const repulse = enemy.getSpecial<number>(18);
+        if (repulse) {
+            views.push(new RepulseDamageView(context, locator, repulse));
+        }
+
+        const laser = enemy.getSpecial<number>(24);
+        if (laser) {
+            views.push(new LaserDamageView(context, locator, laser));
+        }
+
+        if (enemy.hasSpecial(27)) {
+            views.push(new AmbushDamageView(context, locator));
+        }
+
+        return views;
+    }
+}
+
+//#endregion
+
+//#region 合并器
+
+export class MainMapDamageReducer implements IMapDamageReducer {
+    reduce(
+        info: Iterable<Readonly<IMapDamageInfo>>,
+        _locator: ITileLocator
+    ): Readonly<IMapDamageInfo> {
+        let damage = 0;
+        let type = MapDamageType.Unknown;
+        let maxDamage = -Infinity;
+        const extra = {
+            catch: new Set<ITileLocator>(),
+            repulse: new Set<ITileLocator>()
+        };
+
+        for (const item of info) {
+            damage += item.damage;
+            if (item.damage > maxDamage) {
+                maxDamage = item.damage;
+                type = item.type;
+            }
+            item.extra.catch.forEach(v => extra.catch.add(v));
+            item.extra.repulse.forEach(v => extra.repulse.add(v));
+        }
+
+        return {
+            damage,
+            extra,
+            type
+        };
+    }
+}
+
+//#endregion

@@ -1,12 +1,14 @@
-import { ICoreState, IStateSaveData } from './types';
+import { ICoreState, IGameDataState, IStateSaveData } from './types';
 import { IHeroState, HeroState } from './hero';
 import { ILayerState, LayerState } from './map';
 import { IRoleFaceBinder, RoleFaceBinder } from './common';
+import { GameDataState } from './data';
 
 export class CoreState implements ICoreState {
     readonly layer: ILayerState;
     readonly hero: IHeroState;
     readonly roleFace: IRoleFaceBinder;
+    readonly data: IGameDataState;
     readonly idNumberMap: Map<string, number>;
     readonly numberIdMap: Map<number, string>;
 
@@ -16,6 +18,7 @@ export class CoreState implements ICoreState {
         this.roleFace = new RoleFaceBinder();
         this.idNumberMap = new Map();
         this.numberIdMap = new Map();
+        this.data = new GameDataState();
     }
 
     saveState(): IStateSaveData {

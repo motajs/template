@@ -1,6 +1,12 @@
 import { ILayerState } from './map';
 import { IHeroFollower, IHeroState } from './hero';
 import { IRoleFaceBinder } from './common';
+import { IEnemyManager } from '@user/data-base';
+
+export interface IGameDataState {
+    /** 怪物管理器 */
+    readonly enemyManager: IEnemyManager;
+}
 
 export interface IStateSaveData {
     /** 跟随者列表 */
@@ -14,6 +20,8 @@ export interface ICoreState {
     readonly hero: IHeroState;
     /** 朝向绑定 */
     readonly roleFace: IRoleFaceBinder;
+    /** 游戏数据状态 */
+    readonly data: IGameDataState;
     /** id 到图块数字的映射 */
     readonly idNumberMap: Map<string, number>;
     /** 图块数字到 id 的映射 */

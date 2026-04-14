@@ -52,6 +52,7 @@
         "50": "Expected a planEnd call after animation plan calling.",
         "51": "Animatable object cannot be animated by plans with the same start time.",
         "52": "To get divider payload, an excitation binding is expected.",
+        "53": "Expected serializable value set as enemy's default attribute.",
         "1201": "Floor-damage extension needs 'floor-binder' extension as dependency."
     },
     "warn": {
@@ -150,6 +151,16 @@
         "93": "Followers can only be removed when the last follower is not moving.",
         "94": "Expecting an excitation binding when using '$1'",
         "95": "Task adding is required before start loading.",
+        "96": "Enemy '$1': special with code $2 already exists",
+        "97": "Multiple aura converters matched for special code $1, skipping conversion.",
+        "98": "Special modifier conflicts with aura of priority $1 (current: $2), this may cause issues.",
+        "99": "Newly converted aura has priority $1 higher than current $2, skipping.",
+        "100": "Adding and deleting effect both on special aura is forbidden, considering split it into two auras.",
+        "101": "Local refresh affected aura converted by special $1, which means you may have modified specials outside special aura or special query effect.",
+        "102": "Map damage converter is missing, skipping map damage refresh.",
+        "103": "Map damage reducer is missing, reduced map damage is unavailable.",
+        "104": "Enemy dirty marking failed since specific enemy is not in current context.",
+        "105": "No specific map damage view stored, which seems like an internal bug of map damage system.",
         "1001": "Item-detail extension needs 'floor-binder' and 'floor-damage' extension as dependency."
     }
 }
