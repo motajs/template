@@ -161,6 +161,8 @@
         "103": "Map damage reducer is missing, reduced map damage is unavailable.",
         "104": "Enemy dirty marking failed since specific enemy is not in current context.",
         "105": "No specific map damage view stored, which seems like an internal bug of map damage system.",
+        "106": "Damage calculator is missing, damage calculation is unavailable.",
+        "107": "Hero status is not bound, damage calculation is unavailable.",
         "1001": "Item-detail extension needs 'floor-binder' and 'floor-damage' extension as dependency."
     }
 }

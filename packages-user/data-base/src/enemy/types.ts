@@ -540,6 +540,117 @@ export interface IMapDamage<TAttr> {
 
 //#endregion
 
+//#region 伤害系统
+
+export interface IEnemyDamageInfo {
+    /** 战斗伤害值 */
+    readonly damage: number;
+    /** 战斗回合数 */
+    readonly turn: number;
+}
+
+export interface IEnemyCritical {
+    /** 此临界点中指定勇士属性的值 */
+    readonly nextValue: number;
+    /** 当前勇士指定属性的值 */
+    readonly baseValue: number;
+    /** 此临界点中指定勇士数值的值与当前值的差，即 `nextValue - baseValue` */
+    readonly nextDiff: number;
+    /** 当前状态下怪物的伤害信息 */
+    readonly baseInfo: IEnemyDamageInfo;
+    /** 此临界点下怪物的伤害信息 */
+    readonly info: IEnemyDamageInfo;
+    /** 此临界点的伤害值与当前伤害值的差 */
+    readonly damageDiff: number;
+}
+
+export type CriticalableHeroStatus<THero> = keyof {
+    [P in keyof THero as THero[P] extends number ? P : never]: unknown;
+};
+
+export interface IDamageCalculator<TAttr, THero> {
+    /**
+     * 计算战斗伤害信息
+     * @param hero 勇士信息
+     * @param enemy 怪物信息
+     */
+    calculate(
+        hero: Readonly<THero>,
+        enemy: IReadonlyEnemy<TAttr>
+    ): IEnemyDamageInfo;
+
+    /**
+     * 获取临界计算的上界
+     * @param hero 勇士信息
+     * @param enemy 怪物信息
+     * @param attribute 勇士的临界属性
+     */
+    getCriticalLimit(
+        hero: Readonly<THero>,
+        enemy: IReadonlyEnemy<TAttr>,
+        attribute: CriticalableHeroStatus<THero>
+    ): number;
+}
+
+export interface IDamageSystem<TAttr, THero> {
+    /** 伤害系统所属的上下文 */
+    readonly context: IEnemyContext<TAttr>;
+
+    /**
+     * 设置当前伤害计算系统使用的伤害计算器
+     * @param calculator 伤害计算器
+     */
+    useCalculator(calculator: IDamageCalculator<TAttr, THero>): void;
+
+    /**
+     * 获取当前使用的伤害计算器
+     */
+    getCalculator(): IDamageCalculator<TAttr, THero> | null;
+
+    /**
+     * 绑定勇士信息
+     * @param hero 勇士信息
+     */
+    bindHeroStatus(hero: Readonly<THero>): void;
+
+    /**
+     * 获取战斗伤害信息
+     * @param enemy 怪物视图
+     */
+    getDamageInfo(enemy: IEnemyView<TAttr>): IEnemyDamageInfo | null;
+
+    /**
+     * 将指定的怪物标记为脏
+     * @param enemy 怪物视图
+     */
+    markDirty(enemy: IEnemyView<TAttr>): void;
+
+    /**
+     * 删除指定的怪物
+     * @param enemy 怪物视图
+     */
+    deleteEnemy(enemy: IEnemyView<TAttr>): void;
+
+    /**
+     * 将所有怪物标记为脏
+     */
+    markAllDirty(): void;
+
+    /**
+     * 计算怪物在指定勇士属性下的临界
+     * @param enemy 怪物视图
+     * @param attribute 计算临界的目标勇士属性，比如计算攻击临界、自定义属性的临界等等
+     * @param precision 临界计算精度，表示会进行多少次二分计算，一般填写 `12-16` 之间的数即可
+     */
+    calculateCritical(
+        enemy: IEnemyView<TAttr>,
+        attribute: CriticalableHeroStatus<THero>,
+        precision: number
+    ): Generator<IEnemyCritical, void, void>;
+}
+
+//#endregion
+
 //#region 上下文
 
 export interface IEnemyContext<TAttr> {
@@ -547,6 +658,8 @@ export interface IEnemyContext<TAttr> {
     readonly width: number;
     /** 怪物上下文高度 */
     readonly height: number;
+    /** 此上下文使用的索引对象 */
+    readonly indexer: IMapLocIndexer;
 
     /**
      * 调整上下文尺寸，并清空当前上下文中的所有怪物与状态
@@ -701,6 +814,17 @@ export interface IEnemyContext<TAttr> {
      * 获取当前绑定的地图伤害管理器
      */
     getMapDamage(): IMapDamage<TAttr> | null;
+
+    /**
+     * 绑定伤害计算系统
+     * @param system 伤害系统
+     */
+    attachDamageSystem(system: IDamageSystem<TAttr, unknown>): void;
+
+    /**
+     * 获取当前绑定的伤害计算系统
+     */
+    getDamageSystem<THero>(): IDamageSystem<TAttr, THero> | null;
 
     /**
      * 重建当前上下文中的全部怪物计算结果

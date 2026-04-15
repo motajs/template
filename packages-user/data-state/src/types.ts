@@ -1,7 +1,7 @@
 import { ILayerState } from './map';
 import { IHeroFollower, IHeroState } from './hero';
 import { IRoleFaceBinder } from './common';
-import { IEnemyManager } from '@user/data-base';
+import { IEnemyContext, IEnemyManager } from '@user/data-base';
 import { IEnemyAttributes } from './enemy/types';
 
 export interface IGameDataState {
@@ -27,6 +27,9 @@ export interface ICoreState {
     readonly idNumberMap: Map<string, number>;
     /** 图块数字到 id 的映射 */
     readonly numberIdMap: Map<number, string>;
+
+    /** 怪物上下文 */
+    readonly enemyContext: IEnemyContext<IEnemyAttributes>;
 
     /**
      * 保存状态

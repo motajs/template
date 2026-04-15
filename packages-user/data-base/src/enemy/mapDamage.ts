@@ -60,10 +60,12 @@ export class MapDamage<TAttr> implements IMapDamage<TAttr> {
     /** 合并后伤害缓存，索引 -> 合并结果 */
     private readonly reducedCache: Map<number, IMapDamageInfo> = new Map();
 
-    constructor(
-        readonly context: IEnemyContext<TAttr>,
-        readonly indexer: IMapLocIndexer
-    ) {}
+    /** 坐标索引对象 */
+    private readonly indexer: IMapLocIndexer;
+
+    constructor(readonly context: IEnemyContext<TAttr>) {
+        this.indexer = context.indexer;
+    }
 
     useConverter(converter: IMapDamageConverter<TAttr>): void {
         this.converter = converter;

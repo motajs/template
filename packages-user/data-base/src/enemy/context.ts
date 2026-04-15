@@ -3,6 +3,7 @@ import { ITileLocator } from '@user/types';
 import {
     IAuraConverter,
     IAuraView,
+    IDamageSystem,
     IEnemy,
     IEnemyAuraView,
     IEnemyCommonQueryEffect,
@@ -53,6 +54,7 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
     private readonly dirtyEnemy: Set<IEnemyView<TAttr>> = new Set();
 
     private mapDamage: IMapDamage<TAttr> | null = null;
+    private damageSystem: IDamageSystem<TAttr, unknown> | null = null;
     readonly indexer: MapLocIndexer = new MapLocIndexer();
 
     private needUpdate: boolean = true;
@@ -174,6 +176,9 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         if (this.mapDamage) {
             this.mapDamage.deleteEnemy(view);
         }
+        if (this.damageSystem) {
+            this.damageSystem.deleteEnemy(view);
+        }
 
         this.needTotallyRefresh.delete(view);
         this.dirtyEnemy.delete(view);
@@ -251,6 +256,15 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
 
     getMapDamage(): IMapDamage<TAttr> | null {
         return this.mapDamage;
+    }
+
+    attachDamageSystem(system: IDamageSystem<TAttr, unknown>): void {
+        this.damageSystem = system;
+        system.markAllDirty();
+    }
+
+    getDamageSystem<THero>(): IDamageSystem<TAttr, THero> | null {
+        return this.damageSystem as IDamageSystem<TAttr, THero> | null;
     }
 
     private convertSpecial(
@@ -545,6 +559,10 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
             this.buildupFinal();
         }
 
+        if (this.damageSystem) {
+            this.damageSystem.markAllDirty();
+        }
+
         if (this.mapDamage) {
             this.mapDamage.refreshAll();
         }
@@ -553,6 +571,9 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
     markDirty(view: IEnemyView<TAttr>): void {
         if (!this.locatorViewMap.has(view)) return;
         this.dirtyEnemy.add(view);
+        if (this.damageSystem) {
+            this.damageSystem.markDirty(view);
+        }
     }
 
     private refreshSpecialModifier(
@@ -687,6 +708,10 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
 
         this.dirtyEnemy.delete(view);
 
+        if (this.damageSystem) {
+            this.damageSystem.markDirty(view);
+        }
+
         if (this.mapDamage) {
             this.mapDamage.markEnemyDirty(view);
         }
@@ -721,6 +746,9 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         this.needTotallyRefresh.clear();
         this.requestedCommonContext.clear();
         this.dirtyEnemy.clear();
+        if (this.damageSystem) {
+            this.damageSystem.markAllDirty();
+        }
         if (this.mapDamage) {
             this.mapDamage.refreshAll();
         }
@@ -729,6 +757,7 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
     destroy(): void {
         this.clear();
         this.attachMapDamage(null);
+        this.damageSystem = null;
         this.auraConverter.clear();
         this.commonQueryMap.clear();
         this.specialQueryEffects.clear();
