@@ -1,4 +1,5 @@
 import { IRange, logger } from '@motajs/common';
+import { ITileLocator } from '@user/types';
 import {
     IAuraConverter,
     IAuraView,
@@ -16,36 +17,42 @@ import {
 } from './types';
 import { EnemyView } from './enemy';
 import { MapLocIndexer } from './utils';
-import { ITileLocator } from '@user/types';
 
-export class EnemyContext implements IEnemyContext {
-    private readonly enemyViewMap: Map<number, EnemyView> = new Map();
-    private readonly enemyMap: Map<number, IEnemy> = new Map();
-    private readonly locatorViewMap: Map<IEnemyView, number> = new Map();
-    private readonly locatorEnemyMap: Map<IEnemy, number> = new Map();
-    private readonly computedToView: Map<IReadonlyEnemy, EnemyView> = new Map();
+export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
+    private readonly enemyViewMap: Map<number, EnemyView<TAttr>> = new Map();
+    private readonly enemyMap: Map<number, IEnemy<TAttr>> = new Map();
+    private readonly locatorViewMap: Map<IEnemyView<TAttr>, number> = new Map();
+    private readonly locatorEnemyMap: Map<IEnemy<TAttr>, number> = new Map();
+    private readonly computedToView: Map<
+        IReadonlyEnemy<TAttr>,
+        EnemyView<TAttr>
+    > = new Map();
 
-    private readonly auraConverter: Set<IAuraConverter> = new Set();
-    private readonly converterStatus: Map<IAuraConverter, boolean> = new Map();
-    private readonly convertedAura: Map<ISpecial<any>, IAuraView> = new Map();
-
-    private readonly commonQueryMap: Map<number, IEnemyCommonQueryEffect[]> =
+    private readonly auraConverter: Set<IAuraConverter<TAttr>> = new Set();
+    private readonly converterStatus: Map<IAuraConverter<TAttr>, boolean> =
         new Map();
+    private readonly convertedAura: Map<ISpecial<any>, IAuraView<TAttr>> =
+        new Map();
+
+    private readonly commonQueryMap: Map<
+        number,
+        IEnemyCommonQueryEffect<TAttr>[]
+    > = new Map();
 
     private readonly specialQueryEffects: Map<
         number,
-        IEnemySpecialQueryEffect[]
+        IEnemySpecialQueryEffect<TAttr>[]
     > = new Map();
 
-    private readonly finalEffects: IEnemyFinalEffect[] = [];
-    private readonly globalAuraList: Set<IAuraView> = new Set();
-    private readonly sortedAura: Map<number, Set<IAuraView>> = new Map();
+    private readonly finalEffects: IEnemyFinalEffect<TAttr>[] = [];
+    private readonly globalAuraList: Set<IAuraView<TAttr>> = new Set();
+    private readonly sortedAura: Map<number, Set<IAuraView<TAttr>>> = new Map();
 
-    private readonly needTotallyRefresh: Set<IEnemyView> = new Set();
-    private readonly requestedCommonContext: Set<IEnemyView> = new Set();
-    private readonly dirtyEnemy: Set<IEnemyView> = new Set();
+    private readonly needTotallyRefresh: Set<IEnemyView<TAttr>> = new Set();
+    private readonly requestedCommonContext: Set<IEnemyView<TAttr>> = new Set();
+    private readonly dirtyEnemy: Set<IEnemyView<TAttr>> = new Set();
 
-    private mapDamage: IMapDamage | null = null;
+    private mapDamage: IMapDamage<TAttr> | null = null;
     readonly indexer: MapLocIndexer = new MapLocIndexer();
 
     private needUpdate: boolean = true;
@@ -61,24 +68,27 @@ export class EnemyContext implements IEnemyContext {
         this.indexer.setWidth(width);
     }
 
-    registerAuraConverter(converter: IAuraConverter): void {
+    registerAuraConverter(converter: IAuraConverter<TAttr>): void {
         this.auraConverter.add(converter);
         this.converterStatus.set(converter, true);
     }
 
-    unregisterAuraConverter(converter: IAuraConverter): void {
+    unregisterAuraConverter(converter: IAuraConverter<TAttr>): void {
         this.auraConverter.delete(converter);
         this.converterStatus.delete(converter);
     }
 
-    setAuraConverterEnabled(converter: IAuraConverter, enabled: boolean): void {
+    setAuraConverterEnabled(
+        converter: IAuraConverter<TAttr>,
+        enabled: boolean
+    ): void {
         if (!this.auraConverter.has(converter)) return;
         this.converterStatus.set(converter, enabled);
     }
 
     registerCommonQueryEffect(
         code: number,
-        effect: IEnemyCommonQueryEffect
+        effect: IEnemyCommonQueryEffect<TAttr>
     ): void {
         const array = this.commonQueryMap.getOrInsert(code, []);
         array.push(effect);
@@ -87,7 +97,7 @@ export class EnemyContext implements IEnemyContext {
 
     unregisterCommonQueryEffect(
         code: number,
-        effect: IEnemyCommonQueryEffect
+        effect: IEnemyCommonQueryEffect<TAttr>
     ): void {
         const array = this.commonQueryMap.get(code);
         if (!array) return;
@@ -96,12 +106,14 @@ export class EnemyContext implements IEnemyContext {
         array.splice(index, 1);
     }
 
-    registerSpecialQueryEffect(effect: IEnemySpecialQueryEffect): void {
+    registerSpecialQueryEffect(effect: IEnemySpecialQueryEffect<TAttr>): void {
         const list = this.specialQueryEffects.getOrInsert(effect.priority, []);
         list.push(effect);
     }
 
-    unregisterSpecialQueryEffect(effect: IEnemySpecialQueryEffect): void {
+    unregisterSpecialQueryEffect(
+        effect: IEnemySpecialQueryEffect<TAttr>
+    ): void {
         const list = this.specialQueryEffects.get(effect.priority);
         if (!list) return;
         const index = list.indexOf(effect);
@@ -113,41 +125,43 @@ export class EnemyContext implements IEnemyContext {
         }
     }
 
-    registerFinalEffect(effect: IEnemyFinalEffect): void {
+    registerFinalEffect(effect: IEnemyFinalEffect<TAttr>): void {
         this.finalEffects.push(effect);
         this.finalEffects.sort((a, b) => b.priority - a.priority);
     }
 
-    unregisterFinalEffect(effect: IEnemyFinalEffect): void {
+    unregisterFinalEffect(effect: IEnemyFinalEffect<TAttr>): void {
         const index = this.finalEffects.indexOf(effect);
         if (index !== -1) {
             this.finalEffects.splice(index, 1);
         }
     }
 
-    getEnemyLocator(enemy: IEnemy): Readonly<ITileLocator> | null {
+    getEnemyLocator(enemy: IEnemy<TAttr>): Readonly<ITileLocator> | null {
         const index = this.locatorEnemyMap.get(enemy);
         if (index === undefined) return null;
         return this.indexer.indexToLocator(index);
     }
 
-    getEnemyLocatorByView(view: IEnemyView): Readonly<ITileLocator> | null {
+    getEnemyLocatorByView(
+        view: IEnemyView<TAttr>
+    ): Readonly<ITileLocator> | null {
         const index = this.locatorViewMap.get(view);
         if (index === undefined) return null;
         return this.indexer.indexToLocator(index);
     }
 
-    getEnemyByLocator(locator: ITileLocator): IEnemyView | null {
+    getEnemyByLocator(locator: ITileLocator): IEnemyView<TAttr> | null {
         const index = this.indexer.locToIndex(locator.x, locator.y);
         return this.enemyViewMap.get(index) ?? null;
     }
 
-    getEnemyByLoc(x: number, y: number): IEnemyView | null {
+    getEnemyByLoc(x: number, y: number): IEnemyView<TAttr> | null {
         const index = this.indexer.locToIndex(x, y);
         return this.enemyViewMap.get(index) ?? null;
     }
 
-    getViewByComputed(enemy: IReadonlyEnemy): IEnemyView | null {
+    getViewByComputed(enemy: IReadonlyEnemy<TAttr>): IEnemyView<TAttr> | null {
         return this.computedToView.get(enemy) ?? null;
     }
 
@@ -172,11 +186,11 @@ export class EnemyContext implements IEnemyContext {
         this.locatorEnemyMap.delete(enemy);
     }
 
-    setEnemyAt(locator: ITileLocator, enemy: IEnemy): void {
+    setEnemyAt(locator: ITileLocator, enemy: IEnemy<TAttr>): void {
         const index = this.indexer.locToIndex(locator.x, locator.y);
         this.deleteEnemyAt(index);
 
-        const view = new EnemyView(enemy, this);
+        const view = new EnemyView<TAttr>(enemy, this);
         this.enemyMap.set(index, enemy);
         this.enemyViewMap.set(index, view);
         this.locatorEnemyMap.set(enemy, index);
@@ -194,7 +208,7 @@ export class EnemyContext implements IEnemyContext {
     private *internalScanRange<T>(
         range: IRange<T>,
         param: T
-    ): Iterable<EnemyView> {
+    ): Iterable<EnemyView<TAttr>> {
         range.bindHost(this);
         const keys = new Set(this.enemyViewMap.keys());
         const matched = range.autoDetect(keys, param);
@@ -207,44 +221,44 @@ export class EnemyContext implements IEnemyContext {
         }
     }
 
-    scanRange<T>(range: IRange<T>, param: T): Iterable<IEnemyView> {
+    scanRange<T>(range: IRange<T>, param: T): Iterable<IEnemyView<TAttr>> {
         return this.internalScanRange(range, param);
     }
 
-    *iterateEnemy(): Iterable<[ITileLocator, IEnemyView]> {
+    *iterateEnemy(): Iterable<[ITileLocator, IEnemyView<TAttr>]> {
         for (const [index, view] of this.enemyViewMap) {
             const locator = this.indexer.indexToLocator(index);
             yield [locator, view];
         }
     }
 
-    addAura(aura: IAuraView): void {
+    addAura(aura: IAuraView<TAttr>): void {
         this.globalAuraList.add(aura);
         this.needUpdate = true;
     }
 
-    deleteAura(aura: IAuraView): void {
+    deleteAura(aura: IAuraView<TAttr>): void {
         this.globalAuraList.delete(aura);
         this.needUpdate = true;
     }
 
-    attachMapDamage(damage: IMapDamage | null): void {
+    attachMapDamage(damage: IMapDamage<TAttr> | null): void {
         this.mapDamage = damage;
         if (damage) {
             damage.refreshAll();
         }
     }
 
-    getMapDamage(): IMapDamage | null {
+    getMapDamage(): IMapDamage<TAttr> | null {
         return this.mapDamage;
     }
 
     private convertSpecial(
         special: ISpecial<any>,
-        enemy: IReadonlyEnemy,
+        enemy: IReadonlyEnemy<TAttr>,
         locator: ITileLocator
-    ): IEnemyAuraView<any, any> | null {
-        let matched: IAuraConverter | null = null;
+    ): IEnemyAuraView<TAttr, any, any> | null {
+        let matched: IAuraConverter<TAttr> | null = null;
 
         for (const converter of this.auraConverter) {
             if (!this.converterStatus.get(converter)) continue;
@@ -258,10 +272,10 @@ export class EnemyContext implements IEnemyContext {
         }
 
         if (!matched) return null;
-        return matched.convert(special, enemy, locator);
+        return matched.convert(special, enemy, locator, this);
     }
 
-    private insertIntoSortedAura(aura: IAuraView): void {
+    private insertIntoSortedAura(aura: IAuraView<TAttr>): void {
         const set = this.sortedAura.getOrInsertComputed(
             aura.priority,
             () => new Set()
@@ -269,7 +283,7 @@ export class EnemyContext implements IEnemyContext {
         set.add(aura);
     }
 
-    private removeFromSortedAura(aura: IAuraView): void {
+    private removeFromSortedAura(aura: IAuraView<TAttr>): void {
         const set = this.sortedAura.get(aura.priority);
         if (set) {
             set.delete(aura);
@@ -280,15 +294,15 @@ export class EnemyContext implements IEnemyContext {
     }
 
     private processSpecialModifier(
-        modifier: IEnemySpecialModifier,
-        enemy: IEnemy,
+        modifier: IEnemySpecialModifier<TAttr>,
+        enemy: IEnemy<TAttr>,
         locator: ITileLocator,
         currentPriority: number
-    ): Set<IAuraView> {
+    ): Set<IAuraView<TAttr>> {
         const toAdd = modifier.add(enemy, locator);
         const toDelete = modifier.delete(enemy, locator);
 
-        const affectedAuras = new Set<IAuraView>();
+        const affectedAuras = new Set<IAuraView<TAttr>>();
 
         if (toAdd.length > 0 && toDelete.length > 0) {
             logger.warn(100);
@@ -351,7 +365,7 @@ export class EnemyContext implements IEnemyContext {
     }
 
     private processSpecialQuery(
-        effect: IEnemySpecialQueryEffect,
+        effect: IEnemySpecialQueryEffect<TAttr>,
         currentPriority: number
     ): void {
         const modifier = effect.for(this);
@@ -377,7 +391,10 @@ export class EnemyContext implements IEnemyContext {
         }
     }
 
-    private processAuraSpecial(aura: IAuraView, currentPriority: number): void {
+    private processAuraSpecial(
+        aura: IAuraView<TAttr>,
+        currentPriority: number
+    ): void {
         const param = aura.getRangeParam();
 
         for (const enemyView of this.internalScanRange(aura.range, param)) {
@@ -410,7 +427,7 @@ export class EnemyContext implements IEnemyContext {
             const enemy = view.getComputingEnemy();
             const locator = this.indexer.indexToLocator(index);
 
-            for (const special of enemy.specials) {
+            for (const special of enemy.iterateSpecials()) {
                 const aura = this.convertSpecial(special, enemy, locator);
                 if (!aura) continue;
                 this.convertedAura.set(special, aura);
@@ -484,7 +501,7 @@ export class EnemyContext implements IEnemyContext {
                 queried = true;
                 return this;
             };
-            for (const special of enemy.specials) {
+            for (const special of enemy.iterateSpecials()) {
                 const effects = this.commonQueryMap.get(special.code);
                 if (!effects) continue;
                 for (const effect of effects) {
@@ -533,14 +550,14 @@ export class EnemyContext implements IEnemyContext {
         }
     }
 
-    markDirty(view: IEnemyView): void {
+    markDirty(view: IEnemyView<TAttr>): void {
         if (!this.locatorViewMap.has(view)) return;
         this.dirtyEnemy.add(view);
     }
 
     private refreshSpecialModifier(
-        modifier: IEnemySpecialModifier,
-        enemy: IEnemy,
+        modifier: IEnemySpecialModifier<TAttr>,
+        enemy: IEnemy<TAttr>,
         locator: ITileLocator
     ): void {
         const toAdd = modifier.add(enemy, locator);
@@ -582,7 +599,7 @@ export class EnemyContext implements IEnemyContext {
         }
     }
 
-    private refreshEnemy(view: EnemyView): void {
+    private refreshEnemy(view: EnemyView<TAttr>): void {
         const locator = this.getEnemyLocatorByView(view);
         if (!locator) return;
 
@@ -653,7 +670,7 @@ export class EnemyContext implements IEnemyContext {
             queried = true;
             return this;
         };
-        for (const special of enemy.specials) {
+        for (const special of enemy.iterateSpecials()) {
             const effects = this.commonQueryMap.get(special.code);
             if (!effects) continue;
             for (const effect of effects) {
@@ -675,7 +692,7 @@ export class EnemyContext implements IEnemyContext {
         }
     }
 
-    requestRefresh(view: IEnemyView): void {
+    requestRefresh(view: IEnemyView<TAttr>): void {
         if (!this.dirtyEnemy.has(view)) return;
         if (this.needTotallyRefresh.has(view)) {
             this.needUpdate = true;
@@ -685,11 +702,11 @@ export class EnemyContext implements IEnemyContext {
             return;
         }
 
-        this.refreshEnemy(view as EnemyView);
+        this.refreshEnemy(view as EnemyView<TAttr>);
 
         for (const requestedView of this.requestedCommonContext) {
             if (requestedView === view) continue;
-            this.refreshEnemy(requestedView as EnemyView);
+            this.refreshEnemy(requestedView as EnemyView<TAttr>);
         }
     }
 

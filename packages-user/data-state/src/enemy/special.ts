@@ -4,6 +4,7 @@ import {
     IEnemyManager
 } from '@user/data-base';
 import { getHeroStatusOn } from '../legacy/hero';
+import { IEnemyAttributes } from './types';
 
 //#region 复合属性值类型
 
@@ -47,7 +48,11 @@ export interface IHaloValue {
  * 8. 重生属性：还在脚本编辑的 changingFloor
  * 9. 阻击 | 捕捉 的每步效果：packages-user/legacy-plugin-data/src/enemy/checkblock.ts
  */
-export function registerSpecials(manager: IEnemyManager): void {
+export function registerSpecials(
+    manager: IEnemyManager<IEnemyAttributes>
+): void {
+    manager.registerAttribute('guard', new Set());
+
     // 0 - 空
     manager.registerSpecial(
         0,

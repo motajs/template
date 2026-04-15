@@ -1,21 +1,6 @@
 import { IRange } from '@motajs/common';
 import { ITileLocator } from '@user/types';
 
-export interface IEnemyAttributes {
-    /** 怪物生命值 */
-    hp: number;
-    /** 怪物攻击力 */
-    atk: number;
-    /** 怪物防御力 */
-    def: number;
-    /** 怪物金币 */
-    money: number;
-    /** 怪物经验值 */
-    exp: number;
-    /** 怪物加点量 */
-    point: number;
-}
-
 export interface ISpecial<T = void> {
     /** 特殊属性代码 */
     readonly code: number;
@@ -55,7 +40,7 @@ export interface ISpecial<T = void> {
     clone(): ISpecial<T>;
 }
 
-export interface IReadonlyEnemy {
+export interface IReadonlyEnemy<TAttr> {
     /** 怪物标识符 */
     readonly id: string;
     /** 怪物在地图上的标识数字 */
@@ -82,24 +67,20 @@ export interface IReadonlyEnemy {
      * 获取怪物属性值
      * @param key 属性名称
      */
-    getAttribute<K extends keyof IEnemyAttributes>(key: K): IEnemyAttributes[K];
+    getAttribute<K extends keyof TAttr>(key: K): TAttr[K];
+
+    /**
+     * 深拷贝怪物属性并将其返回
+     */
+    cloneAttributes(): TAttr;
 
     /**
      * 深拷贝此怪物对象
      */
-    clone(): IReadonlyEnemy;
+    clone(): IReadonlyEnemy<TAttr>;
 }
 
-export interface IEnemy extends IReadonlyEnemy {
-    /** 怪物标识符 */
-    readonly id: string;
-    /** 怪物在地图上的标识数字 */
-    readonly code: number;
-    /** 怪物属性值 */
-    readonly attributes: Readonly<IEnemyAttributes>;
-    /** 怪物拥有的特殊属性列表 */
-    readonly specials: Set<ISpecial<any>>;
-
+export interface IEnemy<TAttr> extends IReadonlyEnemy<TAttr> {
     /**
      * 添加特殊属性
      * @param special 特殊属性对象
@@ -117,32 +98,29 @@ export interface IEnemy extends IReadonlyEnemy {
      * @param key 属性名称
      * @param value 新的属性值
      */
-    setAttribute<K extends keyof IEnemyAttributes>(
-        key: K,
-        value: IEnemyAttributes[K]
-    ): void;
+    setAttribute<K extends keyof TAttr>(key: K, value: TAttr[K]): void;
 
     /**
      * 深拷贝此怪物对象
      */
-    clone(): IEnemy;
+    clone(): IEnemy<TAttr>;
 
     /**
      * 从一个怪物对象中将属性复制到当前对象
      * @param enemy 怪物对象
      */
-    copy(enemy: IReadonlyEnemy): void;
+    copyFrom(enemy: IReadonlyEnemy<TAttr>): void;
 }
 
-export type SpecialCreation<T> = (enemy: IEnemy) => ISpecial<T>;
+export type SpecialCreation<T, TAttr> = (enemy: IEnemy<TAttr>) => ISpecial<T>;
 
-export interface IEnemyManager {
+export interface IEnemyManager<TAttr> {
     /**
      * 注册一个特殊属性
      * @param code 特殊属性代码
      * @param cons 特殊属性创建函数
      */
-    registerSpecial(code: number, cons: SpecialCreation<any>): void;
+    registerSpecial(code: number, cons: SpecialCreation<any, TAttr>): void;
 
     /**
      * 注册一个怪物属性
@@ -155,26 +133,26 @@ export interface IEnemyManager {
      * 根据旧样板怪物对象生成一个新的怪物对象
      * @param enemy 旧样板怪物对象
      */
-    fromLegacyEnemy(enemy: Enemy): IEnemy;
+    fromLegacyEnemy(enemy: Enemy): IEnemy<TAttr>;
 
     /**
      * 创建怪物对象，如果对应数字的怪物不存在则会返回 `null`
      * @param code 怪物图块数字
      */
-    createEnemy(code: number): IEnemy | null;
+    createEnemy(code: number): IEnemy<TAttr> | null;
 
     /**
      * 根据怪物的 `id` 创建怪物对象，如果对应的怪物不存在则会返回 `null`
      * @param id 怪物 `id`
      */
-    createEnemyById(id: string): IEnemy | null;
+    createEnemyById(id: string): IEnemy<TAttr> | null;
 
     /**
      * 添加怪物模板，如果 `id` 或 `code` 与已有的冲突，则不会做任何操作，
      * 如果需要修改怪物模板，请使用 {@link changePrefab}
      * @param enemy 怪物对象
      */
-    addPrefab(enemy: IEnemy): void;
+    addPrefab(enemy: IEnemy<TAttr>): void;
 
     /**
      * 从旧样板的怪物对象中添加怪物模板
@@ -187,13 +165,13 @@ export interface IEnemyManager {
      * 获取指定怪物的模板
      * @param code 怪物图块数字
      */
-    getPrefab(code: number): IEnemy | null;
+    getPrefab(code: number): IEnemy<TAttr> | null;
 
     /**
      * 根据怪物的 `id` 获取对应的怪物模板
      * @param id 怪物 `id`
      */
-    getPrefabById(id: string): IEnemy | null;
+    getPrefabById(id: string): IEnemy<TAttr> | null;
 
     /**
      * 删除指定的怪物模板
@@ -206,7 +184,7 @@ export interface IEnemyManager {
      * @param code 怪物的图块数字或 `id`
      * @param enemy 新的怪物模板
      */
-    changePrefab(code: number | string, enemy: IEnemy): void;
+    changePrefab(code: number | string, enemy: IEnemy<TAttr>): void;
 }
 
 //#region 辅助接口
@@ -244,9 +222,9 @@ export interface IMapLocIndexer extends IMapLocHelper {
 
 //#region 怪物对象
 
-export interface IEnemyView {
+export interface IEnemyView<TAttr> {
     /** 怪物视图所属的上下文 */
-    readonly context: IEnemyContext;
+    readonly context: IEnemyContext<TAttr>;
 
     /**
      * 重置此怪物视图的状态，将计算后怪物对象恢复至初始状态
@@ -256,18 +234,18 @@ export interface IEnemyView {
     /**
      * 获取基本怪物对象
      */
-    getBaseEnemy(): IReadonlyEnemy;
+    getBaseEnemy(): IReadonlyEnemy<TAttr>;
 
     /**
      * 获取计算后的怪物对象，返回的怪物对象同引用
      */
-    getComputedEnemy(): IReadonlyEnemy;
+    getComputedEnemy(): IReadonlyEnemy<TAttr>;
 
     /**
      * 获取可修改的怪物对象。如果修改此方法获取的怪物对象，那么怪物的真实信息是不会刷新的，
      * 需要手动调用 markDirty 方法来刷新。
      */
-    getModifiableEnemy(): IEnemy;
+    getModifiableEnemy(): IEnemy<TAttr>;
 
     /**
      * 将此怪物标记为脏，需要更新
@@ -279,20 +257,23 @@ export interface IEnemyView {
 
 //#region 光环与查询
 
-export interface IEnemySpecialModifier {
+export interface IEnemySpecialModifier<TAttr> {
     /**
      * 获取要添加到指定怪物身上的特殊属性
      * @param enemy 怪物对象
      * @param locator 怪物定位符
      */
-    add(enemy: IReadonlyEnemy, locator: ITileLocator): ISpecial<any>[];
+    add(enemy: IReadonlyEnemy<TAttr>, locator: ITileLocator): ISpecial<any>[];
 
     /**
      * 获取制定怪物身上要删除的特殊属性
      * @param enemy 怪物对象
      * @param locator 怪物定位符
      */
-    delete(enemy: IReadonlyEnemy, locator: ITileLocator): ISpecial<any>[];
+    delete(
+        enemy: IReadonlyEnemy<TAttr>,
+        locator: ITileLocator
+    ): ISpecial<any>[];
 
     /**
      * 修改一个怪物的特殊属性，如果真正进行了修改则返回 true，否则返回 false
@@ -301,13 +282,13 @@ export interface IEnemySpecialModifier {
      * @param locator 怪物定位符
      */
     modify(
-        enemy: IReadonlyEnemy,
+        enemy: IReadonlyEnemy<TAttr>,
         special: ISpecial<any>,
         locator: ITileLocator
     ): boolean;
 }
 
-export interface IAuraView<T = any> {
+export interface IAuraView<TAttr, T = any> {
     /** 此光环视图的优先级 */
     readonly priority: number;
     /** 此光环视图的影响范围 */
@@ -326,42 +307,44 @@ export interface IAuraView<T = any> {
     /**
      * 对指定怪物对象施加修饰器
      * @param enemy 怪物对象
+     * @param baseEnemy 原始怪物对象，即未进行任何修改的怪物对象
      * @param locator 怪物定位符
      */
     apply(
-        enemy: IEnemy,
-        baseEnemy: IReadonlyEnemy,
+        enemy: IEnemy<TAttr>,
+        baseEnemy: IReadonlyEnemy<TAttr>,
         locator: ITileLocator
     ): void;
 
     /**
      * 对指定怪物对象添加特殊属性修饰器
      * @param enemy 怪物对象
+     * @param baseEnemy 原始怪物对象，即未进行任何修改的怪物对象
      * @param locator 怪物定位符
      */
     applySpecial(
-        enemy: IReadonlyEnemy,
-        baseEnemy: IReadonlyEnemy,
+        enemy: IReadonlyEnemy<TAttr>,
+        baseEnemy: IReadonlyEnemy<TAttr>,
         locator: ITileLocator
-    ): IEnemySpecialModifier | null;
+    ): IEnemySpecialModifier<TAttr> | null;
 }
 
-export interface IEnemyAuraView<T, S> extends IAuraView<T> {
+export interface IEnemyAuraView<TAttr, R, S> extends IAuraView<TAttr, R> {
     /** 此光环视图所属的怪物 */
-    readonly enemy: IReadonlyEnemy;
+    readonly enemy: IReadonlyEnemy<TAttr>;
     /** 此光环视图所属的特殊属性 */
     readonly special: ISpecial<S>;
     /** 此光环视图所属怪物的定位符 */
     readonly locator: ITileLocator;
 }
 
-export interface IAuraConverter {
+export interface IAuraConverter<TAttr> {
     /**
      * 判断一个特殊属性是否应该被当前光环转换器执行转换
      */
     shouldConvert(
         special: ISpecial<any>,
-        enemy: IReadonlyEnemy,
+        enemy: IReadonlyEnemy<TAttr>,
         locator: ITileLocator
     ): boolean;
 
@@ -370,29 +353,32 @@ export interface IAuraConverter {
      */
     convert(
         special: ISpecial<any>,
-        enemy: IReadonlyEnemy,
-        locator: ITileLocator
-    ): IEnemyAuraView<any, any>;
+        enemy: IReadonlyEnemy<TAttr>,
+        locator: ITileLocator,
+        context: IEnemyContext<TAttr>
+    ): IEnemyAuraView<TAttr, any, any>;
 }
 
-export interface IEnemySpecialQueryModifier extends IEnemySpecialModifier {
+export interface IEnemySpecialQueryModifier<
+    TAttr
+> extends IEnemySpecialModifier<TAttr> {
     /**
      * 判断一个怪物是否应该查询外部状态
      */
-    shouldQuery(enemy: IReadonlyEnemy, locator: ITileLocator): boolean;
+    shouldQuery(enemy: IReadonlyEnemy<TAttr>, locator: ITileLocator): boolean;
 }
 
-export interface IEnemySpecialQueryEffect {
+export interface IEnemySpecialQueryEffect<TAttr> {
     /** 效果优先级，与光环属性共用 */
     readonly priority: number;
 
     /**
      * 根据传入的怪物上下文，获取对应的怪物特殊属性修饰器
      */
-    for(ctx: IEnemyContext): IEnemySpecialQueryModifier;
+    for(ctx: IEnemyContext<TAttr>): IEnemySpecialQueryModifier<TAttr>;
 }
 
-export interface IEnemyCommonQueryEffect {
+export interface IEnemyCommonQueryEffect<TAttr> {
     /** 优先级，越高的越先执行 */
     readonly priority: number;
 
@@ -400,21 +386,21 @@ export interface IEnemyCommonQueryEffect {
      * 对怪物的某个特殊属性施加常规查询效果
      */
     apply(
-        enemy: IEnemy,
+        enemy: IEnemy<TAttr>,
         special: ISpecial<any>,
-        query: () => IEnemyContext,
+        query: () => IEnemyContext<TAttr>,
         locator: ITileLocator
     ): void;
 }
 
-export interface IEnemyFinalEffect {
+export interface IEnemyFinalEffect<TAttr> {
     /** 效果优先级，越高会越先被执行 */
     readonly priority: number;
 
     /**
      * 向怪物施加最终修饰效果
      */
-    apply(enemy: IEnemy, locator: ITileLocator): void;
+    apply(enemy: IEnemy<TAttr>, locator: ITileLocator): void;
 }
 
 //#endregion
@@ -438,10 +424,14 @@ export interface IMapDamageInfo {
 }
 
 export interface IMapDamageView<T = any> {
-    /** 获取地图伤害影响范围 */
+    /**
+     * 获取地图伤害影响范围
+     */
     getRange(): IRange<T>;
 
-    /** 获取范围参数 */
+    /**
+     * 获取范围参数
+     */
     getRangeParam(): T;
 
     /**
@@ -451,7 +441,7 @@ export interface IMapDamageView<T = any> {
     getDamageAt(locator: ITileLocator): Readonly<IMapDamageInfo> | null;
 
     /**
-     * 获取指定位置的地图伤害，但是不会对坐标进行判断
+     * 获取指定位置的地图伤害，会对坐标进行判断
      * @param locator 伤害位置
      */
     getDamageWithoutCheck(
@@ -459,32 +449,36 @@ export interface IMapDamageView<T = any> {
     ): Readonly<IMapDamageInfo> | null;
 }
 
-export interface IMapDamageConverter {
-    /** 转换地图伤害视图 */
+export interface IMapDamageConverter<TAttr> {
+    /**
+     * 转换地图伤害视图
+     */
     convert(
-        enemy: IReadonlyEnemy,
+        enemy: IReadonlyEnemy<TAttr>,
         locator: ITileLocator,
-        context: IEnemyContext
+        context: IEnemyContext<TAttr>
     ): IMapDamageView<any>[];
 }
 
 export interface IMapDamageReducer {
-    /** 对伤害信息进行合并 */
+    /**
+     * 对伤害信息进行合并
+     */
     reduce(
         info: Iterable<Readonly<IMapDamageInfo>>,
         locator: ITileLocator
     ): Readonly<IMapDamageInfo>;
 }
 
-export interface IMapDamage {
+export interface IMapDamage<TAttr> {
     /** 当前绑定的怪物上下文 */
-    readonly context: IEnemyContext;
+    readonly context: IEnemyContext<TAttr>;
 
     /**
      * 设置地图伤害转换器，并基于当前上下文重建所有地图伤害视图
      * @param converter 地图伤害转换器
      */
-    useConverter(converter: IMapDamageConverter): void;
+    useConverter(converter: IMapDamageConverter<TAttr>): void;
 
     /**
      * 设置地图伤害合并器
@@ -516,7 +510,7 @@ export interface IMapDamage {
      * 将指定怪物对应的地图伤害标记为脏并刷新
      * @param view 怪物视图
      */
-    markEnemyDirty(view: IEnemyView): void;
+    markEnemyDirty(view: IEnemyView<TAttr>): void;
 
     /**
      * 基于当前上下文重新刷新全部有来源地图伤害
@@ -527,7 +521,7 @@ export interface IMapDamage {
      * 删除指定怪物带来的全部地图伤害来源
      * @param view 怪物视图
      */
-    deleteEnemy(view: IEnemyView): void;
+    deleteEnemy(view: IEnemyView<TAttr>): void;
 
     /**
      * 获取指定位置合并后的地图伤害
@@ -548,7 +542,7 @@ export interface IMapDamage {
 
 //#region 上下文
 
-export interface IEnemyContext {
+export interface IEnemyContext<TAttr> {
     /** 怪物上下文宽度 */
     readonly width: number;
     /** 怪物上下文高度 */
@@ -565,32 +559,35 @@ export interface IEnemyContext {
      * 注册一个光环转换器
      * @param converter 光环转换器
      */
-    registerAuraConverter(converter: IAuraConverter): void;
+    registerAuraConverter(converter: IAuraConverter<TAttr>): void;
 
     /**
      * 注销一个光环转换器
      * @param converter 光环转换器
      */
-    unregisterAuraConverter(converter: IAuraConverter): void;
+    unregisterAuraConverter(converter: IAuraConverter<TAttr>): void;
 
     /**
      * 设置光环转换器的启用状态
      * @param converter 光环转换器
      * @param enabled 是否启用
      */
-    setAuraConverterEnabled(converter: IAuraConverter, enabled: boolean): void;
+    setAuraConverterEnabled(
+        converter: IAuraConverter<TAttr>,
+        enabled: boolean
+    ): void;
 
     /**
      * 注册一个特殊属性查询效果
      * @param effect 特殊属性查询效果
      */
-    registerSpecialQueryEffect(effect: IEnemySpecialQueryEffect): void;
+    registerSpecialQueryEffect(effect: IEnemySpecialQueryEffect<TAttr>): void;
 
     /**
      * 注销一个特殊属性查询效果
      * @param effect 特殊属性查询效果
      */
-    unregisterSpecialQueryEffect(effect: IEnemySpecialQueryEffect): void;
+    unregisterSpecialQueryEffect(effect: IEnemySpecialQueryEffect<TAttr>): void;
 
     /**
      * 为指定特殊属性代码注册常规查询效果
@@ -599,7 +596,7 @@ export interface IEnemyContext {
      */
     registerCommonQueryEffect(
         code: number,
-        effect: IEnemyCommonQueryEffect
+        effect: IEnemyCommonQueryEffect<TAttr>
     ): void;
 
     /**
@@ -609,58 +606,60 @@ export interface IEnemyContext {
      */
     unregisterCommonQueryEffect(
         code: number,
-        effect: IEnemyCommonQueryEffect
+        effect: IEnemyCommonQueryEffect<TAttr>
     ): void;
 
     /**
      * 注册一个最终效果
      * @param effect 最终效果
      */
-    registerFinalEffect(effect: IEnemyFinalEffect): void;
+    registerFinalEffect(effect: IEnemyFinalEffect<TAttr>): void;
 
     /**
      * 注销一个最终效果
      * @param effect 最终效果
      */
-    unregisterFinalEffect(effect: IEnemyFinalEffect): void;
+    unregisterFinalEffect(effect: IEnemyFinalEffect<TAttr>): void;
 
     /**
      * 获取指定怪物对象当前所在位置
      * @param enemy 怪物对象
      */
-    getEnemyLocator(enemy: IEnemy): Readonly<ITileLocator> | null;
+    getEnemyLocator(enemy: IEnemy<TAttr>): Readonly<ITileLocator> | null;
 
     /**
      * 获取指定怪物视图当前所在位置
      * @param view 怪物视图
      */
-    getEnemyLocatorByView(view: IEnemyView): Readonly<ITileLocator> | null;
+    getEnemyLocatorByView(
+        view: IEnemyView<TAttr>
+    ): Readonly<ITileLocator> | null;
 
     /**
      * 根据定位符获取怪物视图
      * @param locator 地图定位符
      */
-    getEnemyByLocator(locator: ITileLocator): IEnemyView | null;
+    getEnemyByLocator(locator: ITileLocator): IEnemyView<TAttr> | null;
 
     /**
      * 根据坐标获取怪物视图
      * @param x 横坐标
      * @param y 纵坐标
      */
-    getEnemyByLoc(x: number, y: number): IEnemyView | null;
+    getEnemyByLoc(x: number, y: number): IEnemyView<TAttr> | null;
 
     /**
      * 根据计算后怪物对象反查怪物视图
      * @param enemy 计算后怪物对象
      */
-    getViewByComputed(enemy: IReadonlyEnemy): IEnemyView | null;
+    getViewByComputed(enemy: IReadonlyEnemy<TAttr>): IEnemyView<TAttr> | null;
 
     /**
      * 在指定位置放置一个怪物对象
      * @param locator 地图定位符
      * @param enemy 怪物对象
      */
-    setEnemyAt(locator: ITileLocator, enemy: IEnemy): void;
+    setEnemyAt(locator: ITileLocator, enemy: IEnemy<TAttr>): void;
 
     /**
      * 删除指定位置的怪物
@@ -673,35 +672,35 @@ export interface IEnemyContext {
      * @param range 范围对象
      * @param param 范围参数
      */
-    scanRange<T>(range: IRange<T>, param: T): Iterable<IEnemyView>;
+    scanRange<T>(range: IRange<T>, param: T): Iterable<IEnemyView<TAttr>>;
 
     /**
      * 迭代上下文中的全部怪物
      */
-    iterateEnemy(): Iterable<[ITileLocator, IEnemyView]>;
+    iterateEnemy(): Iterable<[ITileLocator, IEnemyView<TAttr>]>;
 
     /**
      * 添加一个全局光环视图
      * @param aura 光环视图
      */
-    addAura(aura: IAuraView): void;
+    addAura(aura: IAuraView<TAttr>): void;
 
     /**
      * 删除一个全局光环视图
      * @param aura 光环视图
      */
-    deleteAura(aura: IAuraView): void;
+    deleteAura(aura: IAuraView<TAttr>): void;
 
     /**
      * 绑定地图伤害管理器
      * @param damage 地图伤害管理器
      */
-    attachMapDamage(damage: IMapDamage | null): void;
+    attachMapDamage(damage: IMapDamage<TAttr> | null): void;
 
     /**
      * 获取当前绑定的地图伤害管理器
      */
-    getMapDamage(): IMapDamage | null;
+    getMapDamage(): IMapDamage<TAttr> | null;
 
     /**
      * 重建当前上下文中的全部怪物计算结果
@@ -717,13 +716,13 @@ export interface IEnemyContext {
      * 将指定怪物视图标记为脏
      * @param view 怪物视图
      */
-    markDirty(view: IEnemyView): void;
+    markDirty(view: IEnemyView<TAttr>): void;
 
     /**
      * 申请刷新指定怪物视图
      * @param view 怪物视图
      */
-    requestRefresh(view: IEnemyView): void;
+    requestRefresh(view: IEnemyView<TAttr>): void;
 
     /**
      * 清空当前上下文中的所有对象与运行状态

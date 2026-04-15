@@ -2,10 +2,11 @@ import { ILayerState } from './map';
 import { IHeroFollower, IHeroState } from './hero';
 import { IRoleFaceBinder } from './common';
 import { IEnemyManager } from '@user/data-base';
+import { IEnemyAttributes } from './enemy/types';
 
 export interface IGameDataState {
     /** 怪物管理器 */
-    readonly enemyManager: IEnemyManager;
+    readonly enemyManager: IEnemyManager<IEnemyAttributes>;
 }
 
 export interface IStateSaveData {

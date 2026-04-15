@@ -21,7 +21,7 @@ import {
     IMapDamageView
 } from '@user/data-base';
 import { IZoneValue } from './special';
-import { MapDamageType } from './types';
+import { IEnemyAttributes, MapDamageType } from './types';
 
 const RECT_RANGE = new RectRange();
 const MANHATTAN_RANGE = new ManhattanRange();
@@ -33,7 +33,7 @@ const DIR4 = [...DIRECTION_MAPPER.map(InternalDirectionGroup.Dir4)];
 //#region 地图伤害
 
 abstract class BaseMapDamageView<T> implements IMapDamageView<T> {
-    constructor(protected readonly context: IEnemyContext) {}
+    constructor(protected readonly context: IEnemyContext<IEnemyAttributes>) {}
 
     abstract getRange(): IRange<T>;
 
@@ -94,7 +94,7 @@ export class ZoneDamageView extends BaseMapDamageView<
     IRectRangeParam | IManhattanRangeParam
 > {
     constructor(
-        context: IEnemyContext,
+        context: IEnemyContext<IEnemyAttributes>,
         private readonly locator: Readonly<ITileLocator>,
         private readonly special: Readonly<ISpecial<IZoneValue>>
     ) {
@@ -131,7 +131,7 @@ export class ZoneDamageView extends BaseMapDamageView<
 
 export class RepulseDamageView extends BaseMapDamageView<IManhattanRangeParam> {
     constructor(
-        context: IEnemyContext,
+        context: IEnemyContext<IEnemyAttributes>,
         private readonly locator: Readonly<ITileLocator>,
         private readonly special: Readonly<ISpecial<number>>
     ) {
@@ -165,7 +165,7 @@ export class RepulseDamageView extends BaseMapDamageView<IManhattanRangeParam> {
 
 export class LaserDamageView extends BaseMapDamageView<IRayRangeParam> {
     constructor(
-        context: IEnemyContext,
+        context: IEnemyContext<IEnemyAttributes>,
         private readonly locator: Readonly<ITileLocator>,
         private readonly special: Readonly<ISpecial<number>>,
         private readonly dir: IDirectionDescriptor[] = DIR4
@@ -200,7 +200,7 @@ export class BetweenDamageView extends BaseMapDamageView<IManhattanRangeParam> {
     private static readonly DAMAGE = 1;
 
     constructor(
-        context: IEnemyContext,
+        context: IEnemyContext<IEnemyAttributes>,
         private readonly locator: Readonly<ITileLocator>
     ) {
         super(context);
@@ -250,7 +250,7 @@ export class BetweenDamageView extends BaseMapDamageView<IManhattanRangeParam> {
 
 export class AmbushDamageView extends BaseMapDamageView<IManhattanRangeParam> {
     constructor(
-        context: IEnemyContext,
+        context: IEnemyContext<IEnemyAttributes>,
         private readonly locator: Readonly<ITileLocator>
     ) {
         super(context);
@@ -285,11 +285,11 @@ export class AmbushDamageView extends BaseMapDamageView<IManhattanRangeParam> {
 
 //#region 转换器
 
-export class MainMapDamageConverter implements IMapDamageConverter {
+export class MainMapDamageConverter implements IMapDamageConverter<IEnemyAttributes> {
     convert(
-        enemy: IReadonlyEnemy,
+        enemy: IReadonlyEnemy<IEnemyAttributes>,
         locator: ITileLocator,
-        context: IEnemyContext
+        context: IEnemyContext<IEnemyAttributes>
     ): IMapDamageView<any>[] {
         const views: IMapDamageView<any>[] = [];
 

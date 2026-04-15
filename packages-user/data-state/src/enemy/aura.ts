@@ -9,13 +9,16 @@ import {
 import {
     IAuraConverter,
     IEnemyAuraView,
+    IEnemyContext,
     IEnemySpecialModifier,
+    IEnemyView,
     IReadonlyEnemy,
     ISpecial,
     IEnemy
 } from '@user/data-base';
 import { IHaloValue } from './special';
 import { ITileLocator } from '@user/types';
+import { IEnemyAttributes } from './types';
 
 const FULL_RANGE = new FullRange();
 const RECT_RANGE = new RectRange();
@@ -23,32 +26,32 @@ const MANHATTAN_RANGE = new ManhattanRange();
 
 //#region 25-光环
 
-export class CommonAuraConverter implements IAuraConverter {
+export class CommonAuraConverter implements IAuraConverter<IEnemyAttributes> {
     shouldConvert(special: ISpecial<any>): boolean {
         return special.code === 25;
     }
 
     convert(
         special: ISpecial<any>,
-        enemy: IReadonlyEnemy,
+        enemy: IReadonlyEnemy<IEnemyAttributes>,
         locator: ITileLocator
-    ): IEnemyAuraView<any, any> {
+    ): CommonAura {
         return new CommonAura(enemy, special as ISpecial<IHaloValue>, locator);
     }
 }
 
 export class CommonAura implements IEnemyAuraView<
+    IEnemyAttributes,
     IRectRangeParam | IManhattanRangeParam | void,
     IHaloValue
 > {
     readonly priority: number = 25;
     readonly couldApplyBase: boolean = true;
     readonly couldApplySpecial: boolean = false;
-
     readonly range: IRange<IRectRangeParam | IManhattanRangeParam | void>;
 
     constructor(
-        readonly enemy: IReadonlyEnemy,
+        readonly enemy: IReadonlyEnemy<IEnemyAttributes>,
         readonly special: ISpecial<IHaloValue>,
         readonly locator: ITileLocator
     ) {
@@ -85,7 +88,10 @@ export class CommonAura implements IEnemyAuraView<
         };
     }
 
-    apply(enemy: IEnemy, baseEnemy: IReadonlyEnemy): void {
+    apply(
+        enemy: IEnemy<IEnemyAttributes>,
+        baseEnemy: IReadonlyEnemy<IEnemyAttributes>
+    ): void {
         const { hpBuff, atkBuff, defBuff } = this.special.value;
 
         if (hpBuff !== 0) {
@@ -113,7 +119,78 @@ export class CommonAura implements IEnemyAuraView<
         }
     }
 
-    applySpecial(): IEnemySpecialModifier | null {
+    applySpecial(): IEnemySpecialModifier<IEnemyAttributes> | null {
+        return null;
+    }
+}
+
+//#endregion
+
+//#region 26-支援
+
+export class GuardAuraConverter implements IAuraConverter<IEnemyAttributes> {
+    shouldConvert(special: ISpecial<any>): boolean {
+        return special.code === 26;
+    }
+
+    convert(
+        special: ISpecial<any>,
+        enemy: IReadonlyEnemy<IEnemyAttributes>,
+        locator: ITileLocator,
+        context: IEnemyContext<IEnemyAttributes>
+    ): GuardAura {
+        return new GuardAura(
+            context,
+            enemy,
+            special as ISpecial<void>,
+            locator
+        );
+    }
+}
+
+export class GuardAura implements IEnemyAuraView<
+    IEnemyAttributes,
+    IRectRangeParam,
+    void
+> {
+    readonly priority: number = 26;
+    readonly couldApplyBase: boolean = true;
+    readonly couldApplySpecial: boolean = false;
+    readonly range: IRange<IRectRangeParam> = RECT_RANGE;
+
+    private readonly sourceView: IEnemyView<IEnemyAttributes> | null;
+
+    constructor(
+        context: IEnemyContext<IEnemyAttributes>,
+        readonly enemy: IReadonlyEnemy<IEnemyAttributes>,
+        readonly special: ISpecial<void>,
+        readonly locator: ITileLocator
+    ) {
+        this.sourceView = context.getViewByComputed(enemy);
+    }
+
+    getRangeParam(): IRectRangeParam {
+        return {
+            x: this.locator.x - 1,
+            y: this.locator.y - 1,
+            w: 3,
+            h: 3
+        };
+    }
+
+    apply(
+        enemy: IEnemy<IEnemyAttributes>,
+        _baseEnemy: IReadonlyEnemy<IEnemyAttributes>,
+        locator: ITileLocator
+    ): void {
+        if (!this.sourceView) return;
+        if (locator.x === this.locator.x && locator.y === this.locator.y) {
+            return;
+        }
+        enemy.getAttribute('guard').add(this.sourceView);
+    }
+
+    applySpecial(): IEnemySpecialModifier<IEnemyAttributes> | null {
         return null;
     }
 }

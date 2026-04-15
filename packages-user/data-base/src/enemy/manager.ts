@@ -1,30 +1,21 @@
 import { logger } from '@motajs/common';
 import { Enemy as EnemyImpl } from './enemy';
-import {
-    IEnemy,
-    IEnemyAttributes,
-    IEnemyManager,
-    ISpecial,
-    SpecialCreation
-} from './types';
+import { IEnemy, IEnemyManager, SpecialCreation } from './types';
 
-export class EnemyManager implements IEnemyManager {
+export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
     /** 特殊属性注册表，code -> 创建函数 */
-    private readonly specialRegistry: Map<number, SpecialCreation<any>> =
+    private readonly specialRegistry: Map<number, SpecialCreation<any, TAttr>> =
         new Map();
     /** 自定义怪物属性注册表，name -> 默认值 */
     private readonly attributeRegistry: Map<string, any> = new Map();
     /** 怪物模板表，code -> IEnemy */
-    private readonly prefabByCode: Map<number, IEnemy> = new Map();
+    private readonly prefabByCode: Map<number, IEnemy<TAttr>> = new Map();
     /** 怪物模板表，id -> IEnemy */
-    private readonly prefabById: Map<string, IEnemy> = new Map();
+    private readonly prefabById: Map<string, IEnemy<TAttr>> = new Map();
     /** 旧样板怪物 id 到 code 的映射，用于 fromLegacyEnemy 快速查找已有模板 */
     private readonly legacyIdToCode: Map<string, number> = new Map();
 
-    registerSpecial(
-        code: number,
-        cons: (enemy: IEnemy) => ISpecial<any>
-    ): void {
+    registerSpecial(code: number, cons: SpecialCreation<any, TAttr>): void {
         this.specialRegistry.set(code, cons);
     }
 
@@ -41,7 +32,7 @@ export class EnemyManager implements IEnemyManager {
         this.attributeRegistry.set(name, defaultValue);
     }
 
-    fromLegacyEnemy(enemy: Enemy): IEnemy {
+    fromLegacyEnemy(enemy: Enemy): IEnemy<TAttr> {
         // 如果该旧样板怪物已经通过 addPrefabFromLegacy 注册为模板，直接克隆模板
         const existingCode = this.legacyIdToCode.get(enemy.id);
         if (existingCode) {
@@ -55,20 +46,35 @@ export class EnemyManager implements IEnemyManager {
     }
 
     /**
+     * 根据旧样板怪物与注册过的默认属性构造属性对象
+     * @param enemy 旧样板怪物对象
+     */
+    private createAttributes(enemy: Enemy): TAttr {
+        const attrs: Record<string, any> = {};
+        for (const [name, defaultValue] of this.attributeRegistry) {
+            attrs[name] = structuredClone(defaultValue);
+        }
+        attrs.hp = enemy.hp;
+        attrs.atk = enemy.atk;
+        attrs.def = enemy.def;
+        attrs.money = enemy.money;
+        attrs.exp = enemy.exp;
+        attrs.point = enemy.point;
+        return attrs as TAttr;
+    }
+
+    /**
      * 真正执行旧样板怪物到新怪物对象的转换
      * @param code 怪物图块数字
      * @param enemy 旧样板怪物对象
      */
-    private convertLegacyEnemy(code: number, enemy: Enemy): IEnemy {
-        const attrs: IEnemyAttributes = {
-            hp: enemy.hp,
-            atk: enemy.atk,
-            def: enemy.def,
-            money: enemy.money,
-            exp: enemy.exp,
-            point: enemy.point
-        };
-        const result = new EnemyImpl(enemy.id, code, structuredClone(attrs));
+    private convertLegacyEnemy(code: number, enemy: Enemy): IEnemy<TAttr> {
+        const attrs = this.createAttributes(enemy);
+        const result = new EnemyImpl<TAttr>(
+            enemy.id,
+            code,
+            structuredClone(attrs)
+        );
 
         // 转换特殊属性
         if (enemy.special) {
@@ -84,19 +90,19 @@ export class EnemyManager implements IEnemyManager {
         return result;
     }
 
-    createEnemy(code: number): IEnemy | null {
+    createEnemy(code: number): IEnemy<TAttr> | null {
         const prefab = this.prefabByCode.get(code);
         if (!prefab) return null;
         return prefab.clone();
     }
 
-    createEnemyById(id: string): IEnemy | null {
+    createEnemyById(id: string): IEnemy<TAttr> | null {
         const prefab = this.prefabById.get(id);
         if (!prefab) return null;
         return prefab.clone();
     }
 
-    addPrefab(enemy: IEnemy): void {
+    addPrefab(enemy: IEnemy<TAttr>): void {
         if (
             this.prefabByCode.has(enemy.code) ||
             this.prefabById.has(enemy.id)
@@ -118,11 +124,11 @@ export class EnemyManager implements IEnemyManager {
         this.legacyIdToCode.set(enemy.id, code);
     }
 
-    getPrefab(code: number): IEnemy | null {
+    getPrefab(code: number): IEnemy<TAttr> | null {
         return this.prefabByCode.get(code) ?? null;
     }
 
-    getPrefabById(id: string): IEnemy | null {
+    getPrefabById(id: string): IEnemy<TAttr> | null {
         return this.prefabById.get(id) ?? null;
     }
 
@@ -136,7 +142,7 @@ export class EnemyManager implements IEnemyManager {
         this.prefabById.delete(prefab.id);
     }
 
-    changePrefab(code: number | string, enemy: IEnemy): void {
+    changePrefab(code: number | string, enemy: IEnemy<TAttr>): void {
         // 先删除旧的模板（如果存在）
         this.deletePrefab(code);
         // 再添加新的模板

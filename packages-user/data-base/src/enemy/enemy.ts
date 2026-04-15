@@ -1,14 +1,13 @@
 import { logger } from '@motajs/common';
 import {
     IEnemy,
-    IEnemyAttributes,
     IEnemyContext,
     IReadonlyEnemy,
     ISpecial,
     IEnemyView
 } from './types';
 
-export class Enemy implements IEnemy {
+export class Enemy<TAttr> implements IEnemy<TAttr> {
     readonly specials: Set<ISpecial<any>> = new Set();
     /** code -> ISpecial 映射，用于快速查找 */
     private readonly specialMap: Map<number, ISpecial<any>> = new Map();
@@ -16,7 +15,7 @@ export class Enemy implements IEnemy {
     constructor(
         readonly id: string,
         readonly code: number,
-        readonly attributes: IEnemyAttributes
+        private attributes: TAttr
     ) {}
 
     getSpecial<T>(code: number): ISpecial<T> | null {
@@ -48,21 +47,20 @@ export class Enemy implements IEnemy {
         return this.specials;
     }
 
-    setAttribute<K extends keyof IEnemyAttributes>(
-        key: K,
-        value: IEnemyAttributes[K]
-    ): void {
+    setAttribute<K extends keyof TAttr>(key: K, value: TAttr[K]): void {
         this.attributes[key] = value;
     }
 
-    getAttribute<K extends keyof IEnemyAttributes>(
-        key: K
-    ): IEnemyAttributes[K] {
+    getAttribute<K extends keyof TAttr>(key: K): TAttr[K] {
         return this.attributes[key];
     }
 
-    clone(): IEnemy {
-        const cloned = new Enemy(
+    cloneAttributes(): TAttr {
+        return structuredClone(this.attributes);
+    }
+
+    clone(): IEnemy<TAttr> {
+        const cloned = new Enemy<TAttr>(
             this.id,
             this.code,
             structuredClone(this.attributes)
@@ -73,10 +71,8 @@ export class Enemy implements IEnemy {
         return cloned;
     }
 
-    copy(enemy: IReadonlyEnemy): void {
-        ATTRIBUTE_KEYS.forEach(key => {
-            this.setAttribute(key, structuredClone(enemy.getAttribute(key)));
-        });
+    copyFrom(enemy: IReadonlyEnemy<TAttr>): void {
+        this.attributes = enemy.cloneAttributes();
         this.specials.clear();
         this.specialMap.clear();
         for (const special of enemy.iterateSpecials()) {
@@ -85,25 +81,25 @@ export class Enemy implements IEnemy {
     }
 }
 
-export class EnemyView implements IEnemyView {
-    private computedEnemy: IEnemy;
+export class EnemyView<TAttr> implements IEnemyView<TAttr> {
+    private computedEnemy: IEnemy<TAttr>;
 
     constructor(
-        readonly baseEnemy: IEnemy,
-        readonly context: IEnemyContext
+        readonly baseEnemy: IEnemy<TAttr>,
+        readonly context: IEnemyContext<TAttr>
     ) {
         this.computedEnemy = baseEnemy.clone();
     }
 
     reset(): void {
-        this.computedEnemy.copy(this.baseEnemy);
+        this.computedEnemy.copyFrom(this.baseEnemy);
     }
 
-    getBaseEnemy(): IReadonlyEnemy {
+    getBaseEnemy(): IReadonlyEnemy<TAttr> {
         return this.baseEnemy;
     }
 
-    getComputedEnemy(): IReadonlyEnemy {
+    getComputedEnemy(): IReadonlyEnemy<TAttr> {
         this.context.requestRefresh(this);
         return this.computedEnemy;
     }
@@ -111,11 +107,11 @@ export class EnemyView implements IEnemyView {
     /**
      * 获取计算中怪物对象，这个接口不对外暴露，仅在系统内部的 EnemyContext 中使用。
      */
-    getComputingEnemy(): IEnemy {
+    getComputingEnemy(): IEnemy<TAttr> {
         return this.computedEnemy;
     }
 
-    getModifiableEnemy(): IEnemy {
+    getModifiableEnemy(): IEnemy<TAttr> {
         return this.baseEnemy;
     }
 
@@ -123,12 +119,3 @@ export class EnemyView implements IEnemyView {
         this.context.markDirty(this);
     }
 }
-
-export const ATTRIBUTE_KEYS: (keyof IEnemyAttributes)[] = [
-    'hp',
-    'atk',
-    'def',
-    'money',
-    'exp',
-    'point'
-];

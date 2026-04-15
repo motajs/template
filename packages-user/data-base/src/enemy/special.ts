@@ -78,18 +78,18 @@ export class NonePropertySpecial implements ISpecial<void> {
     }
 }
 
-export function defineCommonSerializableSpecial<T>(
+export function defineCommonSerializableSpecial<T, TAttr = any>(
     code: number,
     value: T,
     config: ICommonSerializableSpecialConfig<T>
-): SpecialCreation<T> {
+): SpecialCreation<T, TAttr> {
     return () =>
         new CommonSerializableSpecial(code, structuredClone(value), config);
 }
 
-export function defineNonePropertySpecial(
+export function defineNonePropertySpecial<TAttr = any>(
     code: number,
     config: ICommonSerializableSpecialConfig<void>
-): SpecialCreation<void> {
+): SpecialCreation<void, TAttr> {
     return () => new NonePropertySpecial(code, config);
 }
