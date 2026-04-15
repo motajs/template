@@ -13,6 +13,7 @@ import {
 import { IEnemyAttributes } from './enemy/types';
 import {
     CommonAuraConverter,
+    EnemyLegacyBridge,
     GuardAuraConverter,
     MainEnemyFinalEffect,
     MainMapDamageConverter,
@@ -38,9 +39,18 @@ export class CoreState implements ICoreState {
         this.idNumberMap = new Map();
         this.numberIdMap = new Map();
 
+        //#region 怪物初始化
+
         // 怪物管理器初始化
-        this.enemyManager = new EnemyManager();
-        registerSpecials(this.enemyManager);
+        const enemyManager = new EnemyManager(new EnemyLegacyBridge());
+        enemyManager.setAttributeDefaults('hp', 0);
+        enemyManager.setAttributeDefaults('atk', 0);
+        enemyManager.setAttributeDefaults('def', 0);
+        enemyManager.setAttributeDefaults('exp', 0);
+        enemyManager.setAttributeDefaults('money', 0);
+        enemyManager.setAttributeDefaults('point', 0);
+        registerSpecials(enemyManager);
+        this.enemyManager = enemyManager;
         // 怪物上下文初始化
         const enemyContext = new EnemyContext<IEnemyAttributes>();
         const damageSystem = new DamageSystem(enemyContext);
@@ -54,6 +64,8 @@ export class CoreState implements ICoreState {
         enemyContext.registerFinalEffect(new MainEnemyFinalEffect());
         enemyContext.resize(TILE_WIDTH, TILE_HEIGHT);
         this.enemyContext = enemyContext;
+
+        //#endregion
     }
 
     saveState(): IStateSaveData {

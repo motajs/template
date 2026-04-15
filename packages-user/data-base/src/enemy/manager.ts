@@ -1,13 +1,18 @@
 import { logger } from '@motajs/common';
 import { Enemy as EnemyImpl } from './enemy';
-import { IEnemy, IEnemyManager, SpecialCreation } from './types';
+import {
+    IEnemy,
+    IEnemyManager,
+    IEnemyLegacyBridge,
+    SpecialCreation
+} from './types';
 
 export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
     /** 特殊属性注册表，code -> 创建函数 */
     private readonly specialRegistry: Map<number, SpecialCreation<any, TAttr>> =
         new Map();
     /** 自定义怪物属性注册表，name -> 默认值 */
-    private readonly attributeRegistry: Map<string, any> = new Map();
+    private readonly attributeRegistry: Map<keyof TAttr, any> = new Map();
     /** 怪物模板表，code -> IEnemy */
     private readonly prefabByCode: Map<number, IEnemy<TAttr>> = new Map();
     /** 怪物模板表，id -> IEnemy */
@@ -15,11 +20,16 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
     /** 旧样板怪物 id 到 code 的映射，用于 fromLegacyEnemy 快速查找已有模板 */
     private readonly legacyIdToCode: Map<string, number> = new Map();
 
+    constructor(readonly bridge: IEnemyLegacyBridge<TAttr>) {}
+
     registerSpecial(code: number, cons: SpecialCreation<any, TAttr>): void {
         this.specialRegistry.set(code, cons);
     }
 
-    registerAttribute(name: string, defaultValue: any): void {
+    setAttributeDefaults<K extends keyof TAttr>(
+        name: K,
+        defaultValue: TAttr[K]
+    ): void {
         if (
             typeof defaultValue === 'function' ||
             typeof defaultValue === 'symbol' ||
@@ -50,16 +60,13 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
      * @param enemy 旧样板怪物对象
      */
     private createAttributes(enemy: Enemy): TAttr {
-        const attrs: Record<string, any> = {};
+        const attrs: Partial<TAttr> = {};
         for (const [name, defaultValue] of this.attributeRegistry) {
             attrs[name] = structuredClone(defaultValue);
         }
-        attrs.hp = enemy.hp;
-        attrs.atk = enemy.atk;
-        attrs.def = enemy.def;
-        attrs.money = enemy.money;
-        attrs.exp = enemy.exp;
-        attrs.point = enemy.point;
+
+        Object.assign(attrs, this.bridge.fromLegacyEnemy(enemy, attrs));
+
         return attrs as TAttr;
     }
 

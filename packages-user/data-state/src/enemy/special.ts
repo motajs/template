@@ -51,7 +51,7 @@ export interface IHaloValue {
 export function registerSpecials(
     manager: IEnemyManager<IEnemyAttributes>
 ): void {
-    manager.registerAttribute('guard', new Set());
+    manager.setAttributeDefaults('guard', new Set());
 
     // 0 - 空
     manager.registerSpecial(

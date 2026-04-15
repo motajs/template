@@ -1,5 +1,7 @@
 import { IRange, ITileLocator } from '@motajs/common';
 
+//#region 怪物基础
+
 export interface ISpecial<T = void> {
     /** 特殊属性代码 */
     readonly code: number;
@@ -121,7 +123,19 @@ export interface IEnemy<TAttr> extends IReadonlyEnemy<TAttr> {
     copyFrom(enemy: IReadonlyEnemy<TAttr>): void;
 }
 
+//#endregion
+
+//#region 怪物管理器
+
 export type SpecialCreation<T, TAttr> = (enemy: IEnemy<TAttr>) => ISpecial<T>;
+
+export interface IEnemyLegacyBridge<TAttr> {
+    /**
+     * 从旧样板的怪物对象中获取其属性
+     * @param enemy 旧样板怪物对象
+     */
+    fromLegacyEnemy(enemy: Enemy, defaultValue: Partial<TAttr>): TAttr;
+}
 
 export interface IEnemyManager<TAttr> {
     /**
@@ -136,7 +150,10 @@ export interface IEnemyManager<TAttr> {
      * @param name 属性名称
      * @param defaultValue 属性默认值
      */
-    registerAttribute(name: string, defaultValue: any): void;
+    setAttributeDefaults<K extends keyof TAttr>(
+        name: K,
+        defaultValue: TAttr[K]
+    ): void;
 
     /**
      * 根据旧样板怪物对象生成一个新的怪物对象
@@ -195,6 +212,8 @@ export interface IEnemyManager<TAttr> {
      */
     changePrefab(code: number | string, enemy: IEnemy<TAttr>): void;
 }
+
+//#endregion
 
 //#region 辅助接口
 
