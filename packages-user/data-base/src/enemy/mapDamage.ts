@@ -1,5 +1,4 @@
-import { logger } from '@motajs/common';
-import { ITileLocator } from '@user/types';
+import { logger, ITileLocator } from '@motajs/common';
 import {
     IEnemyContext,
     IEnemyView,

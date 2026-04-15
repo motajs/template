@@ -1,5 +1,4 @@
-import { IRange, logger } from '@motajs/common';
-import { ITileLocator } from '@user/types';
+import { IRange, ITileLocator, logger } from '@motajs/common';
 import {
     IAuraConverter,
     IAuraView,

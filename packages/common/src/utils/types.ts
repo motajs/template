@@ -135,6 +135,13 @@ export interface IRayRangeParam {
 
 //#region 实用接口
 
+export interface ITileLocator {
+    /** 图块所在横坐标 */
+    x: number;
+    /** 图块所在纵坐标 */
+    y: number;
+}
+
 export const enum InternalDirectionGroup {
     /** 上下左右四方向 */
     Dir4,

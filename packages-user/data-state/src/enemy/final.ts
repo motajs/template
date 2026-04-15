@@ -1,6 +1,6 @@
 import { IEnemy, IEnemyFinalEffect } from '@user/data-base';
 import { IEnemyAttributes } from './types';
-import { ITileLocator } from '@user/types';
+import { ITileLocator } from '@motajs/common';
 
 const HERO_STATUS_PLACEHOLDER = {
     atk: 0,

@@ -8,9 +8,9 @@ import {
     IRectRangeParam,
     ManhattanRange,
     RayRange,
-    RectRange
+    RectRange,
+    ITileLocator
 } from '@motajs/common';
-import { ITileLocator } from '@user/types';
 import { IReadonlyEnemy, ISpecial } from '@user/data-base';
 import {
     IEnemyContext,

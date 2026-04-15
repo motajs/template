@@ -1,4 +1,4 @@
-import { ITileLocator } from '@user/types';
+import { ITileLocator } from '@motajs/common';
 import { IMapLocIndexer } from './types';
 
 export class MapLocIndexer implements IMapLocIndexer {

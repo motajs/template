@@ -21,13 +21,13 @@ export interface ICoreState {
     readonly hero: IHeroState;
     /** 朝向绑定 */
     readonly roleFace: IRoleFaceBinder;
-    /** 游戏数据状态 */
-    readonly data: IGameDataState;
     /** id 到图块数字的映射 */
     readonly idNumberMap: Map<string, number>;
     /** 图块数字到 id 的映射 */
     readonly numberIdMap: Map<number, string>;
 
+    /** 怪物管理器 */
+    readonly enemyManager: IEnemyManager<IEnemyAttributes>;
     /** 怪物上下文 */
     readonly enemyContext: IEnemyContext<IEnemyAttributes>;
 

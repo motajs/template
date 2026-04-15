@@ -3,6 +3,7 @@ import {
     IManhattanRangeParam,
     IRange,
     IRectRangeParam,
+    ITileLocator,
     ManhattanRange,
     RectRange
 } from '@motajs/common';
@@ -17,7 +18,6 @@ import {
     IEnemy
 } from '@user/data-base';
 import { IHaloValue } from './special';
-import { ITileLocator } from '@user/types';
 import { IEnemyAttributes } from './types';
 
 const FULL_RANGE = new FullRange();

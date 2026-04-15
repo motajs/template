@@ -1,5 +1,4 @@
-import { IRange } from '@motajs/common';
-import { ITileLocator } from '@user/types';
+import { IRange, ITileLocator } from '@motajs/common';
 
 export interface ISpecial<T = void> {
     /** 特殊属性代码 */

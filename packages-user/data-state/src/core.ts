@@ -1,12 +1,13 @@
-import { ICoreState, IGameDataState, IStateSaveData } from './types';
+import { ICoreState, IStateSaveData } from './types';
 import { IHeroState, HeroState } from './hero';
 import { ILayerState, LayerState } from './map';
 import { IRoleFaceBinder, RoleFaceBinder } from './common';
-import { GameDataState } from './data';
 import {
     DamageSystem,
     EnemyContext,
+    EnemyManager,
     IEnemyContext,
+    IEnemyManager,
     MapDamage
 } from '@user/data-base';
 import { IEnemyAttributes } from './enemy/types';
@@ -15,16 +16,19 @@ import {
     GuardAuraConverter,
     MainEnemyFinalEffect,
     MainMapDamageConverter,
-    MainMapDamageReducer
+    MainMapDamageReducer,
+    registerSpecials
 } from './enemy';
+import { TILE_HEIGHT, TILE_WIDTH } from './shared';
 
 export class CoreState implements ICoreState {
     readonly layer: ILayerState;
     readonly hero: IHeroState;
     readonly roleFace: IRoleFaceBinder;
-    readonly data: IGameDataState;
     readonly idNumberMap: Map<string, number>;
     readonly numberIdMap: Map<number, string>;
+
+    readonly enemyManager: IEnemyManager<IEnemyAttributes>;
     readonly enemyContext: IEnemyContext<IEnemyAttributes>;
 
     constructor() {
@@ -33,8 +37,10 @@ export class CoreState implements ICoreState {
         this.roleFace = new RoleFaceBinder();
         this.idNumberMap = new Map();
         this.numberIdMap = new Map();
-        this.data = new GameDataState();
 
+        // 怪物管理器初始化
+        this.enemyManager = new EnemyManager();
+        registerSpecials(this.enemyManager);
         // 怪物上下文初始化
         const enemyContext = new EnemyContext<IEnemyAttributes>();
         const damageSystem = new DamageSystem(enemyContext);
@@ -46,7 +52,7 @@ export class CoreState implements ICoreState {
         enemyContext.registerAuraConverter(new CommonAuraConverter());
         enemyContext.registerAuraConverter(new GuardAuraConverter());
         enemyContext.registerFinalEffect(new MainEnemyFinalEffect());
-        enemyContext.resize(core._WIDTH_, core._HEIGHT_);
+        enemyContext.resize(TILE_WIDTH, TILE_HEIGHT);
         this.enemyContext = enemyContext;
     }
 
