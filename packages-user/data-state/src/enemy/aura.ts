@@ -95,27 +95,18 @@ export class CommonAura implements IEnemyAuraView<
         const { hpBuff, atkBuff, defBuff } = this.special.value;
 
         if (hpBuff !== 0) {
-            enemy.setAttribute(
-                'hp',
-                enemy.getAttribute('hp') +
-                    Math.floor((baseEnemy.getAttribute('hp') * hpBuff) / 100)
-            );
+            const hpValue = (baseEnemy.getAttribute('hp') * hpBuff) / 100;
+            enemy.addAttribute('hp', Math.floor(hpValue));
         }
 
         if (atkBuff !== 0) {
-            enemy.setAttribute(
-                'atk',
-                enemy.getAttribute('atk') +
-                    Math.floor((baseEnemy.getAttribute('atk') * atkBuff) / 100)
-            );
+            const atkValue = (baseEnemy.getAttribute('atk') * atkBuff) / 100;
+            enemy.addAttribute('atk', Math.floor(atkValue));
         }
 
         if (defBuff !== 0) {
-            enemy.setAttribute(
-                'def',
-                enemy.getAttribute('def') +
-                    Math.floor((baseEnemy.getAttribute('def') * defBuff) / 100)
-            );
+            const defValue = (baseEnemy.getAttribute('def') * defBuff) / 100;
+            enemy.addAttribute('def', Math.floor(defValue));
         }
     }
 

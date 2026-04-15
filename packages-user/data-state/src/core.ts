@@ -13,6 +13,7 @@ import { IEnemyAttributes } from './enemy/types';
 import {
     CommonAuraConverter,
     GuardAuraConverter,
+    MainEnemyFinalEffect,
     MainMapDamageConverter,
     MainMapDamageReducer
 } from './enemy';
@@ -44,6 +45,7 @@ export class CoreState implements ICoreState {
         enemyContext.attachMapDamage(mapDamage);
         enemyContext.registerAuraConverter(new CommonAuraConverter());
         enemyContext.registerAuraConverter(new GuardAuraConverter());
+        enemyContext.registerFinalEffect(new MainEnemyFinalEffect());
         enemyContext.resize(core._WIDTH_, core._HEIGHT_);
         this.enemyContext = enemyContext;
     }

@@ -51,6 +51,13 @@ export class Enemy<TAttr> implements IEnemy<TAttr> {
         this.attributes[key] = value;
     }
 
+    addAttribute<K extends SelectKey<TAttr, number>>(
+        key: K,
+        value: number
+    ): void {
+        (this.attributes[key] as number) += value;
+    }
+
     getAttribute<K extends keyof TAttr>(key: K): TAttr[K] {
         return this.attributes[key];
     }

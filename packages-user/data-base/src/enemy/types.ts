@@ -101,6 +101,16 @@ export interface IEnemy<TAttr> extends IReadonlyEnemy<TAttr> {
     setAttribute<K extends keyof TAttr>(key: K, value: TAttr[K]): void;
 
     /**
+     * 对一个数字类型的属性值进行增减操作
+     * @param key 属性名称
+     * @param value 要增加的属性值，可以是负值
+     */
+    addAttribute<K extends SelectKey<TAttr, number>>(
+        key: K,
+        value: number
+    ): void;
+
+    /**
      * 深拷贝此怪物对象
      */
     clone(): IEnemy<TAttr>;
