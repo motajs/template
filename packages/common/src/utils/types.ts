@@ -87,6 +87,19 @@ export interface IRange<T> {
      * @param param 传递给范围对象的参数
      */
     inRangeIndex(index: number, param: Readonly<T>): boolean;
+
+    /**
+     * 判断一个点是否在宿主对象矩形范围内
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    inBound(x: number, y: number): boolean;
+
+    /**
+     * 判断一个点索引是否在宿主对象矩形范围内
+     * @param index 索引
+     */
+    inBoundIndex(index: number): boolean;
 }
 
 export interface IRectRangeParam {

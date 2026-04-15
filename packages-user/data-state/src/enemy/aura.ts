@@ -32,11 +32,11 @@ export class CommonAuraConverter implements IAuraConverter<IEnemyAttributes> {
     }
 
     convert(
-        special: ISpecial<any>,
+        special: ISpecial<IHaloValue>,
         enemy: IReadonlyEnemy<IEnemyAttributes>,
         locator: ITileLocator
     ): CommonAura {
-        return new CommonAura(enemy, special as ISpecial<IHaloValue>, locator);
+        return new CommonAura(enemy, special, locator);
     }
 }
 
@@ -134,17 +134,12 @@ export class GuardAuraConverter implements IAuraConverter<IEnemyAttributes> {
     }
 
     convert(
-        special: ISpecial<any>,
+        special: ISpecial<void>,
         enemy: IReadonlyEnemy<IEnemyAttributes>,
         locator: ITileLocator,
         context: IEnemyContext<IEnemyAttributes>
     ): GuardAura {
-        return new GuardAura(
-            context,
-            enemy,
-            special as ISpecial<void>,
-            locator
-        );
+        return new GuardAura(context, enemy, special, locator);
     }
 }
 

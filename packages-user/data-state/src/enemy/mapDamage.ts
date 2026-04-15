@@ -74,20 +74,6 @@ abstract class BaseMapDamageView<T> implements IMapDamageView<T> {
             }
         };
     }
-
-    /**
-     * 判断一个点是否在上下文范围内
-     * @param x 横坐标
-     * @param y 纵坐标
-     */
-    protected isInBounds(x: number, y: number): boolean {
-        return (
-            x >= 0 &&
-            y >= 0 &&
-            x < this.context.width &&
-            y < this.context.height
-        );
-    }
 }
 
 export class ZoneDamageView extends BaseMapDamageView<
@@ -232,7 +218,9 @@ export class BetweenDamageView extends BaseMapDamageView<IManhattanRangeParam> {
 
         const otherX = locator.x + deltaX;
         const otherY = locator.y + deltaY;
-        if (!this.isInBounds(otherX, otherY)) {
+        const range = this.getRange();
+        range.bindHost(this.context);
+        if (!range.inBound(otherX, otherY)) {
             return null;
         }
 

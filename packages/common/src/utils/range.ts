@@ -20,7 +20,7 @@ export abstract class BaseRange<T> implements IRange<T> {
      * @param x 横坐标
      * @param y 纵坐标
      */
-    protected isInBounds(x: number, y: number) {
+    inBound(x: number, y: number) {
         const { width, height } = this.host;
         return x >= 0 && y >= 0 && x < width && y < height;
     }
@@ -29,7 +29,7 @@ export abstract class BaseRange<T> implements IRange<T> {
      * 判断一个坐标索引是否在宿主对象范围内
      * @param index 坐标索引
      */
-    protected isValidIndex(index: number) {
+    inBoundIndex(index: number) {
         const { width, height } = this.host;
         return index >= 0 && index < width * height;
     }
@@ -96,7 +96,7 @@ export class RectRange extends BaseRange<IRectRangeParam> {
         const ex = Math.max(param.x, param.x + param.w);
         const ey = Math.max(param.y, param.y + param.h);
 
-        return this.isInBounds(x, y) && x >= sx && y >= sy && x < ex && y < ey;
+        return this.inBound(x, y) && x >= sx && y >= sy && x < ex && y < ey;
     }
 }
 
@@ -131,7 +131,7 @@ export class ManhattanRange extends BaseRange<IManhattanRangeParam> {
         param: Readonly<IManhattanRangeParam>
     ): boolean {
         return (
-            this.isInBounds(x, y) &&
+            this.inBound(x, y) &&
             Math.abs(x - param.cx) + Math.abs(y - param.cy) <= param.radius
         );
     }
@@ -193,7 +193,7 @@ export class RayRange extends BaseRange<IRayRangeParam> {
         const { width } = this.host;
         const yielded = new Set<number>();
 
-        if (this.isInBounds(param.cx, param.cy)) {
+        if (this.inBound(param.cx, param.cy)) {
             const centerIndex = param.cy * width + param.cx;
             yielded.add(centerIndex);
             yield centerIndex;
@@ -206,7 +206,7 @@ export class RayRange extends BaseRange<IRayRangeParam> {
 
             let x = param.cx + direction.x;
             let y = param.cy + direction.y;
-            while (this.isInBounds(x, y)) {
+            while (this.inBound(x, y)) {
                 const index = y * width + x;
                 if (!yielded.has(index)) {
                     yielded.add(index);
@@ -219,7 +219,7 @@ export class RayRange extends BaseRange<IRayRangeParam> {
     }
 
     inRange(x: number, y: number, param: Readonly<IRayRangeParam>): boolean {
-        if (!this.isInBounds(x, y)) {
+        if (!this.inBound(x, y)) {
             return false;
         }
 
@@ -263,11 +263,11 @@ export class FullRange extends BaseRange<void> {
     }
 
     inRange(x: number, y: number): boolean {
-        return this.isInBounds(x, y);
+        return this.inBound(x, y);
     }
 
     inRangeIndex(index: number): boolean {
-        return this.isValidIndex(index);
+        return this.inBoundIndex(index);
     }
 }
 
