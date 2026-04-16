@@ -67,16 +67,19 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         this.width = width;
         this.height = height;
         this.indexer.setWidth(width);
+        this.needUpdate = true;
     }
 
     registerAuraConverter(converter: IAuraConverter<TAttr>): void {
         this.auraConverter.add(converter);
         this.converterStatus.set(converter, true);
+        this.needUpdate = true;
     }
 
     unregisterAuraConverter(converter: IAuraConverter<TAttr>): void {
         this.auraConverter.delete(converter);
         this.converterStatus.delete(converter);
+        this.needUpdate = true;
     }
 
     setAuraConverterEnabled(
@@ -85,6 +88,7 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
     ): void {
         if (!this.auraConverter.has(converter)) return;
         this.converterStatus.set(converter, enabled);
+        this.needUpdate = true;
     }
 
     registerCommonQueryEffect(
@@ -94,6 +98,7 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         const array = this.commonQueryMap.getOrInsert(code, []);
         array.push(effect);
         array.sort((a, b) => b.priority - a.priority);
+        this.needUpdate = true;
     }
 
     unregisterCommonQueryEffect(
@@ -105,11 +110,13 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         const index = array.indexOf(effect);
         if (index === -1) return;
         array.splice(index, 1);
+        this.needUpdate = true;
     }
 
     registerSpecialQueryEffect(effect: IEnemySpecialQueryEffect<TAttr>): void {
         const list = this.specialQueryEffects.getOrInsert(effect.priority, []);
         list.push(effect);
+        this.needUpdate = true;
     }
 
     unregisterSpecialQueryEffect(
@@ -124,11 +131,13 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         if (list.length === 0) {
             this.specialQueryEffects.delete(effect.priority);
         }
+        this.needUpdate = true;
     }
 
     registerFinalEffect(effect: IEnemyFinalEffect<TAttr>): void {
         this.finalEffects.push(effect);
         this.finalEffects.sort((a, b) => b.priority - a.priority);
+        this.needUpdate = true;
     }
 
     unregisterFinalEffect(effect: IEnemyFinalEffect<TAttr>): void {
@@ -136,6 +145,7 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         if (index !== -1) {
             this.finalEffects.splice(index, 1);
         }
+        this.needUpdate = true;
     }
 
     getEnemyLocator(enemy: IEnemy<TAttr>): Readonly<ITileLocator> | null {
@@ -166,6 +176,10 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         return this.computedToView.get(enemy) ?? null;
     }
 
+    /**
+     * 删除指定索引位置的怪物以及与之关联的所有运行时状态。
+     * @param index 地图索引
+     */
     private deleteEnemyAt(index: number) {
         const view = this.enemyViewMap.get(index);
         const enemy = this.enemyMap.get(index);
@@ -201,6 +215,13 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         this.locatorViewMap.set(view, index);
         this.computedToView.set(view.getComputingEnemy(), view);
 
+        if (this.mapDamage) {
+            this.mapDamage.markEnemyDirty(view);
+        }
+        if (this.damageSystem) {
+            this.damageSystem.markDirty(view);
+        }
+
         this.needUpdate = true;
     }
 
@@ -209,6 +230,11 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         this.deleteEnemyAt(index);
     }
 
+    /**
+     * 在指定范围内筛选出当前上下文中的怪物视图。
+     * @param range 范围对象
+     * @param param 范围参数
+     */
     private *internalScanRange<T>(
         range: IRange<T>,
         param: T
@@ -257,15 +283,23 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         return this.mapDamage;
     }
 
-    attachDamageSystem(system: IDamageSystem<TAttr, unknown>): void {
+    attachDamageSystem(system: IDamageSystem<TAttr, unknown> | null): void {
         this.damageSystem = system;
-        system.markAllDirty();
+        if (system) {
+            system.markAllDirty();
+        }
     }
 
     getDamageSystem<THero>(): IDamageSystem<TAttr, THero> | null {
         return this.damageSystem as IDamageSystem<TAttr, THero> | null;
     }
 
+    /**
+     * 将怪物身上的特殊属性尝试转换为光环视图。
+     * @param special 特殊属性
+     * @param enemy 怪物对象
+     * @param locator 怪物位置
+     */
     private convertSpecial(
         special: ISpecial<any>,
         enemy: IReadonlyEnemy<TAttr>,
@@ -288,6 +322,10 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         return matched.convert(special, enemy, locator, this);
     }
 
+    /**
+     * 将光环按优先级插入到有序表中。
+     * @param aura 光环视图
+     */
     private insertIntoSortedAura(aura: IAuraView<TAttr>): void {
         const set = this.sortedAura.getOrInsertComputed(
             aura.priority,
@@ -296,6 +334,10 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         set.add(aura);
     }
 
+    /**
+     * 从优先级表中移除一个光环。
+     * @param aura 光环视图
+     */
     private removeFromSortedAura(aura: IAuraView<TAttr>): void {
         const set = this.sortedAura.get(aura.priority);
         if (set) {
@@ -306,6 +348,13 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         }
     }
 
+    /**
+     * 执行特殊属性修饰器，并返回因此受到影响的光环集合。
+     * @param modifier 特殊属性修饰器
+     * @param enemy 目标怪物
+     * @param locator 怪物位置
+     * @param currentPriority 当前处理的优先级
+     */
     private processSpecialModifier(
         modifier: IEnemySpecialModifier<TAttr>,
         enemy: IEnemy<TAttr>,
@@ -325,6 +374,7 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         for (const adding of toAdd) {
             const aura = this.convertSpecial(adding, enemy, locator);
             if (aura) {
+                // 新生成的光环只能影响之后的阶段，不能反过来影响当前优先级链。
                 if (import.meta.env.DEV && aura.priority > currentPriority) {
                     logger.warn(
                         99,
@@ -344,6 +394,7 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
             enemy.deleteSpecial(deleting);
             const aura = this.convertedAura.get(deleting);
             if (aura) {
+                // 当前阶段不允许删除同优先级或更高优先级的已生效光环。
                 if (import.meta.env.DEV && aura.priority >= currentPriority) {
                     logger.warn(
                         98,
@@ -377,6 +428,11 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         return affectedAuras;
     }
 
+    /**
+     * 执行单个特殊查询效果。
+     * @param effect 特殊查询效果
+     * @param currentPriority 当前处理的优先级
+     */
     private processSpecialQuery(
         effect: IEnemySpecialQueryEffect<TAttr>,
         currentPriority: number
@@ -404,6 +460,11 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         }
     }
 
+    /**
+     * 执行光环带来的特殊属性修饰效果。
+     * @param aura 光环视图
+     * @param currentPriority 当前处理的优先级
+     */
     private processAuraSpecial(
         aura: IAuraView<TAttr>,
         currentPriority: number
@@ -431,6 +492,9 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         }
     }
 
+    /**
+     * 构建所有由特殊属性衍生出的光环与特殊查询结果。
+     */
     private buildupSpecials(): void {
         for (const aura of this.globalAuraList) {
             this.insertIntoSortedAura(aura);
@@ -450,6 +514,7 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
 
         const processedPriorities = new Set<number>();
 
+        // 由于期间可能会产生新优先级的光环，所以要用 while (true) 而不是直接遍历
         while (true) {
             let maxPriority: number | null = null;
             for (const priority of this.sortedAura.keys()) {
@@ -488,6 +553,9 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         }
     }
 
+    /**
+     * 按优先级执行所有基础属性光环效果。
+     */
     private buildupBase(): void {
         const priorities = [...this.sortedAura.keys()].sort((a, b) => b - a);
         for (const p of priorities) {
@@ -505,6 +573,9 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         }
     }
 
+    /**
+     * 执行常规查询效果，并记录哪些怪物查询了上下文。
+     */
     private buildupQuery(): void {
         for (const [index, view] of this.enemyViewMap) {
             const enemy = view.getComputingEnemy();
@@ -527,6 +598,9 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         }
     }
 
+    /**
+     * 执行最终效果阶段。
+     */
     private buildupFinal(): void {
         for (const [index, view] of this.enemyViewMap) {
             const enemy = view.getComputingEnemy();
@@ -575,6 +649,12 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         }
     }
 
+    /**
+     * 在局部刷新期间执行特殊属性修饰器，但不重建光环拓扑。
+     * @param modifier 特殊属性修饰器
+     * @param enemy 目标怪物
+     * @param locator 怪物位置
+     */
     private refreshSpecialModifier(
         modifier: IEnemySpecialModifier<TAttr>,
         enemy: IEnemy<TAttr>,
@@ -619,6 +699,10 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
         }
     }
 
+    /**
+     * 刷新单个怪物视图的计算结果。
+     * @param view 怪物视图
+     */
     private refreshEnemy(view: EnemyView<TAttr>): void {
         const locator = this.getEnemyLocatorByView(view);
         if (!locator) return;
@@ -646,6 +730,7 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
                     if (!aura.couldApplySpecial) continue;
                     const param = aura.getRangeParam();
                     aura.range.bindHost(this);
+                    // 局部刷新只重新判断“这个怪物是否被该光环命中”。
                     const inRange = aura.range.inRange(
                         locator.x,
                         locator.y,
@@ -756,7 +841,7 @@ export class EnemyContext<TAttr> implements IEnemyContext<TAttr> {
     destroy(): void {
         this.clear();
         this.attachMapDamage(null);
-        this.damageSystem = null;
+        this.attachDamageSystem(null);
         this.auraConverter.clear();
         this.commonQueryMap.clear();
         this.specialQueryEffects.clear();

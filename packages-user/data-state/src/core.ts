@@ -76,7 +76,7 @@ export class CoreState implements ICoreState {
 
     loadState(data: IStateSaveData): void {
         this.hero.removeAllFollowers();
-        data?.followers.forEach(v => {
+        data.followers.forEach(v => {
             this.hero.addFollower(v.num, v.identifier);
         });
     }

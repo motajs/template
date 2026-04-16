@@ -847,7 +847,7 @@ export interface IEnemyContext<TAttr> {
      * 绑定伤害计算系统
      * @param system 伤害系统
      */
-    attachDamageSystem(system: IDamageSystem<TAttr, unknown>): void;
+    attachDamageSystem(system: IDamageSystem<TAttr, unknown> | null): void;
 
     /**
      * 获取当前绑定的伤害计算系统
