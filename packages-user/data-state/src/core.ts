@@ -1,11 +1,12 @@
 import { ICoreState, IStateSaveData } from './types';
-import { IHeroState, HeroState } from './hero';
 import { ILayerState, LayerState } from './map';
 import { IRoleFaceBinder, RoleFaceBinder } from './common';
 import {
     DamageSystem,
     EnemyContext,
     EnemyManager,
+    HeroState,
+    IHeroState,
     IEnemyContext,
     IEnemyManager,
     MapDamage

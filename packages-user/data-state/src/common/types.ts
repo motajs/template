@@ -1,21 +1,7 @@
-export const enum FaceDirection {
-    Unknown,
-    Left,
-    Up,
-    Right,
-    Down,
-    LeftUp,
-    RightUp,
-    LeftDown,
-    RightDown
-}
+import { FaceDirection, type IFaceData } from '@user/data-base';
 
-export interface IFaceData {
-    /** 图块数字 */
-    readonly identifier: number;
-    /** 图块朝向 */
-    readonly face: FaceDirection;
-}
+export { FaceDirection };
+export type { IFaceData } from '@user/data-base';
 
 export interface IRoleFaceBinder {
     /**

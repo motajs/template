@@ -163,6 +163,8 @@
         "105": "No specific map damage view stored, which seems like an internal bug of map damage system.",
         "106": "Damage calculator is missing, damage calculation is unavailable.",
         "107": "Hero status is not bound, damage calculation is unavailable.",
+        "108": "Hero modifier '$1' has already been added once. Ignore repeated add for attribute '$2'.",
+        "109": "Expected a different object reference returned, but got a same reference at modifier '$1' for property '$2'.",
         "1001": "Item-detail extension needs 'floor-binder' and 'floor-damage' extension as dependency."
     }
 }

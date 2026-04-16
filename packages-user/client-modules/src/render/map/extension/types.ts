@@ -2,9 +2,9 @@ import { ITexture, Font } from '@motajs/render';
 import {
     FaceDirection,
     HeroAnimateDirection,
-    IHeroState,
-    IMapLayer
-} from '@user/data-state';
+    IHeroState
+} from '@user/data-base';
+import { IMapLayer } from '@user/data-state';
 
 import { IMapRenderResult } from '../types';
 

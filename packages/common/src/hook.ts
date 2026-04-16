@@ -4,8 +4,7 @@ import { IHookable, IHookBase, IHookController, IHookObject } from './types';
 export abstract class Hookable<
     H extends IHookBase = IHookBase,
     C extends IHookController<H> = IHookController<H>
-> implements IHookable<H, C>
-{
+> implements IHookable<H, C> {
     /** 加载完成的钩子列表 */
     protected readonly loadedList: Set<IHookObject<H, C>> = new Set();
 

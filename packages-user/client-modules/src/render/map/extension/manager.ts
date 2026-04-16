@@ -1,4 +1,5 @@
-import { IHeroState, IMapLayer } from '@user/data-state';
+import { IHeroState } from '@user/data-base';
+import { IMapLayer } from '@user/data-state';
 import {
     IMapDoorRenderer,
     IMapExtensionManager,

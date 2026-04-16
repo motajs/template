@@ -1,7 +1,11 @@
 import { ILayerState } from './map';
-import { IHeroFollower, IHeroState } from './hero';
 import { IRoleFaceBinder } from './common';
-import { IEnemyContext, IEnemyManager } from '@user/data-base';
+import {
+    IEnemyContext,
+    IEnemyManager,
+    IHeroFollower,
+    IHeroState
+} from '@user/data-base';
 import { IEnemyAttributes } from './enemy/types';
 
 export interface IGameDataState {

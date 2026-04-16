@@ -1,8 +1,14 @@
 import { Hookable, HookController, IHookController } from '@motajs/common';
-import { IHeroFollower, IHeroState, IHeroStateHooks } from './types';
-import { FaceDirection, getFaceMovement, nextFaceDirection } from '../common';
 import { isNil } from 'lodash-es';
-import { DEFAULT_HERO_IMAGE } from '../shared';
+import { getFaceMovement, nextFaceDirection } from './utils';
+import {
+    FaceDirection,
+    IHeroFollower,
+    IHeroState,
+    IHeroStateHooks
+} from './types';
+
+const DEFAULT_HERO_IMAGE: ImageIds = 'hero.png';
 
 export class HeroState extends Hookable<IHeroStateHooks> implements IHeroState {
     x: number = 0;

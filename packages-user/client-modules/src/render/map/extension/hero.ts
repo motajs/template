@@ -5,10 +5,9 @@ import {
     HeroAnimateDirection,
     IHeroState,
     IHeroStateHooks,
-    IMapLayer,
-    nextFaceDirection,
-    state
-} from '@user/data-state';
+    nextFaceDirection
+} from '@user/data-base';
+import { IMapLayer, state } from '@user/data-state';
 import { IMapRenderer, IMapRendererTicker, IMovingBlock } from '../types';
 import { isNil } from 'lodash-es';
 import { IHookController, logger } from '@motajs/common';
