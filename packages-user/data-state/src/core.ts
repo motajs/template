@@ -5,11 +5,13 @@ import {
     DamageSystem,
     EnemyContext,
     EnemyManager,
-    HeroState,
-    IHeroState,
+    HeroMover,
     IEnemyContext,
     IEnemyManager,
-    MapDamage
+    MapDamage,
+    HeroAttribute,
+    HeroState,
+    IHeroState
 } from '@user/data-base';
 import { IEnemyAttributes } from './enemy/types';
 import {
@@ -21,21 +23,22 @@ import {
     MainMapDamageReducer,
     registerSpecials
 } from './enemy';
-import { TILE_HEIGHT, TILE_WIDTH } from './shared';
+import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
+import { IHeroAttributeObject } from './hero';
 
 export class CoreState implements ICoreState {
     readonly layer: ILayerState;
-    readonly hero: IHeroState;
     readonly roleFace: IRoleFaceBinder;
     readonly idNumberMap: Map<string, number>;
     readonly numberIdMap: Map<number, string>;
+
+    readonly hero: IHeroState<IHeroAttributeObject>;
 
     readonly enemyManager: IEnemyManager<IEnemyAttributes>;
     readonly enemyContext: IEnemyContext<IEnemyAttributes>;
 
     constructor() {
         this.layer = new LayerState();
-        this.hero = new HeroState();
         this.roleFace = new RoleFaceBinder();
         this.idNumberMap = new Map();
         this.numberIdMap = new Map();
@@ -67,18 +70,27 @@ export class CoreState implements ICoreState {
         this.enemyContext = enemyContext;
 
         //#endregion
+
+        //#region 勇士初始化
+
+        const heroMover = new HeroMover();
+        const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
+        const heroState = new HeroState(heroMover, heroAttribute);
+        this.hero = heroState;
+
+        //#endregion
     }
 
     saveState(): IStateSaveData {
         return structuredClone({
-            followers: this.hero.followers
+            followers: this.hero.mover.followers
         });
     }
 
     loadState(data: IStateSaveData): void {
-        this.hero.removeAllFollowers();
+        this.hero.mover.removeAllFollowers();
         data.followers.forEach(v => {
-            this.hero.addFollower(v.num, v.identifier);
+            this.hero.mover.addFollower(v.num, v.identifier);
         });
     }
 }

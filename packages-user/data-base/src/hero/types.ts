@@ -1,4 +1,5 @@
 import { IHookBase, IHookable } from '@motajs/common';
+import { FaceDirection } from '@user/data-state';
 
 //#region 勇士属性
 
@@ -41,7 +42,7 @@ export interface IHeroModifier<T = unknown, V = unknown> {
     clone(): IHeroModifier<T, V>;
 }
 
-export interface IHeroAttribute<THero> {
+export interface IReadonlyHeroAttribute<THero> {
     /**
      * 获取勇士的基础属性，即未经过任何 Buff 或装备等加成的属性
      * @param name 属性名称
@@ -54,6 +55,26 @@ export interface IHeroAttribute<THero> {
      */
     getFinalAttribute<K extends keyof THero>(name: K): THero[K];
 
+    /**
+     * 将指定属性标记为脏
+     * @param name 属性名称
+     */
+    markDirty(name: keyof THero): void;
+
+    /**
+     * 将指定属性修饰器标记为脏
+     * @param modifier 属性修饰器
+     */
+    markModifierDirty(modifier: IHeroModifier): void;
+
+    /**
+     * 深拷贝此勇士属性对象
+     * @param cloneModifier 是否同时复制修饰器，默认复制
+     */
+    clone(cloneModifier?: boolean): IHeroAttribute<THero>;
+}
+
+export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
     /**
      * 设置勇士的基础属性
      * @param name 属性名称
@@ -80,52 +101,11 @@ export interface IHeroAttribute<THero> {
         name: K,
         modifier: IHeroModifier<THero[K], unknown>
     ): void;
-
-    /**
-     * 将指定属性标记为脏
-     * @param name 属性名称
-     */
-    markDirty(name: keyof THero): void;
-
-    /**
-     * 将指定属性修饰器标记为脏
-     * @param modifier 属性修饰器
-     */
-    markModifierDirty(modifier: IHeroModifier): void;
-
-    /**
-     * 深拷贝此勇士属性对象
-     * @param cloneModifier 是否同时复制修饰器，默认复制
-     */
-    clone(cloneModifier?: boolean): IHeroAttribute<THero>;
 }
 
 //#endregion
 
-//#region 朝向
-
-export const enum FaceDirection {
-    Unknown,
-    Left,
-    Up,
-    Right,
-    Down,
-    LeftUp,
-    RightUp,
-    LeftDown,
-    RightDown
-}
-
-export interface IFaceData {
-    /** 图块数字 */
-    readonly identifier: number;
-    /** 图块朝向 */
-    readonly face: FaceDirection;
-}
-
-//#endregion
-
-//#region 勇士状态
+//#region 勇士移动
 
 export const enum HeroAnimateDirection {
     /** 正向播放动画 */
@@ -143,7 +123,7 @@ export interface IHeroFollower {
     alpha: number;
 }
 
-export interface IHeroStateHooks extends IHookBase {
+export interface IHeroMovingHooks extends IHookBase {
     /**
      * 当设置勇士的坐标时触发
      * @param x 勇士横坐标
@@ -227,7 +207,7 @@ export interface IHeroStateHooks extends IHookBase {
     onSetFollowerAlpha(identifier: string, alpha: number): void;
 }
 
-export interface IHeroState extends IHookable<IHeroStateHooks> {
+export interface IHeroMover extends IHookable<IHeroMovingHooks> {
     /** 勇士横坐标 */
     readonly x: number;
     /** 勇士纵坐标 */
@@ -325,6 +305,49 @@ export interface IHeroState extends IHookable<IHeroStateHooks> {
      * @param alpha 跟随者不透明度
      */
     setFollowerAlpha(identifier: string, alpha: number): void;
+}
+
+//#endregion
+
+//#region 勇士状态
+
+export interface IHeroState<THero> {
+    /** 勇士移动对象 */
+    readonly mover: IHeroMover;
+    /** 勇士属性对象 */
+    readonly attribute: IReadonlyHeroAttribute<THero>;
+
+    /**
+     * 绑定勇士移动对象
+     * @param mover 勇士移动对象
+     */
+    attachMover(mover: IHeroMover): void;
+
+    /**
+     * 获取勇士移动对象
+     */
+    getHeroMover(): IHeroMover;
+
+    /**
+     * 绑定勇士属性对象
+     * @param attribute 勇士属性对象
+     */
+    attachAttribute(attribute: IHeroAttribute<THero>): void;
+
+    /**
+     * 获取可修改勇士对象
+     */
+    getModifiableAttribute(): IHeroAttribute<THero>;
+
+    /**
+     * 获取只读勇士对象
+     */
+    getAttribute(): IReadonlyHeroAttribute<THero>;
+
+    /**
+     * 获取独立勇士属性对象，修改此对象不会影响勇士本身的属性
+     */
+    getIsolatedAttribute(): IHeroAttribute<THero>;
 }
 
 //#endregion

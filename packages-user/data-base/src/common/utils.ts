@@ -30,7 +30,7 @@ export function getFaceMovement(dir: FaceDirection): Loc {
 /**
  * 将八方向朝向降级为四方向朝向
  * @param dir 朝向
- * @param unknown 如果朝向是 `FaceDirection.Unknown`，那么会返回什么，默认还是未知
+ * @param unknown 如果朝向是 `FaceDirection.Unknown`，那么会返回什么，默认值是未知
  */
 export function degradeFace(
     dir: FaceDirection,

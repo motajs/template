@@ -7,6 +7,7 @@ import {
     IHeroState
 } from '@user/data-base';
 import { IEnemyAttributes } from './enemy/types';
+import { IHeroAttributeObject } from './hero';
 
 export interface IGameDataState {
     /** 怪物管理器 */
@@ -22,7 +23,7 @@ export interface ICoreState {
     /** 地图状态 */
     readonly layer: ILayerState;
     /** 勇士状态 */
-    readonly hero: IHeroState;
+    readonly hero: IHeroState<IHeroAttributeObject>;
     /** 朝向绑定 */
     readonly roleFace: IRoleFaceBinder;
     /** id 到图块数字的映射 */

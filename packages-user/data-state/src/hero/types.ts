@@ -17,6 +17,10 @@ export interface IHeroAttributeObject {
     mana: number;
     /** 勇士魔法上限 */
     manamax: number;
+    /** 勇士拥有的金币 */
+    money: number;
+    /** 勇士拥有的经验 */
+    exp: number;
 }
 
 //#endregion

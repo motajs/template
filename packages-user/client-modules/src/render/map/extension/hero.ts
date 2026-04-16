@@ -3,8 +3,8 @@ import {
     FaceDirection,
     getFaceMovement,
     HeroAnimateDirection,
-    IHeroState,
-    IHeroStateHooks,
+    IHeroMover,
+    IHeroMovingHooks,
     nextFaceDirection
 } from '@user/data-base';
 import { IMapLayer, state } from '@user/data-state';
@@ -54,7 +54,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
         new TextureRowSplitter();
 
     /** 勇士钩子 */
-    readonly controller: IHookController<IHeroStateHooks>;
+    readonly controller: IHookController<IHeroMovingHooks>;
     /** 勇士每个朝向的贴图对象 */
     readonly textureMap: Map<FaceDirection, IMaterialFramedData> = new Map();
     /** 勇士渲染实体，与 `entities[0]` 同引用 */
@@ -72,7 +72,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     constructor(
         readonly renderer: IMapRenderer,
         readonly layer: IMapLayer,
-        readonly hero: IHeroState
+        readonly hero: IHeroMover
     ) {
         this.controller = hero.addHook(new MapHeroHook(this));
         this.controller.load();
@@ -106,7 +106,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     private addHeroMoving(
         renderer: IMapRenderer,
         layer: IMapLayer,
-        hero: IHeroState
+        hero: IHeroMover
     ) {
         if (isNil(hero.image)) {
             logger.warn(88);
@@ -450,7 +450,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     }
 }
 
-class MapHeroHook implements Partial<IHeroStateHooks> {
+class MapHeroHook implements Partial<IHeroMovingHooks> {
     constructor(readonly hero: MapHeroRenderer) {}
 
     onSetImage(image: ImageIds): void {

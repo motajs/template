@@ -1,4 +1,4 @@
-import { IHeroState } from '@user/data-base';
+import { IHeroMover } from '@user/data-base';
 import { IMapLayer } from '@user/data-state';
 import {
     IMapDoorRenderer,
@@ -14,7 +14,7 @@ import { IOnMapTextRenderer } from './types';
 
 export class MapExtensionManager implements IMapExtensionManager {
     /** 勇士状态至勇士渲染器的映射 */
-    readonly heroMap: Map<IHeroState, IMapHeroRenderer> = new Map();
+    readonly heroMap: Map<IHeroMover, IMapHeroRenderer> = new Map();
     /** 地图图层到门渲染器的映射 */
     readonly doorMap: Map<IMapLayer, IMapDoorRenderer> = new Map();
     /** 单例的文字渲染拓展（独立图层） */
@@ -22,7 +22,7 @@ export class MapExtensionManager implements IMapExtensionManager {
 
     constructor(readonly renderer: IMapRenderer) {}
 
-    addHero(state: IHeroState, layer: IMapLayer): IMapHeroRenderer | null {
+    addHero(state: IHeroMover, layer: IMapLayer): IMapHeroRenderer | null {
         if (this.heroMap.has(state)) {
             logger.error(45, 'hero renderer');
             return null;
@@ -32,7 +32,7 @@ export class MapExtensionManager implements IMapExtensionManager {
         return heroRenderer;
     }
 
-    removeHero(state: IHeroState): void {
+    removeHero(state: IHeroMover): void {
         const renderer = this.heroMap.get(state);
         if (!renderer) return;
         renderer.destroy();

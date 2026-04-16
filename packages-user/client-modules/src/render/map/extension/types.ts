@@ -2,7 +2,7 @@ import { ITexture, Font } from '@motajs/render';
 import {
     FaceDirection,
     HeroAnimateDirection,
-    IHeroState
+    IHeroMover
 } from '@user/data-base';
 import { IMapLayer } from '@user/data-state';
 
@@ -10,7 +10,7 @@ import { IMapRenderResult } from '../types';
 
 export interface IMapExtensionManager {
     /** 勇士状态至勇士渲染器的映射 */
-    readonly heroMap: Map<IHeroState, IMapHeroRenderer>;
+    readonly heroMap: Map<IHeroMover, IMapHeroRenderer>;
     /** 地图图层到门渲染器的映射 */
     readonly doorMap: Map<IMapLayer, IMapDoorRenderer>;
     /** 单例的文字渲染拓展（独立图层） */
@@ -21,13 +21,13 @@ export interface IMapExtensionManager {
      * @param state 勇士状态
      * @param layer 勇士所在图层
      */
-    addHero(state: IHeroState, layer: IMapLayer): IMapHeroRenderer | null;
+    addHero(state: IHeroMover, layer: IMapLayer): IMapHeroRenderer | null;
 
     /**
      * 移除勇士渲染拓展
      * @param state 勇士状态
      */
-    removeHero(state: IHeroState): void;
+    removeHero(state: IHeroMover): void;
 
     /**
      * 添加开门动画拓展
