@@ -20,7 +20,8 @@ import {
     IReadonlyEnemyHandler,
     ISpecial,
     IMapDamageView,
-    IReadonlyHeroAttribute
+    IReadonlyHeroAttribute,
+    IReadonlyEnemy
 } from '@user/data-base';
 import { IZoneValue } from './special';
 import { IEnemyAttr, MapDamageType } from './types';
@@ -182,6 +183,7 @@ export class LaserDamageView extends BaseMapDamageView<IRayRangeParam> {
 export class BetweenDamageView extends BaseMapDamageView<IManhattanRangeParam> {
     constructor(
         context: IEnemyContext<IEnemyAttr, IHeroAttr>,
+        private readonly enemy: IReadonlyEnemy<IEnemyAttr>,
         private readonly locator: Readonly<ITileLocator>,
         private readonly hero: IReadonlyHeroAttribute<IHeroAttr>
     ) {
@@ -224,12 +226,28 @@ export class BetweenDamageView extends BaseMapDamageView<IManhattanRangeParam> {
         if (!other) {
             return null;
         }
-        if (!other.getComputedEnemy().hasSpecial(16)) {
+        const otherEnemy = other.getComputedEnemy();
+        if (!otherEnemy.hasSpecial(16)) {
             return null;
         }
 
-        const damage = this.hero.getFinalAttribute('hp');
-        return this.createInfo(damage, MapDamageType.Between);
+        const half = this.hero.getFinalAttribute('hp') / 2;
+        if (core.flags.betweenAttackMax) {
+            // 夹击不超伤害值，需要获取两个怪物的伤害
+            const sys = this.context.getDamageSystem();
+            if (!sys) {
+                return this.createInfo(half, MapDamageType.Between);
+            } else {
+                const currInfo = sys.getDamageInfoByComputed(this.enemy);
+                const otherInfo = sys.getDamageInfoByComputed(otherEnemy);
+                const currDamage = currInfo?.damage ?? Infinity;
+                const otherDamage = otherInfo?.damage ?? Infinity;
+                const min = Math.min(half, currDamage, otherDamage);
+                return this.createInfo(min, MapDamageType.Between);
+            }
+        } else {
+            return this.createInfo(half, MapDamageType.Between);
+        }
     }
 }
 
@@ -273,7 +291,7 @@ export class MainMapDamageConverter implements IMapDamageConverter<
         context: IEnemyContext<IEnemyAttr, IHeroAttr>
     ): IMapDamageView<any>[] {
         const views: IMapDamageView<any>[] = [];
-        const { enemy, locator } = handler;
+        const { enemy, locator, hero } = handler;
 
         const zone = enemy.getSpecial<IZoneValue>(15);
         if (zone) {
@@ -281,7 +299,7 @@ export class MainMapDamageConverter implements IMapDamageConverter<
         }
 
         if (enemy.hasSpecial(16)) {
-            views.push(new BetweenDamageView(context, locator, handler.hero));
+            views.push(new BetweenDamageView(context, enemy, locator, hero));
         }
 
         const repulse = enemy.getSpecial<number>(18);

@@ -651,6 +651,14 @@ export interface IDamageSystem<TAttr, THero> {
     getDamageInfo(enemy: IEnemyView<TAttr>): IEnemyDamageInfo | null;
 
     /**
+     * 根据怪物对象获取战斗伤害信息
+     * @param enemy 怪物对象
+     */
+    getDamageInfoByComputed(
+        enemy: IReadonlyEnemy<TAttr>
+    ): IEnemyDamageInfo | null;
+
+    /**
      * 将指定的怪物标记为脏
      * @param enemy 怪物视图
      */

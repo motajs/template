@@ -18,6 +18,7 @@ import {
     CommonAuraConverter,
     EnemyLegacyBridge,
     GuardAuraConverter,
+    MainDamageCalculator,
     MainEnemyFinalEffect,
     MainMapDamageConverter,
     MainMapDamageReducer,
@@ -67,6 +68,7 @@ export class CoreState implements ICoreState {
         // 怪物上下文初始化
         const enemyContext = new EnemyContext<IEnemyAttr, IHeroAttr>();
         const damageSystem = new DamageSystem(enemyContext);
+        damageSystem.useCalculator(new MainDamageCalculator());
         const mapDamage = new MapDamage(enemyContext);
         mapDamage.useConverter(new MainMapDamageConverter());
         mapDamage.useReducer(new MainMapDamageReducer());

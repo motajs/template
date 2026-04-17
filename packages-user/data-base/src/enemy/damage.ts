@@ -11,6 +11,7 @@ import {
     IReadonlyEnemy
 } from './types';
 import { IHeroAttribute, IReadonlyHeroAttribute } from '../hero';
+import { clamp } from 'lodash-es';
 
 interface ICriticalSearchResult {
     /** 此临界点的属性值 */
@@ -84,6 +85,37 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
         return info;
     }
 
+    getDamageInfoByComputed(
+        enemy: IReadonlyEnemy<TAttr>
+    ): IEnemyDamageInfo | null {
+        if (!this.heroStatus) {
+            logger.warn(107);
+            return null;
+        }
+        if (!this.calculator) {
+            logger.warn(106);
+            return null;
+        }
+
+        const hero = this.heroStatus;
+        if (!hero) return null;
+        const view = this.context.getViewByComputed(enemy);
+        if (!view) return null;
+        const locator = this.context.getEnemyLocatorByView(view);
+        if (!locator) return null;
+
+        const cached = this.cache.get(view);
+        if (cached) {
+            return cached;
+        }
+
+        const handler = this.createReadonlyHandler(enemy, locator, hero);
+        const info = this.calculator.calculate(handler);
+        this.cache.set(view, info);
+
+        return info;
+    }
+
     markDirty(enemy: IEnemyView<TAttr>): void {
         this.cache.delete(enemy);
     }
@@ -127,7 +159,8 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
 
         if (currentValue >= upperLimit) return;
 
-        const maxIterations = Math.max(0, Math.floor(precision));
+        // 超过 64 位的精度没有意义，所以最高设置为 64
+        const maxIterations = clamp(Math.floor(precision), 4, 64);
         let baseValue = currentValue;
         let baseInfo = currentInfo;
 
