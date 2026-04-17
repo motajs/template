@@ -1,6 +1,6 @@
 //#region 勇士属性
 
-export interface IHeroAttributeObject {
+export interface IHeroAttr {
     /** 勇士名称 */
     name: string;
     /** 勇士生命值 */

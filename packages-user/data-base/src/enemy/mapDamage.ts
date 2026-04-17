@@ -1,6 +1,7 @@
 import { logger, ITileLocator } from '@motajs/common';
 import {
     IEnemyContext,
+    IReadonlyEnemyHandler,
     IEnemyView,
     IMapDamage,
     IMapDamageConverter,
@@ -33,9 +34,9 @@ interface IDamageStore<TAttr> {
     readonly index: number;
 }
 
-export class MapDamage<TAttr> implements IMapDamage<TAttr> {
+export class MapDamage<TAttr, THero> implements IMapDamage<TAttr, THero> {
     /** 当前使用的地图伤害转换器 */
-    private converter: IMapDamageConverter<TAttr> | null = null;
+    private converter: IMapDamageConverter<TAttr, THero> | null = null;
     /** 当前使用的地图伤害合并器 */
     private reducer: IMapDamageReducer | null = null;
 
@@ -62,13 +63,31 @@ export class MapDamage<TAttr> implements IMapDamage<TAttr> {
     /** 坐标索引对象 */
     private readonly indexer: IMapLocIndexer;
 
-    constructor(readonly context: IEnemyContext<TAttr>) {
+    constructor(readonly context: IEnemyContext<TAttr, THero>) {
         this.indexer = context.indexer;
     }
 
-    useConverter(converter: IMapDamageConverter<TAttr>): void {
+    useConverter(converter: IMapDamageConverter<TAttr, THero>): void {
         this.converter = converter;
         this.refreshAll();
+    }
+
+    /**
+     * 创建只读信息对象
+     * @param view 怪物视图
+     * @param locator 怪物位置
+     */
+    private createReadonlyHandler(
+        view: IEnemyView<TAttr>,
+        locator: ITileLocator
+    ): IReadonlyEnemyHandler<TAttr, THero> | null {
+        const hero = this.context.getBindedHero();
+        if (!hero) return null;
+        return {
+            enemy: view.getComputedEnemy(),
+            locator,
+            hero
+        };
     }
 
     useReducer(reducer: IMapDamageReducer): void {
@@ -174,6 +193,7 @@ export class MapDamage<TAttr> implements IMapDamage<TAttr> {
         const sourced = this.sourcedDamage.get(index);
         if (sourceless) {
             if (sourced) {
+                // 大集合 union 小集合会更快，一般有来源伤害更多，所以 source union sourceless
                 return sourced.damages.union(sourceless.damages);
             } else {
                 return sourceless.damages;
@@ -237,9 +257,11 @@ export class MapDamage<TAttr> implements IMapDamage<TAttr> {
         locator: ITileLocator
     ) {
         this.removeEnemyAffecting(view);
-        const enemy = view.getComputedEnemy();
-        const views = this.converter!.convert(enemy, locator, this.context);
-        const set = new Set(views);
+        if (!this.converter) return;
+        const handler = this.createReadonlyHandler(view, locator);
+        if (!handler) return;
+        const views = this.converter.convert(handler, this.context);
+        const set = new Set<IMapDamageView<any>>(views);
         if (set.size === 0) return;
         this.enemyStore.set(view, set);
         const collection = new Set<number>();
@@ -275,9 +297,11 @@ export class MapDamage<TAttr> implements IMapDamage<TAttr> {
      */
     private refreshEnemy(view: IEnemyView<TAttr>, locator: ITileLocator) {
         this.removeEnemyAffecting(view);
-        const enemy = view.getComputedEnemy();
-        const views = this.converter!.convert(enemy, locator, this.context);
-        const set = new Set(views);
+        if (!this.converter) return;
+        const handler = this.createReadonlyHandler(view, locator);
+        if (!handler) return;
+        const views = this.converter.convert(handler, this.context);
+        const set = new Set<IMapDamageView<any>>(views);
         if (set.size === 0) return;
         this.enemyStore.set(view, set);
         set.forEach(viewItem => {

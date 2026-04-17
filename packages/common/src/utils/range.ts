@@ -104,19 +104,20 @@ export class ManhattanRange extends BaseRange<IManhattanRangeParam> {
     protected estimatePointCount(
         param: Readonly<IManhattanRangeParam>
     ): number {
-        const radius = Math.max(0, param.radius);
+        const radius = Math.abs(param.radius);
         return 1 + 2 * radius * (radius + 1);
     }
 
     *iterateLoc(param: Readonly<IManhattanRangeParam>): Iterable<number> {
         const { width, height } = this.host;
-        for (let dy = -param.radius; dy <= param.radius; dy++) {
+        const radius = Math.abs(param.radius);
+        for (let dy = -radius; dy <= radius; dy++) {
             const y = param.cy + dy;
             if (y < 0 || y >= height) {
                 continue;
             }
 
-            const span = param.radius - Math.abs(dy);
+            const span = radius - Math.abs(dy);
             const startX = Math.max(0, param.cx - span);
             const endX = Math.min(width - 1, param.cx + span);
             for (let x = startX; x <= endX; x++) {
@@ -130,10 +131,10 @@ export class ManhattanRange extends BaseRange<IManhattanRangeParam> {
         y: number,
         param: Readonly<IManhattanRangeParam>
     ): boolean {
-        return (
-            this.inBound(x, y) &&
-            Math.abs(x - param.cx) + Math.abs(y - param.cy) <= param.radius
-        );
+        const radius = Math.abs(param.radius);
+        const dx = Math.abs(x - param.cx);
+        const dy = Math.abs(y - param.cy);
+        return this.inBound(x, y) && dx + dy <= radius;
     }
 }
 
@@ -141,6 +142,7 @@ export class RayRange extends BaseRange<IRayRangeParam> {
     protected estimatePointCount(param: Readonly<IRayRangeParam>): number {
         const { width, height } = this.host;
         // 考虑到这种范围的 `inRange` 判断要更加耗时，因此将返回值略微降低，更倾向于使用 `scan` 方式
+        // 正常情况下应该 / 2
         return ((width + height) * param.dir.length) / 3;
     }
 

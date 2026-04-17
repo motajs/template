@@ -9,16 +9,18 @@ import {
 } from '@motajs/common';
 import {
     IAuraConverter,
+    IEnemyHandler,
     IEnemyAuraView,
     IEnemyContext,
     IEnemySpecialModifier,
     IEnemyView,
+    IReadonlyEnemyHandler,
     IReadonlyEnemy,
-    ISpecial,
-    IEnemy
+    ISpecial
 } from '@user/data-base';
 import { IHaloValue } from './special';
-import { IEnemyAttributes } from './types';
+import { IEnemyAttr } from './types';
+import { IHeroAttr } from '../hero';
 
 const FULL_RANGE = new FullRange();
 const RECT_RANGE = new RectRange();
@@ -26,22 +28,24 @@ const MANHATTAN_RANGE = new ManhattanRange();
 
 //#region 25-光环
 
-export class CommonAuraConverter implements IAuraConverter<IEnemyAttributes> {
+export class CommonAuraConverter implements IAuraConverter<
+    IEnemyAttr,
+    IHeroAttr
+> {
     shouldConvert(special: ISpecial<any>): boolean {
         return special.code === 25;
     }
 
     convert(
         special: ISpecial<IHaloValue>,
-        enemy: IReadonlyEnemy<IEnemyAttributes>,
-        locator: ITileLocator
+        handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
     ): CommonAura {
-        return new CommonAura(enemy, special, locator);
+        return new CommonAura(handler.enemy, special, handler.locator);
     }
 }
 
 export class CommonAura implements IEnemyAuraView<
-    IEnemyAttributes,
+    IEnemyAttr,
     IRectRangeParam | IManhattanRangeParam | void,
     IHaloValue
 > {
@@ -51,7 +55,7 @@ export class CommonAura implements IEnemyAuraView<
     readonly range: IRange<IRectRangeParam | IManhattanRangeParam | void>;
 
     constructor(
-        readonly enemy: IReadonlyEnemy<IEnemyAttributes>,
+        readonly enemy: IReadonlyEnemy<IEnemyAttr>,
         readonly special: ISpecial<IHaloValue>,
         readonly locator: ITileLocator
     ) {
@@ -89,9 +93,10 @@ export class CommonAura implements IEnemyAuraView<
     }
 
     apply(
-        enemy: IEnemy<IEnemyAttributes>,
-        baseEnemy: IReadonlyEnemy<IEnemyAttributes>
+        handler: IEnemyHandler<IEnemyAttr, unknown>,
+        baseEnemy: IReadonlyEnemy<IEnemyAttr>
     ): void {
+        const { enemy } = handler;
         const { hpBuff, atkBuff, defBuff } = this.special.value;
 
         if (hpBuff !== 0) {
@@ -110,7 +115,7 @@ export class CommonAura implements IEnemyAuraView<
         }
     }
 
-    applySpecial(): IEnemySpecialModifier<IEnemyAttributes> | null {
+    applySpecial(): IEnemySpecialModifier<IEnemyAttr> | null {
         return null;
     }
 }
@@ -119,23 +124,25 @@ export class CommonAura implements IEnemyAuraView<
 
 //#region 26-支援
 
-export class GuardAuraConverter implements IAuraConverter<IEnemyAttributes> {
+export class GuardAuraConverter implements IAuraConverter<
+    IEnemyAttr,
+    IHeroAttr
+> {
     shouldConvert(special: ISpecial<any>): boolean {
         return special.code === 26;
     }
 
     convert(
         special: ISpecial<void>,
-        enemy: IReadonlyEnemy<IEnemyAttributes>,
-        locator: ITileLocator,
-        context: IEnemyContext<IEnemyAttributes>
+        handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
+        context: IEnemyContext<IEnemyAttr, IHeroAttr>
     ): GuardAura {
-        return new GuardAura(context, enemy, special, locator);
+        return new GuardAura(context, handler.enemy, special, handler.locator);
     }
 }
 
 export class GuardAura implements IEnemyAuraView<
-    IEnemyAttributes,
+    IEnemyAttr,
     IRectRangeParam,
     void
 > {
@@ -144,11 +151,11 @@ export class GuardAura implements IEnemyAuraView<
     readonly couldApplySpecial: boolean = false;
     readonly range: IRange<IRectRangeParam> = RECT_RANGE;
 
-    private readonly sourceView: IEnemyView<IEnemyAttributes> | null;
+    private readonly sourceView: IEnemyView<IEnemyAttr> | null;
 
     constructor(
-        context: IEnemyContext<IEnemyAttributes>,
-        readonly enemy: IReadonlyEnemy<IEnemyAttributes>,
+        context: IEnemyContext<IEnemyAttr, IHeroAttr>,
+        readonly enemy: IReadonlyEnemy<IEnemyAttr>,
         readonly special: ISpecial<void>,
         readonly locator: ITileLocator
     ) {
@@ -164,19 +171,16 @@ export class GuardAura implements IEnemyAuraView<
         };
     }
 
-    apply(
-        enemy: IEnemy<IEnemyAttributes>,
-        _baseEnemy: IReadonlyEnemy<IEnemyAttributes>,
-        locator: ITileLocator
-    ): void {
+    apply(handler: IEnemyHandler<IEnemyAttr, IHeroAttr>): void {
         if (!this.sourceView) return;
+        const { enemy, locator } = handler;
         if (locator.x === this.locator.x && locator.y === this.locator.y) {
             return;
         }
         enemy.getAttribute('guard').add(this.sourceView);
     }
 
-    applySpecial(): IEnemySpecialModifier<IEnemyAttributes> | null {
+    applySpecial(): IEnemySpecialModifier<IEnemyAttr> | null {
         return null;
     }
 }

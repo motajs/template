@@ -13,7 +13,7 @@ import {
     HeroState,
     IHeroState
 } from '@user/data-base';
-import { IEnemyAttributes } from './enemy/types';
+import { IEnemyAttr } from './enemy/types';
 import {
     CommonAuraConverter,
     EnemyLegacyBridge,
@@ -24,7 +24,7 @@ import {
     registerSpecials
 } from './enemy';
 import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
-import { IHeroAttributeObject } from './hero';
+import { IHeroAttr } from './hero';
 
 export class CoreState implements ICoreState {
     readonly layer: ILayerState;
@@ -32,16 +32,25 @@ export class CoreState implements ICoreState {
     readonly idNumberMap: Map<string, number>;
     readonly numberIdMap: Map<number, string>;
 
-    readonly hero: IHeroState<IHeroAttributeObject>;
+    readonly hero: IHeroState<IHeroAttr>;
 
-    readonly enemyManager: IEnemyManager<IEnemyAttributes>;
-    readonly enemyContext: IEnemyContext<IEnemyAttributes>;
+    readonly enemyManager: IEnemyManager<IEnemyAttr>;
+    readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
 
     constructor() {
         this.layer = new LayerState();
         this.roleFace = new RoleFaceBinder();
         this.idNumberMap = new Map();
         this.numberIdMap = new Map();
+
+        //#region 勇士初始化
+
+        const heroMover = new HeroMover();
+        const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
+        const heroState = new HeroState(heroMover, heroAttribute);
+        this.hero = heroState;
+
+        //#endregion
 
         //#region 怪物初始化
 
@@ -56,7 +65,7 @@ export class CoreState implements ICoreState {
         registerSpecials(enemyManager);
         this.enemyManager = enemyManager;
         // 怪物上下文初始化
-        const enemyContext = new EnemyContext<IEnemyAttributes>();
+        const enemyContext = new EnemyContext<IEnemyAttr, IHeroAttr>();
         const damageSystem = new DamageSystem(enemyContext);
         const mapDamage = new MapDamage(enemyContext);
         mapDamage.useConverter(new MainMapDamageConverter());
@@ -67,16 +76,8 @@ export class CoreState implements ICoreState {
         enemyContext.registerAuraConverter(new GuardAuraConverter());
         enemyContext.registerFinalEffect(new MainEnemyFinalEffect());
         enemyContext.resize(TILE_WIDTH, TILE_HEIGHT);
+        enemyContext.bindHero(heroAttribute);
         this.enemyContext = enemyContext;
-
-        //#endregion
-
-        //#region 勇士初始化
-
-        const heroMover = new HeroMover();
-        const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
-        const heroState = new HeroState(heroMover, heroAttribute);
-        this.hero = heroState;
 
         //#endregion
     }

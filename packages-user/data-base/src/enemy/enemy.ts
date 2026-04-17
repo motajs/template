@@ -93,7 +93,7 @@ export class EnemyView<TAttr> implements IEnemyView<TAttr> {
 
     constructor(
         readonly baseEnemy: IEnemy<TAttr>,
-        readonly context: IEnemyContext<TAttr>
+        readonly context: IEnemyContext<TAttr, unknown>
     ) {
         this.computedEnemy = baseEnemy.clone();
     }

@@ -1,4 +1,5 @@
 import { IRange, ITileLocator } from '@motajs/common';
+import { IReadonlyHeroAttribute } from '../hero';
 
 //#region 怪物基础
 
@@ -246,13 +247,31 @@ export interface IMapLocIndexer extends IMapLocHelper {
     setWidth(width: number): void;
 }
 
+export interface IEnemyHandler<TAttr, THero> {
+    /** 怪物属性信息 */
+    readonly enemy: IEnemy<TAttr>;
+    /** 怪物定位符 */
+    readonly locator: ITileLocator;
+    /** 勇士属性信息 */
+    readonly hero: IReadonlyHeroAttribute<THero>;
+}
+
+export interface IReadonlyEnemyHandler<TAttr, THero> {
+    /** 怪物属性信息 */
+    readonly enemy: IReadonlyEnemy<TAttr>;
+    /** 怪物定位符 */
+    readonly locator: ITileLocator;
+    /** 勇士属性信息 */
+    readonly hero: IReadonlyHeroAttribute<THero>;
+}
+
 //#endregion
 
 //#region 怪物对象
 
 export interface IEnemyView<TAttr> {
     /** 怪物视图所属的上下文 */
-    readonly context: IEnemyContext<TAttr>;
+    readonly context: IEnemyContext<TAttr, unknown>;
 
     /**
      * 重置此怪物视图的状态，将计算后怪物对象恢复至初始状态
@@ -288,31 +307,24 @@ export interface IEnemyView<TAttr> {
 export interface IEnemySpecialModifier<TAttr> {
     /**
      * 获取要添加到指定怪物身上的特殊属性
-     * @param enemy 怪物对象
-     * @param locator 怪物定位符
+     * @param handler 信息对象
      */
-    add(enemy: IReadonlyEnemy<TAttr>, locator: ITileLocator): ISpecial<any>[];
+    add(handler: IReadonlyEnemyHandler<TAttr, unknown>): ISpecial<any>[];
 
     /**
      * 获取制定怪物身上要删除的特殊属性
-     * @param enemy 怪物对象
-     * @param locator 怪物定位符
+     * @param handler 信息对象
      */
-    delete(
-        enemy: IReadonlyEnemy<TAttr>,
-        locator: ITileLocator
-    ): ISpecial<any>[];
+    delete(handler: IReadonlyEnemyHandler<TAttr, unknown>): ISpecial<any>[];
 
     /**
      * 修改一个怪物的特殊属性，如果真正进行了修改则返回 true，否则返回 false
-     * @param enemy 怪物对象
+     * @param handler 信息对象
      * @param special 要修改的怪物特殊属性
-     * @param locator 怪物定位符
      */
     modify(
-        enemy: IReadonlyEnemy<TAttr>,
-        special: ISpecial<any>,
-        locator: ITileLocator
+        handler: IEnemyHandler<TAttr, unknown>,
+        special: ISpecial<any>
     ): boolean;
 }
 
@@ -334,26 +346,22 @@ export interface IAuraView<TAttr, T = any> {
 
     /**
      * 对指定怪物对象施加修饰器
-     * @param enemy 怪物对象
+     * @param handler 信息对象
      * @param baseEnemy 原始怪物对象，即未进行任何修改的怪物对象
-     * @param locator 怪物定位符
      */
     apply(
-        enemy: IEnemy<TAttr>,
-        baseEnemy: IReadonlyEnemy<TAttr>,
-        locator: ITileLocator
+        handler: IEnemyHandler<TAttr, unknown>,
+        baseEnemy: IReadonlyEnemy<TAttr>
     ): void;
 
     /**
      * 对指定怪物对象添加特殊属性修饰器
-     * @param enemy 怪物对象
+     * @param handler 信息对象
      * @param baseEnemy 原始怪物对象，即未进行任何修改的怪物对象
-     * @param locator 怪物定位符
      */
     applySpecial(
-        enemy: IReadonlyEnemy<TAttr>,
-        baseEnemy: IReadonlyEnemy<TAttr>,
-        locator: ITileLocator
+        handler: IEnemyHandler<TAttr, unknown>,
+        baseEnemy: IReadonlyEnemy<TAttr>
     ): IEnemySpecialModifier<TAttr> | null;
 }
 
@@ -366,14 +374,15 @@ export interface IEnemyAuraView<TAttr, R, S> extends IAuraView<TAttr, R> {
     readonly locator: ITileLocator;
 }
 
-export interface IAuraConverter<TAttr> {
+export interface IAuraConverter<TAttr, THero> {
     /**
      * 判断一个特殊属性是否应该被当前光环转换器执行转换
+     * @param special 要转换的特殊属性
+     * @param handler 信息对象
      */
     shouldConvert(
         special: ISpecial<any>,
-        enemy: IReadonlyEnemy<TAttr>,
-        locator: ITileLocator
+        handler: IReadonlyEnemyHandler<TAttr, THero>
     ): boolean;
 
     /**
@@ -381,32 +390,34 @@ export interface IAuraConverter<TAttr> {
      */
     convert(
         special: ISpecial<any>,
-        enemy: IReadonlyEnemy<TAttr>,
-        locator: ITileLocator,
-        context: IEnemyContext<TAttr>
+        handler: IReadonlyEnemyHandler<TAttr, THero>,
+        context: IEnemyContext<TAttr, THero>
     ): IEnemyAuraView<TAttr, any, any>;
 }
 
 export interface IEnemySpecialQueryModifier<
-    TAttr
+    TAttr,
+    THero
 > extends IEnemySpecialModifier<TAttr> {
     /**
      * 判断一个怪物是否应该查询外部状态
      */
-    shouldQuery(enemy: IReadonlyEnemy<TAttr>, locator: ITileLocator): boolean;
+    shouldQuery(handler: IReadonlyEnemyHandler<TAttr, THero>): boolean;
 }
 
-export interface IEnemySpecialQueryEffect<TAttr> {
+export interface IEnemySpecialQueryEffect<TAttr, THero> {
     /** 效果优先级，与光环属性共用 */
     readonly priority: number;
 
     /**
      * 根据传入的怪物上下文，获取对应的怪物特殊属性修饰器
      */
-    for(ctx: IEnemyContext<TAttr>): IEnemySpecialQueryModifier<TAttr>;
+    for(
+        ctx: IEnemyContext<TAttr, THero>
+    ): IEnemySpecialQueryModifier<TAttr, THero>;
 }
 
-export interface IEnemyCommonQueryEffect<TAttr> {
+export interface IEnemyCommonQueryEffect<TAttr, THero> {
     /** 优先级，越高的越先执行 */
     readonly priority: number;
 
@@ -414,21 +425,20 @@ export interface IEnemyCommonQueryEffect<TAttr> {
      * 对怪物的某个特殊属性施加常规查询效果
      */
     apply(
-        enemy: IEnemy<TAttr>,
+        handler: IEnemyHandler<TAttr, THero>,
         special: ISpecial<any>,
-        query: () => IEnemyContext<TAttr>,
-        locator: ITileLocator
+        query: () => IEnemyContext<TAttr, THero>
     ): void;
 }
 
-export interface IEnemyFinalEffect<TAttr> {
+export interface IEnemyFinalEffect<TAttr, THero> {
     /** 效果优先级，越高会越先被执行 */
     readonly priority: number;
 
     /**
      * 向怪物施加最终修饰效果
      */
-    apply(enemy: IEnemy<TAttr>, locator: ITileLocator): void;
+    apply(handler: IEnemyHandler<TAttr, THero>): void;
 }
 
 //#endregion
@@ -477,14 +487,13 @@ export interface IMapDamageView<T = any> {
     ): Readonly<IMapDamageInfo> | null;
 }
 
-export interface IMapDamageConverter<TAttr> {
+export interface IMapDamageConverter<TAttr, THero> {
     /**
      * 转换地图伤害视图
      */
     convert(
-        enemy: IReadonlyEnemy<TAttr>,
-        locator: ITileLocator,
-        context: IEnemyContext<TAttr>
+        handler: IReadonlyEnemyHandler<TAttr, THero>,
+        context: IEnemyContext<TAttr, THero>
     ): IMapDamageView<any>[];
 }
 
@@ -498,15 +507,15 @@ export interface IMapDamageReducer {
     ): Readonly<IMapDamageInfo>;
 }
 
-export interface IMapDamage<TAttr> {
+export interface IMapDamage<TAttr, THero> {
     /** 当前绑定的怪物上下文 */
-    readonly context: IEnemyContext<TAttr>;
+    readonly context: IEnemyContext<TAttr, THero>;
 
     /**
      * 设置地图伤害转换器，并基于当前上下文重建所有地图伤害视图
      * @param converter 地图伤害转换器
      */
-    useConverter(converter: IMapDamageConverter<TAttr>): void;
+    useConverter(converter: IMapDamageConverter<TAttr, THero>): void;
 
     /**
      * 设置地图伤害合并器
@@ -593,36 +602,30 @@ export interface IEnemyCritical {
 }
 
 export type CriticalableHeroStatus<THero> = keyof {
-    [P in keyof THero as THero[P] extends number ? P : never]: unknown;
+    [P in keyof THero as THero[P] extends number ? P : never]: number;
 };
 
 export interface IDamageCalculator<TAttr, THero> {
     /**
      * 计算战斗伤害信息
-     * @param hero 勇士信息
-     * @param enemy 怪物信息
+     * @param handler 信息对象
      */
-    calculate(
-        hero: Readonly<THero>,
-        enemy: IReadonlyEnemy<TAttr>
-    ): IEnemyDamageInfo;
+    calculate(handler: IReadonlyEnemyHandler<TAttr, THero>): IEnemyDamageInfo;
 
     /**
      * 获取临界计算的上界
-     * @param hero 勇士信息
-     * @param enemy 怪物信息
+     * @param handler 信息对象
      * @param attribute 勇士的临界属性
      */
     getCriticalLimit(
-        hero: Readonly<THero>,
-        enemy: IReadonlyEnemy<TAttr>,
+        handler: IReadonlyEnemyHandler<TAttr, THero>,
         attribute: CriticalableHeroStatus<THero>
     ): number;
 }
 
 export interface IDamageSystem<TAttr, THero> {
     /** 伤害系统所属的上下文 */
-    readonly context: IEnemyContext<TAttr>;
+    readonly context: IEnemyContext<TAttr, THero>;
 
     /**
      * 设置当前伤害计算系统使用的伤害计算器
@@ -639,7 +642,7 @@ export interface IDamageSystem<TAttr, THero> {
      * 绑定勇士信息
      * @param hero 勇士信息
      */
-    bindHeroStatus(hero: Readonly<THero>): void;
+    bindHeroStatus(hero: IReadonlyHeroAttribute<THero> | null): void;
 
     /**
      * 获取战斗伤害信息
@@ -668,12 +671,12 @@ export interface IDamageSystem<TAttr, THero> {
      * 计算怪物在指定勇士属性下的临界
      * @param enemy 怪物视图
      * @param attribute 计算临界的目标勇士属性，比如计算攻击临界、自定义属性的临界等等
-     * @param precision 临界计算精度，表示会进行多少次二分计算，一般填写 `12-16` 之间的数即可
+     * @param precision 临界计算精度，表示会进行多少次二分计算，一般填写 `12-16` 之间的数即可，默认是 12
      */
     calculateCritical(
         enemy: IEnemyView<TAttr>,
         attribute: CriticalableHeroStatus<THero>,
-        precision: number
+        precision?: number
     ): Generator<IEnemyCritical, void, void>;
 }
 
@@ -681,7 +684,7 @@ export interface IDamageSystem<TAttr, THero> {
 
 //#region 上下文
 
-export interface IEnemyContext<TAttr> {
+export interface IEnemyContext<TAttr, THero> {
     /** 怪物上下文宽度 */
     readonly width: number;
     /** 怪物上下文高度 */
@@ -700,13 +703,13 @@ export interface IEnemyContext<TAttr> {
      * 注册一个光环转换器
      * @param converter 光环转换器
      */
-    registerAuraConverter(converter: IAuraConverter<TAttr>): void;
+    registerAuraConverter(converter: IAuraConverter<TAttr, THero>): void;
 
     /**
      * 注销一个光环转换器
      * @param converter 光环转换器
      */
-    unregisterAuraConverter(converter: IAuraConverter<TAttr>): void;
+    unregisterAuraConverter(converter: IAuraConverter<TAttr, THero>): void;
 
     /**
      * 设置光环转换器的启用状态
@@ -714,7 +717,7 @@ export interface IEnemyContext<TAttr> {
      * @param enabled 是否启用
      */
     setAuraConverterEnabled(
-        converter: IAuraConverter<TAttr>,
+        converter: IAuraConverter<TAttr, THero>,
         enabled: boolean
     ): void;
 
@@ -722,13 +725,17 @@ export interface IEnemyContext<TAttr> {
      * 注册一个特殊属性查询效果
      * @param effect 特殊属性查询效果
      */
-    registerSpecialQueryEffect(effect: IEnemySpecialQueryEffect<TAttr>): void;
+    registerSpecialQueryEffect(
+        effect: IEnemySpecialQueryEffect<TAttr, THero>
+    ): void;
 
     /**
      * 注销一个特殊属性查询效果
      * @param effect 特殊属性查询效果
      */
-    unregisterSpecialQueryEffect(effect: IEnemySpecialQueryEffect<TAttr>): void;
+    unregisterSpecialQueryEffect(
+        effect: IEnemySpecialQueryEffect<TAttr, THero>
+    ): void;
 
     /**
      * 为指定特殊属性代码注册常规查询效果
@@ -737,7 +744,7 @@ export interface IEnemyContext<TAttr> {
      */
     registerCommonQueryEffect(
         code: number,
-        effect: IEnemyCommonQueryEffect<TAttr>
+        effect: IEnemyCommonQueryEffect<TAttr, THero>
     ): void;
 
     /**
@@ -747,20 +754,31 @@ export interface IEnemyContext<TAttr> {
      */
     unregisterCommonQueryEffect(
         code: number,
-        effect: IEnemyCommonQueryEffect<TAttr>
+        effect: IEnemyCommonQueryEffect<TAttr, THero>
     ): void;
 
     /**
      * 注册一个最终效果
      * @param effect 最终效果
      */
-    registerFinalEffect(effect: IEnemyFinalEffect<TAttr>): void;
+    registerFinalEffect(effect: IEnemyFinalEffect<TAttr, THero>): void;
 
     /**
      * 注销一个最终效果
      * @param effect 最终效果
      */
-    unregisterFinalEffect(effect: IEnemyFinalEffect<TAttr>): void;
+    unregisterFinalEffect(effect: IEnemyFinalEffect<TAttr, THero>): void;
+
+    /**
+     * 绑定勇士对象
+     * @param hero 勇士属性对象
+     */
+    bindHero(hero: IReadonlyHeroAttribute<THero> | null): void;
+
+    /**
+     * 获取当前绑定的勇士属性对象
+     */
+    getBindedHero(): IReadonlyHeroAttribute<THero> | null;
 
     /**
      * 获取指定怪物对象当前所在位置
@@ -813,7 +831,10 @@ export interface IEnemyContext<TAttr> {
      * @param range 范围对象
      * @param param 范围参数
      */
-    scanRange<T>(range: IRange<T>, param: T): Iterable<IEnemyView<TAttr>>;
+    scanRange<T>(
+        range: IRange<T>,
+        param: T
+    ): Iterable<[ITileLocator, IEnemyView<TAttr>]>;
 
     /**
      * 迭代上下文中的全部怪物
@@ -836,12 +857,12 @@ export interface IEnemyContext<TAttr> {
      * 绑定地图伤害管理器
      * @param damage 地图伤害管理器
      */
-    attachMapDamage(damage: IMapDamage<TAttr> | null): void;
+    attachMapDamage(damage: IMapDamage<TAttr, THero> | null): void;
 
     /**
      * 获取当前绑定的地图伤害管理器
      */
-    getMapDamage(): IMapDamage<TAttr> | null;
+    getMapDamage(): IMapDamage<TAttr, THero> | null;
 
     /**
      * 绑定伤害计算系统
@@ -852,7 +873,7 @@ export interface IEnemyContext<TAttr> {
     /**
      * 获取当前绑定的伤害计算系统
      */
-    getDamageSystem<THero>(): IDamageSystem<TAttr, THero> | null;
+    getDamageSystem(): IDamageSystem<TAttr, THero> | null;
 
     /**
      * 重建当前上下文中的全部怪物计算结果

@@ -149,4 +149,8 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         }
         return cloned;
     }
+
+    getModifiableClone(): IHeroAttribute<THero> {
+        return this.clone();
+    }
 }

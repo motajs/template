@@ -6,12 +6,12 @@ import {
     IHeroFollower,
     IHeroState
 } from '@user/data-base';
-import { IEnemyAttributes } from './enemy/types';
-import { IHeroAttributeObject } from './hero';
+import { IEnemyAttr } from './enemy/types';
+import { IHeroAttr } from './hero';
 
 export interface IGameDataState {
     /** 怪物管理器 */
-    readonly enemyManager: IEnemyManager<IEnemyAttributes>;
+    readonly enemyManager: IEnemyManager<IEnemyAttr>;
 }
 
 export interface IStateSaveData {
@@ -23,7 +23,7 @@ export interface ICoreState {
     /** 地图状态 */
     readonly layer: ILayerState;
     /** 勇士状态 */
-    readonly hero: IHeroState<IHeroAttributeObject>;
+    readonly hero: IHeroState<IHeroAttr>;
     /** 朝向绑定 */
     readonly roleFace: IRoleFaceBinder;
     /** id 到图块数字的映射 */
@@ -32,9 +32,9 @@ export interface ICoreState {
     readonly numberIdMap: Map<number, string>;
 
     /** 怪物管理器 */
-    readonly enemyManager: IEnemyManager<IEnemyAttributes>;
+    readonly enemyManager: IEnemyManager<IEnemyAttr>;
     /** 怪物上下文 */
-    readonly enemyContext: IEnemyContext<IEnemyAttributes>;
+    readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
 
     /**
      * 保存状态

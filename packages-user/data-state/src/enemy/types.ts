@@ -1,6 +1,6 @@
 import { IEnemyView } from '@user/data-base';
 
-export interface IEnemyAttributes {
+export interface IEnemyAttr {
     /** 怪物生命值 */
     hp: number;
     /** 怪物攻击力 */
@@ -14,7 +14,7 @@ export interface IEnemyAttributes {
     /** 怪物加点量 */
     point: number;
     /** 支援来源怪物视图列表 */
-    guard: Set<IEnemyView<IEnemyAttributes>>;
+    guard: Set<IEnemyView<IEnemyAttr>>;
 }
 
 export const enum MapDamageType {

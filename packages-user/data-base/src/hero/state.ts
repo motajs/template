@@ -32,6 +32,6 @@ export class HeroState<THero> implements IHeroState<THero> {
     }
 
     getIsolatedAttribute(): IHeroAttribute<THero> {
-        return this.attribute.clone();
+        return this.attribute.getModifiableClone();
     }
 }

@@ -153,13 +153,13 @@ export function initFallback() {
                 core.status.hero.loc[name] = value;
                 if (name === 'direction') {
                     const dir = fromDirectionString(value as Dir);
-                    state.hero.turn(dir);
+                    state.hero.mover.turn(dir);
                     setHeroDirection(value as Dir);
                 } else if (name === 'x') {
                     // 为了防止逆天样板出问题
                     core.bigmap.posX = value as number;
                     if (!noGather) {
-                        state.hero.setPosition(
+                        state.hero.mover.setPosition(
                             value as number,
                             core.status.hero.loc.y
                         );
@@ -168,7 +168,7 @@ export function initFallback() {
                     // 为了防止逆天样板出问题
                     core.bigmap.posY = value as number;
                     if (!noGather) {
-                        state.hero.setPosition(
+                        state.hero.mover.setPosition(
                             core.status.hero.loc.x,
                             value as number
                         );
@@ -218,7 +218,7 @@ export function initFallback() {
 
         patch2.add('setHeroIcon', function (name: ImageIds) {
             core.status.hero.image = name;
-            state.hero.setImage(name);
+            state.hero.mover.setImage(name);
         });
 
         patch.add('isMoving', function () {
@@ -564,7 +564,7 @@ export function initFallback() {
                 time /= core.status.replay.speed;
                 if (core.status.replay.speed === 24) time = 1;
 
-                await state.hero.jumpHero(ex, ey, time);
+                await state.hero.mover.jumpHero(ex, ey, time);
 
                 if (!locked) core.unlockControl();
                 core.setHeroLoc('x', ex);

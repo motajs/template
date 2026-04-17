@@ -16,7 +16,7 @@ export async function createMainExtension() {
     mainMapRenderer.useAsset(materials.trackedAsset);
     const layer = state.layer.getLayerByAlias('event');
     if (layer) {
-        mainMapExtension.addHero(state.hero, layer);
+        mainMapExtension.addHero(state.hero.mover, layer);
         mainMapExtension.addDoor(layer);
     }
     mainMapExtension.addText();

@@ -288,7 +288,7 @@ export class HeroMover extends ObjectMoverBase {
     protected async onMoveStart(controller: IMoveController): Promise<void> {
         this.beforeMoveSpeed = this.moveSpeed;
         if (!core.isReplaying() || core.status.replay.speed <= 12) {
-            state.hero.startMove();
+            state.hero.mover.startMove();
         }
         // 这里要检查前面那一格能不能走，不能走则不触发平滑视角，以避免撞墙上视角卡住
         if (!this.ignoreTerrain) {
@@ -310,7 +310,7 @@ export class HeroMover extends ObjectMoverBase {
     protected async onMoveEnd(controller: IMoveController): Promise<void> {
         this.moveSpeed = this.beforeMoveSpeed;
         this.onSetMoveSpeed(this.moveSpeed, controller);
-        await state.hero.endMove();
+        await state.hero.mover.endMove();
         // viewport.sync('endMove');
         core.clearContinueAutomaticRoute();
         core.stopAutomaticRoute();
@@ -442,19 +442,22 @@ export class HeroMover extends ObjectMoverBase {
         const replaying = core.isReplaying();
         if (replaying) {
             if (core.status.replay.speed > 12) {
-                await state.hero.endMove();
+                await state.hero.mover.endMove();
                 await sleep(speed);
-                state.hero.setPosition(x, y);
+                state.hero.mover.setPosition(x, y);
             } else {
-                state.hero.startMove();
-                await state.hero.move(
+                state.hero.mover.startMove();
+                await state.hero.mover.move(
                     fromDirectionString(moveDir),
                     this.moveSpeed / core.status.replay.speed
                 );
             }
         } else {
-            state.hero.startMove();
-            await state.hero.move(fromDirectionString(moveDir), this.moveSpeed);
+            state.hero.mover.startMove();
+            await state.hero.mover.move(
+                fromDirectionString(moveDir),
+                this.moveSpeed
+            );
         }
     }
 

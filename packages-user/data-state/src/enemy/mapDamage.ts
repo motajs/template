@@ -11,17 +11,20 @@ import {
     RectRange,
     ITileLocator
 } from '@motajs/common';
-import { IReadonlyEnemy, ISpecial } from '@user/data-base';
 import {
     IEnemyContext,
     IMapDamageConverter,
     IMapDamageInfo,
     IMapDamageInfoExtra,
     IMapDamageReducer,
-    IMapDamageView
+    IReadonlyEnemyHandler,
+    ISpecial,
+    IMapDamageView,
+    IReadonlyHeroAttribute
 } from '@user/data-base';
 import { IZoneValue } from './special';
-import { IEnemyAttributes, MapDamageType } from './types';
+import { IEnemyAttr, MapDamageType } from './types';
+import { IHeroAttr } from '../hero';
 
 const RECT_RANGE = new RectRange();
 const MANHATTAN_RANGE = new ManhattanRange();
@@ -33,7 +36,9 @@ const DIR4 = [...DIRECTION_MAPPER.map(InternalDirectionGroup.Dir4)];
 //#region 地图伤害
 
 abstract class BaseMapDamageView<T> implements IMapDamageView<T> {
-    constructor(protected readonly context: IEnemyContext<IEnemyAttributes>) {}
+    constructor(
+        protected readonly context: IEnemyContext<IEnemyAttr, IHeroAttr>
+    ) {}
 
     abstract getRange(): IRange<T>;
 
@@ -80,7 +85,7 @@ export class ZoneDamageView extends BaseMapDamageView<
     IRectRangeParam | IManhattanRangeParam
 > {
     constructor(
-        context: IEnemyContext<IEnemyAttributes>,
+        context: IEnemyContext<IEnemyAttr, IHeroAttr>,
         private readonly locator: Readonly<ITileLocator>,
         private readonly special: Readonly<ISpecial<IZoneValue>>
     ) {
@@ -108,16 +113,14 @@ export class ZoneDamageView extends BaseMapDamageView<
         };
     }
 
-    getDamageWithoutCheck(
-        _locator: ITileLocator
-    ): Readonly<IMapDamageInfo> | null {
+    getDamageWithoutCheck(): Readonly<IMapDamageInfo> | null {
         return this.createInfo(this.special.value.zone, MapDamageType.Zone);
     }
 }
 
 export class RepulseDamageView extends BaseMapDamageView<IManhattanRangeParam> {
     constructor(
-        context: IEnemyContext<IEnemyAttributes>,
+        context: IEnemyContext<IEnemyAttr, IHeroAttr>,
         private readonly locator: Readonly<ITileLocator>,
         private readonly special: Readonly<ISpecial<number>>
     ) {
@@ -151,7 +154,7 @@ export class RepulseDamageView extends BaseMapDamageView<IManhattanRangeParam> {
 
 export class LaserDamageView extends BaseMapDamageView<IRayRangeParam> {
     constructor(
-        context: IEnemyContext<IEnemyAttributes>,
+        context: IEnemyContext<IEnemyAttr, IHeroAttr>,
         private readonly locator: Readonly<ITileLocator>,
         private readonly special: Readonly<ISpecial<number>>,
         private readonly dir: IDirectionDescriptor[] = DIR4
@@ -171,23 +174,16 @@ export class LaserDamageView extends BaseMapDamageView<IRayRangeParam> {
         };
     }
 
-    getDamageWithoutCheck(
-        locator: ITileLocator
-    ): Readonly<IMapDamageInfo> | null {
-        if (locator.x === this.locator.x && locator.y === this.locator.y) {
-            return null;
-        }
-
+    getDamageWithoutCheck(): Readonly<IMapDamageInfo> | null {
         return this.createInfo(this.special.value, MapDamageType.Layer);
     }
 }
 
 export class BetweenDamageView extends BaseMapDamageView<IManhattanRangeParam> {
-    private static readonly DAMAGE = 1;
-
     constructor(
-        context: IEnemyContext<IEnemyAttributes>,
-        private readonly locator: Readonly<ITileLocator>
+        context: IEnemyContext<IEnemyAttr, IHeroAttr>,
+        private readonly locator: Readonly<ITileLocator>,
+        private readonly hero: IReadonlyHeroAttribute<IHeroAttr>
     ) {
         super(context);
     }
@@ -232,13 +228,14 @@ export class BetweenDamageView extends BaseMapDamageView<IManhattanRangeParam> {
             return null;
         }
 
-        return this.createInfo(BetweenDamageView.DAMAGE, MapDamageType.Between);
+        const damage = this.hero.getFinalAttribute('hp');
+        return this.createInfo(damage, MapDamageType.Between);
     }
 }
 
 export class AmbushDamageView extends BaseMapDamageView<IManhattanRangeParam> {
     constructor(
-        context: IEnemyContext<IEnemyAttributes>,
+        context: IEnemyContext<IEnemyAttr, IHeroAttr>,
         private readonly locator: Readonly<ITileLocator>
     ) {
         super(context);
@@ -256,13 +253,7 @@ export class AmbushDamageView extends BaseMapDamageView<IManhattanRangeParam> {
         };
     }
 
-    getDamageWithoutCheck(
-        locator: ITileLocator
-    ): Readonly<IMapDamageInfo> | null {
-        if (locator.x === this.locator.x && locator.y === this.locator.y) {
-            return null;
-        }
-
+    getDamageWithoutCheck(): Readonly<IMapDamageInfo> | null {
         return this.createInfo(0, MapDamageType.Unknown, {
             catch: new Set([this.locator])
         });
@@ -273,13 +264,16 @@ export class AmbushDamageView extends BaseMapDamageView<IManhattanRangeParam> {
 
 //#region 转换器
 
-export class MainMapDamageConverter implements IMapDamageConverter<IEnemyAttributes> {
+export class MainMapDamageConverter implements IMapDamageConverter<
+    IEnemyAttr,
+    IHeroAttr
+> {
     convert(
-        enemy: IReadonlyEnemy<IEnemyAttributes>,
-        locator: ITileLocator,
-        context: IEnemyContext<IEnemyAttributes>
+        handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
+        context: IEnemyContext<IEnemyAttr, IHeroAttr>
     ): IMapDamageView<any>[] {
         const views: IMapDamageView<any>[] = [];
+        const { enemy, locator } = handler;
 
         const zone = enemy.getSpecial<IZoneValue>(15);
         if (zone) {
@@ -287,7 +281,7 @@ export class MainMapDamageConverter implements IMapDamageConverter<IEnemyAttribu
         }
 
         if (enemy.hasSpecial(16)) {
-            views.push(new BetweenDamageView(context, locator));
+            views.push(new BetweenDamageView(context, locator, handler.hero));
         }
 
         const repulse = enemy.getSpecial<number>(18);
@@ -313,10 +307,7 @@ export class MainMapDamageConverter implements IMapDamageConverter<IEnemyAttribu
 //#region 合并器
 
 export class MainMapDamageReducer implements IMapDamageReducer {
-    reduce(
-        info: Iterable<Readonly<IMapDamageInfo>>,
-        _locator: ITileLocator
-    ): Readonly<IMapDamageInfo> {
+    reduce(info: Iterable<Readonly<IMapDamageInfo>>): Readonly<IMapDamageInfo> {
         let damage = 0;
         let type = MapDamageType.Unknown;
         let maxDamage = -Infinity;

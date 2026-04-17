@@ -1,11 +1,11 @@
 import { IEnemyLegacyBridge } from '@user/data-base';
-import { IEnemyAttributes } from './types';
+import { IEnemyAttr } from './types';
 
-export class EnemyLegacyBridge implements IEnemyLegacyBridge<IEnemyAttributes> {
+export class EnemyLegacyBridge implements IEnemyLegacyBridge<IEnemyAttr> {
     fromLegacyEnemy(
         enemy: Enemy,
-        defaultAttr: Partial<IEnemyAttributes>
-    ): IEnemyAttributes {
+        defaultAttr: Partial<IEnemyAttr>
+    ): IEnemyAttr {
         return {
             hp: enemy.hp ?? defaultAttr.hp ?? 0,
             atk: enemy.atk ?? defaultAttr.atk ?? 0,

@@ -71,7 +71,12 @@ export interface IReadonlyHeroAttribute<THero> {
      * 深拷贝此勇士属性对象
      * @param cloneModifier 是否同时复制修饰器，默认复制
      */
-    clone(cloneModifier?: boolean): IHeroAttribute<THero>;
+    clone(cloneModifier?: boolean): IReadonlyHeroAttribute<THero>;
+
+    /**
+     * 获取此勇士属性对象的可修改副本
+     */
+    getModifiableClone(): IHeroAttribute<THero>;
 }
 
 export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
@@ -101,6 +106,12 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
         name: K,
         modifier: IHeroModifier<THero[K], unknown>
     ): void;
+
+    /**
+     * 深拷贝此勇士属性对象
+     * @param cloneModifier 是否同时复制修饰器，默认复制
+     */
+    clone(cloneModifier?: boolean): IHeroAttribute<THero>;
 }
 
 //#endregion

@@ -1,4 +1,4 @@
-import { logger } from '@motajs/common';
+import { ITileLocator, logger } from '@motajs/common';
 import {
     CriticalableHeroStatus,
     IDamageCalculator,
@@ -6,9 +6,11 @@ import {
     IEnemyContext,
     IEnemyCritical,
     IEnemyDamageInfo,
+    IReadonlyEnemyHandler,
     IEnemyView,
     IReadonlyEnemy
 } from './types';
+import { IHeroAttribute, IReadonlyHeroAttribute } from '../hero';
 
 interface ICriticalSearchResult {
     /** 此临界点的属性值 */
@@ -21,12 +23,12 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
     /** 当前正在使用的计算器 */
     private calculator: IDamageCalculator<TAttr, THero> | null = null;
     /** 当前勇士属性 */
-    private heroStatus: Readonly<THero> | null = null;
+    private heroStatus: IReadonlyHeroAttribute<THero> | null = null;
     /** 怪物伤害缓存 */
     private readonly cache: Map<IEnemyView<TAttr>, IEnemyDamageInfo> =
         new Map();
 
-    constructor(readonly context: IEnemyContext<TAttr>) {}
+    constructor(readonly context: IEnemyContext<TAttr, THero>) {}
 
     useCalculator(calculator: IDamageCalculator<TAttr, THero>): void {
         this.calculator = calculator;
@@ -37,35 +39,23 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
         return this.calculator;
     }
 
-    bindHeroStatus(hero: Readonly<THero>): void {
+    bindHeroStatus(hero: IReadonlyHeroAttribute<THero>): void {
         this.heroStatus = hero;
         this.markAllDirty();
     }
 
     /**
-     * 深拷贝勇士属性
+     * 创建只读信息对象
+     * @param enemy 怪物对象
+     * @param locator 怪物位置
+     * @param hero 勇士属性对象
      */
-    private cloneHeroStatus(): THero | null {
-        if (!this.heroStatus) return null;
-        else return structuredClone(this.heroStatus);
-    }
-
-    /**
-     * 在修改勇士属性的情况下计算怪物伤害
-     * @param enemy 怪物属性
-     * @param attribute 修改的属性键名
-     * @param value 修改为的属性值
-     * @returns
-     */
-    private calculateDamageWithModified(
+    private createReadonlyHandler(
         enemy: IReadonlyEnemy<TAttr>,
-        attribute: CriticalableHeroStatus<THero>,
-        value: number
-    ): IEnemyDamageInfo {
-        const hero = this.cloneHeroStatus()!;
-        // @ts-expect-error 之后会进行修复
-        hero[attribute] = value;
-        return this.calculator!.calculate(hero, enemy);
+        locator: ITileLocator,
+        hero: IReadonlyHeroAttribute<THero>
+    ): IReadonlyEnemyHandler<TAttr, THero> {
+        return { enemy, locator, hero };
     }
 
     getDamageInfo(enemy: IEnemyView<TAttr>): IEnemyDamageInfo | null {
@@ -77,15 +67,20 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
             logger.warn(106);
             return null;
         }
-        const hero = this.cloneHeroStatus()!;
+        const hero = this.heroStatus;
+        const locator = this.context.getEnemyLocatorByView(enemy);
+        if (!hero || !locator) return null;
 
         const cached = this.cache.get(enemy);
         if (cached) {
             return cached;
         }
 
-        const info = this.calculator.calculate(hero, enemy.getComputedEnemy());
+        const computed = enemy.getComputedEnemy();
+        const handler = this.createReadonlyHandler(computed, locator, hero);
+        const info = this.calculator.calculate(handler);
         this.cache.set(enemy, info);
+
         return info;
     }
 
@@ -104,7 +99,7 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
     *calculateCritical(
         view: IEnemyView<TAttr>,
         attribute: CriticalableHeroStatus<THero>,
-        precision: number
+        precision: number = 12
     ): Generator<IEnemyCritical, void, void> {
         if (!this.heroStatus) {
             logger.warn(107);
@@ -115,15 +110,19 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
             return;
         }
 
-        const currentInfo = this.getDamageInfo(view);
-        if (!currentInfo) return;
+        const locator = this.context.getEnemyLocatorByView(view);
+        if (!locator) return;
 
         const enemy = view.getComputedEnemy();
-        const hero = this.cloneHeroStatus()!;
-        const currentValue = hero[attribute] as number;
+        const hero = this.heroStatus.getModifiableClone();
+        const handler = this.createReadonlyHandler(enemy, locator, hero);
 
+        const currentInfo = this.calculator.calculate(handler);
+        if (!currentInfo) return;
+
+        const currentValue = hero.getBaseAttribute(attribute) as number;
         const upperLimit = Math.floor(
-            this.calculator.getCriticalLimit(hero, enemy, attribute)
+            this.calculator.getCriticalLimit(handler, attribute)
         );
 
         if (currentValue >= upperLimit) return;
@@ -134,7 +133,8 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
 
         while (baseValue < upperLimit) {
             const next = this.findNextCritical(
-                enemy,
+                handler,
+                hero,
                 attribute,
                 baseValue,
                 upperLimit,
@@ -159,7 +159,8 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
 
     /**
      * 计算下一个临界点
-     * @param enemy 怪物对象
+     * @param handler 信息对象，其中的 `hero` 成员与 `hero` 参数同引用
+     * @param hero 可修改勇士属性对象，与 `handler` 中的 `hero` 成员同引用
      * @param attribute 勇士属性名
      * @param currentValue 当前勇士属性值
      * @param upperLimit 二分上界
@@ -167,7 +168,8 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
      * @param maxIterations 最大迭代数量
      */
     private findNextCritical(
-        enemy: IReadonlyEnemy<TAttr>,
+        handler: IReadonlyEnemyHandler<TAttr, THero>,
+        hero: IHeroAttribute<THero>,
         attribute: CriticalableHeroStatus<THero>,
         currentValue: number,
         upperLimit: number,
@@ -176,36 +178,30 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
     ): ICriticalSearchResult | null {
         let left = currentValue;
         let right = upperLimit;
-        let rightInfo = this.calculateDamageWithModified(
-            enemy,
-            attribute,
-            right
-        );
 
-        if (rightInfo.damage >= referenceDamage) return null;
+        hero.setBaseAttribute(attribute, right as THero[typeof attribute]);
+
+        let targetInfo = this.calculator!.calculate(handler);
+        if (targetInfo.damage >= referenceDamage) return null;
 
         let iter = 0;
-        while (iter < maxIterations) {
+        while (iter++ < maxIterations) {
             const middle = Math.floor((left + right) / 2);
-            const middleInfo = this.calculateDamageWithModified(
-                enemy,
-                attribute,
-                middle
-            );
+            hero.setBaseAttribute(attribute, middle as THero[typeof attribute]);
+            const middleInfo = this.calculator!.calculate(handler);
+
             if (middleInfo.damage < referenceDamage) {
                 right = middle;
-                rightInfo = middleInfo;
             } else {
                 left = middle;
+                targetInfo = middleInfo;
             }
             if (right - left <= 1) break;
-
-            iter++;
         }
 
         return {
             value: right,
-            info: rightInfo
+            info: targetInfo
         };
     }
 }
