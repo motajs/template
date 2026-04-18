@@ -2,12 +2,14 @@ import { loading } from '@user/data-base';
 import { CoreState } from './core';
 import { isNil } from 'lodash-es';
 import { FaceDirection } from './common';
+import { ICoreState } from './types';
+import { TILE_HEIGHT, TILE_WIDTH } from './shared';
 
-function createCoreState() {
+function createCoreState(state: ICoreState) {
     //#region 地图部分
 
-    const width = core._WIDTH_;
-    const height = core._HEIGHT_;
+    const width = TILE_WIDTH;
+    const height = TILE_HEIGHT;
     const bg = state.layer.addLayer(width, height);
     const bg2 = state.layer.addLayer(width, height);
     const event = state.layer.addLayer(width, height);
@@ -56,7 +58,7 @@ function createCoreState() {
 export function create() {
     loading.once('loaded', () => {
         // 加载后初始化全局状态
-        createCoreState();
+        createCoreState(state);
     });
 }
 

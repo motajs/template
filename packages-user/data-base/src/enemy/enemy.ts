@@ -8,7 +8,8 @@ import {
 } from './types';
 
 export class Enemy<TAttr> implements IEnemy<TAttr> {
-    readonly specials: Set<ISpecial<any>> = new Set();
+    /** 怪物身上的特殊属性列表 */
+    private readonly specials: Set<ISpecial<any>> = new Set();
     /** code -> ISpecial 映射，用于快速查找 */
     private readonly specialMap: Map<number, ISpecial<any>> = new Map();
 
@@ -89,7 +90,8 @@ export class Enemy<TAttr> implements IEnemy<TAttr> {
 }
 
 export class EnemyView<TAttr> implements IEnemyView<TAttr> {
-    private computedEnemy: IEnemy<TAttr>;
+    /** 计算后怪物 */
+    private readonly computedEnemy: IEnemy<TAttr>;
 
     constructor(
         readonly baseEnemy: IEnemy<TAttr>,

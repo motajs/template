@@ -90,6 +90,14 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         this.markDirty(name);
     }
 
+    addBaseAttribute<K extends keyof SelectType<THero, number>>(
+        name: K,
+        value: number
+    ): void {
+        (this.attribute[name] as number) += value;
+        this.markDirty(name);
+    }
+
     addModifier<K extends keyof THero>(
         name: K,
         modifier: IHeroModifier<THero[K], unknown>

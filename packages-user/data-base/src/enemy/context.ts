@@ -22,40 +22,56 @@ import { MapLocIndexer } from './utils';
 import { IReadonlyHeroAttribute } from '../hero';
 
 export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
+    /** 坐标索引 -> 怪物视图 */
     private readonly enemyViewMap: Map<number, EnemyView<TAttr>> = new Map();
+    /** 坐标索引 -> 计算前怪物对象 */
     private readonly enemyMap: Map<number, IEnemy<TAttr>> = new Map();
+    /** 怪物视图 -> 坐标索引 */
     private readonly locatorViewMap: Map<IEnemyView<TAttr>, number> = new Map();
+    /** 计算前怪物对象 -> 坐标索引 */
     private readonly locatorEnemyMap: Map<IEnemy<TAttr>, number> = new Map();
+    /** 计算后怪物对象 -> 怪物视图 */
     private readonly computedToView: Map<
         IReadonlyEnemy<TAttr>,
         EnemyView<TAttr>
     > = new Map();
 
+    /** 当前已注册的光环转换器 */
     private readonly auraConverter: Set<IAuraConverter<TAttr, THero>> =
         new Set();
+    /** 光环转换器是否启用 */
     private readonly converterStatus: Map<
         IAuraConverter<TAttr, THero>,
         boolean
     > = new Map();
+    /** 所有已被转换的光环 */
     private readonly convertedAura: Map<ISpecial<any>, IAuraView<TAttr>> =
         new Map();
 
+    /** 普通查询效果注册，特殊属性 -> 此特殊属性的查询效果列表，按照优先级从高到低排序 */
     private readonly commonQueryMap: Map<
         number,
         IEnemyCommonQueryEffect<TAttr, THero>[]
     > = new Map();
 
+    /** 特殊查询效果注册，特殊属性 -> 此特殊属性的特殊查询效果列表，按照优先级从高到低排序 */
     private readonly specialQueryEffects: Map<
         number,
         IEnemySpecialQueryEffect<TAttr, THero>[]
     > = new Map();
 
+    /** 最终效果列表，按照优先级从高到低排列 */
     private readonly finalEffects: IEnemyFinalEffect<TAttr, THero>[] = [];
+    /** 添加的无来源全局光环列表 */
     private readonly globalAuraList: Set<IAuraView<TAttr>> = new Set();
+    /** 排序后的光环视图，视图优先级 -> 光环视图列表 */
     private readonly sortedAura: Map<number, Set<IAuraView<TAttr>>> = new Map();
 
+    /** 当怪物更新后，需要对上下文进行全量刷新的怪物列表 */
     private readonly needTotallyRefresh: Set<IEnemyView<TAttr>> = new Set();
+    /** 所有实际查询了上下文的常规查询效果，这些怪物需要在上下文或其他怪物刷新时一并刷新 */
     private readonly requestedCommonContext: Set<IEnemyView<TAttr>> = new Set();
+    /** 所有需要被标记为脏的怪物 */
     private readonly dirtyEnemy: Set<IEnemyView<TAttr>> = new Set();
 
     /** 当前绑定的勇士属性对象 */
