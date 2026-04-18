@@ -833,7 +833,8 @@ interface Control {
      * @param defaultValue 当变量不存在时的返回值，可选（事件流中默认填0）。
      * @returns flags[name] ?? defaultValue
      */
-    getFlag<T>(name: string, defaultValue?: T): T;
+    getFlag<T>(name: string): T | undefined;
+    getFlag<T>(name: string, defaultValue: T): T;
 
     /**
      * @deprecated 可使用，暂时没有替代接口\

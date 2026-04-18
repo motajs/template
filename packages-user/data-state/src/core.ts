@@ -11,7 +11,9 @@ import {
     MapDamage,
     HeroAttribute,
     HeroState,
-    IHeroState
+    IHeroState,
+    IFlagSystem,
+    FlagSystem
 } from '@user/data-base';
 import { IEnemyAttr } from './enemy/types';
 import {
@@ -28,15 +30,17 @@ import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
 import { IHeroAttr } from './hero';
 
 export class CoreState implements ICoreState {
-    readonly layer: ILayerState;
     readonly roleFace: IRoleFaceBinder;
     readonly idNumberMap: Map<string, number>;
     readonly numberIdMap: Map<number, string>;
 
+    readonly layer: ILayerState;
     readonly hero: IHeroState<IHeroAttr>;
 
     readonly enemyManager: IEnemyManager<IEnemyAttr>;
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
+
+    readonly flags: IFlagSystem;
 
     constructor() {
         this.layer = new LayerState();
@@ -80,6 +84,12 @@ export class CoreState implements ICoreState {
         enemyContext.resize(TILE_WIDTH, TILE_HEIGHT);
         enemyContext.bindHero(heroAttribute);
         this.enemyContext = enemyContext;
+
+        //#endregion
+
+        //#region 其他初始化
+
+        this.flags = new FlagSystem();
 
         //#endregion
     }

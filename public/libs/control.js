@@ -2524,33 +2524,27 @@ control.prototype.getNextLvUpNeed = function () {
 
 ////// 设置某个自定义变量或flag //////
 control.prototype.setFlag = function (name, value) {
-    if (value == null) return this.removeFlag(name);
-    if (!core.status.hero) return;
-    core.status.hero.flags[name] = value;
+    // Deprecated. See packages-user/data-fallback/src/flag.ts
 };
 
 ////// 增加某个flag数值 //////
 control.prototype.addFlag = function (name, value) {
-    if (!core.status.hero) return;
-    core.setFlag(name, core.getFlag(name, 0) + value);
+    // Deprecated. See packages-user/data-fallback/src/flag.ts
 };
 
 ////// 获得某个自定义变量或flag //////
 control.prototype.getFlag = function (name, defaultValue) {
-    if (!core.status.hero) return defaultValue;
-    var value = core.status.hero.flags[name];
-    return value != null ? value : defaultValue;
+    // Deprecated. See packages-user/data-fallback/src/flag.ts
 };
 
 ////// 是否存在某个自定义变量或flag，且值为true //////
 control.prototype.hasFlag = function (name) {
-    return !!core.getFlag(name);
+    // Deprecated. See packages-user/data-fallback/src/flag.ts
 };
 
 ////// 删除某个自定义变量或flag //////
 control.prototype.removeFlag = function (name) {
-    if (!core.status.hero) return;
-    delete core.status.hero.flags[name];
+    // Deprecated. See packages-user/data-fallback/src/flag.ts
 };
 
 ////// 获得某个点的独立开关 //////

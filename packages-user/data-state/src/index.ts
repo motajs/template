@@ -70,8 +70,11 @@ export function create() {
 export const state = new CoreState();
 
 export * from './common';
-export * from './core';
 export * from './enemy';
 export * from './hero';
-export * from './map';
 export * from './legacy';
+export * from './map';
+
+export * from './core';
+export * from './shared';
+export * from './types';

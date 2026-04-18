@@ -143,6 +143,8 @@ export interface GameEvent {
     replayStatus: [replaying: boolean];
     /** 当加载存档时触发，Emitted in project/functions.js */
     loadData: [];
+    /** 当重设 `core.status.hero` 时触发 */
+    resetHero: [hero: any];
 }
 
 export const hook = new EventEmitter<GameEvent>();
