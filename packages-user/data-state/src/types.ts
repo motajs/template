@@ -4,11 +4,13 @@ import {
     IEnemyContext,
     IEnemyManager,
     IHeroFollower,
-    IHeroState
+    IHeroState,
+    IMotaDataLoader
 } from '@user/data-base';
 import { IEnemyAttr } from './enemy/types';
 import { IHeroAttr } from './hero';
 import { IFlagSystem } from '../../data-base/src/flag/types';
+import { ILoadProgressTotal } from '@motajs/loader';
 
 export interface IGameDataState {
     /** 怪物管理器 */
@@ -27,6 +29,11 @@ export interface ICoreState {
     readonly idNumberMap: Map<string, number>;
     /** 图块数字到 id 的映射 */
     readonly numberIdMap: Map<number, string>;
+
+    /** 加载进度对象 */
+    readonly loadProgress: ILoadProgressTotal;
+    /** 数据端加载对象 */
+    readonly dataLoader: IMotaDataLoader;
 
     /** 地图状态 */
     readonly layer: ILayerState;

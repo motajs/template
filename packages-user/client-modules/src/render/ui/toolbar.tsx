@@ -21,11 +21,11 @@ import { generateBinary } from '@motajs/legacy-common';
 import { SetupComponentOptions } from '@motajs/system';
 import { saveSave, saveLoad } from './save';
 import { mainUIController } from './controller';
-import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '../shared';
+import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '../../shared';
 import { openReplay, openSettings } from './settings';
 import { openViewMap } from './viewmap';
 import { DefaultProps } from '@motajs/render-vue';
-import { materials } from '@user/client-base';
+import { client } from '../../core';
 
 interface ToolbarProps extends DefaultProps {
     loc?: ElementLocator;
@@ -74,6 +74,7 @@ export const PlayingToolbar = defineComponent<
     ToolbarEmits,
     keyof ToolbarEmits
 >((props, { emit }) => {
+    const materials = client.materials;
     const bookIcon = materials.getImageByAlias('icon-book');
     const flyIcon = materials.getImageByAlias('icon-fly');
     const toolIcon = materials.getImageByAlias('icon-toolbox');
@@ -171,6 +172,7 @@ const replayingProps = {
 export const ReplayingToolbar = defineComponent<ReplayingProps>(props => {
     const status = props.status;
 
+    const materials = client.materials;
     const bookIcon = materials.getImageByAlias('icon-book');
     const saveIcon = materials.getImageByAlias('icon-save');
     const font1 = Font.defaults({ size: 16 });

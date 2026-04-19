@@ -6,7 +6,7 @@ import {
 import { IMapDoorRenderer } from './types';
 import { IMapRenderer } from '../types';
 import { sleep } from 'mutate-animate';
-import { DOOR_ANIMATE_INTERVAL } from '../../shared';
+import { DOOR_ANIMATE_INTERVAL } from '../../../shared';
 
 export class MapDoorRenderer implements IMapDoorRenderer {
     /** 钩子控制器 */

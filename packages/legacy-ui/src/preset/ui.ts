@@ -102,7 +102,8 @@ function handleAudioSetting<T extends number | boolean>(
     n: T,
     _o: T
 ) {
-    const { bgmPlayer, soundPlayer } = Mota.require('@user/client-base');
+    const { client } = Mota.require('@user/client-modules');
+    const { bgmPlayer, soundPlayer } = client;
     if (key === 'bgmEnabled') {
         bgmPlayer.setEnabled(n as boolean);
         core.checkBgm();

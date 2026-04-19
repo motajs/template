@@ -1,9 +1,9 @@
 import { ITexture } from '@motajs/render';
 import {
     IBlockIdentifier,
-    IIndexedIdentifier,
-    IMaterialManager
-} from './types';
+    IMaterialManager,
+    IIndexedIdentifier
+} from '@user/client-base';
 import { isNil } from 'lodash-es';
 
 function extractClsBlocks<C extends Exclude<Cls, 'tileset'>>(

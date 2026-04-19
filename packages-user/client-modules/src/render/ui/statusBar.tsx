@@ -10,9 +10,9 @@ import {
     MAIN_WIDTH,
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
-} from '../shared';
+} from '../../shared';
 import { DefaultProps } from '@motajs/render-vue';
-import { materials } from '@user/client-base';
+import { client } from '../../core';
 
 export interface ILeftHeroStatus {
     /** 楼层 id */
@@ -115,6 +115,8 @@ export const LeftStatusBar = defineComponent<StatusBarProps<ILeftHeroStatus>>(
         const TITLE_HEIGHT = 36;
         /** 状态属性的开始纵坐标 */
         const STATUS_Y = TITLE_HEIGHT + STATUS_PAD;
+
+        const materials = client.materials;
 
         // 可以换成 materials.getImageByAlias('xxx.png') 来使用全塔属性注册的图片
         const hpIcon = materials.getImageByAlias('icon-hp');

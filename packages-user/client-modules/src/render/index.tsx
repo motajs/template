@@ -1,7 +1,7 @@
 import { Font } from '@motajs/render';
 import { defineComponent } from 'vue';
-import { DEFAULT_FONT, MAIN_HEIGHT, MAIN_WIDTH } from './shared';
-import { hook, loading } from '@user/data-base';
+import { DEFAULT_FONT, MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
+import { hook } from '@user/data-base';
 import { createElements } from './elements';
 import { mainRenderer } from './renderer';
 import { createUI } from './ui';
@@ -9,7 +9,6 @@ import { createAction } from './action';
 import { sceneController } from './scene';
 import { GameTitleUI } from './ui/title';
 import { createWeather } from './weather';
-import { createMainExtension } from './commonIns';
 import { createApp } from './renderer';
 import { LoadSceneUI } from './ui/load';
 
@@ -35,10 +34,6 @@ export function createRender() {
     createAction();
     createWeather();
 
-    loading.once('assetBuilt', () => {
-        createMainExtension();
-    });
-
     hook.on('restart', () => {
         sceneController.closeAll();
         sceneController.open(GameTitleUI, {});
@@ -47,7 +42,6 @@ export function createRender() {
     Font.setDefaults(DEFAULT_FONT);
 }
 
-export * from './commonIns';
 export * from './components';
 export * from './elements';
 export * from './fx';
@@ -56,5 +50,5 @@ export * from './utils';
 export * from './weather';
 export * from './renderer';
 export * from './scene';
-export * from './shared';
+export * from '../shared';
 export * from './use';

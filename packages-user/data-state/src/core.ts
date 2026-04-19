@@ -13,7 +13,9 @@ import {
     HeroState,
     IHeroState,
     IFlagSystem,
-    FlagSystem
+    FlagSystem,
+    IMotaDataLoader,
+    MotaDataLoader
 } from '@user/data-base';
 import { IEnemyAttr } from './enemy/types';
 import {
@@ -28,11 +30,15 @@ import {
 } from './enemy';
 import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
 import { IHeroAttr } from './hero';
+import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 
 export class CoreState implements ICoreState {
     readonly roleFace: IRoleFaceBinder;
     readonly idNumberMap: Map<string, number>;
     readonly numberIdMap: Map<number, string>;
+
+    readonly loadProgress: ILoadProgressTotal;
+    readonly dataLoader: IMotaDataLoader;
 
     readonly layer: ILayerState;
     readonly hero: IHeroState<IHeroAttr>;
@@ -47,6 +53,9 @@ export class CoreState implements ICoreState {
         this.roleFace = new RoleFaceBinder();
         this.idNumberMap = new Map();
         this.numberIdMap = new Map();
+
+        this.loadProgress = new LoadProgressTotal();
+        this.dataLoader = new MotaDataLoader(this.loadProgress);
 
         //#region 勇士初始化
 
@@ -74,8 +83,8 @@ export class CoreState implements ICoreState {
         const damageSystem = new DamageSystem(enemyContext);
         const mapDamage = new MapDamage(enemyContext);
         damageSystem.useCalculator(new MainDamageCalculator());
-        mapDamage.useConverter(new MainMapDamageConverter());
         mapDamage.useReducer(new MainMapDamageReducer());
+        mapDamage.useConverter(new MainMapDamageConverter());
         enemyContext.attachDamageSystem(damageSystem);
         enemyContext.attachMapDamage(mapDamage);
         enemyContext.registerAuraConverter(new CommonAuraConverter());

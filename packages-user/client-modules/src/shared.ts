@@ -16,7 +16,7 @@ export const VARIATOR_DEBUG_SPEED = 0.2;
  * 降低画面刷新频率及每帧执行函数的执行频率，方便调试
  */
 export const DEBUG_DIVIDER = false;
-/** 当使用分频器调试时，分配比例 */
+/** 当使用分频器调试时，分频比例 */
 export const DIVIDER_DEBUG_DIVIDER = 60;
 
 //#endregion

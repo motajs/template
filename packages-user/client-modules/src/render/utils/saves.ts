@@ -2,7 +2,7 @@ import { compressToBase64, decompressFromBase64 } from 'lz-string';
 import { getConfirm, waitbox } from '../components';
 import { IUIMountable } from '@motajs/system';
 import { SyncSaveFromServerResponse } from '@motajs/client-base';
-import { CENTER_LOC, POP_BOX_WIDTH } from '../shared';
+import { CENTER_LOC, POP_BOX_WIDTH } from '../../shared';
 
 export interface SaveData {
     name: string;

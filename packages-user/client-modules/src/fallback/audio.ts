@@ -1,13 +1,14 @@
 import { Patch, PatchClass } from '@motajs/legacy-common';
-import { audioContext, bgmPlayer, soundPlayer } from '@user/client-base';
 import { mainSetting } from '@motajs/legacy-ui';
 import { sleep } from '@motajs/common';
 import { isNil } from 'lodash-es';
+import { client } from '../core';
 
 // todo: 添加弃用警告 logger.warn(56)
 
 export function patchAudio() {
     const patch = new Patch(PatchClass.Control);
+    const { bgmPlayer, soundPlayer, audioContext } = client;
 
     const play = (bgm: BgmIds, when?: number) => {
         bgmPlayer.play(bgm, when);
@@ -28,8 +29,8 @@ export function patchAudio() {
     patch.add('checkBgm', function () {
         if (bgmPlayer.playing) return;
         if (mainSetting.getValue('audio.bgmEnabled')) {
-            if (bgmPlayer.playingBgm) {
-                bgmPlayer.play(bgmPlayer.playingBgm);
+            if (bgmPlayer.playingBGM) {
+                bgmPlayer.play(bgmPlayer.playingBGM);
             } else {
                 play(main.startBgm, 0);
             }

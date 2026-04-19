@@ -17,7 +17,7 @@ import {
     RIGHT_STATUS_POS,
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
-} from '../shared';
+} from '../../shared';
 import {
     ILeftHeroStatus,
     IRightHeroStatus,
@@ -29,11 +29,14 @@ import { getHeroStatusOn, state } from '@user/data-state';
 import { hook } from '@user/data-base';
 import { mainUIController } from './controller';
 import { isNil } from 'lodash-es';
-import { mainMapExtension, mainMapRenderer } from '../commonIns';
 import { using } from '../renderer';
+import { client } from '../../core';
 
 const MainScene = defineComponent(() => {
+    const { mainMapRenderer, mainMapExtension } = client;
+
     //#region 基本定义
+
     const mainTextboxProps: TextboxProps = {
         text: '',
         hidden: true,

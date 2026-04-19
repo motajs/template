@@ -2,7 +2,7 @@ import { MotaOffscreenCanvas2D, RenderItem } from '@motajs/render';
 import { ILayerState } from '@user/data-state';
 import { IMapRenderer } from './types';
 import { ElementNamespace, ComponentInternalInstance } from 'vue';
-import { CELL_HEIGHT, CELL_WIDTH, MAP_HEIGHT, MAP_WIDTH } from '../shared';
+import { CELL_HEIGHT, CELL_WIDTH, MAP_HEIGHT, MAP_WIDTH } from '../../shared';
 import { IMapExtensionManager } from './extension';
 
 export class MapRenderItem extends RenderItem {

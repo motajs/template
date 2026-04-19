@@ -17,15 +17,15 @@ import {
     LOAD_TASK_RADIUS,
     LOAD_UNLOADED_COLOR,
     MAIN_WIDTH
-} from '../shared';
+} from '../../shared';
 import { ElementLocator, Font, MotaOffscreenCanvas2D } from '@motajs/render';
 import { transitioned } from '../use';
 import { cosh, CurveMode, linear } from '@motajs/animate';
-import { loader } from '@user/client-base';
 import { clamp } from 'lodash-es';
 import { sleep } from '@motajs/common';
 import { loading } from '@user/data-base';
 import { GameTitleUI } from './title';
+import { client } from '../../core';
 
 export interface ILoadProps extends UIComponentProps, DefaultProps {}
 
@@ -34,6 +34,7 @@ const loadSceneProps = {
 } satisfies SetupComponentOptions<ILoadProps>;
 
 export const LoadScene = defineComponent<ILoadProps>(props => {
+    const loader = client.loader;
     const taskFont = new Font('Verdana', 24);
     const byteFont = new Font('Verdana', 12);
 

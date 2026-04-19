@@ -45,7 +45,7 @@ import {
     CELL_WIDTH,
     DYNAMIC_RESERVE,
     MOVING_TOLERANCE
-} from '../shared';
+} from '../../shared';
 import { MapViewport } from './viewport';
 import { INSTANCED_COUNT } from './constant';
 import { StaticBlockStatus } from './status';

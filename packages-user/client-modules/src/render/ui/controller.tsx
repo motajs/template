@@ -6,7 +6,7 @@ import {
     UIController
 } from '@motajs/system';
 import { defineComponent } from 'vue';
-import { MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
+import { MAIN_HEIGHT, MAIN_WIDTH } from '../../shared';
 
 export const mainUIController = new UIController('main-ui');
 

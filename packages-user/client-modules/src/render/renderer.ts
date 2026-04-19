@@ -6,7 +6,7 @@ import {
     VARIATOR_DEBUG_SPEED,
     DEBUG_DIVIDER,
     DIVIDER_DEBUG_DIVIDER
-} from './shared';
+} from '../shared';
 import { createRendererFor, RendererUsing } from '@motajs/render-vue';
 import {
     ExcitationDivider,

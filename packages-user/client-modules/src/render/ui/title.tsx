@@ -20,7 +20,7 @@ import {
     TITLE_STROKE_WIDTH,
     TITLE_X,
     TITLE_Y
-} from '../shared';
+} from '../../shared';
 import { ElementLocator, Font } from '@motajs/render';
 import {
     ITransitionedController,
@@ -35,7 +35,7 @@ import { MainSceneUI } from './main';
 import { adjustCover } from '../utils';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { sleep } from '@motajs/common';
-import { materials } from '@user/client-base';
+import { client } from '../../core';
 
 const enum TitleButton {
     StartGame,
@@ -64,6 +64,7 @@ const gameTitleProps = {
 } satisfies SetupComponentOptions<GameTitleProps>;
 
 export const GameTitle = defineComponent<GameTitleProps>(props => {
+    const materials = client.materials;
     const bg = materials.getImageByAlias(TITLE_BACKGROUND_IMAGE);
 
     //#region 计算背景图

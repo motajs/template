@@ -519,9 +519,8 @@ export function initFallback() {
 
                 const fn = generateJumpFn(dx, dy);
                 // 先使用 mainMapRenderer 妥协
-                const { mainMapRenderer: renderer } = Mota.require(
-                    '@user/client-modules'
-                );
+                const { client } = Mota.require('@user/client-modules');
+                const renderer = client.mainMapRenderer;
                 if (renderer.layerState !== state.layer) {
                     callback?.();
                     return;

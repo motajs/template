@@ -27,7 +27,7 @@ import {
     SAVE_ITEM_SIZE,
     SAVE_ITEM_TOP,
     SAVE_PAGES
-} from '../shared';
+} from '../../shared';
 import { getSave, SaveData, adjustGrid, IGridLayoutData } from '../utils';
 
 export const enum SaveMode {

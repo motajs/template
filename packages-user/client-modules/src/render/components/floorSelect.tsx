@@ -8,7 +8,7 @@ import {
     HALF_STATUS_WIDTH,
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
-} from '../shared';
+} from '../../shared';
 
 const SCROLL_HEIGHT = STATUS_BAR_HEIGHT - 280;
 const HALF_HEIGHT = SCROLL_HEIGHT / 2;

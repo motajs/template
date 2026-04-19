@@ -23,7 +23,7 @@ import { openStatistics } from './statistics';
 import { saveWithExist } from './save';
 import { compressToBase64 } from 'lz-string';
 import { ViewMapUI } from './viewmap';
-import { CENTER_LOC, FULL_LOC, MAIN_HEIGHT, POP_BOX_WIDTH } from '../shared';
+import { CENTER_LOC, FULL_LOC, MAIN_HEIGHT, POP_BOX_WIDTH } from '../../shared';
 import { useKey } from '../use';
 
 export interface MainSettingsProps

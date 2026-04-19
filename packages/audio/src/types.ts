@@ -588,6 +588,8 @@ export interface ISoundPlayer<T extends string> {
     readonly ac: IMotaAudioContext;
     /** 当前是否启用此音效播放器 */
     readonly enabled: boolean;
+    /** 当前正在播放的音频 */
+    readonly playing: Set<number>;
 
     /**
      * 设置是否启用音效
