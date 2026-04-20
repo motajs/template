@@ -16,7 +16,8 @@
         "docs:dev": "tsx docs/.vitepress/init.ts && vitepress dev docs",
         "docs:build": "vitepress build docs",
         "docs:preview": "vitepress preview docs",
-        "pack:template": "tsx script/pack-template.ts"
+        "pack:template": "tsx script/pack-template.ts",
+        "check:circular": "madge --circular src/main.ts"
     },
     "dependencies": {
         "@ant-design/icons-vue": "^6.1.0",
@@ -26,6 +27,7 @@
         "axios": "^1.13.6",
         "chart.js": "^4.5.1",
         "codec-parser": "^2.5.0",
+        "dexie": "^4.4.2",
         "eventemitter3": "^5.0.4",
         "gl-matrix": "^3.4.4",
         "jszip": "^3.10.1",
@@ -82,8 +84,8 @@
         "rollup": "^4.59.0",
         "terser": "^5.46.0",
         "tsx": "^4.21.0",
-        "typescript": "6.0.1-rc",
-        "typescript-eslint": "^8.57.0",
+        "typescript": "6.0.3",
+        "typescript-eslint": "^8.58.2",
         "vite": "^7.3.1",
         "vite-plugin-dts": "^4.5.4",
         "vitepress": "^1.6.4",
