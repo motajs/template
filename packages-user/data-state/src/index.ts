@@ -1,6 +1,5 @@
-import { loading } from '@user/data-base';
+import { FaceDirection, loading } from '@user/data-base';
 import { isNil } from 'lodash-es';
-import { FaceDirection } from './common';
 import { ICoreState } from './types';
 import { TILE_HEIGHT, TILE_WIDTH } from './shared';
 import { state } from './ins';
@@ -62,11 +61,9 @@ export function create() {
     });
 }
 
-export * from './common';
 export * from './enemy';
 export * from './hero';
 export * from './legacy';
-export * from './map';
 
 export * from './core';
 export * from './ins';

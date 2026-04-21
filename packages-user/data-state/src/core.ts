@@ -1,6 +1,4 @@
 import { ICoreState, IStateSaveData } from './types';
-import { ILayerState, LayerState } from './map';
-import { FaceDirection, IRoleFaceBinder, RoleFaceBinder } from './common';
 import {
     DamageSystem,
     EnemyContext,
@@ -16,7 +14,12 @@ import {
     FlagSystem,
     IMotaDataLoader,
     MotaDataLoader,
-    loading
+    loading,
+    IRoleFaceBinder,
+    ILayerState,
+    LayerState,
+    RoleFaceBinder,
+    FaceDirection
 } from '@user/data-base';
 import { IEnemyAttr } from './enemy/types';
 import {
