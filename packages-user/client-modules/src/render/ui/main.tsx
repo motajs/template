@@ -96,7 +96,8 @@ const MainScene = defineComponent(() => {
     //#region 状态更新
     const updateStatus = () => {
         if (!core.status || !core.status.hero || !core.status.floorId) return;
-        hideStatus.value = core.getFlag('hideStatusBar', false);
+        const flags = client.data.flags;
+        hideStatus.value = flags.getFieldValueDefaults('hideStatusBar', false);
 
         const hero = core.status.hero;
         leftStatus.atk = getHeroStatusOn('atk');
@@ -116,9 +117,9 @@ const MainScene = defineComponent(() => {
         leftStatus.pickaxe = core.itemCount('pickaxe');
         leftStatus.bomb = core.itemCount('bomb');
         leftStatus.centerFly = core.itemCount('centerFly');
-        leftStatus.poison = core.getFlag('poison', true);
-        leftStatus.weak = core.getFlag('weak', true);
-        leftStatus.curse = core.getFlag('curse', true);
+        leftStatus.poison = flags.getFieldValueDefaults('poison', true);
+        leftStatus.weak = flags.getFieldValueDefaults('weak', true);
+        leftStatus.curse = flags.getFieldValueDefaults('curse', true);
         leftStatus.floor = core.status.floorId;
         leftStatus.lv = core.getLvName(hero.lv);
 
@@ -129,7 +130,7 @@ const MainScene = defineComponent(() => {
         replayStatus.played = totalList.length - toReplay.length;
         replayStatus.total = totalList.length;
 
-        rightStatus.exampleHard = flags.hard;
+        rightStatus.exampleHard = flags.getFieldValueDefaults('hard', 0);
     };
 
     const updateDataFallback = () => {

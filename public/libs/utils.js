@@ -98,7 +98,7 @@ utils.prototype.replaceValue = function (value) {
         if (value.includes('flag:') || value.includes('flag：'))
             value = value.replace(
                 /flag[:：]([a-zA-Z0-9_\u4E00-\u9FCC\u3040-\u30FF\u2160-\u216B\u0391-\u03C9]+)/g,
-                "core.getFlag('$1', 0)"
+                "const { state } = Mota.require('@user/data-state'); const flags = state.flags; flags.getFieldValueDefaults('$1', 0)"
             );
         if (value.includes('global:') || value.includes('global：'))
             value = value.replace(
@@ -130,7 +130,7 @@ utils.prototype.replaceValue = function (value) {
         if (value.includes('temp:'))
             value = value.replace(
                 /temp:([a-zA-Z0-9_]+)/g,
-                "core.getFlag('@temp@$1', 0)"
+                "const { state } = Mota.require('@user/data-state'); const flags = state.flags; flags.getFieldValueDefaults('@temp@$1', 0)"
             );
         // if (value.indexOf('switch:') >= 0)
         //     value = value.replace(
@@ -410,7 +410,9 @@ utils.prototype.getGlobal = function (key, defaultValue) {
             // 录像兼容性：尝试从flag和localStorage获得
             // 注意这里不再二次记录 input2: 到录像
             core.status.replay.toReplay.unshift(action);
-            value = core.getFlag(
+            const { state } = Mota.require('@user/data-state');
+            const flags = state.flags;
+            value = flags.getFieldValueDefaults(
                 '__global__' + key,
                 core.getLocalStorage(key, defaultValue)
             );
@@ -994,9 +996,11 @@ utils.prototype.decodeBase64 = function (str) {
 };
 
 utils.prototype.rand = function (num) {
-    var rand = core.getFlag('__rand__');
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    var rand = flags.getFieldValue('__rand__');
     rand = this.__next_rand(rand);
-    core.setFlag('__rand__', rand);
+    flags.setFieldValue('__rand__', rand);
     var ans = rand / 2147483647;
     if (num && num > 0) return Math.floor(ans * num);
     return ans;

@@ -3,7 +3,6 @@
     "dependencies": {
         "@motajs/common": "workspace:*",
         "@motajs/types": "workspace:*",
-        "@motajs/loader": "workspace:*",
-        "@user/types": "workspace:*"
+        "@motajs/loader": "workspace:*"
     }
 }

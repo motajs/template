@@ -25,6 +25,7 @@ import { compressToBase64 } from 'lz-string';
 import { ViewMapUI } from './viewmap';
 import { CENTER_LOC, FULL_LOC, MAIN_HEIGHT, POP_BOX_WIDTH } from '../../shared';
 import { useKey } from '../use';
+import { client } from '../../core';
 
 export interface MainSettingsProps
     extends Partial<ChoicesProps>, UIComponentProps {
@@ -162,7 +163,8 @@ export const ReplaySettings = defineComponent<MainSettingsProps>(props => {
                 props.controller.closeAll();
                 core.ui.closePanel();
                 const route = core.status.route.slice();
-                const seed = core.getFlag<number>('__seed__');
+                const flags = client.data.flags;
+                const seed = flags.getFieldValue<number>('__seed__');
                 core.startGame(core.status.hard, seed, route);
                 break;
             }
@@ -216,13 +218,15 @@ export const ReplaySettings = defineComponent<MainSettingsProps>(props => {
                 break;
             }
             case ReplayChoice.Download: {
+                const flags = client.data.flags;
+                const seed = flags.getFieldValue<number>('__seed__');
                 core.download(
                     core.firstData.name + '_' + core.formatDate2() + '.h5route',
                     compressToBase64(
                         JSON.stringify({
                             name: core.firstData.name,
                             hard: core.status.hard,
-                            seed: core.getFlag('__seed__'),
+                            seed,
                             route: core.encodeRoute(core.status.route)
                         })
                     )

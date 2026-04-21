@@ -2,12 +2,11 @@
 
 'use strict';
 
-function enemys() {
-    this._init();
-}
+function enemys() {}
 
 ////// 初始化 //////
 enemys.prototype._init = function () {
+    // Deprecated. Remaining for editor compatibility.
     this.enemys = enemys_fcae963b_31c9_42b4_b48c_bb48d09f3f80;
     for (var enemyId in this.enemys) {
         this.enemys[enemyId].id = enemyId;
@@ -15,62 +14,28 @@ enemys.prototype._init = function () {
 };
 
 enemys.prototype.getEnemys = function () {
+    // Deprecated. Remaining for editor compatibility.
     var enemys = core.clone(this.enemys);
-    var enemyInfo = core.getFlag('enemyInfo');
-    if (enemyInfo) {
-        for (var id in enemyInfo) {
-            for (var name in enemyInfo[id]) {
-                enemys[id][name] = core.clone(enemyInfo[id][name]);
-            }
-        }
-    }
-    // 将所有怪物的各项属性映射到朝下的
-    for (var id in enemys) {
-        if (enemys[id].faceIds) {
-            var downId = enemys[id].faceIds.down;
-            if (downId != null && downId != id && enemys[downId]) {
-                enemys[id] = { id: id };
-                for (var property in enemys[downId]) {
-                    if (
-                        property != 'id' &&
-                        enemys[downId].hasOwnProperty(property)
-                    ) {
-                        (function (id, downId, property) {
-                            Object.defineProperty(enemys[id], property, {
-                                get: function () {
-                                    return enemys[downId][property];
-                                },
-                                set: function (v) {
-                                    enemys[downId][property] = v;
-                                },
-                                enumerable: true
-                            });
-                        })(id, downId, property);
-                    }
-                }
-            }
-        }
-    }
     return enemys;
 };
 
 ////// 判断是否含有某特殊属性 //////
 enemys.prototype.hasSpecial = function (special, test) {
-    // Deprecated. Use `Array.includes` instead.
+    // Deprecated. See packages-user/data-base/src/enemy/enemy.ts Enemy.hasSpecial
 };
 
 enemys.prototype.getSpecials = function () {
-    // Deprecated. See src/plugin/game/enemy/special.ts
+    // Deprecated. See packages-user/data-state/src/enemy/special.ts
 };
 
 ////// 获得所有特殊属性的名称 //////
 enemys.prototype.getSpecialText = function (enemy) {
-    // Deprecated.
+    // Deprecated. See packages-user/data-state/src/enemy/special.ts
 };
 
 ////// 获得所有特殊属性的颜色 //////
 enemys.prototype.getSpecialColor = function (enemy) {
-    // Deprecated.
+    // Deprecated. See packages-user/data-state/src/enemy/special.ts
 };
 
 ////// 获得所有特殊属性的额外标记 //////
@@ -80,7 +45,7 @@ enemys.prototype.getSpecialFlag = function (enemy) {
 
 ////// 获得每个特殊属性的说明 //////
 enemys.prototype.getSpecialHint = function (enemy, special) {
-    // Deprecated.
+    // Deprecated. See packages-user/data-state/src/enemy/special.ts
 };
 
 enemys.prototype._calSpecialContent = function (enemy, content) {
@@ -103,20 +68,20 @@ enemys.prototype.getDamageString = function (enemy, x, y, floorId, hero) {
 
 ////// 接下来N个临界值和临界减伤计算 //////
 enemys.prototype.nextCriticals = function (enemy, number, x, y, floorId, hero) {
-    // Deprecated. See src/game/enemy/damage.ts DamageEnemy.calCritical.
+    // Deprecated. See packages-user/data-base/src/enemy/damage.ts DamageSystem.calculateCritical
 };
 
 /// 未破防临界采用二分计算
 enemys.prototype._nextCriticals_overAtk = function (enemy) {
-    // Deprecated. See src/game/enemy/damage.ts DamageEnemy.calCritical.
+    // Deprecated. See packages-user/data-base/src/enemy/damage.ts DamageSystem.calculateCritical
 };
 
 enemys.prototype._nextCriticals_special = function (enemy) {
-    // Deprecated. See src/game/enemy/damage.ts DamageEnemy.calCritical.
+    // Deprecated. See packages-user/data-base/src/enemy/damage.ts DamageSystem.calculateCritical
 };
 
 enemys.prototype._nextCriticals_useBinarySearch = function (enemy) {
-    // Deprecated. See src/game/enemy/damage.ts DamageEnemy.calCritical.
+    // Deprecated. See packages-user/data-base/src/enemy/damage.ts DamageSystem.calculateCritical
 };
 
 ////// N防减伤计算 //////
@@ -125,42 +90,42 @@ enemys.prototype.getDefDamage = function (enemy, k, x, y, floorId, hero) {
 };
 
 enemys.prototype.getEnemyInfo = function (enemy, hero, x, y, floorId) {
-    // Deprecated. See src/game/enemy/damage.ts
+    // Deprecated. See packages-user/data-base/src/enemy/context.ts
 };
 
 ////// 获得战斗伤害信息（实际伤害计算函数） //////
 enemys.prototype.getDamageInfo = function (enemy, hero, x, y, floorId) {
-    // Deprecated. See src/game/enemy/damage.ts
+    // Deprecated. See packages-user/data-base/src/enemy/damage.ts DamageSystem.getDamageInfo
 };
 
 ////// 获得在某个勇士属性下怪物伤害 //////
 enemys.prototype.getDamage = function (enemy, x, y, floorId, hero) {
-    // Deprecated. See src/game/enemy/damage.ts
+    // Deprecated. See packages-user/data-base/src/enemy/damage.ts DamageSystem.getDamageInfo
 };
 
 enemys.prototype._getDamage = function (enemy, hero, x, y, floorId) {
-    // Deprecated. See src/game/enemy/damage.ts
+    // Deprecated. See packages-user/data-base/src/enemy/damage.ts DamageSystem.getDamageInfo
 };
 
 ////// 获得当前楼层的怪物列表 //////
 enemys.prototype.getCurrentEnemys = function (floorId) {
-    // Deprecated. See src/plugin/game/enemy/battle.ts
+    // Deprecated. See packages-user/data-base/src/enemy/context.ts EnemyContext.iterateEnemy
 };
 
 enemys.prototype._getCurrentEnemys_getEnemy = function (enemyId) {
-    // Deprecated. See src/plugin/game/enemy/battle.ts
+    // Deprecated.
 };
 
 enemys.prototype._getCurrentEnemys_addEnemy = function (enemyId) {
-    // Deprecated. See src/plugin/game/enemy/battle.ts
+    // Deprecated.
 };
 
 enemys.prototype._getCurrentEnemys_addEnemy_defDamage = function (enemy) {
-    // Deprecated. See src/plugin/game/enemy/battle.ts
+    // Deprecated.
 };
 
 enemys.prototype._getCurrentEnemys_sort = function (enemys) {
-    // Deprecated. See src/plugin/game/enemy/battle.ts
+    // Deprecated.
 };
 
 enemys.prototype.hasEnemyLeft = function (enemyId, floorId) {

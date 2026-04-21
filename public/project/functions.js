@@ -36,13 +36,15 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a = {
             core.extractBlocks(floorId);
             core.maps._resetFloorImages();
             // 初始化怪物和道具
-            core.material.enemys = core.enemys.getEnemys();
+            // core.material.enemys = core.enemys.getEnemys();
             core.material.items = core.items.getItems();
             // 初始化全局数值和全局开关
             core.values = core.clone(core.data.values);
             for (var key in values || {}) core.values[key] = values[key];
             core.flags = core.clone(core.data.flags);
-            var globalFlags = core.getFlag('globalFlags', {});
+            const { state } = Mota.require('@user/data-state');
+            const flags = state.flags;
+            var globalFlags = flags.getFieldValue('globalFlags', {});
             for (var key in globalFlags) core.flags[key] = globalFlags[key];
             core._init_sys_flags();
             // 初始化界面，状态栏等
@@ -116,13 +118,15 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a = {
 
             // ---------- 此时还没有进行切换，当前floorId还是原来的 ---------- //
             var currentId = core.status.floorId || null; // 获得当前的floorId，可能为null
-            var fromLoad = core.hasFlag('__fromLoad__'); // 是否是读档造成的切换
-            var isFlying = core.hasFlag('__isFlying__'); // 是否是楼传造成的切换
+            const { state } = Mota.require('@user/data-state');
+            const flags = state.flags;
+            var fromLoad = flags.occupied('__fromLoad__'); // 是否是读档造成的切换
+            var isFlying = flags.occupied('__isFlying__'); // 是否是楼传造成的切换
             if (!fromLoad) {
                 if (!core.hasFlag('__leaveLoc__'))
-                    core.setFlag('__leaveLoc__', {});
+                    flags.setFieldValue('__leaveLoc__', {});
                 if (currentId != null)
-                    core.getFlag('__leaveLoc__')[currentId] = core.clone(
+                    flags.getFieldValue('__leaveLoc__')[currentId] = core.clone(
                         core.status.hero.loc
                     );
             }
@@ -188,11 +192,11 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a = {
                 if (!core.hasFlag('__bgm__')) core.playBgm(bgm);
             }
             // 更改天气
-            var weather = core.getFlag('__weather__', null);
-            if (!weather && core.status.maps[floorId].weather)
-                weather = core.status.maps[floorId].weather;
-            if (weather) core.setWeather(weather[0], weather[1]);
-            else core.setWeather();
+            // var weather = core.getFlag('__weather__', null);
+            // if (!weather && core.status.maps[floorId].weather)
+            //     weather = core.status.maps[floorId].weather;
+            // if (weather) core.setWeather(weather[0], weather[1]);
+            // else core.setWeather();
 
             core.updateDamage();
 
@@ -222,9 +226,11 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a = {
             // floorId是切换到的楼层
 
             // 如果是读档，则进行检查（是否需要恢复事件）
-            if (core.hasFlag('__fromLoad__')) {
-                core.events.recoverEvents(core.getFlag('__events__'));
-                core.removeFlag('__events__');
+            const { state } = Mota.require('@user/data-state');
+            const flags = state.flags;
+            if (flags.occupied('__fromLoad__')) {
+                core.events.recoverEvents(flags.getFieldValue('__events__'));
+                flags.deleteField('__events__');
             } else {
                 // 每次抵达楼层执行的事件
                 core.insertAction(core.floors[floorId].eachArrive);
@@ -261,7 +267,11 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a = {
             var stair = null,
                 loc = null;
             if (core.flags.flyRecordPosition) {
-                loc = core.getFlag('__leaveLoc__', {})[toId] || null;
+                const { state } = Mota.require('@user/data-state');
+                const flags = state.flags;
+                loc =
+                    flags.getFieldValueDefaults('__leaveLoc__', {})[toId] ||
+                    null;
             }
 
             // 记录录像
@@ -312,11 +322,13 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a = {
             core.status.route = core.decodeRoute(data.route);
             core.control._bindRoutePush();
             // 文字属性，全局属性
-            core.status.textAttribute = core.getFlag(
+            const { state } = Mota.require('@user/data-state');
+            const flags = state.flags;
+            core.status.textAttribute = flags.getFieldValueDefaults(
                 'textAttribute',
                 core.status.textAttribute
             );
-            var toAttribute = core.getFlag(
+            var toAttribute = flags.getFieldValueDefaults(
                 'globalAttribute',
                 core.status.globalAttribute
             );
@@ -325,7 +337,10 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a = {
                 core.resize();
             }
             // 重置音量
-            core.events.setVolume(core.getFlag('__volume__', 1), 0);
+            core.events.setVolume(
+                flags.getFieldValueDefaults('__volume__', 1),
+                0
+            );
             // 加载勇士图标
             var icon = core.status.hero.image;
             icon = core.getMappedName(icon);
@@ -336,16 +351,16 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a = {
                 core.material.icons.hero.height =
                     core.material.images.images[icon].height / 4;
             }
-            core.setFlag('__fromLoad__', true);
+            flags.setFieldValue('__fromLoad__', true);
 
             // 切换到对应的楼层
             core.changeFloor(data.floorId, null, data.hero.loc, 0, function () {
-                if (core.hasFlag('__bgm__')) {
+                if (flags.occupied('__bgm__')) {
                     // 持续播放
-                    core.playBgm(core.getFlag('__bgm__'));
+                    core.playBgm(flags.getFieldValue('__bgm__'));
                 }
 
-                core.removeFlag('__fromLoad__');
+                flags.deleteField('__fromLoad__');
                 if (callback) callback();
             });
 

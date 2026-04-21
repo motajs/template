@@ -1433,7 +1433,8 @@ ui.prototype._uievent_drawBackground = function (data) {
 };
 
 ui.prototype._drawWindowSkin_getOpacity = function () {
-    return core.getFlag('__winskin_opacity__', 0.85);
+    // Deprecated. Use 0.85 for editor compatibility
+    return 0.85;
 };
 
 ui.prototype._drawBackground_drawWindowSkin = function (
@@ -1555,7 +1556,9 @@ ui.prototype._calTextBoxWidth = function (
 ////// 处理 \i[xxx] 的问题
 ui.prototype._getDrawableIconInfo = function (id) {
     if (id && id.indexOf('flag:') === 0) {
-        id = core.getFlag(id.substring(5), id);
+        const { state } = Mota.require('@user/data-state');
+        const flags = state.flags;
+        id = flags.getFieldValueDefaults(id.substring(5), id);
     }
     id = core.getIdOfThis(id);
     var image = null,

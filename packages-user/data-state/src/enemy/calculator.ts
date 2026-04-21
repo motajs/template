@@ -7,6 +7,7 @@ import {
 import { IEnemyAttr } from './types';
 import { IVampireValue } from './special';
 import { IHeroAttr } from '../hero';
+import { state } from '../ins';
 
 export class MainDamageCalculator implements IDamageCalculator<
     IEnemyAttr,
@@ -143,7 +144,7 @@ export class MainDamageCalculator implements IDamageCalculator<
 
         // 仇恨，无法被魔防减伤
         if (enemy.hasSpecial(17)) {
-            damage += core.getFlag('hatred', 0);
+            damage += state.flags.getFieldValueDefaults('hatred', 0);
         }
 
         return {

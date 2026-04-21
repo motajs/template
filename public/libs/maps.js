@@ -27,14 +27,7 @@ maps.prototype._initFloors = function (floorId) {
 };
 
 maps.prototype._resetFloorImages = function () {
-    for (var floorId in core.status.maps) {
-        (core.status.maps[floorId].images || []).forEach(function (one) {
-            var flag = '__floorImg__' + floorId + '_' + one.x + '_' + one.y;
-            if (core.getFlag(flag) == null) {
-                if (one.disabled) core.setFlag(flag, true);
-            }
-        });
-    }
+    // Deprecated. See packages-user/client-modules/src/render/map/renderer.ts setStaticBackground & setDynamicBackground
 };
 
 maps.prototype._setHDCanvasSize = function (ctx, width, height) {
@@ -722,51 +715,40 @@ maps.prototype._getBgFgMapArray = function (name, floorId, noCache) {
     var width = core.floors[floorId].width;
     var height = core.floors[floorId].height;
 
-    // @ts-ignore
     if (!noCache && core.status[name + 'maps'][floorId])
-        // @ts-ignore
         return core.status[name + 'maps'][floorId];
 
     var arr =
         main.mode == 'editor' &&
-        // @ts-ignore
         !(window.editor && editor.uievent && editor.uievent.isOpen)
-            ? // @ts-ignore
-              core.cloneArray(editor[name + 'map'])
+            ? core.cloneArray(editor[name + 'map'])
             : null;
     if (arr == null)
-        // @ts-ignore
         arr = core.cloneArray(core.floors[floorId][name + 'map'] || []);
 
     for (var y = 0; y < height; ++y) {
         if (arr[y] == null) arr[y] = Array(width).fill(0);
     }
-    // @ts-ignore
-    (core.getFlag('__' + name + 'v__', {})[floorId] || []).forEach(
-        // @ts-ignore
-        function (one) {
-            arr[one[1]][one[0]] = one[2] || 0;
-        }
-    );
-    // @ts-ignore
-    (core.getFlag('__' + name + 'd__', {})[floorId] || []).forEach(
-        // @ts-ignore
-        function (one) {
-            arr[one[1]][one[0]] = 0;
-        }
-    );
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    (
+        flags.getFieldValueDefaults('__' + name + 'v__', {})[floorId] || []
+    ).forEach(function (one) {
+        arr[one[1]][one[0]] = one[2] || 0;
+    });
+    (
+        flags.getFieldValueDefaults('__' + name + 'd__', {})[floorId] || []
+    ).forEach(function (one) {
+        arr[one[1]][one[0]] = 0;
+    });
     if (main.mode == 'editor') {
         for (var x = 0; x < width; x++) {
             for (var y = 0; y < height; y++) {
-                // @ts-ignore
                 arr[y][x] = arr[y][x].idnum || arr[y][x] || 0;
             }
         }
     }
-    // @ts-ignore
-    if (core.status[name + 'maps'])
-        // @ts-ignore
-        core.status[name + 'maps'][floorId] = arr;
+    if (core.status[name + 'maps']) core.status[name + 'maps'][floorId] = arr;
     return arr;
 };
 
@@ -3286,7 +3268,9 @@ maps.prototype._triggerBgFgMap = function (type, name, loc, floorId, callback) {
     if (!floorId) return;
 
     if (loc.length == 0) return;
-    var disabled = core.getFlag('__' + name + 'd__', {});
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    var disabled = flags.getFieldValueDefaults('__' + name + 'd__', {});
     disabled[floorId] = disabled[floorId] || [];
     loc.forEach(function (t) {
         if (type == 'hide') {
@@ -3642,8 +3626,9 @@ maps.prototype.setBgFgBlock = function (name, number, x, y, floorId) {
         if (!isNaN(num)) number = num;
         else number = core.getNumberById(number);
     }
-
-    var values = core.getFlag('__' + name + 'v__', {});
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    var values = flags.getFieldValueDefaults('__' + name + 'v__', {});
     values[floorId] = (values[floorId] || []).filter(function (one) {
         return one[0] != x || one[1] != y;
     });

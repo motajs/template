@@ -105,6 +105,8 @@ events.prototype._startGame_afterStart = function (callback) {
 };
 
 events.prototype._startGame_upload = function () {
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
     // Upload
     var formData = new FormData();
     formData.append('type', 'people');
@@ -112,7 +114,7 @@ events.prototype._startGame_upload = function () {
     formData.append('version', core.firstData.version);
     formData.append('platform', core.platform.string);
     formData.append('hard', core.encodeBase64(core.status.hard));
-    formData.append('hardCode', core.getFlag('hard', 0));
+    formData.append('hardCode', flags.getFieldValueDefaults('hard', 0));
     formData.append('base64', 1);
 
     core.utils.http('POST', '/games/upload.php', formData);
@@ -191,6 +193,8 @@ events.prototype._gameOver_confirmUpload = function (ending, norank) {
 };
 
 events.prototype._gameOver_doUpload = function (username, ending, norank) {
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
     var hp = core.status.hero.hp;
     if (username == null) hp = 1;
     core.ui.closePanel();
@@ -212,7 +216,7 @@ events.prototype._gameOver_doUpload = function (username, ending, norank) {
     formData.append('experience', core.status.hero.exp);
     formData.append('steps', core.status.hero.steps);
     formData.append('norank', norank ? 1 : 0);
-    formData.append('seed', core.getFlag('__seed__'));
+    formData.append('seed', flags.getFieldValue('__seed__'));
     formData.append(
         'totalTime',
         Math.floor(core.status.hero.statistics.totalTime / 1000)
@@ -228,6 +232,8 @@ events.prototype._gameOver_doUpload = function (username, ending, norank) {
 };
 
 events.prototype._gameOver_confirmDownload = function (ending) {
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
     core.ui.closePanel();
     core.ui.drawConfirmBox(
         '你想下载录像吗？',
@@ -236,7 +242,7 @@ events.prototype._gameOver_confirmDownload = function (ending) {
                 name: core.firstData.name,
                 version: core.firstData.version,
                 hard: core.status.hard,
-                seed: core.getFlag('__seed__'),
+                seed: flags.getFieldValue('__seed__'),
                 route: core.encodeRoute(core.status.route)
             };
             core.download(
@@ -666,6 +672,8 @@ events.prototype._sys_getItem = function (data, callback) {
 
 ////// 获得某个物品 //////
 events.prototype.getItem = function (id, num, x, y, isGentleClick, callback) {
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
     if (num == null) num = 1;
     var itemCls = core.material.items[id].cls;
     core.removeBlock(x, y);
@@ -677,8 +685,7 @@ events.prototype.getItem = function (id, num, x, y, isGentleClick, callback) {
     core.drawTip(text, id);
 
     // --- 首次获得道具的提示
-    if (!core.hasFlag('__itemHint__')) core.setFlag('__itemHint__', []);
-    var itemHint = core.getFlag('__itemHint__');
+    var itemHint = flags.getFieldValueDefaults('__itemHint__', []);
     if (
         core.flags.itemFirstText &&
         itemHint.indexOf(id) < 0 &&
@@ -944,14 +951,16 @@ events.prototype.afterChangeFloor = function (floorId) {
 
 ////// 是否到达过某个楼层 //////
 events.prototype.hasVisitedFloor = function (floorId) {
-    if (!core.hasFlag('__visited__')) core.setFlag('__visited__', {});
-    return core.getFlag('__visited__')[floorId] || false;
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    return flags.getFieldValueDefaults('__visited__', {})[floorId] ?? false;
 };
 
 ////// 到达某楼层 //////
 events.prototype.visitFloor = function (floorId) {
-    if (!core.hasFlag('__visited__')) core.setFlag('__visited__', {});
-    core.getFlag('__visited__')[floorId] = true;
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    flags.getFieldValueDefaults('__visited__', {})[floorId] = true;
 };
 
 events.prototype._sys_pushBox = function (data, callback) {
@@ -1334,26 +1343,30 @@ events.prototype.checkAutoEvents = function () {
 };
 
 events.prototype.autoEventExecuting = function (symbol, value) {
-    var aei = core.getFlag('__aei__', []);
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    var aei = flags.getFieldValueDefaults('__aei__', []);
     if (value == null) return aei.indexOf(symbol) >= 0;
     else {
         aei = aei.filter(function (one) {
             return one != symbol;
         });
         if (value) aei.push(symbol);
-        core.setFlag('__aei__', aei);
+        flags.setFieldValue('__aei__', aei);
     }
 };
 
 events.prototype.autoEventExecuted = function (symbol, value) {
-    var aed = core.getFlag('__aed__', []);
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    var aed = flags.getFieldValueDefaults('__aed__', []);
     if (value == null) return aed.indexOf(symbol) >= 0;
     else {
         aed = aed.filter(function (one) {
             return one != symbol;
         });
         if (value) aed.push(symbol);
-        core.setFlag('__aed__', aed);
+        flags.setFieldValue('__aed__', aed);
     }
 };
 
@@ -2710,19 +2723,20 @@ events.prototype._action_for = function (data, x, y, prefix) {
     core.setFlag(stepName, data.step);
     var condition =
         '(function () {' +
-        "var to = core.calValue(core.getFlag('" +
+        'const { state } = Mota.require("@user/data-state"); const flags = state.flags;' +
+        "var to = core.calValue(flags.getFieldValue('" +
         toName +
         "'));" +
-        "var step = core.calValue(core.getFlag('" +
+        "var step = core.calValue(flags.getFieldValue('" +
         stepName +
         "'));" +
         "if (typeof step != 'number' || typeof to != 'number') return false;" +
         'if (step == 0) return true;' +
-        "var currentValue = core.getFlag('@temp@" +
+        "var currentValue = flags.getFieldValue('@temp@" +
         letter +
         "');" +
         'currentValue += step;' +
-        "core.setFlag('@temp@" +
+        "flags.setFieldValue('@temp@" +
         letter +
         "', currentValue);" +
         'if (step > 0) { return currentValue <= to; }' +
@@ -2751,14 +2765,17 @@ events.prototype._action_forEach = function (data, x, y, prefix) {
         return core.doAction();
     }
     var listName = '@temp@forEach@' + data.name.substring(5);
-    core.setFlag(listName, core.clone(data.list));
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    flags.setFieldValue(listName, core.clone(data.list));
     var condition =
         '(function () {' +
-        "var list = core.getFlag('" +
+        "const { state } = Mota.require('@user/data-state'); const flags = state.flags;" +
+        "var list = flags.getFieldValue('" +
         listName +
         "', []);" +
         'if (list.length == 0) return false;' +
-        "core.setFlag('@temp@'+'" +
+        "flags.setFieldValue('@temp@'+'" +
         data.name.substring(5) +
         "', list.shift());" +
         'return true;' +
@@ -2994,11 +3011,13 @@ events.prototype.__action_wait_afterGet = function (data) {
     var todo = [];
     var stop = false;
     var found = false;
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
     data.data.forEach(function (one) {
         if (one._disabled || stop) return;
-        if (one['case'] == 'keyboard' && core.getFlag('type') == 0) {
+        if (one['case'] == 'keyboard' && flags.getFieldValue('type') == 0) {
             (one.keycode + '').split(',').forEach(function (keycode) {
-                if (core.getFlag('keycode', 0) == keycode) {
+                if (flags.getFieldValueDefaults('keycode', 0) == keycode) {
                     found = true;
                     core.push(todo, one.action);
                     if (one['break']) stop = true;
@@ -3009,14 +3028,14 @@ events.prototype.__action_wait_afterGet = function (data) {
             one['case'] == 'mouse' &&
             one.px instanceof Array &&
             one.py instanceof Array &&
-            core.getFlag('type') == 1
+            flags.getFieldValue('type') == 1
         ) {
             var pxmin = core.calValue(one.px[0]);
             var pxmax = core.calValue(one.px[1]);
             var pymin = core.calValue(one.py[0]);
             var pymax = core.calValue(one.py[1]);
-            var px = core.getFlag('px', 0),
-                py = core.getFlag('py', 0);
+            var px = flags.getFieldValueDefaults('px', 0),
+                py = flags.getFieldValueDefaults('py', 0);
             if (px >= pxmin && px <= pxmax && py >= pymin && py <= pymax) {
                 found = true;
                 core.push(todo, one.action);
@@ -3034,7 +3053,7 @@ events.prototype.__action_wait_afterGet = function (data) {
                 if (one['break']) stop = true;
             }
         }
-        if (one['case'] == 'timeout' && core.getFlag('type') == -1) {
+        if (one['case'] == 'timeout' && flags.getFieldValue('type') == -1) {
             found = true;
             core.push(todo, one.action);
             if (one['break']) stop = true;
@@ -3619,34 +3638,17 @@ events.prototype.setEnemy = function (
     prefix,
     norefresh
 ) {
-    if (!core.hasFlag('enemyInfo')) {
-        core.setFlag('enemyInfo', {});
-    }
-    var enemyInfo = core.getFlag('enemyInfo');
-    if (!enemyInfo[id]) enemyInfo[id] = {};
-    if (typeof value === 'string' && name == 'name')
-        value = value.replace(/\r/g, '\\r');
-    value = this._updateValueByOperator(
-        core.calValue(value, prefix),
-        (core.material.enemys[id] || {})[name],
-        operator
-    );
-    enemyInfo[id][name] = value;
-    (core.material.enemys[id] || {})[name] = core.clone(value);
-    if (!norefresh) core.updateStatusBar();
+    // Deprecated. Will be refactored in 2.D
 };
 
 ////// 设置某个点上的怪物属性 //////
 events.prototype.setEnemyOnPoint = function (x, y) {
-    // Deprecated.
+    // Deprecated. Will be refactored in 2.D
 };
 
 ////// 重置某个点上的怪物属性 //////
 events.prototype.resetEnemyOnPoint = function (x, y, floorId, norefresh) {
-    delete ((flags.enemyOnPoint || {})[floorId || core.status.floorId] || {})[
-        x + ',' + y
-    ];
-    if (!norefresh) core.updateStatusBar();
+    // Deprecated. Will be refactored in 2.D
 };
 
 ////// 将某个点上已经设置的怪物属性移动到其他点 //////
@@ -3658,13 +3660,7 @@ events.prototype.moveEnemyOnPoint = function (
     floorId,
     norefresh
 ) {
-    floorId = floorId || core.status.floorId;
-    if (((flags.enemyOnPoint || {})[floorId] || {})[fromX + ',' + fromY]) {
-        flags.enemyOnPoint[floorId][toX + ',' + toY] =
-            flags.enemyOnPoint[floorId][fromX + ',' + fromY];
-        delete flags.enemyOnPoint[floorId][fromX + ',' + fromY];
-        if (!norefresh) core.updateStatusBar();
-    }
+    // Deprecated. Will be refactored in 2.D
 };
 
 ////// 设置楼层属性 //////
@@ -3697,7 +3693,9 @@ events.prototype.setGlobalAttribute = function (name, value) {
 
 ////// 设置全局开关 //////
 events.prototype.setGlobalFlag = function (name, value) {
-    var flags = core.getFlag('globalFlags', {});
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    var flags = flags.getFieldValueDefaults('globalFlags', {});
     if (name.startsWith('s:')) {
         name = name.substring(2);
         var statusBarItems = core.flags.statusBarItems.filter(function (v) {

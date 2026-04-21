@@ -1,6 +1,6 @@
 import { ICoreState, IStateSaveData } from './types';
 import { ILayerState, LayerState } from './map';
-import { IRoleFaceBinder, RoleFaceBinder } from './common';
+import { FaceDirection, IRoleFaceBinder, RoleFaceBinder } from './common';
 import {
     DamageSystem,
     EnemyContext,
@@ -15,7 +15,8 @@ import {
     IFlagSystem,
     FlagSystem,
     IMotaDataLoader,
-    MotaDataLoader
+    MotaDataLoader,
+    loading
 } from '@user/data-base';
 import { IEnemyAttr } from './enemy/types';
 import {
@@ -31,6 +32,7 @@ import {
 import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
 import { IHeroAttr } from './hero';
 import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
+import { isNil } from 'lodash-es';
 
 export class CoreState implements ICoreState {
     readonly roleFace: IRoleFaceBinder;
@@ -100,7 +102,43 @@ export class CoreState implements ICoreState {
 
         this.flags = new FlagSystem();
 
+        // 加载先使用兼容层实现
+        loading.once('loaded', () => {
+            this.initEnemyManager(enemys_fcae963b_31c9_42b4_b48c_bb48d09f3f80);
+        });
+
         //#endregion
+    }
+
+    /**
+     * 初始化怪物管理器对象
+     * @param data 旧样板怪物存储对象
+     */
+    private initEnemyManager(data: Record<EnemyIds, Enemy>) {
+        // TODO: 修改怪物模板并存入存档，即 core.setEnemy
+        const manager = this.enemyManager;
+        for (const [id, enemy] of Object.entries(structuredClone(data))) {
+            const num = this.idNumberMap.get(id);
+            if (isNil(num)) continue;
+            if (enemy.faceIds) {
+                // 有 faceId 的要把其他的也映射到当前怪物
+                const { left, up, right, down } = enemy.faceIds;
+                const leftCode = this.idNumberMap.get(left)!;
+                const upCode = this.idNumberMap.get(up)!;
+                const rightCode = this.idNumberMap.get(right)!;
+                const downCode = this.idNumberMap.get(down)!;
+                manager.addPrefabFromLegacy(downCode, enemy);
+                this.roleFace.malloc(downCode, FaceDirection.Down);
+                this.roleFace.bind(leftCode, downCode, FaceDirection.Left);
+                this.roleFace.bind(upCode, downCode, FaceDirection.Up);
+                this.roleFace.bind(rightCode, downCode, FaceDirection.Down);
+                manager.reusePrefab(num, leftCode, left);
+                manager.reusePrefab(num, upCode, up);
+                manager.reusePrefab(num, rightCode, right);
+            } else {
+                manager.addPrefabFromLegacy(num, enemy);
+            }
+        }
     }
 
     saveState(): IStateSaveData {

@@ -1,9 +1,9 @@
 import { loading } from '@user/data-base';
-import { CoreState } from './core';
 import { isNil } from 'lodash-es';
 import { FaceDirection } from './common';
 import { ICoreState } from './types';
 import { TILE_HEIGHT, TILE_WIDTH } from './shared';
+import { state } from './ins';
 
 function createCoreState(state: ICoreState) {
     //#region 地图部分
@@ -62,13 +62,6 @@ export function create() {
     });
 }
 
-/**
- * 数据端核心状态，目前处于过渡阶段，仅服务于渲染，不负责任何逻辑计算，会在后续把核心逻辑逐渐移动至此对象。
- * 此对象是数据端状态，本身不负责任何渲染操作，仅会向渲染端发送数据让渲染端渲染，不要把渲染操作直接放到此对象上，
- * 否则可能导致录像验证失败。
- */
-export const state = new CoreState();
-
 export * from './common';
 export * from './enemy';
 export * from './hero';
@@ -76,5 +69,6 @@ export * from './legacy';
 export * from './map';
 
 export * from './core';
+export * from './ins';
 export * from './shared';
 export * from './types';

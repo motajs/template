@@ -1,4 +1,5 @@
 import { hook } from '@user/data-base';
+import { isNil } from 'lodash-es';
 
 const potionItems: AllIdsOf<'items'>[] = [
     'redPotion',
@@ -17,7 +18,7 @@ export function createHook() {
 
         const todo: any[] = [];
         // 检查该点的获得道具后事件。
-        if (core.status.floorId == null) return;
+        if (isNil(core.status.floorId)) return;
         const event =
             core.floors[core.status.floorId].afterGetItem[`${x},${y}`];
         if (
@@ -28,34 +29,23 @@ export function createHook() {
         ) {
             core.unshift(todo, event as any[]);
         }
-        if (core.hasFlag('spring')) {
-            if (!core.hasFlag('springCount')) core.setFlag('springCount', 0);
-            if (potionItems.includes(itemId)) {
-                core.addFlag('springCount', 1);
-            }
-            if (core.getFlag<number>('springCount', 0) === 50) {
-                core.setFlag('springCount', 0);
-                core.status.hero.hpmax += core.getNakedStatus('hpmax') * 0.1;
-            }
-            core.updateStatusBar();
-        }
 
         if (todo.length > 0) core.insertAction(todo, x, y);
     });
 
-    hook.on('afterOpenDoor', (doorId, x, y) => {
-        // 开一个门后触发的事件
+    hook.on('afterOpenDoor', (_doorId, x, y) => {
+        // 开一个门后触发的事件s
 
         const todo: any[] = [];
         // 检查该点的获得开门后事件。
-        if (core.status.floorId == null) return;
+        if (isNil(core.status.floorId)) return;
         const event =
             core.floors[core.status.floorId].afterOpenDoor[`${x},${y}`];
         if (event) core.unshift(todo, event as any[]);
 
         if (todo.length > 0) core.insertAction(todo, x, y);
 
-        if (core.status.event.id == null) core.continueAutomaticRoute();
+        if (isNil(core.status.event.id)) core.continueAutomaticRoute();
         else core.clearContinueAutomaticRoute();
     });
 }

@@ -1,6 +1,8 @@
 import { ISpecial, SpecialCreation } from './types';
 
-export interface ICommonSerializableSpecialConfig<T> {
+// TODO: 颜色参数
+
+export interface ICommonSpecialConfig<T> {
     /** 获取特殊属性的名称 */
     getSpecialName: (special: ISpecial<T>) => string;
     /** 获取特殊属性的描述 */
@@ -13,7 +15,7 @@ export class CommonSerializableSpecial<T> implements ISpecial<T> {
     constructor(
         readonly code: number,
         public value: T,
-        readonly config: ICommonSerializableSpecialConfig<T>
+        readonly config: ICommonSpecialConfig<T>
     ) {}
 
     setValue(value: T): void {
@@ -50,7 +52,7 @@ export class NonePropertySpecial implements ISpecial<void> {
 
     constructor(
         readonly code: number,
-        readonly config: ICommonSerializableSpecialConfig<void>
+        readonly config: ICommonSpecialConfig<void>
     ) {}
 
     setValue(_value: void): void {
@@ -81,7 +83,7 @@ export class NonePropertySpecial implements ISpecial<void> {
 export function defineCommonSerializableSpecial<T, TAttr = any>(
     code: number,
     value: T,
-    config: ICommonSerializableSpecialConfig<T>
+    config: ICommonSpecialConfig<T>
 ): SpecialCreation<T, TAttr> {
     return () =>
         new CommonSerializableSpecial(code, structuredClone(value), config);
@@ -89,7 +91,7 @@ export function defineCommonSerializableSpecial<T, TAttr = any>(
 
 export function defineNonePropertySpecial<TAttr = any>(
     code: number,
-    config: ICommonSerializableSpecialConfig<void>
+    config: ICommonSpecialConfig<void>
 ): SpecialCreation<void, TAttr> {
     return () => new NonePropertySpecial(code, config);
 }

@@ -883,7 +883,7 @@ interface Control {
         floorId?: FloorIds,
         name?: string,
         defaultValue?: T
-    ): T;
+    ): T | undefined;
 
     /**
      * @deprecated 可使用，暂时没有替代接口\
@@ -899,7 +899,7 @@ interface Control {
         y?: number,
         floorId?: FloorIds,
         name?: string,
-        value?: number | string
+        value?: number
     ): void;
 
     /**

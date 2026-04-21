@@ -1,5 +1,7 @@
 // @ts-nocheck
 
+import { state } from '@user/data-state';
+
 type Shop = CommonShopEvent | CommonEventShopEvent | ItemShopEvent;
 
 export function openShop(shopId: string, noRoute: boolean) {
@@ -40,7 +42,7 @@ export function openShop(shopId: string, noRoute: boolean) {
 /// 是否访问过某个快捷商店
 export function isShopVisited(id: string) {
     flags.__shops__ ??= {};
-    const shops = core.getFlag<any>('__shops__');
+    const shops = state.flags.getFieldValue('__shops__');
     if (!shops[id]) shops[id] = {};
     return shops[id].visited;
 }
@@ -65,7 +67,7 @@ export function canOpenShop(id: string) {
 /// 启用或禁用某个快捷商店
 export function setShopVisited(id: string, visited: boolean) {
     if (!core.hasFlag('__shops__')) core.setFlag('__shops__', {});
-    const shops = core.getFlag<any>('__shops__');
+    const shops = state.flags.getFieldValue('__shops__');
     if (!shops[id]) shops[id] = {};
     if (visited) shops[id].visited = true;
     else delete shops[id].visited;

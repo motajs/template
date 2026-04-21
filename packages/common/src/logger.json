@@ -53,7 +53,7 @@
         "51": "Animatable object cannot be animated by plans with the same start time.",
         "52": "To get divider payload, an excitation binding is expected.",
         "53": "Expected serializable value set as enemy's default attribute.",
-        "54": "Legacy flags API has been removed, consider using new APIs.",
+        "54": "Legacy '$1' API has been removed, consider using new APIs: '$2'.",
         "1201": "Floor-damage extension needs 'floor-binder' extension as dependency."
     },
     "warn": {

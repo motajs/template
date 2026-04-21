@@ -2,6 +2,7 @@ import { ITileLocator, logger } from '@motajs/common';
 import {
     CriticalableHeroStatus,
     IDamageCalculator,
+    IDamageContext,
     IDamageSystem,
     IEnemyContext,
     IEnemyCritical,
@@ -20,29 +21,22 @@ interface ICriticalSearchResult {
     readonly info: IEnemyDamageInfo;
 }
 
-export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
+export class DamageContext<TAttr, THero> implements IDamageContext<
+    TAttr,
+    THero
+> {
     /** 当前正在使用的计算器 */
-    private calculator: IDamageCalculator<TAttr, THero> | null = null;
+    protected calculator: IDamageCalculator<TAttr, THero> | null;
     /** 当前勇士属性 */
-    private heroStatus: IReadonlyHeroAttribute<THero> | null = null;
-    /** 怪物伤害缓存 */
-    private readonly cache: Map<IEnemyView<TAttr>, IEnemyDamageInfo> =
-        new Map();
+    protected heroStatus: IReadonlyHeroAttribute<THero> | null;
 
-    constructor(readonly context: IEnemyContext<TAttr, THero>) {}
-
-    useCalculator(calculator: IDamageCalculator<TAttr, THero>): void {
+    constructor(
+        readonly context: IEnemyContext<TAttr, THero>,
+        calculator: IDamageCalculator<TAttr, THero> | null = null,
+        heroStatus: IReadonlyHeroAttribute<THero> | null = null
+    ) {
         this.calculator = calculator;
-        this.markAllDirty();
-    }
-
-    getCalculator(): IDamageCalculator<TAttr, THero> | null {
-        return this.calculator;
-    }
-
-    bindHeroStatus(hero: IReadonlyHeroAttribute<THero>): void {
-        this.heroStatus = hero;
-        this.markAllDirty();
+        this.heroStatus = heroStatus;
     }
 
     /**
@@ -72,17 +66,10 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
         const locator = this.context.getEnemyLocatorByView(enemy);
         if (!hero || !locator) return null;
 
-        const cached = this.cache.get(enemy);
-        if (cached) {
-            return cached;
-        }
-
         const computed = enemy.getComputedEnemy();
         const handler = this.createReadonlyHandler(computed, locator, hero);
-        const info = this.calculator.calculate(handler);
-        this.cache.set(enemy, info);
 
-        return info;
+        return this.calculator.calculate(handler);
     }
 
     getDamageInfoByComputed(
@@ -98,34 +85,14 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
         }
 
         const hero = this.heroStatus;
-        if (!hero) return null;
         const view = this.context.getViewByComputed(enemy);
-        if (!view) return null;
+        if (!hero || !view) return null;
         const locator = this.context.getEnemyLocatorByView(view);
         if (!locator) return null;
 
-        const cached = this.cache.get(view);
-        if (cached) {
-            return cached;
-        }
-
         const handler = this.createReadonlyHandler(enemy, locator, hero);
-        const info = this.calculator.calculate(handler);
-        this.cache.set(view, info);
 
-        return info;
-    }
-
-    markDirty(enemy: IEnemyView<TAttr>): void {
-        this.cache.delete(enemy);
-    }
-
-    deleteEnemy(enemy: IEnemyView<TAttr>): void {
-        this.cache.delete(enemy);
-    }
-
-    markAllDirty(): void {
-        this.cache.clear();
+        return this.calculator.calculate(handler);
     }
 
     *calculateCritical(
@@ -236,5 +203,80 @@ export class DamageSystem<TAttr, THero> implements IDamageSystem<TAttr, THero> {
             value: right,
             info: targetInfo
         };
+    }
+}
+
+export class DamageSystem<TAttr, THero>
+    extends DamageContext<TAttr, THero>
+    implements IDamageSystem<TAttr, THero>
+{
+    /** 怪物伤害缓存 */
+    private readonly cache: Map<IEnemyView<TAttr>, IEnemyDamageInfo> =
+        new Map();
+
+    constructor(context: IEnemyContext<TAttr, THero>) {
+        super(context);
+    }
+
+    useCalculator(calculator: IDamageCalculator<TAttr, THero>): void {
+        this.calculator = calculator;
+        this.markAllDirty();
+    }
+
+    getCalculator(): IDamageCalculator<TAttr, THero> | null {
+        return this.calculator;
+    }
+
+    bindHeroStatus(hero: IReadonlyHeroAttribute<THero> | null): void {
+        this.heroStatus = hero;
+        this.markAllDirty();
+    }
+
+    getDamageInfo(enemy: IEnemyView<TAttr>): IEnemyDamageInfo | null {
+        const cached = this.cache.get(enemy);
+        if (cached) {
+            return cached;
+        }
+
+        const info = super.getDamageInfo(enemy);
+        if (!info) return info;
+        this.cache.set(enemy, info);
+
+        return info;
+    }
+
+    getDamageInfoByComputed(
+        enemy: IReadonlyEnemy<TAttr>
+    ): IEnemyDamageInfo | null {
+        const view = this.context.getViewByComputed(enemy);
+        if (view) {
+            const cached = this.cache.get(view);
+            if (cached) {
+                return cached;
+            }
+        }
+
+        const info = super.getDamageInfoByComputed(enemy);
+        if (!view || !info) return info;
+
+        this.cache.set(view, info);
+
+        return info;
+    }
+
+    markDirty(enemy: IEnemyView<TAttr>): void {
+        this.cache.delete(enemy);
+    }
+
+    deleteEnemy(enemy: IEnemyView<TAttr>): void {
+        this.cache.delete(enemy);
+    }
+
+    markAllDirty(): void {
+        this.cache.clear();
+    }
+
+    with(hero: IHeroAttribute<THero>): IDamageContext<TAttr, THero> {
+        return new DamageContext(this.context, this.calculator, hero);
     }
 }

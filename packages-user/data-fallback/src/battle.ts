@@ -1,4 +1,9 @@
-import { DamageEnemy, ensureFloorDamage, getEnemy } from '@user/data-state';
+import {
+    DamageEnemy,
+    ensureFloorDamage,
+    getEnemy,
+    state
+} from '@user/data-state';
 import { hook } from '@user/data-base';
 import { Patch, PatchClass } from '@motajs/legacy-common';
 import { isNil } from 'lodash-es';
@@ -193,7 +198,8 @@ export function patchBattle() {
 
             // 仇恨
             if (info.special.has(17)) {
-                core.setFlag('hatred', core.getFlag('hatred', 0) / 2);
+                const hatred = state.flags.getFieldValueDefaults('hatred', 0);
+                core.setFlag('hatred', hatred / 2);
             } else {
                 core.addFlag('hatred', core.values.hatred);
             }

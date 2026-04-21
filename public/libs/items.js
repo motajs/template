@@ -17,12 +17,6 @@ items.prototype._init = function () {
 ////// 获得所有道具 //////
 items.prototype.getItems = function () {
     var items = core.clone(this.items);
-    var equipInfo = core.getFlag('equipInfo');
-    if (equipInfo) {
-        for (var id in equipInfo) {
-            items[id].equip = core.clone(equipInfo[id]);
-        }
-    }
     return items;
 };
 
@@ -370,7 +364,9 @@ items.prototype._realLoadEquip_playSound = function () {
 
 ////// 保存装备 //////
 items.prototype.quickSaveEquip = function (index) {
-    var saveEquips = core.getFlag('saveEquips', []);
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    var saveEquips = flags.getFieldValueDefaults('saveEquips', []);
     saveEquips[index] = core.clone(core.status.hero.equipment);
     core.setFlag('saveEquips', saveEquips);
     core.status.route.push('saveEquip:' + index);
@@ -379,7 +375,9 @@ items.prototype.quickSaveEquip = function (index) {
 
 ////// 读取装备 //////
 items.prototype.quickLoadEquip = function (index) {
-    var current = core.getFlag('saveEquips', [])[index];
+    const { state } = Mota.require('@user/data-state');
+    const flags = state.flags;
+    var current = flags.getFieldValueDefaults('saveEquips', [])[index];
     if (!current) {
         core.playSound('操作失败');
         core.drawTip(index + '号套装不存在');

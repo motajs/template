@@ -42,7 +42,7 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
         this.attributeRegistry.set(name, defaultValue);
     }
 
-    fromLegacyEnemy(enemy: Enemy): IEnemy<TAttr> {
+    fromLegacyEnemy(code: number, enemy: Enemy): IEnemy<TAttr> {
         // 如果该旧样板怪物已经通过 addPrefabFromLegacy 注册为模板，直接克隆模板
         const existingCode = this.legacyIdToCode.get(enemy.id);
         if (existingCode) {
@@ -52,7 +52,7 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
             }
         }
 
-        return this.convertLegacyEnemy(0, enemy);
+        return this.convertLegacyEnemy(code, enemy);
     }
 
     /**
@@ -109,6 +109,14 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
         return prefab.clone();
     }
 
+    private internalGetPrefab(code: number | string) {
+        if (typeof code === 'number') {
+            return this.prefabByCode.get(code) ?? null;
+        } else {
+            return this.prefabById.get(code) ?? null;
+        }
+    }
+
     addPrefab(enemy: IEnemy<TAttr>): void {
         if (
             this.prefabByCode.has(enemy.code) ||
@@ -140,10 +148,7 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
     }
 
     deletePrefab(code: number | string): void {
-        const prefab =
-            typeof code === 'number'
-                ? this.prefabByCode.get(code)
-                : this.prefabById.get(code);
+        const prefab = this.internalGetPrefab(code);
         if (!prefab) return;
         this.prefabByCode.delete(prefab.code);
         this.prefabById.delete(prefab.id);
@@ -155,5 +160,12 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
         // 再添加新的模板
         this.prefabByCode.set(enemy.code, enemy);
         this.prefabById.set(enemy.id, enemy);
+    }
+
+    reusePrefab(source: number | string, code: number, id: string): void {
+        const prefab = this.internalGetPrefab(source);
+        if (!prefab) return;
+        this.prefabByCode.set(code, prefab);
+        this.prefabById.set(id, prefab);
     }
 }

@@ -9,7 +9,6 @@
         "@motajs/system": "workspace:*",
         "@motajs/legacy-common": "workspace:*",
         "@motajs/legacy-client": "workspace:*",
-        "@motajs/legacy-data": "workspace:*",
         "@motajs/legacy-ui": "workspace:*",
         "@motajs/legacy-system": "workspace:*",
         "@user/client-base": "workspace:*",

@@ -53,11 +53,11 @@ interface PortResponse {
             core.extractBlocks(data);
             if (data === core.status.floorId) {
                 core.status.thisMap = core.status.maps[data];
-                let weather = core.getFlag('__weather__', null);
-                if (!weather && core.status.thisMap.weather)
-                    weather = core.status.thisMap.weather;
-                if (weather) core.setWeather(weather[0], weather[1]);
-                else core.setWeather();
+                // let weather = core.getFlag('__weather__', null);
+                // if (!weather && core.status.thisMap.weather)
+                //     weather = core.status.thisMap.weather;
+                // if (weather) core.setWeather(weather[0], weather[1]);
+                // else core.setWeather();
             }
             core.status.maps[data].enemy?.extract();
             core.status.maps[data].enemy?.calRealAttribute();

@@ -46,8 +46,6 @@ control.prototype._init = function () {
     this.registerReplayAction('key', this._replayAction_key);
     this.registerReplayAction('ignoreInput', this._replayAction_ignoreInput);
     this.registerReplayAction('no', this._replayAction_no);
-    // --- 注册系统的resize
-    this.registerResize('canvas', this._resize_canvas);
 };
 
 // ------ requestAnimationFrame 相关 ------ //
@@ -210,32 +208,7 @@ control.prototype.__animateFrame_weather_image = function (timestamp, level) {};
 
 control.prototype._animationFrame_weather_sun = function (timestamp, level) {};
 
-control.prototype._animateFrame_tip = function (timestamp) {
-    if (core.animateFrame.tip == null) return;
-    var tip = core.animateFrame.tip;
-    if (timestamp - tip.time <= 30) return;
-    var delta = timestamp - tip.time;
-    tip.time = timestamp;
-
-    core.setFont('data', '16px Arial');
-    core.setTextAlign('data', 'left');
-    core.clearMap('data', 0, 0, core._PX_, 50);
-    core.ui._drawTip_drawOne(tip);
-    if (tip.stage == 1) {
-        tip.opacity += 0.05;
-        if (tip.opacity >= 0.6) {
-            tip.stage = 2;
-            tip.displayTime = 0;
-        }
-    } else if (tip.stage == 2) {
-        tip.displayTime += delta;
-        if (tip.displayTime >= 1000) tip.stage = 3;
-    } else tip.opacity -= 0.05;
-
-    if (tip.opacity <= 0) {
-        core.animateFrame.tip = null;
-    }
-};
+control.prototype._animateFrame_tip = function (timestamp) {};
 
 // ------ 标题界面的处理 ------ //
 
@@ -312,13 +285,7 @@ control.prototype._initStatistics = function (totalTime) {
 
 ////// 清除自动寻路路线 //////
 control.prototype.clearAutomaticRouteNode = function (x, y) {
-    // core.clearMap(
-    //     'route',
-    //     x * 32 + 5 - core.status.automaticRoute.offsetX,
-    //     y * 32 + 5 - core.status.automaticRoute.offsetY,
-    //     27,
-    //     27
-    // );
+    // Deprecated.
 };
 
 ////// 停止自动寻路操作 //////
@@ -612,67 +579,21 @@ control.prototype._moveAction_popAutomaticRoute = function () {
 
 ////// 让勇士开始移动 //////
 control.prototype.moveHero = function (direction, callback) {
-    // see src/plugin/game/popup.js
+    // Deprecated. See packages-user/legact-plugin-data/src/fallback.ts
 };
 
 control.prototype._moveHero_moving = function () {
-    // ------ 我已经看不懂这个函数了，反正好用就行23333333
-    core.status.heroStop = false;
-    core.status.automaticRoute.moveDirectly = false;
-
-    var move = function () {
-        if (!core.status.heroStop) {
-            if (core.hasFlag('debug') && core.status.ctrlDown) {
-                if (core.status.heroMoving != 0) return;
-                // 检测是否穿出去
-                var nx = core.nextX(),
-                    ny = core.nextY();
-                if (
-                    nx < 0 ||
-                    nx >= core.bigmap.width ||
-                    ny < 0 ||
-                    ny >= core.bigmap.height
-                )
-                    return;
-                core.eventMoveHero(
-                    [core.getHeroLoc('direction')],
-                    core.values.moveSpeed,
-                    move
-                );
-            } else {
-                core.moveAction();
-                setTimeout(move, 50);
-            }
-        }
-    };
-    move();
+    // Deprecated.
 };
 
 ////// 当前是否正在移动 //////
 control.prototype.isMoving = function () {
-    return !core.status.heroStop || core.status.heroMoving > 0;
+    // Deprecated. See packages-user/legact-plugin-data/src/fallback.ts
 };
 
 ////// 停止勇士的一切行动，等待勇士行动结束后，再执行callback //////
 control.prototype.waitHeroToStop = function (callback) {
-    var lastDirection = core.status.automaticRoute.lastDirection;
-    core.stopAutomaticRoute();
-    core.clearContinueAutomaticRoute();
-    if (callback) {
-        core.status.replay.animate = true;
-        core.lockControl();
-        core.status.automaticRoute.moveDirectly = false;
-        setTimeout(
-            function () {
-                core.status.replay.animate = false;
-                if (core.isset(lastDirection))
-                    core.setHeroLoc('direction', lastDirection);
-                core.drawHero();
-                callback();
-            },
-            core.status.replay.speed == 24 ? 1 : 30
-        );
-    }
+    // Deprecated. See packages-user/legact-plugin-data/src/fallback.ts
 };
 
 ////// 转向 //////
@@ -734,21 +655,11 @@ control.prototype.tryMoveDirectly = function (destX, destY) {
 
 ////// 绘制勇士 //////
 control.prototype.drawHero = function (status, offset = 0, frame) {
-    return;
+    // Deprecated.
 };
 
 control.prototype._drawHero_updateViewport = function (x, y, offset) {
-    core.bigmap.offsetX = core.clamp(
-        (x - core._HALF_WIDTH_) * 32 + offset.x,
-        0,
-        Math.max(32 * core.bigmap.width - core._PX_, 0)
-    );
-    core.bigmap.offsetY = core.clamp(
-        (y - core._HALF_HEIGHT_) * 32 + offset.y,
-        0,
-        Math.max(32 * core.bigmap.height - core._PY_, 0)
-    );
-    core.control.updateViewport();
+    // Deprecated.
 };
 
 control.prototype._drawHero_draw = function (
@@ -759,26 +670,7 @@ control.prototype._drawHero_draw = function (
     offset,
     frame
 ) {
-    offset = offset || { x: 0, y: 0, offset: 0, px: 0, py: 0 };
-    var opacity = core.setAlpha('hero', core.getFlag('__heroOpacity__', 1));
-    this._drawHero_getDrawObjs(direction, x, y, status, offset).forEach(
-        function (block) {
-            core.drawImage(
-                'hero',
-                block.img,
-                ((block.heroIcon[block.status] + (frame || 0)) % 4) *
-                    block.width,
-                block.heroIcon.loc * block.height,
-                block.width,
-                block.height,
-                block.posx + (32 - block.width) / 2,
-                block.posy + 32 - block.height,
-                block.width,
-                block.height
-            );
-        }
-    );
-    core.setAlpha('hero', opacity);
+    // Deprecated.
 };
 
 control.prototype._drawHero_getDrawObjs = function (
@@ -788,48 +680,7 @@ control.prototype._drawHero_getDrawObjs = function (
     status,
     offset
 ) {
-    var heroIconArr = core.material.icons.hero,
-        drawObjs = [],
-        index = 0;
-    drawObjs.push({
-        img: core.material.images.hero,
-        width: core.material.icons.hero.width || 32,
-        height: core.material.icons.hero.height,
-        heroIcon: heroIconArr[direction],
-        posx: x * 32 - core.bigmap.offsetX + offset.x,
-        posy: y * 32 - core.bigmap.offsetY + offset.y,
-        status: status,
-        index: index++
-    });
-    if (typeof offset.offset == 'number') {
-        core.status.hero.followers.forEach(function (t) {
-            drawObjs.push({
-                img: core.material.images.images[t.name],
-                width: core.material.images.images[t.name].width / 4,
-                height: core.material.images.images[t.name].height / 4,
-                heroIcon: heroIconArr[t.direction],
-                posx:
-                    32 * t.x -
-                    core.bigmap.offsetX +
-                    (t.stop
-                        ? 0
-                        : core.utils.scan2[t.direction].x *
-                          Math.abs(offset.offset)),
-                posy:
-                    32 * t.y -
-                    core.bigmap.offsetY +
-                    (t.stop
-                        ? 0
-                        : core.utils.scan2[t.direction].y *
-                          Math.abs(offset.offset)),
-                status: t.stop ? 'stop' : status,
-                index: index++
-            });
-        });
-    }
-    return drawObjs.sort(function (a, b) {
-        return a.posy == b.posy ? b.index - a.index : a.posy - b.posy;
-    });
+    // Deprecated.
 };
 
 control.prototype.setHeroOpacity = function (
@@ -838,37 +689,7 @@ control.prototype.setHeroOpacity = function (
     time,
     callback
 ) {
-    time = time || 0;
-    if (time == 0) {
-        core.setFlag('__heroOpacity__', opacity);
-        core.drawHero();
-        if (callback) callback();
-        return;
-    }
-    time /= Math.max(core.status.replay.speed, 1);
-
-    var fromOpacity = core.getFlag('__heroOpacity__', 1);
-    var step = 0,
-        steps = Math.floor(time / 10);
-    if (steps <= 0) steps = 1;
-    var moveFunc = core.applyEasing(moveMode);
-
-    var animate = setInterval(function () {
-        step++;
-        core.setFlag(
-            '__heroOpacity__',
-            fromOpacity + (opacity - fromOpacity) * moveFunc(step / steps)
-        );
-        core.drawHero();
-        if (step == steps) {
-            delete core.animateFrame.asyncId[animate];
-            clearInterval(animate);
-            if (callback) callback();
-        }
-    }, 10);
-
-    core.animateFrame.lastAsyncId = animate;
-    core.animateFrame.asyncId[animate] = callback;
+    // Deprecated.
 };
 
 // ------ 画布、位置、阻激夹域，显伤 ------ //
@@ -876,7 +697,7 @@ control.prototype.setHeroOpacity = function (
 ////// 设置画布偏移
 control.prototype.setGameCanvasTranslate = function (canvas, x, y) {
     // Deprecated. Use RenderItem.transform instead.
-    // For editor compatibility.
+    // Remaining for editor compatibility.
     var c = core.dom.gameCanvas[canvas];
     x = x * core.domStyle.scale;
     y = y * core.domStyle.scale;
@@ -901,6 +722,7 @@ control.prototype.addGameCanvasTranslate = function (x, y) {
 
 ////// 更新视野范围 //////
 control.prototype.updateViewport = function () {
+    // Deprecated. Remaining for editor compatibility.
     // 当前是否应该重绘？
     if (core.bigmap.v2) {
         if (
@@ -950,59 +772,12 @@ control.prototype.updateViewport = function () {
 
 ////// 设置视野范围 //////
 control.prototype.setViewport = function (px, py) {
-    var originOffsetX = core.bigmap.offsetX,
-        originOffsetY = core.bigmap.offsetY;
-    core.bigmap.offsetX = core.clamp(px, 0, 32 * core.bigmap.width - core._PX_);
-    core.bigmap.offsetY = core.clamp(
-        py,
-        0,
-        32 * core.bigmap.height - core._PY_
-    );
-    this.updateViewport();
-    // ------ hero层也需要！
-    var px = parseFloat(core.canvas.hero._px) || 0;
-    var py = parseFloat(core.canvas.hero._py) || 0;
-    px += originOffsetX - core.bigmap.offsetX;
-    py += originOffsetY - core.bigmap.offsetY;
-    core.control.setGameCanvasTranslate('hero', px, py);
-    core.canvas.hero._px = px;
-    core.canvas.hero._py = py;
+    // Deprecated.
 };
 
 ////// 移动视野范围 //////
 control.prototype.moveViewport = function (x, y, moveMode, time, callback) {
-    time = time || 0;
-    time /= Math.max(core.status.replay.speed, 1);
-    var per_time = 10,
-        step = 0,
-        steps = Math.floor(time / per_time);
-    if (steps <= 0) {
-        this.setViewport(32 * x, 32 * y);
-        if (callback) callback();
-        return;
-    }
-    var px = core.clamp(32 * x, 0, 32 * core.bigmap.width - core._PX_);
-    var py = core.clamp(32 * y, 0, 32 * core.bigmap.height - core._PY_);
-    var cx = core.bigmap.offsetX;
-    var cy = core.bigmap.offsetY;
-    var moveFunc = core.applyEasing(moveMode);
-
-    var animate = window.setInterval(function () {
-        step++;
-        core.setViewport(
-            cx + moveFunc(step / steps) * (px - cx),
-            cy + moveFunc(step / steps) * (py - cy)
-        );
-        if (step == steps) {
-            delete core.animateFrame.asyncId[animate];
-            clearInterval(animate);
-            core.setViewport(px, py);
-            if (callback) callback();
-        }
-    }, per_time);
-
-    core.animateFrame.lastAsyncId = animate;
-    core.animateFrame.asyncId[animate] = callback;
+    // Deprecated.
 };
 
 ////// 获得勇士面对位置的x坐标 //////
@@ -2549,52 +2324,27 @@ control.prototype.removeFlag = function (name) {
 
 ////// 获得某个点的独立开关 //////
 control.prototype.getSwitch = function (x, y, floorId, name, defaultValue) {
-    var prefix = [
-        floorId || core.status.floorId || ':f',
-        x != null ? x : 'x',
-        y != null ? y : 'y'
-    ].join('@');
-    return this.getFlag(prefix + '@' + name, defaultValue);
+    // Deprecated. See packages-user/data-fallback/src/flag.ts
 };
 
 ////// 设置某个点的独立开关 //////
 control.prototype.setSwitch = function (x, y, floorId, name, value) {
-    var prefix = [
-        floorId || core.status.floorId || ':f',
-        x != null ? x : 'x',
-        y != null ? y : 'y'
-    ].join('@');
-    return this.setFlag(prefix + '@' + name, value);
+    // Deprecated. See packages-user/data-fallback/src/flag.ts
 };
 
 ////// 增加某个点的独立开关 //////
 control.prototype.addSwitch = function (x, y, floorId, name, value) {
-    var prefix = [
-        floorId || core.status.floorId || ':f',
-        x != null ? x : 'x',
-        y != null ? y : 'y'
-    ].join('@');
-    return this.addFlag(prefix + '@' + name, value);
+    // Deprecated. See packages-user/data-fallback/src/flag.ts
 };
 
 ////// 判定某个点的独立开关 //////
 control.prototype.hasSwitch = function (x, y, floorId, name) {
-    var prefix = [
-        floorId || core.status.floorId || ':f',
-        x != null ? x : 'x',
-        y != null ? y : 'y'
-    ].join('@');
-    return this.hasFlag(prefix + '@' + name);
+    // Deprecated. See packages-user/data-fallback/src/flag.ts
 };
 
 ////// 删除某个点的独立开关 //////
 control.prototype.removeSwitch = function (x, y, floorId, name) {
-    var prefix = [
-        floorId || core.status.floorId || ':f',
-        x != null ? x : 'x',
-        y != null ? y : 'y'
-    ].join('@');
-    return this.removeFlag(prefix + '@' + name);
+    // Deprecated. See packages-user/data-fallback/src/flag.ts
 };
 
 ////// 锁定状态栏，常常用于事件处理 //////
@@ -2708,36 +2458,7 @@ control.prototype._weather_sun = function (level) {};
 
 ////// 更改画面色调 //////
 control.prototype.setCurtain = function (color, time, moveMode, callback) {
-    if (time == null) time = 750;
-    if (time <= 0) time = 0;
-    if (!core.status.curtainColor) core.status.curtainColor = [0, 0, 0, 0];
-    if (!color) color = [0, 0, 0, 0];
-    if (color[3] == null) color[3] = 1;
-    color[3] = core.clamp(color[3], 0, 1);
-
-    if (time == 0) {
-        // 直接变色
-        core.clearMap('curtain');
-        core.fillRect(
-            'curtain',
-            0,
-            0,
-            core._PX_,
-            core._PY_,
-            core.arrayToRGBA(color)
-        );
-        core.status.curtainColor = color;
-        if (callback) callback();
-        return;
-    }
-
-    this._setCurtain_animate(
-        core.status.curtainColor,
-        color,
-        time,
-        moveMode,
-        callback
-    );
+    // Deprecated.
 };
 
 control.prototype._setCurtain_animate = function (
@@ -2747,44 +2468,7 @@ control.prototype._setCurtain_animate = function (
     moveMode,
     callback
 ) {
-    time /= Math.max(core.status.replay.speed, 1);
-    var per_time = 10,
-        step = 0,
-        steps = Math.floor(time / per_time);
-    if (steps <= 0) steps = 1;
-    var curr = nowColor;
-    var moveFunc = core.applyEasing(moveMode);
-
-    var cb = function () {
-        core.status.curtainColor = curr;
-        if (callback) callback();
-    };
-    var animate = setInterval(function () {
-        step++;
-        curr = [
-            nowColor[0] + (color[0] - nowColor[0]) * moveFunc(step / steps),
-            nowColor[1] + (color[1] - nowColor[1]) * moveFunc(step / steps),
-            nowColor[2] + (color[2] - nowColor[2]) * moveFunc(step / steps),
-            nowColor[3] + (color[3] - nowColor[3]) * moveFunc(step / steps)
-        ];
-        core.clearMap('curtain');
-        core.fillRect(
-            'curtain',
-            0,
-            0,
-            core._PX_,
-            core._PY_,
-            core.arrayToRGBA(curr)
-        );
-        if (step == steps) {
-            delete core.animateFrame.asyncId[animate];
-            clearInterval(animate);
-            cb();
-        }
-    }, per_time);
-
-    core.animateFrame.lastAsyncId = animate;
-    core.animateFrame.asyncId[animate] = cb;
+    // Deprecated.
 };
 
 ////// 画面闪烁 //////
@@ -2795,24 +2479,7 @@ control.prototype.screenFlash = function (
     moveMode,
     callback
 ) {
-    times = times || 1;
-    time = time / 3;
-    var nowColor = core.clone(core.status.curtainColor);
-    core.setCurtain(color, time, moveMode, function () {
-        core.setCurtain(nowColor, time * 2, moveMode, function () {
-            if (times > 1)
-                core.screenFlash(
-                    color,
-                    time * 3,
-                    times - 1,
-                    moveMode,
-                    callback
-                );
-            else {
-                if (callback) callback();
-            }
-        });
-    });
+    // Deprecated.
 };
 
 ////// 播放背景音乐 //////
@@ -2905,71 +2572,21 @@ control.prototype.setToolbarButton = function (useButton) {
 // name为名称，可供注销使用
 // func可以是一个函数，或者是插件中的函数名；可以接受obj参数，详见resize函数。
 control.prototype.registerResize = function (name, func) {
-    this.unregisterResize(name);
-    this.resizes.push({ name: name, func: func });
+    // Deprecated.
 };
 
 ////// 注销一个resize函数 //////
 control.prototype.unregisterResize = function (name) {
-    this.resizes = this.resizes.filter(function (b) {
-        return b.name != name;
-    });
+    // Deprecated.
 };
 
 control.prototype._doResize = function (obj) {
-    for (var i in this.resizes) {
-        try {
-            if (this.resizes[i].func.call(this, obj)) return true;
-        } catch (e) {
-            console.error(e);
-            console.error(
-                'ERROR in resizes[' +
-                    this.resizes[i].name +
-                    ']：已自动注销该项。'
-            );
-            this.unregisterResize(this.resizes[i].name);
-        }
-    }
-    return false;
+    // Deprecated.
 };
 
 ////// 屏幕分辨率改变后重新自适应 //////
 control.prototype.resize = function () {
-    if (main.mode === 'editor') return;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    // if (window.innerWidth >= 600) {
-    //     // 横屏
-    //     core.domStyle.isVertical = false;
-    //     core.domStyle.availableScale = [];
-    //     const maxScale = Math.min(width / core._PX_, height / core._PY_);
-    //     [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5].forEach(function (v) {
-    //         if (v < maxScale) {
-    //             core.domStyle.availableScale.push(v);
-    //         }
-    //     });
-    //     if (!core.domStyle.availableScale.includes(core.domStyle.scale)) {
-    //         core.domStyle.scale = 1;
-    //     }
-    // } else {
-    //     // 竖屏
-    //     core.domStyle.isVertical = true;
-    //     core.domStyle.scale = window.innerWidth / core._PX_;
-    //     core.domStyle.availableScale = [];
-    // }
-
-    // if (!core.domStyle.isVertical) {
-    //     const height = window.innerHeight;
-    //     const width = window.innerWidth;
-    //     const maxScale = Math.min(height / core._PY_, width / core._PX_);
-    //     const target = Number((Math.floor(maxScale * 4) / 4).toFixed(2));
-    //     core.domStyle.scale = target - 0.25;
-    // }
-
-    this._doResize({});
-    this.setToolbarButton();
-    core.updateStatusBar();
+    // Deprecated.
 };
 
 control.prototype._resize_gameGroup = function (obj) {
@@ -2981,9 +2598,9 @@ control.prototype._resize_canvas = function (obj) {
 };
 
 control.prototype._resize_toolBar = function (obj) {
-    // Deprecated. Use CustomToolbar instead.
+    // Deprecated.
 };
 
 control.prototype._resize_tools = function (obj) {
-    // Deprecated. Use CustomToolbar instead.
+    // Deprecated.
 };

@@ -1,5 +1,5 @@
 import { IRange, ITileLocator } from '@motajs/common';
-import { IReadonlyHeroAttribute } from '../hero';
+import { IHeroAttribute, IReadonlyHeroAttribute } from '../hero';
 
 //#region 怪物基础
 
@@ -158,9 +158,10 @@ export interface IEnemyManager<TAttr> {
 
     /**
      * 根据旧样板怪物对象生成一个新的怪物对象
+     * @param code 怪物数字
      * @param enemy 旧样板怪物对象
      */
-    fromLegacyEnemy(enemy: Enemy): IEnemy<TAttr>;
+    fromLegacyEnemy(code: number, enemy: Enemy): IEnemy<TAttr>;
 
     /**
      * 创建怪物对象，如果对应数字的怪物不存在则会返回 `null`
@@ -212,6 +213,14 @@ export interface IEnemyManager<TAttr> {
      * @param enemy 新的怪物模板
      */
     changePrefab(code: number | string, enemy: IEnemy<TAttr>): void;
+
+    /**
+     * 让指定的怪物数字和怪物 id 复用指定的模板
+     * @param source 怪物模板源
+     * @param code 复用怪物数字
+     * @param id 复用怪物 id
+     */
+    reusePrefab(source: number | string, code: number, id: string): void;
 }
 
 //#endregion
@@ -623,7 +632,38 @@ export interface IDamageCalculator<TAttr, THero> {
     ): number;
 }
 
-export interface IDamageSystem<TAttr, THero> {
+export interface IDamageContext<TAttr, THero> {
+    /**
+     * 获取战斗伤害信息
+     * @param enemy 怪物视图
+     */
+    getDamageInfo(enemy: IEnemyView<TAttr>): IEnemyDamageInfo | null;
+
+    /**
+     * 根据怪物对象获取战斗伤害信息
+     * @param enemy 怪物对象
+     */
+    getDamageInfoByComputed(
+        enemy: IReadonlyEnemy<TAttr>
+    ): IEnemyDamageInfo | null;
+
+    /**
+     * 计算怪物在指定勇士属性下的临界
+     * @param enemy 怪物视图
+     * @param attribute 计算临界的目标勇士属性，比如计算攻击临界、自定义属性的临界等等
+     * @param precision 临界计算精度，表示会进行多少次二分计算，一般填写 `12-16` 之间的数即可，默认是 12
+     */
+    calculateCritical(
+        enemy: IEnemyView<TAttr>,
+        attribute: CriticalableHeroStatus<THero>,
+        precision?: number
+    ): Generator<IEnemyCritical, void, void>;
+}
+
+export interface IDamageSystem<TAttr, THero> extends IDamageContext<
+    TAttr,
+    THero
+> {
     /** 伤害系统所属的上下文 */
     readonly context: IEnemyContext<TAttr, THero>;
 
@@ -645,20 +685,6 @@ export interface IDamageSystem<TAttr, THero> {
     bindHeroStatus(hero: IReadonlyHeroAttribute<THero> | null): void;
 
     /**
-     * 获取战斗伤害信息
-     * @param enemy 怪物视图
-     */
-    getDamageInfo(enemy: IEnemyView<TAttr>): IEnemyDamageInfo | null;
-
-    /**
-     * 根据怪物对象获取战斗伤害信息
-     * @param enemy 怪物对象
-     */
-    getDamageInfoByComputed(
-        enemy: IReadonlyEnemy<TAttr>
-    ): IEnemyDamageInfo | null;
-
-    /**
      * 将指定的怪物标记为脏
      * @param enemy 怪物视图
      */
@@ -676,16 +702,10 @@ export interface IDamageSystem<TAttr, THero> {
     markAllDirty(): void;
 
     /**
-     * 计算怪物在指定勇士属性下的临界
-     * @param enemy 怪物视图
-     * @param attribute 计算临界的目标勇士属性，比如计算攻击临界、自定义属性的临界等等
-     * @param precision 临界计算精度，表示会进行多少次二分计算，一般填写 `12-16` 之间的数即可，默认是 12
+     * 修改勇士属性，然后返回修改后勇士属性所组成的计算对象，不影响当前伤害系统的状态
+     * @param modify 勇士修改函数
      */
-    calculateCritical(
-        enemy: IEnemyView<TAttr>,
-        attribute: CriticalableHeroStatus<THero>,
-        precision?: number
-    ): Generator<IEnemyCritical, void, void>;
+    with(hero: IHeroAttribute<THero>): IDamageContext<TAttr, THero>;
 }
 
 //#endregion

@@ -353,7 +353,7 @@ core.prototype._init_flags = function () {
 
     core.maps._initFloors();
     // 初始化怪物、道具等
-    core.material.enemys = core.enemys.getEnemys();
+    // core.material.enemys = core.enemys.getEnemys();
     core.material.items = core.items.getItems();
     core.material.icons = core.icons.getIcons();
 
