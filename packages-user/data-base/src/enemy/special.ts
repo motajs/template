@@ -1,3 +1,5 @@
+import { isEqual } from 'lodash-es';
+import { SaveCompression } from '../common/types';
 import { ISpecial, SpecialCreation } from './types';
 
 // TODO: 颜色参数
@@ -45,6 +47,19 @@ export class CommonSerializableSpecial<T> implements ISpecial<T> {
             this.config
         );
     }
+
+    saveState(_compression: SaveCompression): T {
+        return structuredClone(this.value);
+    }
+
+    loadState(state: T, _compression: SaveCompression): void {
+        this.setValue(state);
+    }
+
+    deepEqualsTo(other: ISpecial<T>): boolean {
+        if (this.code !== other.code) return false;
+        return isEqual(this.value, other.getValue());
+    }
 }
 
 export class NonePropertySpecial implements ISpecial<void> {
@@ -77,6 +92,18 @@ export class NonePropertySpecial implements ISpecial<void> {
 
     clone(): ISpecial<void> {
         return new NonePropertySpecial(this.code, this.config);
+    }
+
+    saveState(_compression: SaveCompression): void {
+        return undefined;
+    }
+
+    loadState(_state: void, _compression: SaveCompression): void {
+        // 无属性，无需操作
+    }
+
+    deepEqualsTo(other: ISpecial<void>): boolean {
+        return this.code === other.code;
     }
 }
 

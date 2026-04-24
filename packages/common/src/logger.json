@@ -173,6 +173,10 @@
         "114": "Save operation took $1ms, exceeding the tolerance of $2ms. Consider reducing compression level.",
         "115": "Autosave operation took $1ms, exceeding the tolerance of $2ms. Consider reducing compression level.",
         "116": "Cannot construct modifier of type '$1' since no registry for it.",
+        "117": "EnemyManager.compareWith called more than once. The previous reference will be overridden. Please ensure you intend to do this.",
+        "118": "No enemy comparer attached to EnemyManager. All enemies will be treated as dirty.",
+        "119": "Enemy prefab with code $1 not found during loadState, skipping.",
+        "120": "Special with code $1 not found in enemy '$2' during loadState, skipping.",
         "1001": "Item-detail extension needs 'floor-binder' and 'floor-damage' extension as dependency."
     }
 }

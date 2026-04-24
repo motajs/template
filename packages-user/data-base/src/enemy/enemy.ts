@@ -2,10 +2,12 @@ import { logger } from '@motajs/common';
 import {
     IEnemy,
     IEnemyContext,
+    IEnemySaveState,
     IReadonlyEnemy,
     ISpecial,
     IEnemyView
 } from './types';
+import { SaveCompression } from '../common/types';
 
 export class Enemy<TAttr> implements IEnemy<TAttr> {
     /** 怪物身上的特殊属性列表 */
@@ -85,6 +87,29 @@ export class Enemy<TAttr> implements IEnemy<TAttr> {
         this.specialMap.clear();
         for (const special of enemy.iterateSpecials()) {
             this.addSpecial(special.clone());
+        }
+    }
+
+    saveState(_compression: SaveCompression): IEnemySaveState<TAttr> {
+        const specials: Map<number, unknown> = new Map();
+        for (const special of this.specials) {
+            specials.set(special.code, special.saveState(_compression));
+        }
+        return { attrs: structuredClone(this.attributes), specials };
+    }
+
+    loadState(
+        state: IEnemySaveState<TAttr>,
+        compression: SaveCompression
+    ): void {
+        this.attributes = structuredClone(state.attrs);
+        for (const special of this.specials) {
+            const saved = state.specials.get(special.code);
+            if (saved === undefined) {
+                logger.warn(120, special.code.toString(), this.id);
+                continue;
+            }
+            special.loadState(saved, compression);
         }
     }
 }

@@ -1,9 +1,36 @@
 import { IRange, ITileLocator } from '@motajs/common';
 import { IHeroAttribute, IReadonlyHeroAttribute } from '../hero';
+import { ISaveableContent } from '../common/types';
 
 //#region 怪物基础
 
-export interface ISpecial<T = void> {
+/** 单个 IEnemy 的存档状态 */
+export interface IEnemySaveState<TAttr> {
+    /** 怪物属性的深拷贝 */
+    readonly attrs: TAttr;
+    /** 特殊属性按 code 映射，值为各 ISpecial.saveState() 的结果 */
+    readonly specials: ReadonlyMap<number, unknown>;
+}
+
+/** IEnemyManager 的存档状态，只保存与参考状态不同的模板 */
+export interface IEnemyManagerSaveState<TAttr> {
+    /** code -> 变更后的 IEnemySaveState，仅包含脏模板 */
+    readonly modified: ReadonlyMap<number, IEnemySaveState<TAttr>>;
+}
+
+export interface IEnemyComparer<TAttr> {
+    /**
+     * 比较两个怪物是否完全相同
+     * @param enemyA 怪物 A
+     * @param enemyB 怪物 B
+     */
+    compare(
+        enemyA: IReadonlyEnemy<TAttr>,
+        enemyB: IReadonlyEnemy<TAttr>
+    ): boolean;
+}
+
+export interface ISpecial<T = void> extends ISaveableContent<T> {
     /** 特殊属性代码 */
     readonly code: number;
     /** 特殊属性需要的数值 */
@@ -40,6 +67,12 @@ export interface ISpecial<T = void> {
      * 深拷贝此特殊属性
      */
     clone(): ISpecial<T>;
+
+    /**
+     * 深度比较此特殊属性与另一特殊属性是否相同
+     * @param other 另一特殊属性
+     */
+    deepEqualsTo(other: ISpecial<T>): boolean;
 }
 
 export interface IReadonlyEnemy<TAttr> {
@@ -82,7 +115,8 @@ export interface IReadonlyEnemy<TAttr> {
     clone(): IReadonlyEnemy<TAttr>;
 }
 
-export interface IEnemy<TAttr> extends IReadonlyEnemy<TAttr> {
+export interface IEnemy<TAttr>
+    extends IReadonlyEnemy<TAttr>, ISaveableContent<IEnemySaveState<TAttr>> {
     /**
      * 添加特殊属性
      * @param special 特殊属性对象
@@ -138,7 +172,9 @@ export interface IEnemyLegacyBridge<TAttr> {
     fromLegacyEnemy(enemy: Enemy, defaultValue: Partial<TAttr>): TAttr;
 }
 
-export interface IEnemyManager<TAttr> {
+export interface IEnemyManager<TAttr> extends ISaveableContent<
+    IEnemyManagerSaveState<TAttr>
+> {
     /**
      * 注册一个特殊属性
      * @param code 特殊属性代码
@@ -193,13 +229,13 @@ export interface IEnemyManager<TAttr> {
      * 获取指定怪物的模板
      * @param code 怪物图块数字
      */
-    getPrefab(code: number): IEnemy<TAttr> | null;
+    getPrefab(code: number): IReadonlyEnemy<TAttr> | null;
 
     /**
      * 根据怪物的 `id` 获取对应的怪物模板
      * @param id 怪物 `id`
      */
-    getPrefabById(id: string): IEnemy<TAttr> | null;
+    getPrefabById(id: string): IReadonlyEnemy<TAttr> | null;
 
     /**
      * 删除指定的怪物模板
@@ -221,6 +257,34 @@ export interface IEnemyManager<TAttr> {
      * @param id 复用怪物 id
      */
     reusePrefab(source: number | string, code: number, id: string): void;
+
+    /**
+     * 设置参考快照，后续对模板的修改将与此比较以确定是否脏。
+     * 非首次调用时会发出警告，但仍执行覆盖
+     * @param reference code -> 参考怪物的 Map
+     */
+    compareWith(reference: ReadonlyMap<number, IReadonlyEnemy<TAttr>>): void;
+
+    /**
+     * 修改指定怪物模板的属性，修改完成后自动与参考模板比较并更新 dirty 集合
+     * @param code 怪物的图块数字或 `id`
+     * @param modify 修改函数，传入可写怪物对象，返回修改后的对象
+     */
+    modifyPrefabAttribute(
+        code: number | string,
+        modify: (prefab: IEnemy<TAttr>) => IEnemy<TAttr>
+    ): void;
+
+    /**
+     * 附加怪物比较器，用于 dirty 集合的判断
+     * @param comparer 比较器对象
+     */
+    attachEnemyComparer(comparer: IEnemyComparer<TAttr>): void;
+
+    /**
+     * 获取当前附加的怪物比较器，如未设置则返回 `null`
+     */
+    getEnemyComparer(): IEnemyComparer<TAttr> | null;
 }
 
 //#endregion

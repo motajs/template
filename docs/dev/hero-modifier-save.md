@@ -83,28 +83,28 @@ iterateModifiers(): Iterable<[keyof THero, IHeroModifier]>;
 
 ### `@user/data-base/hero/types.ts`
 
-- [ ] 修改 `IHeroModifier<T, V>` 接口：
+- [x] 修改 `IHeroModifier<T, V>` 接口：
       改为 `IHeroModifier<T, V, S = unknown>`，`identifier` 改名为 `type`，
       继承 `ISaveableContent<S>`
-- [ ] 新增 `IModifierStateSave` 接口：单条修饰器的存档格式
-- [ ] 修改 `IHeroStateSave<THero>`：新增 `readonly modifiers: readonly IModifierStateSave[]` 字段
-- [ ] 修改 `IReadonlyHeroAttribute<THero>`：新增 `iterateModifiers()` 方法签名
-- [ ] 修改 `IHeroState<THero>`：新增以下方法签名 - `registerModifier(type: string, cons: () => IHeroModifier): void` - `createModifier<V>(type: string): IHeroModifier<unknown, V>` - `createAndInsertModifier<K extends keyof THero, V>(type: string, name: K): IHeroModifier<unknown, V>`
+- [x] 新增 `IModifierStateSave` 接口：单条修饰器的存档格式
+- [x] 修改 `IHeroStateSave<THero>`：新增 `readonly modifiers: readonly IModifierStateSave[]` 字段
+- [x] 修改 `IReadonlyHeroAttribute<THero>`：新增 `iterateModifiers()` 方法签名
+- [x] 修改 `IHeroState<THero>`：新增以下方法签名 - `registerModifier(type: string, cons: () => IHeroModifier): void` - `createModifier<V>(type: string): IHeroModifier<unknown, V>` - `createAndInsertModifier<K extends keyof THero, V>(type: string, name: K): IHeroModifier<unknown, V>`
 
 ### `@user/data-base/hero/attribute.ts`
 
-- [ ] 修改 `BaseHeroModifier<T, V>`：
+- [x] 修改 `BaseHeroModifier<T, V>`：
       将 `abstract readonly identifier` 改为 `abstract readonly type`；
       实现 `saveState` / `loadState`
-- [ ] 修改 `HeroAttribute<THero>`：实现 `iterateModifiers()`
+- [x] 修改 `HeroAttribute<THero>`：实现 `iterateModifiers()`
 
 ### `@user/data-base/hero/state.ts`
 
-- [ ] 修改 `HeroState<THero>`：新增 `private readonly registry: Map<string, () => IHeroModifier>` 成员
-- [ ] 实现 `HeroState.registerModifier`：将工厂函数写入 `registry`
-- [ ] 实现 `HeroState.createModifier`：从 `registry` 取出工厂并调用，返回新实例；
+- [x] 修改 `HeroState<THero>`：新增 `private readonly registry: Map<string, () => IHeroModifier>` 成员
+- [x] 实现 `HeroState.registerModifier`：将工厂函数写入 `registry`
+- [x] 实现 `HeroState.createModifier`：从 `registry` 取出工厂并调用，返回新实例；
       若 `type` 未注册则抛出错误
-- [ ] 实现 `HeroState.createAndInsertModifier`：调用 `createModifier` 后，
+- [x] 实现 `HeroState.createAndInsertModifier`：调用 `createModifier` 后，
       再调用 `this.attribute.addModifier(name, modifier)`，返回同一实例
-- [ ] 修改 `HeroState.saveState`：遍历 `iterateModifiers()` 写入 `modifiers` 字段
-- [ ] 修改 `HeroState.loadState`：遍历 `state.modifiers` 重建修饰器并挂载
+- [x] 修改 `HeroState.saveState`：遍历 `iterateModifiers()` 写入 `modifiers` 字段
+- [x] 修改 `HeroState.loadState`：遍历 `state.modifiers` 重建修饰器并挂载
