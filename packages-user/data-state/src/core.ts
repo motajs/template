@@ -1,4 +1,4 @@
-import { ICoreState, IStateSaveData } from './types';
+import { ICoreState, ISaveableExecutor } from './types';
 import {
     DamageSystem,
     EnemyContext,
@@ -19,9 +19,12 @@ import {
     ILayerState,
     LayerState,
     RoleFaceBinder,
-    FaceDirection
+    FaceDirection,
+    ISaveableContent,
+    IStateSaveData,
+    SaveCompression
 } from '@user/data-base';
-import { IEnemyAttr } from './enemy/types';
+import { IEnemyAttr } from './enemy';
 import {
     CommonAuraConverter,
     EnemyLegacyBridge,
@@ -36,22 +39,37 @@ import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
 import { IHeroAttr } from './hero';
 import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
+import { logger } from '@motajs/common';
+import { ISaveSystem } from './save';
+import { SaveSystem } from './save/system';
 
 export class CoreState implements ICoreState {
+    // 全局内容
     readonly roleFace: IRoleFaceBinder;
     readonly idNumberMap: Map<string, number>;
     readonly numberIdMap: Map<number, string>;
 
-    readonly loadProgress: ILoadProgressTotal;
-    readonly dataLoader: IMotaDataLoader;
-
+    // 可存档内容
     readonly layer: ILayerState;
     readonly hero: IHeroState<IHeroAttr>;
-
     readonly enemyManager: IEnemyManager<IEnemyAttr>;
-    readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
-
     readonly flags: IFlagSystem;
+
+    // 状态内容
+    readonly loadProgress: ILoadProgressTotal;
+    readonly dataLoader: IMotaDataLoader;
+    readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
+    readonly saveSystem: ISaveSystem;
+
+    /** 可存档对象映射 */
+    private readonly saveables: Map<string, ISaveableContent<any>> = new Map();
+    /** 所有已添加的可存档对象 */
+    private readonly addedSaveables: Set<ISaveableContent<any>> = new Set();
+    /** 已绑定的存档执行器 */
+    private readonly executors: Map<
+        ISaveableContent<any>,
+        ISaveableExecutor<any>
+    > = new Map();
 
     constructor() {
         this.layer = new LayerState();
@@ -101,6 +119,25 @@ export class CoreState implements ICoreState {
 
         //#endregion
 
+        //#region 存档系统
+
+        this.saveSystem = new SaveSystem();
+        // 配置存档系统，一般情况下不建议动，除非你知道你在干什么
+        this.saveSystem.config({
+            autosaveLevel: SaveCompression.LowCompression,
+            commonSaveLevel: SaveCompression.HighCompression,
+            autosaveTimeTolerance: 50,
+            saveTimeTolerance: 100,
+            autosaveStackSize: 20
+        });
+
+        // 初始化存档数据库，不要动
+        loading.once('coreInit', () => {
+            this.saveSystem.init(`@game/${core.firstData.name}`);
+        });
+
+        //#endregion
+
         //#region 其他初始化
 
         this.flags = new FlagSystem();
@@ -109,6 +146,8 @@ export class CoreState implements ICoreState {
         loading.once('loaded', () => {
             this.initEnemyManager(enemys_fcae963b_31c9_42b4_b48c_bb48d09f3f80);
         });
+
+        this.addSaveableContent('flags', this.flags);
 
         //#endregion
     }
@@ -141,6 +180,36 @@ export class CoreState implements ICoreState {
             } else {
                 manager.addPrefabFromLegacy(num, enemy);
             }
+        }
+    }
+
+    addSaveableContent(id: string, content: ISaveableContent<unknown>): void {
+        if (this.saveables.has(id)) {
+            logger.warn(112, id);
+            return;
+        }
+        this.saveables.set(id, content);
+    }
+
+    getSaveableContent<T>(id: string): ISaveableContent<T> | null {
+        const content = this.saveables.get(id);
+        return (content as ISaveableContent<T>) ?? null;
+    }
+
+    bindSaveableExecuter<T>(
+        content: ISaveableContent<T> | string,
+        executor: ISaveableExecutor<T>
+    ): void {
+        if (typeof content === 'string') {
+            const saveable = this.saveables.get(content);
+            if (!saveable) return;
+            this.executors.set(saveable, executor);
+        } else {
+            if (!this.addedSaveables.has(content)) {
+                logger.warn(113);
+                return;
+            }
+            this.executors.set(content, executor);
         }
     }
 

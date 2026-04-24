@@ -5,3 +5,4 @@ export * from './final';
 export * from './legacy';
 export * from './mapDamage';
 export * from './special';
+export * from './types';

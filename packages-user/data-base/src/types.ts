@@ -1,9 +1,7 @@
-import { IMotaDataLoader } from './load';
-import { ILoadProgressTotal } from '@motajs/loader';
 import { IHeroFollower, IHeroState } from './hero';
-import { IEnemyContext, IEnemyManager } from './enemy';
+import { IEnemyManager } from './enemy';
 import { IFlagSystem } from './flag';
-import { IRoleFaceBinder } from './common';
+import { IRoleFaceBinder, ISaveableContent } from './common';
 import { ILayerState } from './map';
 
 export interface IStateSaveData {
@@ -19,11 +17,6 @@ export interface IStateBase<TEnemy, THero> {
     /** 图块数字到 id 的映射 */
     readonly numberIdMap: Map<number, string>;
 
-    /** 加载进度对象 */
-    readonly loadProgress: ILoadProgressTotal;
-    /** 数据端加载对象 */
-    readonly dataLoader: IMotaDataLoader;
-
     /** 地图状态 */
     readonly layer: ILayerState;
     /** 勇士状态 */
@@ -31,20 +24,20 @@ export interface IStateBase<TEnemy, THero> {
 
     /** 怪物管理器 */
     readonly enemyManager: IEnemyManager<TEnemy>;
-    /** 怪物上下文 */
-    readonly enemyContext: IEnemyContext<TEnemy, THero>;
 
     /** Flag 系统 */
     readonly flags: IFlagSystem;
 
     /**
-     * 保存当前状态
+     * 添加可存档对象，添加后系统将会自动在存档时将对象存储
+     * @param id 可存档对象的 id
+     * @param content 可存档对象
      */
-    saveState(): IStateSaveData;
+    addSaveableContent(id: string, content: ISaveableContent<unknown>): void;
 
     /**
-     * 加载状态
-     * @param state 状态对象
+     * 根据 id 获取对应的可存档对象
+     * @param id 可存档对象的 id
      */
-    loadState(state: IStateSaveData): void;
+    getSaveableContent<T>(id: string): ISaveableContent<T> | null;
 }

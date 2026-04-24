@@ -1,9 +1,15 @@
-import { IHookBase, IHookable } from '@motajs/common';
-import { FaceDirection } from '@user/data-state';
+import { IFacedTileLocator, IHookBase, IHookable } from '@motajs/common';
+import { FaceDirection, ISaveableContent } from '../common';
 
 //#region 勇士属性
 
-export interface IHeroModifier<T = unknown, V = unknown> {
+export interface IHeroModifier<
+    T = unknown,
+    V = unknown,
+    S = unknown
+> extends ISaveableContent<S> {
+    /** 修饰器类型 */
+    readonly type: string;
     /** 修饰器优先级 */
     readonly priority: number;
     /** 修饰器参数值 */
@@ -42,6 +48,15 @@ export interface IHeroModifier<T = unknown, V = unknown> {
     clone(): IHeroModifier<T, V>;
 }
 
+export interface IModifierStateSave {
+    /** 属性名称 */
+    readonly name: PropertyKey;
+    /** 修饰器类型 */
+    readonly type: string;
+    /** 修饰器存档数据 */
+    readonly state: unknown;
+}
+
 export interface IReadonlyHeroAttribute<THero> {
     /**
      * 获取勇士的基础属性，即未经过任何 Buff 或装备等加成的属性
@@ -77,6 +92,16 @@ export interface IReadonlyHeroAttribute<THero> {
      * 获取此勇士属性对象的可修改副本
      */
     getModifiableClone(): IHeroAttribute<THero>;
+
+    /**
+     * 转换为结构化对象
+     */
+    toStructured(): THero;
+
+    /**
+     * 遍历所有已挂载的属性修饰器
+     */
+    iterateModifiers(): Iterable<[PropertyKey, IHeroModifier]>;
 }
 
 export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
@@ -332,7 +357,20 @@ export interface IHeroMover extends IHookable<IHeroMovingHooks> {
 
 //#region 勇士状态
 
-export interface IHeroState<THero> {
+export interface IHeroStateSave<THero> {
+    /** 勇士属性状态 */
+    readonly attribute: THero;
+    /** 勇士当前位置 */
+    readonly locator: IFacedTileLocator;
+    /** 勇士当前的跟随者 */
+    readonly followers: readonly Readonly<IHeroFollower>[];
+    /** 勇士属性修饰器状态 */
+    readonly modifiers: readonly IModifierStateSave[];
+}
+
+export interface IHeroState<THero> extends ISaveableContent<
+    IHeroStateSave<THero>
+> {
     /** 勇士移动对象 */
     readonly mover: IHeroMover;
     /** 勇士属性对象 */
@@ -369,6 +407,29 @@ export interface IHeroState<THero> {
      * 获取独立勇士属性对象，修改此对象不会影响勇士本身的属性
      */
     getIsolatedAttribute(): IHeroAttribute<THero>;
+
+    /**
+     * 注册一个修饰器工厂函数
+     * @param type 修饰器类型
+     * @param cons 工厂函数
+     */
+    registerModifier(type: string, cons: () => IHeroModifier): void;
+
+    /**
+     * 创建指定类型的修饰器实例
+     * @param type 修饰器类型
+     */
+    createModifier<T, V>(type: string): IHeroModifier<T, V> | null;
+
+    /**
+     * 创建指定类型的修饰器实例并插入至勇士属性对象
+     * @param type 修饰器类型
+     * @param name 属性名称
+     */
+    createAndInsertModifier<K extends keyof THero, V>(
+        type: string,
+        name: K
+    ): IHeroModifier<THero[K], V> | null;
 }
 
 //#endregion

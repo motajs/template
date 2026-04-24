@@ -1,7 +1,9 @@
 import { logger } from '@motajs/common';
+import { SaveCompression } from '../common';
 import { IHeroAttribute, IHeroModifier } from './types';
 
-export abstract class BaseHeroModifier<T, V> implements IHeroModifier<T, V> {
+export abstract class BaseHeroModifier<T, V> implements IHeroModifier<T, V, V> {
+    abstract readonly type: string;
     abstract readonly priority: number;
 
     owner: IHeroAttribute<unknown> | null = null;
@@ -23,6 +25,14 @@ export abstract class BaseHeroModifier<T, V> implements IHeroModifier<T, V> {
 
     bindAttribute(attribute: IHeroAttribute<unknown> | null): void {
         this.owner = attribute;
+    }
+
+    saveState(_compression: SaveCompression): V {
+        return this.currentValue;
+    }
+
+    loadState(state: V, _compression: SaveCompression): void {
+        this.setValue(state);
     }
 
     abstract modify(value: T, baseValue: T, name: string): T;
@@ -160,5 +170,15 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
 
     getModifiableClone(): IHeroAttribute<THero> {
         return this.clone();
+    }
+
+    toStructured(): THero {
+        return structuredClone(this.attribute);
+    }
+
+    *iterateModifiers(): IterableIterator<[keyof THero, IHeroModifier]> {
+        for (const [modifier, name] of this.modifierName) {
+            yield [name, modifier];
+        }
     }
 }

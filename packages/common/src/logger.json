@@ -168,6 +168,11 @@
         "109": "Expected a different object reference returned, but got a same reference at modifier '$1' for property '$2'.",
         "110": "Expected a hero attribute binding before executing any enemy context calculation.",
         "111": "Cannot add value to flag field '$1', since the current value is not a number.",
+        "112": "Cannot add saveable content since id '$1' has already been occupied.",
+        "113": "Cannot bind saveable executor since target saveable content has not been added.",
+        "114": "Save operation took $1ms, exceeding the tolerance of $2ms. Consider reducing compression level.",
+        "115": "Autosave operation took $1ms, exceeding the tolerance of $2ms. Consider reducing compression level.",
+        "116": "Cannot construct modifier of type '$1' since no registry for it.",
         "1001": "Item-detail extension needs 'floor-binder' and 'floor-damage' extension as dependency."
     }
 }
