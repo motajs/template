@@ -22,7 +22,8 @@ import {
     FaceDirection,
     ISaveableContent,
     IStateSaveData,
-    SaveCompression
+    SaveCompression,
+    IReadonlyEnemy
 } from '@user/data-base';
 import { IEnemyAttr } from './enemy';
 import {
@@ -42,6 +43,7 @@ import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
 import { ISaveSystem } from './save';
 import { SaveSystem } from './save/system';
+import { MainEnemyComparer } from './enemy/comparer';
 
 export class CoreState implements ICoreState {
     // 全局内容
@@ -92,7 +94,9 @@ export class CoreState implements ICoreState {
         //#region 怪物初始化
 
         // 怪物管理器初始化
+        const comparer = new MainEnemyComparer();
         const enemyManager = new EnemyManager(new EnemyLegacyBridge());
+        enemyManager.attachEnemyComparer(comparer);
         enemyManager.setAttributeDefaults('hp', 0);
         enemyManager.setAttributeDefaults('atk', 0);
         enemyManager.setAttributeDefaults('def', 0);
@@ -159,6 +163,7 @@ export class CoreState implements ICoreState {
     private initEnemyManager(data: Record<EnemyIds, Enemy>) {
         // TODO: 修改怪物模板并存入存档，即 core.setEnemy
         const manager = this.enemyManager;
+        const reference = new Map<number, IReadonlyEnemy<IEnemyAttr>>();
         for (const [id, enemy] of Object.entries(structuredClone(data))) {
             const num = this.idNumberMap.get(id);
             if (isNil(num)) continue;
@@ -169,7 +174,9 @@ export class CoreState implements ICoreState {
                 const upCode = this.idNumberMap.get(up)!;
                 const rightCode = this.idNumberMap.get(right)!;
                 const downCode = this.idNumberMap.get(down)!;
-                manager.addPrefabFromLegacy(downCode, enemy);
+                const prefab = manager.fromLegacyEnemy(downCode, enemy);
+                reference.set(downCode, prefab);
+                manager.addPrefab(prefab);
                 this.roleFace.malloc(downCode, FaceDirection.Down);
                 this.roleFace.bind(leftCode, downCode, FaceDirection.Left);
                 this.roleFace.bind(upCode, downCode, FaceDirection.Up);
@@ -178,9 +185,12 @@ export class CoreState implements ICoreState {
                 manager.reusePrefab(num, upCode, up);
                 manager.reusePrefab(num, rightCode, right);
             } else {
-                manager.addPrefabFromLegacy(num, enemy);
+                const prefab = manager.fromLegacyEnemy(num, enemy);
+                reference.set(num, prefab);
+                manager.addPrefab(prefab);
             }
         }
+        manager.compareWith(reference);
     }
 
     addSaveableContent(id: string, content: ISaveableContent<unknown>): void {

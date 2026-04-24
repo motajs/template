@@ -10,7 +10,7 @@ import {
     IMaterialManager,
     ITrackedAssetData
 } from '@user/client-base';
-import { ILayerState, IMapLayer } from '@user/data-state';
+import { ILayerState, IMapLayer } from '@user/data-base';
 import { TimingFn } from 'mutate-animate';
 
 export const enum MapBackgroundRepeat {

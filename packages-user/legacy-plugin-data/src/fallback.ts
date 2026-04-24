@@ -1,11 +1,6 @@
 import type { TimingFn } from 'mutate-animate';
-import {
-    fromDirectionString,
-    heroMoveCollection,
-    MoveStep,
-    state
-} from '@user/data-state';
-import { hook, loading } from '@user/data-base';
+import { heroMoveCollection, MoveStep, state } from '@user/data-state';
+import { fromDirectionString, hook, loading } from '@user/data-base';
 import { Patch, PatchClass } from '@motajs/legacy-common';
 import { isNil } from 'lodash-es';
 
@@ -59,8 +54,6 @@ export function initFallback() {
 
     Mota.r(() => {
         // ----- 引入
-        const { mainRenderer } = Mota.require('@user/client-modules');
-        const Animation = Mota.require('MutateAnimate');
 
         const patch = new Patch(PatchClass.Control);
         const patch2 = new Patch(PatchClass.Events);

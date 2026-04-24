@@ -30,7 +30,7 @@ import {
     MapTileBehavior,
     MapTileSizeTestMode
 } from './types';
-import { ILayerState, ILayerStateHooks, IMapLayer } from '@user/data-state';
+import { ILayerState, ILayerStateHooks, IMapLayer } from '@user/data-base';
 import { IHookController, logger } from '@motajs/common';
 import { compileProgramWith } from '@motajs/client-base';
 import { isNil, maxBy } from 'lodash-es';

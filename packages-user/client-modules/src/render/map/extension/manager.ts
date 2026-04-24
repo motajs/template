@@ -1,5 +1,5 @@
 import { IHeroMover } from '@user/data-base';
-import { IMapLayer } from '@user/data-state';
+import { IMapLayer } from '@user/data-base';
 import {
     IMapDoorRenderer,
     IMapExtensionManager,

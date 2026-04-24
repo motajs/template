@@ -4,7 +4,7 @@ import {
     HeroAnimateDirection,
     IHeroMover
 } from '@user/data-base';
-import { IMapLayer } from '@user/data-state';
+import { IMapLayer } from '@user/data-base';
 
 import { IMapRenderResult } from '../types';
 

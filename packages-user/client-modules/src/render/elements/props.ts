@@ -1,6 +1,6 @@
 import { BaseProps, TagDefine } from '@motajs/render-vue';
 import { ERenderItemEvent, SizedCanvasImageSource } from '@motajs/render';
-import { ILayerState } from '@user/data-state';
+import { ILayerState } from '@user/data-base';
 import { IMapExtensionManager, IMapRenderer } from '../map';
 
 export interface IconProps extends BaseProps {

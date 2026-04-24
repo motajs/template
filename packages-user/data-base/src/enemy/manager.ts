@@ -24,6 +24,10 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
     private readonly prefabById: Map<string, IEnemy<TAttr>> = new Map();
     /** 旧样板怪物 id 到 code 的映射，用于 fromLegacyEnemy 快速查找已有模板 */
     private readonly legacyIdToCode: Map<string, number> = new Map();
+    /** 复用映射，reusedCode -> sourceCode */
+    private readonly reuseByCode: Map<number, number> = new Map();
+    /** 复用映射，reusedId -> sourceId */
+    private readonly reuseById: Map<string, string> = new Map();
     /** 脏模板集合，存储发生了变化的模板 code */
     private readonly dirtySet: Set<number> = new Set();
     /** 参考快照，code -> IReadonlyEnemy，由 compareWith 提供 */
@@ -124,9 +128,11 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
 
     private internalGetPrefab(code: number | string) {
         if (typeof code === 'number') {
-            return this.prefabByCode.get(code) ?? null;
+            const sourceCode = this.reuseByCode.get(code) ?? code;
+            return this.prefabByCode.get(sourceCode) ?? null;
         } else {
-            return this.prefabById.get(code) ?? null;
+            const sourceId = this.reuseById.get(code) ?? code;
+            return this.prefabById.get(sourceId) ?? null;
         }
     }
 
@@ -155,11 +161,13 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
     }
 
     getPrefab(code: number): IReadonlyEnemy<TAttr> | null {
-        return this.prefabByCode.get(code) ?? null;
+        const sourceCode = this.reuseByCode.get(code) ?? code;
+        return this.prefabByCode.get(sourceCode) ?? null;
     }
 
     getPrefabById(id: string): IReadonlyEnemy<TAttr> | null {
-        return this.prefabById.get(id) ?? null;
+        const sourceId = this.reuseById.get(id) ?? id;
+        return this.prefabById.get(sourceId) ?? null;
     }
 
     deletePrefab(code: number | string): void {
@@ -181,8 +189,8 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
     reusePrefab(source: number | string, code: number, id: string): void {
         const prefab = this.internalGetPrefab(source);
         if (!prefab) return;
-        this.prefabByCode.set(code, prefab);
-        this.prefabById.set(id, prefab);
+        this.reuseByCode.set(code, prefab.code);
+        this.reuseById.set(id, prefab.id);
     }
 
     compareWith(reference: ReadonlyMap<number, IReadonlyEnemy<TAttr>>): void {
