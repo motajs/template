@@ -10,7 +10,7 @@ import {
     SpecialCreation,
     IEnemySaveState
 } from './types';
-import { SaveCompression } from '../common/types';
+import { SaveCompression } from '../common';
 
 export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
     /** 特殊属性注册表，code -> 创建函数 */

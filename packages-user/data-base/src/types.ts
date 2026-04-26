@@ -2,7 +2,7 @@ import { IHeroFollower, IHeroState } from './hero';
 import { IEnemyManager } from './enemy';
 import { IFlagSystem } from './flag';
 import { IRoleFaceBinder, ISaveableContent } from './common';
-import { ILayerState } from './map';
+import { IMapStore } from './map';
 
 export interface IStateSaveData {
     /** 跟随者列表 */
@@ -18,7 +18,7 @@ export interface IStateBase<TEnemy, THero> {
     readonly numberIdMap: Map<number, string>;
 
     /** 地图状态 */
-    readonly layer: ILayerState;
+    readonly layer: IMapStore;
     /** 勇士状态 */
     readonly hero: IHeroState<THero>;
 

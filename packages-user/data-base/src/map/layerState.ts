@@ -29,6 +29,12 @@ export class LayerState
     /** 图层钩子映射 */
     private layerHookMap: Map<IMapLayer, IMapLayerHookController> = new Map();
 
+    /** 楼层是否处于激活状态 */
+    active: boolean = false;
+
+    /** 楼层级脏标记 */
+    private dirty: boolean = false;
+
     addLayer(width: number, height: number): IMapLayer {
         const array = new Uint32Array(width * height);
         const layer = new MapLayer(array, width, height);
@@ -106,6 +112,18 @@ export class LayerState
         return this.backgroundTile;
     }
 
+    setActiveStatus(active: boolean): void {
+        this.active = active;
+    }
+
+    isDirty(): boolean {
+        return this.dirty;
+    }
+
+    setDirty(dirty: boolean): void {
+        this.dirty = dirty;
+    }
+
     protected createController(
         hook: Partial<ILayerStateHooks>
     ): IHookController<ILayerStateHooks> {
@@ -120,18 +138,21 @@ class StateMapLayerHook implements Partial<IMapLayerHooks> {
     ) {}
 
     onUpdateArea(x: number, y: number, width: number, height: number): void {
+        this.state.setDirty(true);
         this.state.forEachHook(hook => {
             hook.onUpdateLayerArea?.(this.layer, x, y, width, height);
         });
     }
 
     onUpdateBlock(block: number, x: number, y: number): void {
+        this.state.setDirty(true);
         this.state.forEachHook(hook => {
             hook.onUpdateLayerBlock?.(this.layer, block, x, y);
         });
     }
 
     onResize(width: number, height: number): void {
+        this.state.setDirty(true);
         this.state.forEachHook(hook => {
             hook.onResizeLayer?.(this.layer, width, height);
         });
