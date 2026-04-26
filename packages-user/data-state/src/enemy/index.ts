@@ -1,5 +1,6 @@
 export * from './aura';
 export * from './calculator';
+export * from './comparer';
 export * from './damage';
 export * from './final';
 export * from './legacy';

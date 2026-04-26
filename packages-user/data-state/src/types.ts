@@ -30,7 +30,8 @@ export interface ICoreState extends IStateBase<IEnemyAttr, IHeroAttr> {
     readonly saveSystem: ISaveSystem;
 
     /**
-     * 将某个存档执行器绑定至指定的可存档对象，一个可存档对象只能绑定一个执行器，但一个执行器可以绑定多个可存档对象
+     * 将某个存档执行器绑定至指定的可存档对象，一个可存档对象只能绑定一个执行器，
+     * 但一个执行器可以绑定多个可存档对象，主要用来在读档后进行一些全局性的操作
      * @param content 可存档对象或其注册 id
      * @param executor 可存档对象对应的执行器
      */

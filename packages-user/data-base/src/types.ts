@@ -18,7 +18,7 @@ export interface IStateBase<TEnemy, THero> {
     readonly numberIdMap: Map<number, string>;
 
     /** 地图状态 */
-    readonly layer: IMapStore;
+    readonly maps: IMapStore;
     /** 勇士状态 */
     readonly hero: IHeroState<THero>;
 

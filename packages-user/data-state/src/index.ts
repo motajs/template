@@ -1,27 +1,9 @@
 import { FaceDirection, loading } from '@user/data-base';
 import { isNil } from 'lodash-es';
 import { ICoreState } from './types';
-import { TILE_HEIGHT, TILE_WIDTH } from './shared';
 import { state } from './ins';
 
 function createCoreState(state: ICoreState) {
-    //#region 地图部分
-
-    const width = TILE_WIDTH;
-    const height = TILE_HEIGHT;
-    const bg = state.layer.addLayer(width, height);
-    const bg2 = state.layer.addLayer(width, height);
-    const event = state.layer.addLayer(width, height);
-    const fg = state.layer.addLayer(width, height);
-    const fg2 = state.layer.addLayer(width, height);
-    state.layer.setLayerAlias(bg, 'bg');
-    state.layer.setLayerAlias(bg2, 'bg2');
-    state.layer.setLayerAlias(event, 'event');
-    state.layer.setLayerAlias(fg, 'fg');
-    state.layer.setLayerAlias(fg2, 'fg2');
-
-    //#endregion
-
     //#region 图块部分
 
     const data = Object.entries(core.maps.blocksInfo);

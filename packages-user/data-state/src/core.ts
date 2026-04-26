@@ -16,16 +16,14 @@ import {
     MotaDataLoader,
     loading,
     IRoleFaceBinder,
-    ILayerState,
-    LayerState,
     RoleFaceBinder,
     FaceDirection,
     ISaveableContent,
-    IStateSaveData,
     SaveCompression,
-    IReadonlyEnemy
+    IReadonlyEnemy,
+    IMapStore,
+    MapStore
 } from '@user/data-base';
-import { IEnemyAttr } from './enemy';
 import {
     CommonAuraConverter,
     EnemyLegacyBridge,
@@ -34,16 +32,25 @@ import {
     MainEnemyFinalEffect,
     MainMapDamageConverter,
     MainMapDamageReducer,
-    registerSpecials
+    registerSpecials,
+    MainEnemyComparer,
+    IEnemyAttr
 } from './enemy';
-import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
+import {
+    BG2_ZINDEX,
+    BG_ZINDEX,
+    EVENT_ZINDEX,
+    FG2_ZINDEX,
+    FG_ZINDEX,
+    HERO_DEFAULT_ATTRIBUTE,
+    TILE_HEIGHT,
+    TILE_WIDTH
+} from './shared';
 import { IHeroAttr } from './hero';
 import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
-import { ISaveSystem } from './save';
-import { SaveSystem } from './save/system';
-import { MainEnemyComparer } from './enemy/comparer';
+import { ISaveSystem, SaveSystem } from './save';
 
 export class CoreState implements ICoreState {
     // 全局内容
@@ -52,7 +59,7 @@ export class CoreState implements ICoreState {
     readonly numberIdMap: Map<number, string>;
 
     // 可存档内容
-    readonly layer: ILayerState;
+    readonly maps: IMapStore;
     readonly hero: IHeroState<IHeroAttr>;
     readonly enemyManager: IEnemyManager<IEnemyAttr>;
     readonly flags: IFlagSystem;
@@ -74,7 +81,7 @@ export class CoreState implements ICoreState {
     > = new Map();
 
     constructor() {
-        this.layer = new LayerState();
+        this.maps = new MapStore();
         this.roleFace = new RoleFaceBinder();
         this.idNumberMap = new Map();
         this.numberIdMap = new Map();
@@ -149,9 +156,16 @@ export class CoreState implements ICoreState {
         // 加载先使用兼容层实现
         loading.once('loaded', () => {
             this.initEnemyManager(enemys_fcae963b_31c9_42b4_b48c_bb48d09f3f80);
+            this.initMapStore(
+                core.floorIds,
+                core.floors as Record<FloorIds, ResolvedFloor>
+            );
         });
 
-        this.addSaveableContent('flags', this.flags);
+        this.addSaveableContent('@system/hero', this.hero);
+        this.addSaveableContent('@system/flags', this.flags);
+        this.addSaveableContent('@system/maps', this.maps);
+        this.addSaveableContent('@system/enemy', this.enemyManager);
 
         //#endregion
     }
@@ -193,12 +207,86 @@ export class CoreState implements ICoreState {
         manager.compareWith(reference);
     }
 
+    private initMapStore(
+        floors: FloorIds[],
+        data: Record<FloorIds, ResolvedFloor>
+    ) {
+        const reference = new Map<string, Map<number, Uint32Array>>();
+        for (const id of floors) {
+            const floor = data[id];
+            const state = this.maps.createLayerState(id);
+            const bg = state.addLayer(floor.width, floor.height);
+            const bg2 = state.addLayer(floor.width, floor.height);
+            const event = state.addLayer(floor.width, floor.height);
+            const fg = state.addLayer(floor.width, floor.height);
+            const fg2 = state.addLayer(floor.width, floor.height);
+            bg.setZIndex(BG_ZINDEX);
+            bg2.setZIndex(BG2_ZINDEX);
+            event.setZIndex(EVENT_ZINDEX);
+            fg.setZIndex(FG_ZINDEX);
+            fg2.setZIndex(FG2_ZINDEX);
+            state.setLayerAlias(bg, 'bg');
+            state.setLayerAlias(bg2, 'bg2');
+            state.setLayerAlias(event, 'event');
+            state.setLayerAlias(fg, 'fg');
+            state.setLayerAlias(fg2, 'fg2');
+            state.setActiveStatus(false);
+
+            const size = floor.width * floor.height;
+            const ref = new Map<number, Uint32Array>();
+
+            if (floor.bgmap && floor.bgmap.length > 0) {
+                const arr = new Uint32Array(floor.bgmap.flat());
+                bg.setMapRef(arr);
+                ref.set(BG_ZINDEX, new Uint32Array(arr));
+            } else {
+                ref.set(BG_ZINDEX, new Uint32Array(size));
+            }
+
+            if (floor.bg2map && floor.bg2map.length > 0) {
+                const arr = new Uint32Array(floor.bg2map.flat());
+                bg2.setMapRef(arr);
+                ref.set(BG2_ZINDEX, new Uint32Array(arr));
+            } else {
+                ref.set(BG2_ZINDEX, new Uint32Array(size));
+            }
+
+            if (floor.map && floor.map.length > 0) {
+                const arr = new Uint32Array(floor.map.flat());
+                event.setMapRef(arr);
+                ref.set(EVENT_ZINDEX, new Uint32Array(arr));
+            } else {
+                ref.set(EVENT_ZINDEX, new Uint32Array(size));
+            }
+
+            if (floor.fgmap && floor.fgmap.length > 0) {
+                const arr = new Uint32Array(floor.fgmap.flat());
+                fg.setMapRef(arr);
+                ref.set(FG_ZINDEX, new Uint32Array(arr));
+            } else {
+                ref.set(FG_ZINDEX, new Uint32Array(size));
+            }
+
+            if (floor.fg2map && floor.fg2map.length > 0) {
+                const arr = new Uint32Array(floor.fg2map.flat());
+                fg2.setMapRef(arr);
+                ref.set(FG2_ZINDEX, new Uint32Array(arr));
+            } else {
+                ref.set(FG2_ZINDEX, new Uint32Array(size));
+            }
+
+            reference.set(id, ref);
+        }
+        this.maps.compareWith(reference);
+    }
+
     addSaveableContent(id: string, content: ISaveableContent<unknown>): void {
         if (this.saveables.has(id)) {
             logger.warn(112, id);
             return;
         }
         this.saveables.set(id, content);
+        this.addedSaveables.add(content);
     }
 
     getSaveableContent<T>(id: string): ISaveableContent<T> | null {
@@ -221,18 +309,5 @@ export class CoreState implements ICoreState {
             }
             this.executors.set(content, executor);
         }
-    }
-
-    saveState(): IStateSaveData {
-        return structuredClone({
-            followers: this.hero.mover.followers
-        });
-    }
-
-    loadState(data: IStateSaveData): void {
-        this.hero.mover.removeAllFollowers();
-        data.followers.forEach(v => {
-            this.hero.mover.addFollower(v.num, v.identifier);
-        });
     }
 }
