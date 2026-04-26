@@ -186,14 +186,12 @@ export class MapLayer
         }
         const res = new Uint32Array(width * height);
         const arr = this.mapArray;
-        const nr = Math.min(r, w);
         const nb = Math.min(b, h);
-        for (let nx = x; nx < nr; nx++) {
-            for (let ny = y; ny < nb; ny++) {
-                const origin = ny * w + nx;
-                const target = (ny - y) * width + (nx - x);
-                res[target] = arr[origin];
-            }
+        for (let ny = y; ny < nb; ny++) {
+            const lineStart = ny * w + x;
+            const lineEnd = lineStart + width;
+            const dy = ny - y;
+            res.set(arr.subarray(lineStart, lineEnd), dy * width);
         }
         return res;
     }
@@ -203,6 +201,27 @@ export class MapLayer
      */
     getMapRef(): IMapLayerData {
         return this.mapData;
+    }
+
+    setMapRef(array: Uint32Array): void {
+        if (array.length !== this.width * this.height) {
+            logger.warn(
+                123,
+                array.length.toString(),
+                (this.width * this.height).toString()
+            );
+            return;
+        }
+        this.mapData.expired = true;
+        this.mapArray = array;
+        this.mapData = {
+            expired: false,
+            array: this.mapArray
+        };
+        this.empty = !array.some(v => v !== 0);
+        this.forEachHook(hook => {
+            hook.onUpdateArea?.(0, 0, this.width, this.height);
+        });
     }
 
     protected createController(

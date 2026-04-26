@@ -1,11 +1,6 @@
 import type { TimingFn } from 'mutate-animate';
-import {
-    fromDirectionString,
-    heroMoveCollection,
-    MoveStep,
-    state
-} from '@user/data-state';
-import { hook, loading } from '@user/data-base';
+import { heroMoveCollection, MoveStep, state } from '@user/data-state';
+import { fromDirectionString, hook, loading } from '@user/data-base';
 import { Patch, PatchClass } from '@motajs/legacy-common';
 import { isNil } from 'lodash-es';
 
@@ -59,8 +54,6 @@ export function initFallback() {
 
     Mota.r(() => {
         // ----- 引入
-        const { mainRenderer } = Mota.require('@user/client-modules');
-        const Animation = Mota.require('MutateAnimate');
 
         const patch = new Patch(PatchClass.Control);
         const patch2 = new Patch(PatchClass.Events);
@@ -331,7 +324,7 @@ export function initFallback() {
                         callback?.();
                     };
 
-                    const layer = state.layer.getLayerByAlias('event')!;
+                    const layer = state.maps.getLayerByAlias('event')!;
                     layer.openDoor(x, y).then(cb);
 
                     const animate = fallbackIds++;
@@ -380,7 +373,7 @@ export function initFallback() {
                     cb();
                 } else {
                     const num = state.idNumberMap.get(id)!;
-                    const layer = state.layer.getLayerByAlias('event')!;
+                    const layer = state.maps.getLayerByAlias('event')!;
                     layer.closeDoor(num, x, y).then(cb);
 
                     const animate = fallbackIds++;
@@ -521,11 +514,11 @@ export function initFallback() {
                 // 先使用 mainMapRenderer 妥协
                 const { client } = Mota.require('@user/client-modules');
                 const renderer = client.mainMapRenderer;
-                if (renderer.layerState !== state.layer) {
+                if (renderer.layerState !== state.maps) {
                     callback?.();
                     return;
                 }
-                const layer = state.layer.getLayerByAlias('event');
+                const layer = state.maps.getLayerByAlias('event');
                 if (!layer) {
                     callback?.();
                     return;

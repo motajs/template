@@ -1,9 +1,26 @@
 import { IHeroAttr } from './hero';
 
+//#region 地图相关
+
 /** 每个地图的默认宽度 */
 export const TILE_WIDTH = 13;
 /** 每个地图的默认高度 */
 export const TILE_HEIGHT = 13;
+
+// 图层纵深，这些纵深与渲染系统的纵深没有关系，仅在地图图层之间生效
+
+/** 背景层纵深 */
+export const BG_ZINDEX = 0;
+/** 背景层2纵深 */
+export const BG2_ZINDEX = 10;
+/** 事件层纵深 */
+export const EVENT_ZINDEX = 20;
+/** 前景层纵深 */
+export const FG_ZINDEX = 30;
+/** 前景层2纵深 */
+export const FG2_ZINDEX = 40;
+
+//#endregion
 
 //#region 勇士相关
 

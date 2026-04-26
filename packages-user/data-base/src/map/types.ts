@@ -1,4 +1,5 @@
 import { IHookable, IHookBase, IHookController } from '@motajs/common';
+import { ISaveableContent } from '../common';
 
 export interface IMapLayerData {
     /** 当前引用是否过期，当地图图层内部的地图数组引用更新时，此项会变为 `true` */
@@ -48,8 +49,7 @@ export interface IMapLayerHooks extends IHookBase {
     onCloseDoor(num: number, x: number, y: number): Promise<void>;
 }
 
-export interface IMapLayerHookController
-    extends IHookController<IMapLayerHooks> {
+export interface IMapLayerHookController extends IHookController<IMapLayerHooks> {
     /** 拓展所属的图层对象 */
     readonly layer: IMapLayer;
 
@@ -59,8 +59,10 @@ export interface IMapLayerHookController
     getMapData(): Readonly<IMapLayerData>;
 }
 
-export interface IMapLayer
-    extends IHookable<IMapLayerHooks, IMapLayerHookController> {
+export interface IMapLayer extends IHookable<
+    IMapLayerHooks,
+    IMapLayerHookController
+> {
     /** 地图宽度 */
     readonly width: number;
     /** 地图高度 */
@@ -155,6 +157,15 @@ export interface IMapLayer
      * @param y 门纵坐标
      */
     closeDoor(num: number, x: number, y: number): Promise<void>;
+
+    /**
+     * 直接替换内部图块数组引用，跳过拷贝，高性能但风险较高。
+     * 一般仅供 `MapStore` 读档时内部使用，外部正常情况下不应调用。
+     * 调用方需确保传入数组的长度与 `width * height` 匹配，
+     * 且调用后不得再持有或修改传入的数组。
+     * @param array 地图数组，会直接替换内部引用
+     */
+    setMapRef(array: Uint32Array): void;
 }
 
 export interface ILayerStateHooks extends IHookBase {
@@ -212,6 +223,8 @@ export interface ILayerStateHooks extends IHookBase {
 export interface ILayerState extends IHookable<ILayerStateHooks> {
     /** 地图列表 */
     readonly layerList: Set<IMapLayer>;
+    /** 此楼层是否处于激活状态 */
+    readonly active: boolean;
 
     /**
      * 添加图层
@@ -275,4 +288,107 @@ export interface ILayerState extends IHookable<ILayerStateHooks> {
      * 获取背景图块数字，如果没有设置过，则返回 0
      */
     getBackground(): number;
+
+    /**
+     * 设置楼层激活状态
+     * @param active 激活状态
+     */
+    setActiveStatus(active: boolean): void;
+
+    /**
+     * 楼层是否被修改过（相对于参考基准）
+     */
+    isDirty(): boolean;
+
+    /**
+     * 设置楼层脏标记
+     */
+    setDirty(dirty: boolean): void;
+}
+
+/** 单个 MapLayer 的存档数据 */
+export interface IMapLayerSave {
+    readonly width: number;
+    readonly height: number;
+
+    /**
+     * key = 行索引，value = 该行完整的 Uint32Array 数据；
+     * HighCompression 时使用此接口，仅包含与参考基准不同的行；
+     * 读档时，不在此 Map 中的行从参考基准还原。
+     */
+    readonly rows?: ReadonlyMap<number, Uint32Array>;
+
+    /** 完整地图，当使用 `NoCompression` 和 `LowCompression` 时使用此接口 */
+    readonly fullMap?: Uint32Array;
+}
+
+/** 单个楼层的存档数据 */
+export interface ILayerStateSave {
+    readonly background: number;
+
+    /** key = zIndex，value = 对应图层存档数据 */
+    readonly layers: ReadonlyMap<number, IMapLayerSave>;
+}
+
+/** 整个 MapStore 的存档数据 */
+export interface IMapStoreSave {
+    /** key = 楼层 id，只包含 active 的楼层，inactive 的楼层不写入，读档时无需处理 */
+    readonly floors: ReadonlyMap<string, ILayerStateSave>;
+}
+
+export interface IMapStore extends ISaveableContent<IMapStoreSave> {
+    /** 所有楼层的 id 集合 */
+    readonly maps: ReadonlySet<string>;
+
+    /**
+     * 获取指定 id 的楼层状态，不存在则返回 null
+     * @param id 楼层 id
+     */
+    getLayerState(id: string): ILayerState | null;
+
+    /**
+     * 获取指定 id 的楼层状态，要求楼层必须是 active 的，否则返回 null
+     * @param id 楼层 id
+     */
+    getActiveMap(id: string): ILayerState | null;
+
+    /**
+     * 创建并注册一个空白楼层，若 id 已存在则警告并覆盖，返回楼层状态对象
+     * @param id 楼层 id
+     */
+    createLayerState(id: string): ILayerState;
+
+    /**
+     * 获取指定 id 的楼层是否激活，不存在的 id 返回 false
+     * @param id 楼层 id
+     */
+    isMapActive(id: string): boolean;
+
+    /**
+     * 设置指定 id 楼层的激活状态
+     * @param id 楼层 id
+     * @param active 激活状态
+     */
+    setMapActiveStatus(id: string, active: boolean): void;
+
+    /**
+     * 迭代所有 active 的楼层，yield [id, ILayerState]
+     */
+    iterateActiveMaps(): Iterable<[string, ILayerState]>;
+
+    /**
+     * 迭代所有 inactive 的楼层，yield [id, ILayerState]
+     */
+    iterateInactiveMaps(): Iterable<[string, ILayerState]>;
+
+    /**
+     * 迭代所有楼层，yield [id, ILayerState]
+     */
+    iterateAllMaps(): Iterable<[string, ILayerState]>;
+
+    /**
+     * 设置压缩参考基准，以首次调用为唯一基准，再次调用不更新。
+     * @param ref 外层 key = 楼层 id，内层 key = zIndex，value = 图层完整图块数据
+     */
+    compareWith(ref: Map<string, Map<number, Uint32Array>>): void;
 }

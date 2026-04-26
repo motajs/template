@@ -2,7 +2,7 @@ import { linear, TimingFn } from 'mutate-animate';
 import { IMapRenderer, IMapVertexGenerator, IMovingBlock } from './types';
 import { IMaterialFramedData, IMaterialManager } from '@user/client-base';
 import { logger } from '@motajs/common';
-import { IMapLayer } from '@user/data-state';
+import { IMapLayer } from '@user/data-base';
 import { DynamicBlockStatus } from './status';
 
 export interface IMovingRenderer {
