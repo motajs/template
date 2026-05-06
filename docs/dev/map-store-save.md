@@ -242,31 +242,31 @@ setActiveStatus(active: boolean): void;
 
 ### `@user/data-base/src/map/types.ts`
 
-- [ ] 新增 `IMapLayerSave` 接口：单个 MapLayer 存档数据格式
-- [ ] 新增 `ILayerStateSave` 接口：单个楼层存档数据格式
-- [ ] 新增 `IMapStoreSave` 接口：MapStore 整体存档数据格式
-- [ ] 修改 `ILayerState`：新增 `readonly active: boolean` 和
+- [x] 新增 `IMapLayerSave` 接口：单个 MapLayer 存档数据格式
+- [x] 新增 `ILayerStateSave` 接口：单个楼层存档数据格式
+- [x] 新增 `IMapStoreSave` 接口：MapStore 整体存档数据格式
+- [x] 修改 `ILayerState`：新增 `readonly active: boolean` 和
       `setActiveStatus(active: boolean): void`
-- [ ] 修改 `IMapLayer`：新增 `setMapRef(array: Uint32Array): void`
-- [ ] 新增 `IMapStore` 接口：继承 `ISaveableContent<IMapStoreSave>`，
+- [x] 修改 `IMapLayer`：新增 `setMapRef(array: Uint32Array): void`
+- [x] 新增 `IMapStore` 接口：继承 `ISaveableContent<IMapStoreSave>`，
       含全部接口（见第 7 节）
 
 ### `@user/data-base/src/map/mapLayer.ts`
 
 ### `@user/data-base/src/map/layerState.ts`
 
-- [ ] 新增 `active: boolean = false` 成员：楼层激活状态
-- [ ] 实现 `setActiveStatus(active: boolean): void`
-- [ ] 新增 `private dirty: boolean = false` 成员：楼层级脏标记
-- [ ] 修改 `StateMapLayerHook.onUpdateArea`、`onUpdateBlock`、`onResize`：
+- [x] 新增 `active: boolean = false` 成员：楼层激活状态
+- [x] 实现 `setActiveStatus(active: boolean): void`
+- [x] 新增 `private dirty: boolean = false` 成员：楼层级脏标记
+- [x] 修改 `StateMapLayerHook.onUpdateArea`、`onUpdateBlock`、`onResize`：
       在转发钩子的同时，将 `state.dirty` 置 `true`
-- [ ] 新增 `isDirty(): boolean` 方法：返回 `this.dirty`，供 `MapStore` 读取
-- [ ] 新增 `setDirty(dirty: boolean): void` 方法：
+- [x] 新增 `isDirty(): boolean` 方法：返回 `this.dirty`，供 `MapStore` 读取
+- [x] 新增 `setDirty(dirty: boolean): void` 方法：
       供 `MapStore.compareWith` 时根据实际比较结果设置
 
 ### `@user/data-base/src/map/mapLayer.ts`
 
-- [ ] 新增 `setMapRef(array: Uint32Array): void` 方法：
+- [x] 新增 `setMapRef(array: Uint32Array): void` 方法：
       直接替换内部图块数组引用，跳过拷贝，供 `MapStore` 读档时使用。
       需确保传入数组长度与 `width × height` 匹配，
       并触发必要的钩子通知（不触发 `onResize`，应触发 `onUpdateArea` 通知全区域更新）。
@@ -274,21 +274,21 @@ setActiveStatus(active: boolean): void;
 
 ### `@user/data-base/src/map/mapStore.ts`（新文件）
 
-- [ ] 实现 `MapStore` 类，实现 `IMapStore`
-- [ ] `private mapData: Map<string, LayerState>`：楼层 id 到状态对象的映射
-- [ ] `readonly maps: ReadonlySet<string>`：所有楼层 id 的只读集合视图
-- [ ] `private refData: Map<string, Map<number, Uint32Array>> | null`：参考基准
-- [ ] 实现 `getLayerState`、`getActiveMap`、`createLayerState`
-- [ ] 实现 `isMapActive`、`setMapActiveStatus`、`iterateActiveMaps`、`iterateInactiveMaps`、`iterateAllMaps`
-- [ ] 实现 `compareWith`
-- [ ] 实现 `saveNoCompression`、`saveLowCompression`、`saveHighCompression`
-- [ ] 实现 `loadNoCompression`、`loadLowCompression`、`loadHighCompression`
-- [ ] 实现 `saveState(compression)` 和 `loadState(state, compression)` 分发
+- [x] 实现 `MapStore` 类，实现 `IMapStore`
+- [x] `private mapData: Map<string, LayerState>`：楼层 id 到状态对象的映射
+- [x] `readonly maps: ReadonlySet<string>`：所有楼层 id 的只读集合视图
+- [x] `private refData: Map<string, Map<number, Uint32Array>> | null`：参考基准
+- [x] 实现 `getLayerState`、`getActiveMap`、`createLayerState`
+- [x] 实现 `isMapActive`、`setMapActiveStatus`、`iterateActiveMaps`、`iterateInactiveMaps`、`iterateAllMaps`
+- [x] 实现 `compareWith`
+- [x] 实现 `saveNoCompression`、`saveLowCompression`、`saveHighCompression`
+- [x] 实现 `loadNoCompression`、`loadLowCompression`、`loadHighCompression`
+- [x] 实现 `saveState(compression)` 和 `loadState(state, compression)` 分发
 
 ### `@user/data-base/src/map/index.ts`
 
-- [ ] 补充导出 `mapStore.ts`
+- [x] 补充导出 `mapStore.ts`
 
 ### `@user/data-base/src/types.ts`
 
-- [ ] 将 `IStateBase.layer` 类型由 `ILayerState` 改为 `IMapStore`
+- [x] 将 `IStateBase.layer` 类型由 `ILayerState` 改为 `IMapStore`

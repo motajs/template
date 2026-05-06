@@ -214,12 +214,16 @@ export class CoreState implements ICoreState {
         const reference = new Map<string, Map<number, Uint32Array>>();
         for (const id of floors) {
             const floor = data[id];
-            const state = this.maps.createLayerState(id);
-            const bg = state.addLayer(floor.width, floor.height);
-            const bg2 = state.addLayer(floor.width, floor.height);
-            const event = state.addLayer(floor.width, floor.height);
-            const fg = state.addLayer(floor.width, floor.height);
-            const fg2 = state.addLayer(floor.width, floor.height);
+            const state = this.maps.createLayerState(
+                id,
+                floor.width,
+                floor.height
+            );
+            const bg = state.addLayer();
+            const bg2 = state.addLayer();
+            const event = state.addLayer();
+            const fg = state.addLayer();
+            const fg2 = state.addLayer();
             bg.setZIndex(BG_ZINDEX);
             bg2.setZIndex(BG2_ZINDEX);
             event.setZIndex(EVENT_ZINDEX);

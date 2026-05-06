@@ -6,21 +6,65 @@ import {
     IMapLayer,
     IMapLayerSave,
     IMapStore,
-    IMapStoreSave
+    IMapStoreSave,
+    MapArea
 } from './types';
 import { LayerState } from './layerState';
+import { uniq } from 'lodash-es';
 
 export class MapStore implements IMapStore {
     /** 楼层 id 到状态对象的映射 */
     private readonly mapData: Map<string, LayerState> = new Map();
 
-    /** 所有楼层 id 的只读集合视图 */
-    readonly maps: Set<string> = new Set();
+    /** 所有楼层 id 的有序数组 */
+    readonly maps: string[] = [];
 
     /** 差分压缩参考基准，首次 compareWith 后设置，之后不再更新 */
     private refData: Map<string, Map<number, Uint32Array>> | null = null;
 
-    //#region 楼层访问
+    /** 分区列表 */
+    private areaList: Set<MapArea> = new Set();
+
+    /** 上一次调用 notifyEnterFloor 传入的楼层 id */
+    private lastFloorId: string | null = null;
+
+    /** 自动分区激活器开关 */
+    private autoActivitorEnabled: boolean = false;
+
+    //#region 楼层管理
+
+    createLayerState(id: string, width: number, height: number): ILayerState {
+        if (this.mapData.has(id)) {
+            logger.warn(121, id);
+        } else {
+            this.maps.push(id);
+        }
+        const state = new LayerState(width, height);
+        // 若 refData 已存在，新楼层直接视为全脏
+        if (this.refData !== null) {
+            state.setDirty(true);
+        }
+        this.mapData.set(id, state);
+        return state;
+    }
+
+    setMapList(maps: string[]): void {
+        this.maps.length = 0;
+        this.maps.push(...uniq(maps));
+    }
+
+    useManualOrder(sort: (arr: string[]) => string[]): void {
+        const copy = this.maps.slice();
+        const sorted = sort(copy);
+        const oldSet = new Set(this.maps);
+        const newSet = new Set(sorted);
+        if (oldSet.size !== newSet.size || !newSet.isSubsetOf(oldSet)) {
+            logger.warn(125);
+            return;
+        }
+        this.maps.length = 0;
+        this.maps.push(...uniq(sorted));
+    }
 
     getLayerState(id: string): ILayerState | null {
         return this.mapData.get(id) ?? null;
@@ -34,20 +78,65 @@ export class MapStore implements IMapStore {
 
     //#endregion
 
-    //#region 楼层管理
+    //#region 分区管理
 
-    createLayerState(id: string): ILayerState {
-        if (this.mapData.has(id)) {
-            logger.warn(121, id);
+    setArea(areas: Set<MapArea>): void {
+        this.areaList = areas;
+    }
+
+    activeArea(id: string): void {
+        const idx = this.maps.indexOf(id);
+        if (idx === -1) return;
+        const area = this.findAreaByIndex(idx);
+        if (!area) return;
+        this.setAreaActive(area, true);
+    }
+
+    deactiveArea(id: string): void {
+        const idx = this.maps.indexOf(id);
+        if (idx === -1) return;
+        const area = this.findAreaByIndex(idx);
+        if (!area) return;
+        this.setAreaActive(area, false);
+    }
+
+    useAutoActivitor(enable: boolean): void {
+        this.autoActivitorEnabled = enable;
+    }
+
+    notifyEnterFloor(id: string): void {
+        if (!this.autoActivitorEnabled) return;
+        const idx = this.maps.indexOf(id);
+        if (idx === -1) return;
+        const area = this.findAreaByIndex(idx);
+        if (!area) return;
+        if (this.lastFloorId !== null) {
+            this.deactiveArea(this.lastFloorId);
         }
-        const state = new LayerState();
-        // 若 refData 已存在，新楼层直接视为全脏
-        if (this.refData !== null) {
-            state.setDirty(true);
+        this.activeArea(id);
+        this.lastFloorId = id;
+    }
+
+    private findAreaByIndex(idx: number): MapArea | null {
+        for (const area of this.areaList) {
+            for (const interval of area) {
+                if (idx >= interval.start && idx <= interval.end) {
+                    return area;
+                }
+            }
         }
-        this.mapData.set(id, state);
-        this.maps.add(id);
-        return state;
+        return null;
+    }
+
+    private setAreaActive(area: MapArea, active: boolean): void {
+        for (const interval of area) {
+            for (let i = interval.start; i <= interval.end; i++) {
+                const floorId = this.maps[i];
+                if (floorId !== undefined) {
+                    this.setMapActiveStatus(floorId, active);
+                }
+            }
+        }
     }
 
     //#endregion

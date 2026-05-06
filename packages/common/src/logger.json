@@ -182,6 +182,7 @@
         "122": "MapStore.loadState: floor '$1' not found in current map data, skipping.",
         "123": "MapLayer.setMapRef: array length $1 does not match expected size $2, setMapRef will be ignored.",
         "124": "MapStore.loadState: floor '$1' or its layer(s) not found in current reference data, skipping.",
+        "125": "Expected sorted floor id array has a same floor id set, but an array with a different floor id set is returned.",
         "1001": "Item-detail extension needs 'floor-binder' and 'floor-damage' extension as dependency."
     }
 }

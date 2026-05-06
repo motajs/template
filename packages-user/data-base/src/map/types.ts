@@ -76,20 +76,6 @@ export interface IMapLayer extends IHookable<
     readonly zIndex: number;
 
     /**
-     * 调整地图尺寸，维持原有图块。如果尺寸变大，那么会补零，如果尺寸变小，那么会将当前数组裁剪
-     * @param width 地图宽度
-     * @param height 地图高度
-     */
-    resize(width: number, height: number): void;
-
-    /**
-     * 调整地图尺寸，但是将地图全部重置为零，不保留原地图数据
-     * @param width 地图宽度
-     * @param height 地图高度
-     */
-    resize2(width: number, height: number): void;
-
-    /**
      * 设置某一点的图块
      * @param block 图块数字
      * @param x 图块横坐标
@@ -225,13 +211,15 @@ export interface ILayerState extends IHookable<ILayerStateHooks> {
     readonly layerList: Set<IMapLayer>;
     /** 此楼层是否处于激活状态 */
     readonly active: boolean;
+    /** 此楼层的地图宽度 */
+    readonly width: number;
+    /** 此楼层的地图高度 */
+    readonly height: number;
 
     /**
-     * 添加图层
-     * @param width 地图宽度
-     * @param height 地图高度
+     * 添加图层，使用楼层预设的宽高
      */
-    addLayer(width: number, height: number): IMapLayer;
+    addLayer(): IMapLayer;
 
     /**
      * 移除指定图层
@@ -265,18 +253,12 @@ export interface ILayerState extends IHookable<ILayerStateHooks> {
     getLayerAlias(layer: IMapLayer): string | undefined;
 
     /**
-     * 重新设置图层的大小
-     * @param layer 图层对象
-     * @param width 新的图层宽度
-     * @param height 新的图层高度
+     * 重新设置所有图层的大小，同时更新楼层预设宽高
+     * @param width 新的地图宽度
+     * @param height 新的地图高度
      * @param keepBlock 是否保留原有图块，默认不保留
      */
-    resizeLayer(
-        layer: IMapLayer,
-        width: number,
-        height: number,
-        keepBlock?: boolean
-    ): void;
+    resizeLayer(width: number, height: number, keepBlock?: boolean): void;
 
     /**
      * 设置背景图块
@@ -336,9 +318,18 @@ export interface IMapStoreSave {
     readonly floors: ReadonlyMap<string, ILayerStateSave>;
 }
 
+/** 单段闭区间 [start, end]，start 和 end 均为 maps 下标 */
+export interface IMapAreaInterval {
+    readonly start: number;
+    readonly end: number;
+}
+
+/** 一个区域由一个或多个独立区间组成 */
+export type MapArea = IMapAreaInterval[];
+
 export interface IMapStore extends ISaveableContent<IMapStoreSave> {
-    /** 所有楼层的 id 集合 */
-    readonly maps: ReadonlySet<string>;
+    /** 所有楼层的 id 有序数组 */
+    readonly maps: ReadonlyArray<string>;
 
     /**
      * 获取指定 id 的楼层状态，不存在则返回 null
@@ -355,8 +346,10 @@ export interface IMapStore extends ISaveableContent<IMapStoreSave> {
     /**
      * 创建并注册一个空白楼层，若 id 已存在则警告并覆盖，返回楼层状态对象
      * @param id 楼层 id
+     * @param width 地图宽度
+     * @param height 地图高度
      */
-    createLayerState(id: string): ILayerState;
+    createLayerState(id: string, width: number, height: number): ILayerState;
 
     /**
      * 获取指定 id 的楼层是否激活，不存在的 id 返回 false
@@ -391,4 +384,47 @@ export interface IMapStore extends ISaveableContent<IMapStoreSave> {
      * @param ref 外层 key = 楼层 id，内层 key = zIndex，value = 图层完整图块数据
      */
     compareWith(ref: Map<string, Map<number, Uint32Array>>): void;
+
+    /**
+     * 设定楼层有序列表。设定后有序列表将用于分区索引计算
+     * @param maps 楼层 id 数组
+     */
+    setMapList(maps: string[]): void;
+
+    /**
+     * 使用自定义排序函数重排 maps。排序函数接收当前列表的副本，返回新顺序。
+     * 若返回的数组元素集合与原列表不一致，则警告并放弃本次排序
+     * @param sort 排序函数
+     */
+    useManualOrder(sort: (arr: string[]) => string[]): void;
+
+    /**
+     * 设定分区列表。每个分区由一个或多个区间组成
+     * @param areas 分区集合
+     */
+    setArea(areas: Set<MapArea>): void;
+
+    /**
+     * 激活指定楼层所属分区的所有楼层
+     * @param id 楼层 id
+     */
+    activeArea(id: string): void;
+
+    /**
+     * 去激活指定楼层所属分区的所有楼层
+     * @param id 楼层 id
+     */
+    deactiveArea(id: string): void;
+
+    /**
+     * 开启或关闭自动分区激活器
+     * @param enable 是否开启
+     */
+    useAutoActivitor(enable: boolean): void;
+
+    /**
+     * 通知当前进入的楼层。开启自动激活器时，将自动去激活上一个分区并激活新分区
+     * @param id 楼层 id
+     */
+    notifyEnterFloor(id: string): void;
 }

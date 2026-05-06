@@ -18,6 +18,8 @@ export class LayerState
     implements ILayerState
 {
     readonly layerList: Set<IMapLayer> = new Set();
+    /** 具体 MapLayer 实例列表，供内部 resize 使用 */
+    private readonly mapLayerList: Set<MapLayer> = new Set();
     /** 图层到图层别名映射 */
     readonly layerAliasMap: WeakMap<IMapLayer, string> = new WeakMap();
     /** 图层别名到图层的映射 */
@@ -35,10 +37,18 @@ export class LayerState
     /** 楼层级脏标记 */
     private dirty: boolean = false;
 
-    addLayer(width: number, height: number): IMapLayer {
-        const array = new Uint32Array(width * height);
-        const layer = new MapLayer(array, width, height);
+    constructor(
+        public width: number,
+        public height: number
+    ) {
+        super();
+    }
+
+    addLayer(): IMapLayer {
+        const array = new Uint32Array(this.width * this.height);
+        const layer = new MapLayer(array, this.width, this.height);
         this.layerList.add(layer);
+        this.mapLayerList.add(layer);
         this.forEachHook(hook => {
             hook.onUpdateLayer?.(this.layerList);
         });
@@ -50,6 +60,7 @@ export class LayerState
 
     removeLayer(layer: IMapLayer): void {
         this.layerList.delete(layer);
+        this.mapLayerList.delete(layer as MapLayer);
         const alias = this.layerAliasMap.get(layer);
         if (alias) {
             const symbol = Symbol.for(alias);
@@ -89,15 +100,18 @@ export class LayerState
     }
 
     resizeLayer(
-        layer: IMapLayer,
         width: number,
         height: number,
         keepBlock: boolean = false
     ): void {
-        if (keepBlock) {
-            layer.resize(width, height);
-        } else {
-            layer.resize2(width, height);
+        this.width = width;
+        this.height = height;
+        for (const layer of this.mapLayerList) {
+            if (keepBlock) {
+                layer.resize(width, height);
+            } else {
+                layer.resize2(width, height);
+            }
         }
     }
 
