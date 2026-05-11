@@ -16,10 +16,6 @@ export class MainDamageCalculator implements IDamageCalculator<
     /** 当前是否正在计算支援怪的伤害 */
     private inGuard: boolean = false;
 
-    /**
-     * 计算战斗伤害信息
-     * @param handler 信息对象
-     */
     calculate(
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
     ): IEnemyDamageInfo {
@@ -153,11 +149,6 @@ export class MainDamageCalculator implements IDamageCalculator<
         };
     }
 
-    /**
-     * 获取临界计算的上界
-     * @param handler 信息对象
-     * @param attribute 目标属性名
-     */
     getCriticalLimit(
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
         attribute: CriticalableHeroStatus<IHeroAttr>

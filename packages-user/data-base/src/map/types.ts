@@ -1,5 +1,14 @@
 import { IHookable, IHookBase, IHookController } from '@motajs/common';
-import { ISaveableContent } from '../common';
+import {
+    FaceDirection,
+    IMoverController,
+    IObjectMovable,
+    IObjectMover,
+    IRoleFaceBinder,
+    ISaveableContent
+} from '../common';
+
+//#region 静态图层
 
 export interface IMapLayerData {
     /** 当前引用是否过期，当地图图层内部的地图数组引用更新时，此项会变为 `true` */
@@ -74,6 +83,9 @@ export interface IMapLayer extends IHookable<
     readonly empty: boolean;
     /** 图层纵深 */
     readonly zIndex: number;
+
+    /** 此图层对应的动态图块图层，z 层级与静态图块一致 */
+    readonly dynamicLayer: IDynamicLayer;
 
     /**
      * 设置某一点的图块
@@ -153,6 +165,10 @@ export interface IMapLayer extends IHookable<
      */
     setMapRef(array: Uint32Array): void;
 }
+
+//#endregion
+
+//#region 图层管理
 
 export interface ILayerStateHooks extends IHookBase {
     /**
@@ -287,6 +303,10 @@ export interface ILayerState extends IHookable<ILayerStateHooks> {
      */
     setDirty(dirty: boolean): void;
 }
+
+//#endregion
+
+//#region 楼层管理
 
 /** 单个 MapLayer 的存档数据 */
 export interface IMapLayerSave {
@@ -428,3 +448,149 @@ export interface IMapStore extends ISaveableContent<IMapStoreSave> {
      */
     notifyEnterFloor(id: string): void;
 }
+
+//#endregion
+
+//#region 动态图块
+
+export interface IDynamicLayerHooks extends IHookBase {
+    /**
+     * 当图块被创建（含从静态图块转换）时触发
+     * @param tile 被创建的动态图块
+     * @param layer 所属的动态图层
+     */
+    onCreateTile(tile: IDynamicTile, layer: IDynamicLayer): void;
+
+    /**
+     * 当图块被删除时触发
+     * @param tile 被删除的动态图块
+     * @param layer 所属的动态图层
+     */
+    onDeleteTile(tile: IDynamicTile, layer: IDynamicLayer): Promise<void>;
+
+    /**
+     * 当更新动态图块的位置时触发（包括使用 `mover` 触发的移动）
+     * @param tile 更新位置的图块
+     * @param layer 所属的动态图层
+     */
+    onUpdateTilePosition(tile: IDynamicTile, layer: IDynamicLayer): void;
+}
+
+export interface IDynamicLayer extends IHookable<IDynamicLayerHooks> {
+    /** 当前动态图层所属的静态图层 */
+    readonly layer: IMapLayer;
+
+    /**
+     * 在指定位置创建一个动态图块
+     * @param num 图块数字
+     * @param x 横坐标
+     * @param y 纵坐标
+     * @returns 创建的动态图块引用
+     */
+    createDynamic(num: number, x: number, y: number): IDynamicTile;
+
+    /**
+     * 从所属静态图层读取并清除指定位置的图块，创建对应动态图块并返回引用。
+     * 若该位置图块为 0，则发出警告并仍然创建 `num = 0` 的动态图块
+     * @param x 横坐标
+     * @param y 纵坐标
+     * @returns 创建的动态图块引用
+     */
+    transferToDynamic(x: number, y: number): IDynamicTile;
+
+    /**
+     * 将动态图块还原为静态图块。坐标越界则警告并放弃，
+     * 否则写回静态图层并触发 {@link IDynamicLayerHooks.onDeleteTile}
+     * @param tile 要还原的动态图块
+     */
+    transferToStatic(tile: IDynamicTile): void;
+
+    /**
+     * 仅当目标位置静态图块为 0（空白）时才还原为静态图块，否则不转换
+     * @param tile 要还原的动态图块
+     * @returns 是否转换成功
+     */
+    transferToStaticIfSafe(tile: IDynamicTile): boolean;
+
+    /**
+     * 删除指定动态图块，触发 {@link IDynamicLayerHooks.onDeleteTile} 钩子。
+     * 若图块不属于此层则发出警告
+     * @param tile 要删除的动态图块
+     */
+    deleteDynamic(tile: IDynamicTile): Promise<void>;
+
+    /**
+     * 获取指定格点上所有动态图块的可迭代对象
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    getDynamicTilesAt(x: number, y: number): Iterable<IDynamicTile>;
+
+    /**
+     * 迭代所有的动态图块
+     */
+    iterateDynamicTiles(): Iterable<IDynamicTile>;
+
+    /**
+     * 手动设置动态图块的朝向，更新 `tile.num`（若有朝向绑定）。
+     * 转向逻辑与移动时的转向逻辑相同，但不触发移动
+     * @param tile 要设置朝向的动态图块
+     * @param direction 目标朝向
+     */
+    setDynamicDirection(tile: IDynamicTile, direction: FaceDirection): void;
+
+    /**
+     * 更新图块内部存储位置
+     * @param tile 动态图块
+     */
+    updateDynamicTile(tile: IDynamicTile): void;
+}
+
+export interface IDynamicTile extends IObjectMovable {
+    /** 当前图块数字 */
+    readonly num: number;
+    /** 当前图块所属的动态图层 */
+    readonly layer: IDynamicLayer;
+    /** 当前动态图块的移动器 */
+    readonly mover: IObjectMover<IDynamicTile>;
+
+    /**
+     * 设置图块朝向，会一并修改 {@link num}，返回设置后的当前图块数字
+     * @param direction 图块朝向
+     */
+    setFaceDirection(direction: FaceDirection): number;
+
+    /**
+     * 直接删除此图块
+     */
+    delete(): Promise<void>;
+
+    /**
+     * 将当前图块还原为静态图块
+     */
+    toStatic(): void;
+
+    /**
+     * 还原为静态图块，如果当前位置有东西则不转换
+     */
+    toStaticIfSafe(): boolean;
+
+    /**
+     * 单步便捷移动接口，适用于简单移动场景，复杂路径通过 `tile.mover` 访问。
+     * 等价于：
+     *
+     * ```ts
+     * mover.step(dir, count);
+     * return mover.start();
+     * ```
+     */
+    step(dir: FaceDirection, count?: number): IMoverController | null;
+
+    /**
+     * 注入朝向绑定器，初始状态视为无朝向绑定
+     * @param binder 朝向绑定器
+     */
+    setFaceBinder(binder: IRoleFaceBinder | null): void;
+}
+
+//#endregion

@@ -1,11 +1,13 @@
 import { isNil } from 'lodash-es';
 import {
+    IDynamicLayer,
     IMapLayer,
     IMapLayerData,
     IMapLayerHookController,
     IMapLayerHooks
 } from './types';
 import { Hookable, HookController, logger } from '@motajs/common';
+import { DynamicLayer } from './dynamicLayer';
 
 // todo: 提供 core.setBlock 等方法的替代方法，同时添加 setBlockList，以及前景背景的接口
 
@@ -23,6 +25,8 @@ export class MapLayer
     /** 地图数据引用 */
     private mapData: IMapLayerData;
 
+    readonly dynamicLayer: IDynamicLayer;
+
     constructor(array: Uint32Array, width: number, height: number) {
         super();
         this.width = width;
@@ -35,6 +39,7 @@ export class MapLayer
             expired: false,
             array: this.mapArray
         };
+        this.dynamicLayer = new DynamicLayer(this);
     }
 
     resize(width: number, height: number): void {
