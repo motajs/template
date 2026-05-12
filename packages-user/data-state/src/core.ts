@@ -22,7 +22,12 @@ import {
     SaveCompression,
     IReadonlyEnemy,
     IMapStore,
-    MapStore
+    MapStore,
+    IFaceManager,
+    FaceManager,
+    InternalFaceGroup,
+    Dir4FaceHandler,
+    Dir8FaceHandler
 } from '@user/data-base';
 import {
     CommonAuraConverter,
@@ -55,6 +60,7 @@ import { ISaveSystem, SaveSystem } from './save';
 export class CoreState implements ICoreState {
     // 全局内容
     readonly roleFace: IRoleFaceBinder;
+    readonly faceManager: IFaceManager;
     readonly idNumberMap: Map<string, number>;
     readonly numberIdMap: Map<number, string>;
 
@@ -82,7 +88,6 @@ export class CoreState implements ICoreState {
 
     constructor() {
         this.maps = new MapStore();
-        this.roleFace = new RoleFaceBinder();
         this.idNumberMap = new Map();
         this.numberIdMap = new Map();
 
@@ -150,6 +155,16 @@ export class CoreState implements ICoreState {
         //#endregion
 
         //#region 其他初始化
+
+        // 朝向
+        this.roleFace = new RoleFaceBinder();
+        this.faceManager = new FaceManager();
+        const dir4 = new Dir4FaceHandler();
+        const dir8 = new Dir8FaceHandler();
+        this.faceManager.register(InternalFaceGroup.Dir4, dir4);
+        this.faceManager.registerById('dir4', dir4);
+        this.faceManager.register(InternalFaceGroup.Dir8, dir8);
+        this.faceManager.registerById('dir8', dir8);
 
         this.flags = new FlagSystem();
 

@@ -1,7 +1,7 @@
 import { IHeroFollower, IHeroState } from './hero';
 import { IEnemyManager } from './enemy';
 import { IFlagSystem } from './flag';
-import { IRoleFaceBinder, ISaveableContent } from './common';
+import { IFaceManager, IRoleFaceBinder, ISaveableContent } from './common';
 import { IMapStore } from './map';
 
 export interface IStateSaveData {
@@ -12,6 +12,8 @@ export interface IStateSaveData {
 export interface IStateBase<TEnemy, THero> {
     /** 朝向绑定 */
     readonly roleFace: IRoleFaceBinder;
+    /** 朝向管理 */
+    readonly faceManager: IFaceManager;
     /** id 到图块数字的映射 */
     readonly idNumberMap: Map<string, number>;
     /** 图块数字到 id 的映射 */
