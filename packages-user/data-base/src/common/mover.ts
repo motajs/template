@@ -7,6 +7,7 @@ import {
     ITileLocator
 } from '@motajs/common';
 import { FaceDirection } from './types';
+import { IFaceHandler } from './faceManager';
 
 //#region 对象移动
 
@@ -278,6 +279,14 @@ export abstract class ObjectMover<T extends IObjectMovable>
     /** 是否调用了 `IMoverController.stop` 接口 */
     private shouldStop: boolean = false;
 
+    /** 朝向处理 */
+    private readonly faceHandler: IFaceHandler<FaceDirection>;
+
+    constructor(faceHandler: IFaceHandler<FaceDirection>) {
+        super();
+        this.faceHandler = faceHandler;
+    }
+
     protected createController(
         hook: Partial<IObjectMoverHooks<T>>
     ): IHookController<IObjectMoverHooks<T>> {
@@ -349,34 +358,6 @@ export abstract class ObjectMover<T extends IObjectMovable>
         }
     }
 
-    // TODO: 需要做一个朝向系统以解决朝向难以处理的问题
-    /**
-     * 获取指定方向的反方向
-     * @param dir 当前方向
-     */
-    private getOppositeDirection(dir: FaceDirection): FaceDirection {
-        switch (dir) {
-            case FaceDirection.Left:
-                return FaceDirection.Right;
-            case FaceDirection.Up:
-                return FaceDirection.Down;
-            case FaceDirection.Right:
-                return FaceDirection.Left;
-            case FaceDirection.Down:
-                return FaceDirection.Up;
-            case FaceDirection.LeftUp:
-                return FaceDirection.RightDown;
-            case FaceDirection.RightUp:
-                return FaceDirection.LeftDown;
-            case FaceDirection.LeftDown:
-                return FaceDirection.RightUp;
-            case FaceDirection.RightDown:
-                return FaceDirection.LeftUp;
-            case FaceDirection.Unknown:
-                return FaceDirection.Unknown;
-        }
-    }
-
     /**
      * 根据步骤内容预先同步移动器内部状态
      * @param step 当前步骤
@@ -397,7 +378,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
             case ObjectMoveStepType.Special: {
                 const dir = this.getCurrentDirection();
                 if (step.direction === ObjectSpecialStep.Backward) {
-                    const opposite = this.getOppositeDirection(dir);
+                    const opposite = this.faceHandler.opposite(dir);
                     this.moveDirection = opposite;
                     this.faceDirection = opposite;
                 } else {

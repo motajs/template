@@ -1,7 +1,4 @@
 import {
-    DirectionMapper,
-    IDirectionDescriptor,
-    InternalDirectionGroup,
     IManhattanRangeParam,
     IRange,
     IRayRangeParam,
@@ -9,7 +6,8 @@ import {
     ManhattanRange,
     RayRange,
     RectRange,
-    ITileLocator
+    ITileLocator,
+    IDirectionDescriptor
 } from '@motajs/common';
 import {
     IEnemyContext,
@@ -21,7 +19,9 @@ import {
     ISpecial,
     IMapDamageView,
     IReadonlyHeroAttribute,
-    IReadonlyEnemy
+    IReadonlyEnemy,
+    IFaceHandler,
+    InternalFaceGroup
 } from '@user/data-base';
 import { IZoneValue } from './special';
 import { IEnemyAttr, MapDamageType } from './types';
@@ -30,9 +30,6 @@ import { IHeroAttr } from '../hero';
 const RECT_RANGE = new RectRange();
 const MANHATTAN_RANGE = new ManhattanRange();
 const RAY_RANGE = new RayRange();
-
-const DIRECTION_MAPPER = new DirectionMapper();
-const DIR4 = [...DIRECTION_MAPPER.map(InternalDirectionGroup.Dir4)];
 
 //#region 地图伤害
 
@@ -154,13 +151,17 @@ export class RepulseDamageView extends BaseMapDamageView<IManhattanRangeParam> {
 }
 
 export class LaserDamageView extends BaseMapDamageView<IRayRangeParam> {
+    /** 激光方向列表 */
+    private readonly dirs: IDirectionDescriptor[];
+
     constructor(
         context: IEnemyContext<IEnemyAttr, IHeroAttr>,
         private readonly locator: Readonly<ITileLocator>,
         private readonly special: Readonly<ISpecial<number>>,
-        private readonly dir: IDirectionDescriptor[] = DIR4
+        dir: IFaceHandler<number>
     ) {
         super(context);
+        this.dirs = [...dir.mapMovement()].map(v => v[1]);
     }
 
     getRange(): IRange<IRayRangeParam> {
@@ -171,7 +172,7 @@ export class LaserDamageView extends BaseMapDamageView<IRayRangeParam> {
         return {
             cx: this.locator.x,
             cy: this.locator.y,
-            dir: this.dir
+            dir: this.dirs
         };
     }
 
@@ -309,7 +310,8 @@ export class MainMapDamageConverter implements IMapDamageConverter<
 
         const laser = enemy.getSpecial<number>(24);
         if (laser) {
-            views.push(new LaserDamageView(context, locator, laser));
+            const face = handler.data.faceManager.get(InternalFaceGroup.Dir4)!;
+            views.push(new LaserDamageView(context, locator, laser, face));
         }
 
         if (enemy.hasSpecial(27)) {

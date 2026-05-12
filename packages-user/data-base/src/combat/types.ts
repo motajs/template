@@ -245,7 +245,7 @@ export interface IMapDamageView<T = any> {
     getDamageAt(locator: ITileLocator): Readonly<IMapDamageInfo> | null;
 
     /**
-     * 获取指定位置的地图伤害，会对坐标进行判断
+     * 获取指定位置的地图伤害，不会对坐标进行判断
      * @param locator 伤害位置
      */
     getDamageWithoutCheck(
