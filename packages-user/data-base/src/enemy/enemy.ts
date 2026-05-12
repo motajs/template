@@ -1,12 +1,5 @@
 import { logger } from '@motajs/common';
-import {
-    IEnemy,
-    IEnemyContext,
-    IEnemySaveState,
-    IReadonlyEnemy,
-    ISpecial,
-    IEnemyView
-} from './types';
+import { IEnemy, IEnemySaveState, IReadonlyEnemy, ISpecial } from './types';
 import { SaveCompression } from '../common/types';
 
 export class Enemy<TAttr> implements IEnemy<TAttr> {
@@ -111,45 +104,5 @@ export class Enemy<TAttr> implements IEnemy<TAttr> {
             }
             special.loadState(saved, compression);
         }
-    }
-}
-
-export class EnemyView<TAttr> implements IEnemyView<TAttr> {
-    /** 计算后怪物 */
-    private readonly computedEnemy: IEnemy<TAttr>;
-
-    constructor(
-        readonly baseEnemy: IEnemy<TAttr>,
-        readonly context: IEnemyContext<TAttr, unknown>
-    ) {
-        this.computedEnemy = baseEnemy.clone();
-    }
-
-    reset(): void {
-        this.computedEnemy.copyFrom(this.baseEnemy);
-    }
-
-    getBaseEnemy(): IReadonlyEnemy<TAttr> {
-        return this.baseEnemy;
-    }
-
-    getComputedEnemy(): IReadonlyEnemy<TAttr> {
-        this.context.requestRefresh(this);
-        return this.computedEnemy;
-    }
-
-    /**
-     * 获取计算中怪物对象，这个接口不对外暴露，仅在系统内部的 EnemyContext 中使用。
-     */
-    getComputingEnemy(): IEnemy<TAttr> {
-        return this.computedEnemy;
-    }
-
-    getModifiableEnemy(): IEnemy<TAttr> {
-        return this.baseEnemy;
-    }
-
-    markDirty(): void {
-        this.context.markDirty(this);
     }
 }

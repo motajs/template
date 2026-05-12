@@ -7,9 +7,9 @@ import {
     IMapDamageConverter,
     IMapDamageInfo,
     IMapDamageReducer,
-    IMapDamageView,
-    IMapLocIndexer
+    IMapDamageView
 } from './types';
+import { ILocationHelper } from '../common/indexer';
 
 interface IPointInfo {
     /** 该点所有的地图伤害 */
@@ -61,7 +61,7 @@ export class MapDamage<TAttr, THero> implements IMapDamage<TAttr, THero> {
     private readonly reducedCache: Map<number, IMapDamageInfo> = new Map();
 
     /** 坐标索引对象 */
-    private readonly indexer: IMapLocIndexer;
+    private readonly indexer: ILocationHelper;
 
     constructor(readonly context: IEnemyContext<TAttr, THero>) {
         this.indexer = context.indexer;

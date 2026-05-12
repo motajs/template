@@ -1,3 +1,4 @@
+export * from './combat';
 export * from './common';
 export * from './enemy';
 export * from './flag';

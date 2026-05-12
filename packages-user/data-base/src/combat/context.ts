@@ -3,7 +3,6 @@ import {
     IAuraConverter,
     IAuraView,
     IDamageSystem,
-    IEnemy,
     IEnemyAuraView,
     IEnemyCommonQueryEffect,
     IEnemyContext,
@@ -13,13 +12,12 @@ import {
     IEnemySpecialQueryEffect,
     IEnemyView,
     IMapDamage,
-    IReadonlyEnemy,
-    IReadonlyEnemyHandler,
-    ISpecial
+    IReadonlyEnemyHandler
 } from './types';
-import { EnemyView } from './enemy';
-import { MapLocIndexer } from './utils';
 import { IReadonlyHeroAttribute } from '../hero';
+import { IEnemy, IReadonlyEnemy, ISpecial } from '../enemy';
+import { EnemyView } from './enemy';
+import { ILocationIndexer, MapLocIndexer } from '../common/indexer';
 
 export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
     /** 坐标索引 -> 怪物视图 */
@@ -82,7 +80,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
     private damageSystem: IDamageSystem<TAttr, THero> | null = null;
 
     /** 索引工具 */
-    readonly indexer: MapLocIndexer = new MapLocIndexer();
+    readonly indexer: ILocationIndexer = new MapLocIndexer();
 
     /** 当前是否需要全量刷新 */
     private needUpdate: boolean = true;

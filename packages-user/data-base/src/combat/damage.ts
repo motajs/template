@@ -1,3 +1,4 @@
+import { clamp } from 'lodash-es';
 import { ITileLocator, logger } from '@motajs/common';
 import {
     CriticalableHeroStatus,
@@ -8,11 +9,10 @@ import {
     IEnemyCritical,
     IEnemyDamageInfo,
     IReadonlyEnemyHandler,
-    IEnemyView,
-    IReadonlyEnemy
+    IEnemyView
 } from './types';
 import { IHeroAttribute, IReadonlyHeroAttribute } from '../hero';
-import { clamp } from 'lodash-es';
+import { IReadonlyEnemy } from '../enemy';
 
 interface ICriticalSearchResult {
     /** 此临界点的属性值 */
