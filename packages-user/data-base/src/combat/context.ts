@@ -18,66 +18,73 @@ import { IReadonlyHeroAttribute } from '../hero';
 import { IEnemy, IReadonlyEnemy, ISpecial } from '../enemy';
 import { EnemyView } from './enemy';
 import { ILocationIndexer, MapLocIndexer } from '../common/indexer';
+import { IStateBase } from '../types';
 
-export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
+export class EnemyContext<TEnemy, THero> implements IEnemyContext<
+    TEnemy,
+    THero
+> {
     /** 坐标索引 -> 怪物视图 */
-    private readonly enemyViewMap: Map<number, EnemyView<TAttr>> = new Map();
+    private readonly enemyViewMap: Map<number, EnemyView<TEnemy>> = new Map();
     /** 坐标索引 -> 计算前怪物对象 */
-    private readonly enemyMap: Map<number, IEnemy<TAttr>> = new Map();
+    private readonly enemyMap: Map<number, IEnemy<TEnemy>> = new Map();
     /** 怪物视图 -> 坐标索引 */
-    private readonly locatorViewMap: Map<IEnemyView<TAttr>, number> = new Map();
+    private readonly locatorViewMap: Map<IEnemyView<TEnemy>, number> =
+        new Map();
     /** 计算前怪物对象 -> 坐标索引 */
-    private readonly locatorEnemyMap: Map<IEnemy<TAttr>, number> = new Map();
+    private readonly locatorEnemyMap: Map<IEnemy<TEnemy>, number> = new Map();
     /** 计算后怪物对象 -> 怪物视图 */
     private readonly computedToView: Map<
-        IReadonlyEnemy<TAttr>,
-        EnemyView<TAttr>
+        IReadonlyEnemy<TEnemy>,
+        EnemyView<TEnemy>
     > = new Map();
 
     /** 当前已注册的光环转换器 */
-    private readonly auraConverter: Set<IAuraConverter<TAttr, THero>> =
+    private readonly auraConverter: Set<IAuraConverter<TEnemy, THero>> =
         new Set();
     /** 光环转换器是否启用 */
     private readonly converterStatus: Map<
-        IAuraConverter<TAttr, THero>,
+        IAuraConverter<TEnemy, THero>,
         boolean
     > = new Map();
     /** 所有已被转换的光环 */
-    private readonly convertedAura: Map<ISpecial<any>, IAuraView<TAttr>> =
+    private readonly convertedAura: Map<ISpecial<any>, IAuraView<TEnemy>> =
         new Map();
 
     /** 普通查询效果注册，特殊属性 -> 此特殊属性的查询效果列表，按照优先级从高到低排序 */
     private readonly commonQueryMap: Map<
         number,
-        IEnemyCommonQueryEffect<TAttr, THero>[]
+        IEnemyCommonQueryEffect<TEnemy, THero>[]
     > = new Map();
 
     /** 特殊查询效果注册，特殊属性 -> 此特殊属性的特殊查询效果列表，按照优先级从高到低排序 */
     private readonly specialQueryEffects: Map<
         number,
-        IEnemySpecialQueryEffect<TAttr, THero>[]
+        IEnemySpecialQueryEffect<TEnemy, THero>[]
     > = new Map();
 
     /** 最终效果列表，按照优先级从高到低排列 */
-    private readonly finalEffects: IEnemyFinalEffect<TAttr, THero>[] = [];
+    private readonly finalEffects: IEnemyFinalEffect<TEnemy, THero>[] = [];
     /** 添加的无来源全局光环列表 */
-    private readonly globalAuraList: Set<IAuraView<TAttr>> = new Set();
+    private readonly globalAuraList: Set<IAuraView<TEnemy>> = new Set();
     /** 排序后的光环视图，视图优先级 -> 光环视图列表 */
-    private readonly sortedAura: Map<number, Set<IAuraView<TAttr>>> = new Map();
+    private readonly sortedAura: Map<number, Set<IAuraView<TEnemy>>> =
+        new Map();
 
     /** 当怪物更新后，需要对上下文进行全量刷新的怪物列表 */
-    private readonly needTotallyRefresh: Set<IEnemyView<TAttr>> = new Set();
+    private readonly needTotallyRefresh: Set<IEnemyView<TEnemy>> = new Set();
     /** 所有实际查询了上下文的常规查询效果，这些怪物需要在上下文或其他怪物刷新时一并刷新 */
-    private readonly requestedCommonContext: Set<IEnemyView<TAttr>> = new Set();
+    private readonly requestedCommonContext: Set<IEnemyView<TEnemy>> =
+        new Set();
     /** 所有需要被标记为脏的怪物 */
-    private readonly dirtyEnemy: Set<IEnemyView<TAttr>> = new Set();
+    private readonly dirtyEnemy: Set<IEnemyView<TEnemy>> = new Set();
 
     /** 当前绑定的勇士属性对象 */
     private bindedHero: IReadonlyHeroAttribute<THero> | null = null;
     /** 地图伤害对象 */
-    private mapDamage: IMapDamage<TAttr, THero> | null = null;
+    private mapDamage: IMapDamage<TEnemy, THero> | null = null;
     /** 伤害系统对象 */
-    private damageSystem: IDamageSystem<TAttr, THero> | null = null;
+    private damageSystem: IDamageSystem<TEnemy, THero> | null = null;
 
     /** 索引工具 */
     readonly indexer: ILocationIndexer = new MapLocIndexer();
@@ -89,6 +96,8 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
     width: number = 0;
     height: number = 0;
 
+    constructor(readonly dataState: IStateBase<TEnemy, THero>) {}
+
     resize(width: number, height: number): void {
         this.clear();
         this.width = width;
@@ -97,20 +106,20 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
         this.needUpdate = true;
     }
 
-    registerAuraConverter(converter: IAuraConverter<TAttr, THero>): void {
+    registerAuraConverter(converter: IAuraConverter<TEnemy, THero>): void {
         this.auraConverter.add(converter);
         this.converterStatus.set(converter, true);
         this.needUpdate = true;
     }
 
-    unregisterAuraConverter(converter: IAuraConverter<TAttr, THero>): void {
+    unregisterAuraConverter(converter: IAuraConverter<TEnemy, THero>): void {
         this.auraConverter.delete(converter);
         this.converterStatus.delete(converter);
         this.needUpdate = true;
     }
 
     setAuraConverterEnabled(
-        converter: IAuraConverter<TAttr, THero>,
+        converter: IAuraConverter<TEnemy, THero>,
         enabled: boolean
     ): void {
         if (!this.auraConverter.has(converter)) return;
@@ -120,7 +129,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
 
     registerCommonQueryEffect(
         code: number,
-        effect: IEnemyCommonQueryEffect<TAttr, THero>
+        effect: IEnemyCommonQueryEffect<TEnemy, THero>
     ): void {
         const array = this.commonQueryMap.getOrInsert(code, []);
         array.push(effect);
@@ -130,7 +139,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
 
     unregisterCommonQueryEffect(
         code: number,
-        effect: IEnemyCommonQueryEffect<TAttr, THero>
+        effect: IEnemyCommonQueryEffect<TEnemy, THero>
     ): void {
         const array = this.commonQueryMap.get(code);
         if (!array) return;
@@ -141,7 +150,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
     }
 
     registerSpecialQueryEffect(
-        effect: IEnemySpecialQueryEffect<TAttr, THero>
+        effect: IEnemySpecialQueryEffect<TEnemy, THero>
     ): void {
         const list = this.specialQueryEffects.getOrInsert(effect.priority, []);
         list.push(effect);
@@ -149,7 +158,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
     }
 
     unregisterSpecialQueryEffect(
-        effect: IEnemySpecialQueryEffect<TAttr, THero>
+        effect: IEnemySpecialQueryEffect<TEnemy, THero>
     ): void {
         const list = this.specialQueryEffects.get(effect.priority);
         if (!list) return;
@@ -163,13 +172,13 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
         this.needUpdate = true;
     }
 
-    registerFinalEffect(effect: IEnemyFinalEffect<TAttr, THero>): void {
+    registerFinalEffect(effect: IEnemyFinalEffect<TEnemy, THero>): void {
         this.finalEffects.push(effect);
         this.finalEffects.sort((a, b) => b.priority - a.priority);
         this.needUpdate = true;
     }
 
-    unregisterFinalEffect(effect: IEnemyFinalEffect<TAttr, THero>): void {
+    unregisterFinalEffect(effect: IEnemyFinalEffect<TEnemy, THero>): void {
         const index = this.finalEffects.indexOf(effect);
         if (index !== -1) {
             this.finalEffects.splice(index, 1);
@@ -194,37 +203,39 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
      * @param locator 怪物位置
      */
     private createHandler(
-        enemy: IEnemy<TAttr>,
+        enemy: IEnemy<TEnemy>,
         locator: ITileLocator
-    ): IEnemyHandler<TAttr, THero> {
-        return { enemy, locator, hero: this.bindedHero! };
+    ): IEnemyHandler<TEnemy, THero> {
+        return { enemy, locator, hero: this.bindedHero!, data: this.dataState };
     }
 
-    getEnemyLocator(enemy: IEnemy<TAttr>): Readonly<ITileLocator> | null {
+    getEnemyLocator(enemy: IEnemy<TEnemy>): Readonly<ITileLocator> | null {
         const index = this.locatorEnemyMap.get(enemy);
         if (index === undefined) return null;
         return this.indexer.indexToLocator(index);
     }
 
     getEnemyLocatorByView(
-        view: IEnemyView<TAttr>
+        view: IEnemyView<TEnemy>
     ): Readonly<ITileLocator> | null {
         const index = this.locatorViewMap.get(view);
         if (index === undefined) return null;
         return this.indexer.indexToLocator(index);
     }
 
-    getEnemyByLocator(locator: ITileLocator): IEnemyView<TAttr> | null {
+    getEnemyByLocator(locator: ITileLocator): IEnemyView<TEnemy> | null {
         const index = this.indexer.locToIndex(locator.x, locator.y);
         return this.enemyViewMap.get(index) ?? null;
     }
 
-    getEnemyByLoc(x: number, y: number): IEnemyView<TAttr> | null {
+    getEnemyByLoc(x: number, y: number): IEnemyView<TEnemy> | null {
         const index = this.indexer.locToIndex(x, y);
         return this.enemyViewMap.get(index) ?? null;
     }
 
-    getViewByComputed(enemy: IReadonlyEnemy<TAttr>): IEnemyView<TAttr> | null {
+    getViewByComputed(
+        enemy: IReadonlyEnemy<TEnemy>
+    ): IEnemyView<TEnemy> | null {
         return this.computedToView.get(enemy) ?? null;
     }
 
@@ -256,11 +267,11 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
         this.locatorEnemyMap.delete(enemy);
     }
 
-    setEnemyAt(locator: ITileLocator, enemy: IEnemy<TAttr>): void {
+    setEnemyAt(locator: ITileLocator, enemy: IEnemy<TEnemy>): void {
         const index = this.indexer.locToIndex(locator.x, locator.y);
         this.deleteEnemyAt(index);
 
-        const view = new EnemyView<TAttr>(enemy, this);
+        const view = new EnemyView<TEnemy>(enemy, this);
         this.enemyMap.set(index, enemy);
         this.enemyViewMap.set(index, view);
         this.locatorEnemyMap.set(enemy, index);
@@ -290,7 +301,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
     private *internalScanRange<T>(
         range: IRange<T>,
         param: T
-    ): Iterable<[ITileLocator, EnemyView<TAttr>]> {
+    ): Iterable<[ITileLocator, EnemyView<TEnemy>]> {
         range.bindHost(this);
         const keys = new Set(this.enemyViewMap.keys());
         const matched = range.autoDetect(keys, param);
@@ -307,46 +318,46 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
     scanRange<T>(
         range: IRange<T>,
         param: T
-    ): Iterable<[ITileLocator, IEnemyView<TAttr>]> {
+    ): Iterable<[ITileLocator, IEnemyView<TEnemy>]> {
         return this.internalScanRange(range, param);
     }
 
-    *iterateEnemy(): Iterable<[ITileLocator, IEnemyView<TAttr>]> {
+    *iterateEnemy(): Iterable<[ITileLocator, IEnemyView<TEnemy>]> {
         for (const [index, view] of this.enemyViewMap) {
             const locator = this.indexer.indexToLocator(index);
             yield [locator, view];
         }
     }
 
-    addAura(aura: IAuraView<TAttr>): void {
+    addAura(aura: IAuraView<TEnemy>): void {
         this.globalAuraList.add(aura);
         this.needUpdate = true;
     }
 
-    deleteAura(aura: IAuraView<TAttr>): void {
+    deleteAura(aura: IAuraView<TEnemy>): void {
         this.globalAuraList.delete(aura);
         this.needUpdate = true;
     }
 
-    attachMapDamage(damage: IMapDamage<TAttr, THero> | null): void {
+    attachMapDamage(damage: IMapDamage<TEnemy, THero> | null): void {
         this.mapDamage = damage;
         if (damage) {
             damage.refreshAll();
         }
     }
 
-    getMapDamage(): IMapDamage<TAttr, THero> | null {
+    getMapDamage(): IMapDamage<TEnemy, THero> | null {
         return this.mapDamage;
     }
 
-    attachDamageSystem(system: IDamageSystem<TAttr, unknown> | null): void {
+    attachDamageSystem(system: IDamageSystem<TEnemy, THero> | null): void {
         this.damageSystem = system;
         if (system) {
             system.bindHeroStatus(this.bindedHero);
         }
     }
 
-    getDamageSystem(): IDamageSystem<TAttr, THero> | null {
+    getDamageSystem(): IDamageSystem<TEnemy, THero> | null {
         return this.damageSystem;
     }
 
@@ -358,9 +369,9 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
      */
     private convertSpecial(
         special: ISpecial<any>,
-        handler: IReadonlyEnemyHandler<TAttr, THero>
-    ): IEnemyAuraView<TAttr, any, any> | null {
-        let matched: IAuraConverter<TAttr, THero> | null = null;
+        handler: IReadonlyEnemyHandler<TEnemy, THero>
+    ): IEnemyAuraView<TEnemy, any, any> | null {
+        let matched: IAuraConverter<TEnemy, THero> | null = null;
         for (const converter of this.auraConverter) {
             if (!this.converterStatus.get(converter)) continue;
             if (converter.shouldConvert(special, handler)) {
@@ -380,7 +391,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
      * 将光环按优先级插入到有序表中
      * @param aura 光环视图
      */
-    private insertIntoSortedAura(aura: IAuraView<TAttr>): void {
+    private insertIntoSortedAura(aura: IAuraView<TEnemy>): void {
         const set = this.sortedAura.getOrInsertComputed(
             aura.priority,
             () => new Set()
@@ -392,7 +403,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
      * 从优先级表中移除一个光环
      * @param aura 光环视图
      */
-    private removeFromSortedAura(aura: IAuraView<TAttr>): void {
+    private removeFromSortedAura(aura: IAuraView<TEnemy>): void {
         const set = this.sortedAura.get(aura.priority);
         if (set) {
             set.delete(aura);
@@ -410,12 +421,12 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
      * @param currentPriority 当前处理的优先级
      */
     private processSpecialModifier(
-        modifier: IEnemySpecialModifier<TAttr>,
-        handler: IEnemyHandler<TAttr, THero>,
+        modifier: IEnemySpecialModifier<TEnemy>,
+        handler: IEnemyHandler<TEnemy, THero>,
         currentPriority: number
-    ): Set<IAuraView<TAttr>> {
+    ): Set<IAuraView<TEnemy>> {
         const enemy = handler.enemy;
-        const affectedAuras = new Set<IAuraView<TAttr>>();
+        const affectedAuras = new Set<IAuraView<TEnemy>>();
         const toAdd = modifier.add(handler);
         const toDelete = modifier.delete(handler);
 
@@ -487,7 +498,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
      * @param currentPriority 当前处理的优先级
      */
     private processSpecialQuery(
-        effect: IEnemySpecialQueryEffect<TAttr, THero>,
+        effect: IEnemySpecialQueryEffect<TEnemy, THero>,
         currentPriority: number
     ): void {
         const modifier = effect.for(this);
@@ -519,7 +530,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
      * @param currentPriority 当前处理的优先级
      */
     private processAuraSpecial(
-        aura: IAuraView<TAttr>,
+        aura: IAuraView<TEnemy>,
         currentPriority: number
     ): void {
         const param = aura.getRangeParam();
@@ -694,7 +705,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
         }
     }
 
-    markDirty(view: IEnemyView<TAttr>): void {
+    markDirty(view: IEnemyView<TEnemy>): void {
         if (!this.locatorViewMap.has(view)) return;
         this.dirtyEnemy.add(view);
         if (this.damageSystem) {
@@ -709,8 +720,8 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
      * @param locator 怪物位置
      */
     private refreshSpecialModifier(
-        modifier: IEnemySpecialModifier<TAttr>,
-        handler: IEnemyHandler<TAttr, THero>
+        modifier: IEnemySpecialModifier<TEnemy>,
+        handler: IEnemyHandler<TEnemy, THero>
     ): void {
         const enemy = handler.enemy;
         const toAdd = modifier.add(handler);
@@ -756,7 +767,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
      * 刷新单个怪物视图的计算结果
      * @param view 怪物视图
      */
-    private refreshEnemy(view: EnemyView<TAttr>): void {
+    private refreshEnemy(view: EnemyView<TEnemy>): void {
         const locator = this.getEnemyLocatorByView(view);
         if (!locator) return;
 
@@ -851,7 +862,7 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
         }
     }
 
-    requestRefresh(view: IEnemyView<TAttr>): void {
+    requestRefresh(view: IEnemyView<TEnemy>): void {
         if (!this.dirtyEnemy.has(view)) return;
         if (this.needTotallyRefresh.has(view)) {
             this.needUpdate = true;
@@ -861,11 +872,11 @@ export class EnemyContext<TAttr, THero> implements IEnemyContext<TAttr, THero> {
             return;
         }
 
-        this.refreshEnemy(view as EnemyView<TAttr>);
+        this.refreshEnemy(view as EnemyView<TEnemy>);
 
         for (const requestedView of this.requestedCommonContext) {
             if (requestedView === view) continue;
-            this.refreshEnemy(requestedView as EnemyView<TAttr>);
+            this.refreshEnemy(requestedView as EnemyView<TEnemy>);
         }
     }
 

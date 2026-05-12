@@ -1,6 +1,6 @@
 import { logger } from '@motajs/common';
+import { SaveCompression } from '../common';
 import { IEnemy, IEnemySaveState, IReadonlyEnemy, ISpecial } from './types';
-import { SaveCompression } from '../common/types';
 
 export class Enemy<TAttr> implements IEnemy<TAttr> {
     /** 怪物身上的特殊属性列表 */

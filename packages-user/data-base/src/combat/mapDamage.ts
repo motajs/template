@@ -10,6 +10,7 @@ import {
     IMapDamageView
 } from './types';
 import { ILocationHelper } from '../common/indexer';
+import { IStateBase } from '../types';
 
 interface IPointInfo {
     /** 该点所有的地图伤害 */
@@ -34,9 +35,9 @@ interface IDamageStore<TAttr> {
     readonly index: number;
 }
 
-export class MapDamage<TAttr, THero> implements IMapDamage<TAttr, THero> {
+export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     /** 当前使用的地图伤害转换器 */
-    private converter: IMapDamageConverter<TAttr, THero> | null = null;
+    private converter: IMapDamageConverter<TEnemy, THero> | null = null;
     /** 当前使用的地图伤害合并器 */
     private reducer: IMapDamageReducer | null = null;
 
@@ -45,14 +46,14 @@ export class MapDamage<TAttr, THero> implements IMapDamage<TAttr, THero> {
     /** 有来源地图伤害，坐标 -> 点伤害信息 */
     private readonly sourcedDamage: Map<number, IPointInfo> = new Map();
     /** 地图伤害视图 -> 其信息对象 */
-    private readonly viewStore: Map<IMapDamageView<any>, IViewStore<TAttr>> =
+    private readonly viewStore: Map<IMapDamageView<any>, IViewStore<TEnemy>> =
         new Map();
     /** 地图伤害信息 -> 其信息对象 */
-    private readonly damageStore: Map<IMapDamageInfo, IDamageStore<TAttr>> =
+    private readonly damageStore: Map<IMapDamageInfo, IDamageStore<TEnemy>> =
         new Map();
     /** 怪物视图 -> 其影响对象 */
     private readonly enemyStore: Map<
-        IEnemyView<TAttr>,
+        IEnemyView<TEnemy>,
         Set<IMapDamageView<any>>
     > = new Map();
     /** 需要延迟刷新的坐标索引 */
@@ -63,11 +64,14 @@ export class MapDamage<TAttr, THero> implements IMapDamage<TAttr, THero> {
     /** 坐标索引对象 */
     private readonly indexer: ILocationHelper;
 
-    constructor(readonly context: IEnemyContext<TAttr, THero>) {
+    readonly dataState: IStateBase<TEnemy, THero>;
+
+    constructor(readonly context: IEnemyContext<TEnemy, THero>) {
         this.indexer = context.indexer;
+        this.dataState = context.dataState;
     }
 
-    useConverter(converter: IMapDamageConverter<TAttr, THero>): void {
+    useConverter(converter: IMapDamageConverter<TEnemy, THero>): void {
         this.converter = converter;
         this.refreshAll();
     }
@@ -78,15 +82,16 @@ export class MapDamage<TAttr, THero> implements IMapDamage<TAttr, THero> {
      * @param locator 怪物位置
      */
     private createReadonlyHandler(
-        view: IEnemyView<TAttr>,
+        view: IEnemyView<TEnemy>,
         locator: ITileLocator
-    ): IReadonlyEnemyHandler<TAttr, THero> | null {
+    ): IReadonlyEnemyHandler<TEnemy, THero> | null {
         const hero = this.context.getBindedHero();
         if (!hero) return null;
         return {
             enemy: view.getComputedEnemy(),
             locator,
-            hero
+            hero,
+            data: this.context.dataState
         };
     }
 
@@ -126,7 +131,7 @@ export class MapDamage<TAttr, THero> implements IMapDamage<TAttr, THero> {
         this.markDirtyIndex(this.indexer.locaterToIndex(locator));
     }
 
-    markEnemyDirty(view: IEnemyView<TAttr>): void {
+    markEnemyDirty(view: IEnemyView<TEnemy>): void {
         const store = this.enemyStore.get(view);
         const locator = this.context.getEnemyLocatorByView(view);
         if (!store) {
@@ -141,7 +146,7 @@ export class MapDamage<TAttr, THero> implements IMapDamage<TAttr, THero> {
         this.refreshEnemyAndClearCache(view, locator);
     }
 
-    deleteEnemy(view: IEnemyView<TAttr>): void {
+    deleteEnemy(view: IEnemyView<TEnemy>): void {
         const store = this.enemyStore.get(view);
         if (!store) return;
         const collection = new Set<number>();
@@ -231,7 +236,7 @@ export class MapDamage<TAttr, THero> implements IMapDamage<TAttr, THero> {
      * 移除指定怪物所产生的地图伤害
      * @param view 怪物视图
      */
-    private removeEnemyAffecting(view: IEnemyView<TAttr>) {
+    private removeEnemyAffecting(view: IEnemyView<TEnemy>) {
         const views = this.enemyStore.get(view);
         if (!views) return;
         views.forEach(viewItem => {
@@ -253,7 +258,7 @@ export class MapDamage<TAttr, THero> implements IMapDamage<TAttr, THero> {
      * 刷新指定位置的怪物地图伤害，并执行刷新缓存的操作
      */
     private refreshEnemyAndClearCache(
-        view: IEnemyView<TAttr>,
+        view: IEnemyView<TEnemy>,
         locator: ITileLocator
     ) {
         this.removeEnemyAffecting(view);
@@ -295,7 +300,7 @@ export class MapDamage<TAttr, THero> implements IMapDamage<TAttr, THero> {
     /**
      * 刷新指定位置的怪物地图伤害
      */
-    private refreshEnemy(view: IEnemyView<TAttr>, locator: ITileLocator) {
+    private refreshEnemy(view: IEnemyView<TEnemy>, locator: ITileLocator) {
         this.removeEnemyAffecting(view);
         if (!this.converter) return;
         const handler = this.createReadonlyHandler(view, locator);
