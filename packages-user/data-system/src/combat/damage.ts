@@ -11,9 +11,12 @@ import {
     IReadonlyEnemyHandler,
     IEnemyView
 } from './types';
-import { IHeroAttribute, IReadonlyHeroAttribute } from '../hero';
-import { IReadonlyEnemy } from '../enemy';
-import { IStateBase } from '../types';
+import {
+    IHeroAttribute,
+    IReadonlyHeroAttribute,
+    IReadonlyEnemy,
+    IStateBase
+} from '@user/data-base';
 
 interface ICriticalSearchResult {
     /** 此临界点的属性值 */

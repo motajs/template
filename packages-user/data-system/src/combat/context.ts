@@ -14,11 +14,16 @@ import {
     IMapDamage,
     IReadonlyEnemyHandler
 } from './types';
-import { IReadonlyHeroAttribute } from '../hero';
-import { IEnemy, IReadonlyEnemy, ISpecial } from '../enemy';
+import {
+    IReadonlyHeroAttribute,
+    IEnemy,
+    IReadonlyEnemy,
+    ISpecial,
+    IStateBase,
+    ILocationIndexer,
+    MapLocIndexer
+} from '@user/data-base';
 import { EnemyView } from './enemy';
-import { ILocationIndexer, MapLocIndexer } from '../common/indexer';
-import { IStateBase } from '../types';
 
 export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     TEnemy,

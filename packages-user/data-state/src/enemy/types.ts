@@ -1,4 +1,4 @@
-import { IEnemyView } from '@user/data-base';
+import { IEnemyView } from '@user/data-system';
 
 export interface IEnemyAttr {
     /** 怪物生命值 */

@@ -1,4 +1,4 @@
-import { IEnemyFinalEffect, IEnemyHandler } from '@user/data-base';
+import { IEnemyFinalEffect, IEnemyHandler } from '@user/data-system';
 import { IEnemyAttr } from './types';
 import { IHeroAttr } from '../hero';
 

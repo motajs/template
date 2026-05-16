@@ -3,7 +3,7 @@ import {
     IDamageCalculator,
     IEnemyDamageInfo,
     IReadonlyEnemyHandler
-} from '@user/data-base';
+} from '@user/data-system';
 import { IEnemyAttr } from './types';
 import { IVampireValue } from './special';
 import { IHeroAttr } from '../hero';
@@ -90,7 +90,8 @@ export class MainDamageCalculator implements IDamageCalculator<
                 const extraInfo = this.calculate({
                     enemy: guard.getComputedEnemy(),
                     locator,
-                    hero
+                    hero,
+                    data: handler.data
                 });
                 turn += extraInfo.turn;
                 damage += extraInfo.damage;

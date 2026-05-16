@@ -1,4 +1,4 @@
-import { IEnemy, IReadonlyEnemy } from '../enemy';
+import { IEnemy, IReadonlyEnemy } from '@user/data-base';
 import { IEnemyView, IEnemyContext } from './types';
 
 export class EnemyView<TAttr> implements IEnemyView<TAttr> {

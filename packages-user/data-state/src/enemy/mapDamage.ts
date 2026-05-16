@@ -16,11 +16,13 @@ import {
     IMapDamageInfoExtra,
     IMapDamageReducer,
     IReadonlyEnemyHandler,
+    IMapDamageView
+} from '@user/data-system';
+import {
+    IFaceHandler,
     ISpecial,
-    IMapDamageView,
     IReadonlyHeroAttribute,
     IReadonlyEnemy,
-    IFaceHandler,
     InternalFaceGroup
 } from '@user/data-base';
 import { IZoneValue } from './special';

@@ -315,9 +315,21 @@ importers:
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
+      '@user/data-system':
+        specifier: workspace:*
+        version: link:../data-system
       '@user/data-utils':
         specifier: workspace:*
         version: link:../data-utils
+
+  packages-user/data-system:
+    dependencies:
+      '@motajs/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@user/data-base':
+        specifier: workspace:*
+        version: link:../data-base
 
   packages-user/data-utils:
     dependencies:
@@ -409,8 +421,6 @@ importers:
         specifier: workspace:*
         version: link:../data-utils
 
-  packages-user/types: {}
-
   packages/animate: {}
 
   packages/audio:
@@ -442,12 +452,6 @@ importers:
         version: link:../legacy-ui
 
   packages/legacy-common:
-    dependencies:
-      '@motajs/common':
-        specifier: workspace:*
-        version: link:../common
-
-  packages/legacy-data:
     dependencies:
       '@motajs/common':
         specifier: workspace:*

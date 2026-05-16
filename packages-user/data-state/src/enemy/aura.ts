@@ -14,10 +14,9 @@ import {
     IEnemyContext,
     IEnemySpecialModifier,
     IEnemyView,
-    IReadonlyEnemyHandler,
-    IReadonlyEnemy,
-    ISpecial
-} from '@user/data-base';
+    IReadonlyEnemyHandler
+} from '@user/data-system';
+import { IReadonlyEnemy, ISpecial } from '@user/data-base';
 import { IHaloValue } from './special';
 import { IEnemyAttr } from './types';
 import { IHeroAttr } from '../hero';

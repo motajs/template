@@ -4,6 +4,7 @@
         "@motajs/types": "workspace:*",
         "@motajs/common": "workspace:*",
         "@user/data-base": "workspace:*",
+        "@user/data-system": "workspace:*",
         "@user/data-utils": "workspace:*"
     }
 }

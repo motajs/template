@@ -1,8 +1,13 @@
 import { ITileLocator, IRange } from '@motajs/common';
-import { IEnemy, IReadonlyEnemy, ISpecial } from '../enemy';
-import { IReadonlyHeroAttribute, IHeroAttribute } from '../hero';
-import { ILocationHelper } from '../common/indexer';
-import { IStateBase } from '../types';
+import {
+    IEnemy,
+    IReadonlyEnemy,
+    ISpecial,
+    IReadonlyHeroAttribute,
+    IHeroAttribute,
+    IStateBase,
+    ILocationHelper
+} from '@user/data-base';
 
 //#region 辅助接口
 
