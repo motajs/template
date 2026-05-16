@@ -231,6 +231,8 @@ export interface ILayerState extends IHookable<ILayerStateHooks> {
     readonly width: number;
     /** 此楼层的地图高度 */
     readonly height: number;
+    /** 当前楼层的默认事件层 */
+    readonly eventLayer: IMapLayer | null;
 
     /**
      * 添加图层，使用楼层预设的宽高
@@ -292,6 +294,12 @@ export interface ILayerState extends IHookable<ILayerStateHooks> {
      * @param active 激活状态
      */
     setActiveStatus(active: boolean): void;
+
+    /**
+     * 设置本楼层的事件层图层
+     * @param layer 图层
+     */
+    setEventLayer(layer: IMapLayer | null): void;
 
     /**
      * 楼层是否被修改过（相对于参考基准）

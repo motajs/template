@@ -31,8 +31,8 @@ export class LayerState
     /** 图层钩子映射 */
     private layerHookMap: Map<IMapLayer, IMapLayerHookController> = new Map();
 
-    /** 楼层是否处于激活状态 */
     active: boolean = false;
+    eventLayer: IMapLayer | null = null;
 
     /** 楼层级脏标记 */
     private dirty: boolean = false;
@@ -128,6 +128,17 @@ export class LayerState
 
     setActiveStatus(active: boolean): void {
         this.active = active;
+    }
+
+    setEventLayer(layer: IMapLayer | null): void {
+        if (!layer) {
+            this.eventLayer = null;
+        } else {
+            if (!this.layerList.has(layer)) {
+                return;
+            }
+            this.eventLayer = layer;
+        }
     }
 
     isDirty(): boolean {

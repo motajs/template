@@ -188,6 +188,8 @@
         "128": "Position $1,$2 is out of map bounds, operation cancelled.",
         "129": "Position $1,$2 is not empty, existing block will be overwritten.",
         "130": "The given tile is not managed by this dynamic layer.",
+        "131": "Event layer to set is not belong to current LayerState.",
+        "132": "Trigger registry entry of $1 '$2' already exists, new factory will override old factory.",
         "1001": "Item-detail extension needs 'floor-binder' and 'floor-damage' extension as dependency."
     }
 }
