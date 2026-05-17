@@ -55,8 +55,7 @@
         "53": "Expected serializable value set as enemy's default attribute.",
         "54": "Legacy '$1' API has been removed, consider using new APIs: '$2'.",
         "55": "Cannot load MapStore state: reference data (compareWith) has not been set.",
-        "56": "Cannot convert legacy tile data since no tile legacy converter is attached to TileStore.",
-        "1201": "Floor-damage extension needs 'floor-binder' extension as dependency."
+        "56": "Cannot convert legacy tile data since no tile legacy converter is attached to TileStore."
     },
     "warn": {
         "1": "Resource with type of 'none' is loaded.",
@@ -193,6 +192,7 @@
         "132": "Trigger registry entry of $1 '$2' already exists, new factory will override old factory.",
         "133": "TileStore.addTile: tile number $1 already exists (id: '$2'), old tile data will be overridden.",
         "134": "TileStore.addTile: tile id '$1' already maps to number $2, old tile data will be overridden.",
-        "1001": "Item-detail extension needs 'floor-binder' and 'floor-damage' extension as dependency."
+        "135": "Expected a trigger registry attched before collect triggers.",
+        "136": "Unexpected duplicate trigger priority $1, which may cause trigger executed in an unexpected order."
     }
 }

@@ -5,7 +5,7 @@ export class TriggerCollection implements ITriggerCollection {
     private readonly triggerList: ITrigger[];
 
     constructor(triggers: Iterable<ITrigger>) {
-        this.triggerList = Array.from(triggers);
+        this.triggerList = [...triggers];
     }
 
     count(): number {

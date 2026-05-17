@@ -33,7 +33,11 @@ import {
     DamageSystem,
     EnemyContext,
     IEnemyContext,
-    MapDamage
+    ITriggerCollector,
+    ITriggerRegistry,
+    MapDamage,
+    TriggerCollector,
+    TriggerRegistry
 } from '@user/data-system';
 import {
     CommonAuraConverter,
@@ -78,6 +82,8 @@ export class CoreState implements ICoreState {
 
     // Layer 2 内容
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
+    readonly triggerRegistry: ITriggerRegistry;
+    readonly triggerCollector: ITriggerCollector;
 
     // 用户层内容
     readonly loadProgress: ILoadProgressTotal;
@@ -95,26 +101,43 @@ export class CoreState implements ICoreState {
     > = new Map();
 
     constructor() {
+        //#region L0 初始化
+
+        // 朝向
+        this.roleFace = new RoleFaceBinder();
+        this.faceManager = new FaceManager();
+        const dir4 = new Dir4FaceHandler();
+        const dir8 = new Dir8FaceHandler();
+        this.faceManager.register(FaceGroup.Dir4, dir4);
+        this.faceManager.registerById('dir4', dir4);
+        this.faceManager.register(FaceGroup.Dir8, dir8);
+        this.faceManager.registerById('dir8', dir8);
+
+        // 图块
         const tileStore = new TileStore<LegacyTileData>();
         tileStore.attachLegacyConverter(new TileLegacyBridge());
         this.tileStore = tileStore;
+
+        //#endregion
+
+        //#region L1 初始化
+
+        // Flag 系统
+        this.flags = new FlagSystem();
+
+        // 地图
         this.maps = new MapStore(tileStore, this);
 
-        this.loadProgress = new LoadProgressTotal();
-        this.dataLoader = new MotaDataLoader(this.loadProgress);
-
-        //#region 勇士初始化
-
+        // 勇士
         const heroMover = new HeroMover();
         const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
         const heroState = new HeroState(heroMover, heroAttribute);
         this.hero = heroState;
 
-        //#endregion
+        this.loadProgress = new LoadProgressTotal();
+        this.dataLoader = new MotaDataLoader(this.loadProgress);
 
-        //#region 怪物初始化
-
-        // 怪物管理器初始化
+        // 怪物管理器
         const comparer = new MainEnemyComparer();
         const enemyManager = new EnemyManager(new EnemyLegacyBridge());
         enemyManager.attachEnemyComparer(comparer);
@@ -126,7 +149,12 @@ export class CoreState implements ICoreState {
         enemyManager.setAttributeDefaults('point', 0);
         registerSpecials(enemyManager);
         this.enemyManager = enemyManager;
-        // 怪物上下文初始化
+
+        //#endregion
+
+        //#region L2 初始化
+
+        // 怪物上下文
         const enemyContext = new EnemyContext<IEnemyAttr, IHeroAttr>(this);
         const damageSystem = new DamageSystem(enemyContext);
         const mapDamage = new MapDamage(enemyContext);
@@ -142,10 +170,18 @@ export class CoreState implements ICoreState {
         enemyContext.bindHero(heroAttribute);
         this.enemyContext = enemyContext;
 
+        // 触发器注册与收集器
+        const triggerRegistry = new TriggerRegistry();
+        const triggerCollector = new TriggerCollector();
+        triggerCollector.attachRegistry(triggerRegistry);
+        this.triggerRegistry = triggerRegistry;
+        this.triggerCollector = triggerCollector;
+
         //#endregion
 
-        //#region 存档系统
+        //#region 顶层初始化
 
+        // 存档系统
         this.saveSystem = new SaveSystem();
         // 配置存档系统，一般情况下不建议动，除非你知道你在干什么
         this.saveSystem.config({
@@ -155,29 +191,16 @@ export class CoreState implements ICoreState {
             saveTimeTolerance: 100,
             autosaveStackSize: 20
         });
-
+        this.addSaveableContent('@system/hero', this.hero);
+        this.addSaveableContent('@system/flags', this.flags);
+        this.addSaveableContent('@system/maps', this.maps);
+        this.addSaveableContent('@system/enemy', this.enemyManager);
         // 初始化存档数据库，不要动
         loading.once('coreInit', () => {
             this.saveSystem.init(`@game/${core.firstData.name}`);
         });
 
-        //#endregion
-
-        //#region 其他初始化
-
-        // 朝向
-        this.roleFace = new RoleFaceBinder();
-        this.faceManager = new FaceManager();
-        const dir4 = new Dir4FaceHandler();
-        const dir8 = new Dir8FaceHandler();
-        this.faceManager.register(FaceGroup.Dir4, dir4);
-        this.faceManager.registerById('dir4', dir4);
-        this.faceManager.register(FaceGroup.Dir8, dir8);
-        this.faceManager.registerById('dir8', dir8);
-
-        this.flags = new FlagSystem();
-
-        // 加载先使用兼容层实现
+        // 加载初始化，先使用兼容层实现
         loading.once('loaded', () => {
             this.initTileStore(core.maps.blocksInfo);
             this.initEnemyManager(enemys_fcae963b_31c9_42b4_b48c_bb48d09f3f80);
@@ -186,13 +209,6 @@ export class CoreState implements ICoreState {
                 core.floors as Record<FloorIds, ResolvedFloor>
             );
         });
-
-        this.addSaveableContent('@system/hero', this.hero);
-        this.addSaveableContent('@system/flags', this.flags);
-        this.addSaveableContent('@system/maps', this.maps);
-        this.addSaveableContent('@system/enemy', this.enemyManager);
-
-        //#endregion
     }
 
     /**
