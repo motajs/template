@@ -6,9 +6,9 @@ export interface IStateSystem<TEnemy, THero> extends IStateBase<TEnemy, THero> {
     /** 怪物上下文 */
     readonly enemyContext: IEnemyContext<TEnemy, THero>;
     /** 触发器注册 */
-    readonly triggerRegistry: ITriggerRegistry;
+    readonly triggerRegistry: ITriggerRegistry<TEnemy, THero>;
     /** 触发器收集器 */
-    readonly triggerCollector: ITriggerCollector;
+    readonly triggerCollector: ITriggerCollector<TEnemy, THero>;
 }
 
 export interface IStateSystemExtended<TEnemy = unknown, THero = unknown> {

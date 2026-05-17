@@ -69,23 +69,23 @@ import { logger } from '@motajs/common';
 import { ISaveSystem, SaveSystem } from './save';
 
 export class CoreState implements ICoreState {
-    // Layer 0 内容
+    // Layer 0 公共层
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
     readonly tileStore: ITileStore<LegacyTileData>;
 
-    // Layer 1 内容
+    // Layer 1 数据层，所有可存档内容都在这
     readonly maps: IMapStore;
     readonly hero: IHeroState<IHeroAttr>;
     readonly enemyManager: IEnemyManager<IEnemyAttr>;
     readonly flags: IFlagSystem;
 
-    // Layer 2 内容
+    // Layer 2 执行层，游戏逻辑对象都在这
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
-    readonly triggerRegistry: ITriggerRegistry;
-    readonly triggerCollector: ITriggerCollector;
+    readonly triggerRegistry: ITriggerRegistry<IEnemyAttr, IHeroAttr>;
+    readonly triggerCollector: ITriggerCollector<IEnemyAttr, IHeroAttr>;
 
-    // 用户层内容
+    // 用户层内容，也就是最顶层的内容，一般仅用于初始化
     readonly loadProgress: ILoadProgressTotal;
     readonly dataLoader: IMotaDataLoader;
     readonly saveSystem: ISaveSystem;
@@ -171,8 +171,10 @@ export class CoreState implements ICoreState {
         this.enemyContext = enemyContext;
 
         // 触发器注册与收集器
-        const triggerRegistry = new TriggerRegistry();
-        const triggerCollector = new TriggerCollector();
+        const triggerRegistry = new TriggerRegistry<IEnemyAttr, IHeroAttr>(
+            this
+        );
+        const triggerCollector = new TriggerCollector<IEnemyAttr, IHeroAttr>();
         triggerCollector.attachRegistry(triggerRegistry);
         this.triggerRegistry = triggerRegistry;
         this.triggerCollector = triggerCollector;
@@ -247,7 +249,6 @@ export class CoreState implements ICoreState {
      * @param data 旧样板怪物存储对象
      */
     private initEnemyManager(data: Record<EnemyIds, Enemy>) {
-        // TODO: 修改怪物模板并存入存档，即 core.setEnemy
         const manager = this.enemyManager;
         const reference = new Map<number, IReadonlyEnemy<IEnemyAttr>>();
         for (const [id, enemy] of Object.entries(structuredClone(data))) {
