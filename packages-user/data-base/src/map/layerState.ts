@@ -11,6 +11,7 @@ import {
     IMapLayerHookController,
     IMapLayerHooks
 } from './types';
+import { ITileStore } from '../store';
 import { MapLayer } from './mapLayer';
 
 export class LayerState
@@ -38,6 +39,7 @@ export class LayerState
     private dirty: boolean = false;
 
     constructor(
+        public readonly tileStore: ITileStore,
         public width: number,
         public height: number
     ) {
@@ -46,7 +48,12 @@ export class LayerState
 
     addLayer(): IMapLayer {
         const array = new Uint32Array(this.width * this.height);
-        const layer = new MapLayer(array, this.width, this.height);
+        const layer = new MapLayer(
+            array,
+            this.width,
+            this.height,
+            this.tileStore
+        );
         this.layerList.add(layer);
         this.mapLayerList.add(layer);
         this.forEachHook(hook => {

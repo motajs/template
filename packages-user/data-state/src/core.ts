@@ -91,10 +91,10 @@ export class CoreState implements ICoreState {
     > = new Map();
 
     constructor() {
-        this.maps = new MapStore();
         const tileStore = new TileStore<LegacyTileData>();
         tileStore.attachLegacyConverter(new TileLegacyBridge());
         this.tileStore = tileStore;
+        this.maps = new MapStore(tileStore);
 
         this.loadProgress = new LoadProgressTotal();
         this.dataLoader = new MotaDataLoader(this.loadProgress);

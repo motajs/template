@@ -8,6 +8,7 @@ import {
 } from './types';
 import { Hookable, HookController, logger } from '@motajs/common';
 import { DynamicLayer } from './dynamicLayer';
+import { ITileStore } from '../store';
 
 // todo: 提供 core.setBlock 等方法的替代方法，同时添加 setBlockList，以及前景背景的接口
 
@@ -24,10 +25,17 @@ export class MapLayer
     private mapArray: Uint32Array;
     /** 地图数据引用 */
     private mapData: IMapLayerData;
+    /** 手动触发器覆盖映射，key = y * width + x */
+    private triggerMap: Map<number, number> = new Map();
 
     readonly dynamicLayer: IDynamicLayer;
 
-    constructor(array: Uint32Array, width: number, height: number) {
+    constructor(
+        array: Uint32Array,
+        width: number,
+        height: number,
+        private readonly tileStore: ITileStore
+    ) {
         super();
         this.width = width;
         this.height = height;
@@ -40,6 +48,25 @@ export class MapLayer
             array: this.mapArray
         };
         this.dynamicLayer = new DynamicLayer(this);
+    }
+
+    /**
+     * 在地图尺寸变化后重新映射手动触发器覆盖表
+     */
+    private remapTriggerMap(
+        beforeWidth: number,
+        width: number,
+        height: number
+    ): Map<number, number> {
+        const next = new Map<number, number>();
+        for (const [index, type] of this.triggerMap) {
+            const x = index % beforeWidth;
+            const y = Math.floor(index / beforeWidth);
+            if (x < width && y < height) {
+                next.set(y * width + x, type);
+            }
+        }
+        return next;
     }
 
     resize(width: number, height: number): void {
@@ -55,6 +82,7 @@ export class MapLayer
         this.height = height;
         const area = width * height;
         const newArray = new Uint32Array(area);
+        this.triggerMap = this.remapTriggerMap(beforeWidth, width, height);
         this.mapArray = newArray;
         // 将原来的地图数组赋值给现在的
         if (beforeArea > area) {
@@ -84,13 +112,16 @@ export class MapLayer
 
     resize2(width: number, height: number): void {
         if (this.width === width && this.height === height) {
+            this.empty = true;
             this.mapArray.fill(0);
+            this.triggerMap.clear();
             return;
         }
         this.mapData.expired = true;
         this.width = width;
         this.height = height;
         this.mapArray = new Uint32Array(width * height);
+        this.triggerMap.clear();
         this.mapData = {
             expired: false,
             array: this.mapArray
@@ -119,6 +150,39 @@ export class MapLayer
             return -1;
         }
         return this.mapArray[y * this.width + x];
+    }
+
+    getTriggerType(x: number, y: number): number {
+        if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
+            return -1;
+        }
+        const index = y * this.width + x;
+        if (this.triggerMap.has(index)) {
+            return this.triggerMap.get(index)!;
+        }
+        return this.tileStore.getTrigger(this.mapArray[index]);
+    }
+
+    setTriggerType(type: number, x: number, y: number): void {
+        if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
+            return;
+        }
+        const index = y * this.width + x;
+        if (this.tileStore.getTrigger(this.mapArray[index]) === type) {
+            this.triggerMap.delete(index);
+        } else {
+            this.triggerMap.set(index, type);
+        }
+    }
+
+    revertTrigger(x: number, y: number): void {
+        if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
+            this.triggerMap.delete(y * this.width + x);
+        }
+    }
+
+    clearTrigger(): void {
+        this.triggerMap.clear();
     }
 
     putMapData(array: Uint32Array, x: number, y: number, width: number): void {
@@ -201,13 +265,6 @@ export class MapLayer
         return res;
     }
 
-    /**
-     * 获取地图数据的内部存储直接引用
-     */
-    getMapRef(): IMapLayerData {
-        return this.mapData;
-    }
-
     setMapRef(array: Uint32Array): void {
         if (array.length !== this.width * this.height) {
             logger.warn(
@@ -227,6 +284,18 @@ export class MapLayer
         this.forEachHook(hook => {
             hook.onUpdateArea?.(0, 0, this.width, this.height);
         });
+    }
+
+    getMapRef(): IMapLayerData {
+        return this.mapData;
+    }
+
+    setTriggerRef(triggers: Map<number, number>): void {
+        this.triggerMap = triggers;
+    }
+
+    getTriggerRef(): ReadonlyMap<number, number> {
+        return this.triggerMap;
     }
 
     protected createController(

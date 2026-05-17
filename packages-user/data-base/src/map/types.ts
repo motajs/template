@@ -7,6 +7,7 @@ import {
     IRoleFaceBinder,
     ISaveableContent
 } from '../common';
+import { ITileStore } from '../store';
 
 //#region 静态图层
 
@@ -104,6 +105,33 @@ export interface IMapLayer extends IHookable<
     getBlock(x: number, y: number): number;
 
     /**
+     * 获取指定点的静态图块对应的有效触发器类型，若手动覆盖不存在则回退到图块默认触发器
+     * @param x 图块横坐标
+     * @param y 图块纵坐标
+     */
+    getTriggerType(x: number, y: number): number;
+
+    /**
+     * 设置指定点静态图块的触发器
+     * @param type 触发器类型
+     * @param x 图块横坐标
+     * @param y 图块纵坐标
+     */
+    setTriggerType(type: number, x: number, y: number): void;
+
+    /**
+     * 删除指定点静态图块的触发器，回退为图块默认触发器
+     * @param x 图块横坐标
+     * @param y 图块纵坐标
+     */
+    revertTrigger(x: number, y: number): void;
+
+    /**
+     * 清空地图上所有静态图块的手动设置的触发器，恢复为图块默认触发器
+     */
+    clearTrigger(): void;
+
+    /**
      * 设置地图图块
      * @param array 地图图块数组
      * @param x 数组第一项代表的横坐标
@@ -131,9 +159,29 @@ export interface IMapLayer extends IHookable<
     ): Uint32Array;
 
     /**
+     * 直接替换内部图块数组引用，跳过拷贝，高性能但风险较高。
+     * 一般仅供 `MapStore` 读档时内部使用，外部正常情况下不应调用。
+     * 调用方需确保传入数组的长度与 `width * height` 匹配，
+     * 且调用后不得再持有或修改传入的数组。
+     * @param array 地图数组，会直接替换内部引用
+     */
+    setMapRef(array: Uint32Array): void;
+
+    /**
      * 获取整个地图的地图数组，是对内部数组的直接引用
      */
     getMapRef(): IMapLayerData;
+
+    /**
+     * 直接设置内部触发器映射对象，一般仅供内部存读档使用，外部正常情况下不应调用
+     * @param triggers 触发器映射
+     */
+    setTriggerRef(triggers: Map<number, number>): void;
+
+    /**
+     * 获取静态触发器覆盖映射，一般仅供内部存档逻辑使用
+     */
+    getTriggerRef(): ReadonlyMap<number, number>;
 
     /**
      * 设置地图纵深，会影响渲染的遮挡顺序
@@ -155,15 +203,6 @@ export interface IMapLayer extends IHookable<
      * @param y 门纵坐标
      */
     closeDoor(num: number, x: number, y: number): Promise<void>;
-
-    /**
-     * 直接替换内部图块数组引用，跳过拷贝，高性能但风险较高。
-     * 一般仅供 `MapStore` 读档时内部使用，外部正常情况下不应调用。
-     * 调用方需确保传入数组的长度与 `width * height` 匹配，
-     * 且调用后不得再持有或修改传入的数组。
-     * @param array 地图数组，会直接替换内部引用
-     */
-    setMapRef(array: Uint32Array): void;
 }
 
 //#endregion
@@ -225,6 +264,8 @@ export interface ILayerStateHooks extends IHookBase {
 export interface ILayerState extends IHookable<ILayerStateHooks> {
     /** 地图列表 */
     readonly layerList: Set<IMapLayer>;
+    /** 当前楼层共享的图块定义 store */
+    readonly tileStore: ITileStore;
     /** 此楼层是否处于激活状态 */
     readonly active: boolean;
     /** 此楼层的地图宽度 */
@@ -316,7 +357,6 @@ export interface ILayerState extends IHookable<ILayerStateHooks> {
 
 //#region 楼层管理
 
-/** 单个 MapLayer 的存档数据 */
 export interface IMapLayerSave {
     readonly width: number;
     readonly height: number;
@@ -332,27 +372,27 @@ export interface IMapLayerSave {
     readonly fullMap?: Uint32Array;
 }
 
-/** 单个楼层的存档数据 */
 export interface ILayerStateSave {
+    /** 楼层背景 */
     readonly background: number;
-
     /** key = zIndex，value = 对应图层存档数据 */
     readonly layers: ReadonlyMap<number, IMapLayerSave>;
+    /** 静态触发器覆盖映射，仅在存在覆盖时写入 */
+    readonly triggers: ReadonlyMap<number, ReadonlyMap<number, number>>;
 }
 
-/** 整个 MapStore 的存档数据 */
 export interface IMapStoreSave {
     /** key = 楼层 id，只包含 active 的楼层，inactive 的楼层不写入，读档时无需处理 */
     readonly floors: ReadonlyMap<string, ILayerStateSave>;
 }
 
-/** 单段闭区间 [start, end]，start 和 end 均为 maps 下标 */
 export interface IMapAreaInterval {
+    /** 区域起始索引，包含 */
     readonly start: number;
+    /** 区域结束索引，包含 */
     readonly end: number;
 }
 
-/** 一个区域由一个或多个独立区间组成 */
 export type MapArea = IMapAreaInterval[];
 
 export interface IMapStore extends ISaveableContent<IMapStoreSave> {
@@ -504,21 +544,25 @@ export interface IDynamicLayer extends IHookable<IDynamicLayerHooks> {
      * @param y 纵坐标
      * @returns 创建的动态图块引用
      */
-    transferToDynamic(x: number, y: number): IDynamicTile;
+    transferToDynamic(
+        x: number,
+        y: number,
+        keepTrigger?: boolean
+    ): IDynamicTile;
 
     /**
      * 将动态图块还原为静态图块。坐标越界则警告并放弃，
      * 否则写回静态图层并触发 {@link IDynamicLayerHooks.onDeleteTile}
      * @param tile 要还原的动态图块
      */
-    transferToStatic(tile: IDynamicTile): void;
+    transferToStatic(tile: IDynamicTile, keepTrigger?: boolean): void;
 
     /**
      * 仅当目标位置静态图块为 0（空白）时才还原为静态图块，否则不转换
      * @param tile 要还原的动态图块
      * @returns 是否转换成功
      */
-    transferToStaticIfSafe(tile: IDynamicTile): boolean;
+    transferToStaticIfSafe(tile: IDynamicTile, keepTrigger?: boolean): boolean;
 
     /**
      * 删除指定动态图块，触发 {@link IDynamicLayerHooks.onDeleteTile} 钩子。
@@ -557,6 +601,8 @@ export interface IDynamicLayer extends IHookable<IDynamicLayerHooks> {
 export interface IDynamicTile extends IObjectMovable {
     /** 当前图块数字 */
     readonly num: number;
+    /** 当前动态图块携带的触发器类型，-1 表示无触发器 */
+    readonly triggerType: number;
     /** 当前图块所属的动态图层 */
     readonly layer: IDynamicLayer;
     /** 当前动态图块的移动器 */
@@ -567,6 +613,12 @@ export interface IDynamicTile extends IObjectMovable {
      * @param direction 图块朝向
      */
     setFaceDirection(direction: FaceDirection): number;
+
+    /**
+     * 设置当前动态图块的触发器类型
+     * @param type 触发器类型
+     */
+    setTriggerType(type: number): void;
 
     /**
      * 直接删除此图块

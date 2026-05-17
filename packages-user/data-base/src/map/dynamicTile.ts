@@ -10,6 +10,7 @@ import { DynamicTileMover } from './mover';
 
 export class DynamicTile implements IDynamicTile {
     readonly mover: IObjectMover<IDynamicTile>;
+    triggerType: number;
 
     /** 当前的朝向绑定对象 */
     private face: IRoleFaceBinder | null = null;
@@ -21,6 +22,7 @@ export class DynamicTile implements IDynamicTile {
         public readonly layer: IDynamicLayer
     ) {
         this.mover = new DynamicTileMover(this);
+        this.triggerType = -1;
     }
 
     setFaceBinder(binder: IRoleFaceBinder | null): void {
@@ -34,6 +36,10 @@ export class DynamicTile implements IDynamicTile {
             this.num = next.identifier;
         }
         return this.num;
+    }
+
+    setTriggerType(type: number): void {
+        this.triggerType = type;
     }
 
     delete(): Promise<void> {
