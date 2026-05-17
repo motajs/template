@@ -325,8 +325,8 @@ export function initFallback() {
                         callback?.();
                     };
 
-                    const layer = state.maps.getLayerByAlias('event')!;
-                    layer.openDoor(x, y).then(cb);
+                    // const layer = state.maps.getLayerByAlias('event')!;
+                    // layer.openDoor(x, y).then(cb);
 
                     const animate = fallbackIds++;
                     core.animateFrame.lastAsyncId = animate;
@@ -373,9 +373,9 @@ export function initFallback() {
                 if (core.status.replay.speed === 24) {
                     cb();
                 } else {
-                    const num = state.tileStore.idToNumber(id)!;
-                    const layer = state.maps.getLayerByAlias('event')!;
-                    layer.closeDoor(num, x, y).then(cb);
+                    // const num = state.tileStore.idToNumber(id)!;
+                    // const layer = state.maps.getLayerByAlias('event')!;
+                    // layer.closeDoor(num, x, y).then(cb);
 
                     const animate = fallbackIds++;
                     core.animateFrame.lastAsyncId = animate;
@@ -515,20 +515,20 @@ export function initFallback() {
                 // 先使用 mainMapRenderer 妥协
                 const { client } = Mota.require('@user/client-modules');
                 const renderer = client.mainMapRenderer;
-                if (renderer.layerState !== state.maps) {
-                    callback?.();
-                    return;
-                }
-                const layer = state.maps.getLayerByAlias('event');
-                if (!layer) {
-                    callback?.();
-                    return;
-                }
+                // if (renderer.layerState !== state.maps) {
+                //     callback?.();
+                //     return;
+                // }
+                // const layer = state.maps.getLayerByAlias('event');
+                // if (!layer) {
+                //     callback?.();
+                //     return;
+                // }
                 core.removeBlock(sx, sy);
-                const moving = renderer.addMovingBlock(layer, block.id, sx, sy);
+                // const moving = renderer.addMovingBlock(layer, block.id, sx, sy);
                 core.updateStatusBar();
-                await moving.moveRelative(fn, time);
-                moving.destroy();
+                // await moving.moveRelative(fn, time);
+                // moving.destroy();
 
                 if (keep) {
                     core.setBlock(block.id, ex, ey);
