@@ -1,9 +1,10 @@
 import EventEmitter from 'eventemitter3';
 import { backDir, toDir } from './utils';
-import { fromDirectionString, loading } from '@user/data-base';
+import { loading } from '@user/data-base';
 import type { HeroKeyMover } from '@user/client-modules';
 import { sleep } from '@motajs/common';
 import { state } from '..';
+import { fromDirectionString } from '@user/data-common';
 
 // todo: 转身功能
 

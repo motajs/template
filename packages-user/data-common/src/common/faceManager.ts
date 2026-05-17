@@ -2,7 +2,7 @@ import { FaceDirection } from './types';
 
 //#region 接口与枚举
 
-export const enum InternalFaceGroup {
+export const enum FaceGroup {
     /** 四方向（上下左右） */
     Dir4,
     /** 八方向（上下左右+斜向） */

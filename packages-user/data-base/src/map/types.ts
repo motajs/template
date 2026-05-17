@@ -1,13 +1,14 @@
 import { IHookable, IHookBase, IHookController } from '@motajs/common';
 import {
     FaceDirection,
+    IDataCommonExtended,
     IMoverController,
     IObjectMovable,
     IObjectMover,
     IRoleFaceBinder,
     ISaveableContent
-} from '../common';
-import { ITileStore } from '../store';
+} from '@user/data-common';
+import { ITileStore } from '@user/data-common';
 
 //#region 静态图层
 
@@ -69,10 +70,10 @@ export interface IMapLayerHookController extends IHookController<IMapLayerHooks>
     getMapData(): Readonly<IMapLayerData>;
 }
 
-export interface IMapLayer extends IHookable<
-    IMapLayerHooks,
-    IMapLayerHookController
-> {
+export interface IMapLayer
+    extends
+        IHookable<IMapLayerHooks, IMapLayerHookController>,
+        IDataCommonExtended {
     /** 地图宽度 */
     readonly width: number;
     /** 地图高度 */
@@ -85,6 +86,8 @@ export interface IMapLayer extends IHookable<
     /** 图层纵深 */
     readonly zIndex: number;
 
+    /** 当前图层所属的地图状态对象 */
+    readonly layerState: ILayerState;
     /** 此图层对应的动态图块图层，z 层级与静态图块一致 */
     readonly dynamicLayer: IDynamicLayer;
 
@@ -261,7 +264,8 @@ export interface ILayerStateHooks extends IHookBase {
     onResizeLayer(layer: IMapLayer, width: number, height: number): void;
 }
 
-export interface ILayerState extends IHookable<ILayerStateHooks> {
+export interface ILayerState
+    extends IHookable<ILayerStateHooks>, IDataCommonExtended {
     /** 地图列表 */
     readonly layerList: Set<IMapLayer>;
     /** 当前楼层共享的图块定义 store */
@@ -395,7 +399,8 @@ export interface IMapAreaInterval {
 
 export type MapArea = IMapAreaInterval[];
 
-export interface IMapStore extends ISaveableContent<IMapStoreSave> {
+export interface IMapStore
+    extends ISaveableContent<IMapStoreSave>, IDataCommonExtended {
     /** 所有楼层的 id 有序数组 */
     readonly maps: ReadonlyArray<string>;
 
@@ -524,7 +529,8 @@ export interface IDynamicLayerHooks extends IHookBase {
     onUpdateTilePosition(tile: IDynamicTile, layer: IDynamicLayer): void;
 }
 
-export interface IDynamicLayer extends IHookable<IDynamicLayerHooks> {
+export interface IDynamicLayer
+    extends IHookable<IDynamicLayerHooks>, IDataCommonExtended {
     /** 当前动态图层所属的静态图层 */
     readonly layer: IMapLayer;
 
@@ -598,7 +604,7 @@ export interface IDynamicLayer extends IHookable<IDynamicLayerHooks> {
     updateDynamicTile(tile: IDynamicTile): void;
 }
 
-export interface IDynamicTile extends IObjectMovable {
+export interface IDynamicTile extends IObjectMovable, IDataCommonExtended {
     /** 当前图块数字 */
     readonly num: number;
     /** 当前动态图块携带的触发器类型，-1 表示无触发器 */

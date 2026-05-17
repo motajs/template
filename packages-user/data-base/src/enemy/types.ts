@@ -1,4 +1,4 @@
-import { ISaveableContent } from '../common';
+import { ISaveableContent } from '@user/data-common';
 
 //#region 怪物基础
 

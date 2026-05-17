@@ -19,11 +19,10 @@ import {
     IEnemy,
     IReadonlyEnemy,
     ISpecial,
-    IStateBase,
-    ILocationIndexer,
-    MapLocIndexer
+    IStateBase
 } from '@user/data-base';
 import { EnemyView } from './enemy';
+import { ILocationIndexer, MapLocIndexer } from '@user/data-common';
 
 export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     TEnemy,

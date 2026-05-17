@@ -11,7 +11,7 @@ import {
     IMapLayerHookController,
     IMapLayerHooks
 } from './types';
-import { ITileStore } from '../store';
+import { IDataCommon, ITileStore } from '@user/data-common';
 import { MapLayer } from './mapLayer';
 
 export class LayerState
@@ -39,6 +39,7 @@ export class LayerState
     private dirty: boolean = false;
 
     constructor(
+        public readonly state: IDataCommon,
         public readonly tileStore: ITileStore,
         public width: number,
         public height: number
@@ -52,6 +53,7 @@ export class LayerState
             array,
             this.width,
             this.height,
+            this,
             this.tileStore
         );
         this.layerList.add(layer);

@@ -8,7 +8,7 @@ import {
     IModifierStateSave,
     IReadonlyHeroAttribute
 } from './types';
-import { SaveCompression } from '../common';
+import { SaveCompression } from '@user/data-common';
 import { logger } from '@motajs/common';
 
 export class HeroState<THero> implements IHeroState<THero> {

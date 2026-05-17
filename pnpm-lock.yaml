@@ -288,6 +288,15 @@ importers:
       '@motajs/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@user/data-common':
+        specifier: workspace:*
+        version: link:../data-common
+
+  packages-user/data-common:
+    dependencies:
+      '@motajs/common':
+        specifier: workspace:*
+        version: link:../../packages/common
 
   packages-user/data-fallback:
     dependencies:

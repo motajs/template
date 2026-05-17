@@ -19,15 +19,14 @@ import {
     IMapDamageView
 } from '@user/data-system';
 import {
-    IFaceHandler,
     ISpecial,
     IReadonlyHeroAttribute,
-    IReadonlyEnemy,
-    InternalFaceGroup
+    IReadonlyEnemy
 } from '@user/data-base';
 import { IZoneValue } from './special';
 import { IEnemyAttr, MapDamageType } from './types';
 import { IHeroAttr } from '../hero';
+import { IFaceHandler, FaceGroup } from '@user/data-common';
 
 const RECT_RANGE = new RectRange();
 const MANHATTAN_RANGE = new ManhattanRange();
@@ -312,7 +311,7 @@ export class MainMapDamageConverter implements IMapDamageConverter<
 
         const laser = enemy.getSpecial<number>(24);
         if (laser) {
-            const face = handler.data.faceManager.get(InternalFaceGroup.Dir4)!;
+            const face = handler.data.faceManager.get(FaceGroup.Dir4)!;
             views.push(new LaserDamageView(context, locator, laser, face));
         }
 

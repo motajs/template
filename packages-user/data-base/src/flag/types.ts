@@ -1,6 +1,6 @@
 //#region 字段
 
-import { ISaveableContent } from '../common';
+import { ISaveableContent } from '@user/data-common';
 
 export interface IFlagCommonField<T> {
     /** 此字段所处的 Flag 系统 */

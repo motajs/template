@@ -1,6 +1,6 @@
 import { logger } from '@motajs/common';
-import { SaveCompression } from '../common';
-import { ITileStore } from '../store';
+import { IDataCommon, SaveCompression } from '@user/data-common';
+import { ITileStore } from '@user/data-common';
 import {
     ILayerState,
     ILayerStateSave,
@@ -32,7 +32,10 @@ export class MapStore implements IMapStore {
     /** 自动分区激活器开关 */
     private autoActivitorEnabled: boolean = false;
 
-    constructor(private readonly tileStore: ITileStore) {}
+    constructor(
+        private readonly tileStore: ITileStore,
+        public readonly state: IDataCommon
+    ) {}
 
     //#region 楼层管理
 
@@ -42,7 +45,7 @@ export class MapStore implements IMapStore {
         } else {
             this.maps.push(id);
         }
-        const state = new LayerState(this.tileStore, width, height);
+        const state = new LayerState(this.state, this.tileStore, width, height);
         // 若 refData 已存在，新楼层直接视为全脏
         if (this.refData !== null) {
             state.setDirty(true);

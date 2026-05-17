@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash-es';
-import { SaveCompression } from '../common';
+import { SaveCompression } from '@user/data-common';
 import { ISpecial, SpecialCreation } from './types';
 
 // TODO: 颜色参数

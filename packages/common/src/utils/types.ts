@@ -1,4 +1,4 @@
-import { FaceDirection } from '@user/data-base';
+import { FaceDirection } from '@user/data-common';
 
 export interface ISearchable4Dir {
     /** 获取上侧元素 */

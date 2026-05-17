@@ -1,23 +1,15 @@
 import { IHeroFollower, IHeroState } from './hero';
 import { IEnemyManager } from './enemy';
 import { IFlagSystem } from './flag';
-import { IFaceManager, IRoleFaceBinder, ISaveableContent } from './common';
 import { IMapStore } from './map';
-import { ITileStore } from './store';
+import { IDataCommon, ISaveableContent } from '@user/data-common';
 
 export interface IStateSaveData {
     /** 跟随者列表 */
     readonly followers: readonly IHeroFollower[];
 }
 
-export interface IStateBase<TEnemy, THero> {
-    /** 朝向绑定 */
-    readonly roleFace: IRoleFaceBinder;
-    /** 朝向管理 */
-    readonly faceManager: IFaceManager;
-    /** 图块定义存储 */
-    readonly tileStore: ITileStore;
-
+export interface IStateBase<TEnemy, THero> extends IDataCommon {
     /** 地图状态 */
     readonly maps: IMapStore;
     /** 勇士状态 */

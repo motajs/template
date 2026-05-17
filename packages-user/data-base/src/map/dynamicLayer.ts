@@ -11,13 +11,15 @@ import {
     IDynamicTile,
     IMapLayer
 } from './types';
-import { FaceDirection, degradeFace } from '../common';
+import { FaceDirection, IDataCommon, degradeFace } from '@user/data-common';
 import { DynamicTile } from './dynamicTile';
 
 export class DynamicLayer
     extends Hookable<IDynamicLayerHooks>
     implements IDynamicLayer
 {
+    readonly state: IDataCommon;
+
     /** 坐标到动态图块集合的映射，外层 key = y，内层 key = x，不使用 index 是为了支持地图外图块 */
     private readonly tilePosMap: Map<number, Map<number, Set<IDynamicTile>>> =
         new Map();
@@ -26,6 +28,7 @@ export class DynamicLayer
 
     constructor(public readonly layer: IMapLayer) {
         super();
+        this.state = layer.state;
     }
 
     protected createController(

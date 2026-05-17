@@ -1,4 +1,4 @@
-import { ISaveableContent, SaveCompression } from '@user/data-base';
+import { ISaveableContent, SaveCompression } from '@user/data-common';
 import { Dexie, Table } from 'dexie';
 
 export interface IGlobalTrasaction {

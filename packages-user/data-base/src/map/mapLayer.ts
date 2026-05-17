@@ -1,6 +1,7 @@
 import { isNil } from 'lodash-es';
 import {
     IDynamicLayer,
+    ILayerState,
     IMapLayer,
     IMapLayerData,
     IMapLayerHookController,
@@ -8,7 +9,7 @@ import {
 } from './types';
 import { Hookable, HookController, logger } from '@motajs/common';
 import { DynamicLayer } from './dynamicLayer';
-import { ITileStore } from '../store';
+import { IDataCommon, ITileStore } from '@user/data-common';
 
 // todo: 提供 core.setBlock 等方法的替代方法，同时添加 setBlockList，以及前景背景的接口
 
@@ -16,6 +17,8 @@ export class MapLayer
     extends Hookable<IMapLayerHooks, IMapLayerHookController>
     implements IMapLayer
 {
+    readonly state: IDataCommon;
+
     width: number;
     height: number;
     empty: boolean = true;
@@ -34,9 +37,11 @@ export class MapLayer
         array: Uint32Array,
         width: number,
         height: number,
+        public readonly layerState: ILayerState,
         private readonly tileStore: ITileStore
     ) {
         super();
+        this.state = layerState.state;
         this.width = width;
         this.height = height;
         const area = width * height;

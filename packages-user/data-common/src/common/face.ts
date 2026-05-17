@@ -1,5 +1,5 @@
 import { logger } from '@motajs/common';
-import { IFaceData, IRoleFaceBinder } from './types';
+import { IFaceData, IRoleFaceBinder } from '../common';
 import { isNil } from 'lodash-es';
 import { FaceDirection } from '.';
 

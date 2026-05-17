@@ -1,8 +1,8 @@
 import { Hookable, HookController, IHookController } from '@motajs/common';
 import { isNil } from 'lodash-es';
-import { getFaceMovement, nextFaceDirection } from '../common/utils';
+import { getFaceMovement, nextFaceDirection } from '@user/data-common';
 import { IHeroFollower, IHeroMover, IHeroMovingHooks } from './types';
-import { FaceDirection } from '../common';
+import { FaceDirection } from '@user/data-common';
 
 const DEFAULT_HERO_IMAGE: ImageIds = 'hero.png';
 

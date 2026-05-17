@@ -1,5 +1,19 @@
 import { ICoreState, ISaveableExecutor } from './types';
 import {
+    IRoleFaceBinder,
+    IFaceManager,
+    ITileStore,
+    ISaveableContent,
+    TileStore,
+    SaveCompression,
+    RoleFaceBinder,
+    FaceManager,
+    Dir4FaceHandler,
+    Dir8FaceHandler,
+    FaceGroup,
+    FaceDirection
+} from '@user/data-common';
+import {
     EnemyManager,
     HeroMover,
     IEnemyManager,
@@ -11,22 +25,16 @@ import {
     IMotaDataLoader,
     MotaDataLoader,
     loading,
-    IRoleFaceBinder,
-    RoleFaceBinder,
-    FaceDirection,
-    ISaveableContent,
-    SaveCompression,
     IReadonlyEnemy,
     IMapStore,
-    MapStore,
-    IFaceManager,
-    FaceManager,
-    InternalFaceGroup,
-    Dir4FaceHandler,
-    Dir8FaceHandler,
-    ITileStore,
-    TileStore
+    MapStore
 } from '@user/data-base';
+import {
+    DamageSystem,
+    EnemyContext,
+    IEnemyContext,
+    MapDamage
+} from '@user/data-system';
 import {
     CommonAuraConverter,
     EnemyLegacyBridge,
@@ -55,29 +63,25 @@ import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
 import { ISaveSystem, SaveSystem } from './save';
-import {
-    DamageSystem,
-    EnemyContext,
-    IEnemyContext,
-    MapDamage
-} from '@user/data-system';
 
 export class CoreState implements ICoreState {
-    // 全局内容
+    // Layer 0 内容
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
     readonly tileStore: ITileStore<LegacyTileData>;
 
-    // 可存档内容
+    // Layer 1 内容
     readonly maps: IMapStore;
     readonly hero: IHeroState<IHeroAttr>;
     readonly enemyManager: IEnemyManager<IEnemyAttr>;
     readonly flags: IFlagSystem;
 
-    // 状态内容
+    // Layer 2 内容
+    readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
+
+    // 用户层内容
     readonly loadProgress: ILoadProgressTotal;
     readonly dataLoader: IMotaDataLoader;
-    readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
     readonly saveSystem: ISaveSystem;
 
     /** 可存档对象映射 */
@@ -94,7 +98,7 @@ export class CoreState implements ICoreState {
         const tileStore = new TileStore<LegacyTileData>();
         tileStore.attachLegacyConverter(new TileLegacyBridge());
         this.tileStore = tileStore;
-        this.maps = new MapStore(tileStore);
+        this.maps = new MapStore(tileStore, this);
 
         this.loadProgress = new LoadProgressTotal();
         this.dataLoader = new MotaDataLoader(this.loadProgress);
@@ -166,9 +170,9 @@ export class CoreState implements ICoreState {
         this.faceManager = new FaceManager();
         const dir4 = new Dir4FaceHandler();
         const dir8 = new Dir8FaceHandler();
-        this.faceManager.register(InternalFaceGroup.Dir4, dir4);
+        this.faceManager.register(FaceGroup.Dir4, dir4);
         this.faceManager.registerById('dir4', dir4);
-        this.faceManager.register(InternalFaceGroup.Dir8, dir8);
+        this.faceManager.register(FaceGroup.Dir8, dir8);
         this.faceManager.registerById('dir8', dir8);
 
         this.flags = new FlagSystem();

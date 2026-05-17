@@ -1,4 +1,8 @@
-import { ITileLegacyConverter, ITileRawData, TileType } from '@user/data-base';
+import {
+    ITileLegacyConverter,
+    ITileRawData,
+    TileType
+} from '@user/data-common';
 
 export type LegacyTileData = MapDataOf<keyof NumberToId>;
 

@@ -5,9 +5,9 @@ import {
     ISpecial,
     IReadonlyHeroAttribute,
     IHeroAttribute,
-    IStateBase,
-    ILocationHelper
+    IStateBase
 } from '@user/data-base';
+import { ILocationHelper } from '@user/data-common';
 
 //#region 辅助接口
 

@@ -1,5 +1,5 @@
 import { logger } from '@motajs/common';
-import { SaveCompression } from '../common';
+import { SaveCompression } from '@user/data-common';
 import { IHeroAttribute, IHeroModifier } from './types';
 
 export abstract class BaseHeroModifier<T, V> implements IHeroModifier<T, V, V> {

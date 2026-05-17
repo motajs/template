@@ -1,13 +1,10 @@
-import {
-    IEnemyContext,
-    IMotaDataLoader,
-    ISaveableContent,
-    IStateBase
-} from '@user/data-base';
+import { IMotaDataLoader, IStateBase } from '@user/data-base';
 import { IEnemyAttr } from './enemy';
 import { IHeroAttr } from './hero';
 import { ILoadProgressTotal } from '@motajs/loader';
 import { ISaveSystem } from './save';
+import { IEnemyContext } from '@user/data-system';
+import { ISaveableContent } from '@user/data-common';
 
 export interface ISaveableExecutor<T, TEnemy = IEnemyAttr, THero = IHeroAttr> {
     /**

@@ -1,5 +1,5 @@
 import { IFacedTileLocator, IHookBase, IHookable } from '@motajs/common';
-import { FaceDirection, ISaveableContent } from '../common';
+import { FaceDirection, ISaveableContent } from '@user/data-common';
 
 //#region 勇士属性
 

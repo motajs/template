@@ -1,5 +1,5 @@
 import { logger } from '@motajs/common';
-import { SaveCompression } from '../common';
+import { SaveCompression } from '@user/data-common';
 import { IEnemy, IEnemySaveState, IReadonlyEnemy, ISpecial } from './types';
 
 export class Enemy<TAttr> implements IEnemy<TAttr> {

@@ -1,14 +1,16 @@
 import { isNil } from 'lodash-es';
 import {
     FaceDirection,
+    IDataCommon,
     IMoverController,
     IObjectMover,
     IRoleFaceBinder
-} from '../common';
+} from '@user/data-common';
 import { IDynamicLayer, IDynamicTile } from './types';
 import { DynamicTileMover } from './mover';
 
 export class DynamicTile implements IDynamicTile {
+    readonly state: IDataCommon;
     readonly mover: IObjectMover<IDynamicTile>;
     triggerType: number;
 
@@ -21,6 +23,7 @@ export class DynamicTile implements IDynamicTile {
         public y: number,
         public readonly layer: IDynamicLayer
     ) {
+        this.state = layer.state;
         this.mover = new DynamicTileMover(this);
         this.triggerType = -1;
     }

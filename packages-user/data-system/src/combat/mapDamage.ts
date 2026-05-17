@@ -9,7 +9,8 @@ import {
     IMapDamageReducer,
     IMapDamageView
 } from './types';
-import { ILocationHelper, IStateBase } from '@user/data-base';
+import { IStateBase } from '@user/data-base';
+import { ILocationHelper } from '@user/data-common';
 
 interface IPointInfo {
     /** 该点所有的地图伤害 */

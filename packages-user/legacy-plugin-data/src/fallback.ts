@@ -1,8 +1,9 @@
 import type { TimingFn } from 'mutate-animate';
 import { heroMoveCollection, MoveStep, state } from '@user/data-state';
-import { fromDirectionString, hook, loading } from '@user/data-base';
+import { hook, loading } from '@user/data-base';
 import { Patch, PatchClass } from '@motajs/legacy-common';
 import { isNil } from 'lodash-es';
+import { fromDirectionString } from '@user/data-common';
 
 // 向后兼容用，会充当两个版本间过渡的作用
 
