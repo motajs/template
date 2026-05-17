@@ -3,7 +3,7 @@ import { IEnemyAttr } from './enemy';
 import { IHeroAttr } from './hero';
 import { ILoadProgressTotal } from '@motajs/loader';
 import { ISaveSystem } from './save';
-import { IEnemyContext } from '@user/data-system';
+import { IStateSystem } from '@user/data-system';
 import { ISaveableContent } from '@user/data-common';
 
 export interface ISaveableExecutor<T, TEnemy = IEnemyAttr, THero = IHeroAttr> {
@@ -15,14 +15,11 @@ export interface ISaveableExecutor<T, TEnemy = IEnemyAttr, THero = IHeroAttr> {
     afterLoad(data: T, state: IStateBase<TEnemy, THero>): void;
 }
 
-export interface ICoreState extends IStateBase<IEnemyAttr, IHeroAttr> {
+export interface ICoreState extends IStateSystem<IEnemyAttr, IHeroAttr> {
     /** 加载进度对象 */
     readonly loadProgress: ILoadProgressTotal;
     /** 数据端加载对象 */
     readonly dataLoader: IMotaDataLoader;
-    /** 怪物上下文 */
-    readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
-
     /** 存档系统 */
     readonly saveSystem: ISaveSystem;
 

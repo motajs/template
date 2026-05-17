@@ -34,3 +34,8 @@ export interface IStateBase<TEnemy, THero> extends IDataCommon {
      */
     getSaveableContent<T>(id: string): ISaveableContent<T> | null;
 }
+
+export interface IStateBaseExtended<TEnemy = unknown, THero = unknown> {
+    /** 当前对象对应的数据层对象（Layer 1 对象） */
+    readonly state: IStateBase<TEnemy, THero>;
+}

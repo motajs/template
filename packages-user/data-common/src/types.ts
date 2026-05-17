@@ -11,6 +11,6 @@ export interface IDataCommon {
 }
 
 export interface IDataCommonExtended {
-    /** 当前对象对应的基本数据端对象（Layer 0 对象） */
+    /** 当前对象对应的公共层对象（Layer 0 对象） */
     readonly state: IDataCommon;
 }
