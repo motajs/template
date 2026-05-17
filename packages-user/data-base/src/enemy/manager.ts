@@ -12,16 +12,18 @@ import {
 } from './types';
 import { SaveCompression } from '@user/data-common';
 
-export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
+export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
     /** 特殊属性注册表，code -> 创建函数 */
-    private readonly specialRegistry: Map<number, SpecialCreation<any, TAttr>> =
-        new Map();
+    private readonly specialRegistry: Map<
+        number,
+        SpecialCreation<any, TEnemy>
+    > = new Map();
     /** 自定义怪物属性注册表，name -> 默认值 */
-    private readonly attributeRegistry: Map<keyof TAttr, any> = new Map();
+    private readonly attributeRegistry: Map<keyof TEnemy, any> = new Map();
     /** 怪物模板表，code -> IEnemy */
-    private readonly prefabByCode: Map<number, IEnemy<TAttr>> = new Map();
+    private readonly prefabByCode: Map<number, IEnemy<TEnemy>> = new Map();
     /** 怪物模板表，id -> IEnemy */
-    private readonly prefabById: Map<string, IEnemy<TAttr>> = new Map();
+    private readonly prefabById: Map<string, IEnemy<TEnemy>> = new Map();
     /** 旧样板怪物 id 到 code 的映射，用于 fromLegacyEnemy 快速查找已有模板 */
     private readonly legacyIdToCode: Map<string, number> = new Map();
     /** 复用映射，reusedCode -> sourceCode */
@@ -31,21 +33,21 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
     /** 脏模板集合，存储发生了变化的模板 code */
     private readonly dirtySet: Set<number> = new Set();
     /** 参考快照，code -> IReadonlyEnemy，由 compareWith 提供 */
-    private referenceByCode: Map<number, IReadonlyEnemy<TAttr>> = new Map();
+    private referenceByCode: Map<number, IReadonlyEnemy<TEnemy>> = new Map();
     /** 当前附加的怪物比较器 */
-    private comparer: IEnemyComparer<TAttr> | null = null;
+    private comparer: IEnemyComparer<TEnemy> | null = null;
     /** 是否已首次调用 compareWith */
     private hasReference: boolean = false;
 
-    constructor(readonly bridge: IEnemyLegacyBridge<TAttr>) {}
+    constructor(readonly bridge: IEnemyLegacyBridge<TEnemy>) {}
 
-    registerSpecial(code: number, cons: SpecialCreation<any, TAttr>): void {
+    registerSpecial(code: number, cons: SpecialCreation<any, TEnemy>): void {
         this.specialRegistry.set(code, cons);
     }
 
-    setAttributeDefaults<K extends keyof TAttr>(
+    setAttributeDefaults<K extends keyof TEnemy>(
         name: K,
-        defaultValue: TAttr[K]
+        defaultValue: TEnemy[K]
     ): void {
         if (
             typeof defaultValue === 'function' ||
@@ -59,7 +61,7 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
         this.attributeRegistry.set(name, defaultValue);
     }
 
-    fromLegacyEnemy(code: number, enemy: Enemy): IEnemy<TAttr> {
+    fromLegacyEnemy(code: number, enemy: Enemy): IEnemy<TEnemy> {
         // 如果该旧样板怪物已经通过 addPrefabFromLegacy 注册为模板，直接克隆模板
         const existingCode = this.legacyIdToCode.get(enemy.id);
         if (existingCode) {
@@ -76,15 +78,15 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
      * 根据旧样板怪物与注册过的默认属性构造属性对象
      * @param enemy 旧样板怪物对象
      */
-    private createAttributes(enemy: Enemy): TAttr {
-        const attrs: Partial<TAttr> = {};
+    private createAttributes(enemy: Enemy): TEnemy {
+        const attrs: Partial<TEnemy> = {};
         for (const [name, defaultValue] of this.attributeRegistry) {
             attrs[name] = structuredClone(defaultValue);
         }
 
         Object.assign(attrs, this.bridge.fromLegacyEnemy(enemy, attrs));
 
-        return attrs as TAttr;
+        return attrs as TEnemy;
     }
 
     /**
@@ -92,9 +94,9 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
      * @param code 怪物图块数字
      * @param enemy 旧样板怪物对象
      */
-    private convertLegacyEnemy(code: number, enemy: Enemy): IEnemy<TAttr> {
+    private convertLegacyEnemy(code: number, enemy: Enemy): IEnemy<TEnemy> {
         const attrs = this.createAttributes(enemy);
-        const result = new EnemyImpl<TAttr>(
+        const result = new EnemyImpl<TEnemy>(
             enemy.id,
             code,
             structuredClone(attrs)
@@ -114,13 +116,13 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
         return result;
     }
 
-    createEnemy(code: number): IEnemy<TAttr> | null {
+    createEnemy(code: number): IEnemy<TEnemy> | null {
         const prefab = this.prefabByCode.get(code);
         if (!prefab) return null;
         return prefab.clone();
     }
 
-    createEnemyById(id: string): IEnemy<TAttr> | null {
+    createEnemyById(id: string): IEnemy<TEnemy> | null {
         const prefab = this.prefabById.get(id);
         if (!prefab) return null;
         return prefab.clone();
@@ -136,7 +138,7 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
         }
     }
 
-    addPrefab(enemy: IEnemy<TAttr>): void {
+    addPrefab(enemy: IEnemy<TEnemy>): void {
         if (
             this.prefabByCode.has(enemy.code) ||
             this.prefabById.has(enemy.id)
@@ -160,12 +162,12 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
         this.updateDirty(code, prefab);
     }
 
-    getPrefab(code: number): IReadonlyEnemy<TAttr> | null {
+    getPrefab(code: number): IReadonlyEnemy<TEnemy> | null {
         const sourceCode = this.reuseByCode.get(code) ?? code;
         return this.prefabByCode.get(sourceCode) ?? null;
     }
 
-    getPrefabById(id: string): IReadonlyEnemy<TAttr> | null {
+    getPrefabById(id: string): IReadonlyEnemy<TEnemy> | null {
         const sourceId = this.reuseById.get(id) ?? id;
         return this.prefabById.get(sourceId) ?? null;
     }
@@ -177,7 +179,7 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
         this.prefabById.delete(prefab.id);
     }
 
-    changePrefab(code: number | string, enemy: IEnemy<TAttr>): void {
+    changePrefab(code: number | string, enemy: IEnemy<TEnemy>): void {
         // 先删除旧的模板（如果存在）
         this.deletePrefab(code);
         // 再添加新的模板
@@ -193,7 +195,7 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
         this.reuseById.set(id, prefab.id);
     }
 
-    compareWith(reference: ReadonlyMap<number, IReadonlyEnemy<TAttr>>): void {
+    compareWith(reference: ReadonlyMap<number, IReadonlyEnemy<TEnemy>>): void {
         const isSubsequentCall = this.hasReference;
         if (isSubsequentCall) {
             logger.warn(117);
@@ -211,7 +213,7 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
 
     modifyPrefabAttribute(
         code: number | string,
-        modify: (prefab: IEnemy<TAttr>) => IEnemy<TAttr>
+        modify: (prefab: IEnemy<TEnemy>) => IEnemy<TEnemy>
     ): void {
         const prefab = this.internalGetPrefab(code);
         if (!prefab) return;
@@ -230,16 +232,16 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
         this.updateDirty(result.code, result);
     }
 
-    attachEnemyComparer(comparer: IEnemyComparer<TAttr>): void {
+    attachEnemyComparer(comparer: IEnemyComparer<TEnemy>): void {
         this.comparer = comparer;
     }
 
-    getEnemyComparer(): IEnemyComparer<TAttr> | null {
+    getEnemyComparer(): IEnemyComparer<TEnemy> | null {
         return this.comparer;
     }
 
-    saveState(compression: SaveCompression): IEnemyManagerSaveState<TAttr> {
-        const modified: Map<number, IEnemySaveState<TAttr>> = new Map();
+    saveState(compression: SaveCompression): IEnemyManagerSaveState<TEnemy> {
+        const modified: Map<number, IEnemySaveState<TEnemy>> = new Map();
         for (const code of this.dirtySet) {
             const prefab = this.prefabByCode.get(code);
             if (!prefab) continue;
@@ -249,7 +251,7 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
     }
 
     loadState(
-        state: IEnemyManagerSaveState<TAttr>,
+        state: IEnemyManagerSaveState<TEnemy>,
         compression: SaveCompression
     ): void {
         for (const [code, enemyState] of state.modified) {
@@ -269,7 +271,7 @@ export class EnemyManager<TAttr> implements IEnemyManager<TAttr> {
      * @param code 怪物图块数字
      * @param current 当前模板对象
      */
-    private updateDirty(code: number, current: IEnemy<TAttr>): void {
+    private updateDirty(code: number, current: IEnemy<TEnemy>): void {
         if (!this.hasReference) return;
         if (!this.comparer) {
             logger.warn(118);

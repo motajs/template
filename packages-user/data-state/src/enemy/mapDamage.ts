@@ -24,8 +24,8 @@ import {
     IReadonlyEnemy
 } from '@user/data-base';
 import { IZoneValue } from './special';
-import { IEnemyAttr, MapDamageType } from './types';
-import { IHeroAttr } from '../hero';
+import { MapDamageType } from './types';
+import { IHeroAttr, IEnemyAttr } from '@user/data-common';
 import { IFaceHandler, FaceGroup } from '@user/data-common';
 
 const RECT_RANGE = new RectRange();

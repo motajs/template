@@ -14,23 +14,27 @@ import { ILocationHelper } from '@user/data-common';
 export interface IEnemyHandler<TEnemy, THero> {
     /** 怪物属性信息 */
     readonly enemy: IEnemy<TEnemy>;
+    /** 怪物上下文 */
+    readonly context: IEnemyContext<TEnemy, THero>;
     /** 怪物定位符 */
     readonly locator: ITileLocator;
     /** 勇士属性信息 */
     readonly hero: IReadonlyHeroAttribute<THero>;
     /** 当前全局状态对象 */
-    readonly data: IStateBase<TEnemy, THero>;
+    readonly data: IStateBase;
 }
 
 export interface IReadonlyEnemyHandler<TEnemy, THero> {
     /** 怪物属性信息 */
     readonly enemy: IReadonlyEnemy<TEnemy>;
+    /** 怪物上下文 */
+    readonly context: IReadonlyEnemyContext<TEnemy, THero>;
     /** 怪物定位符 */
     readonly locator: ITileLocator;
     /** 勇士属性信息 */
     readonly hero: IReadonlyHeroAttribute<THero>;
     /** 当前全局状态对象 */
-    readonly data: IStateBase<TEnemy, THero>;
+    readonly data: IStateBase;
 }
 
 //#endregion
@@ -282,7 +286,7 @@ export interface IMapDamage<TEnemy, THero> {
     /** 当前绑定的怪物上下文 */
     readonly context: IEnemyContext<TEnemy, THero>;
     /** 地图伤害系统绑定的全局状态对象 */
-    readonly dataState: IStateBase<TEnemy, THero>;
+    readonly dataState: IStateBase;
 
     /**
      * 设置地图伤害转换器，并基于当前上下文重建所有地图伤害视图
@@ -398,7 +402,7 @@ export interface IDamageCalculator<TEnemy, THero> {
 
 export interface IDamageContext<TEnemy, THero> {
     /** 伤害上下文所属的全局状态对象 */
-    readonly dataState: IStateBase<TEnemy, THero>;
+    readonly dataState: IStateBase;
 
     /**
      * 获取战斗伤害信息
@@ -479,7 +483,7 @@ export interface IDamageSystem<TEnemy, THero> extends IDamageContext<
 
 //#region 上下文
 
-export interface IEnemyContext<TEnemy, THero> {
+export interface IReadonlyEnemyContext<TEnemy, THero> {
     /** 怪物上下文宽度 */
     readonly width: number;
     /** 怪物上下文高度 */
@@ -487,7 +491,84 @@ export interface IEnemyContext<TEnemy, THero> {
     /** 此上下文使用的索引对象 */
     readonly indexer: ILocationHelper;
     /** 当前怪物上下文绑定的全局状态对象 */
-    readonly dataState: IStateBase<TEnemy, THero>;
+    readonly dataState: IStateBase;
+
+    /**
+     * 获取当前绑定的勇士属性对象
+     */
+    getBindedHero(): IReadonlyHeroAttribute<THero> | null;
+
+    /**
+     * 获取指定怪物对象当前所在位置
+     * @param enemy 怪物对象
+     */
+    getEnemyLocator(enemy: IEnemy<TEnemy>): Readonly<ITileLocator> | null;
+
+    /**
+     * 获取指定怪物视图当前所在位置
+     * @param view 怪物视图
+     */
+    getEnemyLocatorByView(
+        view: IEnemyView<TEnemy>
+    ): Readonly<ITileLocator> | null;
+
+    /**
+     * 根据定位符获取怪物视图
+     * @param locator 地图定位符
+     */
+    getEnemyByLocator(locator: ITileLocator): IEnemyView<TEnemy> | null;
+
+    /**
+     * 根据坐标获取怪物视图
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    getEnemyByLoc(x: number, y: number): IEnemyView<TEnemy> | null;
+
+    /**
+     * 根据计算后怪物对象反查怪物视图
+     * @param enemy 计算后怪物对象
+     */
+    getViewByComputed(enemy: IReadonlyEnemy<TEnemy>): IEnemyView<TEnemy> | null;
+
+    /**
+     * 扫描指定范围内的怪物视图
+     * @param range 范围对象
+     * @param param 范围参数
+     */
+    scanRange<T>(
+        range: IRange<T>,
+        param: T
+    ): Iterable<[ITileLocator, IEnemyView<TEnemy>]>;
+
+    /**
+     * 迭代上下文中的全部怪物
+     */
+    iterateEnemy(): Iterable<[ITileLocator, IEnemyView<TEnemy>]>;
+
+    /**
+     * 获取当前绑定的地图伤害管理器
+     */
+    getMapDamage(): IMapDamage<TEnemy, THero> | null;
+
+    /**
+     * 获取当前绑定的伤害计算系统
+     */
+    getDamageSystem(): IDamageSystem<TEnemy, THero> | null;
+}
+
+export interface IEnemyContext<TEnemy, THero> extends IReadonlyEnemyContext<
+    TEnemy,
+    THero
+> {
+    /** 怪物上下文宽度 */
+    readonly width: number;
+    /** 怪物上下文高度 */
+    readonly height: number;
+    /** 此上下文使用的索引对象 */
+    readonly indexer: ILocationHelper;
+    /** 当前怪物上下文绑定的全局状态对象 */
+    readonly dataState: IStateBase;
 
     /**
      * 调整上下文尺寸，并清空当前上下文中的所有怪物与状态
@@ -573,44 +654,6 @@ export interface IEnemyContext<TEnemy, THero> {
     bindHero(hero: IReadonlyHeroAttribute<THero> | null): void;
 
     /**
-     * 获取当前绑定的勇士属性对象
-     */
-    getBindedHero(): IReadonlyHeroAttribute<THero> | null;
-
-    /**
-     * 获取指定怪物对象当前所在位置
-     * @param enemy 怪物对象
-     */
-    getEnemyLocator(enemy: IEnemy<TEnemy>): Readonly<ITileLocator> | null;
-
-    /**
-     * 获取指定怪物视图当前所在位置
-     * @param view 怪物视图
-     */
-    getEnemyLocatorByView(
-        view: IEnemyView<TEnemy>
-    ): Readonly<ITileLocator> | null;
-
-    /**
-     * 根据定位符获取怪物视图
-     * @param locator 地图定位符
-     */
-    getEnemyByLocator(locator: ITileLocator): IEnemyView<TEnemy> | null;
-
-    /**
-     * 根据坐标获取怪物视图
-     * @param x 横坐标
-     * @param y 纵坐标
-     */
-    getEnemyByLoc(x: number, y: number): IEnemyView<TEnemy> | null;
-
-    /**
-     * 根据计算后怪物对象反查怪物视图
-     * @param enemy 计算后怪物对象
-     */
-    getViewByComputed(enemy: IReadonlyEnemy<TEnemy>): IEnemyView<TEnemy> | null;
-
-    /**
      * 在指定位置放置一个怪物对象
      * @param locator 地图定位符
      * @param enemy 怪物对象
@@ -622,21 +665,6 @@ export interface IEnemyContext<TEnemy, THero> {
      * @param locator 地图定位符
      */
     deleteEnemy(locator: ITileLocator): void;
-
-    /**
-     * 扫描指定范围内的怪物视图
-     * @param range 范围对象
-     * @param param 范围参数
-     */
-    scanRange<T>(
-        range: IRange<T>,
-        param: T
-    ): Iterable<[ITileLocator, IEnemyView<TEnemy>]>;
-
-    /**
-     * 迭代上下文中的全部怪物
-     */
-    iterateEnemy(): Iterable<[ITileLocator, IEnemyView<TEnemy>]>;
 
     /**
      * 添加一个全局光环视图
@@ -657,20 +685,10 @@ export interface IEnemyContext<TEnemy, THero> {
     attachMapDamage(damage: IMapDamage<TEnemy, THero> | null): void;
 
     /**
-     * 获取当前绑定的地图伤害管理器
-     */
-    getMapDamage(): IMapDamage<TEnemy, THero> | null;
-
-    /**
      * 绑定伤害计算系统
      * @param system 伤害系统
      */
     attachDamageSystem(system: IDamageSystem<TEnemy, unknown> | null): void;
-
-    /**
-     * 获取当前绑定的伤害计算系统
-     */
-    getDamageSystem(): IDamageSystem<TEnemy, THero> | null;
 
     /**
      * 重建当前上下文中的全部怪物计算结果

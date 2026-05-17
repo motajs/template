@@ -11,7 +11,9 @@ import {
     Dir4FaceHandler,
     Dir8FaceHandler,
     FaceGroup,
-    FaceDirection
+    FaceDirection,
+    IHeroAttr,
+    IEnemyAttr
 } from '@user/data-common';
 import {
     EnemyManager,
@@ -48,8 +50,7 @@ import {
     MainMapDamageConverter,
     MainMapDamageReducer,
     registerSpecials,
-    MainEnemyComparer,
-    IEnemyAttr
+    MainEnemyComparer
 } from './enemy';
 import {
     BG2_ZINDEX,
@@ -61,7 +62,6 @@ import {
     TILE_HEIGHT,
     TILE_WIDTH
 } from './shared';
-import { IHeroAttr } from './hero';
 import { LegacyTileData, TileLegacyBridge } from './legacy';
 import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
@@ -82,8 +82,8 @@ export class CoreState implements ICoreState {
 
     // Layer 2 执行层，游戏逻辑对象都在这
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
-    readonly triggerRegistry: ITriggerRegistry<IEnemyAttr, IHeroAttr>;
-    readonly triggerCollector: ITriggerCollector<IEnemyAttr, IHeroAttr>;
+    readonly triggerRegistry: ITriggerRegistry;
+    readonly triggerCollector: ITriggerCollector;
 
     // 用户层内容，也就是最顶层的内容，一般仅用于初始化
     readonly loadProgress: ILoadProgressTotal;
@@ -171,10 +171,8 @@ export class CoreState implements ICoreState {
         this.enemyContext = enemyContext;
 
         // 触发器注册与收集器
-        const triggerRegistry = new TriggerRegistry<IEnemyAttr, IHeroAttr>(
-            this
-        );
-        const triggerCollector = new TriggerCollector<IEnemyAttr, IHeroAttr>();
+        const triggerRegistry = new TriggerRegistry(this);
+        const triggerCollector = new TriggerCollector();
         triggerCollector.attachRegistry(triggerRegistry);
         this.triggerRegistry = triggerRegistry;
         this.triggerCollector = triggerCollector;

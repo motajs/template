@@ -1,5 +1,5 @@
 import { IEnemyComparer, IReadonlyEnemy } from '@user/data-base';
-import { IEnemyAttr } from './types';
+import { IEnemyAttr } from '@user/data-common';
 
 export class MainEnemyComparer implements IEnemyComparer<IEnemyAttr> {
     compare(

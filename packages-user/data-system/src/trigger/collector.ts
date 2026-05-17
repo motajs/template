@@ -8,18 +8,11 @@ import {
 import { logger } from '@motajs/common';
 import { TriggerCollection } from './collection';
 
-export class TriggerCollector<
-    TEnemy = unknown,
-    THero = unknown
-> implements ITriggerCollector<TEnemy, THero> {
+export class TriggerCollector implements ITriggerCollector {
     /** 当前收集器使用的注册对象 */
-    private registry: ITriggerRegistry<TEnemy, THero> | null = null;
+    private registry: ITriggerRegistry | null = null;
 
-    collect(
-        x: number,
-        y: number,
-        layer: IMapLayer
-    ): ITriggerCollection<TEnemy, THero> {
+    collect(x: number, y: number, layer: IMapLayer): ITriggerCollection {
         if (!this.registry) {
             logger.warn(135);
             return new TriggerCollection([]);
@@ -62,8 +55,8 @@ export class TriggerCollector<
             const duplicate = new Set<number>();
             if (staticTrigger) {
                 // 有静态触发器
-                const lessTriggers: ITrigger<TEnemy, THero>[] = [];
-                const greaterTriggers: ITrigger<TEnemy, THero>[] = [];
+                const lessTriggers: ITrigger[] = [];
+                const greaterTriggers: ITrigger[] = [];
                 // 先收集所有的触发器，并记录重复情况
                 for (const tile of layer.dynamicLayer.getDynamicTilesAt(x, y)) {
                     const trigger = this.registry.create(tile.triggerType);
@@ -92,7 +85,7 @@ export class TriggerCollector<
                 return new TriggerCollection(arr);
             } else {
                 // 没有静态触发器
-                const triggers: ITrigger<TEnemy, THero>[] = [];
+                const triggers: ITrigger[] = [];
                 for (const tile of layer.dynamicLayer.getDynamicTilesAt(x, y)) {
                     const trigger = this.registry.create(tile.triggerType);
                     if (trigger) {
@@ -113,7 +106,7 @@ export class TriggerCollector<
         }
     }
 
-    attachRegistry(registry: ITriggerRegistry<TEnemy, THero> | null): void {
+    attachRegistry(registry: ITriggerRegistry | null): void {
         this.registry = registry;
     }
 }

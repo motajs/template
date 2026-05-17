@@ -1,4 +1,4 @@
-import { IHeroAttr } from './hero';
+import { IHeroAttr } from '@user/data-common';
 
 //#region 地图相关
 

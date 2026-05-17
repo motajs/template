@@ -2,21 +2,26 @@ import { IHeroFollower, IHeroState } from './hero';
 import { IEnemyManager } from './enemy';
 import { IFlagSystem } from './flag';
 import { IMapStore } from './map';
-import { IDataCommon, ISaveableContent } from '@user/data-common';
+import {
+    IDataCommon,
+    IEnemyAttr,
+    IHeroAttr,
+    ISaveableContent
+} from '@user/data-common';
 
 export interface IStateSaveData {
     /** 跟随者列表 */
     readonly followers: readonly IHeroFollower[];
 }
 
-export interface IStateBase<TEnemy, THero> extends IDataCommon {
+export interface IStateBase extends IDataCommon {
     /** 地图状态 */
     readonly maps: IMapStore;
     /** 勇士状态 */
-    readonly hero: IHeroState<THero>;
+    readonly hero: IHeroState<IHeroAttr>;
 
     /** 怪物管理器 */
-    readonly enemyManager: IEnemyManager<TEnemy>;
+    readonly enemyManager: IEnemyManager<IEnemyAttr>;
 
     /** Flag 系统 */
     readonly flags: IFlagSystem;
@@ -35,7 +40,7 @@ export interface IStateBase<TEnemy, THero> extends IDataCommon {
     getSaveableContent<T>(id: string): ISaveableContent<T> | null;
 }
 
-export interface IStateBaseExtended<TEnemy = unknown, THero = unknown> {
+export interface IStateBaseExtended {
     /** 当前对象对应的数据层对象（Layer 1 对象） */
-    readonly state: IStateBase<TEnemy, THero>;
+    readonly state: IStateBase;
 }

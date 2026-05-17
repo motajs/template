@@ -1,21 +1,19 @@
 import { IMotaDataLoader, IStateBase } from '@user/data-base';
-import { IEnemyAttr } from './enemy';
-import { IHeroAttr } from './hero';
 import { ILoadProgressTotal } from '@motajs/loader';
 import { ISaveSystem } from './save';
 import { IStateSystem } from '@user/data-system';
 import { ISaveableContent } from '@user/data-common';
 
-export interface ISaveableExecutor<T, TEnemy = IEnemyAttr, THero = IHeroAttr> {
+export interface ISaveableExecutor<T> {
     /**
      * 当数据读取后执行的函数，允许对其他存档对象进行读取
      * @param data 对应可存档对象的存档数据
      * @param state 当前的基础状态
      */
-    afterLoad(data: T, state: IStateBase<TEnemy, THero>): void;
+    afterLoad(data: T, state: IStateBase): void;
 }
 
-export interface ICoreState extends IStateSystem<IEnemyAttr, IHeroAttr> {
+export interface ICoreState extends IStateSystem {
     /** 加载进度对象 */
     readonly loadProgress: ILoadProgressTotal;
     /** 数据端加载对象 */

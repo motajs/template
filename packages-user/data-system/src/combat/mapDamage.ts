@@ -64,7 +64,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     /** 坐标索引对象 */
     private readonly indexer: ILocationHelper;
 
-    readonly dataState: IStateBase<TEnemy, THero>;
+    readonly dataState: IStateBase;
 
     constructor(readonly context: IEnemyContext<TEnemy, THero>) {
         this.indexer = context.indexer;
@@ -89,6 +89,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
         if (!hero) return null;
         return {
             enemy: view.getComputedEnemy(),
+            context: this.context,
             locator,
             hero,
             data: this.context.dataState

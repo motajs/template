@@ -34,7 +34,7 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
     /** 当前勇士属性 */
     protected heroStatus: IReadonlyHeroAttribute<THero> | null;
 
-    readonly dataState: IStateBase<TEnemy, THero>;
+    readonly dataState: IStateBase;
 
     constructor(
         readonly context: IEnemyContext<TEnemy, THero>,
@@ -57,7 +57,13 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
         locator: ITileLocator,
         hero: IReadonlyHeroAttribute<THero>
     ): IReadonlyEnemyHandler<TEnemy, THero> {
-        return { enemy, locator, hero, data: this.dataState };
+        return {
+            enemy,
+            context: this.context,
+            locator,
+            hero,
+            data: this.dataState
+        };
     }
 
     getDamageInfo(enemy: IEnemyView<TEnemy>): IEnemyDamageInfo | null {

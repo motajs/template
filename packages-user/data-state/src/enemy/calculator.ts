@@ -4,10 +4,10 @@ import {
     IEnemyDamageInfo,
     IReadonlyEnemyHandler
 } from '@user/data-system';
-import { IEnemyAttr } from './types';
+import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import { IVampireValue } from './special';
-import { IHeroAttr } from '../hero';
 import { state } from '../ins';
+import { logger } from '@motajs/common';
 
 export class MainDamageCalculator implements IDamageCalculator<
     IEnemyAttr,
@@ -87,8 +87,14 @@ export class MainDamageCalculator implements IDamageCalculator<
             // 因此回合数需要加上打支援怪的回合数
             for (const guard of guards) {
                 // 直接把 enemy 传过去，因此支援的 enemy 会吃到其原本所在位置的光环加成
+                const view = handler.context.getEnemyByLocator(guard);
+                if (!view) {
+                    logger.warn(137, guard.x.toString(), guard.y.toString());
+                    continue;
+                }
                 const extraInfo = this.calculate({
-                    enemy: guard.getComputedEnemy(),
+                    enemy: view.getComputedEnemy(),
+                    context: handler.context,
                     locator,
                     hero,
                     data: handler.data

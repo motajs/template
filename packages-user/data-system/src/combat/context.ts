@@ -100,7 +100,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     width: number = 0;
     height: number = 0;
 
-    constructor(readonly dataState: IStateBase<TEnemy, THero>) {}
+    constructor(readonly dataState: IStateBase) {}
 
     resize(width: number, height: number): void {
         this.clear();
@@ -210,7 +210,13 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
         enemy: IEnemy<TEnemy>,
         locator: ITileLocator
     ): IEnemyHandler<TEnemy, THero> {
-        return { enemy, locator, hero: this.bindedHero!, data: this.dataState };
+        return {
+            enemy,
+            context: this,
+            locator,
+            hero: this.bindedHero!,
+            data: this.dataState
+        };
     }
 
     getEnemyLocator(enemy: IEnemy<TEnemy>): Readonly<ITileLocator> | null {

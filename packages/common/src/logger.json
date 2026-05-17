@@ -193,6 +193,7 @@
         "133": "TileStore.addTile: tile number $1 already exists (id: '$2'), old tile data will be overridden.",
         "134": "TileStore.addTile: tile id '$1' already maps to number $2, old tile data will be overridden.",
         "135": "Expected a trigger registry attched before collect triggers.",
-        "136": "Unexpected duplicate trigger priority $1, which may cause trigger executed in an unexpected order."
+        "136": "Unexpected duplicate trigger priority $1, which may cause trigger executed in an unexpected order.",
+        "137": "Unknown guard enemy at locator '$1,$2'."
     }
 }
