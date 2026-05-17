@@ -1,0 +1,91 @@
+export const enum TileType {
+    /** 未知或尚未归类的图块 */
+    Unknown,
+    /** 空白图块 */
+    None,
+    /** 地形类图块 */
+    Terrain,
+    /** 动画类图块 */
+    Animate,
+    /** 道具类图块 */
+    Item,
+    /** 怪物类图块 */
+    Enemy,
+    /** NPC 类图块 */
+    Npc,
+    /** 自动元件 */
+    Autotile,
+    /** Tileset 切片图块 */
+    Tileset
+}
+
+export interface ITileRawData {
+    /** 图块数字 */
+    readonly num: number;
+    /** 图块字符串 id */
+    readonly id: string;
+    /** 默认触发器类型 */
+    readonly trigger: number;
+    /** 图块逻辑类型 */
+    readonly type: TileType;
+}
+
+export interface ITileLegacyConverter<TLegacy> {
+    /**
+     * 将旧样板图块定义转换为新的图块原始数据
+     * @param num 图块数字
+     * @param legacy 旧样板图块定义
+     */
+    fromLegacy(num: number, legacy: TLegacy): ITileRawData;
+}
+
+export interface ITileStore<TLegacy = unknown> {
+    /**
+     * 获取指定图块数字对应的完整原始定义
+     * @param num 图块数字
+     */
+    getData(num: number): ITileRawData | null;
+
+    /**
+     * 获取指定图块数字对应的默认触发器类型
+     * @param num 图块数字
+     */
+    getTrigger(num: number): number;
+
+    /**
+     * 获取指定图块数字对应的图块类型
+     * @param num 图块数字
+     */
+    getType(num: number): TileType;
+
+    /**
+     * 添加一个图块定义；若 `num` 或 `id` 冲突则警告并覆盖
+     * @param data 图块原始定义
+     */
+    addTile(data: ITileRawData): void;
+
+    /**
+     * 根据图块 id 查询对应图块数字
+     * @param id 图块 id
+     */
+    idToNumber(id: string): number | null;
+
+    /**
+     * 根据图块数字查询对应图块 id
+     * @param num 图块数字
+     */
+    numberToId(num: number): string | null;
+
+    /**
+     * 挂载一个旧样板转换器
+     * @param converter 旧样板转换器
+     */
+    attachLegacyConverter(converter: ITileLegacyConverter<TLegacy>): void;
+
+    /**
+     * 使用当前转换器转换并写入一个旧样板图块定义
+     * @param num 图块数字
+     * @param legacy 旧样板图块定义
+     */
+    fromLegacy(num: number, legacy: TLegacy): ITileRawData;
+}

@@ -3,6 +3,7 @@ import { IEnemyManager } from './enemy';
 import { IFlagSystem } from './flag';
 import { IFaceManager, IRoleFaceBinder, ISaveableContent } from './common';
 import { IMapStore } from './map';
+import { ITileStore } from './store';
 
 export interface IStateSaveData {
     /** 跟随者列表 */
@@ -14,10 +15,8 @@ export interface IStateBase<TEnemy, THero> {
     readonly roleFace: IRoleFaceBinder;
     /** 朝向管理 */
     readonly faceManager: IFaceManager;
-    /** id 到图块数字的映射 */
-    readonly idNumberMap: Map<string, number>;
-    /** 图块数字到 id 的映射 */
-    readonly numberIdMap: Map<number, string>;
+    /** 图块定义存储 */
+    readonly tileStore: ITileStore;
 
     /** 地图状态 */
     readonly maps: IMapStore;

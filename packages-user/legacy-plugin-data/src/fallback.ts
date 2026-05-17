@@ -372,7 +372,7 @@ export function initFallback() {
                 if (core.status.replay.speed === 24) {
                     cb();
                 } else {
-                    const num = state.idNumberMap.get(id)!;
+                    const num = state.tileStore.idToNumber(id)!;
                     const layer = state.maps.getLayerByAlias('event')!;
                     layer.closeDoor(num, x, y).then(cb);
 

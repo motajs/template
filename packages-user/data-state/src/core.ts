@@ -1,12 +1,8 @@
 import { ICoreState, ISaveableExecutor } from './types';
 import {
-    DamageSystem,
-    EnemyContext,
     EnemyManager,
     HeroMover,
-    IEnemyContext,
     IEnemyManager,
-    MapDamage,
     HeroAttribute,
     HeroState,
     IHeroState,
@@ -27,7 +23,9 @@ import {
     FaceManager,
     InternalFaceGroup,
     Dir4FaceHandler,
-    Dir8FaceHandler
+    Dir8FaceHandler,
+    ITileStore,
+    TileStore
 } from '@user/data-base';
 import {
     CommonAuraConverter,
@@ -52,17 +50,23 @@ import {
     TILE_WIDTH
 } from './shared';
 import { IHeroAttr } from './hero';
+import { LegacyTileData, TileLegacyBridge } from './legacy';
 import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
 import { ISaveSystem, SaveSystem } from './save';
+import {
+    DamageSystem,
+    EnemyContext,
+    IEnemyContext,
+    MapDamage
+} from '@user/data-system';
 
 export class CoreState implements ICoreState {
     // 全局内容
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
-    readonly idNumberMap: Map<string, number>;
-    readonly numberIdMap: Map<number, string>;
+    readonly tileStore: ITileStore<LegacyTileData>;
 
     // 可存档内容
     readonly maps: IMapStore;
@@ -88,8 +92,9 @@ export class CoreState implements ICoreState {
 
     constructor() {
         this.maps = new MapStore();
-        this.idNumberMap = new Map();
-        this.numberIdMap = new Map();
+        const tileStore = new TileStore<LegacyTileData>();
+        tileStore.attachLegacyConverter(new TileLegacyBridge());
+        this.tileStore = tileStore;
 
         this.loadProgress = new LoadProgressTotal();
         this.dataLoader = new MotaDataLoader(this.loadProgress);
@@ -118,7 +123,7 @@ export class CoreState implements ICoreState {
         registerSpecials(enemyManager);
         this.enemyManager = enemyManager;
         // 怪物上下文初始化
-        const enemyContext = new EnemyContext<IEnemyAttr, IHeroAttr>();
+        const enemyContext = new EnemyContext<IEnemyAttr, IHeroAttr>(this);
         const damageSystem = new DamageSystem(enemyContext);
         const mapDamage = new MapDamage(enemyContext);
         damageSystem.useCalculator(new MainDamageCalculator());
@@ -170,6 +175,7 @@ export class CoreState implements ICoreState {
 
         // 加载先使用兼容层实现
         loading.once('loaded', () => {
+            this.initTileStore(core.maps.blocksInfo);
             this.initEnemyManager(enemys_fcae963b_31c9_42b4_b48c_bb48d09f3f80);
             this.initMapStore(
                 core.floorIds,
@@ -186,6 +192,37 @@ export class CoreState implements ICoreState {
     }
 
     /**
+     * 初始化图块存储对象
+     * @param data 旧样板图块定义对象
+     */
+    private initTileStore(data: typeof core.maps.blocksInfo) {
+        const entries = Object.entries(data);
+        for (const [key, block] of entries) {
+            this.tileStore.fromLegacy(Number(key), block);
+        }
+
+        for (const [key, block] of entries) {
+            if (!block.faceIds) continue;
+            const { down, up, left, right } = block.faceIds;
+            const downNum = this.tileStore.idToNumber(down);
+            if (downNum !== Number(key)) continue;
+            const upNum = this.tileStore.idToNumber(up);
+            const leftNum = this.tileStore.idToNumber(left);
+            const rightNum = this.tileStore.idToNumber(right);
+            this.roleFace.malloc(downNum, FaceDirection.Down);
+            if (!isNil(upNum)) {
+                this.roleFace.bind(upNum, downNum, FaceDirection.Up);
+            }
+            if (!isNil(leftNum)) {
+                this.roleFace.bind(leftNum, downNum, FaceDirection.Left);
+            }
+            if (!isNil(rightNum)) {
+                this.roleFace.bind(rightNum, downNum, FaceDirection.Right);
+            }
+        }
+    }
+
+    /**
      * 初始化怪物管理器对象
      * @param data 旧样板怪物存储对象
      */
@@ -194,15 +231,15 @@ export class CoreState implements ICoreState {
         const manager = this.enemyManager;
         const reference = new Map<number, IReadonlyEnemy<IEnemyAttr>>();
         for (const [id, enemy] of Object.entries(structuredClone(data))) {
-            const num = this.idNumberMap.get(id);
+            const num = this.tileStore.idToNumber(id);
             if (isNil(num)) continue;
             if (enemy.faceIds) {
                 // 有 faceId 的要把其他的也映射到当前怪物
                 const { left, up, right, down } = enemy.faceIds;
-                const leftCode = this.idNumberMap.get(left)!;
-                const upCode = this.idNumberMap.get(up)!;
-                const rightCode = this.idNumberMap.get(right)!;
-                const downCode = this.idNumberMap.get(down)!;
+                const leftCode = this.tileStore.idToNumber(left)!;
+                const upCode = this.tileStore.idToNumber(up)!;
+                const rightCode = this.tileStore.idToNumber(right)!;
+                const downCode = this.tileStore.idToNumber(down)!;
                 const prefab = manager.fromLegacyEnemy(downCode, enemy);
                 reference.set(downCode, prefab);
                 manager.addPrefab(prefab);
