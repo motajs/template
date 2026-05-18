@@ -3,7 +3,6 @@ import { initFallback } from './fallback';
 import { initFiveLayer } from './fiveLayer';
 import { createHook } from './hook';
 import { initReplay } from './replay';
-import { initUI } from './ui';
 
 export function createLegacy() {
     initFallback();
@@ -11,13 +10,10 @@ export function createLegacy() {
         initFiveLayer();
         createHook();
         initReplay();
-        initUI();
     });
 }
 
 export * from './fallback';
 export * from './fiveLayer';
-export * from './removeMap';
 export * from './replay';
 export * from './shop';
-export * from './ui';
