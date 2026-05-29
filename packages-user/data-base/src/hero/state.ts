@@ -2,7 +2,7 @@ import { HeroAttribute } from './attribute';
 import {
     IHeroAttribute,
     IHeroModifier,
-    IHeroMover,
+    IHeroMoveController,
     IHeroState,
     IHeroStateSave,
     IModifierStateSave,
@@ -16,11 +16,11 @@ export class HeroState<THero> implements IHeroState<THero> {
     private readonly registry: Map<string, () => IHeroModifier> = new Map();
 
     constructor(
-        public mover: IHeroMover,
+        public mover: IHeroMoveController,
         public attribute: IHeroAttribute<THero>
     ) {}
 
-    attachMover(mover: IHeroMover): void {
+    attachMover(mover: IHeroMoveController): void {
         this.mover = mover;
     }
 
@@ -28,7 +28,7 @@ export class HeroState<THero> implements IHeroState<THero> {
         this.attribute = attribute;
     }
 
-    getHeroMover(): IHeroMover {
+    getHeroMover(): IHeroMoveController {
         return this.mover;
     }
 

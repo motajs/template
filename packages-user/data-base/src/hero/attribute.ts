@@ -87,6 +87,24 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         this.finalAttribute[name] = value;
     }
 
+    *catchCalculateProgress<K extends keyof THero>(name: K) {
+        const modifierList = this.modifier.get(name);
+        if (!modifierList) return;
+
+        const baseValue = this.attribute[name];
+        let value = baseValue;
+        for (const modifier of modifierList as IHeroModifier<THero[K]>[]) {
+            const nextValue = modifier.modify(value, baseValue, name);
+            // 部署之后就没必要弹这个警告了，额外判断反而可能会有一定的性能损失，直接 tree-shaking 优化掉
+            if (import.meta.env.DEV && this.isSameReference(value, nextValue)) {
+                const modiferName = modifier.constructor.name;
+                logger.warn(109, modiferName, String(name));
+            }
+            value = nextValue;
+            yield [modifier, value] as [IHeroModifier<THero[K]>, THero[K]];
+        }
+    }
+
     getBaseAttribute<K extends keyof THero>(name: K): THero[K] {
         return this.attribute[name];
     }

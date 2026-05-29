@@ -98,7 +98,7 @@
 - 只进行必要的非空判断，非必要时直接使用非空断言 `!`。
 - 除非参数要求传入函数等情况，不建议在函数内定义局部函数。
 - 语句尽量不换行，除非必要，尤其注意三元运算符与 `private readonly` 类成员。
-- 任何时候都不应该写 `getter` 和 `setter`。
+- 一般不建议写 `getter` 和 `setter`，但某些场景下还是可以使用的。
 
 ## 双端分离
 
@@ -133,4 +133,4 @@
 | `@user/data-common  | Layer 0 | 公共层，定义 `IDataCommon` 及公共无依赖接口                                     |
 | `@user/data-base`   | Layer 1 | 数据层，定义 `IStateBase` 及可存档游戏数据（地图、怪物、玩家属性等）            |
 | `@user/data-system` | Layer 2 | 执行层，定义 `ICoreState`，依赖数据层实现玩家控制、战斗计算等影响游戏进程的动作 |
-| `@user/data-state`  | —       | 数据端的顶层模块，指导 Layer 2 的执行行为，不直接参与执行                       |
+| `@user/data-state`  | Layer 3 | 数据端的顶层模块，一般仅用于初始化以及仅供渲染端调用的顶层模块                  |

@@ -1,14 +1,18 @@
 import { Hookable, HookController, IHookController } from '@motajs/common';
 import { isNil } from 'lodash-es';
 import { getFaceMovement, nextFaceDirection } from '@user/data-common';
-import { IHeroFollower, IHeroMover, IHeroMovingHooks } from './types';
+import {
+    IHeroFollower,
+    IHeroMoveController,
+    IHeroMoveControllerHooks
+} from './types';
 import { FaceDirection } from '@user/data-common';
 
 const DEFAULT_HERO_IMAGE: ImageIds = 'hero.png';
 
-export class HeroMover
-    extends Hookable<IHeroMovingHooks>
-    implements IHeroMover
+export class HeroMoveController
+    extends Hookable<IHeroMoveControllerHooks>
+    implements IHeroMoveController
 {
     x: number = 0;
     y: number = 0;
@@ -22,8 +26,8 @@ export class HeroMover
     readonly followers: IHeroFollower[] = [];
 
     protected createController(
-        hook: Partial<IHeroMovingHooks>
-    ): IHookController<IHeroMovingHooks> {
+        hook: Partial<IHeroMoveControllerHooks>
+    ): IHookController<IHeroMoveControllerHooks> {
         return new HookController(this, hook);
     }
 

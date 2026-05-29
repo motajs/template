@@ -4,10 +4,10 @@ import { FaceDirection, ISaveableContent } from '@user/data-common';
 //#region 勇士属性
 
 export interface IHeroModifier<
-    T = unknown,
+    K = unknown,
     V = unknown,
-    S = unknown
-> extends ISaveableContent<S> {
+    Save = unknown
+> extends ISaveableContent<Save> {
     /** 修饰器类型 */
     readonly type: string;
     /** 修饰器优先级 */
@@ -40,12 +40,12 @@ export interface IHeroModifier<
      * @param baseValue 该属性值的基础属性值
      * @param name 属性名称
      */
-    modify(value: T, baseValue: T, name: PropertyKey): T;
+    modify(value: K, baseValue: K, name: PropertyKey): K;
 
     /**
      * 深拷贝此修饰器
      */
-    clone(): IHeroModifier<T, V>;
+    clone(): IHeroModifier<K, V>;
 }
 
 export interface IModifierStateSave {
@@ -129,7 +129,7 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
      */
     addModifier<K extends keyof THero>(
         name: K,
-        modifier: IHeroModifier<THero[K], unknown>
+        modifier: IHeroModifier<THero[K]>
     ): void;
 
     /**
@@ -139,7 +139,7 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
      */
     deleteModifier<K extends keyof THero>(
         name: K,
-        modifier: IHeroModifier<THero[K], unknown>
+        modifier: IHeroModifier<THero[K]>
     ): void;
 
     /**
@@ -147,6 +147,15 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
      * @param cloneModifier 是否同时复制修饰器，默认复制
      */
     clone(cloneModifier?: boolean): IHeroAttribute<THero>;
+
+    /**
+     * 获取勇士指定属性计算过程的可迭代对象，一般用于调试。
+     * 此方法仅输出计算过程及结果，不会修改内部存储的最终属性。
+     * @param name 属性名称
+     */
+    catchCalculateProgress<K extends keyof THero>(
+        name: K
+    ): Iterable<[IHeroModifier<THero[K]>, THero[K]]>;
 }
 
 //#endregion
@@ -169,7 +178,7 @@ export interface IHeroFollower {
     alpha: number;
 }
 
-export interface IHeroMovingHooks extends IHookBase {
+export interface IHeroMoveControllerHooks extends IHookBase {
     /**
      * 当设置勇士的坐标时触发
      * @param x 勇士横坐标
@@ -253,7 +262,7 @@ export interface IHeroMovingHooks extends IHookBase {
     onSetFollowerAlpha(identifier: string, alpha: number): void;
 }
 
-export interface IHeroMover extends IHookable<IHeroMovingHooks> {
+export interface IHeroMoveController extends IHookable<IHeroMoveControllerHooks> {
     /** 勇士横坐标 */
     readonly x: number;
     /** 勇士纵坐标 */
@@ -372,7 +381,7 @@ export interface IHeroState<THero> extends ISaveableContent<
     IHeroStateSave<THero>
 > {
     /** 勇士移动对象 */
-    readonly mover: IHeroMover;
+    readonly mover: IHeroMoveController;
     /** 勇士属性对象 */
     readonly attribute: IReadonlyHeroAttribute<THero>;
 
@@ -380,12 +389,12 @@ export interface IHeroState<THero> extends ISaveableContent<
      * 绑定勇士移动对象
      * @param mover 勇士移动对象
      */
-    attachMover(mover: IHeroMover): void;
+    attachMover(mover: IHeroMoveController): void;
 
     /**
      * 获取勇士移动对象
      */
-    getHeroMover(): IHeroMover;
+    getHeroMover(): IHeroMoveController;
 
     /**
      * 绑定勇士属性对象

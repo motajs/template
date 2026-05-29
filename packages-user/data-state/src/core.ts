@@ -17,7 +17,7 @@ import {
 } from '@user/data-common';
 import {
     EnemyManager,
-    HeroMover,
+    HeroMoveController,
     IEnemyManager,
     HeroAttribute,
     HeroState,
@@ -69,23 +69,23 @@ import { logger } from '@motajs/common';
 import { ISaveSystem, SaveSystem } from './save';
 
 export class CoreState implements ICoreState {
-    // Layer 0 公共层
+    // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
     readonly tileStore: ITileStore<LegacyTileData>;
 
-    // Layer 1 数据层，所有可存档内容都在这
+    // Layer 1 数据层，所有可存档内容都在这，一般用于数据存储
     readonly maps: IMapStore;
     readonly hero: IHeroState<IHeroAttr>;
     readonly enemyManager: IEnemyManager<IEnemyAttr>;
     readonly flags: IFlagSystem;
 
-    // Layer 2 执行层，游戏逻辑对象都在这
+    // Layer 2 执行层，游戏逻辑对象都在这，包括一些需要操作数据层的逻辑系统等
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
     readonly triggerRegistry: ITriggerRegistry;
     readonly triggerCollector: ITriggerCollector;
 
-    // 用户层内容，也就是最顶层的内容，一般仅用于初始化
+    // Layer 3 用户层，也就是最顶层的内容，一般仅用于初始化以及仅供渲染端调用的顶层模块
     readonly loadProgress: ILoadProgressTotal;
     readonly dataLoader: IMotaDataLoader;
     readonly saveSystem: ISaveSystem;
@@ -129,7 +129,7 @@ export class CoreState implements ICoreState {
         this.maps = new MapStore(tileStore, this);
 
         // 勇士
-        const heroMover = new HeroMover();
+        const heroMover = new HeroMoveController();
         const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
         const heroState = new HeroState(heroMover, heroAttribute);
         this.hero = heroState;
@@ -179,7 +179,7 @@ export class CoreState implements ICoreState {
 
         //#endregion
 
-        //#region 顶层初始化
+        //#region L3 初始化
 
         // 存档系统
         this.saveSystem = new SaveSystem();
@@ -209,7 +209,11 @@ export class CoreState implements ICoreState {
                 core.floors as Record<FloorIds, ResolvedFloor>
             );
         });
+
+        //#endregion
     }
+
+    //#region 私有方法
 
     /**
      * 初始化图块存储对象
@@ -355,6 +359,10 @@ export class CoreState implements ICoreState {
         this.maps.compareWith(reference);
     }
 
+    //#endregion
+
+    //#region 存档方法
+
     addSaveableContent(id: string, content: ISaveableContent<unknown>): void {
         if (this.saveables.has(id)) {
             logger.warn(112, id);
@@ -385,4 +393,6 @@ export class CoreState implements ICoreState {
             this.executors.set(content, executor);
         }
     }
+
+    //#endregion
 }
