@@ -1,11 +1,12 @@
-import { ITileLocator, IRange } from '@motajs/common';
+import { ITileLocator, IRange, IHookable, IHookBase } from '@motajs/common';
 import {
     IEnemy,
     IReadonlyEnemy,
     ISpecial,
     IReadonlyHeroAttribute,
     IHeroAttribute,
-    IStateBase
+    IStateBase,
+    IStateBaseExtended
 } from '@user/data-base';
 import { ILocationHelper } from '@user/data-common';
 
@@ -21,7 +22,7 @@ export interface IEnemyHandler<TEnemy, THero> {
     /** 勇士属性信息 */
     readonly hero: IReadonlyHeroAttribute<THero>;
     /** 当前全局状态对象 */
-    readonly data: IStateBase;
+    readonly state: IStateBase;
 }
 
 export interface IReadonlyEnemyHandler<TEnemy, THero> {
@@ -34,7 +35,7 @@ export interface IReadonlyEnemyHandler<TEnemy, THero> {
     /** 勇士属性信息 */
     readonly hero: IReadonlyHeroAttribute<THero>;
     /** 当前全局状态对象 */
-    readonly data: IStateBase;
+    readonly state: IStateBase;
 }
 
 //#endregion
@@ -282,11 +283,9 @@ export interface IMapDamageReducer {
     ): Readonly<IMapDamageInfo>;
 }
 
-export interface IMapDamage<TEnemy, THero> {
+export interface IMapDamage<TEnemy, THero> extends IStateBaseExtended {
     /** 当前绑定的怪物上下文 */
     readonly context: IEnemyContext<TEnemy, THero>;
-    /** 地图伤害系统绑定的全局状态对象 */
-    readonly dataState: IStateBase;
 
     /**
      * 设置地图伤害转换器，并基于当前上下文重建所有地图伤害视图
@@ -356,11 +355,16 @@ export interface IMapDamage<TEnemy, THero> {
 
 //#region 伤害系统
 
-export interface IEnemyDamageInfo {
+export interface IEnemyDamageInfoBase {
     /** 战斗伤害值 */
     readonly damage: number;
     /** 战斗回合数 */
     readonly turn: number;
+}
+
+export interface IEnemyDamageInfo<TEnemy, THero> extends IEnemyDamageInfoBase {
+    /** 信息对象 */
+    readonly handler: IReadonlyEnemyHandler<TEnemy, THero>;
 }
 
 export interface IEnemyCritical {
@@ -371,9 +375,9 @@ export interface IEnemyCritical {
     /** 此临界点中指定勇士数值的值与当前值的差，即 `nextValue - baseValue` */
     readonly nextDiff: number;
     /** 当前状态下怪物的伤害信息 */
-    readonly baseInfo: IEnemyDamageInfo;
+    readonly baseInfo: IEnemyDamageInfoBase;
     /** 此临界点下怪物的伤害信息 */
-    readonly info: IEnemyDamageInfo;
+    readonly info: IEnemyDamageInfoBase;
     /** 此临界点的伤害值与当前伤害值的差 */
     readonly damageDiff: number;
 }
@@ -387,7 +391,9 @@ export interface IDamageCalculator<TEnemy, THero> {
      * 计算战斗伤害信息
      * @param handler 信息对象
      */
-    calculate(handler: IReadonlyEnemyHandler<TEnemy, THero>): IEnemyDamageInfo;
+    calculate(
+        handler: IReadonlyEnemyHandler<TEnemy, THero>
+    ): IEnemyDamageInfoBase;
 
     /**
      * 获取临界计算的上界
@@ -400,15 +406,14 @@ export interface IDamageCalculator<TEnemy, THero> {
     ): number;
 }
 
-export interface IDamageContext<TEnemy, THero> {
-    /** 伤害上下文所属的全局状态对象 */
-    readonly dataState: IStateBase;
-
+export interface IDamageContext<TEnemy, THero> extends IStateBaseExtended {
     /**
      * 获取战斗伤害信息
      * @param enemy 怪物视图
      */
-    getDamageInfo(enemy: IEnemyView<TEnemy>): IEnemyDamageInfo | null;
+    getDamageInfo(
+        enemy: IEnemyView<TEnemy>
+    ): IEnemyDamageInfo<TEnemy, THero> | null;
 
     /**
      * 根据怪物对象获取战斗伤害信息
@@ -416,7 +421,7 @@ export interface IDamageContext<TEnemy, THero> {
      */
     getDamageInfoByComputed(
         enemy: IReadonlyEnemy<TEnemy>
-    ): IEnemyDamageInfo | null;
+    ): IEnemyDamageInfo<TEnemy, THero> | null;
 
     /**
      * 计算怪物在指定勇士属性下的临界
@@ -483,15 +488,16 @@ export interface IDamageSystem<TEnemy, THero> extends IDamageContext<
 
 //#region 上下文
 
-export interface IReadonlyEnemyContext<TEnemy, THero> {
+export interface IReadonlyEnemyContext<
+    TEnemy,
+    THero
+> extends IStateBaseExtended {
     /** 怪物上下文宽度 */
     readonly width: number;
     /** 怪物上下文高度 */
     readonly height: number;
     /** 此上下文使用的索引对象 */
     readonly indexer: ILocationHelper;
-    /** 当前怪物上下文绑定的全局状态对象 */
-    readonly dataState: IStateBase;
 
     /**
      * 获取当前绑定的勇士属性对象
@@ -567,8 +573,6 @@ export interface IEnemyContext<TEnemy, THero> extends IReadonlyEnemyContext<
     readonly height: number;
     /** 此上下文使用的索引对象 */
     readonly indexer: ILocationHelper;
-    /** 当前怪物上下文绑定的全局状态对象 */
-    readonly dataState: IStateBase;
 
     /**
      * 调整上下文尺寸，并清空当前上下文中的所有怪物与状态
@@ -721,6 +725,114 @@ export interface IEnemyContext<TEnemy, THero> extends IReadonlyEnemyContext<
      * 销毁当前上下文
      */
     destroy(): void;
+}
+
+//#endregion
+
+//#region 战斗流程
+
+export interface ICombatFlowHandler<TEnemy, THero> {
+    /** 战斗的怪物是否在地图上 */
+    readonly onMap: boolean;
+    /** 可修改勇士对象 */
+    readonly hero: IHeroAttribute<THero>;
+    /** 可修改怪物对象 */
+    readonly enemy: IEnemy<TEnemy>;
+    /** 怪物上下文 */
+    readonly context: IEnemyContext<TEnemy, THero>;
+    /** 怪物位置 */
+    readonly locator: ITileLocator;
+    /** 全局状态对象 */
+    readonly state: IStateBase;
+}
+
+export interface ICombatFlowHook<TEnemy, THero> extends IHookBase {
+    /**
+     * 战前脚本
+     * @param info 战斗伤害信息
+     */
+    onBeforeCombat?(info: IEnemyDamageInfo<TEnemy, THero>): Promise<void>;
+
+    /**
+     * 战后脚本
+     * @param info 战斗伤害信息
+     */
+    onAfterCombat?(info: IEnemyDamageInfo<TEnemy, THero>): Promise<void>;
+}
+
+export interface ICombatScript<TEnemy, THero> {
+    /** 此脚本的优先级 */
+    readonly priority: number;
+
+    /**
+     * 战前执行的内容，返回 `false` 会立刻停止后续战前内容的执行，并放弃此次战斗
+     * @param info 战斗伤害信息
+     * @param handler 信息对象
+     */
+    before(
+        info: IEnemyDamageInfo<TEnemy, THero>,
+        handler: ICombatFlowHandler<TEnemy, THero>
+    ): Promise<boolean>;
+
+    /**
+     * 战后执行的内容
+     * @param info 战斗伤害信息
+     * @param handler 信息对象
+     */
+    after(
+        info: IEnemyDamageInfo<TEnemy, THero>,
+        handler: ICombatFlowHandler<TEnemy, THero>
+    ): Promise<void>;
+}
+
+export interface ICombatFlow<TEnemy, THero>
+    extends IHookable<ICombatFlowHook<TEnemy, THero>>, IStateBaseExtended {
+    /** 勇士属性对象 */
+    readonly hero: IReadonlyHeroAttribute<THero> | null;
+    /** 怪物上下文对象 */
+    readonly context: IReadonlyEnemyContext<TEnemy, THero> | null;
+    /** 伤害上下文 */
+    readonly damage: IDamageContext<TEnemy, THero> | null;
+
+    /**
+     * 绑定勇士属性对象
+     * @param hero 勇士属性对象
+     */
+    bindHero(hero: IHeroAttribute<THero> | null): void;
+
+    /**
+     * 绑定怪物上下文
+     * @param context 怪物上下文
+     */
+    bindContext(context: IReadonlyEnemyContext<TEnemy, THero> | null): void;
+
+    /**
+     * 绑定伤害上下文
+     * @param damage 伤害上下文
+     */
+    bindDamage(damage: IDamageContext<TEnemy, THero> | null): void;
+
+    /**
+     * 与指定怪物战斗
+     * @param enemy 怪物视图对象
+     */
+    battle(
+        enemy: IEnemyView<TEnemy>
+    ): Promise<IEnemyDamageInfo<TEnemy, THero> | null>;
+
+    /**
+     * 与指定怪物战斗
+     * @param enemy 怪物对象
+     */
+    battleComputed(
+        enemy: IReadonlyEnemy<TEnemy>
+    ): Promise<IEnemyDamageInfo<TEnemy, THero> | null>;
+
+    /**
+     * 添加战前战后脚本
+     * @param script 战前战后脚本
+     */
+    addCombatScript(script: ICombatScript<TEnemy, THero>): void;
 }
 
 //#endregion

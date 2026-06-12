@@ -100,7 +100,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     width: number = 0;
     height: number = 0;
 
-    constructor(readonly dataState: IStateBase) {}
+    constructor(readonly state: IStateBase) {}
 
     resize(width: number, height: number): void {
         this.clear();
@@ -215,7 +215,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
             context: this,
             locator,
             hero: this.bindedHero!,
-            data: this.dataState
+            state: this.state
         };
     }
 

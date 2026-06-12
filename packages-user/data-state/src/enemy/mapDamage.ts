@@ -311,7 +311,7 @@ export class MainMapDamageConverter implements IMapDamageConverter<
 
         const laser = enemy.getSpecial<number>(24);
         if (laser) {
-            const face = handler.data.faceManager.get(FaceGroup.Dir4)!;
+            const face = handler.state.faceManager.get(FaceGroup.Dir4)!;
             views.push(new LaserDamageView(context, locator, laser, face));
         }
 

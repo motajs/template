@@ -64,11 +64,11 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     /** 坐标索引对象 */
     private readonly indexer: ILocationHelper;
 
-    readonly dataState: IStateBase;
+    readonly state: IStateBase;
 
     constructor(readonly context: IEnemyContext<TEnemy, THero>) {
         this.indexer = context.indexer;
-        this.dataState = context.dataState;
+        this.state = context.state;
     }
 
     useConverter(converter: IMapDamageConverter<TEnemy, THero>): void {
@@ -92,7 +92,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
             context: this.context,
             locator,
             hero,
-            data: this.context.dataState
+            state: this.state
         };
     }
 

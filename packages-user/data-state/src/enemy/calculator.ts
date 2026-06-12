@@ -97,7 +97,7 @@ export class MainDamageCalculator implements IDamageCalculator<
                     context: handler.context,
                     locator,
                     hero,
-                    data: handler.data
+                    state: handler.state
                 });
                 turn += extraInfo.turn;
                 damage += extraInfo.damage;

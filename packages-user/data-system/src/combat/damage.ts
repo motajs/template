@@ -9,7 +9,8 @@ import {
     IEnemyCritical,
     IEnemyDamageInfo,
     IReadonlyEnemyHandler,
-    IEnemyView
+    IEnemyView,
+    IEnemyDamageInfoBase
 } from './types';
 import {
     IHeroAttribute,
@@ -22,7 +23,7 @@ interface ICriticalSearchResult {
     /** 此临界点的属性值 */
     readonly value: number;
     /** 此临界点的伤害信息 */
-    readonly info: IEnemyDamageInfo;
+    readonly info: IEnemyDamageInfoBase;
 }
 
 export class DamageContext<TEnemy, THero> implements IDamageContext<
@@ -34,14 +35,14 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
     /** 当前勇士属性 */
     protected heroStatus: IReadonlyHeroAttribute<THero> | null;
 
-    readonly dataState: IStateBase;
+    readonly state: IStateBase;
 
     constructor(
         readonly context: IEnemyContext<TEnemy, THero>,
         calculator: IDamageCalculator<TEnemy, THero> | null = null,
         heroStatus: IReadonlyHeroAttribute<THero> | null = null
     ) {
-        this.dataState = context.dataState;
+        this.state = context.state;
         this.calculator = calculator;
         this.heroStatus = heroStatus;
     }
@@ -62,11 +63,13 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
             context: this.context,
             locator,
             hero,
-            data: this.dataState
+            state: this.state
         };
     }
 
-    getDamageInfo(enemy: IEnemyView<TEnemy>): IEnemyDamageInfo | null {
+    getDamageInfo(
+        enemy: IEnemyView<TEnemy>
+    ): IEnemyDamageInfo<TEnemy, THero> | null {
         if (!this.heroStatus) {
             logger.warn(107);
             return null;
@@ -82,12 +85,15 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
         const computed = enemy.getComputedEnemy();
         const handler = this.createReadonlyHandler(computed, locator, hero);
 
-        return this.calculator.calculate(handler);
+        return {
+            handler,
+            ...this.calculator.calculate(handler)
+        };
     }
 
     getDamageInfoByComputed(
         enemy: IReadonlyEnemy<TEnemy>
-    ): IEnemyDamageInfo | null {
+    ): IEnemyDamageInfo<TEnemy, THero> | null {
         if (!this.heroStatus) {
             logger.warn(107);
             return null;
@@ -105,7 +111,10 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
 
         const handler = this.createReadonlyHandler(enemy, locator, hero);
 
-        return this.calculator.calculate(handler);
+        return {
+            handler,
+            ...this.calculator.calculate(handler)
+        };
     }
 
     *calculateCritical(
@@ -224,8 +233,10 @@ export class DamageSystem<TEnemy, THero>
     implements IDamageSystem<TEnemy, THero>
 {
     /** 怪物伤害缓存 */
-    private readonly cache: Map<IEnemyView<TEnemy>, IEnemyDamageInfo> =
-        new Map();
+    private readonly cache: Map<
+        IEnemyView<TEnemy>,
+        IEnemyDamageInfo<TEnemy, THero>
+    > = new Map();
 
     constructor(context: IEnemyContext<TEnemy, THero>) {
         super(context);
@@ -245,7 +256,9 @@ export class DamageSystem<TEnemy, THero>
         this.markAllDirty();
     }
 
-    getDamageInfo(enemy: IEnemyView<TEnemy>): IEnemyDamageInfo | null {
+    getDamageInfo(
+        enemy: IEnemyView<TEnemy>
+    ): IEnemyDamageInfo<TEnemy, THero> | null {
         const cached = this.cache.get(enemy);
         if (cached) {
             return cached;
@@ -260,7 +273,7 @@ export class DamageSystem<TEnemy, THero>
 
     getDamageInfoByComputed(
         enemy: IReadonlyEnemy<TEnemy>
-    ): IEnemyDamageInfo | null {
+    ): IEnemyDamageInfo<TEnemy, THero> | null {
         const view = this.context.getViewByComputed(enemy);
         if (view) {
             const cached = this.cache.get(view);
