@@ -424,6 +424,14 @@ export interface IDamageContext<TEnemy, THero> extends IStateBaseExtended {
     ): IEnemyDamageInfo<TEnemy, THero> | null;
 
     /**
+     * 根据指定怪物信息对象获取战斗伤害信息
+     * @param handler 怪物信息对象
+     */
+    getDamageInfoByHandler(
+        handler: IReadonlyEnemyHandler<TEnemy, THero>
+    ): IEnemyDamageInfo<TEnemy, THero> | null;
+
+    /**
      * 计算怪物在指定勇士属性下的临界
      * @param enemy 怪物视图
      * @param attribute 计算临界的目标勇士属性，比如计算攻击临界、自定义属性的临界等等
@@ -804,7 +812,7 @@ export interface ICombatFlow<TEnemy, THero>
      * 绑定怪物上下文
      * @param context 怪物上下文
      */
-    bindContext(context: IReadonlyEnemyContext<TEnemy, THero> | null): void;
+    bindContext(context: IEnemyContext<TEnemy, THero> | null): void;
 
     /**
      * 绑定伤害上下文
@@ -822,7 +830,7 @@ export interface ICombatFlow<TEnemy, THero>
 
     /**
      * 与指定怪物战斗
-     * @param enemy 怪物对象
+     * @param enemy 计算后怪物对象
      */
     battleComputed(
         enemy: IReadonlyEnemy<TEnemy>

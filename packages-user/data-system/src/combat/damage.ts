@@ -117,6 +117,20 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
         };
     }
 
+    getDamageInfoByHandler(
+        handler: IReadonlyEnemyHandler<TEnemy, THero>
+    ): IEnemyDamageInfo<TEnemy, THero> | null {
+        if (!this.calculator) {
+            logger.warn(106);
+            return null;
+        }
+
+        return {
+            handler,
+            ...this.calculator.calculate(handler)
+        };
+    }
+
     *calculateCritical(
         view: IEnemyView<TEnemy>,
         attribute: CriticalableHeroStatus<THero>,

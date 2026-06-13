@@ -194,6 +194,10 @@
         "134": "TileStore.addTile: tile id '$1' already maps to number $2, old tile data will be overridden.",
         "135": "Expected a trigger registry attched before collect triggers.",
         "136": "Unexpected duplicate trigger priority $1, which may cause trigger executed in an unexpected order.",
-        "137": "Unknown guard enemy at locator '$1,$2'."
+        "137": "Unknown guard enemy at locator '$1,$2'.",
+        "138": "Expected $1 with a same state with the CombatFlow object, but got a difference one.",
+        "139": "Expected $1 binding before start battle flow, but got a null object.",
+        "140": "Different priority of combat script is expected, but got a same one.",
+        "141": "Some issue may occur in binded damage system on combat flow, please check the console."
     }
 }
