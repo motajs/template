@@ -793,6 +793,15 @@ export interface ICombatScript<TEnemy, THero> {
     ): Promise<void>;
 }
 
+export interface ICombatResult<TEnemy, THero> {
+    /** 是否通过战前脚本跳过了战斗流程 */
+    readonly skipped: boolean;
+    /** 战斗伤害信息对象 */
+    readonly damageInfo: IEnemyDamageInfo<TEnemy, THero>;
+    /** 怪物信息对象 */
+    readonly enemyHandler: IReadonlyEnemyHandler<TEnemy, THero>;
+}
+
 export interface ICombatFlow<TEnemy, THero>
     extends IHookable<ICombatFlowHook<TEnemy, THero>>, IStateBaseExtended {
     /** 勇士属性对象 */

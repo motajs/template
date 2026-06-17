@@ -1,7 +1,7 @@
 import {
     CriticalableHeroStatus,
     IDamageCalculator,
-    IEnemyDamageInfo,
+    IEnemyDamageInfoBase,
     IReadonlyEnemyHandler
 } from '@user/data-system';
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
@@ -18,7 +18,7 @@ export class MainDamageCalculator implements IDamageCalculator<
 
     calculate(
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
-    ): IEnemyDamageInfo {
+    ): IEnemyDamageInfoBase {
         const { enemy, locator, hero } = handler;
         const hp = hero.getBaseAttribute('hp');
         const atk = hero.getFinalAttribute('atk');
