@@ -215,7 +215,7 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
         let left = currentValue;
         let right = upperLimit;
 
-        hero.setBaseAttribute(attribute, right as THero[typeof attribute]);
+        hero.set(attribute, right as THero[typeof attribute]);
 
         let targetInfo = this.calculator!.calculate(handler);
         if (targetInfo.damage >= referenceDamage) return null;
@@ -223,7 +223,7 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
         let iter = 0;
         while (iter++ < maxIterations) {
             const middle = Math.floor((left + right) / 2);
-            hero.setBaseAttribute(attribute, middle as THero[typeof attribute]);
+            hero.set(attribute, middle as THero[typeof attribute]);
             const middleInfo = this.calculator!.calculate(handler);
 
             if (middleInfo.damage < referenceDamage) {

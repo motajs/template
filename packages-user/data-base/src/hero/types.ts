@@ -110,17 +110,28 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
      * @param name 属性名称
      * @param value 要设置为的值
      */
-    setBaseAttribute<K extends keyof THero>(name: K, value: THero[K]): void;
+    set<K extends keyof THero>(name: K, value: THero[K]): void;
 
     /**
      * 增减勇士属性
      * @param name 属性名称
      * @param value 属性增减值
      */
-    addBaseAttribute<K extends SelectKey<THero, number>>(
-        name: K,
-        value: number
-    ): void;
+    add<K extends SelectKey<THero, number>>(name: K, value: number): void;
+
+    /**
+     * 将勇士属性乘以某一个值
+     * @param name 属性名称
+     * @param value 属性乘数
+     */
+    mul<K extends SelectKey<THero, number>>(name: K, value: number): void;
+
+    /**
+     * 将勇士属性除以某一个值
+     * @param name 属性名称
+     * @param value 属性除数
+     */
+    div<K extends SelectKey<THero, number>>(name: K, value: number): void;
 
     /**
      * 向一个属性添加属性修饰器

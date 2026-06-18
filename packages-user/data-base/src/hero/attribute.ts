@@ -113,16 +113,32 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         return this.finalAttribute[name];
     }
 
-    setBaseAttribute<K extends keyof THero>(name: K, value: THero[K]): void {
+    set<K extends keyof THero>(name: K, value: THero[K]): void {
         this.attribute[name] = value;
         this.markDirty(name);
     }
 
-    addBaseAttribute<K extends keyof SelectType<THero, number>>(
+    add<K extends keyof SelectType<THero, number>>(
         name: K,
         value: number
     ): void {
         (this.attribute[name] as number) += value;
+        this.markDirty(name);
+    }
+
+    mul<K extends keyof SelectType<THero, number>>(
+        name: K,
+        value: number
+    ): void {
+        (this.attribute[name] as number) *= value;
+        this.markDirty(name);
+    }
+
+    div<K extends keyof SelectType<THero, number>>(
+        name: K,
+        value: number
+    ): void {
+        (this.attribute[name] as number) /= value;
         this.markDirty(name);
     }
 
