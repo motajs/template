@@ -25,13 +25,16 @@
 
 ## 构建说明
 
-| 命令                  | 说明                                                    |
-| --------------------- | ------------------------------------------------------- |
-| `pnpm build:packages` | 以库模式构建 `packages` 下的所有内容                    |
-| `pnpm build:game`     | 构建为可直接部署的游戏包                                |
-| `pnpm build:lib`      | 以库模式构建 `packages` 与 `packages-user` 下的所有内容 |
-| `pnpm type`           | 对仓库执行类型检查                                      |
-| `pnpm check:circular` | 对仓库执行循环引用检查                                  |
+| 命令                  | 说明                                                         |
+| --------------------- | ------------------------------------------------------------ |
+| `pnpm build:packages` | 以库模式构建 `packages` 下的所有内容                         |
+| `pnpm build:game`     | 构建为可直接部署的游戏包                                     |
+| `pnpm build:lib`      | 以库模式构建 `packages` 与 `packages-user` 下的所有内容      |
+| `pnpm lint:packages`  | 运行 `packages` 文件夹下的 `eslint` 格式检查                 |
+| `pnpm lint:user`      | 运行 `packages-user` 文件夹下的 `eslint` 格式检查            |
+| `pnpm lint:custom`    | 运行自定义文件的 `eslint` 格式检查，相当于 `pnpm eslint ...` |
+| `pnpm check:type`     | 对仓库执行类型检查                                           |
+| `pnpm check:circular` | 对仓库执行循环引用检查                                       |
 
 ## 术语统一
 
