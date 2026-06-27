@@ -9,7 +9,7 @@ import {
     IReadonlyHeroAttribute
 } from './types';
 import { SaveCompression } from '@user/data-common';
-import { logger } from '@motajs/common';
+import { IFacedTileLocator, logger } from '@motajs/common';
 
 export class HeroState<THero> implements IHeroState<THero> {
     /** 修饰器工厂函数注册表 */
@@ -29,6 +29,10 @@ export class HeroState<THero> implements IHeroState<THero> {
     }
 
     getHeroMover(): IHeroMoveController {
+        return this.mover;
+    }
+
+    getLocation(): IFacedTileLocator {
         return this.mover;
     }
 

@@ -1,5 +1,10 @@
 import { IFacedTileLocator, IHookBase, IHookable } from '@motajs/common';
-import { FaceDirection, ISaveableContent } from '@user/data-common';
+import {
+    IDataCommonExtended,
+    IObjectMovable,
+    IObjectMover,
+    ISaveableContent
+} from '@user/data-common';
 
 //#region 勇士属性
 
@@ -171,206 +176,189 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
 
 //#endregion
 
+//#region 勇士位置
+
+export interface IHeroLocationSave extends Readonly<IFacedTileLocator> {}
+
+export interface IHeroLocation
+    extends
+        ISaveableContent<IHeroLocationSave>,
+        IObjectMovable,
+        IDataCommonExtended {
+    /** 勇士的移动对象 */
+    readonly mover: IObjectMover<this>;
+}
+
+//#endregion
+
 //#region 勇士移动
 
-export const enum HeroAnimateDirection {
-    /** 正向播放动画 */
-    Forward,
-    /** 反向播放动画 */
-    Backward
+export const enum HeroMoveCode {
+    /** 正常移动 */
+    Step,
+    /** 移动被停止 */
+    Stop,
+    /** 不能移动，并撞击目标格触发器 */
+    Hit,
+    /** 不能移动，不触发触发器 */
+    CannotMove
 }
 
-export interface IHeroFollower {
-    /** 跟随者的图块数字 */
-    readonly num: number;
-    /** 跟随者的标识符 */
-    readonly identifier: string;
-    /** 跟随者的不透明度 */
-    alpha: number;
+export interface IHeroMoverConfig {
+    /** 本次移动是否不记录进路线系统 */
+    noRoute?: boolean;
+    /** 本次移动是否忽略地形碰撞检测 */
+    ignoreTerrain?: boolean;
+    /** 本次移动是否在特定时机触发自动存档 */
+    autoSave?: boolean;
 }
 
-export interface IHeroMoveControllerHooks extends IHookBase {
+export interface IHeroMover<T extends IHeroLocation> extends IObjectMover<T> {
     /**
-     * 当设置勇士的坐标时触发
-     * @param x 勇士横坐标
-     * @param y 勇士纵坐标
+     * 配置本次移动的行为模式
+     * @param config 配置对象，未传入的字段保持当前值
      */
-    onSetPosition(x: number, y: number): void;
+    config(config: Readonly<IHeroMoverConfig>): this;
 
     /**
-     * 当设置勇士朝向时触发
-     * @param direction 勇士朝向
+     * 获取当前移动配置的只读快照
      */
-    onTurnHero(direction: FaceDirection): void;
+    getConfig(): Readonly<IHeroMoverConfig>;
+}
 
-    /**
-     * 当勇士开始移动时触发
-     */
-    onStartMove(): void;
+//#endregion
 
-    /**
-     * 当移动勇士时触发
-     * @param direction 移动方向
-     * @param time 移动动画时长
-     */
-    onMoveHero(direction: FaceDirection, time: number): Promise<void>;
+//#region 勇士渲染
 
-    /**
-     * 当停止移动时触发
-     */
-    onEndMove(): Promise<void>;
+export interface IHeroRenderingSave {
+    /** 勇士的不透明度 */
+    readonly alpha: number;
+}
 
+export interface IHeroRenderingHooks extends IHookBase {
     /**
-     * 当勇士跳跃时触发
-     * @param x 目标点横坐标
-     * @param y 目标点纵坐标
-     * @param time 跳跃动画时长
-     * @param waitFollower 是否等待跟随者跳跃完毕
-     */
-    onJumpHero(
-        x: number,
-        y: number,
-        time: number,
-        waitFollower: boolean
-    ): Promise<void>;
-
-    /**
-     * 当设置勇士图片时触发
-     * @param image 勇士图片 id
-     */
-    onSetImage(image: ImageIds): void;
-
-    /**
-     * 当设置勇士不透明度时执行
+     * 当勇士的不透明度被修改时触发
      * @param alpha 不透明度
      */
-    onSetAlpha(alpha: number): void;
-
-    /**
-     * 添加跟随者时触发
-     * @param follower 跟随者的图块数字
-     * @param identifier 跟随者的标识符
-     */
-    onAddFollower(follower: number, identifier: string): void;
-
-    /**
-     * 当移除跟随者时触发
-     * @param identifier 跟随者的标识符
-     * @param animate 填 `true` 的话，如果删除了中间的跟随者，后续跟随者会使用移动动画移动到下一格，否则瞬移至下一格
-     */
-    onRemoveFollower(identifier: string, animate: boolean): void;
-
-    /**
-     * 当移除所有跟随者时触发
-     */
-    onRemoveAllFollowers(): void;
-
-    /**
-     * 设置跟随者的不透明度
-     * @param identifier 跟随者标识符
-     * @param alpha 跟随者不透明度
-     */
-    onSetFollowerAlpha(identifier: string, alpha: number): void;
+    onSetAlpha?(alpha: number): void;
 }
 
-export interface IHeroMoveController extends IHookable<IHeroMoveControllerHooks> {
-    /** 勇士横坐标 */
-    readonly x: number;
-    /** 勇士纵坐标 */
-    readonly y: number;
-    /** 勇士朝向 */
-    readonly direction: FaceDirection;
-    /** 勇士图片 */
-    readonly image?: ImageIds;
-    /** 跟随者列表 */
-    readonly followers: readonly IHeroFollower[];
-    /** 勇士当前的不透明度 */
+export interface IHeroRendering
+    extends
+        ISaveableContent<IHeroRenderingSave>,
+        IHookable<IHeroRenderingHooks>,
+        IDataCommonExtended {
+    /** 勇士的当前不透明度 */
     readonly alpha: number;
-
-    /**
-     * 设置勇士位置
-     * @param x 横坐标
-     * @param y 纵坐标
-     */
-    setPosition(x: number, y: number): void;
-
-    /**
-     * 设置勇士朝向
-     * @param direction 勇士朝向，不填表示顺时针旋转
-     */
-    turn(direction?: FaceDirection): void;
-
-    /**
-     * 开始勇士移动，在移动前必须先调用此方法将勇士切换为移动状态
-     */
-    startMove(): void;
-
-    /**
-     * 移动勇士。能否移动的逻辑暂时不在这里，目前作为过渡作用，仅服务于渲染
-     * @param dir 移动方向
-     * @param time 移动动画时长，默认 100ms
-     * @returns 移动的 `Promise`，当相关的移动动画结束后兑现
-     */
-    move(dir: FaceDirection, time?: number): Promise<void>;
-
-    /**
-     * 结束勇士移动
-     * @returns 当移动动画结束后兑现的 `Promise`
-     */
-    endMove(): Promise<void>;
-
-    /**
-     * 跳跃勇士至目标点
-     * @param x 目标点横坐标
-     * @param y 目标点纵坐标
-     * @param time 跳跃动画时长，默认 500ms
-     * @param waitFollower 是否等待跟随者跳跃完毕，默认不等待
-     * @returns 跳跃的 `Promise`，当相关的移动动画结束后兑现
-     */
-    jumpHero(
-        x: number,
-        y: number,
-        time?: number,
-        waitFollower?: boolean
-    ): Promise<void>;
-
-    /**
-     * 设置勇士图片
-     * @param image 图片 id
-     */
-    setImage(image: ImageIds): void;
 
     /**
      * 设置勇士的不透明度
      * @param alpha 不透明度
      */
     setAlpha(alpha: number): void;
+}
+
+//#endregion
+
+//#region 勇士跟随者
+
+export interface IHeroFollowerSave {
+    /** 跟随者渲染对象保存 */
+    readonly rendering: IHeroRenderingSave;
+    /** 跟随者位置保存 */
+    readonly location: IHeroLocationSave;
+}
+
+export interface IHeroFollower
+    extends ISaveableContent<IHeroFollowerSave>, IDataCommonExtended {
+    /** 跟随者的图块数字 */
+    readonly num: number;
+    /** 跟随者的渲染信息对象 */
+    readonly rendering: IHeroRendering;
+    /** 跟随者的位置对象 */
+    readonly location: IHeroLocation;
 
     /**
-     * 添加一个跟随者
-     * @param follower 跟随者的图块数字
-     * @param identifier 跟随者的标识符，可以用来移除
+     * 获取下一个跟随者
+     * @returns null 表示当前为最后一个
      */
-    addFollower(follower: number, identifier: string): void;
+    next(): IHeroFollower | null;
 
     /**
-     * 移除指定的跟随者
-     * @param identifier 跟随者的标识符
-     * @param animate 填 `true` 的话，如果删除了中间的跟随者，后续跟随者会使用移动动画移动到下一格，否则瞬移至下一格
+     * 获取上一个跟随者
+     * @returns null 表示当前为第一个
      */
-    removeFollower(identifier: string, animate?: boolean): void;
+    last(): IHeroFollower | null;
+}
+
+export interface IHeroFollowersControllerHooks extends IHookBase {
+    /**
+     * 当添加跟随者时触发
+     * @param follower 跟随者对象
+     * @param index 添加的跟随者的索引
+     */
+    onAddFollower?(follower: IHeroFollower, index: number): void;
 
     /**
-     * 移除所有跟随者
+     * 当移除跟随者时触发
+     * @param follower 跟随者对象
+     * @param index 要移除的跟随者索引
      */
-    removeAllFollowers(): void;
+    onRemoveFollower?(follower: IHeroFollower, index: number): void;
 
     /**
-     * 设置指定跟随者的不透明度
-     * @param identifier 跟随者标识符
-     * @param alpha 跟随者不透明度
+     * 当聚集跟随者时触发
+     * @param sync 是否为同步调用（即是否通过 `gatherFollowersSync` 触发）
      */
-    setFollowerAlpha(identifier: string, alpha: number): void;
+    onGatherFollowers?(sync: boolean): void;
+}
+
+export interface IHeroFollowersController
+    extends IHookable<IHeroFollowersControllerHooks>, IDataCommonExtended {
+    /**
+     * 添加跟随者
+     * @param num 跟随者的图块数字或图块 id
+     */
+    addFollower(num: number | string): IHeroFollower;
+
+    /**
+     * 根据跟随者的索引数字获取跟随者对象
+     * @param index 跟随者的索引数字
+     */
+    getFollower(index: number): IHeroFollower | null;
+
+    /**
+     * 根据跟随者的图块数字或图块 id 获取所有符合的跟随者
+     * @param num 跟随者的图块数字或图块 id
+     * @returns 一个输出 [跟随者索引, 跟随者对象] 的迭代器
+     */
+    getFollowersById(num: number | string): Iterable<[number, IHeroFollower]>;
+
+    /**
+     * 获取勇士的所有跟随者
+     */
+    getAllFollowers(): IHeroFollower[];
+
+    /**
+     * 移除指定跟随者
+     * @param index 跟随者索引
+     */
+    removeFollower(index: number): Promise<void>;
+
+    /**
+     * 移除所有的跟随者
+     */
+    removeAllFollowers(): Promise<void>;
+
+    /**
+     * 将所有跟随者聚集到勇士位置，并调整朝向为与勇士相同
+     */
+    gatherFollowers(): Promise<void>;
+
+    /**
+     * 立刻将所有跟随者聚集到勇士位置，并调整朝向为与勇士相同，不会播放移动动画
+     */
+    gatherFollowersSync(): void;
 }
 
 //#endregion
@@ -381,9 +369,9 @@ export interface IHeroStateSave<THero> {
     /** 勇士属性状态 */
     readonly attribute: THero;
     /** 勇士当前位置 */
-    readonly locator: IFacedTileLocator;
+    readonly locator: IHeroLocationSave;
     /** 勇士当前的跟随者 */
-    readonly followers: readonly Readonly<IHeroFollower>[];
+    readonly followers: readonly IHeroFollowerSave[];
     /** 勇士属性修饰器状态 */
     readonly modifiers: readonly IModifierStateSave[];
 }
@@ -392,20 +380,18 @@ export interface IHeroState<THero> extends ISaveableContent<
     IHeroStateSave<THero>
 > {
     /** 勇士移动对象 */
-    readonly mover: IHeroMoveController;
+    readonly location: IHeroLocation;
     /** 勇士属性对象 */
     readonly attribute: IReadonlyHeroAttribute<THero>;
+    /** 勇士跟随者对象 */
+    readonly followers: IHeroFollowersController;
+    /** 勇士的渲染对象，包含一些必要渲染信息，存在于数据端，并非渲染端 */
+    readonly rendering: IHeroRendering;
 
     /**
-     * 绑定勇士移动对象
-     * @param mover 勇士移动对象
+     * 获取勇士当前的位置
      */
-    attachMover(mover: IHeroMoveController): void;
-
-    /**
-     * 获取勇士移动对象
-     */
-    getHeroMover(): IHeroMoveController;
+    getLocation(): IFacedTileLocator;
 
     /**
      * 绑定勇士属性对象

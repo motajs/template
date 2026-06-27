@@ -198,6 +198,7 @@
         "138": "Expected $1 with a same state with the CombatFlow object, but got a difference one.",
         "139": "Expected $1 binding before start battle flow, but got a null object.",
         "140": "Different priority of combat script is expected, but got a same one.",
-        "141": "Some issue may occur in binded damage system on combat flow, please check the console."
+        "141": "Some issue may occur in binded damage system on combat flow, please check the console.",
+        "142": "Expected a specific tile number after convert id '$1' to number, but got null."
     }
 }

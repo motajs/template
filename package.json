@@ -10,6 +10,7 @@
         "declare": "tsx script/declare.ts",
         "type": "vue-tsc --noEmit",
         "lines": "tsx script/lines.ts packages packages-user",
+        "lint": "eslint",
         "build:packages": "vue-tsc --noEmit && tsx script/build-packages.ts",
         "build:game": "tsx script/declare.ts && vue-tsc --noEmit && tsx script/build-game.ts",
         "build:lib": "vue-tsc --noEmit && tsx script/build-lib.ts",

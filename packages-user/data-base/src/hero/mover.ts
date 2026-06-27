@@ -1,142 +1,182 @@
-import { Hookable, HookController, IHookController } from '@motajs/common';
-import { isNil } from 'lodash-es';
-import { getFaceMovement, nextFaceDirection } from '@user/data-common';
+import { ITileLocator } from '@motajs/common';
 import {
-    IHeroFollower,
-    IHeroMoveController,
-    IHeroMoveControllerHooks
+    FaceDirection,
+    getFaceMovement,
+    IFaceHandler,
+    IMoverController,
+    ObjectMoveStep,
+    ObjectMover,
+    ObjectMoveStepType
+} from '@user/data-common';
+import {
+    HeroMoveCode,
+    IHeroLocation,
+    IHeroMover,
+    IHeroMoverConfig
 } from './types';
-import { FaceDirection } from '@user/data-common';
 
-const DEFAULT_HERO_IMAGE: ImageIds = 'hero.png';
-
-export class HeroMoveController
-    extends Hookable<IHeroMoveControllerHooks>
-    implements IHeroMoveController
+export class HeroMover<T extends IHeroLocation>
+    extends ObjectMover<T>
+    implements IHeroMover<T>
 {
-    x: number = 0;
-    y: number = 0;
-    direction: FaceDirection = FaceDirection.Down;
-    image: ImageIds = DEFAULT_HERO_IMAGE;
+    readonly tile: T;
 
-    /** 当前勇士是否正在移动 */
-    moving: boolean = false;
-    alpha: number = 1;
+    /** 本次移动是否不记录进路线系统 */
+    private noRoute: boolean = false;
+    /** 本次移动是否忽略地形碰撞检测 */
+    private ignoreTerrain: boolean = false;
+    /** 本次移动是否在特定时机触发自动存档 */
+    private autoSave: boolean = false;
 
-    readonly followers: IHeroFollower[] = [];
-
-    protected createController(
-        hook: Partial<IHeroMoveControllerHooks>
-    ): IHookController<IHeroMoveControllerHooks> {
-        return new HookController(this, hook);
+    constructor(tile: T, faceHandler: IFaceHandler<FaceDirection>) {
+        super(faceHandler);
+        this.tile = tile;
     }
 
-    setPosition(x: number, y: number): void {
-        this.x = x;
-        this.y = y;
-        this.forEachHook(hook => {
-            hook.onSetPosition?.(x, y);
-        });
+    config(config: Readonly<IHeroMoverConfig>): this {
+        if (config.noRoute !== undefined) {
+            this.noRoute = config.noRoute;
+        }
+        if (config.ignoreTerrain !== undefined) {
+            this.ignoreTerrain = config.ignoreTerrain;
+        }
+        if (config.autoSave !== undefined) {
+            this.autoSave = config.autoSave;
+        }
+        return this;
     }
 
-    turn(direction?: FaceDirection): void {
-        const next = isNil(direction)
-            ? nextFaceDirection(this.direction)
-            : direction;
-        this.direction = next;
-        this.forEachHook(hook => {
-            hook.onTurnHero?.(next);
-        });
+    getConfig(): Readonly<IHeroMoverConfig> {
+        return {
+            noRoute: this.noRoute,
+            ignoreTerrain: this.ignoreTerrain,
+            autoSave: this.autoSave
+        };
     }
 
-    startMove(): void {
-        this.moving = true;
-        this.forEachHook(hook => {
-            hook.onStartMove?.();
-        });
+    protected async onMoveStart(
+        _tile: IHeroLocation,
+        _controller: Readonly<IMoverController>
+    ): Promise<void> {
+        // TODO: 通知渲染端开始移动，同步平滑视角
     }
 
-    async move(dir: FaceDirection, time: number = 100): Promise<void> {
-        await Promise.all(
-            this.forEachHook(hook => {
-                return hook.onMoveHero?.(dir, time);
-            })
-        );
-        const { x, y } = getFaceMovement(dir);
-        this.x += x;
-        this.y += y;
+    protected async onMoveEnd(
+        _tile: IHeroLocation,
+        _controller: Readonly<IMoverController>
+    ): Promise<void> {
+        // TODO: 通知渲染端移动结束
+        // TODO: 清除自动寻路状态
     }
 
-    async endMove(): Promise<void> {
-        if (!this.moving) return;
-        await Promise.all(
-            this.forEachHook(hook => {
-                return hook.onEndMove?.();
-            })
-        );
-        this.moving = false;
+    protected async onStepStart(
+        step: ObjectMoveStep,
+        tile: IHeroLocation,
+        controller: Readonly<IMoverController>
+    ): Promise<number> {
+        const type = step.type;
+
+        if (
+            type !== ObjectMoveStepType.Dir &&
+            type !== ObjectMoveStepType.DirFace &&
+            type !== ObjectMoveStepType.Special
+        ) {
+            return HeroMoveCode.Step;
+        }
+
+        if (!this.ignoreTerrain) {
+            const result = this.checkTerrain(tile, controller);
+            if (result !== HeroMoveCode.Step) {
+                return result;
+            }
+        }
+
+        if (this.autoSave) {
+            // TODO: 检查当前步是否需要触发自动存档（如进入/离开地图伤害区域）
+        }
+
+        return HeroMoveCode.Step;
     }
 
-    async jumpHero(
+    protected async onStepEnd(
+        code: number,
+        step: ObjectMoveStep,
+        tile: IHeroLocation,
+        controller: Readonly<IMoverController>
+    ): Promise<ITileLocator> {
+        const type = step.type;
+
+        const isMovementStep =
+            type === ObjectMoveStepType.Dir ||
+            type === ObjectMoveStepType.DirFace ||
+            type === ObjectMoveStepType.Special;
+
+        if (
+            !isMovementStep &&
+            type !== ObjectMoveStepType.Teleport &&
+            type !== ObjectMoveStepType.Jump
+        ) {
+            return { x: tile.x, y: tile.y };
+        }
+
+        if (code === HeroMoveCode.CannotMove || code === HeroMoveCode.Hit) {
+            void controller.stop();
+            // TODO: 处理撞击图块逻辑
+            return { x: tile.x, y: tile.y };
+        }
+
+        if (code === HeroMoveCode.Stop) {
+            void controller.stop();
+            // TODO: 清除自动寻路
+            return { x: tile.x, y: tile.y };
+        }
+
+        if (type === ObjectMoveStepType.Teleport) {
+            return this.calcPos(tile, step.x, step.y, step.rel);
+        }
+
+        if (type === ObjectMoveStepType.Jump) {
+            return this.calcPos(tile, step.x, step.y, step.rel);
+        }
+
+        const offset = getFaceMovement(this.moveDirection);
+        const nx = tile.x + offset.x;
+        const ny = tile.y + offset.y;
+
+        // TODO: 路线记录
+        // TODO: 中毒伤害处理
+        // TODO: 步数累计
+
+        return { x: nx, y: ny };
+    }
+
+    /**
+     * 计算传送 / 跳跃的目标坐标
+     * @param tile 当前所在图块
+     * @param x 目标横坐标或偏移量
+     * @param y 目标纵坐标或偏移量
+     * @param rel 是否使用相对模式
+     */
+    private calcPos(
+        tile: IHeroLocation,
         x: number,
         y: number,
-        time: number = 500,
-        waitFollower: boolean = false
-    ): Promise<void> {
-        await Promise.all(
-            this.forEachHook(hook => {
-                return hook.onJumpHero?.(x, y, time, waitFollower);
-            })
-        );
-        this.x = x;
-        this.y = y;
+        rel: boolean
+    ): ITileLocator {
+        if (rel) {
+            return { x: tile.x + x, y: tile.y + y };
+        }
+        return { x, y };
     }
 
-    setImage(image: ImageIds): void {
-        this.image = image;
-        this.forEachHook(hook => {
-            hook.onSetImage?.(image);
-        });
-    }
-
-    setAlpha(alpha: number): void {
-        this.alpha = alpha;
-        this.forEachHook(hook => {
-            hook.onSetAlpha?.(alpha);
-        });
-    }
-
-    setFollowerAlpha(identifier: string, alpha: number): void {
-        const follower = this.followers.find(v => v.identifier === identifier);
-        if (!follower) return;
-        follower.alpha = alpha;
-        this.forEachHook(hook => {
-            hook.onSetFollowerAlpha?.(identifier, alpha);
-        });
-    }
-
-    addFollower(follower: number, identifier: string): void {
-        this.followers.push({ num: follower, identifier, alpha: 1 });
-        this.forEachHook(hook => {
-            hook.onAddFollower?.(follower, identifier);
-        });
-    }
-
-    removeFollower(identifier: string, animate: boolean = false): void {
-        const index = this.followers.findIndex(
-            v => v.identifier === identifier
-        );
-        if (index === -1) return;
-        this.followers.splice(index, 1);
-        this.forEachHook(hook => {
-            hook.onRemoveFollower?.(identifier, animate);
-        });
-    }
-
-    removeAllFollowers(): void {
-        this.followers.length = 0;
-        this.forEachHook(hook => {
-            hook.onRemoveAllFollowers?.();
-        });
+    /**
+     * 检测当前移动方向前方一格的地形是否可通行
+     */
+    private checkTerrain(
+        _tile: IHeroLocation,
+        _controller: Readonly<IMoverController>
+    ): HeroMoveCode {
+        // TODO: 需要地形检测接口（替代 core.noPass / core.canMoveHero）
+        return HeroMoveCode.Step;
     }
 }

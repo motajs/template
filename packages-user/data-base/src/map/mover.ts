@@ -72,6 +72,19 @@ export class DynamicTileMover extends ObjectMover<IDynamicTile> {
                 locator.y += y;
                 break;
             }
+            case ObjectMoveStepType.Teleport:
+            case ObjectMoveStepType.Jump: {
+                const { x, y, rel } = step;
+                tile.setFaceDirection(this.faceDirection);
+                if (rel) {
+                    locator.x += x;
+                    locator.y += y;
+                } else {
+                    locator.x = x;
+                    locator.y = y;
+                }
+                break;
+            }
         }
         return Promise.resolve(locator);
     }

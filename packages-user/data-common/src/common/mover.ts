@@ -23,7 +23,11 @@ export const enum ObjectMoveStepType {
     /** 特殊步，如前进或后退 */
     Special,
     /** 动画方向步 */
-    AnimDir
+    AnimDir,
+    /** 传送步 */
+    Teleport,
+    /** 跳跃步 */
+    Jump
 }
 
 export const enum ObjectSpecialStep {
@@ -103,13 +107,37 @@ export interface IObjectMoveAnimDir {
     dir: ObjectAnimDirection;
 }
 
+export interface IObjectMoveTP {
+    /** 步骤类型 */
+    type: ObjectMoveStepType.Teleport;
+    /** 目标横坐标 */
+    x: number;
+    /** 目标纵坐标 */
+    y: number;
+    /** 是否相对模式 */
+    rel: boolean;
+}
+
+export interface IObjectMoveJump {
+    /** 步骤类型 */
+    type: ObjectMoveStepType.Jump;
+    /** 目标横坐标 */
+    x: number;
+    /** 目标纵坐标 */
+    y: number;
+    /** 是否相对模式 */
+    rel: boolean;
+}
+
 export type ObjectMoveStep =
     | IObjectMoveStepDir
     | IObjectMoveStepDirFace
     | IObjectMoveStepSpeed
     | IObjectMoveStepFace
     | IObjectMoveStepSpecial
-    | IObjectMoveAnimDir;
+    | IObjectMoveAnimDir
+    | IObjectMoveTP
+    | IObjectMoveJump;
 
 export interface IMoverController {
     /** 本次移动是否已经全部完成 */
@@ -194,6 +222,22 @@ export interface IObjectMover<T extends IObjectMovable> extends IHookable<
     readonly currAnimDir: ObjectAnimDirection;
     /** 当前移动速度，单位毫秒 */
     readonly currentSpeed: number;
+
+    /**
+     * 添加一个瞬移步，到这一步时目标将会瞬移至指定位置
+     * @param x 瞬移目标横坐标
+     * @param y 瞬移目标纵坐标
+     * @param rel 是否使用相对模式，相对模式下目标位置为当前位置加上前两个参数
+     */
+    tp(x: number, y: number, rel?: boolean): this;
+
+    /**
+     * 添加一个跳跃步，目标将会跳跃至指定位置
+     * @param x 跳跃目标横坐标
+     * @param y 跳跃目标纵坐标
+     * @param rel 是否使用相对模式，相对模式下目标位置为当前位置加上前两个参数
+     */
+    jump(x: number, y: number, rel?: boolean): this;
 
     /**
      * 追加若干个绝对方向步，并同步更新移动方向与朝向
@@ -394,6 +438,26 @@ export abstract class ObjectMover<T extends IObjectMovable>
                 this.currentSpeed = step.value;
                 break;
         }
+    }
+
+    tp(x: number, y: number, rel: boolean = false): this {
+        this.pushStep({
+            type: ObjectMoveStepType.Teleport,
+            x,
+            y,
+            rel
+        });
+        return this;
+    }
+
+    jump(x: number, y: number, rel: boolean = false): this {
+        this.pushStep({
+            type: ObjectMoveStepType.Jump,
+            x,
+            y,
+            rel
+        });
+        return this;
     }
 
     step(dir: FaceDirection, count: number = 1): this {
