@@ -1,3 +1,5 @@
+//#region tile
+
 export const enum TileType {
     /** 未知或尚未归类的图块 */
     Unknown,
@@ -19,6 +21,26 @@ export const enum TileType {
     Tileset
 }
 
+export const enum PassBit {
+    /** 上方向掩码 */
+    Up = 0b0001,
+    /** 右方向掩码 */
+    Right = 0b0010,
+    /** 下方向掩码 */
+    Down = 0b0100,
+    /** 左方向掩码 */
+    Left = 0b1000
+}
+
+export interface ITilePassData {
+    /** 是否仅当图块处在事件层时生效 */
+    readonly onlyEvents: boolean;
+    /** 可以离开的方向 */
+    readonly outPass: number;
+    /** 可以进入的方向 */
+    readonly inPass: number;
+}
+
 export interface ITileRawData {
     /** 图块数字 */
     readonly num: number;
@@ -28,6 +50,8 @@ export interface ITileRawData {
     readonly trigger: number;
     /** 图块逻辑类型 */
     readonly type: TileType;
+    /** 图块的通行性对象 */
+    readonly pass: ITilePassData;
 }
 
 export interface ITileLegacyConverter<TLegacy> {
@@ -89,3 +113,5 @@ export interface ITileStore<TLegacy = unknown> {
      */
     fromLegacy(num: number, legacy: TLegacy): ITileRawData;
 }
+
+//#endregion

@@ -1,6 +1,7 @@
 import { isNil } from 'lodash-es';
 import {
     IDynamicLayer,
+    ILayerLocation,
     ILayerState,
     IMapLayer,
     IMapLayerData,
@@ -53,6 +54,10 @@ export class MapLayer
             array: this.mapArray
         };
         this.dynamicLayer = new DynamicLayer(this);
+    }
+
+    inMap(x: number, y: number): boolean {
+        return x >= 0 && y >= 0 && x < this.width && y < this.height;
     }
 
     /**
@@ -150,15 +155,32 @@ export class MapLayer
     }
 
     getBlock(x: number, y: number): number {
-        if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
-            // 不在地图内，返回 -1
+        if (!this.inMap(x, y)) {
             return -1;
         }
         return this.mapArray[y * this.width + x];
     }
 
+    getLocationData(x: number, y: number): ILayerLocation | null {
+        if (!this.inMap(x, y)) return null;
+        const index = y * this.width + x;
+        const num = this.mapArray[index];
+        const raw = this.state.tileStore.getData(num);
+        const dynamics = this.dynamicLayer.getDynamicTilesAt(x, y);
+        const trigger = this.triggerMap.get(index) ?? -1;
+
+        const data: ILayerLocation = {
+            tile: num,
+            raw,
+            trigger,
+            dynamics
+        };
+
+        return data;
+    }
+
     getTriggerType(x: number, y: number): number {
-        if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
+        if (!this.inMap(x, y)) {
             return -1;
         }
         const index = y * this.width + x;
@@ -169,7 +191,7 @@ export class MapLayer
     }
 
     setTriggerType(type: number, x: number, y: number): void {
-        if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
+        if (!this.inMap(x, y)) {
             return;
         }
         const index = y * this.width + x;
@@ -181,7 +203,7 @@ export class MapLayer
     }
 
     revertTrigger(x: number, y: number): void {
-        if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
+        if (this.inMap(x, y)) {
             this.triggerMap.delete(y * this.width + x);
         }
     }

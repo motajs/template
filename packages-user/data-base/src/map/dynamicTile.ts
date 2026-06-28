@@ -4,14 +4,18 @@ import {
     IDataCommon,
     IMoverController,
     IObjectMover,
-    IRoleFaceBinder
+    IRoleFaceBinder,
+    ITileRawData
 } from '@user/data-common';
 import { IDynamicLayer, IDynamicTile } from './types';
 import { DynamicTileMover } from './mover';
+import { logger } from '@motajs/common';
 
 export class DynamicTile implements IDynamicTile {
     readonly state: IDataCommon;
     readonly mover: IObjectMover<IDynamicTile>;
+
+    raw: ITileRawData | null;
     triggerType: number;
 
     /** 当前的朝向绑定对象 */
@@ -26,6 +30,13 @@ export class DynamicTile implements IDynamicTile {
         this.state = layer.state;
         this.mover = new DynamicTileMover(this);
         this.triggerType = -1;
+        const data = this.state.tileStore.getData(num);
+        if (!data) {
+            logger.warn(143, num.toString());
+            this.raw = null;
+        } else {
+            this.raw = data;
+        }
     }
 
     setFaceBinder(binder: IRoleFaceBinder | null): void {

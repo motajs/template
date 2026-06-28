@@ -6,7 +6,8 @@ import {
     IObjectMovable,
     IObjectMover,
     IRoleFaceBinder,
-    ISaveableContent
+    ISaveableContent,
+    ITileRawData
 } from '@user/data-common';
 import { ITileStore } from '@user/data-common';
 
@@ -15,8 +16,19 @@ import { ITileStore } from '@user/data-common';
 export interface IMapLayerData {
     /** 当前引用是否过期，当地图图层内部的地图数组引用更新时，此项会变为 `true` */
     expired: boolean;
-    /** 地图图块数组，是对内部存储的直接引用 */
+    /** 地图图块数组，是对内部存储的直接引用，仅建议读取，不建议修改 */
     array: Uint32Array;
+}
+
+export interface ILayerLocation {
+    /** 该点的静态图块数字 */
+    readonly tile: number;
+    /** 该点的静态图块信息 */
+    readonly raw: ITileRawData | null;
+    /** 该点的静态触发器，-1 表示未设置（即使用图块本身的触发器），否则表示该点的静态触发器，覆盖图块本身的触发器 */
+    readonly trigger: number;
+    /** 该点包含的所有动态图块 */
+    readonly dynamics: Iterable<IDynamicTile>;
 }
 
 export interface IMapLayerHooks extends IHookBase {
@@ -92,6 +104,13 @@ export interface IMapLayer
     readonly dynamicLayer: IDynamicLayer;
 
     /**
+     * 判断指定坐标是否在地图内
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    inMap(x: number, y: number): boolean;
+
+    /**
      * 设置某一点的图块
      * @param block 图块数字
      * @param x 图块横坐标
@@ -106,6 +125,13 @@ export interface IMapLayer
      * @returns 指定点的图块，如果没有图块，返回 0，如果不在地图上，返回 -1
      */
     getBlock(x: number, y: number): number;
+
+    /**
+     * 获取指定点的所有图块信息
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    getLocationData(x: number, y: number): ILayerLocation | null;
 
     /**
      * 获取指定点的静态图块对应的有效触发器类型，若手动覆盖不存在则回退到图块默认触发器
@@ -512,21 +538,21 @@ export interface IDynamicLayerHooks extends IHookBase {
      * @param tile 被创建的动态图块
      * @param layer 所属的动态图层
      */
-    onCreateTile(tile: IDynamicTile, layer: IDynamicLayer): void;
+    onCreateTile?(tile: IDynamicTile, layer: IDynamicLayer): void;
 
     /**
      * 当图块被删除时触发
      * @param tile 被删除的动态图块
      * @param layer 所属的动态图层
      */
-    onDeleteTile(tile: IDynamicTile, layer: IDynamicLayer): Promise<void>;
+    onDeleteTile?(tile: IDynamicTile, layer: IDynamicLayer): Promise<void>;
 
     /**
      * 当更新动态图块的位置时触发（包括使用 `mover` 触发的移动）
      * @param tile 更新位置的图块
      * @param layer 所属的动态图层
      */
-    onUpdateTilePosition(tile: IDynamicTile, layer: IDynamicLayer): void;
+    onUpdateTilePosition?(tile: IDynamicTile, layer: IDynamicLayer): void;
 }
 
 export interface IDynamicLayer
@@ -613,6 +639,8 @@ export interface IDynamicTile extends IObjectMovable, IDataCommonExtended {
     readonly layer: IDynamicLayer;
     /** 当前动态图块的移动器 */
     readonly mover: IObjectMover<IDynamicTile>;
+    /** 当前动态图块的图块数据 */
+    readonly raw: ITileRawData | null;
 
     /**
      * 设置图块朝向，会一并修改 {@link num}，返回设置后的当前图块数字

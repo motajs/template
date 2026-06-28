@@ -17,7 +17,6 @@ import {
 } from '@user/data-common';
 import {
     EnemyManager,
-    HeroMoveController,
     IEnemyManager,
     HeroAttribute,
     HeroState,
@@ -129,9 +128,8 @@ export class CoreState implements ICoreState {
         this.maps = new MapStore(tileStore, this);
 
         // 勇士
-        const heroMover = new HeroMoveController();
         const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
-        const heroState = new HeroState(heroMover, heroAttribute);
+        const heroState = new HeroState(this, dir8, heroAttribute);
         this.hero = heroState;
 
         this.loadProgress = new LoadProgressTotal();
