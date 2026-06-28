@@ -1,5 +1,11 @@
-import { IFacedTileLocator, IHookBase, IHookable } from '@motajs/common';
 import {
+    IFacedTileLocator,
+    IHookBase,
+    IHookable,
+    ITileLocator
+} from '@motajs/common';
+import {
+    FaceDirection,
     IDataCommonExtended,
     IObjectMovable,
     IObjectMover,
@@ -186,13 +192,24 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
 
 //#region 勇士位置
 
-export interface IHeroLocationSave extends Readonly<IFacedTileLocator> {}
+export interface IHeroLocationSave {
+    /** 当前横坐标 */
+    readonly x: number;
+    /** 当前纵坐标 */
+    readonly y: number;
+    /** 当前朝向 */
+    readonly direction: FaceDirection;
+    /** 当前所在楼层 id，undefined 表示尚不处于任何楼层 */
+    readonly floorId: string | undefined;
+}
 
 export interface IHeroLocation
     extends
         ISaveableContent<IHeroLocationSave>,
         IObjectMovable,
         IDataCommonExtended {
+    /** 当前所在楼层 id，undefined 表示尚不处于任何楼层 */
+    readonly floorId: string | undefined;
     /** 勇士的移动对象 */
     readonly mover: IObjectMover<this>;
 }
@@ -210,6 +227,23 @@ export const enum HeroMoveCode {
     Hit,
     /** 不能移动，不触发触发器 */
     CannotMove
+}
+
+export interface ITerrainPassChecker {
+    /** 对应的勇士状态对象 */
+    readonly hero: IHeroState<unknown>;
+
+    /**
+     * 判断在指定楼层中，从指定坐标向指定方向移动一格是否可通行
+     * @param locator 当前位置
+     * @param direction 移动方向
+     * @param floorId 当前楼层 id，可能为 undefined
+     */
+    canPass(
+        locator: ITileLocator,
+        direction: FaceDirection,
+        floorId: string | undefined
+    ): boolean;
 }
 
 export interface IHeroMoverConfig {
@@ -232,6 +266,12 @@ export interface IHeroMover<T extends IHeroLocation> extends IObjectMover<T> {
      * 获取当前移动配置的只读快照
      */
     getConfig(): Readonly<IHeroMoverConfig>;
+
+    /**
+     * 设置地形通行判定器，传入 null 移除判定器
+     * @param checker 地形判定器，null 表示移除
+     */
+    useTerrainChecker(checker: ITerrainPassChecker | null): void;
 }
 
 //#endregion

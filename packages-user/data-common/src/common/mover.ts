@@ -247,6 +247,8 @@ export interface IObjectMover<T extends IObjectMovable> extends IHookable<
     readonly currAnimDir: ObjectAnimDirection;
     /** 当前移动速度，单位毫秒 */
     readonly currentSpeed: number;
+    /** 朝向信息对象 */
+    readonly faceHandler: IFaceHandler<FaceDirection>;
 
     /**
      * 立刻设置移动对象的位置
@@ -367,8 +369,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
     /** 是否调用了 `IMoverController.stop` 接口 */
     private shouldStop: boolean = false;
 
-    /** 朝向处理 */
-    private readonly faceHandler: IFaceHandler<FaceDirection>;
+    readonly faceHandler: IFaceHandler<FaceDirection>;
 
     constructor(faceHandler: IFaceHandler<FaceDirection>) {
         super();

@@ -12,35 +12,39 @@ import {
     HeroMoveCode,
     IHeroLocation,
     IHeroMover,
-    IHeroMoverConfig
+    IHeroMoverConfig,
+    ITerrainPassChecker
 } from './types';
+import { isNil } from 'lodash-es';
 
 export class HeroMover<T extends IHeroLocation>
     extends ObjectMover<T>
     implements IHeroMover<T>
 {
-    readonly tile: T;
-
     /** 本次移动是否不记录进路线系统 */
     private noRoute: boolean = false;
     /** 本次移动是否忽略地形碰撞检测 */
     private ignoreTerrain: boolean = false;
     /** 本次移动是否在特定时机触发自动存档 */
     private autoSave: boolean = false;
+    /** 自定义地形通行判定器 */
+    private terrainChecker: ITerrainPassChecker | null = null;
 
-    constructor(tile: T, faceHandler: IFaceHandler<FaceDirection>) {
+    constructor(
+        readonly tile: T,
+        faceHandler: IFaceHandler<FaceDirection>
+    ) {
         super(faceHandler);
-        this.tile = tile;
     }
 
     config(config: Readonly<IHeroMoverConfig>): this {
-        if (config.noRoute !== undefined) {
+        if (!isNil(config.noRoute)) {
             this.noRoute = config.noRoute;
         }
-        if (config.ignoreTerrain !== undefined) {
+        if (!isNil(config.ignoreTerrain)) {
             this.ignoreTerrain = config.ignoreTerrain;
         }
-        if (config.autoSave !== undefined) {
+        if (!isNil(config.autoSave)) {
             this.autoSave = config.autoSave;
         }
         return this;
@@ -52,6 +56,10 @@ export class HeroMover<T extends IHeroLocation>
             ignoreTerrain: this.ignoreTerrain,
             autoSave: this.autoSave
         };
+    }
+
+    useTerrainChecker(checker: ITerrainPassChecker | null): void {
+        this.terrainChecker = checker;
     }
 
     protected async onMoveStart(
@@ -81,9 +89,7 @@ export class HeroMover<T extends IHeroLocation>
 
         if (!this.ignoreTerrain) {
             const result = this.checkTerrain(tile, controller);
-            if (result !== HeroMoveCode.Step) {
-                return result;
-            }
+            if (result !== HeroMoveCode.Step) return result;
         }
 
         if (this.autoSave) {
@@ -168,10 +174,16 @@ export class HeroMover<T extends IHeroLocation>
      * 检测当前移动方向前方一格的地形是否可通行
      */
     private checkTerrain(
-        _tile: IHeroLocation,
+        tile: IHeroLocation,
         _controller: Readonly<IMoverController>
     ): HeroMoveCode {
-        // TODO: 需要地形检测接口（替代 core.noPass / core.canMoveHero）
-        return HeroMoveCode.Step;
+        if (!this.terrainChecker) return HeroMoveCode.CannotMove;
+        const locator: ITileLocator = { x: tile.x, y: tile.y };
+        const pass = this.terrainChecker.canPass(
+            locator,
+            this.moveDirection,
+            tile.floorId
+        );
+        return pass ? HeroMoveCode.Step : HeroMoveCode.CannotMove;
     }
 }

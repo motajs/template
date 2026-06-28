@@ -6,6 +6,7 @@ import { IHeroLocation, IHeroLocationSave, IHeroMover } from './types';
 export class HeroLocation implements IHeroLocation {
     x: number;
     y: number;
+    floorId: string | undefined = undefined;
 
     readonly state: IDataCommon;
     readonly mover: IHeroMover<this>;
@@ -36,13 +37,15 @@ export class HeroLocation implements IHeroLocation {
         return {
             x: this.x,
             y: this.y,
-            direction: this.mover.faceDirection
+            direction: this.mover.faceDirection,
+            floorId: this.floorId
         };
     }
 
     loadState(state: IHeroLocationSave): void {
         this.x = state.x;
         this.y = state.y;
+        this.floorId = state.floorId;
         this.mover.setFaceDir(state.direction);
     }
 }
