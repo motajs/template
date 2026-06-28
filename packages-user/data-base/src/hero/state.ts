@@ -1,39 +1,66 @@
 import { HeroAttribute } from './attribute';
+import { HeroFollowersController } from './followersController';
+import { HeroLocation } from './location';
+import { HeroRendering } from './rendering';
 import {
     IHeroAttribute,
+    IHeroFollowersController,
+    IHeroLocation,
     IHeroModifier,
-    IHeroMoveController,
+    IHeroRendering,
     IHeroState,
     IHeroStateSave,
     IModifierStateSave,
     IReadonlyHeroAttribute
 } from './types';
-import { SaveCompression } from '@user/data-common';
+import {
+    FaceDirection,
+    IDataCommon,
+    IFaceHandler,
+    SaveCompression
+} from '@user/data-common';
 import { IFacedTileLocator, logger } from '@motajs/common';
 
 export class HeroState<THero> implements IHeroState<THero> {
     /** 修饰器工厂函数注册表 */
-    private readonly registry: Map<string, () => IHeroModifier> = new Map();
+    private readonly registry: Map<
+        string,
+        <K extends keyof THero>() => IHeroModifier<THero[K]>
+    > = new Map();
+
+    readonly location: IHeroLocation;
+    readonly rendering: IHeroRendering;
+    readonly followers: IHeroFollowersController;
 
     constructor(
-        public mover: IHeroMoveController,
+        state: IDataCommon,
+        faceHandler: IFaceHandler<FaceDirection>,
         public attribute: IHeroAttribute<THero>
-    ) {}
-
-    attachMover(mover: IHeroMoveController): void {
-        this.mover = mover;
+    ) {
+        this.rendering = new HeroRendering(state);
+        const defaultLoc: IFacedTileLocator = {
+            x: 0,
+            y: 0,
+            direction: FaceDirection.Down
+        };
+        this.location = new HeroLocation(state, defaultLoc, faceHandler);
+        this.followers = new HeroFollowersController(
+            state,
+            this.location,
+            faceHandler
+        );
     }
 
     attachAttribute(attribute: IHeroAttribute<THero>): void {
         this.attribute = attribute;
     }
 
-    getHeroMover(): IHeroMoveController {
-        return this.mover;
-    }
-
     getLocation(): IFacedTileLocator {
-        return this.mover;
+        return {
+            x: this.location.x,
+            y: this.location.y,
+            direction: this.location.mover.faceDirection
+        };
     }
 
     getModifiableAttribute(): IHeroAttribute<THero> {
@@ -48,7 +75,10 @@ export class HeroState<THero> implements IHeroState<THero> {
         return this.attribute.getModifiableClone();
     }
 
-    registerModifier(type: string, cons: () => IHeroModifier): void {
+    registerModifier(
+        type: string,
+        cons: <K extends keyof THero>() => IHeroModifier<THero[K]>
+    ): void {
         this.registry.set(type, cons);
     }
 
@@ -57,9 +87,8 @@ export class HeroState<THero> implements IHeroState<THero> {
         if (!cons) {
             logger.warn(116, type);
             return null;
-        } else {
-            return cons() as IHeroModifier<T, V>;
         }
+        return cons() as IHeroModifier<T, V>;
     }
 
     createAndInsertModifier<K extends keyof THero, V>(
@@ -73,22 +102,23 @@ export class HeroState<THero> implements IHeroState<THero> {
     }
 
     saveState(compression: SaveCompression): IHeroStateSave<THero> {
-        const modifiers: IModifierStateSave[] = [];
+        const modifiers: IModifierStateSave<THero>[] = [];
         for (const [name, modifier] of this.attribute.iterateModifiers()) {
             modifiers.push({
-                name,
+                name: name as keyof THero,
                 type: modifier.type,
                 state: modifier.saveState(compression)
             });
         }
+        const followerSaves = this.followers
+            .getAllFollowers()
+            .map(v => v.saveState(compression));
+
         return {
             attribute: this.attribute.toStructured(),
-            locator: {
-                x: this.mover.x,
-                y: this.mover.y,
-                direction: this.mover.direction
-            },
-            followers: structuredClone(this.mover.followers),
+            location: this.location.saveState(compression),
+            rendering: this.rendering.saveState(compression),
+            followers: followerSaves,
             modifiers
         };
     }
@@ -102,19 +132,16 @@ export class HeroState<THero> implements IHeroState<THero> {
             const cons = this.registry.get(save.type);
             if (!cons) continue;
             const modifier = cons();
-            modifier.loadState(save.state as never, compression);
-            newAttribute.addModifier(
-                save.name as keyof THero,
-                modifier as unknown as IHeroModifier<THero[keyof THero]>
-            );
+            modifier.loadState(save.state, compression);
+            newAttribute.addModifier(save.name, modifier);
         }
         this.attribute = newAttribute;
-        this.mover.setPosition(state.locator.x, state.locator.y);
-        this.mover.turn(state.locator.direction);
-        this.mover.removeAllFollowers();
-        state.followers.forEach(follower => {
-            this.mover.addFollower(follower.num, follower.identifier);
-            this.mover.setFollowerAlpha(follower.identifier, follower.alpha);
-        });
+        this.location.loadState(state.location, compression);
+        this.rendering.loadState(state.rendering, compression);
+        void this.followers.removeAllFollowers();
+        for (const save of state.followers) {
+            const follower = this.followers.addFollower(save.num);
+            follower.loadState(save, compression);
+        }
     }
 }

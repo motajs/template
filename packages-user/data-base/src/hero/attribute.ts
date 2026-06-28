@@ -43,8 +43,11 @@ export abstract class BaseHeroModifier<T, V> implements IHeroModifier<T, V, V> {
 export class HeroAttribute<THero> implements IHeroAttribute<THero> {
     /** 当前勇士属性修饰器 */
     private readonly modifier: Map<keyof THero, IHeroModifier[]> = new Map();
-    /** 当前每个修饰器对应的属性值 */
-    private readonly modifierName: Map<IHeroModifier, keyof THero> = new Map();
+    /** 当前每个修饰器对应的属性名称 */
+    private readonly modifierName: Map<
+        IHeroModifier<THero[keyof THero]>,
+        keyof THero
+    > = new Map();
     /** 当前勇士最终属性 */
     private readonly finalAttribute: THero;
 
@@ -144,7 +147,7 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
 
     addModifier<K extends keyof THero>(
         name: K,
-        modifier: IHeroModifier<THero[K], unknown>
+        modifier: IHeroModifier<THero[K]>
     ): void {
         if (modifier.owner) {
             const modiferName = modifier.constructor.name;
@@ -181,7 +184,7 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         this.recalculateAttribute(name);
     }
 
-    markModifierDirty(modifier: IHeroModifier): void {
+    markModifierDirty(modifier: IHeroModifier<THero[keyof THero]>): void {
         const name = this.modifierName.get(modifier);
         if (name === undefined) return;
         this.markDirty(name);
@@ -210,9 +213,16 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         return structuredClone(this.attribute);
     }
 
-    *iterateModifiers(): IterableIterator<[keyof THero, IHeroModifier]> {
+    *iterateModifiers(): IterableIterator<[PropertyKey, IHeroModifier]> {
         for (const [modifier, name] of this.modifierName) {
             yield [name, modifier];
         }
+    }
+
+    getModifiers<K extends keyof THero>(
+        name: K
+    ): Iterable<IHeroModifier<THero[K]>> {
+        const arr = this.modifier.get(name) as IHeroModifier<THero[K]>[];
+        return arr ?? [];
     }
 }

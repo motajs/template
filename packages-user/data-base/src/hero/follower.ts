@@ -65,6 +65,7 @@ export class HeroFollower implements IHeroFollower {
 
     saveState(compression: SaveCompression): IHeroFollowerSave {
         return {
+            num: this.num,
             rendering: this.rendering.saveState(compression),
             location: this.location.saveState(compression)
         };

@@ -700,7 +700,7 @@ export interface IEnemyContext<TEnemy, THero> extends IReadonlyEnemyContext<
      * 绑定伤害计算系统
      * @param system 伤害系统
      */
-    attachDamageSystem(system: IDamageSystem<TEnemy, unknown> | null): void;
+    attachDamageSystem(system: IDamageSystem<TEnemy, THero> | null): void;
 
     /**
      * 重建当前上下文中的全部怪物计算结果

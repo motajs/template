@@ -9,9 +9,9 @@ import {
 //#region 勇士属性
 
 export interface IHeroModifier<
-    K = unknown,
-    V = unknown,
-    Save = unknown
+    H = unknown, // 属性值类型
+    V = unknown, // 修饰器参数类型
+    Save = unknown // 存档类型
 > extends ISaveableContent<Save> {
     /** 修饰器类型 */
     readonly type: string;
@@ -45,17 +45,17 @@ export interface IHeroModifier<
      * @param baseValue 该属性值的基础属性值
      * @param name 属性名称
      */
-    modify(value: K, baseValue: K, name: PropertyKey): K;
+    modify(value: H, baseValue: H, name: PropertyKey): H;
 
     /**
      * 深拷贝此修饰器
      */
-    clone(): IHeroModifier<K, V>;
+    clone(): IHeroModifier<H, V>;
 }
 
-export interface IModifierStateSave {
+export interface IModifierStateSave<THero> {
     /** 属性名称 */
-    readonly name: PropertyKey;
+    readonly name: keyof THero;
     /** 修饰器类型 */
     readonly type: string;
     /** 修饰器存档数据 */
@@ -107,6 +107,14 @@ export interface IReadonlyHeroAttribute<THero> {
      * 遍历所有已挂载的属性修饰器
      */
     iterateModifiers(): Iterable<[PropertyKey, IHeroModifier]>;
+
+    /**
+     * 获取指定属性名称的所有修饰器
+     * @param name 属性名称
+     */
+    getModifiers<K extends keyof THero>(
+        name: K
+    ): Iterable<IHeroModifier<THero[K]>>;
 }
 
 export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
@@ -263,6 +271,8 @@ export interface IHeroRendering
 //#region 勇士跟随者
 
 export interface IHeroFollowerSave {
+    /** 跟随者图块数字 */
+    readonly num: number;
     /** 跟随者渲染对象保存 */
     readonly rendering: IHeroRenderingSave;
     /** 跟随者位置保存 */
@@ -369,11 +379,13 @@ export interface IHeroStateSave<THero> {
     /** 勇士属性状态 */
     readonly attribute: THero;
     /** 勇士当前位置 */
-    readonly locator: IHeroLocationSave;
+    readonly location: IHeroLocationSave;
+    /** 勇士渲染状态 */
+    readonly rendering: IHeroRenderingSave;
     /** 勇士当前的跟随者 */
     readonly followers: readonly IHeroFollowerSave[];
     /** 勇士属性修饰器状态 */
-    readonly modifiers: readonly IModifierStateSave[];
+    readonly modifiers: readonly IModifierStateSave<THero>[];
 }
 
 export interface IHeroState<THero> extends ISaveableContent<
