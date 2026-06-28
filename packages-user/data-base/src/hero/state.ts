@@ -1,5 +1,5 @@
 import { HeroAttribute } from './attribute';
-import { HeroFollowersController } from './followersController';
+import { HeroFollowersController } from './follower';
 import { HeroLocation } from './location';
 import { HeroRendering } from './rendering';
 import {

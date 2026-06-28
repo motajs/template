@@ -57,17 +57,12 @@ export class HeroMover<T extends IHeroLocation>
     protected async onMoveStart(
         _tile: IHeroLocation,
         _controller: Readonly<IMoverController>
-    ): Promise<void> {
-        // TODO: 通知渲染端开始移动，同步平滑视角
-    }
+    ): Promise<void> {}
 
     protected async onMoveEnd(
         _tile: IHeroLocation,
         _controller: Readonly<IMoverController>
-    ): Promise<void> {
-        // TODO: 通知渲染端移动结束
-        // TODO: 清除自动寻路状态
-    }
+    ): Promise<void> {}
 
     protected async onStepStart(
         step: ObjectMoveStep,

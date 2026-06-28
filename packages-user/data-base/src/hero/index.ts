@@ -1,6 +1,5 @@
 export * from './attribute';
 export * from './follower';
-export * from './followersController';
 export * from './location';
 export * from './rendering';
 export * from './mover';
