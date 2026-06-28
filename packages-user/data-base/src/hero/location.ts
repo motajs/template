@@ -43,6 +43,6 @@ export class HeroLocation implements IHeroLocation {
     loadState(state: IHeroLocationSave): void {
         this.x = state.x;
         this.y = state.y;
-        this.mover.face(state.direction).start();
+        this.mover.setFaceDir(state.direction);
     }
 }

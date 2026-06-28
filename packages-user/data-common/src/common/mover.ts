@@ -205,6 +205,31 @@ export interface IObjectMoverHooks<T extends IObjectMovable> extends IHookBase {
         tile: T,
         mover: IObjectMover<T>
     ): Promise<void>;
+
+    /**
+     * 当设置移动对象的位置时触发，仅 `setPos` 可以触发
+     * @param x 横坐标
+     * @param y 纵坐标
+     * @param tile 移动器绑定的图块
+     * @param mover 当前移动器
+     */
+    onSetPos?(x: number, y: number, tile: T, mover: IObjectMover<T>): void;
+
+    /**
+     * 当设置移动对象的朝向时触发，仅 `setFaceDir` 可以触发
+     * @param dir 面朝朝向
+     * @param tile 移动器绑定的图块
+     * @param mover 当前移动器
+     */
+    onSetFaceDir?(dir: FaceDirection, tile: T, mover: IObjectMover<T>): void;
+
+    /**
+     * 当设置移动对象的朝向时触发，仅 `setMoveDir` 可以触发
+     * @param dir 移动朝向
+     * @param tile 移动器绑定的图块
+     * @param mover 当前移动器
+     */
+    onSetMoveDir?(dir: FaceDirection, tile: T, mover: IObjectMover<T>): void;
 }
 
 export interface IObjectMover<T extends IObjectMovable> extends IHookable<
@@ -222,6 +247,25 @@ export interface IObjectMover<T extends IObjectMovable> extends IHookable<
     readonly currAnimDir: ObjectAnimDirection;
     /** 当前移动速度，单位毫秒 */
     readonly currentSpeed: number;
+
+    /**
+     * 立刻设置移动对象的位置
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    setPos(x: number, y: number): void;
+
+    /**
+     * 立刻设置移动对象的朝向
+     * @param dir 朝向
+     */
+    setFaceDir(dir: FaceDirection): void;
+
+    /**
+     * 立刻设置移动对象的移动方向
+     * @param dir 朝向
+     */
+    setMoveDir(dir: FaceDirection): void;
 
     /**
      * 添加一个瞬移步，到这一步时目标将会瞬移至指定位置
@@ -424,7 +468,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
                 if (step.direction === ObjectSpecialStep.Backward) {
                     const opposite = this.faceHandler.opposite(dir);
                     this.moveDirection = opposite;
-                    this.faceDirection = opposite;
+                    this.faceDirection = dir;
                 } else {
                     this.moveDirection = dir;
                     this.faceDirection = dir;
@@ -438,6 +482,27 @@ export abstract class ObjectMover<T extends IObjectMovable>
                 this.currentSpeed = step.value;
                 break;
         }
+    }
+
+    setPos(x: number, y: number): void {
+        this.tile.setPos(x, y);
+        this.forEachHook(hook => {
+            hook.onSetPos?.(x, y, this.tile, this);
+        });
+    }
+
+    setFaceDir(dir: FaceDirection): void {
+        this.faceDirection = dir;
+        this.forEachHook(hook => {
+            hook.onSetFaceDir?.(dir, this.tile, this);
+        });
+    }
+
+    setMoveDir(dir: FaceDirection): void {
+        this.moveDirection = dir;
+        this.forEachHook(hook => {
+            hook.onSetMoveDir?.(dir, this.tile, this);
+        });
     }
 
     tp(x: number, y: number, rel: boolean = false): this {
@@ -561,7 +626,9 @@ export abstract class ObjectMover<T extends IObjectMovable>
             );
             await Promise.all(stepStartHooks);
             const loc = await this.onStepEnd(code, step, this.tile, controller);
-            this.tile.setPos(loc.x, loc.y);
+            if (this.tile.x !== loc.x && this.tile.y !== loc.y) {
+                this.tile.setPos(loc.x, loc.y);
+            }
             const stepEndHooks = this.forEachHook(hook =>
                 hook.onStepEnd?.(code, step, this.tile, this)
             );

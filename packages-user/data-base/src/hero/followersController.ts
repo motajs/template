@@ -132,12 +132,12 @@ export class HeroFollowersController
     }
 
     gatherFollowersSync(): void {
-        const targetX = this.heroLocation.x;
-        const targetY = this.heroLocation.y;
-        const targetDir = this.heroLocation.mover.faceDirection;
+        const { x, y } = this.heroLocation;
+        const dir = this.heroLocation.mover.faceDirection;
         for (const follower of this.followers) {
-            follower.location.setPos(targetX, targetY);
-            follower.location.mover.face(targetDir).start();
+            const mover = follower.location.mover;
+            mover.setPos(x, y);
+            mover.setFaceDir(dir);
         }
         this.forEachHook(hook => {
             hook.onGatherFollowers?.(true);
