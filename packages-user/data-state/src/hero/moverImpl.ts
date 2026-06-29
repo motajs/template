@@ -1,22 +1,25 @@
 import {
     IHeroMoveTopHandler,
     IHeroMoveTopImpl,
-    IMapStore,
-    IStateBase
+    IMapStore
 } from '@user/data-base';
 import { FaceDirection, PassBit } from '@user/data-common';
-import { ITriggerCollector, ITriggerHandler } from '@user/data-system';
+import {
+    IStateSystem,
+    ITriggerCollector,
+    ITriggerHandler
+} from '@user/data-system';
 import { isNil } from 'lodash-es';
 
 export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
     /** 地图存储对象 */
     private readonly maps: IMapStore;
+    /** 触发器收集器对象 */
+    private readonly collector: ITriggerCollector;
 
-    constructor(
-        private readonly state: IStateBase,
-        private readonly collector: ITriggerCollector
-    ) {
+    constructor(private readonly state: IStateSystem) {
         this.maps = state.maps;
+        this.collector = state.triggerCollector;
     }
 
     //#region 通行性判断

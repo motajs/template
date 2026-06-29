@@ -210,10 +210,7 @@ export class CoreState implements ICoreState {
         });
 
         // 勇士顶层初始化
-        const heroMoveTopImpl = new DefaultHeroMoveTopImpl(
-            this,
-            this.triggerCollector
-        );
+        const heroMoveTopImpl = new DefaultHeroMoveTopImpl(this);
         this.hero.location.mover.useTopImplementation(heroMoveTopImpl);
 
         //#endregion
