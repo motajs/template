@@ -100,7 +100,7 @@ export class HeroMover<T extends IHeroLocation>
     }
 
     /**
-     * 创建通行性检查信息对象
+     * 创建撞击行为信息对象
      * @param curr 勇士所在位置
      * @param dir 勇士移动方向
      * @param floorId 当前楼层 id
