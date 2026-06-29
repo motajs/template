@@ -66,6 +66,8 @@ import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
 import { ISaveSystem, SaveSystem } from './save';
+import { DefaultPassChecker } from './hero';
+import { DefaultHitAction } from './hero/hitAction';
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
@@ -207,6 +209,16 @@ export class CoreState implements ICoreState {
                 core.floors as Record<FloorIds, ResolvedFloor>
             );
         });
+
+        // 勇士顶层初始化
+        const passChecker = new DefaultPassChecker(this.maps);
+        const hitAction = new DefaultHitAction(
+            this.maps,
+            this.triggerCollector,
+            this
+        );
+        this.hero.location.mover.useTerrainChecker(passChecker);
+        this.hero.location.mover.useHitAction(hitAction);
 
         //#endregion
     }

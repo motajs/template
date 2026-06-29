@@ -1,6 +1,5 @@
 import { FaceDirection, PassBit } from '@user/data-common';
 import {
-    IHeroState,
     IMapStore,
     IPassCheckerHandler,
     ITerrainPassChecker
@@ -8,10 +7,7 @@ import {
 import { isNil } from 'lodash-es';
 
 export class DefaultPassChecker implements ITerrainPassChecker {
-    constructor(
-        readonly maps: IMapStore,
-        readonly hero: IHeroState<unknown>
-    ) {}
+    constructor(readonly maps: IMapStore) {}
 
     /**
      * 将朝向转换为对应的通行性位掩码。
@@ -54,10 +50,10 @@ export class DefaultPassChecker implements ITerrainPassChecker {
             return true;
         }
 
-        const layerState = this.maps.getLayerState(floorId);
-        if (!layerState) return false;
-        const eventLayer = layerState.eventLayer;
-        if (!eventLayer) return false;
+        const map = this.maps.getLayerState(floorId);
+        if (!map) return false;
+        const event = map.eventLayer;
+        if (!event) return false;
 
         const { x, y } = currLoc;
         const { x: nx, y: ny } = nextLoc;
@@ -70,8 +66,8 @@ export class DefaultPassChecker implements ITerrainPassChecker {
         let canEnter = true;
 
         // 判断事件层
-        const curr = eventLayer.getLocationData(x, y);
-        const next = eventLayer.getLocationData(nx, ny);
+        const curr = event.getLocationData(x, y);
+        const next = event.getLocationData(nx, ny);
         if (curr && curr.raw) {
             canLeave = !!(leaveMask & curr.raw.pass.outPass);
         }
@@ -82,8 +78,8 @@ export class DefaultPassChecker implements ITerrainPassChecker {
         if (!canLeave || !canEnter) return false;
 
         // 判断其他层
-        for (const layer of layerState.layerList) {
-            if (layer === eventLayer) continue;
+        for (const layer of map.layerList) {
+            if (layer === event) continue;
             const curr = layer.getLocationData(x, y);
             const next = layer.getLocationData(nx, ny);
             let canLeave = true;

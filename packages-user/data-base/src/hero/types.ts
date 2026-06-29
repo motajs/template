@@ -212,7 +212,7 @@ export interface IHeroLocation
     /** 当前所在楼层 id，undefined 表示尚不处于任何楼层 */
     readonly floorId: string | undefined;
     /** 勇士的移动对象 */
-    readonly mover: IObjectMover<this>;
+    readonly mover: IHeroMover<this>;
 }
 
 //#endregion
