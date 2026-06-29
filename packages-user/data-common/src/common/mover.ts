@@ -11,7 +11,7 @@ import { IFaceHandler } from './faceManager';
 
 //#region 对象移动
 
-export const enum ObjectMoveStepType {
+export const enum ObjectMoveType {
     /** 绝对方向步，同步更新移动方向与朝向 */
     Dir,
     /** 绝对方向步，显式指定朝向 */
@@ -65,14 +65,14 @@ export interface IObjectMovable {
 
 export interface IObjectMoveStepDir {
     /** 步骤类型 */
-    type: ObjectMoveStepType.Dir;
+    type: ObjectMoveType.Dir;
     /** 本步移动方向 */
     move: FaceDirection;
 }
 
 export interface IObjectMoveStepDirFace {
     /** 步骤类型 */
-    type: ObjectMoveStepType.DirFace;
+    type: ObjectMoveType.DirFace;
     /** 本步移动方向 */
     move: FaceDirection;
     /** 本步显式朝向 */
@@ -81,35 +81,35 @@ export interface IObjectMoveStepDirFace {
 
 export interface IObjectMoveStepSpeed {
     /** 步骤类型 */
-    type: ObjectMoveStepType.Speed;
+    type: ObjectMoveType.Speed;
     /** 后续移动的每格耗时，单位为 ms */
     value: number;
 }
 
 export interface IObjectMoveStepFace {
     /** 步骤类型 */
-    type: ObjectMoveStepType.Face;
+    type: ObjectMoveType.Face;
     /** 要设置的朝向 */
     value: FaceDirection;
 }
 
 export interface IObjectMoveStepSpecial {
     /** 步骤类型 */
-    type: ObjectMoveStepType.Special;
+    type: ObjectMoveType.Special;
     /** 特殊步方向 */
     direction: ObjectSpecialStep;
 }
 
 export interface IObjectMoveAnimDir {
     /** 步骤类型 */
-    type: ObjectMoveStepType.AnimDir;
+    type: ObjectMoveType.AnimDir;
     /** 动画播放方向 */
     dir: ObjectAnimDirection;
 }
 
 export interface IObjectMoveTP {
     /** 步骤类型 */
-    type: ObjectMoveStepType.Teleport;
+    type: ObjectMoveType.Teleport;
     /** 目标横坐标 */
     x: number;
     /** 目标纵坐标 */
@@ -120,7 +120,7 @@ export interface IObjectMoveTP {
 
 export interface IObjectMoveJump {
     /** 步骤类型 */
-    type: ObjectMoveStepType.Jump;
+    type: ObjectMoveType.Jump;
     /** 目标横坐标 */
     x: number;
     /** 目标纵坐标 */
@@ -149,13 +149,13 @@ export interface IMoverController {
      * 向当前移动队列末尾追加步骤
      * @param steps 要追加的步骤列表
      */
-    push(...steps: ObjectMoveStep[]): void;
+    push(...steps: Readonly<ObjectMoveStep>[]): void;
 
     /**
      * 在当前步移动之后立刻插入指定步，顺序为参数传入的顺序
      * @param steps 要插入的步骤列表
      */
-    insert(...steps: ObjectMoveStep[]): void;
+    insert(...steps: Readonly<ObjectMoveStep>[]): void;
 
     /**
      * 停止当前移动，在当前步骤完成后兑现
@@ -187,7 +187,7 @@ export interface IObjectMoverHooks<T extends IObjectMovable> extends IHookBase {
      */
     onStepStart?(
         code: number,
-        step: ObjectMoveStep,
+        step: Readonly<ObjectMoveStep>,
         tile: T,
         mover: IObjectMover<T>
     ): Promise<void>;
@@ -201,7 +201,7 @@ export interface IObjectMoverHooks<T extends IObjectMovable> extends IHookBase {
      */
     onStepEnd?(
         code: number,
-        step: ObjectMoveStep,
+        step: Readonly<ObjectMoveStep>,
         tile: T,
         mover: IObjectMover<T>
     ): Promise<void>;
@@ -409,7 +409,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
      * @param controller 移动控制器
      */
     protected abstract onStepStart(
-        step: ObjectMoveStep,
+        step: Readonly<ObjectMoveStep>,
         tile: T,
         controller: Readonly<IMoverController>
     ): Promise<number>;
@@ -423,7 +423,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
      */
     protected abstract onStepEnd(
         code: number,
-        step: ObjectMoveStep,
+        step: Readonly<ObjectMoveStep>,
         tile: T,
         controller: Readonly<IMoverController>
     ): Promise<ITileLocator>;
@@ -451,20 +451,20 @@ export abstract class ObjectMover<T extends IObjectMovable>
      * 根据步骤内容预先同步移动器内部状态
      * @param step 当前步骤
      */
-    private prepareStep(step: ObjectMoveStep): void {
+    private prepareStep(step: Readonly<ObjectMoveStep>): void {
         switch (step.type) {
-            case ObjectMoveStepType.Dir:
+            case ObjectMoveType.Dir:
                 this.moveDirection = step.move;
                 this.faceDirection = step.move;
                 break;
-            case ObjectMoveStepType.DirFace:
+            case ObjectMoveType.DirFace:
                 this.moveDirection = step.move;
                 this.faceDirection = step.face;
                 break;
-            case ObjectMoveStepType.Face:
+            case ObjectMoveType.Face:
                 this.faceDirection = step.value;
                 break;
-            case ObjectMoveStepType.Special: {
+            case ObjectMoveType.Special: {
                 const dir = this.getCurrentDirection();
                 if (step.direction === ObjectSpecialStep.Backward) {
                     const opposite = this.faceHandler.opposite(dir);
@@ -476,10 +476,10 @@ export abstract class ObjectMover<T extends IObjectMovable>
                 }
                 break;
             }
-            case ObjectMoveStepType.AnimDir:
+            case ObjectMoveType.AnimDir:
                 this.currAnimDir = step.dir;
                 break;
-            case ObjectMoveStepType.Speed:
+            case ObjectMoveType.Speed:
                 this.currentSpeed = step.value;
                 break;
         }
@@ -508,7 +508,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
 
     tp(x: number, y: number, rel: boolean = false): this {
         this.pushStep({
-            type: ObjectMoveStepType.Teleport,
+            type: ObjectMoveType.Teleport,
             x,
             y,
             rel
@@ -518,7 +518,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
 
     jump(x: number, y: number, rel: boolean = false): this {
         this.pushStep({
-            type: ObjectMoveStepType.Jump,
+            type: ObjectMoveType.Jump,
             x,
             y,
             rel
@@ -529,7 +529,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
     step(dir: FaceDirection, count: number = 1): this {
         for (let i = 0; i < count; i++) {
             this.pushStep({
-                type: ObjectMoveStepType.Dir,
+                type: ObjectMoveType.Dir,
                 move: dir
             });
         }
@@ -543,7 +543,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
     ): this {
         for (let i = 0; i < count; i++) {
             this.pushStep({
-                type: ObjectMoveStepType.DirFace,
+                type: ObjectMoveType.DirFace,
                 move,
                 face
             });
@@ -554,7 +554,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
     forward(count: number = 1): this {
         for (let i = 0; i < count; i++) {
             this.pushStep({
-                type: ObjectMoveStepType.Special,
+                type: ObjectMoveType.Special,
                 direction: ObjectSpecialStep.Forward
             });
         }
@@ -564,7 +564,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
     backward(count: number = 1): this {
         for (let i = 0; i < count; i++) {
             this.pushStep({
-                type: ObjectMoveStepType.Special,
+                type: ObjectMoveType.Special,
                 direction: ObjectSpecialStep.Backward
             });
         }
@@ -573,7 +573,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
 
     speed(value: number): this {
         this.pushStep({
-            type: ObjectMoveStepType.Speed,
+            type: ObjectMoveType.Speed,
             value
         });
         return this;
@@ -581,7 +581,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
 
     face(dir: FaceDirection): this {
         this.pushStep({
-            type: ObjectMoveStepType.Face,
+            type: ObjectMoveType.Face,
             value: dir
         });
         return this;
@@ -589,7 +589,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
 
     animDir(dir: ObjectAnimDirection): this {
         this.pushStep({
-            type: ObjectMoveStepType.AnimDir,
+            type: ObjectMoveType.AnimDir,
             dir
         });
         return this;
@@ -605,7 +605,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
      * @param queue 移动队列
      */
     private async moveProgress(
-        queue: ObjectMoveStep[],
+        queue: Readonly<ObjectMoveStep>[],
         controller: Readonly<IMoverController>
     ) {
         // 移动开始

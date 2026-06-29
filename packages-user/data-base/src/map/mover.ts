@@ -3,7 +3,7 @@ import {
     getFaceMovement,
     ObjectMover,
     ObjectMoveStep,
-    ObjectMoveStepType
+    ObjectMoveType
 } from '@user/data-common';
 import { IDynamicTile } from './types';
 import { DYNAMIC_MOVER_FACE } from '../shared';
@@ -47,33 +47,33 @@ export class DynamicTileMover extends ObjectMover<IDynamicTile> {
             y: tile.y
         };
         switch (step.type) {
-            case ObjectMoveStepType.Dir: {
+            case ObjectMoveType.Dir: {
                 const { x, y } = getFaceMovement(step.move);
                 tile.setFaceDirection(step.move);
                 locator.x += x;
                 locator.y += y;
                 break;
             }
-            case ObjectMoveStepType.DirFace: {
+            case ObjectMoveType.DirFace: {
                 const { x, y } = getFaceMovement(step.move);
                 tile.setFaceDirection(step.face);
                 locator.x += x;
                 locator.y += y;
                 break;
             }
-            case ObjectMoveStepType.Face: {
+            case ObjectMoveType.Face: {
                 tile.setFaceDirection(step.value);
                 break;
             }
-            case ObjectMoveStepType.Special: {
+            case ObjectMoveType.Special: {
                 const { x, y } = getFaceMovement(this.moveDirection);
                 tile.setFaceDirection(this.faceDirection);
                 locator.x += x;
                 locator.y += y;
                 break;
             }
-            case ObjectMoveStepType.Teleport:
-            case ObjectMoveStepType.Jump: {
+            case ObjectMoveType.Teleport:
+            case ObjectMoveType.Jump: {
                 const { x, y, rel } = step;
                 tile.setFaceDirection(this.faceDirection);
                 if (rel) {

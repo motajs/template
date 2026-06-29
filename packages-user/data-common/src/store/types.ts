@@ -52,6 +52,11 @@ export interface ITileRawData {
     readonly type: TileType;
     /** 图块的通行性对象 */
     readonly pass: ITilePassData;
+    /**
+     * 事件可通行性，当为 `false` 时，玩家会通过撞击触发图块的触发器，
+     * 当为 `true` 时，玩家会通过走上去触发图块的触发器。类似于旧样板的 `noPass`
+     */
+    readonly eventPass: boolean;
 }
 
 export interface ITileLegacyConverter<TLegacy> {

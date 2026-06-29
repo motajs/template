@@ -3,7 +3,7 @@ import {
     ILayerState,
     IMapLayer,
     IStateBase,
-    IStateBaseExtended
+    IDataBaseExtended
 } from '@user/data-base';
 
 export interface ITriggerHandler {
@@ -19,7 +19,7 @@ export interface ITriggerHandler {
 
 export type TriggerFactory = (type: number, state: IStateBase) => ITrigger;
 
-export interface ITrigger extends IStateBaseExtended {
+export interface ITrigger extends IDataBaseExtended {
     /** 触发器类型标识 */
     readonly type: number;
     /** 触发器优先级 */
@@ -37,7 +37,7 @@ export interface ITrigger extends IStateBaseExtended {
     collection(): ITriggerCollection;
 }
 
-export interface ITriggerRegistry extends IStateBaseExtended {
+export interface ITriggerRegistry extends IDataBaseExtended {
     /**
      * 注册一个按类型创建的触发器工厂
      * @param type 触发器类型

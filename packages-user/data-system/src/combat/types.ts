@@ -5,14 +5,13 @@ import {
     ISpecial,
     IReadonlyHeroAttribute,
     IHeroAttribute,
-    IStateBase,
-    IStateBaseExtended
+    IDataBaseExtended
 } from '@user/data-base';
 import { ILocationHelper } from '@user/data-common';
 
 //#region 辅助接口
 
-export interface IEnemyHandler<TEnemy, THero> {
+export interface IEnemyHandler<TEnemy, THero> extends IDataBaseExtended {
     /** 怪物属性信息 */
     readonly enemy: IEnemy<TEnemy>;
     /** 怪物上下文 */
@@ -21,11 +20,12 @@ export interface IEnemyHandler<TEnemy, THero> {
     readonly locator: ITileLocator;
     /** 勇士属性信息 */
     readonly hero: IReadonlyHeroAttribute<THero>;
-    /** 当前全局状态对象 */
-    readonly state: IStateBase;
 }
 
-export interface IReadonlyEnemyHandler<TEnemy, THero> {
+export interface IReadonlyEnemyHandler<
+    TEnemy,
+    THero
+> extends IDataBaseExtended {
     /** 怪物属性信息 */
     readonly enemy: IReadonlyEnemy<TEnemy>;
     /** 怪物上下文 */
@@ -34,8 +34,6 @@ export interface IReadonlyEnemyHandler<TEnemy, THero> {
     readonly locator: ITileLocator;
     /** 勇士属性信息 */
     readonly hero: IReadonlyHeroAttribute<THero>;
-    /** 当前全局状态对象 */
-    readonly state: IStateBase;
 }
 
 //#endregion
@@ -283,7 +281,7 @@ export interface IMapDamageReducer {
     ): Readonly<IMapDamageInfo>;
 }
 
-export interface IMapDamage<TEnemy, THero> extends IStateBaseExtended {
+export interface IMapDamage<TEnemy, THero> extends IDataBaseExtended {
     /** 当前绑定的怪物上下文 */
     readonly context: IEnemyContext<TEnemy, THero>;
 
@@ -406,7 +404,7 @@ export interface IDamageCalculator<TEnemy, THero> {
     ): number;
 }
 
-export interface IDamageContext<TEnemy, THero> extends IStateBaseExtended {
+export interface IDamageContext<TEnemy, THero> extends IDataBaseExtended {
     /**
      * 获取战斗伤害信息
      * @param enemy 怪物视图
@@ -499,7 +497,7 @@ export interface IDamageSystem<TEnemy, THero> extends IDamageContext<
 export interface IReadonlyEnemyContext<
     TEnemy,
     THero
-> extends IStateBaseExtended {
+> extends IDataBaseExtended {
     /** 怪物上下文宽度 */
     readonly width: number;
     /** 怪物上下文高度 */
@@ -739,7 +737,7 @@ export interface IEnemyContext<TEnemy, THero> extends IReadonlyEnemyContext<
 
 //#region 战斗流程
 
-export interface ICombatFlowHandler<TEnemy, THero> {
+export interface ICombatFlowHandler<TEnemy, THero> extends IDataBaseExtended {
     /** 战斗的怪物是否在地图上 */
     readonly onMap: boolean;
     /** 可修改勇士对象 */
@@ -750,8 +748,6 @@ export interface ICombatFlowHandler<TEnemy, THero> {
     readonly context: IEnemyContext<TEnemy, THero>;
     /** 怪物位置 */
     readonly locator: ITileLocator;
-    /** 全局状态对象 */
-    readonly state: IStateBase;
 }
 
 export interface ICombatFlowHook<TEnemy, THero> extends IHookBase {
@@ -803,7 +799,7 @@ export interface ICombatResult<TEnemy, THero> {
 }
 
 export interface ICombatFlow<TEnemy, THero>
-    extends IHookable<ICombatFlowHook<TEnemy, THero>>, IStateBaseExtended {
+    extends IHookable<ICombatFlowHook<TEnemy, THero>>, IDataBaseExtended {
     /** 勇士属性对象 */
     readonly hero: IReadonlyHeroAttribute<THero> | null;
     /** 怪物上下文对象 */

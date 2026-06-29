@@ -1,6 +1,7 @@
 import { FaceDirection } from './types';
 
 /**
+ * @deprecated 用 `IFaceHandler` 接口
  * 获取指定朝向的坐标偏移量
  * @param dir 朝向
  */
@@ -28,6 +29,7 @@ export function getFaceMovement(dir: FaceDirection): Loc {
 }
 
 /**
+ * @deprecated 用 `IFaceHandler` 接口
  * 将八方向朝向降级为四方向朝向
  * @param dir 朝向
  * @param unknown 如果朝向是 `FaceDirection.Unknown`，那么会返回什么，默认值是未知
@@ -52,6 +54,7 @@ export function degradeFace(
 }
 
 /**
+ * @deprecated 用 `IFaceHandler` 接口
  * 获取指定朝向旋转后的朝向
  * @param dir 当前朝向
  * @param anticlockwise 是否逆时针旋转，默认顺时针
@@ -155,6 +158,7 @@ export function nextFaceDirection(
 }
 
 /**
+ * @deprecated 用 `IFaceHandler` 接口
  * 根据朝向字符串获取朝向枚举值
  * @param dir 朝向字符串
  */

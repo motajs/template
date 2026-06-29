@@ -36,25 +36,22 @@ export class TileLegacyBridge implements ITileLegacyConverter<LegacyTileData> {
 
     private getPass(num: number, legacy: LegacyTileData): ITilePassData {
         if (num === 0) {
+            // 空图块
             return {
                 onlyEvents: true,
                 inPass: 0b1111,
                 outPass: 0b1111
             };
         } else if (num === 17) {
+            // 空气墙
             return {
                 onlyEvents: false,
                 inPass: 0b0000,
                 outPass: 0b0000
             };
         } else {
-            if (legacy.noPass) {
-                return {
-                    onlyEvents: true,
-                    inPass: 0b0000,
-                    outPass: 0b1111
-                };
-            } else if (legacy.cannotIn && legacy.cannotOut) {
+            // 正常图块
+            if (legacy.cannotIn && legacy.cannotOut) {
                 let inPass = 0b1111;
                 let outPass = 0b1111;
                 if (legacy.cannotIn.includes('up')) {
@@ -102,7 +99,8 @@ export class TileLegacyBridge implements ITileLegacyConverter<LegacyTileData> {
             id: legacy.id,
             trigger: -1,
             type: this.getTileType(num, legacy),
-            pass: this.getPass(num, legacy)
+            pass: this.getPass(num, legacy),
+            eventPass: !legacy.noPass
         };
     }
 }

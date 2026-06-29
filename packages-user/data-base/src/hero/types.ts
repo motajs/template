@@ -7,6 +7,7 @@ import {
 import {
     FaceDirection,
     IDataCommonExtended,
+    IFaceHandler,
     IObjectMovable,
     IObjectMover,
     ISaveableContent
@@ -229,21 +230,52 @@ export const enum HeroMoveCode {
     CannotMove
 }
 
+export interface IHeroMoveHandlerBase extends IDataCommonExtended {
+    /** 当前位置 */
+    readonly currLoc: ITileLocator;
+    /** 要移动至的位置 */
+    readonly nextLoc: ITileLocator;
+    /** 移动方向 */
+    readonly direction: FaceDirection;
+    /** 当前楼层 id */
+    readonly floorId: string | undefined;
+}
+
+export interface IPassCheckerHandler extends IHeroMoveHandlerBase {
+    /** 朝向管理对象 */
+    readonly face: IFaceHandler<FaceDirection>;
+}
+
+export interface IHeroHitHandler extends IHeroMoveHandlerBase {}
+
 export interface ITerrainPassChecker {
-    /** 对应的勇士状态对象 */
-    readonly hero: IHeroState<unknown>;
+    /**
+     * 检查目标位置是否在地图范围内
+     * @param x 横坐标
+     * @param y 纵坐标
+     * @param floorId 楼层 id
+     */
+    inBound(x: number, y: number, floorId: string | undefined): boolean;
 
     /**
      * 判断在指定楼层中，从指定坐标向指定方向移动一格是否可通行
-     * @param locator 当前位置
-     * @param direction 移动方向
-     * @param floorId 当前楼层 id，可能为 undefined
+     * @param handler 通行性检查对象
      */
-    canPass(
-        locator: ITileLocator,
-        direction: FaceDirection,
-        floorId: string | undefined
-    ): boolean;
+    canPass(handler: IPassCheckerHandler): boolean;
+
+    /**
+     * 判断在指定楼层中，从指定坐标向指定方向移动时是否应该产生撞击，撞击将会触发目标位置的触发器
+     * @param handler 通行性检查对象
+     */
+    shouldHit(handler: IPassCheckerHandler): boolean;
+}
+
+export interface IHeroHitAction {
+    /**
+     * 勇士撞击某一个图块时执行的内容，一般用于触发目标位置的触发器
+     * @param handler 撞击行为对象
+     */
+    hit(handler: IHeroHitHandler): Promise<void>;
 }
 
 export interface IHeroMoverConfig {
@@ -255,7 +287,8 @@ export interface IHeroMoverConfig {
     autoSave?: boolean;
 }
 
-export interface IHeroMover<T extends IHeroLocation> extends IObjectMover<T> {
+export interface IHeroMover<T extends IHeroLocation>
+    extends IObjectMover<T>, IDataCommonExtended {
     /**
      * 配置本次移动的行为模式
      * @param config 配置对象，未传入的字段保持当前值
@@ -268,10 +301,16 @@ export interface IHeroMover<T extends IHeroLocation> extends IObjectMover<T> {
     getConfig(): Readonly<IHeroMoverConfig>;
 
     /**
-     * 设置地形通行判定器，传入 null 移除判定器
-     * @param checker 地形判定器，null 表示移除
+     * 设置地形通行判定器，传入 `null` 移表示移除
+     * @param checker 地形判定器
      */
     useTerrainChecker(checker: ITerrainPassChecker | null): void;
+
+    /**
+     * 设置勇士撞击行为的执行对象，传入 `null` 表示移除。
+     * @param action 撞击行为对象
+     */
+    useHitAction(action: IHeroHitAction | null): void;
 }
 
 //#endregion
