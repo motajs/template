@@ -1,13 +1,25 @@
-import { FaceDirection, PassBit } from '@user/data-common';
 import {
+    IHeroMoveTopHandler,
+    IHeroMoveTopImpl,
     IMapStore,
-    IPassCheckerHandler,
-    ITerrainPassChecker
+    IStateBase
 } from '@user/data-base';
+import { FaceDirection, PassBit } from '@user/data-common';
+import { ITriggerCollector, ITriggerHandler } from '@user/data-system';
 import { isNil } from 'lodash-es';
 
-export class DefaultPassChecker implements ITerrainPassChecker {
-    constructor(readonly maps: IMapStore) {}
+export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
+    /** 地图存储对象 */
+    private readonly maps: IMapStore;
+
+    constructor(
+        private readonly state: IStateBase,
+        private readonly collector: ITriggerCollector
+    ) {
+        this.maps = state.maps;
+    }
+
+    //#region 通行性判断
 
     /**
      * 将朝向转换为对应的通行性位掩码。
@@ -36,7 +48,7 @@ export class DefaultPassChecker implements ITerrainPassChecker {
         return x >= 0 && y >= 0 && x < width && y < height;
     }
 
-    canPass(handler: IPassCheckerHandler): boolean {
+    canPass(handler: IHeroMoveTopHandler): boolean {
         const { currLoc, nextLoc, direction, floorId, face } = handler;
         if (isNil(floorId)) return false;
 
@@ -96,7 +108,7 @@ export class DefaultPassChecker implements ITerrainPassChecker {
         return true;
     }
 
-    shouldHit(handler: IPassCheckerHandler): boolean {
+    shouldHit(handler: IHeroMoveTopHandler): boolean {
         const { nextLoc, floorId } = handler;
         if (isNil(floorId)) return false;
         const layerState = this.maps.getLayerState(floorId);
@@ -110,4 +122,31 @@ export class DefaultPassChecker implements ITerrainPassChecker {
         if (!next || !next.raw) return false;
         return !next.raw.eventPass;
     }
+
+    //#endregion
+
+    //#region 触发器行为
+
+    async hit(handler: IHeroMoveTopHandler): Promise<void> {
+        if (isNil(handler.floorId)) return;
+
+        const map = this.maps.getLayerState(handler.floorId);
+        if (!map) return;
+        const event = map.eventLayer;
+        if (!event) return;
+
+        const { x, y } = handler.nextLoc;
+        const triggers = this.collector.collect(x, y, event);
+
+        const triggerHandler: ITriggerHandler = {
+            state: this.state,
+            layer: map,
+            mapLayer: event,
+            locator: handler.nextLoc
+        };
+
+        return triggers.trigger(triggerHandler);
+    }
+
+    //#endregion
 }

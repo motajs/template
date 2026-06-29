@@ -1,2 +1,2 @@
-export * from './passChecker';
+export * from './moverImpl';
 export * from './types';

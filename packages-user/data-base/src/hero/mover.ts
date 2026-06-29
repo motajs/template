@@ -1,4 +1,4 @@
-import { ITileLocator } from '@motajs/common';
+import { ITileLocator, logger } from '@motajs/common';
 import {
     FaceDirection,
     IFaceHandler,
@@ -10,13 +10,11 @@ import {
 } from '@user/data-common';
 import {
     HeroMoveCode,
-    IHeroHitAction,
-    IHeroHitHandler,
     IHeroLocation,
     IHeroMover,
     IHeroMoverConfig,
-    IPassCheckerHandler,
-    ITerrainPassChecker
+    IHeroMoveTopHandler,
+    IHeroMoveTopImpl
 } from './types';
 import { isNil } from 'lodash-es';
 
@@ -26,17 +24,17 @@ export class HeroMover<T extends IHeroLocation>
 {
     readonly state: IDataCommon;
 
-    /** 本次移动是否不记录进路线系统 */
+    /** 是否不记录进路线系统 */
     private noRoute: boolean = false;
-    /** 本次移动是否忽略地形碰撞检测 */
+    /** 是否忽略地形碰撞检测 */
     private ignoreTerrain: boolean = false;
-    /** 本次移动是否在特定时机触发自动存档 */
+    /** 是否在特定时机触发自动存档 */
     private autoSave: boolean = false;
+    /** 是否允许到达地图外 */
+    private allowOutBound: boolean = false;
 
-    /** 地形通行判定器 */
-    private terrainChecker: ITerrainPassChecker | null = null;
-    /** 撞击行为对象 */
-    private hitAction: IHeroHitAction | null = null;
+    /** 勇士移动顶层实现对象 */
+    private topImpl: IHeroMoveTopImpl | null = null;
 
     constructor(
         readonly tile: T,
@@ -46,7 +44,7 @@ export class HeroMover<T extends IHeroLocation>
         this.state = tile.state;
     }
 
-    config(config: Readonly<IHeroMoverConfig>): this {
+    config(config: Partial<IHeroMoverConfig>): this {
         if (!isNil(config.noRoute)) {
             this.noRoute = config.noRoute;
         }
@@ -56,6 +54,9 @@ export class HeroMover<T extends IHeroLocation>
         if (!isNil(config.autoSave)) {
             this.autoSave = config.autoSave;
         }
+        if (!isNil(config.allowOutBound)) {
+            this.allowOutBound = config.allowOutBound;
+        }
         return this;
     }
 
@@ -63,66 +64,75 @@ export class HeroMover<T extends IHeroLocation>
         return {
             noRoute: this.noRoute,
             ignoreTerrain: this.ignoreTerrain,
-            autoSave: this.autoSave
+            autoSave: this.autoSave,
+            allowOutBound: this.allowOutBound
         };
     }
 
-    useTerrainChecker(checker: ITerrainPassChecker | null): void {
-        this.terrainChecker = checker;
-    }
-
-    useHitAction(action: IHeroHitAction | null): void {
-        this.hitAction = action;
+    useTopImplementation(impl: IHeroMoveTopImpl | null): void {
+        this.topImpl = impl;
     }
 
     /**
-     * 创建通行性检查信息对象
+     * 创建顶层信息对象
      * @param curr 勇士所在位置
      * @param dir 勇士移动方向
      * @param floorId 当前楼层 id
      */
-    private createPassHandler(
+    private createHandler(
         curr: ITileLocator,
-        dir: FaceDirection,
+        step: Readonly<ObjectMoveStep>,
         floorId: string | undefined
-    ): IPassCheckerHandler {
-        const { x, y } = this.faceHandler.movement(dir);
-        const nx = curr.x + x;
-        const ny = curr.y + y;
-        return {
-            currLoc: curr,
-            nextLoc: { x: nx, y: ny },
-            direction: dir,
-            floorId,
-            face: this.faceHandler,
-            state: this.state
-        };
+    ): IHeroMoveTopHandler {
+        switch (step.type) {
+            case ObjectMoveType.Dir:
+            case ObjectMoveType.DirFace:
+            case ObjectMoveType.Special: {
+                const { x, y } = this.faceHandler.movement(this.moveDirection);
+                const nx = curr.x + x;
+                const ny = curr.y + y;
+                return {
+                    currLoc: { x: curr.x, y: curr.y },
+                    nextLoc: { x: nx, y: ny },
+                    direction: this.moveDirection,
+                    floorId,
+                    face: this.faceHandler,
+                    state: this.state
+                };
+            }
+            case ObjectMoveType.Jump:
+            case ObjectMoveType.Teleport: {
+                const nx = step.rel ? curr.x + step.x : step.x;
+                const ny = step.rel ? curr.y + step.y : step.y;
+                return {
+                    currLoc: { x: curr.x, y: curr.y },
+                    nextLoc: { x: nx, y: ny },
+                    direction: this.moveDirection,
+                    floorId,
+                    face: this.faceHandler,
+                    state: this.state
+                };
+            }
+            case ObjectMoveType.AnimDir:
+            case ObjectMoveType.Face:
+            case ObjectMoveType.Speed: {
+                return {
+                    currLoc: { x: curr.x, y: curr.y },
+                    nextLoc: { x: curr.x, y: curr.y },
+                    direction: this.moveDirection,
+                    floorId,
+                    face: this.faceHandler,
+                    state: this.state
+                };
+            }
+        }
     }
 
-    /**
-     * 创建撞击行为信息对象
-     * @param curr 勇士所在位置
-     * @param dir 勇士移动方向
-     * @param floorId 当前楼层 id
-     */
-    private createHitHandler(
-        curr: ITileLocator,
-        dir: FaceDirection,
-        floorId: string | undefined
-    ): IHeroHitHandler {
-        const { x, y } = this.faceHandler.movement(dir);
-        const nx = curr.x + x;
-        const ny = curr.y + y;
-        return {
-            currLoc: curr,
-            nextLoc: { x: nx, y: ny },
-            direction: dir,
-            floorId,
-            state: this.state
-        };
+    protected async onMoveStart(): Promise<void> {
+        if (!this.topImpl) {
+            logger.warn(144);
+        }
     }
-
-    protected async onMoveStart(): Promise<void> {}
 
     protected async onMoveEnd(): Promise<void> {}
 
@@ -130,28 +140,28 @@ export class HeroMover<T extends IHeroLocation>
         step: Readonly<ObjectMoveStep>,
         tile: IHeroLocation
     ): Promise<number> {
-        if (!this.terrainChecker) return HeroMoveCode.CannotMove;
+        if (!this.topImpl) return HeroMoveCode.Stop;
 
         const type = step.type;
+        const handler = this.createHandler(tile, step, tile.floorId);
 
+        // 边界判断
+        const { x: nx, y: ny } = handler.nextLoc;
+        const inBound = this.topImpl.inBound(nx, ny, handler.floorId);
+        if (!this.allowOutBound && !inBound) return HeroMoveCode.CannotMove;
+
+        // 移动步判断
         if (
             type === ObjectMoveType.Dir ||
             type === ObjectMoveType.DirFace ||
             type === ObjectMoveType.Special
         ) {
-            const dir = this.moveDirection;
-            const handler = this.createPassHandler(tile, dir, tile.floorId);
-            const { x: nx, y: ny } = handler.nextLoc;
-            const inBound = this.terrainChecker.inBound(nx, ny, tile.floorId);
-            // 目标点不在地图内
-            if (!inBound) return HeroMoveCode.CannotMove;
-
             if (this.ignoreTerrain) {
                 return HeroMoveCode.Step;
             } else {
-                const canPass = this.terrainChecker.canPass(handler);
+                const canPass = this.topImpl.canPass(handler);
                 if (canPass) {
-                    const hit = this.terrainChecker.shouldHit(handler);
+                    const hit = this.topImpl.shouldHit(handler);
                     if (hit) return HeroMoveCode.Hit;
                     else return HeroMoveCode.Step;
                 } else {
@@ -160,14 +170,12 @@ export class HeroMover<T extends IHeroLocation>
             }
         }
 
-        // 跳跃和瞬移仅需要进行边界判断
+        // 跳跃和瞬移
         if (type === ObjectMoveType.Jump || type === ObjectMoveType.Teleport) {
-            const nx = step.rel ? tile.x + step.x : step.x;
-            const ny = step.rel ? tile.y + step.y : step.y;
             if (this.ignoreTerrain) {
                 return HeroMoveCode.Step;
             } else {
-                if (this.terrainChecker.inBound(nx, ny, tile.floorId)) {
+                if (inBound) {
                     return HeroMoveCode.Step;
                 } else {
                     return HeroMoveCode.Stop;
@@ -175,6 +183,7 @@ export class HeroMover<T extends IHeroLocation>
             }
         }
 
+        // 其他的一律可以直接执行
         return HeroMoveCode.Step;
     }
 
@@ -184,7 +193,9 @@ export class HeroMover<T extends IHeroLocation>
         tile: IHeroLocation,
         controller: Readonly<IMoverController>
     ): Promise<ITileLocator> {
-        const type = step.type;
+        if (!this.topImpl) return { x: tile.x, y: tile.y };
+
+        const handler = this.createHandler(tile, step, tile.floorId);
 
         // 不能移动或停止
         if (code === HeroMoveCode.CannotMove || code === HeroMoveCode.Stop) {
@@ -195,12 +206,7 @@ export class HeroMover<T extends IHeroLocation>
 
         // 撞击时也使用当前位置，同时处理撞击行为
         if (code === HeroMoveCode.Hit) {
-            // 执行撞击行为
-            if (this.hitAction) {
-                const dir = this.moveDirection;
-                const handler = this.createHitHandler(tile, dir, tile.floorId);
-                await this.hitAction.hit(handler);
-            }
+            await this.topImpl.hit(handler);
             // 这里同样不能 await
             controller.stop();
             return { x: tile.x, y: tile.y };
@@ -208,30 +214,7 @@ export class HeroMover<T extends IHeroLocation>
 
         // 正常移动
         if (code === HeroMoveCode.Step) {
-            if (
-                type === ObjectMoveType.Teleport ||
-                type === ObjectMoveType.Jump
-            ) {
-                // 瞬移行为
-                if (step.rel) {
-                    return { x: tile.x + step.x, y: tile.y + step.y };
-                } else {
-                    return { x: step.x, y: step.y };
-                }
-            } else if (
-                type === ObjectMoveType.Dir ||
-                type === ObjectMoveType.DirFace ||
-                type === ObjectMoveType.Special
-            ) {
-                // 移动行为
-                const { x, y } = this.faceHandler.movement(this.moveDirection);
-                const nx = tile.x + x;
-                const ny = tile.y + y;
-                return { x: nx, y: ny };
-            } else {
-                // 其他行为
-                return { x: tile.x, y: tile.y };
-            }
+            return handler.nextLoc;
         }
 
         return { x: tile.x, y: tile.y };
