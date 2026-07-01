@@ -136,6 +136,31 @@ export const enum ItemCategory {
     Equipment
 }
 
+export interface IItemEffect {
+    /** 即捡即用事件内容（Pick 类型） */
+    readonly pickEvent: unknown;
+    /** 道具使用事件内容（Constant 和 Consumable 类型） */
+    readonly useEvent: unknown;
+
+    /**
+     * 即捡即用效果，拾取道具时调用
+     * @param item 当前道具数据
+     */
+    pickEffect(item: IItemRawData): void;
+
+    /**
+     * 道具使用效果，使用道具时调用
+     * @param item 当前道具数据
+     */
+    useEffect(item: IItemRawData): void;
+
+    /**
+     * 能否使用道具
+     * @param item 当前道具数据
+     */
+    canUse(item: IItemRawData): boolean;
+}
+
 export interface IItemRawData {
     /** 道具在地图上的图块数字 */
     readonly num: number;
@@ -148,16 +173,11 @@ export interface IItemRawData {
     /** 道具描述文本 */
     readonly text: string;
 
-    /** 即捡即用效果（Pick 类型） */
-    readonly pickEffect: string;
-    /** 即捡即用事件（Pick 类型） */
-    readonly pickEvent: unknown;
-    /** 道具使用效果（Constant 和 Consumable 类型） */
-    readonly useEffect: string;
-    /** 道具使用事件（Constant 和 Consumable 类型） */
-    readonly useEvent: unknown;
-    /** 是否能够使用道具（Constant 和 Consumable 类型） */
-    readonly canUse: string;
+    /** 是否在道具栏中隐藏 */
+    readonly hideInToolbox: boolean;
+
+    /** 道具效果对象（非 Equipment 类型） */
+    readonly effect: IItemEffect;
     /** 装备道具属性（Equipment 类型） */
     readonly equip: unknown;
 }

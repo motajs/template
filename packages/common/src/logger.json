@@ -202,6 +202,7 @@
         "141": "Some issue may occur in binded damage system on combat flow, please check the console.",
         "142": "Expected a specific tile number after convert id '$1' to number, but got null.",
         "143": "Cannot create dynamic tile for $1 since its raw data is not found.",
-        "144": "A hero move top implementation object binding is required for hero moving."
+        "144": "A hero move top implementation object binding is required for hero moving.",
+        "145": "No tile registered for item '$1'."
     }
 }

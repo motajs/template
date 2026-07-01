@@ -22,7 +22,7 @@
 
 ### 设计意图
 
-参考 `ITileRawData` 的设计，`IItemRawData` 是道具的原始数据定义，存储于 `IItemStore` 中。与 `ITileRawData` 具有 `num`（图块数字）、`id`（字符串标识符）、`type`（逻辑类型）等字段一样，`IItemRawData` 存储道具的项目级静态定义。该接口已存在于 `store/types.ts` 中（当前为空占位），需要补齐字段。
+参考 `ITileRawData` 的设计，`IItemRawData` 是道具的原始数据定义，存储于 `IItemStore` 中。除基础数据字段外，通过 `readonly effect: IItemEffect` 成员承载道具效果。旧样板字符串效果由 `IItemLegacyConverter` 在转换时通过 `new Function` 编译为 `IItemEffect` 实例。
 
 `IItemStore` 作为 Layer 0 的基础设施被 `IDataCommon` 持有，与 `ITileStore` 平级。后续 `IItemManager`（Layer 1）通过 `IDataCommonExtended.state.itemStore` 访问原始数据，据此创建 `IItem<TAttr>` 运行时实例。
 
@@ -33,20 +33,39 @@
 - `IItemRawData.category`：预期频率**中频**。道具分类，决定使用时的基础行为分支。典型使用场景：拾取道具时判断是否为 `Pick` 类以立即触发效果。
 - `IItemRawData.name`：预期频率**高频**。道具显示名称，UI 展示的核心字段。
 - `IItemRawData.text`：预期频率**低频**。道具描述文本，仅详情展示时出现。
+- `IItemRawData.effect`：预期频率**中频**。道具效果对象，包含 `pickEffect`、`useEffect`、`canUse` 三个方法。典型使用场景：拾取道具时调用 `effect.pickEffect(state)` 触发即捡即用效果。
 
 ### 预期体量
 
-`IItemRawData` 为纯数据接口，约 10–12 行。
+`IItemRawData` 约 15–20 行（含 `effect` 成员）。
+
+## IItemEffect
+
+### 设计意图
+
+道具效果接口，与 `IItemRawData` 并列定义在 `store/types.ts` 中。包含 `pickEffect`、`useEffect`、`canUse` 三个方法，参数为当前道具的 `IItemRawData`。由 `IItemLegacyConverter` 在转换时通过 `new Function` 编译实例化，编译函数内部自行持有 `IStateSystem` 引用（由实现类构造函数传入），方法内据此调用编译函数。
+
+### 接口分析
+
+- `IItemEffect.pickEffect`：预期频率**低频**。拾取道具时调用（仅 `Pick` 类型），参数为当前道具数据。
+- `IItemEffect.useEffect`：预期频率**中频**。使用道具时调用（`Constant` 和 `Consumable` 类型），参数为当前道具数据。典型使用场景：使用消耗道具触发属性变化。
+- `IItemEffect.canUse`：预期频率**中频**。判定道具是否可用（`Constant` 和 `Consumable` 类型），参数为当前道具数据。典型使用场景：开门钥匙判断是否满足使用条件。
+
+### 预期体量
+
+`IItemEffect` 约 12–15 行。
 
 ## IItemLegacyConverter
 
 ### 设计意图
 
-参考 `ITileLegacyConverter`，定义从旧样板道具对象到 `IItemRawData` 的转换器接口。与后续 `IItemLegacyBridge` 不同——`IItemLegacyConverter` 位于 store 层负责原始数据的导入，`IItemLegacyBridge`（Layer 1）负责运行时属性的转换。二者分层独立，分别处理静态数据与运行时对象。
+参考 `ITileLegacyConverter`，定义从旧样板道具对象到 `IItemRawData` 的转换器接口。转换时需将旧样板中的字符串效果（`itemEffect`、`useItemEffect`、`canUseItemEffect`）通过 `new Function` 编译为 `IItemEffect` 实例，赋给 `IItemRawData.effect`。编编译函数签名为 `(state: IStateSystem) => void`（`canUse` 返回 `boolean`），实现类内部自行持有 `IStateSystem`，接口方法仅传递 `IItemRawData`。
+
+与后续 `IItemLegacyBridge` 不同——`IItemLegacyConverter` 位于 store 层负责原始数据的导入（含效果编译），`IItemLegacyBridge`（Layer 1）负责运行时属性的转换。二者分层独立，分别处理静态数据与运行时对象。
 
 ### 接口分析
 
-- `IItemLegacyConverter.fromLegacy`：预期频率**低频**。仅在样板加载阶段调用，执行旧格式→新格式的批量转换。
+- `IItemLegacyConverter.fromLegacy`：预期频率**低频**。仅在样板加载阶段调用，执行旧格式→新格式的批量转换，含字符串效果的编译。
 
 ### 预期体量
 
@@ -82,14 +101,15 @@
 ### `@user/data-common/src/store/types.ts`
 
 - [x] 新增 `ItemCategory` 枚举：包含 `Unknown`、`Constant`、`Consumable`、`Pick`、`Equipment` 五个成员。放在 `store/types.ts` 以避免与 `types.ts` 的循环引用。
-- [x] 补齐 `IItemRawData` 接口（原为空占位）：新增 `num`、`id`、`category`、`name`、`text` 字段。
-- [x] 新增 `IItemLegacyConverter<TLegacy>` 接口：定义旧样板道具→`IItemRawData` 的转换方法。
+- [x] 补齐 `IItemRawData` 接口：新增 `readonly effect: IItemEffect` 成员。
+- [x] 新增 `IItemEffect` 接口：包含 `pickEffect(item: IItemRawData): void`、`useEffect(item: IItemRawData): void`、`canUse(item: IItemRawData): boolean` 三个方法。
+- [x] 新增 `IItemLegacyConverter<TLegacy>` 接口：定义旧样板道具→`IItemRawData` 的转换方法，负责将旧样板字符串效果编译为 `IItemEffect` 实例。
 - [x] 新增 `IItemStore<TLegacy>` 接口：提供 `getData`、`getCategory`、`addItem`、`attachLegacyConverter`、`fromLegacy` 方法，不需要 id↔num 双向索引。
 
 ### `@user/data-common/src/store/itemStore.ts`（新建）
 
 - [x] 新增 `ItemStore<TLegacy>` 类：实现 `IItemStore<TLegacy>` 接口，参考 `TileStore` 的实现模式。
-- [x] 内部维护 `dataMap: Map<number, IItemRawData>` 一张表，无需 id↔num 双向映射。
+- [x] 内部维护 `dataMap: Map<number, IItemRawData>` 一张表，无需 id num 双向映射。
 - [x] 实现 `fromLegacy`：无 converter 时抛出错误。
 
 ### `@user/data-common/src/store/index.ts`

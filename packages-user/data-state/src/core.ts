@@ -15,7 +15,9 @@ import {
     IHeroAttr,
     IEnemyAttr,
     ISaveSystem,
-    SaveSystem
+    SaveSystem,
+    IItemStore,
+    ItemStore
 } from '@user/data-common';
 import {
     EnemyManager,
@@ -63,7 +65,12 @@ import {
     TILE_HEIGHT,
     TILE_WIDTH
 } from './shared';
-import { LegacyTileData, TileLegacyBridge } from './legacy';
+import {
+    ItemLegacyBridge,
+    LegacyItemData,
+    LegacyTileData,
+    TileLegacyBridge
+} from './legacy';
 import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
@@ -73,8 +80,9 @@ export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
-    readonly tileStore: ITileStore<LegacyTileData>;
     readonly saveSystem: ISaveSystem;
+    readonly tileStore: ITileStore<LegacyTileData>;
+    readonly itemStore: IItemStore<LegacyItemData>;
 
     // Layer 1 数据层，所有可存档内容都在这，一般用于数据存储
     readonly maps: IMapStore;
@@ -118,6 +126,10 @@ export class CoreState implements ICoreState {
         const tileStore = new TileStore<LegacyTileData>();
         tileStore.attachLegacyConverter(new TileLegacyBridge());
         this.tileStore = tileStore;
+        // 道具
+        const itemStore = new ItemStore<LegacyItemData>();
+        itemStore.attachLegacyConverter(new ItemLegacyBridge(this));
+        this.itemStore = itemStore;
 
         //#endregion
 
@@ -203,6 +215,7 @@ export class CoreState implements ICoreState {
         // 加载初始化，先使用兼容层实现
         loading.once('loaded', () => {
             this.initTileStore(core.maps.blocksInfo);
+            this.initItemStore(core.items.items);
             this.initEnemyManager(enemys_fcae963b_31c9_42b4_b48c_bb48d09f3f80);
             this.initMapStore(
                 core.floorIds,
@@ -247,6 +260,22 @@ export class CoreState implements ICoreState {
             if (!isNil(rightNum)) {
                 this.roleFace.bind(rightNum, downNum, FaceDirection.Right);
             }
+        }
+    }
+
+    /**
+     * 初始化道具存储对象
+     * @param data 旧样板道具定义对象
+     */
+    private initItemStore(data: typeof core.items.items) {
+        const entries = Object.entries(data);
+        for (const [id, legacy] of entries) {
+            const num = this.tileStore.idToNumber(id);
+            if (isNil(num)) {
+                logger.warn(145, id);
+                continue;
+            }
+            this.itemStore.fromLegacy(num, legacy);
         }
     }
 
