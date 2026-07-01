@@ -13,7 +13,9 @@ import {
     FaceGroup,
     FaceDirection,
     IHeroAttr,
-    IEnemyAttr
+    IEnemyAttr,
+    ISaveSystem,
+    SaveSystem
 } from '@user/data-common';
 import {
     EnemyManager,
@@ -65,7 +67,6 @@ import { LegacyTileData, TileLegacyBridge } from './legacy';
 import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
-import { ISaveSystem, SaveSystem } from './save';
 import { DefaultHeroMoveTopImpl } from './hero';
 
 export class CoreState implements ICoreState {
@@ -73,6 +74,7 @@ export class CoreState implements ICoreState {
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
     readonly tileStore: ITileStore<LegacyTileData>;
+    readonly saveSystem: ISaveSystem;
 
     // Layer 1 数据层，所有可存档内容都在这，一般用于数据存储
     readonly maps: IMapStore;
@@ -88,7 +90,6 @@ export class CoreState implements ICoreState {
     // Layer 3 用户层，也就是最顶层的内容，一般仅用于初始化以及仅供渲染端调用的顶层模块
     readonly loadProgress: ILoadProgressTotal;
     readonly dataLoader: IMotaDataLoader;
-    readonly saveSystem: ISaveSystem;
 
     /** 可存档对象映射 */
     private readonly saveables: Map<string, ISaveableContent<any>> = new Map();

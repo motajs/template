@@ -1,6 +1,7 @@
 import { ITileLocator } from '@motajs/common';
 import { IFaceManager, IRoleFaceBinder } from './common';
 import { ITileStore } from './store';
+import { ISaveSystem } from './save';
 
 export interface IEnemyAttr {
     /** 怪物生命值 */
@@ -49,6 +50,8 @@ export interface IDataCommon {
     readonly roleFace: IRoleFaceBinder;
     /** 朝向管理 */
     readonly faceManager: IFaceManager;
+    /** 存档系统 */
+    readonly saveSystem: ISaveSystem;
 }
 
 export interface IDataCommonExtended {

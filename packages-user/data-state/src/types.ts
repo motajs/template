@@ -1,6 +1,5 @@
 import { IMotaDataLoader, IStateBase } from '@user/data-base';
 import { ILoadProgressTotal } from '@motajs/loader';
-import { ISaveSystem } from './save';
 import { IStateSystem } from '@user/data-system';
 import { ISaveableContent } from '@user/data-common';
 
@@ -18,8 +17,6 @@ export interface ICoreState extends IStateSystem {
     readonly loadProgress: ILoadProgressTotal;
     /** 数据端加载对象 */
     readonly dataLoader: IMotaDataLoader;
-    /** 存档系统 */
-    readonly saveSystem: ISaveSystem;
 
     /**
      * 将某个存档执行器绑定至指定的可存档对象，一个可存档对象只能绑定一个执行器，

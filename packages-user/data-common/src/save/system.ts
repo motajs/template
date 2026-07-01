@@ -4,9 +4,10 @@ import {
     IGlobalTrasaction,
     ISaveRead,
     ISaveSystem,
-    ISaveSystemConfig
+    ISaveSystemConfig,
+    ISaveableContent,
+    SaveCompression
 } from './types';
-import { ISaveableContent, SaveCompression } from '@user/data-common';
 import { isNil } from 'lodash-es';
 
 interface ISaveRecord {
