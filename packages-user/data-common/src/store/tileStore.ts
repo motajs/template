@@ -70,7 +70,7 @@ export class TileStore<TLegacy = unknown> implements ITileStore<TLegacy> {
         const converter = this.legacyConverter;
         if (!converter) {
             logger.error(56);
-            throw new Error('Expected a tile legacy converter');
+            throw new Error('Expected a tile legacy converter.');
         }
         const data = converter.fromLegacy(num, legacy);
         this.addTile(data);

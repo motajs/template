@@ -68,7 +68,7 @@ export interface ITileLegacyConverter<TLegacy> {
     fromLegacy(num: number, legacy: TLegacy): ITileRawData;
 }
 
-export interface ITileStore<TLegacy = unknown> {
+export interface ITileStore<TLegacy> {
     /**
      * 获取指定图块数字对应的完整原始定义
      * @param num 图块数字
@@ -117,6 +117,91 @@ export interface ITileStore<TLegacy = unknown> {
      * @param legacy 旧样板图块定义
      */
     fromLegacy(num: number, legacy: TLegacy): ITileRawData;
+}
+
+//#endregion
+
+//#region item
+
+export const enum ItemCategory {
+    /** 未知或尚未归类的道具 */
+    Unknown,
+    /** 永久道具，使用后不会消耗 */
+    Constant,
+    /** 一次性道具，使用后消耗 */
+    Consumable,
+    /** 即捡即用道具，捡到立刻生效 */
+    Pick,
+    /** 装备类道具，可装备 / 卸下 */
+    Equipment
+}
+
+export interface IItemRawData {
+    /** 道具在地图上的图块数字 */
+    readonly num: number;
+    /** 道具的字符串标识符 */
+    readonly id: string;
+    /** 道具分类 */
+    readonly category: ItemCategory;
+    /** 道具显示名称 */
+    readonly name: string;
+    /** 道具描述文本 */
+    readonly text: string;
+
+    /** 即捡即用效果（Pick 类型） */
+    readonly pickEffect: string;
+    /** 即捡即用事件（Pick 类型） */
+    readonly pickEvent: unknown;
+    /** 道具使用效果（Constant 和 Consumable 类型） */
+    readonly useEffect: string;
+    /** 道具使用事件（Constant 和 Consumable 类型） */
+    readonly useEvent: unknown;
+    /** 是否能够使用道具（Constant 和 Consumable 类型） */
+    readonly canUse: string;
+    /** 装备道具属性（Equipment 类型） */
+    readonly equip: unknown;
+}
+
+export interface IItemLegacyConverter<TLegacy> {
+    /**
+     * 将旧样板道具定义转换为新的道具原始数据
+     * @param num 道具图块数字
+     * @param legacy 旧样板道具定义
+     */
+    fromLegacy(num: number, legacy: TLegacy): IItemRawData;
+}
+
+export interface IItemStore<TLegacy> {
+    /**
+     * 获取指定图块数字对应的道具原始数据
+     * @param num 道具图块数字
+     */
+    getData(num: number): IItemRawData | null;
+
+    /**
+     * 获取指定图块数字对应的道具分类
+     * @param num 道具图块数字
+     */
+    getCategory(num: number): ItemCategory;
+
+    /**
+     * 添加一个道具原始数据定义
+     * @param data 道具原始数据
+     */
+    addItem(data: IItemRawData): void;
+
+    /**
+     * 挂载一个旧样板转换器
+     * @param converter 旧样板转换器
+     */
+    attachLegacyConverter(converter: IItemLegacyConverter<TLegacy>): void;
+
+    /**
+     * 使用当前转换器转换并写入一个旧样板道具定义
+     * @param num 道具图块数字
+     * @param legacy 旧样板道具定义
+     */
+    fromLegacy(num: number, legacy: TLegacy): IItemRawData;
 }
 
 //#endregion

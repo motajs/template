@@ -1,6 +1,6 @@
 import { ITileLocator } from '@motajs/common';
 import { IFaceManager, IRoleFaceBinder } from './common';
-import { ITileStore } from './store';
+import { IItemStore, ITileStore } from './store';
 import { ISaveSystem } from './save';
 
 export interface IEnemyAttr {
@@ -46,6 +46,8 @@ export interface IHeroAttr {
 export interface IDataCommon {
     /** 图块定义存储 */
     readonly tileStore: ITileStore<MapDataOf<keyof NumberToId>>;
+    /** 道具定义存储 */
+    readonly itemStore: IItemStore;
     /** 朝向绑定 */
     readonly roleFace: IRoleFaceBinder;
     /** 朝向管理 */

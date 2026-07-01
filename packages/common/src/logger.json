@@ -55,7 +55,8 @@
         "53": "Expected serializable value set as enemy's default attribute.",
         "54": "Legacy '$1' API has been removed, consider using new APIs: '$2'.",
         "55": "Cannot load MapStore state: reference data (compareWith) has not been set.",
-        "56": "Cannot convert legacy tile data since no tile legacy converter is attached to TileStore."
+        "56": "Cannot convert legacy tile data since no tile legacy converter is attached to TileStore.",
+        "57": "Cannot convert legacy item data since no item legacy converter is attached to ItemStore."
     },
     "warn": {
         "1": "Resource with type of 'none' is loaded.",
