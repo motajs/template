@@ -78,9 +78,9 @@ import { DefaultHeroMoveTopImpl } from './hero';
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
+    readonly saveSystem: ISaveSystem;
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
-    readonly saveSystem: ISaveSystem;
     readonly tileStore: ITileStore<LegacyTileData>;
     readonly itemStore: IItemStore<LegacyItemData>;
 
@@ -111,6 +111,17 @@ export class CoreState implements ICoreState {
 
     constructor() {
         //#region L0 初始化
+
+        // 存档系统
+        this.saveSystem = new SaveSystem();
+        // 配置存档系统，一般情况下不建议动，除非你知道你在干什么
+        this.saveSystem.config({
+            autosaveLevel: SaveCompression.LowCompression,
+            commonSaveLevel: SaveCompression.HighCompression,
+            autosaveTimeTolerance: 50,
+            saveTimeTolerance: 100,
+            autosaveStackSize: 20
+        });
 
         // 朝向
         this.roleFace = new RoleFaceBinder();
@@ -193,16 +204,7 @@ export class CoreState implements ICoreState {
 
         //#region L3 初始化
 
-        // 存档系统
-        this.saveSystem = new SaveSystem();
-        // 配置存档系统，一般情况下不建议动，除非你知道你在干什么
-        this.saveSystem.config({
-            autosaveLevel: SaveCompression.LowCompression,
-            commonSaveLevel: SaveCompression.HighCompression,
-            autosaveTimeTolerance: 50,
-            saveTimeTolerance: 100,
-            autosaveStackSize: 20
-        });
+        // 存档内容
         this.addSaveableContent('@system/hero', this.hero);
         this.addSaveableContent('@system/flags', this.flags);
         this.addSaveableContent('@system/maps', this.maps);
