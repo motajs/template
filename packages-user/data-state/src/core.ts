@@ -82,7 +82,7 @@ export class CoreState implements ICoreState {
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
     readonly tileStore: ITileStore<LegacyTileData>;
-    readonly itemStore: IItemStore<LegacyItemData>;
+    readonly itemStore: IItemStore<IHeroAttr, LegacyItemData>;
 
     // Layer 1 数据层，所有可存档内容都在这，一般用于数据存储
     readonly maps: IMapStore;

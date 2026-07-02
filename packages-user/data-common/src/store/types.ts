@@ -136,7 +136,7 @@ export const enum ItemCategory {
     Equipment
 }
 
-export interface IItemEffect {
+export interface IItemEffect<THero> {
     /** 即捡即用事件内容（Pick 类型） */
     readonly pickEvent: unknown;
     /** 道具使用事件内容（Constant 和 Consumable 类型） */
@@ -146,22 +146,37 @@ export interface IItemEffect {
      * 即捡即用效果，拾取道具时调用
      * @param item 当前道具数据
      */
-    pickEffect(item: IItemRawData): void;
+    pickEffect(item: IItemRawData<THero>): void;
 
     /**
      * 道具使用效果，使用道具时调用
      * @param item 当前道具数据
      */
-    useEffect(item: IItemRawData): void;
+    useEffect(item: IItemRawData<THero>): void;
 
     /**
      * 能否使用道具
      * @param item 当前道具数据
      */
-    canUse(item: IItemRawData): boolean;
+    canUse(item: IItemRawData<THero>): boolean;
 }
 
-export interface IItemRawData {
+export interface IItemEquipData<THero> {
+    /** 可以装备至的装备槽，`number` 表示指定索引装备槽，`string` 表示指定装备槽名称，每个装备槽之间为或的关系 */
+    readonly slots: (number | string)[];
+    /** 动画 id */
+    readonly animate: AnimationIds;
+    /** 数值加成 */
+    readonly value: Map<SelectKey<THero, number>, number>;
+    /** 百分比加成 */
+    readonly percentage: Map<SelectKey<THero, number>, number>;
+    /** 穿上装备事件 */
+    readonly loadEvent: unknown;
+    /** 脱下装备事件 */
+    readonly unloadEvent: unknown;
+}
+
+export interface IItemRawData<THero> {
     /** 道具在地图上的图块数字 */
     readonly num: number;
     /** 道具的字符串标识符 */
@@ -177,26 +192,26 @@ export interface IItemRawData {
     readonly hideInToolbox: boolean;
 
     /** 道具效果对象（非 Equipment 类型） */
-    readonly effect: IItemEffect;
+    readonly effect: IItemEffect<THero>;
     /** 装备道具属性（Equipment 类型） */
-    readonly equip: unknown;
+    readonly equip: IItemEquipData<THero>;
 }
 
-export interface IItemLegacyConverter<TLegacy> {
+export interface IItemLegacyConverter<THero, TLegacy> {
     /**
      * 将旧样板道具定义转换为新的道具原始数据
      * @param num 道具图块数字
      * @param legacy 旧样板道具定义
      */
-    fromLegacy(num: number, legacy: TLegacy): IItemRawData;
+    fromLegacy(num: number, legacy: TLegacy): IItemRawData<THero>;
 }
 
-export interface IItemStore<TLegacy> {
+export interface IItemStore<THero, TLegacy> {
     /**
      * 获取指定图块数字对应的道具原始数据
      * @param num 道具图块数字
      */
-    getData(num: number): IItemRawData | null;
+    getData(num: number): IItemRawData<THero> | null;
 
     /**
      * 获取指定图块数字对应的道具分类
@@ -208,20 +223,22 @@ export interface IItemStore<TLegacy> {
      * 添加一个道具原始数据定义
      * @param data 道具原始数据
      */
-    addItem(data: IItemRawData): void;
+    addItem(data: IItemRawData<THero>): void;
 
     /**
      * 挂载一个旧样板转换器
      * @param converter 旧样板转换器
      */
-    attachLegacyConverter(converter: IItemLegacyConverter<TLegacy>): void;
+    attachLegacyConverter(
+        converter: IItemLegacyConverter<THero, TLegacy>
+    ): void;
 
     /**
      * 使用当前转换器转换并写入一个旧样板道具定义
      * @param num 道具图块数字
      * @param legacy 旧样板道具定义
      */
-    fromLegacy(num: number, legacy: TLegacy): IItemRawData;
+    fromLegacy(num: number, legacy: TLegacy): IItemRawData<THero>;
 }
 
 //#endregion

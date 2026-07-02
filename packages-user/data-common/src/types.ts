@@ -47,7 +47,7 @@ export interface IDataCommon {
     /** 图块定义存储 */
     readonly tileStore: ITileStore<MapDataOf<keyof NumberToId>>;
     /** 道具定义存储 */
-    readonly itemStore: IItemStore<Item<AllIdsOf<'items'>>>;
+    readonly itemStore: IItemStore<IHeroAttr, Item<AllIdsOf<'items'>>>;
     /** 朝向绑定 */
     readonly roleFace: IRoleFaceBinder;
     /** 朝向管理 */

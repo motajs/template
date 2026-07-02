@@ -1,5 +1,7 @@
 import {
+    IHeroAttr,
     IItemEffect,
+    IItemEquipData,
     IItemLegacyConverter,
     IItemRawData,
     ItemCategory
@@ -8,16 +10,26 @@ import { IStateSystem } from '@user/data-system';
 
 export type LegacyItemData = Item<AllIdsOf<'items'>>;
 
-type LegacyItemEffectFn = (state: IStateSystem, item: IItemRawData) => void;
-type LegacyItemCanUseFn = (state: IStateSystem, item: IItemRawData) => boolean;
+type LegacyItemEffectFn = (
+    state: IStateSystem,
+    item: IItemRawData<IHeroAttr>
+) => void;
+type LegacyItemCanUseFn = (
+    state: IStateSystem,
+    item: IItemRawData<IHeroAttr>
+) => boolean;
 
-class LegacyItemEffect implements IItemEffect {
+class LegacyItemEffect implements IItemEffect<IHeroAttr> {
     pickEvent: unknown;
     useEvent: unknown;
 
+    /** 即捡即用效果 */
     private readonly pickFn: LegacyItemEffectFn | null = null;
+    /** 道具使用效果 */
     private readonly useFn: LegacyItemEffectFn | null = null;
+    /** 是否能够使用道具 */
     private readonly canUseFn: LegacyItemCanUseFn | null = null;
+    /** 全局状态对象 */
     private readonly state: IStateSystem;
 
     constructor(legacy: LegacyItemData, state: IStateSystem) {
@@ -50,24 +62,27 @@ class LegacyItemEffect implements IItemEffect {
         }
     }
 
-    pickEffect(item: IItemRawData): void {
+    pickEffect(item: IItemRawData<IHeroAttr>): void {
         this.pickFn?.(this.state, item);
     }
 
-    useEffect(item: IItemRawData): void {
+    useEffect(item: IItemRawData<IHeroAttr>): void {
         this.useFn?.(this.state, item);
     }
 
-    canUse(item: IItemRawData): boolean {
+    canUse(item: IItemRawData<IHeroAttr>): boolean {
         if (!this.canUseFn) return true;
         else return this.canUseFn(this.state, item);
     }
 }
 
-export class ItemLegacyBridge implements IItemLegacyConverter<LegacyItemData> {
+export class ItemLegacyBridge implements IItemLegacyConverter<
+    IHeroAttr,
+    LegacyItemData
+> {
     constructor(private readonly state: IStateSystem) {}
 
-    fromLegacy(num: number, legacy: LegacyItemData): IItemRawData {
+    fromLegacy(num: number, legacy: LegacyItemData): IItemRawData<IHeroAttr> {
         const effect = new LegacyItemEffect(legacy, this.state);
         return {
             num,
@@ -77,10 +92,35 @@ export class ItemLegacyBridge implements IItemLegacyConverter<LegacyItemData> {
             text: legacy.text ?? '',
             hideInToolbox: legacy.hideInToolBox,
             effect,
-            equip: legacy.equip
+            equip: this.convertEquip(legacy.equip)
         };
     }
 
+    private convertEquip(legacy: Equip): IItemEquipData<IHeroAttr> {
+        const valueMap = new Map<SelectKey<IHeroAttr, number>, number>();
+        const perMap = new Map<SelectKey<IHeroAttr, number>, number>();
+
+        for (const [key, value] of Object.entries(legacy.value)) {
+            valueMap.set(key as SelectKey<IHeroAttr, number>, value);
+        }
+        for (const [key, value] of Object.entries(legacy.percentage)) {
+            perMap.set(key as SelectKey<IHeroAttr, number>, value);
+        }
+
+        return {
+            slots: [legacy.type],
+            animate: legacy.animate,
+            value: valueMap,
+            percentage: perMap,
+            loadEvent: legacy.equipEvent,
+            unloadEvent: legacy.unequipEvent
+        };
+    }
+
+    /**
+     * 从旧样板道具类型获取新接口对应的类型
+     * @param cls 旧样板道具类型
+     */
     private mapCategory(cls: ItemCls): ItemCategory {
         switch (cls) {
             case 'constants':
