@@ -23,8 +23,6 @@ class LegacyItemEffect implements IItemEffect<IHeroAttr> {
     pickEvent: unknown;
     useEvent: unknown;
 
-    /** 即捡即用效果 */
-    private readonly pickFn: LegacyItemEffectFn | null = null;
     /** 道具使用效果 */
     private readonly useFn: LegacyItemEffectFn | null = null;
     /** 是否能够使用道具 */
@@ -37,33 +35,32 @@ class LegacyItemEffect implements IItemEffect<IHeroAttr> {
         this.pickEvent = undefined;
         this.useEvent = legacy.useItemEvent;
 
-        if (legacy.itemEffect) {
-            this.pickFn = new Function(
-                'state',
-                'item',
-                legacy.itemEffect
-            ) as LegacyItemEffectFn;
+        if (legacy.cls === 'items') {
+            if (legacy.itemEffect) {
+                this.useFn = new Function(
+                    'state',
+                    'item',
+                    legacy.itemEffect
+                ) as LegacyItemEffectFn;
+            }
+        } else if (legacy.cls === 'constants' || legacy.cls === 'tools') {
+            if (legacy.useItemEffect) {
+                this.useFn = new Function(
+                    'state',
+                    'item',
+                    legacy.useItemEffect
+                ) as LegacyItemEffectFn;
+            }
+            if (typeof legacy.canUseItemEffect === 'string') {
+                this.canUseFn = new Function(
+                    'state',
+                    'item',
+                    legacy.canUseItemEffect
+                ) as LegacyItemCanUseFn;
+            } else {
+                this.canUseFn = () => !!legacy.canUseItemEffect;
+            }
         }
-        if (legacy.useItemEffect) {
-            this.useFn = new Function(
-                'state',
-                'item',
-                legacy.useItemEffect
-            ) as LegacyItemEffectFn;
-        }
-        if (typeof legacy.canUseItemEffect === 'string') {
-            this.canUseFn = new Function(
-                'state',
-                'item',
-                legacy.canUseItemEffect
-            ) as LegacyItemCanUseFn;
-        } else {
-            this.canUseFn = () => !!legacy.canUseItemEffect;
-        }
-    }
-
-    pickEffect(item: IItemRawData<IHeroAttr>): void {
-        this.pickFn?.(this.state, item);
     }
 
     useEffect(item: IItemRawData<IHeroAttr>): void {
@@ -96,6 +93,10 @@ export class ItemLegacyBridge implements IItemLegacyConverter<
         };
     }
 
+    /**
+     * 将旧样板装备信息转换为新样板接口
+     * @param legacy 旧样板格式的装备信息
+     */
     private convertEquip(legacy: Equip): IItemEquipData<IHeroAttr> {
         const valueMap = new Map<SelectKey<IHeroAttr, number>, number>();
         const perMap = new Map<SelectKey<IHeroAttr, number>, number>();

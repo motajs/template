@@ -1,10 +1,12 @@
 import { HeroAttribute } from './attribute';
 import { HeroFollowersController } from './follower';
+import { HeroItems } from './items';
 import { HeroLocation } from './location';
 import { HeroRendering } from './rendering';
 import {
     IHeroAttribute,
     IHeroFollowersController,
+    IHeroItems,
     IHeroLocation,
     IHeroModifier,
     IHeroRendering,
@@ -31,6 +33,7 @@ export class HeroState<THero> implements IHeroState<THero> {
     readonly location: IHeroLocation;
     readonly rendering: IHeroRendering;
     readonly followers: IHeroFollowersController;
+    readonly items: IHeroItems<THero>;
 
     constructor(
         state: IDataCommon,
@@ -49,6 +52,7 @@ export class HeroState<THero> implements IHeroState<THero> {
             this.location,
             faceHandler
         );
+        this.items = new HeroItems(state);
     }
 
     attachAttribute(attribute: IHeroAttribute<THero>): void {
@@ -119,7 +123,8 @@ export class HeroState<THero> implements IHeroState<THero> {
             location: this.location.saveState(compression),
             rendering: this.rendering.saveState(compression),
             followers: followerSaves,
-            modifiers
+            modifiers,
+            items: this.items.saveState(compression)
         };
     }
 
@@ -138,6 +143,7 @@ export class HeroState<THero> implements IHeroState<THero> {
         this.attribute = newAttribute;
         this.location.loadState(state.location, compression);
         this.rendering.loadState(state.rendering, compression);
+        this.items.loadState(state.items, compression);
         void this.followers.removeAllFollowers();
         for (const save of state.followers) {
             const follower = this.followers.addFollower(save.num);

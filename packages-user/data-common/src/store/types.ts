@@ -137,25 +137,21 @@ export const enum ItemCategory {
 }
 
 export interface IItemEffect<THero> {
-    /** 即捡即用事件内容（Pick 类型） */
-    readonly pickEvent: unknown;
-    /** 道具使用事件内容（Constant 和 Consumable 类型） */
+    /**
+     * 道具使用事件内容对于 `Pick` 类型，会在拾取时触发；
+     * 对于 `Constant` 和 `Consumable` 类型，会在使用时触发。
+     */
     readonly useEvent: unknown;
 
     /**
-     * 即捡即用效果，拾取道具时调用
-     * @param item 当前道具数据
-     */
-    pickEffect(item: IItemRawData<THero>): void;
-
-    /**
-     * 道具使用效果，使用道具时调用
+     * 道具使用效果，使用道具时调用。对于 `Pick` 类型，会在拾取时触发；
+     * 对于 `Constant` 和 `Consumable` 类型，会在使用时触发。
      * @param item 当前道具数据
      */
     useEffect(item: IItemRawData<THero>): void;
 
     /**
-     * 能否使用道具
+     * 能否使用道具，仅对 `Constant` 和 `Consumable` 类型的道具生效
      * @param item 当前道具数据
      */
     canUse(item: IItemRawData<THero>): boolean;

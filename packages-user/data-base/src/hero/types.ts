@@ -8,6 +8,7 @@ import {
     FaceDirection,
     IDataCommonExtended,
     IFaceHandler,
+    IItemRawData,
     IObjectMovable,
     IObjectMover,
     ISaveableContent
@@ -441,6 +442,73 @@ export interface IHeroFollowersController
 
 //#endregion
 
+//#region 勇士道具
+
+export interface IHeroItemSave {
+    /** 道具图块数字 */
+    readonly num: number;
+    /** 道具持有数量 */
+    readonly count: number;
+}
+
+export interface IHeroItemsSave {
+    /** 永久道具存档 */
+    readonly constants: readonly IHeroItemSave[];
+    /** 消耗道具存档 */
+    readonly consumables: readonly IHeroItemSave[];
+    /** 装备道具存档 */
+    readonly equipments: readonly IHeroItemSave[];
+}
+
+export interface IHeroItemState<THero> {
+    /** 道具字符串 id */
+    readonly id: string;
+    /** 道具图块数字 */
+    readonly num: number;
+    /** 道具原始定义数据引用 */
+    readonly raw: IItemRawData<THero>;
+    /** 道具持有数量 */
+    count: number;
+}
+
+export interface IHeroItems<THero>
+    extends ISaveableContent<IHeroItemsSave>, IDataCommonExtended {
+    /**
+     * 增加道具数量，count 可以填负数。当道具为 `Pick` 类型时会立刻执行其效果。
+     * @param item 道具图块数字或字符串 id
+     * @param count 要增加的数量，默认为 1
+     */
+    addItem(item: number | string, count?: number): void;
+
+    /**
+     * 勇士获取指定道具，当道具为 `Pick` 类型时会立刻执行其效果，否则使背包中的数量加一。
+     * 是 `addItem(item, 1)` 的另一种写法。
+     * @param item 带锯图块数字或 id
+     */
+    getItem(item: number | string): void;
+
+    /**
+     * 获取指定道具的状态
+     * @param item 道具图块数字或字符串 id
+     */
+    getItemState(item: number | string): Readonly<IHeroItemState<THero>> | null;
+
+    /**
+     * 使用道具，仅对 Constant 与 Consumable 类型生效。Consumable 类型使用后数量减一。
+     * @param item 道具图块数字或字符串 id
+     * @returns 道具是否使用成功
+     */
+    useItem(item: number | string): boolean;
+
+    /**
+     * 获取指定道具的持有数量
+     * @param item 道具图块数字或字符串 id
+     */
+    itemCount(item: number | string): number;
+}
+
+//#endregion
+
 //#region 勇士状态
 
 export interface IHeroStateSave<THero> {
@@ -454,6 +522,8 @@ export interface IHeroStateSave<THero> {
     readonly followers: readonly IHeroFollowerSave[];
     /** 勇士属性修饰器状态 */
     readonly modifiers: readonly IModifierStateSave<THero>[];
+    /** 勇士道具背包状态 */
+    readonly items: IHeroItemsSave;
 }
 
 export interface IHeroState<THero> extends ISaveableContent<
@@ -467,6 +537,8 @@ export interface IHeroState<THero> extends ISaveableContent<
     readonly followers: IHeroFollowersController;
     /** 勇士的渲染对象，包含一些必要渲染信息，存在于数据端，并非渲染端 */
     readonly rendering: IHeroRendering;
+    /** 勇士道具背包 */
+    readonly items: IHeroItems<THero>;
 
     /**
      * 获取勇士当前的位置
