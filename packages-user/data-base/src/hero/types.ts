@@ -70,6 +70,11 @@ export interface IModifierStateSave<THero> {
     readonly state: unknown;
 }
 
+export interface IHeroAttributeCloneOption {
+    /** 是否克隆属性修饰器，默认为 `true` */
+    cloneModifier: boolean;
+}
+
 export interface IReadonlyHeroAttribute<THero> {
     /**
      * 获取勇士的基础属性，即未经过任何 Buff 或装备等加成的属性
@@ -97,12 +102,14 @@ export interface IReadonlyHeroAttribute<THero> {
 
     /**
      * 深拷贝此勇士属性对象
-     * @param cloneModifier 是否同时复制修饰器，默认复制
+     * @param option 深拷贝选项
      */
-    clone(cloneModifier?: boolean): IReadonlyHeroAttribute<THero>;
+    clone(
+        option?: Readonly<Partial<IHeroAttributeCloneOption>>
+    ): IHeroAttribute<THero>;
 
     /**
-     * 获取此勇士属性对象的可修改副本
+     * 获取此勇士属性对象的可修改副本，与 `clone()` 效果一致
      */
     getModifiableClone(): IHeroAttribute<THero>;
 
@@ -123,6 +130,25 @@ export interface IReadonlyHeroAttribute<THero> {
     getModifiers<K extends keyof THero>(
         name: K
     ): Iterable<IHeroModifier<THero[K]>>;
+
+    /**
+     * 获取指定修饰器的索引位置
+     * @param modifier 修饰器对象
+     */
+    getModifierIndex(modifier: IHeroModifier): number;
+
+    /**
+     * 设置指定修饰器的存档状态
+     * @param modifier 属性修饰器
+     * @param save 不进入存档
+     */
+    setModifierSaveEnabled(modifier: IHeroModifier, save: boolean): void;
+
+    /**
+     * 获取指定修饰器的存档状态
+     * @param modifier 属性修饰器
+     */
+    getModifierSaveEnabled(modifier: IHeroModifier): boolean;
 }
 
 export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
@@ -138,30 +164,32 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
      * @param name 属性名称
      * @param value 属性增减值
      */
-    add<K extends SelectKey<THero, number>>(name: K, value: number): void;
+    add(name: SelectKey<THero, number>, value: number): void;
 
     /**
      * 将勇士属性乘以某一个值
      * @param name 属性名称
      * @param value 属性乘数
      */
-    mul<K extends SelectKey<THero, number>>(name: K, value: number): void;
+    mul(name: SelectKey<THero, number>, value: number): void;
 
     /**
      * 将勇士属性除以某一个值
      * @param name 属性名称
      * @param value 属性除数
      */
-    div<K extends SelectKey<THero, number>>(name: K, value: number): void;
+    div(name: SelectKey<THero, number>, value: number): void;
 
     /**
      * 向一个属性添加属性修饰器
      * @param name 属性名称
      * @param modifier 属性修饰器
+     * @param save 是否进入存档，默认 true
      */
     addModifier<K extends keyof THero>(
         name: K,
-        modifier: IHeroModifier<THero[K]>
+        modifier: IHeroModifier<THero[K]>,
+        save?: boolean
     ): void;
 
     /**
@@ -175,10 +203,15 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
     ): void;
 
     /**
-     * 深拷贝此勇士属性对象
-     * @param cloneModifier 是否同时复制修饰器，默认复制
+     * 根据修饰器索引删除指定修饰器
+     * @param name 属性名称
+     * @param index 修饰器索引
+     * @returns 被删除的修饰器
      */
-    clone(cloneModifier?: boolean): IHeroAttribute<THero>;
+    deleteModifierByIndex<K extends keyof THero>(
+        name: K,
+        index: number
+    ): IHeroModifier<THero[K]> | null;
 
     /**
      * 获取勇士指定属性计算过程的可迭代对象，一般用于调试。
@@ -451,13 +484,13 @@ export interface IHeroItemSave {
     readonly count: number;
 }
 
-export interface IHeroItemsSave {
+export interface IHeroItemsSave<THero> {
     /** 永久道具存档 */
     readonly constants: readonly IHeroItemSave[];
     /** 消耗道具存档 */
     readonly consumables: readonly IHeroItemSave[];
-    /** 装备道具存档 */
-    readonly equipments: readonly IHeroItemSave[];
+    /** 装备实例仓库存档 */
+    readonly equipStore: IHeroEquipsStoreSave<THero>;
 }
 
 export interface IHeroItemState<THero> {
@@ -472,7 +505,10 @@ export interface IHeroItemState<THero> {
 }
 
 export interface IHeroItems<THero>
-    extends ISaveableContent<IHeroItemsSave>, IDataCommonExtended {
+    extends ISaveableContent<IHeroItemsSave<THero>>, IDataCommonExtended {
+    /** 勇士装备实例存储 */
+    readonly equipment: IHeroEquipsStore<THero>;
+
     /**
      * 增加道具数量，count 可以填负数。当道具为 `Pick` 类型时会立刻执行其效果。
      * @param item 道具图块数字或字符串 id
@@ -509,6 +545,187 @@ export interface IHeroItems<THero>
 
 //#endregion
 
+//#region 勇士装备
+
+export interface IEquipmentStateSave<THero> {
+    /** 装备实例 uid */
+    readonly uid: number;
+    /** 装备道具图块数字 */
+    readonly num: number;
+    /** 当前数值加成 */
+    readonly value: Map<SelectKey<THero, number>, number>;
+    /** 当前百分比加成 */
+    readonly percentage: Map<SelectKey<THero, number>, number>;
+}
+
+export interface IHeroEquipsStoreSave<THero> {
+    /** 所有装备实例的存档 */
+    readonly equipments: readonly IEquipmentStateSave<THero>[];
+}
+
+export interface IEquipmentState<THero> extends ISaveableContent<
+    IEquipmentStateSave<THero>
+> {
+    /** 装备实例 uid */
+    readonly uid: number;
+    /** 装备的定义数据引用 */
+    readonly item: IItemRawData<THero>;
+
+    /**
+     * 获取装备产生的所有修饰器，每个元素为 [属性名, 修饰器]
+     */
+    getModifiers(): Iterable<[SelectKey<THero, number>, IHeroModifier<number>]>;
+}
+
+export interface IEquipmentSortHandler<THero> extends IDataCommonExtended {
+    /** 要排序的装备 A */
+    readonly equipA: IEquipmentState<THero>;
+    /** 要排序的装备 B */
+    readonly equipB: IEquipmentState<THero>;
+    /** 装备存储实例 */
+    readonly store: IHeroEquipsStore<THero>;
+}
+
+export interface IEquipmentSorter<THero> {
+    /**
+     * 对比两个装备，返回哪个装备要排到更前面，即哪个装备更强。
+     * 返回负值表示 `equipA` 排到前面，返回正值表示 `equipB` 排到前面，返回 0 表示按照装备实例的 `uid` 排序。
+     * @param handler 装备排序信息对象
+     */
+    compare(handler: IEquipmentSortHandler<THero>): number;
+}
+
+export interface IHeroEquipsStore<THero>
+    extends ISaveableContent<IHeroEquipsStoreSave<THero>>, IDataCommonExtended {
+    /**
+     * 获得一件装备道具，创建装备实例
+     * @param item 道具图块数字或字符串 id
+     * @returns 新分配的装备实例 uid
+     */
+    add(item: number | string): number;
+
+    /**
+     * 移除指定装备实例
+     * @param uid 装备实例 uid
+     */
+    delete(uid: number): void;
+
+    /**
+     * 获取指定装备实例的状态，与当前是否装备无关
+     * @param uid 装备实例 uid
+     */
+    get(uid: number): IEquipmentState<THero> | null;
+
+    /**
+     * 设置当前对象的装备排序器
+     * @param comparer 装备排序器
+     */
+    useSorter(comparer: IEquipmentSorter<THero> | null): void;
+
+    /**
+     * 获取指定装备的所有装备实例，按照排序器的顺序进行排序，如没有排序器则按 `uid` 排序
+     * @param equip 装备的图块数字或 id
+     */
+    instancesOf(equip: number | string): IEquipmentState<THero>[];
+
+    /**
+     * 获取当前的所有装备实例，按照排序器的顺序输出，如没有排序器则按 `uid` 排序
+     */
+    instances(): IEquipmentState<THero>[];
+
+    /**
+     * 获取指定类型装备的实例总数
+     * @param item 道具图块数字或字符串 id
+     */
+    count(item: number | string): number;
+}
+
+export interface IHeroEquipmentSave {
+    /** 当前已装备的 uid 映射 */
+    readonly equipped: ReadonlyMap<number, number>;
+    /** 当前装备槽数组 */
+    readonly slots: readonly string[];
+}
+
+export const enum EquipStatus {
+    /** 可以直接装备到目标装备栏 */
+    CanEquip,
+    /** 不能装备到目标装备栏 */
+    CannotEquip,
+    /** 需要将目标装备栏上的装备进行替换 */
+    NeedReplace
+}
+
+export interface IHeroEquipment<THero>
+    extends ISaveableContent<IHeroEquipmentSave>, IDataCommonExtended {
+    /** 装备槽位数组，每一项字符串表示这一栏装备的名称，用于显示及装备槽匹配 */
+    readonly slots: readonly string[];
+
+    /**
+     * 设置装备槽
+     * @param slots 装备槽位数组
+     */
+    setSlots(slots: string[]): void;
+
+    /**
+     * 判断指定装备是否可以装备到指定装备槽
+     * @param uid 装备实例的 uid
+     * @param slot 要装备至的装备槽，可以是装备槽的索引，也可以是装备槽的名称
+     */
+    canEquipTo(uid: number, slot: number | string): EquipStatus;
+
+    /**
+     * 将指定装备穿上
+     * @param uid 装备实例 uid
+     * @param slot 要装备至的装备槽，可以是装备槽的索引，也可以是装备槽的名称
+     * @param autoUnload 当要装备的装备已经处于某个装备槽，是否自动将其卸下，默认为 `true`
+     * @returns 被卸下的装备实例 uid，如果没有装备被卸下，那么为 `undefined`
+     */
+    equip(
+        uid: number,
+        slot: number | string,
+        autoUnload?: boolean
+    ): number | undefined;
+
+    /**
+     * 将指定装备卸下
+     * @param slot 要卸下的装备槽索引
+     * @returns 被卸下的装备实例 uid，如果没有装备被卸下，那么为 `undefined`
+     */
+    unequip(slot: number): number | undefined;
+
+    /**
+     * 查询指定装备是否处于装备状态
+     * @param uid 装备实例 uid
+     */
+    equipped(uid: number): boolean;
+
+    /**
+     * 获取指定装备槽索引位置的装备 uid
+     * @param slot 要获取的装备槽索引
+     */
+    getEquipped(slot: number): number | undefined;
+
+    /**
+     * 获取所有已装备的实例，按照装备槽排序
+     */
+    getEquips(): (IEquipmentState<THero> | null)[];
+
+    /**
+     * 比较两个装备在指定槽位的表现，输出装备 A 时的属性减装备 B 时的属性
+     * @param equipA 要比较的装备 A 的 uid
+     * @param equipB 要比较的装备 B 的 uid
+     * @param slot 要比较的装备槽索引
+     */
+    compareEquip(
+        equipA: number,
+        equipB: number,
+        slot: number
+    ): Readonly<Partial<THero>>;
+}
+
+//#endregion
+
 //#region 勇士状态
 
 export interface IHeroStateSave<THero> {
@@ -523,7 +740,9 @@ export interface IHeroStateSave<THero> {
     /** 勇士属性修饰器状态 */
     readonly modifiers: readonly IModifierStateSave<THero>[];
     /** 勇士道具背包状态 */
-    readonly items: IHeroItemsSave;
+    readonly items: IHeroItemsSave<THero>;
+    /** 勇士装备状态 */
+    readonly equip: IHeroEquipmentSave;
 }
 
 export interface IHeroState<THero> extends ISaveableContent<
@@ -539,6 +758,8 @@ export interface IHeroState<THero> extends ISaveableContent<
     readonly rendering: IHeroRendering;
     /** 勇士道具背包 */
     readonly items: IHeroItems<THero>;
+    /** 勇士装备系统 */
+    readonly equip: IHeroEquipment<THero>;
 
     /**
      * 获取勇士当前的位置

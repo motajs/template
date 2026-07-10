@@ -1,4 +1,5 @@
 import { HeroAttribute } from './attribute';
+import { HeroEquipment } from './equipment';
 import { HeroFollowersController } from './follower';
 import { HeroItems } from './items';
 import { HeroLocation } from './location';
@@ -6,6 +7,7 @@ import { HeroRendering } from './rendering';
 import {
     IHeroAttribute,
     IHeroFollowersController,
+    IHeroEquipment,
     IHeroItems,
     IHeroLocation,
     IHeroModifier,
@@ -34,6 +36,7 @@ export class HeroState<THero> implements IHeroState<THero> {
     readonly rendering: IHeroRendering;
     readonly followers: IHeroFollowersController;
     readonly items: IHeroItems<THero>;
+    readonly equip: IHeroEquipment<THero>;
 
     constructor(
         state: IDataCommon,
@@ -53,6 +56,7 @@ export class HeroState<THero> implements IHeroState<THero> {
             faceHandler
         );
         this.items = new HeroItems(state);
+        this.equip = new HeroEquipment(this.items.equipment, this.attribute);
     }
 
     attachAttribute(attribute: IHeroAttribute<THero>): void {
@@ -108,6 +112,7 @@ export class HeroState<THero> implements IHeroState<THero> {
     saveState(compression: SaveCompression): IHeroStateSave<THero> {
         const modifiers: IModifierStateSave<THero>[] = [];
         for (const [name, modifier] of this.attribute.iterateModifiers()) {
+            if (!this.attribute.getModifierSaveEnabled(modifier)) continue;
             modifiers.push({
                 name: name as keyof THero,
                 type: modifier.type,
@@ -124,7 +129,8 @@ export class HeroState<THero> implements IHeroState<THero> {
             rendering: this.rendering.saveState(compression),
             followers: followerSaves,
             modifiers,
-            items: this.items.saveState(compression)
+            items: this.items.saveState(compression),
+            equip: this.equip.saveState(compression)
         };
     }
 
@@ -144,6 +150,7 @@ export class HeroState<THero> implements IHeroState<THero> {
         this.location.loadState(state.location, compression);
         this.rendering.loadState(state.rendering, compression);
         this.items.loadState(state.items, compression);
+        this.equip.loadState(state.equip, compression);
         void this.followers.removeAllFollowers();
         for (const save of state.followers) {
             const follower = this.followers.addFollower(save.num);

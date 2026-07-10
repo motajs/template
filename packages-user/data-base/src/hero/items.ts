@@ -1,5 +1,6 @@
 import { isNil } from 'lodash-es';
-import { IDataCommon, ItemCategory } from '@user/data-common';
+import { IDataCommon, ItemCategory, SaveCompression } from '@user/data-common';
+import { HeroEquipsStore } from './equipment';
 import {
     IHeroItems,
     IHeroItemSave,
@@ -13,10 +14,12 @@ export class HeroItems<THero> implements IHeroItems<THero> {
     /** 消耗道具 */
     private readonly consumables: Map<number, IHeroItemState<THero>> =
         new Map();
-    /** 装备道具 */
-    private readonly equipments: Map<number, IHeroItemState<THero>> = new Map();
 
-    constructor(readonly state: IDataCommon) {}
+    readonly equipment: HeroEquipsStore<THero>;
+
+    constructor(readonly state: IDataCommon) {
+        this.equipment = new HeroEquipsStore<THero>(state);
+    }
 
     /**
      * 将 item 参数解析为 num，字符串 id 通过 tileStore 转换为 num
@@ -37,8 +40,6 @@ export class HeroItems<THero> implements IHeroItems<THero> {
                 return this.constants;
             case ItemCategory.Consumable:
                 return this.consumables;
-            case ItemCategory.Equipment:
-                return this.equipments;
             default:
                 return this.constants;
         }
@@ -79,6 +80,13 @@ export class HeroItems<THero> implements IHeroItems<THero> {
         if (raw.category === ItemCategory.Pick) {
             for (let i = 0; i < count; i++) {
                 raw.effect.useEffect(raw);
+            }
+            return;
+        }
+
+        if (raw.category === ItemCategory.Equipment) {
+            for (let i = 0; i < count; i++) {
+                this.equipment.add(item);
             }
             return;
         }
@@ -160,20 +168,22 @@ export class HeroItems<THero> implements IHeroItems<THero> {
         }
     }
 
-    saveState(): IHeroItemsSave {
+    saveState(compression: SaveCompression): IHeroItemsSave<THero> {
         return {
             constants: this.mapToSave(this.constants),
             consumables: this.mapToSave(this.consumables),
-            equipments: this.mapToSave(this.equipments)
+            equipStore: this.equipment.saveState(compression)
         };
     }
 
-    loadState(state: IHeroItemsSave): void {
+    loadState(
+        state: IHeroItemsSave<THero>,
+        compression: SaveCompression
+    ): void {
         this.constants.clear();
         this.consumables.clear();
-        this.equipments.clear();
         this.loadMap(this.constants, state.constants);
         this.loadMap(this.consumables, state.consumables);
-        this.loadMap(this.equipments, state.equipments);
+        this.equipment.loadState(state.equipStore, compression);
     }
 }

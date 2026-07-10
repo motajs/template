@@ -56,7 +56,9 @@
         "54": "Legacy '$1' API has been removed, consider using new APIs: '$2'.",
         "55": "Cannot load MapStore state: reference data (compareWith) has not been set.",
         "56": "Cannot convert legacy tile data since no tile legacy converter is attached to TileStore.",
-        "57": "Cannot convert legacy item data since no item legacy converter is attached to ItemStore."
+        "57": "Cannot convert legacy item data since no item legacy converter is attached to ItemStore.",
+        "58": "Cannot find max equipment uid while loading equipment store.",
+        "59": "Cannot find item raw data for tile num $1."
     },
     "warn": {
         "1": "Resource with type of 'none' is loaded.",
@@ -203,6 +205,8 @@
         "142": "Expected a specific tile number after convert id '$1' to number, but got null.",
         "143": "Cannot create dynamic tile for $1 since its raw data is not found.",
         "144": "A hero move top implementation object binding is required for hero moving.",
-        "145": "No tile registered for item '$1'."
+        "145": "No tile registered for item '$1'.",
+        "146": "No equipment with uid of $1 in hero's inventory.",
+        "147": "No available equipment slot to equip $1."
     }
 }

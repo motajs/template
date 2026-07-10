@@ -97,13 +97,25 @@ export interface ITileStore<TLegacy> {
      * 根据图块 id 查询对应图块数字
      * @param id 图块 id
      */
-    idToNumber(id: string): number | null;
+    idToNumber(id: string): number | undefined;
 
     /**
      * 根据图块数字查询对应图块 id
      * @param num 图块数字
      */
-    numberToId(num: number): string | null;
+    numberToId(num: number): string | undefined;
+
+    /**
+     * 传入图块数字或 id，返回图块数字
+     * @param token 图块数字或 id
+     */
+    num(token: number | string): number | undefined;
+
+    /**
+     * 传入图块数字或 id，返回图块 id
+     * @param token 图块数字或 id
+     */
+    id(token: number | string): string | undefined;
 
     /**
      * 挂载一个旧样板转换器

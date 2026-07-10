@@ -54,12 +54,28 @@ export class TileStore<TLegacy = unknown> implements ITileStore<TLegacy> {
         this.numMap.set(data.num, data.id);
     }
 
-    idToNumber(id: string): number | null {
-        return this.idMap.get(id) ?? null;
+    idToNumber(id: string): number | undefined {
+        return this.idMap.get(id);
     }
 
-    numberToId(num: number): string | null {
-        return this.numMap.get(num) ?? null;
+    numberToId(num: number): string | undefined {
+        return this.numMap.get(num);
+    }
+
+    num(token: number | string): number | undefined {
+        if (typeof token === 'number') {
+            return token;
+        } else {
+            return this.idMap.get(token);
+        }
+    }
+
+    id(token: number | string): string | undefined {
+        if (typeof token === 'number') {
+            return this.numMap.get(token);
+        } else {
+            return token;
+        }
     }
 
     attachLegacyConverter(converter: ITileLegacyConverter<TLegacy>): void {
