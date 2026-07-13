@@ -1,6 +1,6 @@
 import { isNil } from 'lodash-es';
 import { IDataCommon, ItemCategory, SaveCompression } from '@user/data-common';
-import { HeroEquipsStore } from './equipment';
+import { HeroEquipsStore } from './equipStore';
 import {
     IHeroItems,
     IHeroItemSave,
@@ -25,7 +25,7 @@ export class HeroItems<THero> implements IHeroItems<THero> {
      * 将 item 参数解析为 num，字符串 id 通过 tileStore 转换为 num
      * @param item 道具图块数字或 id
      */
-    private resolveNum(item: number | string): number | null {
+    private resolveNum(item: number | string): number | undefined {
         if (typeof item === 'number') return item;
         return this.state.tileStore.idToNumber(item);
     }
