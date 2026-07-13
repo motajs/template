@@ -207,6 +207,13 @@
         "144": "A hero move top implementation object binding is required for hero moving.",
         "145": "No tile registered for item '$1'.",
         "146": "No equipment with uid of $1 in hero's inventory.",
-        "147": "No available equipment slot to equip $1."
+        "147": "No available equipment slot to equip $1.",
+        "148": "Unknown replay param type: $1, value(stringified): $2.",
+        "149": "Replay $1 array expand multiplier need to be greater than 1, but got $2.",
+        "150": "Replay $1 array reached its max length $2. Just provide higher value if you do need more space, or check your logic to avoid add replay command repeatly.",
+        "151": "0 or 1 is expected for boolean replay array, but got $1.",
+        "152": "Bigint replay param reached its limit, min for -(2n ** 2047n), and max for 2n ** 2047n - 1n.",
+        "153": "Up to 255 parameters for a single replay command, but got $1. Overflowed parameters will be ignored.",
+        "154": "Cannot transfer replay command $1 from uint16 to uint8, since it's greater than 255."
     }
 }
