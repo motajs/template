@@ -2,11 +2,13 @@ import { logger } from '@motajs/common';
 import {
     IReplayArray,
     IReplayArrayConfig,
+    IReplayArraySave,
     IReplayReadStream,
     IReplayStepHandler,
     ReplayCommandWidth,
     ReplayParamValue
 } from './types';
+import { ISaveableContent } from '../save';
 
 interface INormalizedParam {
     /**
@@ -44,7 +46,9 @@ interface IDecodedCommand {
     readonly paramCount: number;
 }
 
-export class ReplayArray implements IReplayArray {
+export class ReplayArray
+    implements IReplayArray, ISaveableContent<IReplayArraySave>
+{
     length: number = 0;
     commandWidth: ReplayCommandWidth = ReplayCommandWidth.Uint8;
 
@@ -705,6 +709,9 @@ export class ReplayArray implements IReplayArray {
             expired: false,
 
             read: () => {
+                if (stream.expired) {
+                    logger.warn(155);
+                }
                 if (stream.index >= this.length) return null;
                 const { command, paramCount } = this.decodeCommand(currCommand);
                 const params = this.decodeParamList(currParam, paramCount);
@@ -786,5 +793,31 @@ export class ReplayArray implements IReplayArray {
 
     getParamArray(): ArrayBuffer {
         return this.paramBuffer;
+    }
+
+    //#region 存读档
+
+    saveState(): IReplayArraySave {
+        return {
+            commands: this.commandBuffer,
+            params: this.paramBuffer,
+            metadata: {
+                commandWidth: this.commandWidth
+            }
+        };
+    }
+
+    loadState(state: IReplayArraySave): void {
+        this.commandBuffer = state.commands;
+        this.paramBuffer = state.params;
+        this.commandWidth = state.metadata.commandWidth;
+
+        this.commandView = new DataView(this.commandBuffer);
+        this.paramView = new DataView(this.paramBuffer);
+        this.commandArray = new Uint8Array(this.commandBuffer);
+        this.paramArray = new Uint8Array(this.paramBuffer);
+        this.indexArray = new Uint32Array(this.indexBuffer);
+
+        this.expireStreams();
     }
 }

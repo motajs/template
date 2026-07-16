@@ -1,5 +1,4 @@
 import { IHookable, IHookBase } from '@motajs/common';
-import { ISaveableContent } from '../save';
 
 export type ReplayParamValue = number | string | boolean | bigint;
 
@@ -16,8 +15,9 @@ export interface IReplayCommand {
     /**
      * 执行当前录像步对应的操作逻辑
      * @param step 当前录像步信息
+     * @returns 当此录像步执行完毕时兑现的 `Promise`，兑现值表示此录像步是否播放成功
      */
-    execute(step: IReplayStepHandler): Promise<void>;
+    execute(step: IReplayStepHandler): Promise<boolean>;
 }
 
 export interface IReplaySandboxHook extends IHookBase {
@@ -57,14 +57,23 @@ export interface IReplaySandboxHook extends IHookBase {
 export interface IReplaySandbox extends IHookable<IReplaySandboxHook> {
     /** 是否处于暂停状态 */
     readonly pausing: boolean;
+    /** 当前录像是否已经播放完毕 */
+    readonly ended: boolean;
     /** 播放倍率，1 为正常速度 */
     readonly speed: number;
+    /** 当前是否正在播放，当调用 `play` 后，调用 `stop` 前，此值会是 `true` */
+    readonly playing: boolean;
 
     /**
      * 设置播放倍率
      * @param speed 播放倍率
      */
     setSpeed(speed: number): void;
+
+    /**
+     * 获取已经播放过的录像步数量，不包括当前正在播放的录像步
+     */
+    getReplayed(): number;
 
     /**
      * 开始连续播放
@@ -88,8 +97,9 @@ export interface IReplaySandbox extends IHookable<IReplaySandboxHook> {
 
     /**
      * 单步播放一步，返回的 Promise 在该步渲染完成后兑现
+     * @returns 当前步是否正常播放完成
      */
-    step(): Promise<void>;
+    step(): Promise<boolean>;
 }
 
 export interface IStateReseter {
@@ -108,7 +118,7 @@ export const enum ReplayCommandWidth {
 }
 
 export interface IReplayReadStream {
-    /** 当前读取位置的步索引 */
+    /** 已经读取过的录像步数量，即上一次调用 `read` 时读取的录像步索引 */
     index: number;
     /** 录像总步数 */
     length: number;
@@ -142,6 +152,38 @@ export interface IReplayArrayConfig {
     commandMaxLength: number;
     /** 参数数组最大长度 */
     paramMaxLength: number;
+}
+
+export interface IReplayMetadataSave {
+    /** 当前录像使用的指令码宽度 */
+    readonly commandWidth: ReplayCommandWidth;
+}
+
+export interface IReplayArraySave {
+    /**
+     * 指令数组，在 Uint8 位宽下，两个字节为一组，第一个字节为参数数量，第二个字节为指令标识。
+     * 在 Uint16 位宽下，三个字节为一组，第一个字节为参数数量，后两个字节组成的 uint16 为指令标识。
+     */
+    readonly commands: ArrayBuffer;
+
+    /**
+     * 参数数组，由参数类型和参数值组成。参数类型占据一个字节，参数值根据类型不同占据不同的字节。
+     * 参数类型列表（包含参数类型字节）：
+     *
+     * - 0: boolean --- 2 Byte
+     * - 1: int8    --- 2 Byte
+     * - 2: int16   --- 3 Byte
+     * - 3: int32   --- 5 Byte
+     * - 4: int64   --- 9 Byte
+     * - 5: float   --- 9 Byte
+     * - 6: bigint  --- n + 1 Byte, 其中 n 是 bigint 的字节数
+     * - 7: string  --- n + 1 Byte, 其中 n 是字符串编码后的字节数
+     * - 8 ~ 255: n - 7 长度的字符串  --- n + 1 Byte, 其中 n 是字符串编码后的字节数
+     */
+    readonly params: ArrayBuffer;
+
+    /** 录像元数据 */
+    readonly metadata: IReplayMetadataSave;
 }
 
 export interface IReplayArray {
@@ -260,40 +302,18 @@ export interface IReplaySystemHook extends IHookBase {
     ): void;
 }
 
-export interface IReplayMetadataSave {
-    /** 当前录像使用的指令码宽度 */
-    readonly commandWidth: ReplayCommandWidth;
+export interface IReplaySandboxConfig {
+    /** 录像播放沙箱使用的录像数组 */
+    route: IReplayArray;
+    /** 录像播放前进行的状态重置使用的状态重置对象 */
+    reseter: IStateReseter;
+    /** 录像播放的起始索引，默认为 0 */
+    startIndex?: number;
+    /** 初始化使用的存档对象 */
+    save?: Map<string, unknown>;
 }
 
-export interface IReplaySystemSave {
-    /**
-     * 指令数组，在 Uint8 位宽下，两个字节为一组，第一个字节为参数数量，第二个字节为指令标识。
-     * 在 Uint16 位宽下，三个字节为一组，第一个字节为参数数量，后两个字节组成的 uint16 为指令标识。
-     */
-    readonly commands: ArrayBuffer;
-
-    /**
-     * 参数数组，由参数类型和参数值组成。参数类型占据一个字节，参数值根据类型不同占据不同的字节。
-     * 参数类型列表：
-     *
-     * - 0: boolean --- 2 Byte
-     * - 1: int8    --- 2 Byte
-     * - 2: int16   --- 3 Byte
-     * - 3: int32   --- 5 Byte
-     * - 4: int64   --- 9 Byte
-     * - 5: float   --- 9 Byte
-     * - 6: bigint  --- n + 1 Byte, 其中 n 是 bigint 的字节数
-     * - 7: string  --- n + 1 Byte, 其中 n 是字符串编码后的字节数
-     * - 8 ~ 255: n - 7 长度的字符串  --- n + 1 Byte, 其中 n 是字符串编码后的字节数
-     */
-    readonly params: ArrayBuffer;
-
-    /** 录像元数据 */
-    readonly metadata: IReplayMetadataSave;
-}
-
-export interface IReplaySystem
-    extends ISaveableContent<IReplaySystemSave>, IHookable<IReplaySystemHook> {
+export interface IReplaySystem extends IHookable<IReplaySystemHook> {
     /** 当前是否处在录像播放状态 */
     readonly replaying: boolean;
     /** 当前正在播放的录像沙箱实例 */
@@ -303,27 +323,29 @@ export interface IReplaySystem
 
     /**
      * 注册一个录像命令
-     * @param id 命令的唯一标识
+     * @param code 命令的唯一标识
      * @param command 命令对应的执行对象
      */
-    registerCommand(id: number, command: IReplayCommand): void;
+    registerCommand(code: number, command: IReplayCommand): void;
+
+    /**
+     * 根据录像命令标识符获取命令对象
+     * @param code 命令标识符
+     */
+    getCommand(code: number): IReplayCommand | null;
 
     /**
      * 向录像末尾追加一条录像步
-     * @param id 命令标识
+     * @param code 命令标识
      * @param params 可变数量的录像参数
      */
-    record(id: number, ...params: ReplayParamValue[]): void;
+    record(code: number, ...params: ReplayParamValue[]): void;
 
     /**
      * 创建一个录像播放沙箱
-     * @param reseter 状态重置器，用于在播放前重置游戏状态
-     * @param save 可选，已加载的存档数据，用于从存档状态继续播放
+     * @param config 录像播放沙箱的配置对象
      */
-    createReplaySandbox(
-        reseter: IStateReseter,
-        save?: Map<string, unknown>
-    ): IReplaySandbox;
+    createReplaySandbox(config: Readonly<IReplaySandboxConfig>): IReplaySandbox;
 
     /**
      * 释放当前活跃的沙箱
