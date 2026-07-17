@@ -1,7 +1,7 @@
 import {
     IHeroMoveTopHandler,
     IHeroMoveTopImpl,
-    IMapStore
+    IMapState
 } from '@user/data-base';
 import { FaceDirection, PassBit } from '@user/data-common';
 import {
@@ -13,7 +13,7 @@ import { isNil } from 'lodash-es';
 
 export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
     /** 地图存储对象 */
-    private readonly maps: IMapStore;
+    private readonly maps: IMapState;
     /** 触发器收集器对象 */
     private readonly collector: ITriggerCollector;
 

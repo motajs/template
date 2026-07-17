@@ -6,14 +6,14 @@ import {
     ILayerStateSave,
     IMapLayer,
     IMapLayerSave,
-    IMapStore,
+    IMapState,
     IMapStoreSave,
     MapArea
 } from './types';
 import { LayerState } from './layerState';
 import { uniq } from 'lodash-es';
 
-export class MapStore implements IMapStore {
+export class MapState implements IMapState {
     /** 楼层 id 到状态对象的映射 */
     private readonly mapData: Map<string, LayerState> = new Map();
 

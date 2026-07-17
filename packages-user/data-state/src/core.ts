@@ -17,7 +17,8 @@ import {
     ISaveSystem,
     SaveSystem,
     IItemStore,
-    ItemStore
+    ItemStore,
+    IMapStore
 } from '@user/data-common';
 import {
     EnemyManager,
@@ -31,8 +32,8 @@ import {
     MotaDataLoader,
     loading,
     IReadonlyEnemy,
-    IMapStore,
-    MapStore
+    IMapState,
+    MapState
 } from '@user/data-base';
 import {
     DamageSystem,
@@ -75,6 +76,7 @@ import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
 import { DefaultHeroMoveTopImpl } from './hero';
+import { MapStore } from '../../data-common/src/store/mapStore';
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
@@ -83,9 +85,10 @@ export class CoreState implements ICoreState {
     readonly faceManager: IFaceManager;
     readonly tileStore: ITileStore<LegacyTileData>;
     readonly itemStore: IItemStore<IHeroAttr, LegacyItemData>;
+    readonly mapStore: IMapStore;
 
     // Layer 1 数据层，所有可存档内容都在这，一般用于数据存储
-    readonly maps: IMapStore;
+    readonly maps: IMapState;
     readonly hero: IHeroState<IHeroAttr>;
     readonly enemyManager: IEnemyManager<IEnemyAttr>;
     readonly flags: IFlagSystem;
@@ -138,9 +141,12 @@ export class CoreState implements ICoreState {
         tileStore.attachLegacyConverter(new TileLegacyBridge());
         this.tileStore = tileStore;
         // 道具
-        const itemStore = new ItemStore<LegacyItemData>();
+        const itemStore = new ItemStore<IHeroAttr, LegacyItemData>();
         itemStore.attachLegacyConverter(new ItemLegacyBridge(this));
         this.itemStore = itemStore;
+        // 地图
+        const mapStore = new MapStore();
+        this.mapStore = mapStore;
 
         //#endregion
 
@@ -150,7 +156,7 @@ export class CoreState implements ICoreState {
         this.flags = new FlagSystem();
 
         // 地图
-        this.maps = new MapStore(tileStore, this);
+        this.maps = new MapState(tileStore, this);
 
         // 勇士
         const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);

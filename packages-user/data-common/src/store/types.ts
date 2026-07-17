@@ -68,7 +68,7 @@ export interface ITileLegacyConverter<TLegacy> {
     fromLegacy(num: number, legacy: TLegacy): ITileRawData;
 }
 
-export interface ITileStore<TLegacy> {
+export interface ITileStore<TLegacy = unknown> {
     /**
      * 获取指定图块数字对应的完整原始定义
      * @param num 图块数字
@@ -247,6 +247,35 @@ export interface IItemStore<THero, TLegacy> {
      * @param legacy 旧样板道具定义
      */
     fromLegacy(num: number, legacy: TLegacy): IItemRawData<THero>;
+}
+
+//#endregion
+
+//#region map
+
+export interface IMapRawData {
+    /** 楼层 id */
+    readonly floorId: string;
+    /** 地图宽度 */
+    readonly width: number;
+    /** 地图数组 */
+    readonly map: Record<number, number[]>;
+    /** 每个地图图层的字符串别名 */
+    readonly layerAlias: Record<number, string>;
+}
+
+export interface IMapStore {
+    /**
+     * 根据地图 id 获取指定地图的原始数据
+     * @param floorId 楼层 id
+     */
+    getMap(floorId: string): IMapRawData | null;
+
+    /**
+     * 添加地图的原始数据定义
+     * @param map 地图原始数据
+     */
+    addMap(map: IMapRawData): void;
 }
 
 //#endregion

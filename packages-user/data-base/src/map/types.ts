@@ -425,7 +425,7 @@ export interface IMapAreaInterval {
 
 export type MapArea = IMapAreaInterval[];
 
-export interface IMapStore
+export interface IMapState
     extends ISaveableContent<IMapStoreSave>, IDataCommonExtended {
     /** 所有楼层的 id 有序数组 */
     readonly maps: ReadonlyArray<string>;

@@ -1,7 +1,7 @@
 import { IHeroFollower, IHeroState } from './hero';
 import { IEnemyManager } from './enemy';
 import { IFlagSystem } from './flag';
-import { IMapStore } from './map';
+import { IMapState } from './map';
 import {
     IDataCommon,
     IEnemyAttr,
@@ -16,7 +16,7 @@ export interface IStateSaveData {
 
 export interface IStateBase extends IDataCommon {
     /** 地图状态 */
-    readonly maps: IMapStore;
+    readonly maps: IMapState;
     /** 勇士状态 */
     readonly hero: IHeroState<IHeroAttr>;
 
