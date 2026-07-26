@@ -15,7 +15,9 @@ import {
     IHeroState,
     IHeroStateSave,
     IModifierStateSave,
-    IReadonlyHeroAttribute
+    IReadonlyHeroAttribute,
+    IHeroChangeFloorInfo,
+    IHeroStateHook
 } from './types';
 import {
     FaceDirection,
@@ -23,9 +25,18 @@ import {
     IFaceHandler,
     SaveCompression
 } from '@user/data-common';
-import { IFacedTileLocator, logger } from '@motajs/common';
+import {
+    Hookable,
+    HookController,
+    IFacedTileLocator,
+    IHookController,
+    logger
+} from '@motajs/common';
 
-export class HeroState<THero> implements IHeroState<THero> {
+export class HeroState<THero>
+    extends Hookable<IHeroStateHook>
+    implements IHeroState<THero>
+{
     /** 修饰器工厂函数注册表 */
     private readonly registry: Map<
         string,
@@ -43,6 +54,7 @@ export class HeroState<THero> implements IHeroState<THero> {
         faceHandler: IFaceHandler<FaceDirection>,
         public attribute: IHeroAttribute<THero>
     ) {
+        super();
         this.rendering = new HeroRendering(state);
         const defaultLoc: IFacedTileLocator = {
             x: 0,
@@ -59,8 +71,10 @@ export class HeroState<THero> implements IHeroState<THero> {
         this.equip = new HeroEquipment(this.items.equipment, this.attribute);
     }
 
-    attachAttribute(attribute: IHeroAttribute<THero>): void {
-        this.attribute = attribute;
+    protected createController(
+        hook: Partial<IHeroStateHook>
+    ): IHookController<IHeroStateHook> {
+        return new HookController(this, hook);
     }
 
     getLocation(): IFacedTileLocator {
@@ -69,6 +83,12 @@ export class HeroState<THero> implements IHeroState<THero> {
             y: this.location.y,
             direction: this.location.mover.faceDirection
         };
+    }
+
+    //#region 属性相关
+
+    attachAttribute(attribute: IHeroAttribute<THero>): void {
+        this.attribute = attribute;
     }
 
     getModifiableAttribute(): IHeroAttribute<THero> {
@@ -107,6 +127,22 @@ export class HeroState<THero> implements IHeroState<THero> {
         if (!modifier) return null;
         this.attribute.addModifier(name, modifier);
         return modifier;
+    }
+
+    //#endregion
+
+    async changeFloor(info: IHeroChangeFloorInfo): Promise<void> {
+        await Promise.all(
+            this.forEachHook(hook => hook.onBeforeChangeFloor?.(info))
+        );
+        const mover = this.location.mover;
+        mover.setFaceDir(info.face);
+        mover.setMoveDir(info.face);
+        mover.setPos(info.x, info.y);
+        this.location.setFloor(info.target);
+        await Promise.all(
+            this.forEachHook(hook => hook.onAfterChangeFloor?.(info))
+        );
     }
 
     saveState(compression: SaveCompression): IHeroStateSave<THero> {

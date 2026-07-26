@@ -371,9 +371,13 @@ export abstract class ObjectMover<T extends IObjectMovable>
 
     readonly faceHandler: IFaceHandler<FaceDirection>;
 
-    constructor(faceHandler: IFaceHandler<FaceDirection>) {
+    constructor(
+        faceHandler: IFaceHandler<FaceDirection>,
+        direction: FaceDirection
+    ) {
         super();
         this.faceHandler = faceHandler;
+        this.faceDirection = direction;
     }
 
     protected createController(
@@ -651,7 +655,6 @@ export abstract class ObjectMover<T extends IObjectMovable>
         this.clear();
         this.shouldStop = false;
 
-        this.faceDirection = this.tile.getCurrentFaceDirection();
         this.moveDirection = FaceDirection.Unknown;
 
         const { promise, resolve } = Promise.withResolvers<void>();

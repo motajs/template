@@ -1,5 +1,5 @@
 import { logger } from '@motajs/common';
-import { IDataCommon, SaveCompression } from '@user/data-common';
+import { IDataCommon, IMapRawData, SaveCompression } from '@user/data-common';
 import { ITileStore } from '@user/data-common';
 import {
     ILayerState,
@@ -11,7 +11,7 @@ import {
     MapArea
 } from './types';
 import { LayerState } from './layerState';
-import { uniq } from 'lodash-es';
+import { isNil, uniq } from 'lodash-es';
 
 export class MapState implements IMapState {
     /** 楼层 id 到状态对象的映射 */
@@ -38,6 +38,56 @@ export class MapState implements IMapState {
     ) {}
 
     //#region 楼层管理
+
+    fromRaw(raw: IMapRawData): ILayerState | null {
+        let length = 0;
+        const entries = Object.entries(raw.map);
+        for (const [_, map] of Object.entries(raw.map)) {
+            if (length > 0 && map.length !== length) {
+                logger.error(60, map.length.toString(), length.toString());
+                return null;
+            } else {
+                length = map.length;
+            }
+        }
+        if (length % raw.width !== 0) {
+            logger.error(61, length.toString(), raw.width.toString());
+            return null;
+        }
+
+        // 设置楼层图块数据
+        const height = length / raw.width;
+        const state = this.createLayerState(raw.floorId, raw.width, height);
+        for (const [zIndex, map] of entries) {
+            const z = Number(zIndex);
+            if (isNaN(z)) {
+                logger.error(62, 'IMapRawData.map', String(zIndex));
+                continue;
+            }
+            const layer = state.addLayer();
+            const alias = raw.layerAlias[z];
+            layer.setMapRef(new Uint32Array(map));
+            layer.setZIndex(z);
+            state.setLayerAlias(layer, alias);
+
+            // 设置图块静态触发器
+            const extra = raw.blockData[z];
+            for (const [index, data] of Object.entries(extra)) {
+                const indexNum = Number(index);
+                if (isNaN(indexNum)) {
+                    logger.error(62, 'IMapRawData.blockData', String(index));
+                    continue;
+                }
+                if (!isNil(data.trigger)) {
+                    const x = indexNum % raw.width;
+                    const y = Math.floor(indexNum / raw.width);
+                    layer.setTriggerType(data.trigger, x, y);
+                }
+            }
+        }
+
+        return state;
+    }
 
     createLayerState(id: string, width: number, height: number): ILayerState {
         if (this.mapData.has(id)) {

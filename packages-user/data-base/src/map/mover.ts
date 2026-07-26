@@ -18,7 +18,7 @@ const enum DynamicMoveCode {
 export class DynamicTileMover extends ObjectMover<IDynamicTile> {
     constructor(public readonly tile: IDynamicTile) {
         const face = tile.state.faceManager;
-        super(face.get(DYNAMIC_MOVER_FACE)!);
+        super(face.get(DYNAMIC_MOVER_FACE)!, tile.getCurrentFaceDirection());
     }
 
     protected onMoveStart(): Promise<void> {

@@ -225,7 +225,7 @@ export class CoreState implements ICoreState {
             this.initTileStore(core.maps.blocksInfo);
             this.initItemStore(core.items.items);
             this.initEnemyManager(enemys_fcae963b_31c9_42b4_b48c_bb48d09f3f80);
-            this.initMapStore(
+            this.initMapState(
                 core.floorIds,
                 core.floors as Record<FloorIds, ResolvedFloor>
             );
@@ -323,7 +323,7 @@ export class CoreState implements ICoreState {
         manager.compareWith(reference);
     }
 
-    private initMapStore(
+    private initMapState(
         floors: FloorIds[],
         data: Record<FloorIds, ResolvedFloor>
     ) {

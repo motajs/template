@@ -1,5 +1,7 @@
 //#region tile
 
+import { IFacedTileLocator } from '@motajs/common';
+
 export const enum TileType {
     /** 未知或尚未归类的图块 */
     Unknown,
@@ -253,6 +255,54 @@ export interface IItemStore<THero, TLegacy> {
 
 //#region map
 
+export const enum ChangeFloorType {
+    /** 指定具体位置的楼层切换方式 */
+    Specified,
+    /** 仅指定相对关系的楼层切换方式 */
+    Related
+}
+
+export const enum ChangeFloorTarget {
+    /** 切换至前一层 */
+    Previous,
+    /** 切换至后一层 */
+    Next
+}
+
+export const enum ChangeFloorPos {
+    /** 原地不动 */
+    Stand,
+    /** 左右对称位置 */
+    SymmetryX,
+    /** 上下对称位置 */
+    SymmetryY,
+    /** 中心对称位置 */
+    CentralSymmetry
+}
+
+export interface IChangeFloorData {
+    /** 切换至的楼层 id 的切换方式 */
+    readonly floorType: ChangeFloorType;
+    /** 指定具体位置的切换楼层方式下，切换至的具体楼层 */
+    readonly targetFloor?: string;
+    /** 相对关系的楼层切换方式下，切换至的楼层代号 */
+    readonly relatedFloor?: ChangeFloorTarget;
+
+    /** 切换至的目标位置的切换方式 */
+    readonly posType: ChangeFloorType;
+    /** 指定具体位置的位置切换方式下，切换至的具体位置，朝向填写 `FaceDirection.Unknown` 视为维持 */
+    readonly targetPos?: IFacedTileLocator;
+    /** 相对关系的位置切换方式下，切换至的位置代号 */
+    readonly relatedPos?: ChangeFloorPos;
+}
+
+export interface IMapBlockRawData {
+    /** 此点的静态触发器类型（仅对该点生效，不会跟随任何图块移动） */
+    readonly trigger?: number;
+    /** 楼层切换信息 */
+    readonly changeFloor?: IChangeFloorData;
+}
+
 export interface IMapRawData {
     /** 楼层 id */
     readonly floorId: string;
@@ -262,6 +312,8 @@ export interface IMapRawData {
     readonly map: Record<number, number[]>;
     /** 每个地图图层的字符串别名 */
     readonly layerAlias: Record<number, string>;
+    /** 每个地图图层中，指定位置图块的额外数据，外层 key 为图层 zIndex，内层 key 为图块位置索引 */
+    readonly blockData: Record<number, Record<number, IMapBlockRawData>>;
 }
 
 export interface IMapStore {

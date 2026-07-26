@@ -1,7 +1,14 @@
-import { IHookable, IHookBase, IHookController } from '@motajs/common';
+import {
+    IHookable,
+    IHookBase,
+    IHookController,
+    ITileLocator
+} from '@motajs/common';
 import {
     FaceDirection,
     IDataCommonExtended,
+    IMapBlockRawData,
+    IMapRawData,
     IMoverController,
     IObjectMovable,
     IObjectMover,
@@ -21,6 +28,8 @@ export interface IMapLayerData {
 }
 
 export interface ILayerLocation {
+    /** 该点的位置 */
+    readonly locator: ITileLocator;
     /** 该点的静态图块数字 */
     readonly tile: number;
     /** 该点的静态图块信息 */
@@ -29,6 +38,8 @@ export interface ILayerLocation {
     readonly trigger: number;
     /** 该点包含的所有动态图块 */
     readonly dynamics: Iterable<IDynamicTile>;
+    /** 该点的静态图块原始数据 */
+    readonly block: IMapBlockRawData;
 }
 
 export interface IMapLayerHooks extends IHookBase {
@@ -441,6 +452,12 @@ export interface IMapState
      * @param id 楼层 id
      */
     getActiveMap(id: string): ILayerState | null;
+
+    /**
+     * 从楼层原始数据生成楼层状态
+     * @param raw 楼层原始数据
+     */
+    fromRaw(raw: IMapRawData): ILayerState | null;
 
     /**
      * 创建并注册一个空白楼层，若 id 已存在则警告并覆盖，返回楼层状态对象

@@ -227,6 +227,21 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
 
 //#region 勇士位置
 
+export interface IHeroLocationHook extends IHookBase {
+    /**
+     * 当设置勇士位置时触发
+     * @param x 设置为的横坐标
+     * @param y 设置为的纵坐标
+     */
+    onSetPos?(x: number, y: number): void;
+
+    /**
+     * 当设置勇士所处楼层时触发
+     * @param floorId 设置为的楼层 id，undefined 表示尚不处于任何楼层
+     */
+    onSetFloor?(floorId: string | undefined): void;
+}
+
 export interface IHeroLocationSave {
     /** 当前横坐标 */
     readonly x: number;
@@ -242,11 +257,18 @@ export interface IHeroLocation
     extends
         ISaveableContent<IHeroLocationSave>,
         IObjectMovable,
+        IHookable<IHeroLocationHook>,
         IDataCommonExtended {
     /** 当前所在楼层 id，undefined 表示尚不处于任何楼层 */
     readonly floorId: string | undefined;
     /** 勇士的移动对象 */
     readonly mover: IHeroMover<this>;
+
+    /**
+     * 设置勇士所在的楼层 id，注意此方法会引起数据变化，但是不会产生楼层切换动画
+     * @param floorId 目标楼层 id
+     */
+    setFloor(floorId: string | undefined): void;
 }
 
 //#endregion
@@ -728,6 +750,33 @@ export interface IHeroEquipment<THero>
 
 //#region 勇士状态
 
+export interface IHeroChangeFloorInfo {
+    /** 要切换至的目标楼层 */
+    readonly target: string;
+    /** 要切换至的目标位置横坐标 */
+    readonly x: number;
+    /** 要切换至的目标位置纵坐标 */
+    readonly y: number;
+    /** 要切换至的目标朝向 */
+    readonly face: FaceDirection;
+}
+
+export interface IHeroStateHook extends IHookBase {
+    /**
+     * 当勇士切换楼层前触发，此钩子执行完毕后会立刻触发 `IHeroLocation` 的 `onSetFloor` 钩子。
+     * 此钩子应该用于切换楼层前的过渡及必要的数据准备，不应该修改勇士位置相关的数据。
+     * @param info 勇士切换楼层信息对象
+     */
+    onBeforeChangeFloor?(info: IHeroChangeFloorInfo): Promise<void>;
+
+    /**
+     * 当勇士切换楼层后触发，此钩子会在 `IHeroLocation` 的 `onSetFloor` 钩子执行完毕后立刻触发。
+     * 此钩子应该用于切换楼层后的过渡及必要的数据处理，不应该修改勇士位置相关的数据。
+     * @param info 勇士切换楼层信息对象
+     */
+    onAfterChangeFloor?(info: IHeroChangeFloorInfo): Promise<void>;
+}
+
 export interface IHeroStateSave<THero> {
     /** 勇士属性状态 */
     readonly attribute: THero;
@@ -745,9 +794,8 @@ export interface IHeroStateSave<THero> {
     readonly equip: IHeroEquipmentSave;
 }
 
-export interface IHeroState<THero> extends ISaveableContent<
-    IHeroStateSave<THero>
-> {
+export interface IHeroState<THero>
+    extends ISaveableContent<IHeroStateSave<THero>>, IHookable<IHeroStateHook> {
     /** 勇士移动对象 */
     readonly location: IHeroLocation;
     /** 勇士属性对象 */
@@ -809,6 +857,12 @@ export interface IHeroState<THero> extends ISaveableContent<
         type: string,
         name: K
     ): IHeroModifier<THero[K], V> | null;
+
+    /**
+     * 切换勇士所在楼层
+     * @param info 楼层切换信息对象
+     */
+    changeFloor(info: IHeroChangeFloorInfo): Promise<void>;
 }
 
 //#endregion

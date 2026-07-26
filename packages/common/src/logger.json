@@ -58,7 +58,10 @@
         "56": "Cannot convert legacy tile data since no tile legacy converter is attached to TileStore.",
         "57": "Cannot convert legacy item data since no item legacy converter is attached to ItemStore.",
         "58": "Cannot find max equipment uid while loading equipment store.",
-        "59": "Cannot find item raw data for tile num $1."
+        "59": "Cannot find item raw data for tile num $1.",
+        "60": "Cannot create layer state from raw data since the area of every layer of the map does not equal: $1 vs $2.",
+        "61": "Cannot create layer state from raw data since map area cannot be divided by width evenly: area = $1 while divider = $2.",
+        "62": "Expected a number for the key of $1, but got $2."
     },
     "warn": {
         "1": "Resource with type of 'none' is loaded.",
@@ -223,6 +226,12 @@
         "160": "Replay safety collection ending function is called outside replay safety collection unexpectedly.",
         "161": "Replay safety detected. Followings are simplified detect info. To get detailed info, run: '$1'.\n$2",
         "162": "Cannot find replay safety detail info of code $1. The detail info may expired, or it just has not been existed.",
-        "163": "Replay command code $1 has already been registered. This will not replace the old registry."
+        "163": "Replay command code $1 has already been registered. This will not replace the old registry.",
+        "164": "Change floor trigger needs specified locator.",
+        "165": "Target floor id or target position needs to be specified while change floor type is 'ChangeFloorType.Specified'.",
+        "166": "Related floor id or related position needs to be specified while change floor type is 'ChangeFloorType.Related'.",
+        "167": "Hero must at a specified floor before using related change floor method.",
+        "168": "The current floor of hero does not in the specified map list.",
+        "169": "The current floor is the last or the first floor in the map list, so related floor change method will not work."
     }
 }
