@@ -173,7 +173,9 @@ export class MapLayer
             tile: num,
             raw,
             trigger,
-            dynamics
+            dynamics,
+            locator: { x, y },
+            block: raw
         };
 
         return data;

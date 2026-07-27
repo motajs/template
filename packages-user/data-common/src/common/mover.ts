@@ -433,6 +433,21 @@ export abstract class ObjectMover<T extends IObjectMovable>
     ): Promise<ITileLocator>;
 
     /**
+     * 当单步移动结束后触发，此时对象坐标已经被设置
+     * @param code 移动代码，由 {@link onStepStart} 返回值传递而来
+     * @param step 当前移动步对象
+     * @param tile 移动图块
+     * @param controller 移动控制器
+     */
+    protected abstract onStepSettled(
+        before: ITileLocator,
+        curr: ITileLocator,
+        tile: T,
+        step: Readonly<ObjectMoveStep>,
+        controller: Readonly<IMoverController>
+    ): Promise<void>;
+
+    /**
      * 向计划队列末尾追加一个步骤
      * @param step 要追加的步骤
      */
@@ -631,9 +646,12 @@ export abstract class ObjectMover<T extends IObjectMovable>
             );
             await Promise.all(stepStartHooks);
             const loc = await this.onStepEnd(code, step, this.tile, controller);
+            const before: ITileLocator = { x: this.tile.x, y: this.tile.y };
+            const curr: ITileLocator = { x: loc.x, y: loc.y };
             if (this.tile.x !== loc.x && this.tile.y !== loc.y) {
                 this.tile.setPos(loc.x, loc.y);
             }
+            await this.onStepSettled(before, curr, this.tile, step, controller);
             const stepEndHooks = this.forEachHook(hook =>
                 hook.onStepEnd?.(code, step, this.tile, this)
             );

@@ -7,7 +7,8 @@ import { FaceDirection, PassBit } from '@user/data-common';
 import {
     IStateSystem,
     ITriggerCollector,
-    ITriggerHandler
+    ITriggerHandler,
+    TriggerType
 } from '@user/data-system';
 import { isNil } from 'lodash-es';
 
@@ -130,25 +131,56 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
 
     //#region 触发器行为
 
-    async hit(handler: IHeroMoveTopHandler): Promise<void> {
-        if (isNil(handler.floorId)) return;
+    /**
+     * 统一的触发器收集与执行流程
+     * @param type 触发条件
+     * @param handler 移动信息对象
+     * @param x 收集横坐标
+     * @param y 收集纵坐标
+     */
+    private commonTrigger(
+        type: TriggerType,
+        handler: IHeroMoveTopHandler,
+        x: number,
+        y: number
+    ): Promise<void> {
+        if (isNil(handler.floorId)) return Promise.resolve();
 
         const map = this.maps.getLayerState(handler.floorId);
-        if (!map) return;
+        if (!map) return Promise.resolve();
         const event = map.eventLayer;
-        if (!event) return;
+        if (!event) return Promise.resolve();
 
-        const { x, y } = handler.nextLoc;
         const triggers = this.collector.collect(x, y, event);
 
         const triggerHandler: ITriggerHandler = {
             state: this.state,
             layer: map,
             mapLayer: event,
-            locator: handler.nextLoc
+            locator: { x, y }
         };
 
-        return triggers.trigger(triggerHandler);
+        return triggers.trigger(type, triggerHandler);
+    }
+
+    async enter(handler: IHeroMoveTopHandler): Promise<void> {
+        const { x, y } = handler.nextLoc;
+        return this.commonTrigger(TriggerType.Enter, handler, x, y);
+    }
+
+    async leave(handler: IHeroMoveTopHandler): Promise<void> {
+        const { x, y } = handler.currLoc;
+        return this.commonTrigger(TriggerType.Leave, handler, x, y);
+    }
+
+    async hit(handler: IHeroMoveTopHandler): Promise<void> {
+        const { x, y } = handler.nextLoc;
+        return this.commonTrigger(TriggerType.Hit, handler, x, y);
+    }
+
+    async cannotEnter(handler: IHeroMoveTopHandler): Promise<void> {
+        const { x, y } = handler.nextLoc;
+        return this.commonTrigger(TriggerType.CannotEnter, handler, x, y);
     }
 
     //#endregion

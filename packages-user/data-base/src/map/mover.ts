@@ -1,6 +1,7 @@
 import { ITileLocator, logger } from '@motajs/common';
 import {
     getFaceMovement,
+    IMoverController,
     ObjectMover,
     ObjectMoveStep,
     ObjectMoveType
@@ -87,6 +88,10 @@ export class DynamicTileMover extends ObjectMover<IDynamicTile> {
             }
         }
         return Promise.resolve(locator);
+    }
+
+    protected onStepSettled(): Promise<void> {
+        return Promise.resolve();
     }
 }
 

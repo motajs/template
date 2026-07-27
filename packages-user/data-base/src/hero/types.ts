@@ -280,9 +280,9 @@ export const enum HeroMoveCode {
     Step,
     /** 移动被停止 */
     Stop,
-    /** 不能移动，并撞击目标格触发器 */
+    /** 不能移动，并触发目标格撞击触发器 */
     Hit,
-    /** 不能移动，不触发触发器 */
+    /** 不能移动，并触发目标格无法进入触发器 */
     CannotMove
 }
 
@@ -315,16 +315,34 @@ export interface IHeroMoveTopImpl {
     canPass(handler: IHeroMoveTopHandler): boolean;
 
     /**
-     * 判断在指定楼层中，从指定坐标向指定方向移动时是否应该产生撞击，撞击将会触发目标位置的触发器
+     * 判断在指定楼层中，从指定坐标向指定方向移动时是否应该产生撞击，撞击将会触发目标位置的撞击触发器
      * @param handler 通行性检查对象
      */
     shouldHit(handler: IHeroMoveTopHandler): boolean;
 
     /**
-     * 勇士撞击某一个图块时执行的内容，一般用于触发目标位置的触发器
+     * 勇士正常移动到某个图块上时触发进入触发器
+     * @param handler 移动信息对象
+     */
+    enter(handler: IHeroMoveTopHandler): Promise<void>;
+
+    /**
+     * 勇士将要离开当前图块时触发离开触发器
+     * @param handler 移动信息对象
+     */
+    leave(handler: IHeroMoveTopHandler): Promise<void>;
+
+    /**
+     * 勇士撞击某一个图块时执行的内容，一般用于触发目标位置的撞击触发器
      * @param handler 撞击行为对象
      */
     hit(handler: IHeroMoveTopHandler): Promise<void>;
+
+    /**
+     * 勇士无法进入某一个图块时执行的内容，一般用于触发目标位置的无法进入触发器
+     * @param handler 移动信息对象
+     */
+    cannotEnter(handler: IHeroMoveTopHandler): Promise<void>;
 }
 
 export interface IHeroMoverConfig {

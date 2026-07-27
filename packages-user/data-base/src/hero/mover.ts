@@ -128,6 +128,27 @@ export class HeroMover<T extends IHeroLocation>
         }
     }
 
+    /**
+     * 根据当前位置及要移动至的位置创建信息对象
+     * @param curr 当前位置
+     * @param next 移动至的位置
+     * @param floorId 楼层 id
+     */
+    private createHandlerFromLoc(
+        curr: ITileLocator,
+        next: ITileLocator,
+        floorId: string | undefined
+    ): IHeroMoveTopHandler {
+        return {
+            currLoc: { x: curr.x, y: curr.y },
+            nextLoc: { x: next.x, y: next.y },
+            direction: this.moveDirection,
+            floorId,
+            face: this.faceHandler,
+            state: this.state
+        };
+    }
+
     protected async onMoveStart(): Promise<void> {
         if (!this.topImpl) {
             logger.warn(144);
@@ -195,28 +216,53 @@ export class HeroMover<T extends IHeroLocation>
     ): Promise<ITileLocator> {
         if (!this.topImpl) return { x: tile.x, y: tile.y };
 
+        const trigger = !this.ignoreTerrain;
+
         const handler = this.createHandler(tile, step, tile.floorId);
 
-        // 不能移动或停止
-        if (code === HeroMoveCode.CannotMove || code === HeroMoveCode.Stop) {
+        if (code === HeroMoveCode.CannotMove) {
+            if (trigger) {
+                await this.topImpl.cannotEnter(handler);
+            }
             // 这里不能 await，因为其 Promise 会在当前步结束后兑现，如果 await 就会卡住
             controller.stop();
             return { x: tile.x, y: tile.y };
         }
 
-        // 撞击时也使用当前位置，同时处理撞击行为
-        if (code === HeroMoveCode.Hit) {
-            await this.topImpl.hit(handler);
-            // 这里同样不能 await
+        if (code === HeroMoveCode.Stop) {
             controller.stop();
             return { x: tile.x, y: tile.y };
         }
 
-        // 正常移动
+        if (code === HeroMoveCode.Hit) {
+            if (trigger) {
+                await this.topImpl.hit(handler);
+            }
+            controller.stop();
+            return { x: tile.x, y: tile.y };
+        }
+
         if (code === HeroMoveCode.Step) {
             return handler.nextLoc;
         }
 
         return { x: tile.x, y: tile.y };
+    }
+
+    protected async onStepSettled(
+        before: ITileLocator,
+        curr: ITileLocator,
+        tile: T
+    ): Promise<void> {
+        if (!this.topImpl) return;
+
+        const handler = this.createHandlerFromLoc(before, curr, tile.floorId);
+
+        const trigger = !this.ignoreTerrain;
+
+        if (trigger) {
+            await this.topImpl.leave(handler);
+            await this.topImpl.enter(handler);
+        }
     }
 }

@@ -6,6 +6,17 @@ import {
     IDataBaseExtended
 } from '@user/data-base';
 
+export const enum TriggerType {
+    /** 进入图块 */
+    Enter,
+    /** 离开图块 */
+    Leave,
+    /** 撞击图块 */
+    Hit,
+    /** 无法进入图块 */
+    CannotEnter
+}
+
 export interface ITriggerHandler {
     /** 当前全局状态对象 */
     readonly state: IStateBase;
@@ -26,10 +37,28 @@ export interface ITrigger extends IDataBaseExtended {
     readonly priority: number;
 
     /**
-     * 使用给定上下文触发当前触发器
+     * 进入图块时触发
      * @param handler 触发上下文对象
      */
-    trigger(handler: ITriggerHandler): Promise<void>;
+    onEnter(handler: ITriggerHandler): Promise<void>;
+
+    /**
+     * 离开图块时触发
+     * @param handler 触发上下文对象
+     */
+    onLeave(handler: ITriggerHandler): Promise<void>;
+
+    /**
+     * 撞击图块时触发
+     * @param handler 触发上下文对象
+     */
+    onHit(handler: ITriggerHandler): Promise<void>;
+
+    /**
+     * 无法进入图块时触发
+     * @param handler 触发上下文对象
+     */
+    onCannotEnter(handler: ITriggerHandler): Promise<void>;
 
     /**
      * 将当前触发器包装为单元素触发器集合
@@ -65,16 +94,19 @@ export interface ITriggerCollection {
     count(): number;
 
     /**
-     * 顺序触发当前集合中的所有触发器
+     * 按指定触发条件顺序触发当前集合中的所有触发器
+     * @param type 触发类型
      * @param handler 初始触发上下文对象
      */
-    trigger(handler: ITriggerHandler): Promise<void>;
+    trigger(type: TriggerType, handler: ITriggerHandler): Promise<void>;
 
     /**
      * 逐个触发当前集合中的触发器，并允许为下一次推进提供新上下文
+     * @param condition 触发条件
      * @param handler 初始触发上下文对象
      */
     triggerIter(
+        condition: TriggerType,
         handler: ITriggerHandler
     ): AsyncGenerator<ITrigger, void, ITriggerHandler | null>;
 

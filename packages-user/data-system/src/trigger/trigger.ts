@@ -8,7 +8,13 @@ export abstract class BaseTrigger implements ITrigger {
 
     constructor(readonly state: IStateBase) {}
 
-    abstract trigger(handler: ITriggerHandler): Promise<void>;
+    abstract onEnter(handler: ITriggerHandler): Promise<void>;
+
+    abstract onLeave(handler: ITriggerHandler): Promise<void>;
+
+    abstract onHit(handler: ITriggerHandler): Promise<void>;
+
+    abstract onCannotEnter(handler: ITriggerHandler): Promise<void>;
 
     collection(): ITriggerCollection {
         return new TriggerCollection([this]);

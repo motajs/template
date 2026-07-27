@@ -133,7 +133,11 @@ export class ChangeFloorTrigger extends BaseTrigger implements ITrigger {
         }
     }
 
-    async trigger(handler: ITriggerHandler): Promise<void> {
+    /**
+     * 触发楼层切换
+     * @param handler 触发信息对象
+     */
+    private async trigger(handler: ITriggerHandler): Promise<void> {
         if (!handler.layer || !handler.locator || !handler.mapLayer) {
             logger.warn(164);
             return;
@@ -158,5 +162,21 @@ export class ChangeFloorTrigger extends BaseTrigger implements ITrigger {
 
     collection(): ITriggerCollection {
         return new TriggerCollection([this]);
+    }
+
+    onEnter(handler: ITriggerHandler): Promise<void> {
+        return this.trigger(handler);
+    }
+
+    onHit(handler: ITriggerHandler): Promise<void> {
+        return this.trigger(handler);
+    }
+
+    onLeave(): Promise<void> {
+        return Promise.resolve();
+    }
+
+    onCannotEnter(): Promise<void> {
+        return Promise.resolve();
     }
 }
