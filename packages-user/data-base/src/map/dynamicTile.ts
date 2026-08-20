@@ -1,70 +1,89 @@
 import { isNil } from 'lodash-es';
 import {
     FaceDirection,
-    IDataCommon,
     IMoverController,
     IObjectMover,
-    IRoleFaceBinder,
     ITileRawData
 } from '@user/data-common';
-import { IDynamicLayer, IDynamicTile } from './types';
+import {
+    IDynamicBlockSave,
+    IDynamicTile,
+    IMapLayer,
+    IStaticTile
+} from './types';
 import { DynamicTileMover } from './mover';
 import { logger } from '@motajs/common';
+import { MapTileBase } from './tile';
 
-export class DynamicTile implements IDynamicTile {
-    readonly state: IDataCommon;
+export class DynamicTile
+    extends MapTileBase<IDynamicBlockSave>
+    implements IDynamicTile
+{
     readonly mover: IObjectMover<IDynamicTile>;
 
-    raw: ITileRawData | null;
-    triggerType: number;
-
-    /** 当前的朝向绑定对象 */
-    private face: IRoleFaceBinder | null = null;
+    /** 内部存储的图块数字 */
+    private tileNum: number;
+    /** 内部存储的原始图块信息 */
+    private tileRaw: ITileRawData | null;
 
     constructor(
-        public num: number,
+        num: number,
         public x: number,
         public y: number,
-        public readonly layer: IDynamicLayer
+        layer: IMapLayer
     ) {
-        this.state = layer.state;
+        super(x, y, layer);
+        this.tileNum = num;
         this.mover = new DynamicTileMover(this);
-        this.triggerType = -1;
         const data = this.state.tileStore.getData(num);
         if (!data) {
             logger.warn(143, num.toString());
-            this.raw = null;
+            this.tileRaw = null;
         } else {
-            this.raw = data;
+            this.tileRaw = data;
         }
     }
 
-    setFaceBinder(binder: IRoleFaceBinder | null): void {
-        this.face = binder;
+    num(): number {
+        return this.tileNum;
     }
 
-    setFaceDirection(direction: FaceDirection): number {
-        if (!this.face) return this.num;
-        const next = this.face.getFaceOf(this.num, direction);
-        if (next) {
-            this.num = next.identifier;
+    raw(): ITileRawData | null {
+        return this.tileRaw;
+    }
+
+    set(num: number): void {
+        this.tileNum = num;
+        const data = this.state.tileStore.getData(num);
+        if (!data) {
+            logger.warn(143, num.toString());
+            this.tileRaw = null;
+        } else {
+            this.tileRaw = data;
         }
-        return this.num;
     }
 
-    setTriggerType(type: number): void {
-        this.triggerType = type;
+    setPos(x: number, y: number): void {
+        this.x = x;
+        this.y = y;
+        this.locator = { x, y };
+        this.layer.updateDynamicTile(this);
     }
 
-    delete(): Promise<void> {
-        return this.layer.deleteDynamic(this);
+    getCurrentFaceDirection(): FaceDirection {
+        const curr = this.layer.faceBinder.getFaceDirection(this.tileNum);
+        if (isNil(curr)) {
+            return FaceDirection.Unknown;
+        } else {
+            return curr;
+        }
     }
 
-    toStatic(): void {
-        this.layer.transferToStatic(this);
+    toStatic(): IStaticTile | null {
+        return this.layer.transferToStatic(this);
     }
 
-    toStaticIfSafe(): boolean {
+    toStaticIfSafe(): IStaticTile | null {
         return this.layer.transferToStaticIfSafe(this);
     }
 
@@ -74,19 +93,31 @@ export class DynamicTile implements IDynamicTile {
         return this.mover.start();
     }
 
-    setPos(x: number, y: number): void {
-        this.x = x;
-        this.y = y;
-        this.layer.updateDynamicTile(this);
+    delete(): Promise<void> {
+        return this.layer.deleteDynamic(this);
     }
 
-    getCurrentFaceDirection(): FaceDirection {
-        if (this.face) {
-            const face = this.face.getFaceDirection(this.num);
-            if (isNil(face)) return FaceDirection.Unknown;
-            else return face;
+    saveState(): Readonly<IDynamicBlockSave> {
+        const save: IDynamicBlockSave = {
+            num: this.num()
+        };
+
+        if (this.triggers) {
+            save.triggers = this.triggers;
+        }
+
+        return save;
+    }
+
+    loadState(save: Readonly<IDynamicBlockSave>): void {
+        if (save.triggers) {
+            if (save.triggers.size === 0) {
+                this.useEmptyTrigger();
+            } else {
+                save.triggers.forEach(v => this.addTrigger(v));
+            }
         } else {
-            return FaceDirection.Down;
+            this.clearTrigger();
         }
     }
 }

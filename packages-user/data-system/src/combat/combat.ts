@@ -8,7 +8,7 @@ import {
 import {
     ICombatFlow,
     ICombatFlowHandler,
-    ICombatFlowHook,
+    ICombatFlowHooks,
     ICombatScript,
     IDamageContext,
     IEnemyContext,
@@ -25,7 +25,7 @@ import {
 } from '@user/data-base';
 
 export class CombatFlow<TEnemy, THero>
-    extends Hookable<ICombatFlowHook<TEnemy, THero>>
+    extends Hookable<ICombatFlowHooks<TEnemy, THero>>
     implements ICombatFlow<TEnemy, THero>
 {
     hero: IHeroAttribute<THero> | null = null;
@@ -42,8 +42,8 @@ export class CombatFlow<TEnemy, THero>
     //#region 对象控制
 
     protected createController(
-        hook: Partial<ICombatFlowHook<TEnemy, THero>>
-    ): IHookController<ICombatFlowHook<TEnemy, THero>> {
+        hook: Partial<ICombatFlowHooks<TEnemy, THero>>
+    ): IHookController<ICombatFlowHooks<TEnemy, THero>> {
         return new HookController(this, hook);
     }
 

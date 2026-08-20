@@ -227,7 +227,7 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
 
 //#region 勇士位置
 
-export interface IHeroLocationHook extends IHookBase {
+export interface IHeroLocationHooks extends IHookBase {
     /**
      * 当设置勇士位置时触发
      * @param x 设置为的横坐标
@@ -257,7 +257,7 @@ export interface IHeroLocation
     extends
         ISaveableContent<IHeroLocationSave>,
         IObjectMovable,
-        IHookable<IHeroLocationHook>,
+        IHookable<IHeroLocationHooks>,
         IDataCommonExtended {
     /** 当前所在楼层 id，undefined 表示尚不处于任何楼层 */
     readonly floorId: string | undefined;
@@ -779,7 +779,7 @@ export interface IHeroChangeFloorInfo {
     readonly face: FaceDirection;
 }
 
-export interface IHeroStateHook extends IHookBase {
+export interface IHeroStateHooks extends IHookBase {
     /**
      * 当勇士切换楼层前触发，此钩子执行完毕后会立刻触发 `IHeroLocation` 的 `onSetFloor` 钩子。
      * 此钩子应该用于切换楼层前的过渡及必要的数据准备，不应该修改勇士位置相关的数据。
@@ -813,7 +813,9 @@ export interface IHeroStateSave<THero> {
 }
 
 export interface IHeroState<THero>
-    extends ISaveableContent<IHeroStateSave<THero>>, IHookable<IHeroStateHook> {
+    extends
+        ISaveableContent<IHeroStateSave<THero>>,
+        IHookable<IHeroStateHooks> {
     /** 勇士移动对象 */
     readonly location: IHeroLocation;
     /** 勇士属性对象 */

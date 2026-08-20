@@ -30,7 +30,7 @@ import {
     MapTileBehavior,
     MapTileSizeTestMode
 } from './types';
-import { ILayerState, ILayerStateHooks, IMapLayer } from '@user/data-base';
+import { IGameMap, IGameMapHooks, IMapLayer } from '@user/data-base';
 import { IHookController, logger } from '@motajs/common';
 import { compileProgramWith } from '@motajs/client-base';
 import { isNil, maxBy } from 'lodash-es';
@@ -78,9 +78,9 @@ export class MapRenderer
     assetWidth: number = 4096;
     assetHeight: number = 4096;
 
-    layerState: ILayerState;
+    layerState: IGameMap;
     /** 地图状态钩子控制器 */
-    private layerStateHook: IHookController<ILayerStateHooks>;
+    private layerStateHook: IHookController<IGameMapHooks>;
 
     /** 排序后的图层 */
     private sortedLayers: IMapLayer[] = [];
@@ -210,7 +210,7 @@ export class MapRenderer
      */
     constructor(
         readonly manager: IMaterialManager,
-        layerState: ILayerState
+        layerState: IGameMap
     ) {
         this.movingIndexPool.push(
             ...Array.from({ length: this.movingCount }, (_, i) => i).reverse()
@@ -427,7 +427,7 @@ export class MapRenderer
         this.vertex.updateLayerArray();
     }
 
-    setLayerState(layerState: ILayerState): void {
+    setLayerState(layerState: IGameMap): void {
         if (layerState === this.layerState) return;
         this.layerStateHook.unload();
         this.layerState = layerState;
@@ -1735,7 +1735,7 @@ export class MapRenderer
     //#endregion
 }
 
-class RendererLayerStateHook implements Partial<ILayerStateHooks> {
+class RendererLayerStateHook implements Partial<IGameMapHooks> {
     constructor(readonly renderer: MapRenderer) {}
 
     onChangeBackground(tile: number): void {

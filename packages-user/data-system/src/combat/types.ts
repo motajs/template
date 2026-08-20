@@ -750,7 +750,7 @@ export interface ICombatFlowHandler<TEnemy, THero> extends IDataBaseExtended {
     readonly locator: ITileLocator;
 }
 
-export interface ICombatFlowHook<TEnemy, THero> extends IHookBase {
+export interface ICombatFlowHooks<TEnemy, THero> extends IHookBase {
     /**
      * 战前脚本
      * @param info 战斗伤害信息
@@ -799,7 +799,7 @@ export interface ICombatResult<TEnemy, THero> {
 }
 
 export interface ICombatFlow<TEnemy, THero>
-    extends IHookable<ICombatFlowHook<TEnemy, THero>>, IDataBaseExtended {
+    extends IHookable<ICombatFlowHooks<TEnemy, THero>>, IDataBaseExtended {
     /** 勇士属性对象 */
     readonly hero: IReadonlyHeroAttribute<THero> | null;
     /** 怪物上下文对象 */

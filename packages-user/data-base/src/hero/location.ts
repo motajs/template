@@ -8,13 +8,13 @@ import { FaceDirection, IDataCommon, IFaceHandler } from '@user/data-common';
 import { HeroMover } from './mover';
 import {
     IHeroLocation,
-    IHeroLocationHook,
+    IHeroLocationHooks,
     IHeroLocationSave,
     IHeroMover
 } from './types';
 
 export class HeroLocation
-    extends Hookable<IHeroLocationHook>
+    extends Hookable<IHeroLocationHooks>
     implements IHeroLocation
 {
     x: number;
@@ -39,8 +39,8 @@ export class HeroLocation
     }
 
     protected createController(
-        hook: Partial<IHeroLocationHook>
-    ): IHookController<IHeroLocationHook> {
+        hook: Partial<IHeroLocationHooks>
+    ): IHookController<IHeroLocationHooks> {
         return new HookController(this, hook);
     }
 

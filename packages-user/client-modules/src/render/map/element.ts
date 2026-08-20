@@ -1,5 +1,5 @@
 import { MotaOffscreenCanvas2D, RenderItem } from '@motajs/render';
-import { ILayerState } from '@user/data-base';
+import { IGameMap } from '@user/data-base';
 import { IMapRenderer } from './types';
 import { ElementNamespace, ComponentInternalInstance } from 'vue';
 import { CELL_HEIGHT, CELL_WIDTH, MAP_HEIGHT, MAP_WIDTH } from '../../shared';
@@ -11,7 +11,7 @@ export class MapRenderItem extends RenderItem {
      * @param renderer 地图渲染器对象
      */
     constructor(
-        readonly layerState: ILayerState,
+        readonly layerState: IGameMap,
         readonly renderer: IMapRenderer,
         readonly exManager: IMapExtensionManager
     ) {

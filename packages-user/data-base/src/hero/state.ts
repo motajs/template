@@ -17,7 +17,7 @@ import {
     IModifierStateSave,
     IReadonlyHeroAttribute,
     IHeroChangeFloorInfo,
-    IHeroStateHook
+    IHeroStateHooks
 } from './types';
 import {
     FaceDirection,
@@ -34,7 +34,7 @@ import {
 } from '@motajs/common';
 
 export class HeroState<THero>
-    extends Hookable<IHeroStateHook>
+    extends Hookable<IHeroStateHooks>
     implements IHeroState<THero>
 {
     /** 修饰器工厂函数注册表 */
@@ -72,8 +72,8 @@ export class HeroState<THero>
     }
 
     protected createController(
-        hook: Partial<IHeroStateHook>
-    ): IHookController<IHeroStateHook> {
+        hook: Partial<IHeroStateHooks>
+    ): IHookController<IHeroStateHooks> {
         return new HookController(this, hook);
     }
 

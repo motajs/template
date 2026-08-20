@@ -1,6 +1,6 @@
 import { ITileLocator } from '@motajs/common';
 import {
-    ILayerState,
+    IGameMap,
     IMapLayer,
     IStateBase,
     IDataBaseExtended
@@ -21,7 +21,7 @@ export interface ITriggerHandler {
     /** 当前全局状态对象 */
     readonly state: IStateBase;
     /** 当前楼层状态对象 */
-    readonly layer?: ILayerState;
+    readonly layer?: IGameMap;
     /** 当前参与触发的图层对象 */
     readonly mapLayer?: IMapLayer;
     /** 当前触发点定位符 */

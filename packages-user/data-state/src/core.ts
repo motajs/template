@@ -330,11 +330,7 @@ export class CoreState implements ICoreState {
         const reference = new Map<string, Map<number, Uint32Array>>();
         for (const id of floors) {
             const floor = data[id];
-            const state = this.maps.createLayerState(
-                id,
-                floor.width,
-                floor.height
-            );
+            const state = this.maps.createMap(id, floor.width, floor.height);
             const bg = state.addLayer();
             const bg2 = state.addLayer();
             const event = state.addLayer();

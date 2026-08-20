@@ -7,6 +7,7 @@ import {
 import {
     FaceDirection,
     IDataCommonExtended,
+    ILocationHelper,
     IMapBlockRawData,
     IMapRawData,
     IMoverController,
@@ -18,7 +19,135 @@ import {
 } from '@user/data-common';
 import { ITileStore } from '@user/data-common';
 
-//#region 静态图层
+//#region 图块信息
+
+export interface IMapBlockSaveBase {
+    /** 此图块的触发器 */
+    triggers?: ReadonlySet<number>;
+}
+
+export interface IStaticBlockSave extends IMapBlockSaveBase {}
+
+export interface IDynamicBlockSave extends IMapBlockSaveBase {
+    /** 此动态图块的图块数字 */
+    num: number;
+}
+
+export interface ITileBase {
+    /** 该图块所处的位置 */
+    readonly locator: ITileLocator;
+    /** 该图块所处的图层对象 */
+    readonly layer: IMapLayer;
+    /** 包含的触发器列表，不存在时表示使用图块本身的触发器 */
+    readonly triggers: ReadonlySet<number> | null;
+
+    /**
+     * 获取该图块的原始图块信息
+     */
+    raw(): ITileRawData | null;
+
+    /**
+     * 获取该图块的原始点位信息
+     */
+    block(): IMapBlockRawData | null;
+
+    /**
+     * 获取该图块的图块数字
+     */
+    num(): number;
+
+    /**
+     * 设置此图块为指定图块
+     * @param num 图块数字
+     */
+    set(num: number): void;
+
+    /**
+     * 设置图块朝向，会一并修改 {@link num}，返回设置后的当前图块数字
+     * @param direction 图块朝向
+     */
+    setFaceDirection(direction: FaceDirection): number;
+
+    /**
+     * 清空此图块实例的触发器，回退为图块本身的触发器
+     */
+    clearTrigger(): void;
+
+    /**
+     * 在此图块实例上添加触发器，当图块实例包含触发器时，将会覆盖图块本身的触发器
+     * @param trigger 触发器数字
+     */
+    addTrigger(trigger: number): void;
+
+    /**
+     * 删除此图块实例上添加的触发器
+     * @param trigger 触发器数字
+     */
+    deleteTrigger(trigger: number): void;
+
+    /**
+     * 将此图块实例的触发器设置为无触发器，并覆盖图块本身的触发器。若图块本身包含触发器，此方法可以将其禁用
+     */
+    useEmptyTrigger(): void;
+}
+
+export interface IStaticTile
+    extends
+        ITileBase,
+        IDataCommonExtended,
+        ISaveableContent<Readonly<IStaticBlockSave>> {
+    /**
+     * 将此静态图块转换为动态图块
+     */
+    toDynamic(): IDynamicTile;
+
+    /**
+     * 判断当前静态图块是否需要存档
+     */
+    shouldSave(): boolean;
+}
+
+export interface IDynamicTile
+    extends
+        ITileBase,
+        IObjectMovable,
+        IDataCommonExtended,
+        ISaveableContent<Readonly<IDynamicBlockSave>> {
+    /** 该动态图块的移动器 */
+    readonly mover: IObjectMover<IDynamicTile>;
+    /** 该动态图块所属的动态图层 */
+    readonly layer: IMapLayer;
+
+    /**
+     * 将该动态图块转换为静态图块，如果该动态图块的坐标不为整数或正在移动，那么会转换失败并返回 `null`。
+     * 如果目标点有静态图块，那么会将其覆盖。
+     */
+    toStatic(): IStaticTile | null;
+
+    /**
+     * 将该动态图块转换为静态图块，如果该动态图块的坐标不为整数或正在移动，或目标点不为空，那么会转换失败并返回 `null`。
+     * 即在 `toStatic` 的基础上添加了一个目标点是否为空的判断。
+     */
+    toStaticIfSafe(): IStaticTile | null;
+
+    /**
+     * 单步便捷移动接口，适用于简单移动场景，复杂路径通过 `tile.mover` 访问。
+     * 等价于：
+     *
+     * ```ts
+     * mover.step(dir, count);
+     * return mover.start();
+     * ```
+     */
+    step(dir: FaceDirection, count?: number): IMoverController | null;
+
+    /**
+     * 直接删除此图块
+     */
+    delete(): Promise<void>;
+}
+
+//#region 地图图层
 
 export interface IMapLayerData {
     /** 当前引用是否过期，当地图图层内部的地图数组引用更新时，此项会变为 `true` */
@@ -32,14 +161,10 @@ export interface ILayerLocation {
     readonly locator: ITileLocator;
     /** 该点的静态图块数字 */
     readonly tile: number;
-    /** 该点的静态图块信息 */
-    readonly raw: ITileRawData | null;
-    /** 该点的静态触发器，-1 表示未设置（即使用图块本身的触发器），否则表示该点的静态触发器，覆盖图块本身的触发器 */
-    readonly trigger: number;
     /** 该点包含的所有动态图块 */
     readonly dynamics: Iterable<IDynamicTile>;
     /** 该点的静态图块原始数据 */
-    readonly block: IMapBlockRawData;
+    readonly static: IStaticTile;
 }
 
 export interface IMapLayerHooks extends IHookBase {
@@ -51,7 +176,7 @@ export interface IMapLayerHooks extends IHookBase {
     onResize(width: number, height: number): void;
 
     /**
-     * 当更新某个区域的图块时执行
+     * 当更新某个区域的图块时执行，对应于 `putMapData` 方法
      * @param x 更新区域左上角横坐标
      * @param y 更新区域左上角纵坐标
      * @param width 更新区域宽度
@@ -60,7 +185,7 @@ export interface IMapLayerHooks extends IHookBase {
     onUpdateArea(x: number, y: number, width: number, height: number): void;
 
     /**
-     * 当更新某个点的图块时执行，如果设置的图块与原先一样，则不会触发此方法
+     * 当更新某个点的图块时执行，如果设置的图块与原先一样，则不会触发此方法，对应于 `setBlock` 方法
      * @param block 更新为的图块数字
      * @param x 更新点横坐标
      * @param y 更新点纵坐标
@@ -81,6 +206,24 @@ export interface IMapLayerHooks extends IHookBase {
      * @param y 门纵坐标
      */
     onCloseDoor(num: number, x: number, y: number): Promise<void>;
+
+    /**
+     * 当动态图块被创建时触发，包括从静态图块转换为动态图块
+     * @param tile 被创建的动态图块
+     */
+    onCreateDynamic?(tile: IDynamicTile): void;
+
+    /**
+     * 当动态图块被删除时触发
+     * @param tile 被删除的动态图块
+     */
+    onDeleteDynamic?(tile: IDynamicTile): Promise<void>;
+
+    /**
+     * 当更新动态图块的位置时触发
+     * @param tile 更新位置的图块
+     */
+    onUpdateDynamicPosition?(tile: IDynamicTile): void;
 }
 
 export interface IMapLayerHookController extends IHookController<IMapLayerHooks> {
@@ -93,36 +236,9 @@ export interface IMapLayerHookController extends IHookController<IMapLayerHooks>
     getMapData(): Readonly<IMapLayerData>;
 }
 
-export interface IMapLayer
-    extends
-        IHookable<IMapLayerHooks, IMapLayerHookController>,
-        IDataCommonExtended {
-    /** 地图宽度 */
-    readonly width: number;
-    /** 地图高度 */
-    readonly height: number;
+interface ILayerStatic {
     /**
-     * 地图是否全部空白，此值具有充分性，但不具有必要性，
-     * 即如果其为 `true`，则地图一定空白，但是如果其为 `false`，那么地图也有可能空白
-     */
-    readonly empty: boolean;
-    /** 图层纵深 */
-    readonly zIndex: number;
-
-    /** 当前图层所属的地图状态对象 */
-    readonly layerState: ILayerState;
-    /** 此图层对应的动态图块图层，z 层级与静态图块一致 */
-    readonly dynamicLayer: IDynamicLayer;
-
-    /**
-     * 判断指定坐标是否在地图内
-     * @param x 横坐标
-     * @param y 纵坐标
-     */
-    inMap(x: number, y: number): boolean;
-
-    /**
-     * 设置某一点的图块
+     * 设置某一点的图块，会标记图层为脏
      * @param block 图块数字
      * @param x 图块横坐标
      * @param y 图块纵坐标
@@ -130,7 +246,7 @@ export interface IMapLayer
     setBlock(block: number, x: number, y: number): void;
 
     /**
-     * 获取指定点的图块
+     * 获取指定点的图块数字
      * @param x 图块横坐标
      * @param y 图块纵坐标
      * @returns 指定点的图块，如果没有图块，返回 0，如果不在地图上，返回 -1
@@ -138,41 +254,14 @@ export interface IMapLayer
     getBlock(x: number, y: number): number;
 
     /**
-     * 获取指定点的所有图块信息
-     * @param x 横坐标
-     * @param y 纵坐标
-     */
-    getLocationData(x: number, y: number): ILayerLocation | null;
-
-    /**
-     * 获取指定点的静态图块对应的有效触发器类型，若手动覆盖不存在则回退到图块默认触发器
+     * 获取指定点的静态图块实例
      * @param x 图块横坐标
      * @param y 图块纵坐标
      */
-    getTriggerType(x: number, y: number): number;
+    getTile(x: number, y: number): IStaticTile | null;
 
     /**
-     * 设置指定点静态图块的触发器
-     * @param type 触发器类型
-     * @param x 图块横坐标
-     * @param y 图块纵坐标
-     */
-    setTriggerType(type: number, x: number, y: number): void;
-
-    /**
-     * 删除指定点静态图块的触发器，回退为图块默认触发器
-     * @param x 图块横坐标
-     * @param y 图块纵坐标
-     */
-    revertTrigger(x: number, y: number): void;
-
-    /**
-     * 清空地图上所有静态图块的手动设置的触发器，恢复为图块默认触发器
-     */
-    clearTrigger(): void;
-
-    /**
-     * 设置地图图块
+     * 设置地图图块，会标记图层为脏
      * @param array 地图图块数组
      * @param x 数组第一项代表的横坐标
      * @param y 数组第一项代表的纵坐标
@@ -199,9 +288,8 @@ export interface IMapLayer
     ): Uint32Array;
 
     /**
-     * 直接替换内部图块数组引用，跳过拷贝，高性能但风险较高。
-     * 一般仅供 `MapStore` 读档时内部使用，外部正常情况下不应调用。
-     * 调用方需确保传入数组的长度与 `width * height` 匹配，
+     * 直接替换内部图块数组引用，跳过拷贝，高性能但风险较高。一般仅供内部使用，外部不需要调用。
+     * 此操作不会标记图层为脏。调用方需确保传入数组的长度与 `width * height` 匹配，
      * 且调用后不得再持有或修改传入的数组。
      * @param array 地图数组，会直接替换内部引用
      */
@@ -213,15 +301,170 @@ export interface IMapLayer
     getMapRef(): IMapLayerData;
 
     /**
-     * 直接设置内部触发器映射对象，一般仅供内部存读档使用，外部正常情况下不应调用
-     * @param triggers 触发器映射
+     * 设置静态图块的朝向
+     * @param x 要设置的静态图块横坐标
+     * @param y 要设置的静态图块纵坐标
+     * @param direction 目标朝向
+     * @returns 更新朝向后该静态图块的图块数字
      */
-    setTriggerRef(triggers: Map<number, number>): void;
+    setStaticDirection(x: number, y: number, direction: FaceDirection): number;
 
     /**
-     * 获取静态触发器覆盖映射，一般仅供内部存档逻辑使用
+     * 迭代所有的图块
      */
-    getTriggerRef(): ReadonlyMap<number, number>;
+    iterateBlocks(): Iterable<ILayerLocation>;
+}
+
+interface ILayerDynamic {
+    /**
+     * 在指定位置创建一个动态图块
+     * @param num 图块数字
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    createDynamic(num: number, x: number, y: number): IDynamicTile;
+
+    /**
+     * 从静态图层读取并清除指定位置的图块，创建对应动态图块并返回
+     * @param x 横坐标
+     * @param y 纵坐标
+     * @param keepTrigger 是否将静态图块的触发器保留至动态图块，不论是否保留，此格的静态触发器都会被清空
+     */
+    transferToDynamic(
+        x: number,
+        y: number,
+        keepTrigger?: boolean
+    ): IDynamicTile | null;
+
+    /**
+     * 将动态图块还原为静态图块
+     * @param tile 要还原的动态图块
+     * @param keepTrigger 是否保留动态图块的触发器至静态图块，若不保留，那么此格将回退为静态图块本身的触发器
+     */
+    transferToStatic(
+        tile: IDynamicTile,
+        keepTrigger?: boolean
+    ): IStaticTile | null;
+
+    /**
+     * 仅当目标位置不存在静态图块时才还原为静态图块，否则不转换
+     * @param tile 要还原的动态图块
+     * @param keepTrigger 是否保留动态图块的触发器至静态图块，若不保留，那么此格将回退为静态图块本身的触发器
+     */
+    transferToStaticIfSafe(
+        tile: IDynamicTile,
+        keepTrigger?: boolean
+    ): IStaticTile | null;
+
+    /**
+     * 删除指定动态图块，当删除完成后兑现返回值
+     * @param tile 要删除的动态图块
+     */
+    deleteDynamic(tile: IDynamicTile): Promise<void>;
+
+    /**
+     * 获取指定格点上所有动态图块的可迭代对象
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    getDynamicTilesAt(x: number, y: number): Iterable<IDynamicTile>;
+
+    /**
+     * 迭代所有的动态图块
+     */
+    iterateDynamicTiles(): Iterable<IDynamicTile>;
+
+    /**
+     * 设置动态图块的朝向
+     * @param tile 要设置朝向的动态图块
+     * @param direction 目标朝向
+     * @returns 更新朝向后该动态图块的图块数字
+     */
+    setDynamicDirection(tile: IDynamicTile, direction: FaceDirection): number;
+
+    /**
+     * 更新动态图块位置，用于在图块发生移动时更新内部存储，一般不需要手动调用
+     * @param tile 动态图块
+     */
+    updateDynamicTile(tile: IDynamicTile): void;
+}
+
+export interface IMapLayerSave {
+    /** 地图宽度 */
+    readonly width: number;
+    /** 地图高度 */
+    readonly height: number;
+
+    /**
+     * 每行的地图数据，键表示行索引，值表示该行完整的 Uint32Array 数据。
+     * HighCompression 时使用此接口，仅包含与参考基准不同的行。
+     */
+    readonly rows?: ReadonlyMap<number, Uint32Array>;
+
+    /** 完整地图，当使用 `NoCompression` 和 `LowCompression` 时使用此接口 */
+    readonly fullMap?: Uint32Array;
+
+    /**
+     * 每个静态图块实例的存储，在 `LowCompression` 和 `HighCompression` 下，
+     * 此存储只会保存被标记为脏的图块，避免占用过大的存储空间。
+     */
+    readonly staticBlocks?: ReadonlyMap<number, Readonly<IStaticBlockSave>>;
+    /**
+     * 每个动态图块实例的存储，在 `LowCompression` 和 `HighCompression` 下，
+     * 此存储只会保存被标记为脏的图块，避免占用过大的存储空间。
+     */
+    readonly dynamicBlocks?: ReadonlyMap<number, Readonly<IDynamicBlockSave>[]>;
+}
+
+export interface IMapLayer
+    extends
+        IHookable<IMapLayerHooks, IMapLayerHookController>,
+        IDataCommonExtended,
+        ILayerStatic,
+        ILayerDynamic,
+        ISaveableContent<IMapLayerSave> {
+    /** 地图宽度 */
+    readonly width: number;
+    /** 地图高度 */
+    readonly height: number;
+    /**
+     * 地图是否全部空白，此值具有充分性，但不具有必要性，
+     * 即如果其为 `true`，则地图一定空白，但是如果其为 `false`，那么地图也有可能空白
+     */
+    readonly empty: boolean;
+    /** 图层纵深 */
+    readonly zIndex: number;
+
+    /** 当前图层所属的地图状态对象 */
+    readonly map: IGameMap;
+    /** 该图层使用的朝向绑定器 */
+    readonly faceBinder: IRoleFaceBinder;
+
+    /**
+     * 设置图层的参考基准，存档时会根据参考基准进行必要的压缩处理，仅可调用一次，多次调用无效
+     * @param data 图层的静态地图矩阵
+     */
+    compareWith(data: Uint32Array): void;
+
+    /**
+     * 判断指定坐标是否在地图内
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    inMap(x: number, y: number): boolean;
+
+    /**
+     * 设置该图层使用的朝向绑定器，用于控制图块转向操作
+     * @param binder 朝向绑定器
+     */
+    setFaceBinder(binder: IRoleFaceBinder | null): void;
+
+    /**
+     * 获取指定点的所有图块信息
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    getLocationData(x: number, y: number): ILayerLocation | null;
 
     /**
      * 设置地图纵深，会影响渲染的遮挡顺序
@@ -243,54 +486,53 @@ export interface IMapLayer
      * @param y 门纵坐标
      */
     closeDoor(num: number, x: number, y: number): Promise<void>;
+
+    /**
+     * 当前图层是否为脏，即是否经过了修改，相对于设置的参考基准。
+     * 图层相对于参考基准变化时一定为 `true`，但为 `true` 时图层不一定相对参考基准发生了变化。
+     * 此标记仅针对静态图层，动态图块的改动不会影响此值。
+     */
+    dirty(): boolean;
+
+    /**
+     * 标记当前图层是否为脏，会影响存档，如果不明白原理不建议随意调用
+     * @param dirty 图层是否为脏
+     */
+    markDirty(dirty: boolean): void;
+}
+
+export interface IResizableMapLayer extends IMapLayer {
+    /**
+     * 重设图层宽高，清空地图上的所有内容，会标记图层为脏
+     * @param width 要设置为的宽度
+     * @param height 要设置为的高度
+     */
+    resize(width: number, height: number): void;
+
+    /**
+     * 重设图层宽高，会保留已有图块内容，扩大的区域补零，缩小的区域裁剪，会标记图层为脏
+     * @param width 要设置为的宽度
+     * @param height 要设置为的高度
+     */
+    resize2(width: number, height: number): void;
 }
 
 //#endregion
 
 //#region 图层管理
 
-export interface ILayerStateHooks extends IHookBase {
+export interface IGameMapHooks extends IHookBase {
     /**
      * 当设置背景图块时执行，如果设置的背景图块与原先一样，则不会执行
      * @param tile 背景图块
      */
-    onChangeBackground(tile: number): void;
+    onChangeBackground?(tile: number): void;
 
     /**
      * 当地图列表发生变化时执行
      * @param layerList 地图图层列表
      */
-    onUpdateLayer(layerList: Set<IMapLayer>): void;
-
-    /**
-     * 当地图状态对象的某个图层发生区域更新时执行
-     * @param layer 触发更新的地图图层对象
-     * @param x 更新区域左上角横坐标
-     * @param y 更新区域左上角纵坐标
-     * @param width 更新区域宽度
-     * @param height 更新区域高度
-     */
-    onUpdateLayerArea(
-        layer: IMapLayer,
-        x: number,
-        y: number,
-        width: number,
-        height: number
-    ): void;
-
-    /**
-     * 当地图状态对象的某个图层设置图块时执行，如果设置的图块与原先一样则不会触发
-     * @param layer 触发更新的地图图层对象
-     * @param block 设置为的图块
-     * @param x 图块横坐标
-     * @param y 图块纵坐标
-     */
-    onUpdateLayerBlock(
-        layer: IMapLayer,
-        block: number,
-        x: number,
-        y: number
-    ): void;
+    onUpdateLayer?(layerList: Set<IMapLayer>): void;
 
     /**
      * 当地图状态对象的某个图层大小发生变化时执行
@@ -298,11 +540,23 @@ export interface ILayerStateHooks extends IHookBase {
      * @param width 地图的新宽度
      * @param height 地图的新高度
      */
-    onResizeLayer(layer: IMapLayer, width: number, height: number): void;
+    onResizeLayer?(layer: IMapLayer, width: number, height: number): void;
 }
 
-export interface ILayerState
-    extends IHookable<ILayerStateHooks>, IDataCommonExtended {
+export interface IGameMapSave {
+    /** 楼层背景 */
+    readonly background: number;
+    /** 该地图每一个图层的存档信息，键表示纵深，值对应图层存档数据 */
+    readonly layers: ReadonlyMap<number, IMapLayerSave>;
+}
+
+export interface IGameMap
+    extends
+        IHookable<IGameMapHooks>,
+        IDataCommonExtended,
+        ISaveableContent<IGameMapSave> {
+    /** 坐标索引器，用于坐标与扁平索引之间的双向转换 */
+    readonly indexer: ILocationHelper;
     /** 地图列表 */
     readonly layerList: Set<IMapLayer>;
     /** 当前楼层共享的图块定义 store */
@@ -353,6 +607,12 @@ export interface ILayerState
     getLayerAlias(layer: IMapLayer): string | undefined;
 
     /**
+     * 设置地图的参考基准，存档时会根据参考基准进行必要的压缩，仅可调用一次，多次调用无效
+     * @param data 地图的静态地图矩阵，键表示纵深，值表示对应图层的矩阵
+     */
+    compareWith(data: Map<number, Uint32Array>): void;
+
+    /**
      * 重新设置所有图层的大小，同时更新楼层预设宽高
      * @param width 新的地图宽度
      * @param height 新的地图高度
@@ -384,47 +644,26 @@ export interface ILayerState
     setEventLayer(layer: IMapLayer | null): void;
 
     /**
-     * 楼层是否被修改过（相对于参考基准）
+     * 当前地图是否为脏，相对于参考基准，当任意图层或地图设置发生变化时为脏。
+     * 地图相对于参考基准变化时一定为 `true`，但为 `true` 时地图不一定相对参考基准发生了变化。
+     * 此标记仅针对静态图层和本地图的地图设置，动态图块的改动不会影响此值。
      */
-    isDirty(): boolean;
+    dirty(): boolean;
 
     /**
-     * 设置楼层脏标记
+     * 标记当前地图是否为脏，会影响存档，如果不明白原理不建议随意调用
+     * @param dirty 地图是否为脏
      */
-    setDirty(dirty: boolean): void;
+    markDirty(dirty: boolean): void;
 }
 
 //#endregion
 
 //#region 楼层管理
 
-export interface IMapLayerSave {
-    readonly width: number;
-    readonly height: number;
-
-    /**
-     * key = 行索引，value = 该行完整的 Uint32Array 数据；
-     * HighCompression 时使用此接口，仅包含与参考基准不同的行；
-     * 读档时，不在此 Map 中的行从参考基准还原。
-     */
-    readonly rows?: ReadonlyMap<number, Uint32Array>;
-
-    /** 完整地图，当使用 `NoCompression` 和 `LowCompression` 时使用此接口 */
-    readonly fullMap?: Uint32Array;
-}
-
-export interface ILayerStateSave {
-    /** 楼层背景 */
-    readonly background: number;
-    /** key = zIndex，value = 对应图层存档数据 */
-    readonly layers: ReadonlyMap<number, IMapLayerSave>;
-    /** 静态触发器覆盖映射，仅在存在覆盖时写入 */
-    readonly triggers: ReadonlyMap<number, ReadonlyMap<number, number>>;
-}
-
 export interface IMapStoreSave {
-    /** key = 楼层 id，只包含 active 的楼层，inactive 的楼层不写入，读档时无需处理 */
-    readonly floors: ReadonlyMap<string, ILayerStateSave>;
+    /** 键表示楼层 id，只包含已激活的楼层，未激活的楼层不写入 */
+    readonly floors: ReadonlyMap<string, IGameMapSave>;
 }
 
 export interface IMapAreaInterval {
@@ -442,33 +681,33 @@ export interface IMapState
     readonly maps: ReadonlyArray<string>;
 
     /**
-     * 获取指定 id 的楼层状态，不存在则返回 null
-     * @param id 楼层 id
-     */
-    getLayerState(id: string): ILayerState | null;
-
-    /**
-     * 获取指定 id 的楼层状态，要求楼层必须是 active 的，否则返回 null
-     * @param id 楼层 id
-     */
-    getActiveMap(id: string): ILayerState | null;
-
-    /**
-     * 从楼层原始数据生成楼层状态
-     * @param raw 楼层原始数据
-     */
-    fromRaw(raw: IMapRawData): ILayerState | null;
-
-    /**
      * 创建并注册一个空白楼层，若 id 已存在则警告并覆盖，返回楼层状态对象
      * @param id 楼层 id
      * @param width 地图宽度
      * @param height 地图高度
      */
-    createLayerState(id: string, width: number, height: number): ILayerState;
+    createMap(id: string, width: number, height: number): IGameMap;
 
     /**
-     * 获取指定 id 的楼层是否激活，不存在的 id 返回 false
+     * 获取指定 id 的楼层状态，不存在则返回 `null`
+     * @param id 楼层 id
+     */
+    getMap(id: string): IGameMap | null;
+
+    /**
+     * 从楼层原始数据生成楼层状态
+     * @param raw 楼层原始数据
+     */
+    fromRaw(raw: IMapRawData): IGameMap | null;
+
+    /**
+     * 获取指定 id 的楼层状态，要求楼层必须是已激活的，否则返回 `null`
+     * @param id 楼层 id
+     */
+    getActiveMap(id: string): IGameMap | null;
+
+    /**
+     * 获取指定 id 的楼层是否激活，不存在的 id 返回 `false`
      * @param id 楼层 id
      */
     isMapActive(id: string): boolean;
@@ -481,23 +720,23 @@ export interface IMapState
     setMapActiveStatus(id: string, active: boolean): void;
 
     /**
-     * 迭代所有 active 的楼层，yield [id, ILayerState]
+     * 迭代所有已激活的楼层
      */
-    iterateActiveMaps(): Iterable<[string, ILayerState]>;
+    iterateActiveMaps(): Iterable<[string, IGameMap]>;
 
     /**
-     * 迭代所有 inactive 的楼层，yield [id, ILayerState]
+     * 迭代所有未激活的楼层
      */
-    iterateInactiveMaps(): Iterable<[string, ILayerState]>;
+    iterateInactiveMaps(): Iterable<[string, IGameMap]>;
 
     /**
-     * 迭代所有楼层，yield [id, ILayerState]
+     * 迭代所有楼层
      */
-    iterateAllMaps(): Iterable<[string, ILayerState]>;
+    iterateAllMaps(): Iterable<[string, IGameMap]>;
 
     /**
-     * 设置压缩参考基准，以首次调用为唯一基准，再次调用不更新。
-     * @param ref 外层 key = 楼层 id，内层 key = zIndex，value = 图层完整图块数据
+     * 设置参考基准，存档时会根据参考基准进行必要的压缩处理，仅可调用一次，多次调用无效
+     * @param ref 外层键表示楼层 id，内层键表示图层纵深，值表示图层完整图块数据
      */
     compareWith(ref: Map<string, Map<number, Uint32Array>>): void;
 
@@ -506,13 +745,6 @@ export interface IMapState
      * @param maps 楼层 id 数组
      */
     setMapList(maps: string[]): void;
-
-    /**
-     * 使用自定义排序函数重排 maps。排序函数接收当前列表的副本，返回新顺序。
-     * 若返回的数组元素集合与原列表不一致，则警告并放弃本次排序
-     * @param sort 排序函数
-     */
-    useManualOrder(sort: (arr: string[]) => string[]): void;
 
     /**
      * 设定分区列表。每个分区由一个或多个区间组成
@@ -527,7 +759,7 @@ export interface IMapState
     activeArea(id: string): void;
 
     /**
-     * 去激活指定楼层所属分区的所有楼层
+     * 取消激活指定楼层所属分区的所有楼层
      * @param id 楼层 id
      */
     deactiveArea(id: string): void;
@@ -539,169 +771,11 @@ export interface IMapState
     useAutoActivitor(enable: boolean): void;
 
     /**
-     * 通知当前进入的楼层。开启自动激活器时，将自动去激活上一个分区并激活新分区
+     * 通知当前勇士进入的楼层，用于自动分区。当开启自动分区激活器时，若进入的楼层不属于当前分区，
+     * 那么会自动取消激活当前分区，然后激活新进入的分区。此函数一般不需要手动调用。
      * @param id 楼层 id
      */
     notifyEnterFloor(id: string): void;
-}
-
-//#endregion
-
-//#region 动态图块
-
-export interface IDynamicLayerHooks extends IHookBase {
-    /**
-     * 当图块被创建（含从静态图块转换）时触发
-     * @param tile 被创建的动态图块
-     * @param layer 所属的动态图层
-     */
-    onCreateTile?(tile: IDynamicTile, layer: IDynamicLayer): void;
-
-    /**
-     * 当图块被删除时触发
-     * @param tile 被删除的动态图块
-     * @param layer 所属的动态图层
-     */
-    onDeleteTile?(tile: IDynamicTile, layer: IDynamicLayer): Promise<void>;
-
-    /**
-     * 当更新动态图块的位置时触发（包括使用 `mover` 触发的移动）
-     * @param tile 更新位置的图块
-     * @param layer 所属的动态图层
-     */
-    onUpdateTilePosition?(tile: IDynamicTile, layer: IDynamicLayer): void;
-}
-
-export interface IDynamicLayer
-    extends IHookable<IDynamicLayerHooks>, IDataCommonExtended {
-    /** 当前动态图层所属的静态图层 */
-    readonly layer: IMapLayer;
-
-    /**
-     * 在指定位置创建一个动态图块
-     * @param num 图块数字
-     * @param x 横坐标
-     * @param y 纵坐标
-     * @returns 创建的动态图块引用
-     */
-    createDynamic(num: number, x: number, y: number): IDynamicTile;
-
-    /**
-     * 从所属静态图层读取并清除指定位置的图块，创建对应动态图块并返回引用。
-     * 若该位置图块为 0，则发出警告并仍然创建 `num = 0` 的动态图块
-     * @param x 横坐标
-     * @param y 纵坐标
-     * @returns 创建的动态图块引用
-     */
-    transferToDynamic(
-        x: number,
-        y: number,
-        keepTrigger?: boolean
-    ): IDynamicTile;
-
-    /**
-     * 将动态图块还原为静态图块。坐标越界则警告并放弃，
-     * 否则写回静态图层并触发 {@link IDynamicLayerHooks.onDeleteTile}
-     * @param tile 要还原的动态图块
-     */
-    transferToStatic(tile: IDynamicTile, keepTrigger?: boolean): void;
-
-    /**
-     * 仅当目标位置静态图块为 0（空白）时才还原为静态图块，否则不转换
-     * @param tile 要还原的动态图块
-     * @returns 是否转换成功
-     */
-    transferToStaticIfSafe(tile: IDynamicTile, keepTrigger?: boolean): boolean;
-
-    /**
-     * 删除指定动态图块，触发 {@link IDynamicLayerHooks.onDeleteTile} 钩子。
-     * 若图块不属于此层则发出警告
-     * @param tile 要删除的动态图块
-     */
-    deleteDynamic(tile: IDynamicTile): Promise<void>;
-
-    /**
-     * 获取指定格点上所有动态图块的可迭代对象
-     * @param x 横坐标
-     * @param y 纵坐标
-     */
-    getDynamicTilesAt(x: number, y: number): Iterable<IDynamicTile>;
-
-    /**
-     * 迭代所有的动态图块
-     */
-    iterateDynamicTiles(): Iterable<IDynamicTile>;
-
-    /**
-     * 手动设置动态图块的朝向，更新 `tile.num`（若有朝向绑定）。
-     * 转向逻辑与移动时的转向逻辑相同，但不触发移动
-     * @param tile 要设置朝向的动态图块
-     * @param direction 目标朝向
-     */
-    setDynamicDirection(tile: IDynamicTile, direction: FaceDirection): void;
-
-    /**
-     * 更新图块内部存储位置
-     * @param tile 动态图块
-     */
-    updateDynamicTile(tile: IDynamicTile): void;
-}
-
-export interface IDynamicTile extends IObjectMovable, IDataCommonExtended {
-    /** 当前图块数字 */
-    readonly num: number;
-    /** 当前动态图块携带的触发器类型，-1 表示无触发器 */
-    readonly triggerType: number;
-    /** 当前图块所属的动态图层 */
-    readonly layer: IDynamicLayer;
-    /** 当前动态图块的移动器 */
-    readonly mover: IObjectMover<IDynamicTile>;
-    /** 当前动态图块的图块数据 */
-    readonly raw: ITileRawData | null;
-
-    /**
-     * 设置图块朝向，会一并修改 {@link num}，返回设置后的当前图块数字
-     * @param direction 图块朝向
-     */
-    setFaceDirection(direction: FaceDirection): number;
-
-    /**
-     * 设置当前动态图块的触发器类型
-     * @param type 触发器类型
-     */
-    setTriggerType(type: number): void;
-
-    /**
-     * 直接删除此图块
-     */
-    delete(): Promise<void>;
-
-    /**
-     * 将当前图块还原为静态图块
-     */
-    toStatic(): void;
-
-    /**
-     * 还原为静态图块，如果当前位置有东西则不转换
-     */
-    toStaticIfSafe(): boolean;
-
-    /**
-     * 单步便捷移动接口，适用于简单移动场景，复杂路径通过 `tile.mover` 访问。
-     * 等价于：
-     *
-     * ```ts
-     * mover.step(dir, count);
-     * return mover.start();
-     * ```
-     */
-    step(dir: FaceDirection, count?: number): IMoverController | null;
-
-    /**
-     * 注入朝向绑定器，初始状态视为无朝向绑定
-     * @param binder 朝向绑定器
-     */
-    setFaceBinder(binder: IRoleFaceBinder | null): void;
 }
 
 //#endregion

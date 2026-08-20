@@ -20,7 +20,7 @@ export interface IReplayCommand {
     execute(step: IReplayStepHandler): Promise<boolean>;
 }
 
-export interface IReplaySandboxHook extends IHookBase {
+export interface IReplaySandboxHooks extends IHookBase {
     /**
      * 当录像沙箱将某一步录像操作执行完毕后触发
      * @param step 当前录像步信息
@@ -54,7 +54,7 @@ export interface IReplaySandboxHook extends IHookBase {
     onResumeReplay?(): void;
 }
 
-export interface IReplaySandbox extends IHookable<IReplaySandboxHook> {
+export interface IReplaySandbox extends IHookable<IReplaySandboxHooks> {
     /** 是否处于暂停状态 */
     readonly pausing: boolean;
     /** 当前录像是否已经播放完毕 */
@@ -282,7 +282,7 @@ export interface IReplayArray {
     ): void;
 }
 
-export interface IReplaySystemHook extends IHookBase {
+export interface IReplaySystemHooks extends IHookBase {
     /**
      * 当创建新的录像沙盒时触发
      * @param sandbox 创建的录像沙盒
@@ -313,7 +313,7 @@ export interface IReplaySandboxConfig {
     save?: Map<string, unknown>;
 }
 
-export interface IReplaySystem extends IHookable<IReplaySystemHook> {
+export interface IReplaySystem extends IHookable<IReplaySystemHooks> {
     /** 当前是否处在录像播放状态 */
     readonly replaying: boolean;
     /** 当前正在播放的录像沙箱实例 */

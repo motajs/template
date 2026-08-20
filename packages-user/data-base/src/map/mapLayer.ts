@@ -1,18 +1,27 @@
 import { isNil } from 'lodash-es';
 import {
-    IDynamicLayer,
+    IDynamicBlockSave,
+    IDynamicTile,
+    IGameMap,
     ILayerLocation,
-    ILayerState,
     IMapLayer,
     IMapLayerData,
     IMapLayerHookController,
-    IMapLayerHooks
+    IMapLayerHooks,
+    IMapLayerSave,
+    IStaticBlockSave,
+    IStaticTile
 } from './types';
-import { Hookable, HookController, logger } from '@motajs/common';
-import { DynamicLayer } from './dynamicLayer';
-import { IDataCommon, ITileStore } from '@user/data-common';
-
-// todo: 提供 core.setBlock 等方法的替代方法，同时添加 setBlockList，以及前景背景的接口
+import { Hookable, HookController, ITileLocator, logger } from '@motajs/common';
+import {
+    degradeFace,
+    FaceDirection,
+    IDataCommon,
+    IRoleFaceBinder,
+    SaveCompression
+} from '@user/data-common';
+import { DynamicTile } from './dynamicTile';
+import { StaticTile } from './staticTile';
 
 export class MapLayer
     extends Hookable<IMapLayerHooks, IMapLayerHookController>
@@ -25,127 +34,116 @@ export class MapLayer
     empty: boolean = true;
     zIndex: number = 0;
 
+    faceBinder: IRoleFaceBinder;
+
     /** 地图图块数组 */
     private mapArray: Uint32Array;
     /** 地图数据引用 */
     private mapData: IMapLayerData;
-    /** 手动触发器覆盖映射，key = y * width + x */
-    private triggerMap: Map<number, number> = new Map();
-
-    readonly dynamicLayer: IDynamicLayer;
+    /** 静态图块实例缓存，key = y * width + x */
+    private readonly staticTileCache: Map<number, StaticTile> = new Map();
+    /** 坐标到动态图块集合的映射，外层 key = y，内层 key = x */
+    private readonly tilePosMap: Map<number, Map<number, Set<IDynamicTile>>> =
+        new Map();
+    /** 动态图块到其当前坐标的映射 */
+    private readonly posTileMap: Map<IDynamicTile, ITileLocator> = new Map();
+    /** 图层脏标记 */
+    private layerDirty: boolean = false;
+    /** 图层参考基准，用于存档压缩对比 */
+    private refArray: Uint32Array | null = null;
 
     constructor(
         array: Uint32Array,
         width: number,
         height: number,
-        public readonly layerState: ILayerState,
-        private readonly tileStore: ITileStore
+        public readonly map: IGameMap
     ) {
         super();
-        this.state = layerState.state;
+        this.state = map.state;
+        this.faceBinder = this.state.roleFace;
         this.width = width;
         this.height = height;
         const area = width * height;
         this.mapArray = new Uint32Array(area);
-        // 超出的裁剪，不足的补零
         this.mapArray.set(array);
         this.mapData = {
             expired: false,
             array: this.mapArray
         };
-        this.dynamicLayer = new DynamicLayer(this);
-    }
-
-    inMap(x: number, y: number): boolean {
-        return x >= 0 && y >= 0 && x < this.width && y < this.height;
     }
 
     /**
-     * 在地图尺寸变化后重新映射手动触发器覆盖表
+     * 将动态图块登记到指定坐标的索引表中
+     * @param tile 动态图块
+     * @param x 横坐标
+     * @param y 纵坐标
      */
-    private remapTriggerMap(
-        beforeWidth: number,
-        width: number,
-        height: number
-    ): Map<number, number> {
-        const next = new Map<number, number>();
-        for (const [index, type] of this.triggerMap) {
-            const x = index % beforeWidth;
-            const y = Math.floor(index / beforeWidth);
-            if (x < width && y < height) {
-                next.set(y * width + x, type);
-            }
-        }
-        return next;
+    private addTileToPosMap(tile: IDynamicTile, x: number, y: number): void {
+        const xMap = this.tilePosMap.getOrInsertComputed(y, () => new Map());
+        const set = xMap.getOrInsertComputed(x, () => new Set());
+        set.add(tile);
     }
 
-    resize(width: number, height: number): void {
-        if (this.width === width && this.height === height) {
-            return;
+    /**
+     * 将动态图块从指定坐标的索引表中移除
+     * @param tile 动态图块
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    private removeTileFromPosMap(
+        tile: IDynamicTile,
+        x: number,
+        y: number
+    ): void {
+        this.tilePosMap.get(y)?.get(x)?.delete(tile);
+    }
+
+    /**
+     * 从两个内部映射中移除图块记录
+     * @param tile 动态图块
+     */
+    private removeTile(tile: IDynamicTile): void {
+        const pos = this.posTileMap.get(tile);
+        if (pos) {
+            this.removeTileFromPosMap(tile, pos.x, pos.y);
         }
-        this.mapData.expired = true;
-        const before = this.mapArray;
-        const beforeWidth = this.width;
-        const beforeHeight = this.height;
-        const beforeArea = beforeWidth * beforeHeight;
-        this.width = width;
-        this.height = height;
-        const area = width * height;
-        const newArray = new Uint32Array(area);
-        this.triggerMap = this.remapTriggerMap(beforeWidth, width, height);
-        this.mapArray = newArray;
-        // 将原来的地图数组赋值给现在的
-        if (beforeArea > area) {
-            // 如果地图变小了，那么直接设置，不需要补零
-            for (let ny = 0; ny < height; ny++) {
-                const begin = ny * beforeWidth;
-                newArray.set(before.subarray(begin, begin + width), ny * width);
+        this.posTileMap.delete(tile);
+    }
+
+    /**
+     * 将动态图块的触发器同步回当前静态格点
+     * @param tile 动态图块
+     * @param keepTrigger 是否保留触发器
+     */
+    private syncStaticTrigger(tile: IDynamicTile, keepTrigger: boolean): void {
+        const staticTile = this.getTile(tile.x, tile.y);
+        if (!staticTile) return;
+        if (keepTrigger) {
+            const triggers = tile.triggers;
+            if (!triggers) {
+                staticTile.clearTrigger();
+            } else {
+                staticTile.clearTrigger();
+                for (const trigger of triggers) {
+                    staticTile.addTrigger(trigger);
+                }
             }
         } else {
-            // 如果地图变大了，那么需要补零。因为新数组本来就是用 0 填充的，实际上只要赋值就可以了
-            for (let ny = 0; ny < beforeHeight; ny++) {
-                const begin = ny * beforeWidth;
-                newArray.set(
-                    before.subarray(begin, begin + beforeWidth),
-                    ny * width
-                );
-            }
+            staticTile.clearTrigger();
         }
-        this.mapData = {
-            expired: false,
-            array: this.mapArray
-        };
-        this.forEachHook(hook => {
-            hook.onResize?.(width, height);
-        });
     }
 
-    resize2(width: number, height: number): void {
-        if (this.width === width && this.height === height) {
-            this.empty = true;
-            this.mapArray.fill(0);
-            this.triggerMap.clear();
-            return;
-        }
-        this.mapData.expired = true;
-        this.width = width;
-        this.height = height;
-        this.mapArray = new Uint32Array(width * height);
-        this.triggerMap.clear();
-        this.mapData = {
-            expired: false,
-            array: this.mapArray
-        };
-        this.empty = true;
-        this.forEachHook(hook => {
-            hook.onResize?.(width, height);
-        });
+    //#region 静态图层操作
+
+    inMap(x: number, y: number): boolean {
+        return x >= 0 && y >= 0 && x < this.width && y < this.height;
     }
 
     setBlock(block: number, x: number, y: number): void {
         const index = y * this.width + x;
         if (block === this.mapArray[index]) return;
         this.mapArray[index] = block;
+        this.layerDirty = true;
         this.forEachHook(hook => {
             hook.onUpdateBlock?.(block, x, y);
         });
@@ -161,74 +159,47 @@ export class MapLayer
         return this.mapArray[y * this.width + x];
     }
 
-    getLocationData(x: number, y: number): ILayerLocation | null {
+    getTile(x: number, y: number): IStaticTile | null {
         if (!this.inMap(x, y)) return null;
-        const index = y * this.width + x;
-        const num = this.mapArray[index];
-        const raw = this.state.tileStore.getData(num);
-        const dynamics = this.dynamicLayer.getDynamicTilesAt(x, y);
-        const trigger = this.triggerMap.get(index) ?? -1;
+        const index = this.map.indexer.locToIndex(x, y);
+        let staticTile = this.staticTileCache.get(index);
+        if (!staticTile) {
+            staticTile = new StaticTile(x, y, this);
+            this.staticTileCache.set(index, staticTile);
+        }
+        return staticTile;
+    }
 
-        const data: ILayerLocation = {
-            tile: num,
-            raw,
-            trigger,
-            dynamics,
+    getLocationData(x: number, y: number): ILayerLocation | null {
+        const staticTile = this.getTile(x, y);
+        if (!staticTile) return null;
+        const num = staticTile.num();
+        const dynamics = this.getDynamicTilesAt(x, y);
+        return {
             locator: { x, y },
-            block: raw
+            tile: num,
+            dynamics,
+            static: staticTile
         };
-
-        return data;
-    }
-
-    getTriggerType(x: number, y: number): number {
-        if (!this.inMap(x, y)) {
-            return -1;
-        }
-        const index = y * this.width + x;
-        if (this.triggerMap.has(index)) {
-            return this.triggerMap.get(index)!;
-        }
-        return this.tileStore.getTrigger(this.mapArray[index]);
-    }
-
-    setTriggerType(type: number, x: number, y: number): void {
-        if (!this.inMap(x, y)) {
-            return;
-        }
-        const index = y * this.width + x;
-        if (this.tileStore.getTrigger(this.mapArray[index]) === type) {
-            this.triggerMap.delete(index);
-        } else {
-            this.triggerMap.set(index, type);
-        }
-    }
-
-    revertTrigger(x: number, y: number): void {
-        if (this.inMap(x, y)) {
-            this.triggerMap.delete(y * this.width + x);
-        }
-    }
-
-    clearTrigger(): void {
-        this.triggerMap.clear();
     }
 
     putMapData(array: Uint32Array, x: number, y: number, width: number): void {
         if (array.length % width !== 0) {
             logger.warn(8);
         }
-        const height = Math.ceil(array.length / width);
-        if (width === this.width && height === this.height) {
+        this.layerDirty = true;
+        const h = Math.ceil(array.length / width);
+        if (width === this.width && h === this.height) {
             this.mapArray.set(array);
+            this.staticTileCache.clear();
             this.forEachHook(hook => {
-                hook.onUpdateArea?.(x, y, width, height);
+                hook.onUpdateArea?.(x, y, width, h);
             });
             return;
         }
         const w = this.width;
         const r = x + width;
-        const b = y + height;
+        const b = y + h;
         if (x < 0 || y < 0 || r > w || b > this.height) {
             logger.warn(9);
         }
@@ -244,13 +215,12 @@ export class MapLayer
             const offset = (ny + nt) * w + nl;
             const sub = array.subarray(start, start + nw);
             if (empty && sub.some(v => v !== 0)) {
-                // 空地图判断
                 empty = false;
             }
             this.mapArray.set(array.subarray(start, start + nw), offset);
         }
         this.forEachHook(hook => {
-            hook.onUpdateArea?.(x, y, width, height);
+            hook.onUpdateArea?.(x, y, width, h);
         });
         this.empty &&= empty;
     }
@@ -305,6 +275,7 @@ export class MapLayer
         }
         this.mapData.expired = true;
         this.mapArray = array;
+        this.staticTileCache.clear();
         this.mapData = {
             expired: false,
             array: this.mapArray
@@ -319,23 +290,153 @@ export class MapLayer
         return this.mapData;
     }
 
-    setTriggerRef(triggers: Map<number, number>): void {
-        this.triggerMap = triggers;
+    setStaticDirection(x: number, y: number, direction: FaceDirection): number {
+        const tile = this.getTile(x, y);
+        if (!tile) return -1;
+        return tile.setFaceDirection(direction);
     }
 
-    getTriggerRef(): ReadonlyMap<number, number> {
-        return this.triggerMap;
+    *iterateBlocks(): Iterable<ILayerLocation> {
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                const num = this.getBlock(x, y);
+                if (num !== 0) {
+                    yield this.getLocationData(x, y)!;
+                }
+            }
+        }
     }
 
-    protected createController(
-        hook: Partial<IMapLayerHooks>
-    ): IMapLayerHookController {
-        return new MapLayerHookController(this, hook);
+    //#endregion
+
+    //#region 动态图层操作
+
+    createDynamic(num: number, x: number, y: number): IDynamicTile {
+        const tile = new DynamicTile(num, x, y, this);
+        const location = this.getLocationData(x, y);
+        if (location) {
+            const staticTriggers = location.static.triggers;
+            if (staticTriggers) {
+                for (const trigger of staticTriggers) {
+                    tile.addTrigger(trigger);
+                }
+            }
+        }
+        this.addTileToPosMap(tile, x, y);
+        this.posTileMap.set(tile, { x, y });
+        this.forEachHook(hook => hook.onCreateDynamic?.(tile));
+        return tile;
     }
 
-    setZIndex(zIndex: number): void {
-        this.zIndex = zIndex;
+    transferToDynamic(
+        x: number,
+        y: number,
+        keepTrigger: boolean = true
+    ): IDynamicTile | null {
+        if (!this.inMap(x, y)) {
+            logger.warn(131, x.toString(), y.toString());
+            return null;
+        }
+        const num = this.getBlock(x, y);
+        if (num === 0) {
+            logger.warn(127, x.toString(), y.toString());
+        }
+        this.setBlock(0, x, y);
+        const tile = this.createDynamic(num, x, y);
+        const staticTile = this.getTile(x, y);
+        if (staticTile) {
+            staticTile.clearTrigger();
+        }
+        if (!keepTrigger) {
+            tile.clearTrigger();
+        }
+        return tile;
     }
+
+    transferToStatic(
+        tile: IDynamicTile,
+        keepTrigger: boolean = true
+    ): IStaticTile | null {
+        const x = tile.x;
+        const y = tile.y;
+        if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
+            logger.warn(128, x.toString(), y.toString());
+            return null;
+        }
+        if (this.getBlock(x, y) !== 0) {
+            logger.warn(129, x.toString(), y.toString());
+        }
+        this.setBlock(tile.num(), x, y);
+        this.syncStaticTrigger(tile, keepTrigger);
+        this.removeTile(tile);
+        this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
+        return this.getTile(x, y);
+    }
+
+    transferToStaticIfSafe(
+        tile: IDynamicTile,
+        keepTrigger: boolean = true
+    ): IStaticTile | null {
+        const x = tile.x;
+        const y = tile.y;
+        if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
+            logger.warn(128, x.toString(), y.toString());
+            return null;
+        }
+        if (this.getBlock(tile.x, tile.y) !== 0) return null;
+        this.setBlock(tile.num(), x, y);
+        this.syncStaticTrigger(tile, keepTrigger);
+        this.removeTile(tile);
+        this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
+        return this.getTile(x, y);
+    }
+
+    async deleteDynamic(tile: IDynamicTile): Promise<void> {
+        if (!this.posTileMap.has(tile)) {
+            logger.warn(130);
+            return;
+        }
+        this.removeTile(tile);
+        const hooks = this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
+        await Promise.all(hooks);
+    }
+
+    getDynamicTilesAt(x: number, y: number): Iterable<IDynamicTile> {
+        return this.tilePosMap.get(y)?.get(x) ?? new Set();
+    }
+
+    iterateDynamicTiles(): Iterable<IDynamicTile> {
+        return this.posTileMap.keys();
+    }
+
+    setDynamicDirection(tile: IDynamicTile, direction: FaceDirection): number {
+        const numBefore = tile.num();
+        tile.setFaceDirection(direction);
+        if (tile.num() !== numBefore) return tile.num();
+        const degraded = degradeFace(direction);
+        if (degraded !== direction) {
+            tile.setFaceDirection(degraded);
+        }
+        return tile.num();
+    }
+
+    updateDynamicTile(tile: IDynamicTile): void {
+        const oldPos = this.posTileMap.get(tile);
+        if (oldPos) {
+            this.removeTileFromPosMap(tile, oldPos.x, oldPos.y);
+            oldPos.x = tile.x;
+            oldPos.y = tile.y;
+            this.addTileToPosMap(tile, tile.x, tile.y);
+        } else {
+            this.addTileToPosMap(tile, tile.x, tile.y);
+            this.posTileMap.set(tile, { x: tile.x, y: tile.y });
+        }
+        this.forEachHook(hook => hook.onUpdateDynamicPosition?.(tile));
+    }
+
+    //#endregion
+
+    //#region 开关门
 
     async openDoor(x: number, y: number): Promise<void> {
         const index = y * this.width + x;
@@ -363,6 +464,352 @@ export class MapLayer
         );
         this.setBlock(num, x, y);
     }
+
+    //#endregion
+
+    //#region 图层操作
+
+    setZIndex(zIndex: number): void {
+        this.zIndex = zIndex;
+    }
+
+    setFaceBinder(binder: IRoleFaceBinder | null): void {
+        if (!binder) return;
+        this.faceBinder = binder;
+    }
+
+    dirty(): boolean {
+        return this.layerDirty;
+    }
+
+    markDirty(dirty: boolean): void {
+        this.layerDirty = dirty;
+    }
+
+    /**
+     * 判断当前图层的地图矩阵是否与参考基准完全一致
+     */
+    private isEqualToRef(): boolean {
+        const ref = this.refArray;
+        if (!ref) return false;
+        if (this.mapArray.length !== ref.length) return false;
+        return !this.mapArray.some((v, i) => ref[i] !== v);
+    }
+
+    compareWith(data: Uint32Array): void {
+        if (this.refArray) return;
+        this.refArray = data;
+        this.layerDirty = !this.isEqualToRef();
+    }
+
+    protected createController(
+        hook: Partial<IMapLayerHooks>
+    ): IMapLayerHookController {
+        return new MapLayerHookController(this, hook);
+    }
+
+    resize(width: number, height: number): void {
+        if (this.width === width && this.height === height) {
+            return;
+        }
+        this.layerDirty = true;
+        this.mapData.expired = true;
+        const before = this.mapArray;
+        const beforeWidth = this.width;
+        const beforeHeight = this.height;
+        const beforeArea = beforeWidth * beforeHeight;
+        this.width = width;
+        this.height = height;
+        const area = width * height;
+        const newArray = new Uint32Array(area);
+        this.mapArray = newArray;
+        this.staticTileCache.clear();
+        if (beforeArea > area) {
+            for (let ny = 0; ny < height; ny++) {
+                const begin = ny * beforeWidth;
+                newArray.set(before.subarray(begin, begin + width), ny * width);
+            }
+        } else {
+            for (let ny = 0; ny < beforeHeight; ny++) {
+                const begin = ny * beforeWidth;
+                newArray.set(
+                    before.subarray(begin, begin + beforeWidth),
+                    ny * width
+                );
+            }
+        }
+        this.mapData = {
+            expired: false,
+            array: this.mapArray
+        };
+        this.forEachHook(hook => {
+            hook.onResize?.(width, height);
+        });
+    }
+
+    resize2(width: number, height: number): void {
+        this.layerDirty = true;
+        if (this.width === width && this.height === height) {
+            this.empty = true;
+            this.mapArray.fill(0);
+            this.staticTileCache.clear();
+            return;
+        }
+        this.mapData.expired = true;
+        this.width = width;
+        this.height = height;
+        this.mapArray = new Uint32Array(width * height);
+        this.staticTileCache.clear();
+        this.mapData = {
+            expired: false,
+            array: this.mapArray
+        };
+        this.empty = true;
+        this.forEachHook(hook => {
+            hook.onResize?.(width, height);
+        });
+    }
+
+    //#endregion
+
+    //#region 存读档
+
+    /**
+     * 保存静态图块实例
+     */
+    private saveStatics(): Map<number, IStaticBlockSave> {
+        const blocks = new Map<number, IStaticBlockSave>();
+        for (const location of this.iterateBlocks()) {
+            const tile = location.static;
+            if (!tile.shouldSave()) continue;
+            const index = this.map.indexer.locaterToIndex(location.locator);
+            blocks.set(index, tile.saveState(SaveCompression.NoCompression));
+        }
+        return blocks;
+    }
+
+    /**
+     * 保存动态图块实例
+     */
+    private saveDynamics(): Map<number, IDynamicBlockSave[]> {
+        const blocks = new Map<number, IDynamicBlockSave[]>();
+        for (const tile of this.iterateDynamicTiles()) {
+            const index = this.map.indexer.locaterToIndex(tile.locator);
+            const list = blocks.getOrInsert(index, []);
+            list.push(tile.saveState(SaveCompression.NoCompression));
+        }
+        return blocks;
+    }
+
+    /**
+     * 与参考行比较，返回与参考基准不同的行
+     * @param refArray 参考基准数组
+     */
+    private diffRows(refArray: Uint32Array): Map<number, Uint32Array> {
+        const rows = new Map<number, Uint32Array>();
+        for (let row = 0; row < this.height; row++) {
+            const start = row * this.width;
+            const end = start + this.width;
+            const slice = this.mapArray.subarray(start, end);
+            const refSlice = refArray.subarray(start, end);
+            const same = refSlice.every((v, i) => slice[i] === v);
+            if (!same) {
+                rows.set(row, new Uint32Array(slice));
+            }
+        }
+        return rows;
+    }
+
+    /**
+     * 以无压缩方式序列化当前图层
+     */
+    private saveNoCompression(): IMapLayerSave {
+        return {
+            width: this.width,
+            height: this.height,
+            fullMap: new Uint32Array(this.mapArray),
+            staticBlocks: this.saveStatics(),
+            dynamicBlocks: this.saveDynamics()
+        };
+    }
+
+    /**
+     * 以低压缩方式序列化当前图层
+     */
+    private saveLowCompression(): IMapLayerSave {
+        const staticBlocks = this.saveStatics();
+        const dynamicBlocks = this.saveDynamics();
+        if (this.layerDirty && (!this.refArray || !this.isEqualToRef())) {
+            return {
+                width: this.width,
+                height: this.height,
+                fullMap: new Uint32Array(this.mapArray),
+                staticBlocks,
+                dynamicBlocks
+            };
+        } else {
+            return {
+                width: this.width,
+                height: this.height,
+                staticBlocks,
+                dynamicBlocks
+            };
+        }
+    }
+
+    /**
+     * 以高压缩方式序列化当前图层
+     */
+    private saveHighCompression(): IMapLayerSave {
+        const staticBlocks = this.saveStatics();
+        const dynamicBlocks = this.saveDynamics();
+        if (this.layerDirty) {
+            if (this.refArray) {
+                return {
+                    width: this.width,
+                    height: this.height,
+                    rows: this.diffRows(this.refArray),
+                    staticBlocks,
+                    dynamicBlocks
+                };
+            } else {
+                return {
+                    width: this.width,
+                    height: this.height,
+                    fullMap: new Uint32Array(this.mapArray),
+                    staticBlocks,
+                    dynamicBlocks
+                };
+            }
+        } else {
+            return {
+                width: this.width,
+                height: this.height,
+                staticBlocks,
+                dynamicBlocks
+            };
+        }
+    }
+
+    saveState(compression: SaveCompression): IMapLayerSave {
+        if (compression === SaveCompression.HighCompression) {
+            return this.saveHighCompression();
+        } else if (compression === SaveCompression.LowCompression) {
+            return this.saveLowCompression();
+        } else {
+            return this.saveNoCompression();
+        }
+    }
+
+    /**
+     * 读取静态图块实例存档数据
+     * @param save 静态图块实例存档
+     */
+    private loadStatics(save: ReadonlyMap<number, IStaticBlockSave>): void {
+        for (const [index, tileSave] of save) {
+            const { x, y } = this.map.indexer.indexToLocator(index);
+            const location = this.getLocationData(x, y);
+            if (!location) continue;
+            location.static.loadState(tileSave, SaveCompression.NoCompression);
+        }
+    }
+
+    /**
+     * 读取动态图块实例存档数据
+     * @param save 动态图块实例存档
+     */
+    private loadDynamics(save: ReadonlyMap<number, IDynamicBlockSave[]>): void {
+        for (const [index, dynamics] of save) {
+            const { x, y } = this.map.indexer.indexToLocator(index);
+            for (const block of dynamics) {
+                const tile = this.createDynamic(block.num, x, y);
+                tile.loadState(block, SaveCompression.NoCompression);
+            }
+        }
+    }
+
+    /**
+     * 以无压缩方式读取当前图层
+     * @param save 图层存档
+     */
+    private loadNoCompression(save: IMapLayerSave): void {
+        if (save.fullMap) {
+            this.setMapRef(new Uint32Array(save.fullMap));
+        }
+        if (save.staticBlocks) {
+            this.loadStatics(save.staticBlocks);
+        }
+        if (save.dynamicBlocks) {
+            this.loadDynamics(save.dynamicBlocks);
+        }
+        this.layerDirty = !this.isEqualToRef();
+    }
+
+    /**
+     * 以低压缩方式读取当前图层
+     * @param save 图层存档
+     */
+    private loadLowCompression(save: IMapLayerSave): void {
+        if (save.fullMap) {
+            this.setMapRef(new Uint32Array(save.fullMap));
+            this.layerDirty = true;
+        } else if (this.refArray) {
+            this.setMapRef(new Uint32Array(this.refArray));
+            this.layerDirty = false;
+        } else {
+            logger.warn(124, this.zIndex.toString());
+        }
+
+        if (save.staticBlocks) {
+            this.loadStatics(save.staticBlocks);
+        }
+        if (save.dynamicBlocks) {
+            this.loadDynamics(save.dynamicBlocks);
+        }
+    }
+
+    /**
+     * 以高压缩方式读取当前图层
+     * @param save 图层存档
+     */
+    private loadHighCompression(save: IMapLayerSave): void {
+        if (save.rows && save.rows.size > 0) {
+            if (this.refArray) {
+                const buf = new Uint32Array(this.refArray);
+                for (const [rowIdx, rowData] of save.rows) {
+                    buf.set(rowData, rowIdx * this.width);
+                }
+                this.setMapRef(buf);
+                this.layerDirty = true;
+            } else {
+                logger.warn(124, this.zIndex.toString());
+            }
+        } else if (this.refArray) {
+            this.setMapRef(new Uint32Array(this.refArray));
+            this.layerDirty = false;
+        } else {
+            logger.warn(124, this.zIndex.toString());
+        }
+
+        if (save.staticBlocks) {
+            this.loadStatics(save.staticBlocks);
+        }
+        if (save.dynamicBlocks) {
+            this.loadDynamics(save.dynamicBlocks);
+        }
+    }
+
+    loadState(save: IMapLayerSave, compression: SaveCompression): void {
+        if (compression === SaveCompression.HighCompression) {
+            this.loadHighCompression(save);
+        } else if (compression === SaveCompression.LowCompression) {
+            this.loadLowCompression(save);
+        } else {
+            this.loadNoCompression(save);
+        }
+    }
+
+    //#endregion
 }
 
 class MapLayerHookController

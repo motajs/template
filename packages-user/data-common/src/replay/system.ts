@@ -10,7 +10,7 @@ import {
     IReplaySandbox,
     IReplaySandboxConfig,
     IReplaySystem,
-    IReplaySystemHook,
+    IReplaySystemHooks,
     ReplayCommandWidth,
     ReplayParamValue
 } from './types';
@@ -18,7 +18,7 @@ import { ReplayArray } from './array';
 import { ReplaySandbox } from './sandbox';
 
 export class ReplaySystem
-    extends Hookable<IReplaySystemHook>
+    extends Hookable<IReplaySystemHooks>
     implements IReplaySystem
 {
     replaying: boolean = false;
@@ -42,8 +42,8 @@ export class ReplaySystem
     }
 
     protected createController(
-        hook: Partial<IReplaySystemHook>
-    ): IHookController<IReplaySystemHook> {
+        hook: Partial<IReplaySystemHooks>
+    ): IHookController<IReplaySystemHooks> {
         return new HookController(this, hook);
     }
 

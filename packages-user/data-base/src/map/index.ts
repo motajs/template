@@ -1,4 +1,4 @@
-export * from './layerState';
+export * from './gameMap';
 export * from './mapLayer';
 export * from './mapState';
 export * from './mover';

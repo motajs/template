@@ -8,12 +8,12 @@ import {
     IReplayArray,
     IReplayReadStream,
     IReplaySandbox,
-    IReplaySandboxHook,
+    IReplaySandboxHooks,
     IReplaySystem
 } from './types';
 
 export class ReplaySandbox
-    extends Hookable<IReplaySandboxHook>
+    extends Hookable<IReplaySandboxHooks>
     implements IReplaySandbox
 {
     pausing: boolean = true;
@@ -41,8 +41,8 @@ export class ReplaySandbox
     }
 
     protected createController(
-        hook: Partial<IReplaySandboxHook>
-    ): IHookController<IReplaySandboxHook> {
+        hook: Partial<IReplaySandboxHooks>
+    ): IHookController<IReplaySandboxHooks> {
         return new HookController(this, hook);
     }
 

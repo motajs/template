@@ -1,15 +1,12 @@
 import { ITileLocator, logger } from '@motajs/common';
 import {
     getFaceMovement,
-    IMoverController,
     ObjectMover,
     ObjectMoveStep,
     ObjectMoveType
 } from '@user/data-common';
 import { IDynamicTile } from './types';
 import { DYNAMIC_MOVER_FACE } from '../shared';
-
-//#region 动态图块
 
 const enum DynamicMoveCode {
     /** 正常执行 */
@@ -94,5 +91,3 @@ export class DynamicTileMover extends ObjectMover<IDynamicTile> {
         return Promise.resolve();
     }
 }
-
-//#endregion

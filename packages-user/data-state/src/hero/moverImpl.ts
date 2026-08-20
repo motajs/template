@@ -46,7 +46,7 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
 
     inBound(x: number, y: number, floorId: string | undefined): boolean {
         if (isNil(floorId)) return false;
-        const layerState = this.maps.getLayerState(floorId);
+        const layerState = this.maps.getMap(floorId);
         if (!layerState) return false;
         const { width, height } = layerState;
         return x >= 0 && y >= 0 && x < width && y < height;
@@ -66,7 +66,7 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
             return true;
         }
 
-        const map = this.maps.getLayerState(floorId);
+        const map = this.maps.getMap(floorId);
         if (!map) return false;
         const event = map.eventLayer;
         if (!event) return false;
@@ -115,7 +115,7 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
     shouldHit(handler: IHeroMoveTopHandler): boolean {
         const { nextLoc, floorId } = handler;
         if (isNil(floorId)) return false;
-        const layerState = this.maps.getLayerState(floorId);
+        const layerState = this.maps.getMap(floorId);
         if (!layerState) return false;
         const eventLayer = layerState.eventLayer;
         if (!eventLayer) return false;
@@ -146,7 +146,7 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
     ): Promise<void> {
         if (isNil(handler.floorId)) return Promise.resolve();
 
-        const map = this.maps.getLayerState(handler.floorId);
+        const map = this.maps.getMap(handler.floorId);
         if (!map) return Promise.resolve();
         const event = map.eventLayer;
         if (!event) return Promise.resolve();
