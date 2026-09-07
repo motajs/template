@@ -18,6 +18,10 @@ Requirements for the engine's completion. Each maps to roadmap phases.
 - [ ] **PATH-01**: 引擎支持自动寻路
 - [ ] **PATH-02**: 移动端通过点击地图触发自动寻路移动
 
+### 数据端（Data）
+
+- [ ] **DATA-01**: 数据端（L0–L3）接口实现完成——用户设计的接口全部落地，数据层各系统（地图/角色/敌人/flag/战斗/触发器/存档/回放）可用，并可在 Node 环境独立运行回放验证
+
 ### 渲染适配与双布局（Render）
 
 - [ ] **REND-01**: 渲染端适配新数据层接口
@@ -48,21 +52,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EVT-01 | — | Pending |
-| EVT-02 | — | Pending |
-| EVT-03 | — | Pending |
-| PATH-01 | — | Pending |
-| PATH-02 | — | Pending |
-| REND-01 | — | Pending |
-| REND-02 | — | Pending |
-| LEGACY-01 | — | Pending |
-| LEGACY-02 | — | Pending |
-| TEST-01 | — | Pending |
+| EVT-01 | Phase 1 | Pending |
+| EVT-02 | Phase 1 | Pending |
+| EVT-03 | Phase 1 | Pending |
+| PATH-01 | Phase 2 | Pending |
+| PATH-02 | Phase 2 | Pending |
+| DATA-01 | Phase 3 | Pending |
+| REND-01 | Phase 4 | Pending |
+| REND-02 | Phase 4 | Pending |
+| LEGACY-01 | Phase 5 | Pending |
+| LEGACY-02 | Phase 5 | Pending |
+| TEST-01 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 10 total
-- Mapped to phases: 0
-- Unmapped: 10 ⚠️
+- v1 requirements: 11 total
+- Mapped to phases: 11
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-07*
