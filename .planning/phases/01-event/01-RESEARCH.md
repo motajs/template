@@ -329,7 +329,12 @@ export class GameEventStore implements IGameEventStore {
 
 **Note:** A1/A2/A4 是「接口设计由用户主导」下 AI 无法自行拍板的点，应在计划阶段前由用户确认或明确标注为待定。它们不阻塞「删除旧体系 + 落地已设计接口」的骨架工作，但阻塞 EVT-02 对话/开门的端到端验证。
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> 以下三个开放问题已在规划阶段前由用户决策（2026-09-07）：
+> - **A1 已解决**：点事件承载字段已在接口中落地（`IMapRawData.events` 三级结构、`IMapBlockSaveBase.events` 可选、`ITileRawData` 旧 `trigger` 已替换为 `events`）。
+> - **A2 已延后**：Anon Tokyo 内建函数清单（对话/开门/道具/战斗）延后到「收尾工作」，本阶段不实现，`builtInFunctions` 留空骨架。
+> - **A4 已延后**：不处理旧 `ITrigger` 移动四钩子的兼容映射，本阶段直接删除旧体系，不实现 `cannotEnter` 对应触发。
 
 1. **点事件的承载字段（A1）**
    - What we know: D-03 区分点事件（不随图块移动）与图块事件；图块事件已设计在 `ITileBase.events`；`IMapPointRawData` 目前仅有 `trigger?: number[]` 与 `changeFloor`。
