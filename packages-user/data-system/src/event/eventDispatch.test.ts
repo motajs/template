@@ -346,6 +346,18 @@ describe('event execute modes and reductions', () => {
                 { custom: {} }
             )
         ).resolves.toBe(false);
+        fixture.executor.setReduce(modules.EventReduceMode.OrReduce);
+        await expect(
+            fixture.executor.execute([invocation('wrong-trigger', enter)], {
+                custom: {}
+            })
+        ).resolves.toBe(false);
+        fixture.executor.setReduce(modules.EventReduceMode.AndReduce);
+        await expect(
+            fixture.executor.execute([invocation('wrong-trigger', enter)], {
+                custom: {}
+            })
+        ).resolves.toBe(true);
     });
 
     it('warns for unknown ids and continues with valid events', async () => {
