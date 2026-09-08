@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 01
 current_phase_name: event
 status: executing
-stopped_at: Completed 01-10-PLAN.md
-last_updated: "2026-09-08T16:09:59.190Z"
+stopped_at: Completed 01-07-PLAN.md; 01-08 and 01-09 deferred by user decision
+last_updated: "2026-09-08T16:21:42.803Z"
 last_activity: 2026-09-08
 last_activity_desc: Phase 01 Plan 05 decision recording completed
-state_head: d3eeb1eb19d278b6bb4e1a5f4c77de9e8d7d42fc
+state_head: ff41ab3d6ce0f2b444a39d4f33b0b63778482618
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 10
-  completed_plans: 7
+  completed_plans: 8
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-07)
 ## Current Position
 
 Phase: 01 (event) — EXECUTING
-Plan: 7 of 10
+Plan: 8 of 10
 Status: Ready to execute next plan
 Last activity: 2026-09-08 — Phase 01 execution started
 
@@ -63,6 +63,7 @@ Progress: [█████░░░░░] 50%
 | Phase 01 P05 | 17min | 2 tasks | 4 files |
 | Phase 01 P06 | 20min | 2 tasks | 4 files |
 | Phase 01 P10 | 25min | 2 tasks | 5 files |
+| Phase 01 P07 | 25min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Phase 01 Plan 05 defers eventStore circular dependencies, preserving current imports and behavior and recording the exact check:circular paths as the phase baseline.
 - [Phase 01]: Plan 01-06 validates raw map event containers before registration and binds coordinate events to the event layer.
 - [Phase 01]: Plan 01-10 restores raw tile defaults and implements the approved coordinate point-event lifecycle; map-level aggregation and registration remain deferred.
+- [Phase 01]: Plan 01-07 dispatches one approved source-aware point/static/dynamic invocation sequence with trigger filtering before cut/reduce.
+- [Phase 01]: Plans 01-08 and 01-09 remain unexecuted by explicit user decision: preserve rawEvent/Promise<R>/as adapters/cycles and defer production registration plus unsafe map aggregation.
 
 ### Pending Todos
 
@@ -101,6 +104,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-08T16:09:59.154Z
-Stopped at: Completed 01-10-PLAN.md
+Last session: 2026-09-08T16:21:42.697Z
+Stopped at: Completed 01-07-PLAN.md; 01-08 and 01-09 deferred by user decision
 Resume file: None
