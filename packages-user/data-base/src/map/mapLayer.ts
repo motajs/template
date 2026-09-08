@@ -50,6 +50,11 @@ export class MapLayer
     /** 点事件视图，外层 key = y，内层 key = x */
     private readonly pointEvents: Map<number, Map<number, ILayerEventView>> =
         new Map();
+    /** 点事件的原始纯基准，外层 key = y，内层 key = x */
+    private readonly pointEventBaselines: Map<
+        number,
+        Map<number, ReadonlyMap<number, string>>
+    > = new Map();
     /** 动态图块到其当前坐标的映射 */
     private readonly posTileMap: Map<IDynamicTile, ITileLocator> = new Map();
     /** 图层脏标记 */
@@ -131,10 +136,116 @@ export class MapLayer
     private syncStaticEvent(tile: IDynamicTile, keepEvent: boolean): void {
         const staticTile = this.getTile(tile.x, tile.y);
         if (!staticTile) return;
-        staticTile.tileEvent().clear();
+        staticTile.set(staticTile.num());
         if (keepEvent) {
+            staticTile.tileEvent().clear();
             for (const [priority, id] of tile.tileEvent().get()) {
                 staticTile.tileEvent().set(priority, id);
+            }
+        }
+    }
+
+    /**
+     * 记录尚未保存过的点事件纯基准
+     * @param x 点事件横坐标
+     * @param y 点事件纵坐标
+     * @param eventView 点事件视图
+     */
+    private capturePointEventBaseline(
+        x: number,
+        y: number,
+        eventView: ILayerEventView
+    ): void {
+        const yMap = this.pointEventBaselines.get(y);
+        if (yMap?.has(x)) return;
+        if (eventView.dirty()) return;
+        const target = yMap ?? new Map<number, ReadonlyMap<number, string>>();
+        target.set(x, new Map(eventView.get()));
+        if (!yMap) this.pointEventBaselines.set(y, target);
+    }
+
+    /**
+     * 将所有已创建的点事件视图恢复到原始纯基准
+     */
+    private resetPointEvents(): void {
+        for (const [y, xMap] of this.pointEvents) {
+            for (const [x, eventView] of xMap) {
+                this.capturePointEventBaseline(x, y, eventView);
+            }
+        }
+        for (const [y, xMap] of this.pointEvents) {
+            for (const [x, eventView] of xMap) {
+                eventView.clear();
+                const baseline = this.pointEventBaselines.get(y)?.get(x);
+                if (baseline) {
+                    for (const [priority, id] of baseline) {
+                        eventView.set(priority, id);
+                    }
+                }
+                eventView.markPure();
+            }
+        }
+    }
+
+    /**
+     * 裁剪超出新图层范围的点事件及其纯基准
+     * @param width 新图层宽度
+     * @param height 新图层高度
+     */
+    private cropPointEvents(width: number, height: number): void {
+        for (const [y, xMap] of this.pointEvents) {
+            if (y >= height) {
+                this.pointEvents.delete(y);
+                continue;
+            }
+            for (const x of xMap.keys()) {
+                if (x >= width) xMap.delete(x);
+            }
+            if (xMap.size === 0) this.pointEvents.delete(y);
+        }
+        for (const [y, xMap] of this.pointEventBaselines) {
+            if (y >= height) {
+                this.pointEventBaselines.delete(y);
+                continue;
+            }
+            for (const x of xMap.keys()) {
+                if (x >= width) xMap.delete(x);
+            }
+            if (xMap.size === 0) this.pointEventBaselines.delete(y);
+        }
+    }
+
+    /**
+     * 收集需要保存的点事件并复制其内部 Map
+     */
+    private savePointEvents(): Map<number, ReadonlyMap<number, string>> {
+        const pointEvents = new Map<number, ReadonlyMap<number, string>>();
+        for (const [y, xMap] of this.pointEvents) {
+            for (const [x, eventView] of xMap) {
+                if (!eventView.dirty()) continue;
+                const index = this.map.indexer.locToIndex(x, y);
+                pointEvents.set(index, new Map(eventView.get()));
+            }
+        }
+        return pointEvents;
+    }
+
+    /**
+     * 在图层基准上叠加点事件存档
+     * @param save 点事件存档，可省略
+     */
+    private loadPointEvents(
+        save?: ReadonlyMap<number, ReadonlyMap<number, string>>
+    ): void {
+        this.resetPointEvents();
+        if (!save) return;
+        for (const [index, events] of save) {
+            const { x, y } = this.map.indexer.indexToLocator(index);
+            const eventView = this.event(x, y);
+            if (!eventView) continue;
+            eventView.clear();
+            for (const [priority, id] of events) {
+                eventView.set(priority, id);
             }
         }
     }
@@ -321,6 +432,7 @@ export class MapLayer
         const tile = new DynamicTile(num, x, y, this);
         const location = this.getLocationData(x, y);
         if (location) {
+            tile.tileEvent().clear();
             for (const [priority, id] of location.static.tileEvent().get()) {
                 tile.tileEvent().set(priority, id);
             }
@@ -479,6 +591,8 @@ export class MapLayer
         if (!eventView) {
             eventView = new LayerEventView();
             xMap.set(x, eventView);
+        } else {
+            this.capturePointEventBaseline(x, y, eventView);
         }
         return eventView;
     }
@@ -501,7 +615,13 @@ export class MapLayer
     }
 
     dirty(): boolean {
-        return this.layerDirty;
+        if (this.layerDirty) return true;
+        for (const xMap of this.pointEvents.values()) {
+            for (const eventView of xMap.values()) {
+                if (eventView.dirty()) return true;
+            }
+        }
+        return false;
     }
 
     markDirty(dirty: boolean): void {
@@ -535,6 +655,7 @@ export class MapLayer
             return;
         }
         this.layerDirty = true;
+        this.cropPointEvents(width, height);
         this.mapData.expired = true;
         const before = this.mapArray;
         const beforeWidth = this.width;
@@ -571,6 +692,8 @@ export class MapLayer
 
     resize2(width: number, height: number): void {
         this.layerDirty = true;
+        this.pointEvents.clear();
+        this.pointEventBaselines.clear();
         if (this.width === width && this.height === height) {
             this.empty = true;
             this.mapArray.fill(0);
@@ -655,7 +778,8 @@ export class MapLayer
             height: this.height,
             fullMap: new Uint32Array(this.mapArray),
             staticBlocks: this.saveStatics(),
-            dynamicBlocks: this.saveDynamics()
+            dynamicBlocks: this.saveDynamics(),
+            pointEvents: this.savePointEvents()
         };
     }
 
@@ -671,14 +795,16 @@ export class MapLayer
                 height: this.height,
                 fullMap: new Uint32Array(this.mapArray),
                 staticBlocks,
-                dynamicBlocks
+                dynamicBlocks,
+                pointEvents: this.savePointEvents()
             };
         } else {
             return {
                 width: this.width,
                 height: this.height,
                 staticBlocks,
-                dynamicBlocks
+                dynamicBlocks,
+                pointEvents: this.savePointEvents()
             };
         }
     }
@@ -696,7 +822,8 @@ export class MapLayer
                     height: this.height,
                     rows: this.diffRows(this.refArray),
                     staticBlocks,
-                    dynamicBlocks
+                    dynamicBlocks,
+                    pointEvents: this.savePointEvents()
                 };
             } else {
                 return {
@@ -704,7 +831,8 @@ export class MapLayer
                     height: this.height,
                     fullMap: new Uint32Array(this.mapArray),
                     staticBlocks,
-                    dynamicBlocks
+                    dynamicBlocks,
+                    pointEvents: this.savePointEvents()
                 };
             }
         } else {
@@ -712,7 +840,8 @@ export class MapLayer
                 width: this.width,
                 height: this.height,
                 staticBlocks,
-                dynamicBlocks
+                dynamicBlocks,
+                pointEvents: this.savePointEvents()
             };
         }
     }
@@ -833,6 +962,7 @@ export class MapLayer
         } else {
             this.loadNoCompression(save);
         }
+        this.loadPointEvents(save.pointEvents);
     }
 
     //#endregion
