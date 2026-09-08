@@ -59,9 +59,11 @@
         "57": "Cannot convert legacy item data since no item legacy converter is attached to ItemStore.",
         "58": "Cannot find max equipment uid while loading equipment store.",
         "59": "Cannot find item raw data for tile num $1.",
-        "60": "Cannot create layer state from raw data since the area of every layer of the map does not equal: $1 vs $2.",
-        "61": "Cannot create layer state from raw data since map area cannot be divided by width evenly: area = $1 while divider = $2.",
-        "62": "Expected a number for the key of $1, but got $2."
+        "60": "Cannot create game map '$3' from raw data since the area of every layer of the map does not equal: $1 vs $2.",
+        "61": "Cannot create game map '$3' from raw data since map area cannot be divided by width evenly: area = $1 while divider = $2.",
+        "62": "Cannot add $1 from raw data for game map '$2' since Expected a number for the key of $3, but got $4.",
+        "63": "Cannot create game map '$2' from raw data since the '$1' container is missing, null, or not an object.",
+        "64": "Cannot create game map '$2' from raw data since the '$1' value has an invalid type or range."
     },
     "warn": {
         "1": "Resource with type of 'none' is loaded.",
@@ -232,6 +234,9 @@
         "166": "Related floor id or related position needs to be specified while change floor type is 'ChangeFloorType.Related'.",
         "167": "Hero must at a specified floor before using related change floor method.",
         "168": "The current floor of hero does not in the specified map list.",
-        "169": "The current floor is the last or the first floor in the map list, so related floor change method will not work."
+        "169": "The current floor is the last or the first floor in the map list, so related floor change method will not work.",
+        "170": "Game event id '$1' has already been used, old event will be overridden.",
+        "171": "Event id '$1' not found in event store, event will be skipped.",
+        "172": "Event returned non-boolean value '$1' during reduction. JavaScript short-circuit semantics will be used."
     }
 }

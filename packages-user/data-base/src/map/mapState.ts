@@ -35,9 +35,160 @@ export class MapState implements IMapState {
         public readonly state: IDataCommon
     ) {}
 
+    /**
+     * 判断原始数据中的值是否为可枚举的对象容器
+     * @param value 待判断的运行时值
+     */
+    private isRecord(value: unknown): value is Record<string, unknown> {
+        return !!value && typeof value === 'object' && !Array.isArray(value);
+    }
+
+    /**
+     * 判断字符串键是否能无歧义地转换为有限数字
+     * @param key 原始对象键
+     */
+    private isNumericKey(key: string): boolean {
+        return key.trim() !== '' && Number.isFinite(Number(key));
+    }
+
+    /**
+     * 在创建地图前验证外部原始地图及事件结构
+     * @param raw 待验证的楼层原始数据
+     */
+    private validateRaw(raw: IMapRawData): boolean {
+        const rawMap: unknown = raw.map;
+        const rawEvents: unknown = raw.events;
+        const rawAliases: unknown = raw.layerAlias;
+        if (!this.isRecord(rawMap)) {
+            logger.error(63, 'map', raw.floorId);
+            return false;
+        }
+        if (!this.isRecord(rawEvents)) {
+            logger.error(63, 'events', raw.floorId);
+            return false;
+        }
+        if (!this.isRecord(rawAliases)) {
+            logger.error(63, 'layerAlias', raw.floorId);
+            return false;
+        }
+        if (!Number.isInteger(raw.width) || raw.width <= 0) {
+            logger.error(64, 'width', raw.floorId);
+            return false;
+        }
+
+        let length = 0;
+        for (const [zIndex, map] of Object.entries(rawMap)) {
+            if (!this.isNumericKey(zIndex)) {
+                logger.error(
+                    62,
+                    'layer',
+                    raw.floorId,
+                    'IMapRawData.map',
+                    zIndex
+                );
+                return false;
+            }
+            if (!Array.isArray(map)) {
+                logger.error(64, 'map layer', raw.floorId);
+                return false;
+            }
+            if (
+                !map.every(
+                    value =>
+                        typeof value === 'number' &&
+                        Number.isFinite(value) &&
+                        Number.isInteger(value) &&
+                        value >= 0
+                )
+            ) {
+                logger.error(64, 'map value', raw.floorId);
+                return false;
+            }
+            if (length > 0 && map.length !== length) {
+                logger.error(
+                    60,
+                    map.length.toString(),
+                    length.toString(),
+                    raw.floorId
+                );
+                return false;
+            }
+            length = map.length;
+
+            const alias = rawAliases[zIndex];
+            if (typeof alias !== 'string') {
+                logger.error(64, 'layer alias', raw.floorId);
+                return false;
+            }
+            const events = rawEvents[zIndex];
+            if (!this.isRecord(events)) {
+                logger.error(63, `events layer ${zIndex}`, raw.floorId);
+                return false;
+            }
+            for (const [index, tileEvents] of Object.entries(events)) {
+                if (!this.isNumericKey(index)) {
+                    logger.error(
+                        62,
+                        'event',
+                        raw.floorId,
+                        'IMapRawData.events',
+                        index
+                    );
+                    return false;
+                }
+                const indexNum = Number(index);
+                if (
+                    !Number.isInteger(indexNum) ||
+                    indexNum < 0 ||
+                    indexNum >= length
+                ) {
+                    logger.error(64, 'event position', raw.floorId);
+                    return false;
+                }
+                if (!this.isRecord(tileEvents)) {
+                    logger.error(63, `events position ${index}`, raw.floorId);
+                    return false;
+                }
+                for (const [priority, id] of Object.entries(tileEvents)) {
+                    if (!this.isNumericKey(priority)) {
+                        logger.error(
+                            62,
+                            'event',
+                            raw.floorId,
+                            'IMapRawData.events',
+                            priority
+                        );
+                        return false;
+                    }
+                    if (typeof id !== 'string') {
+                        logger.error(64, 'event id', raw.floorId);
+                        return false;
+                    }
+                }
+            }
+        }
+        if (length % raw.width !== 0) {
+            logger.error(
+                61,
+                length.toString(),
+                raw.width.toString(),
+                raw.floorId
+            );
+            return false;
+        }
+        for (const zIndex of Object.keys(rawEvents)) {
+            if (!this.isNumericKey(zIndex) || !Object.hasOwn(rawMap, zIndex)) {
+                logger.error(64, 'event layer', raw.floorId);
+                return false;
+            }
+        }
+        return true;
+    }
+
     //#region 楼层管理
 
     fromRaw(raw: IMapRawData): IGameMap | null {
+        if (!this.validateRaw(raw)) return null;
         let length = 0;
         const entries = Object.entries(raw.map);
         for (const [_, map] of Object.entries(raw.map)) {

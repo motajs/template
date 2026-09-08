@@ -62,3 +62,60 @@ describe('MapState raw event path', () => {
         expect(layer?.event(1, 0)?.dirty()).toBe(false);
     });
 });
+
+describe('MapState malformed raw event structures', () => {
+    const cases = [
+        {
+            name: 'missing raw.map container',
+            mutate: raw => Reflect.set(raw, 'map', null),
+            code: 63
+        },
+        {
+            name: 'missing raw.events container',
+            mutate: raw => Reflect.set(raw, 'events', null),
+            code: 63
+        },
+        {
+            name: 'missing event layer container',
+            mutate: raw => Reflect.set(raw.events, '0', null),
+            code: 63
+        },
+        {
+            name: 'invalid event position container',
+            mutate: raw => Reflect.set(raw.events[0], '1', []),
+            code: 63
+        },
+        {
+            name: 'non-numeric map layer key',
+            mutate: raw => Reflect.set(raw.map, 'bad', [1, 1, 1, 1]),
+            code: 62
+        },
+        {
+            name: 'invalid map layer value',
+            mutate: raw => Reflect.set(raw.map, '0', null),
+            code: 64
+        },
+        {
+            name: 'out of range event position',
+            mutate: raw => Reflect.set(raw.events[0], '4', { 5: 'id' }),
+            code: 64
+        },
+        {
+            name: 'non-string event id',
+            mutate: raw => Reflect.set(raw.events[0][1], '5', 3),
+            code: 64
+        }
+    ];
+
+    it.each(cases)('$name is rejected before map registration', testCase => {
+        const mapState = createMapState();
+        const raw = createRaw();
+        testCase.mutate(raw);
+
+        const result = modules.logger.catch(() => mapState.fromRaw(raw));
+
+        expect(result.ret).toBeNull();
+        expect(result.info.map(info => info.code)).toContain(testCase.code);
+        expect(mapState.getMap(raw.floorId)).toBeNull();
+    });
+});
