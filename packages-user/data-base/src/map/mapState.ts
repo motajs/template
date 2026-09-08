@@ -1,4 +1,4 @@
-import { isNil, uniq } from 'lodash-es';
+import { uniq } from 'lodash-es';
 import { IDataCommon, IMapRawData, SaveCompression } from '@user/data-common';
 import { ITileStore } from '@user/data-common';
 import {
@@ -42,14 +42,24 @@ export class MapState implements IMapState {
         const entries = Object.entries(raw.map);
         for (const [_, map] of Object.entries(raw.map)) {
             if (length > 0 && map.length !== length) {
-                logger.error(60, map.length.toString(), length.toString());
+                logger.error(
+                    60,
+                    map.length.toString(),
+                    length.toString(),
+                    raw.floorId
+                );
                 return null;
             } else {
                 length = map.length;
             }
         }
         if (length % raw.width !== 0) {
-            logger.error(61, length.toString(), raw.width.toString());
+            logger.error(
+                61,
+                length.toString(),
+                raw.width.toString(),
+                raw.floorId
+            );
             return null;
         }
 
@@ -58,32 +68,27 @@ export class MapState implements IMapState {
         const state = this.createMap(raw.floorId, raw.width, height);
         for (const [zIndex, map] of entries) {
             const z = Number(zIndex);
-            if (isNaN(z)) {
-                logger.error(62, 'IMapRawData.map', String(zIndex));
-                continue;
-            }
             const layer = state.addLayer();
             const alias = raw.layerAlias[z];
             layer.setMapRef(new Uint32Array(map));
             layer.setZIndex(z);
             state.setLayerAlias(layer, alias);
 
-            // 设置图块静态触发器
-            const extra = raw.blockData[z];
-            for (const [index, data] of Object.entries(extra)) {
+            // 设置坐标点事件
+            const events = raw.events[z];
+            for (const [index, tileEvents] of Object.entries(events)) {
                 const indexNum = Number(index);
-                if (isNaN(indexNum)) {
-                    logger.error(62, 'IMapRawData.blockData', String(index));
-                    continue;
+                const x = indexNum % raw.width;
+                const y = Math.floor(indexNum / raw.width);
+                const eventView = layer.event(x, y)!;
+                for (const [priority, id] of Object.entries(tileEvents)) {
+                    const priorityNum = Number(priority);
+                    eventView.set(priorityNum, id);
                 }
-                if (!isNil(data.trigger)) {
-                    const x = indexNum % raw.width;
-                    const y = Math.floor(indexNum / raw.width);
-                    const location = layer.getLocationData(x, y);
-                    if (location) {
-                        location.static.addTrigger(data.trigger);
-                    }
-                }
+                eventView.markPure();
+            }
+            if (alias === 'event') {
+                state.setEventLayer(layer);
             }
         }
 
