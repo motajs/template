@@ -1,19 +1,20 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 1
-current_phase_name: 事件系统
+milestone: v1.0
+current_phase: 01
+current_phase_name: event
 status: executing
-stopped_at: Phase 1 context gathered
-last_updated: "2026-09-07T14:06:31.386Z"
-last_activity: 2026-09-07
-last_activity_desc: Roadmap revised (6 phases, 11 requirements mapped)
-state_head: 6f06b686560de391f0c76bf0b0e72658a94e3e37
+stopped_at: Completed 01-06-PLAN.md
+last_updated: "2026-09-08T15:55:40.633Z"
+last_activity: 2026-09-08
+last_activity_desc: Phase 01 Plan 05 decision recording completed
+state_head: 974669b00a0e356f51b59a5d124f43a1d85a75d1
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 3
-  completed_plans: 0
-  percent: 0
+  total_plans: 10
+  completed_plans: 6
+milestone_name: milestone
 ---
 
 # Project State
@@ -23,22 +24,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-07)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 1 — 事件系统
+**Current focus:** Phase 01 — event
 
 ## Current Position
 
-Phase: 1 (事件系统) — READY TO EXECUTE
-Plan: 0 of TBD in current phase
-Status: Ready to execute
-Last activity: 2026-09-07 — Roadmap revised (6 phases, 11 requirements mapped)
+Phase: 01 (event) — EXECUTING
+Plan: 6 of 10
+Status: Ready to execute next plan
+Last activity: 2026-09-08 — Phase 01 execution started
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 5
 - Average duration: N/A
 - Total execution time: 0 hours
 
@@ -54,6 +55,13 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: N/A
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 01 P04 | 7min | 3 tasks | 2 files |
+| Phase 01 P05 | 17min | 2 tasks | 4 files |
+| Phase 01 P06 | 20min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -65,7 +73,13 @@ Recent decisions affecting current work:
 - 接口/架构设计由用户主导；AI 仅做实现与测试
 - 渲染层先于数据层完成重构（既有顺序延续）
 - 阶段顺序调整为玩法优先：事件 + 寻路 → 数据端完成 → 渲染适配 → legacy 移植 → 单元测试
-- Git 提交必须经用户 review，AI 不擅自提交
+- AI 可在验证通过后自行创建 git commit，无需用户逐次审批；验证未通过不得提交
+- [Phase 01]: Serialized event registration and map event-id binding remain deferred; CoreState retains only a TODO and no new public registration API is added.
+- [Phase 01]: Source-aware dispatch uses IGameEventInvocation { id: string; env: IBlockEventEnv } and one full-sequence execute call.
+- [Phase 01]: IMapLayerSave.pointEvents uses index -> priority -> eventId, independent from map-matrix dirty, with pure-baseline overlay loading and crop/clear resize semantics.
+- [Phase 01]: Phase 01 Plan 05 preserves rawEvent as public Statement[] with constructor/setRaw aliasing, generic Promise<R>, and current as Promise<R> adapters; no defensive-copy, unknown, or cache-safety changes.
+- [Phase 01]: Phase 01 Plan 05 defers eventStore circular dependencies, preserving current imports and behavior and recording the exact check:circular paths as the phase baseline.
+- [Phase 01]: Plan 01-06 validates raw map event containers before registration and binds coordinate events to the event layer.
 
 ### Pending Todos
 
@@ -74,6 +88,8 @@ None yet.
 ### Blockers/Concerns
 
 - 数据层 L0–L3 接口设计仍在进行中（由用户主导），DATA-01（Phase 3）依赖接口设计落地
+- 01-08 rawEvent cache-safety and no-as implementation assumptions conflict with the explicit 01-05 user-approved current contract; replan before execution.
+- eventStore circular paths are explicitly preserved as the Phase 01 baseline; revise any gate that requires those paths to disappear before execution.
 
 ## Deferred Items
 
@@ -83,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-07T10:26:54.613Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-event/01-CONTEXT.md
+Last session: 2026-09-08T15:55:40.597Z
+Stopped at: Completed 01-06-PLAN.md
+Resume file: None

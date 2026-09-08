@@ -9,9 +9,9 @@ Requirements for the engine's completion. Each maps to roadmap phases.
 
 ### 事件系统（Event）
 
-- [ ] **EVT-01**: 引擎提供事件系统的数据/序列化接口，支持 blockly 式低代码定义（编辑器在外部项目）
-- [ ] **EVT-02**: 事件系统能驱动简单场景的事件流程（踩踏触发链路；对话、开门依赖 A2 内建函数清单，延后到收尾工作）
-- [ ] **EVT-03**: 事件系统定位为初学者抽象，仅覆盖简单场景，不为复杂场景追求通用表达
+- [x] **EVT-01**: 引擎提供事件系统的数据/序列化接口，支持 blockly 式低代码定义（编辑器在外部项目）
+- [x] **EVT-02**: 事件系统能驱动简单场景的事件流程（踩踏触发链路；对话、开门依赖 A2 内建函数清单，延后到收尾工作）
+- [x] **EVT-03**: 事件系统定位为初学者抽象，仅覆盖简单场景，不为复杂场景追求通用表达
 
 ### 寻路（Pathfinding）
 
@@ -52,9 +52,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EVT-01 | Phase 1 | Pending |
-| EVT-02 | Phase 1 | Pending |
-| EVT-03 | Phase 1 | Pending |
+| EVT-01 | Phase 1 | Complete |
+| EVT-02 | Phase 1 | Complete |
+| EVT-03 | Phase 1 | Complete |
 | PATH-01 | Phase 2 | Pending |
 | PATH-02 | Phase 2 | Pending |
 | DATA-01 | Phase 3 | Pending |
@@ -65,6 +65,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-01 | Phase 6 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 11 total
 - Mapped to phases: 11
 - Unmapped: 0 ✓

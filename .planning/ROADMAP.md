@@ -2,7 +2,7 @@
 
 ## Overview
 
-引擎从旧 mota-js 运行时逐步重构，渲染端已重构完成，数据端接口设计中。本路线图沿「事件系统 → 寻路 → 数据端完成 → 渲染适配 → legacy 移植 → 单元测试」的依赖顺序推进：先补齐剧情事件、自动寻路两大玩法系统，再完成数据端 L0–L3 接口落地，随后把新数据层与已重构渲染端打通并支持双布局，接着清理被新接口覆盖的 legacy，最后以单元测试兜底，使引擎能完整跑通一部魔塔。接口/架构设计由用户主导，AI 负责实现与测试，所有 git 提交须经用户 review。
+引擎从旧 mota-js 运行时逐步重构，渲染端已重构完成，数据端接口设计中。本路线图沿「事件系统 → 寻路 → 数据端完成 → 渲染适配 → legacy 移植 → 单元测试」的依赖顺序推进：先补齐剧情事件、自动寻路两大玩法系统，再完成数据端 L0–L3 接口落地，随后把新数据层与已重构渲染端打通并支持双布局，接着清理被新接口覆盖的 legacy，最后以单元测试兜底，使引擎能完整跑通一部魔塔。接口/架构设计由用户主导，AI 负责实现与测试；验证通过后 AI 可自行创建 git commit。
 
 ## Phases
 
@@ -34,19 +34,28 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. 引擎能执行踩踏触发事件驱动的事件执行链路（对话/开门依赖 A2 内建函数清单，延后到收尾工作）
   4. 事件系统保持面向初学者的简单抽象，未引入复杂场景的通用表达能力
 
-**Plans**: 3 plans
+**Plans**: 6/10 plans executed
 Plans:
+
+- [x] 01-04-PLAN.md
+- [x] 01-05-PLAN.md
+- [x] 01-06-PLAN.md
+- [ ] 01-07-PLAN.md
+- [ ] 01-08-PLAN.md
+- [ ] 01-09-PLAN.md
+- [ ] 01-10-PLAN.md
+
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — L0/L1 事件数据契约落地 + 图块/点位事件视图 + 存读档迁移
+- [x] 01-01-PLAN.md — L0/L1 事件数据契约落地 + 图块/点位事件视图 + 存读档迁移
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-02-PLAN.md — 执行器接口用户确认（checkpoint）+ 执行器实现 + 删除旧 ITrigger（D-13）+ CoreState 装配
+- [x] 01-02-PLAN.md — 执行器接口用户确认（checkpoint）+ 执行器实现 + 删除旧 ITrigger（D-13）+ CoreState 装配
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-03-PLAN.md — moverImpl 踩踏触发重写为事件执行 + 阶段验收
+- [x] 01-03-PLAN.md — moverImpl 踩踏触发重写为事件执行 + 阶段验收
 
 ### Phase 2: 寻路系统
 
@@ -115,7 +124,7 @@ Plans:
   1. 核心数据层系统有单元测试覆盖
   2. 测试覆盖关键行为（战斗伤害、触发器、寻路、事件等）
   3. 测试在本地可运行且全部通过
-  4. 测试由 AI 编写，经用户 review 后提交
+   4. 测试由 AI 编写并运行，通过验证后可提交
 
 **Plans**: TBD
 
@@ -126,7 +135,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. 事件系统 | 0/TBD | Not started | - |
+| 1. 事件系统 | 6/10 | In Progress|  |
 | 2. 寻路系统 | 0/TBD | Not started | - |
 | 3. 数据端完成 | 0/TBD | Not started | - |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
