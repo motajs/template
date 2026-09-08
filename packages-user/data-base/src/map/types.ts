@@ -54,6 +54,13 @@ export interface IBlockEventEnv extends IDataCommonExtended {
     readonly map: IGameMap | null;
 }
 
+export interface IGameEventInvocation {
+    /** 事件在 `IGameEventStore` 中的 id */
+    readonly id: string;
+    /** 此次调用对应的真实来源环境 */
+    readonly env: IBlockEventEnv;
+}
+
 export interface IReadonlyBlockEvent<R = void> extends IReadonlyGameEvent<
     IBlockEventParam,
     IBlockEventEnv,
