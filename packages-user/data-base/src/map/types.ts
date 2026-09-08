@@ -5,41 +5,124 @@ import {
     ITileLocator
 } from '@motajs/common';
 import {
+    EventTrigger,
     FaceDirection,
     IDataCommonExtended,
+    IGameEvent,
     ILocationHelper,
-    IMapBlockRawData,
     IMapRawData,
     IMoverController,
     IObjectMovable,
     IObjectMover,
+    IReadonlyGameEvent,
     IRoleFaceBinder,
     ISaveableContent,
     ITileRawData
 } from '@user/data-common';
 import { ITileStore } from '@user/data-common';
 
+//#region 事件信息
+
+export const enum BlockEventType {
+    /** 普通事件类型，一般是手动触发的 */
+    CommonEvent,
+    /** 点事件类型 */
+    PointEvent,
+    /** 图块事件类型 */
+    TileEvent
+}
+
+export interface IBlockEventParam {
+    /** 自定义参数 */
+    readonly custom: Record<string, any>;
+}
+
+export interface IBlockEventEnv extends IDataCommonExtended {
+    /** 事件类型 */
+    readonly type: BlockEventType;
+    /** 本次事件的触发器类型 */
+    readonly trigger: EventTrigger;
+    /** 触发事件时玩家的位置 */
+    readonly heroLocator: Readonly<ITileLocator>;
+    /** 触发事件时触发者的位置，有可能不存在 */
+    readonly triggerLocator: Readonly<ITileLocator> | null;
+    /** 触发事件的图块，有可能不存在 */
+    readonly tile: IReadonlyTileBase | null;
+    /** 触发事件的图层，有可能不存在 */
+    readonly layer: IMapLayer | null;
+    /** 触发事件的地图，有可能不存在 */
+    readonly map: IGameMap | null;
+}
+
+export interface IReadonlyBlockEvent<R = void> extends IReadonlyGameEvent<
+    IBlockEventParam,
+    IBlockEventEnv,
+    R
+> {}
+
+export interface IBlockEvent<R = void> extends IGameEvent<
+    IBlockEventParam,
+    IBlockEventEnv,
+    R
+> {}
+
 //#region 图块信息
 
 export interface IMapBlockSaveBase {
-    /** 此图块的触发器 */
-    triggers?: ReadonlySet<number>;
+    /** 当前图块的事件，键表示优先级，值表示事件在 `IGameEventStore` 中的 id */
+    readonly events?: ReadonlyMap<number, string>;
 }
 
 export interface IStaticBlockSave extends IMapBlockSaveBase {}
 
 export interface IDynamicBlockSave extends IMapBlockSaveBase {
     /** 此动态图块的图块数字 */
-    num: number;
+    readonly num: number;
 }
 
-export interface ITileBase {
+export interface IReadonlyEventView {
+    /**
+     * 获取所有的事件
+     * @returns 键表示优先级，值表示事件在 `IGameEventStore` 的索引
+     */
+    get(): ReadonlyMap<number, string>;
+
+    /**
+     * 当前事件是否与参考基准不同
+     */
+    dirty(): boolean;
+}
+
+export interface ILayerEventView extends IReadonlyEventView {
+    /**
+     * 设置指定优先级的事件，如果优先级冲突则会覆盖并抛出警告
+     * @param priority 事件优先级
+     * @param event 事件在 `IGameEventStore` 中的 id
+     */
+    set(priority: number, event: string): void;
+
+    /**
+     * 删除指定优先级的事件
+     * @param priority 事件优先级
+     */
+    delete(priority: number): void;
+
+    /**
+     * 清空所有事件
+     */
+    clear(): void;
+
+    /**
+     * 标记当前为参考基准，`dirty` 将以此时为参考基准进行判断
+     */
+    markPure(): void;
+}
+
+export interface IReadonlyTileBase {
     /** 该图块所处的位置 */
     readonly locator: ITileLocator;
     /** 该图块所处的图层对象 */
     readonly layer: IMapLayer;
-    /** 包含的触发器列表，不存在时表示使用图块本身的触发器 */
-    readonly triggers: ReadonlySet<number> | null;
 
     /**
      * 获取该图块的原始图块信息
@@ -47,15 +130,22 @@ export interface ITileBase {
     raw(): ITileRawData | null;
 
     /**
-     * 获取该图块的原始点位信息
-     */
-    block(): IMapBlockRawData | null;
-
-    /**
      * 获取该图块的图块数字
      */
     num(): number;
 
+    /**
+     * 获取此图块实例的图块事件
+     */
+    tileEvent(): IReadonlyEventView;
+
+    /**
+     * 获取此图块所在位置的点事件
+     */
+    pointEvent(): IReadonlyEventView | null;
+}
+
+export interface ITileBase extends IReadonlyTileBase {
     /**
      * 设置此图块为指定图块
      * @param num 图块数字
@@ -69,26 +159,14 @@ export interface ITileBase {
     setFaceDirection(direction: FaceDirection): number;
 
     /**
-     * 清空此图块实例的触发器，回退为图块本身的触发器
+     * 获取此图块实例的图块事件
      */
-    clearTrigger(): void;
+    tileEvent(): ILayerEventView;
 
     /**
-     * 在此图块实例上添加触发器，当图块实例包含触发器时，将会覆盖图块本身的触发器
-     * @param trigger 触发器数字
+     * 获取此图块所在位置的点事件
      */
-    addTrigger(trigger: number): void;
-
-    /**
-     * 删除此图块实例上添加的触发器
-     * @param trigger 触发器数字
-     */
-    deleteTrigger(trigger: number): void;
-
-    /**
-     * 将此图块实例的触发器设置为无触发器，并覆盖图块本身的触发器。若图块本身包含触发器，此方法可以将其禁用
-     */
-    useEmptyTrigger(): void;
+    pointEvent(): ILayerEventView | null;
 }
 
 export interface IStaticTile
@@ -328,32 +406,32 @@ interface ILayerDynamic {
      * 从静态图层读取并清除指定位置的图块，创建对应动态图块并返回
      * @param x 横坐标
      * @param y 纵坐标
-     * @param keepTrigger 是否将静态图块的触发器保留至动态图块，不论是否保留，此格的静态触发器都会被清空
+     * @param keepEvent 是否将静态图块的事件保留至动态图块，不论是否保留，此格的静态事件都会被清空
      */
     transferToDynamic(
         x: number,
         y: number,
-        keepTrigger?: boolean
+        keepEvent?: boolean
     ): IDynamicTile | null;
 
     /**
      * 将动态图块还原为静态图块
      * @param tile 要还原的动态图块
-     * @param keepTrigger 是否保留动态图块的触发器至静态图块，若不保留，那么此格将回退为静态图块本身的触发器
+     * @param keepEvent 是否保留动态图块的事件至静态图块，若不保留，那么此格将回退为静态图块本身的事件
      */
     transferToStatic(
         tile: IDynamicTile,
-        keepTrigger?: boolean
+        keepEvent?: boolean
     ): IStaticTile | null;
 
     /**
      * 仅当目标位置不存在静态图块时才还原为静态图块，否则不转换
      * @param tile 要还原的动态图块
-     * @param keepTrigger 是否保留动态图块的触发器至静态图块，若不保留，那么此格将回退为静态图块本身的触发器
+     * @param keepEvent 是否保留动态图块的事件至静态图块，若不保留，那么此格将回退为静态图块本身的事件
      */
     transferToStaticIfSafe(
         tile: IDynamicTile,
-        keepTrigger?: boolean
+        keepEvent?: boolean
     ): IStaticTile | null;
 
     /**
@@ -414,6 +492,11 @@ export interface IMapLayerSave {
      * 此存储只会保存被标记为脏的图块，避免占用过大的存储空间。
      */
     readonly dynamicBlocks?: ReadonlyMap<number, Readonly<IDynamicBlockSave>[]>;
+
+    /**
+     * 点事件存储，键表示坐标索引，值表示该坐标的优先级到事件 id 映射
+     */
+    readonly pointEvents?: ReadonlyMap<number, ReadonlyMap<number, string>>;
 }
 
 export interface IMapLayer
@@ -488,6 +571,21 @@ export interface IMapLayer
     closeDoor(num: number, x: number, y: number): Promise<void>;
 
     /**
+     * 获取指定点的点事件视图
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    event(x: number, y: number): ILayerEventView | null;
+
+    /**
+     * 获取指定点的点事件映射，是 `event(x, y)?.get()` 的简写版本
+     * @param x 横坐标
+     * @param y 纵坐标
+     * @returns 键表示优先级，值表示事件在 `IGameEventStore` 的索引
+     */
+    getPointEvent(x: number, y: number): ReadonlyMap<number, string> | null;
+
+    /**
      * 当前图层是否为脏，即是否经过了修改，相对于设置的参考基准。
      * 图层相对于参考基准变化时一定为 `true`，但为 `true` 时图层不一定相对参考基准发生了变化。
      * 此标记仅针对静态图层，动态图块的改动不会影响此值。
@@ -503,14 +601,14 @@ export interface IMapLayer
 
 export interface IResizableMapLayer extends IMapLayer {
     /**
-     * 重设图层宽高，清空地图上的所有内容，会标记图层为脏
+     * 重设图层宽高，保留范围内地图与点事件并裁剪越界内容，会标记图层为脏
      * @param width 要设置为的宽度
      * @param height 要设置为的高度
      */
     resize(width: number, height: number): void;
 
     /**
-     * 重设图层宽高，会保留已有图块内容，扩大的区域补零，缩小的区域裁剪，会标记图层为脏
+     * 重设图层宽高，清空地图与点事件，会标记图层为脏
      * @param width 要设置为的宽度
      * @param height 要设置为的高度
      */
