@@ -3,6 +3,7 @@ import {
     IDynamicBlockSave,
     IDynamicTile,
     IGameMap,
+    ILayerEventView,
     ILayerLocation,
     IMapLayer,
     IMapLayerData,
@@ -21,6 +22,7 @@ import {
     SaveCompression
 } from '@user/data-common';
 import { DynamicTile } from './dynamicTile';
+import { LayerEventView } from './eventView';
 import { StaticTile } from './staticTile';
 
 export class MapLayer
@@ -44,6 +46,9 @@ export class MapLayer
     private readonly staticTileCache: Map<number, StaticTile> = new Map();
     /** 坐标到动态图块集合的映射，外层 key = y，内层 key = x */
     private readonly tilePosMap: Map<number, Map<number, Set<IDynamicTile>>> =
+        new Map();
+    /** 点事件视图，外层 key = y，内层 key = x */
+    private readonly pointEvents: Map<number, Map<number, ILayerEventView>> =
         new Map();
     /** 动态图块到其当前坐标的映射 */
     private readonly posTileMap: Map<IDynamicTile, ITileLocator> = new Map();
@@ -79,8 +84,16 @@ export class MapLayer
      * @param y 纵坐标
      */
     private addTileToPosMap(tile: IDynamicTile, x: number, y: number): void {
-        const xMap = this.tilePosMap.getOrInsertComputed(y, () => new Map());
-        const set = xMap.getOrInsertComputed(x, () => new Set());
+        let xMap = this.tilePosMap.get(y);
+        if (!xMap) {
+            xMap = new Map();
+            this.tilePosMap.set(y, xMap);
+        }
+        let set = xMap.get(x);
+        if (!set) {
+            set = new Set();
+            xMap.set(x, set);
+        }
         set.add(tile);
     }
 
@@ -111,25 +124,18 @@ export class MapLayer
     }
 
     /**
-     * 将动态图块的触发器同步回当前静态格点
+     * 将动态图块的事件同步回当前静态格点
      * @param tile 动态图块
-     * @param keepTrigger 是否保留触发器
+     * @param keepEvent 是否保留事件
      */
-    private syncStaticTrigger(tile: IDynamicTile, keepTrigger: boolean): void {
+    private syncStaticEvent(tile: IDynamicTile, keepEvent: boolean): void {
         const staticTile = this.getTile(tile.x, tile.y);
         if (!staticTile) return;
-        if (keepTrigger) {
-            const triggers = tile.triggers;
-            if (!triggers) {
-                staticTile.clearTrigger();
-            } else {
-                staticTile.clearTrigger();
-                for (const trigger of triggers) {
-                    staticTile.addTrigger(trigger);
-                }
+        staticTile.tileEvent().clear();
+        if (keepEvent) {
+            for (const [priority, id] of tile.tileEvent().get()) {
+                staticTile.tileEvent().set(priority, id);
             }
-        } else {
-            staticTile.clearTrigger();
         }
     }
 
@@ -315,11 +321,8 @@ export class MapLayer
         const tile = new DynamicTile(num, x, y, this);
         const location = this.getLocationData(x, y);
         if (location) {
-            const staticTriggers = location.static.triggers;
-            if (staticTriggers) {
-                for (const trigger of staticTriggers) {
-                    tile.addTrigger(trigger);
-                }
+            for (const [priority, id] of location.static.tileEvent().get()) {
+                tile.tileEvent().set(priority, id);
             }
         }
         this.addTileToPosMap(tile, x, y);
@@ -331,7 +334,7 @@ export class MapLayer
     transferToDynamic(
         x: number,
         y: number,
-        keepTrigger: boolean = true
+        keepEvent: boolean = true
     ): IDynamicTile | null {
         if (!this.inMap(x, y)) {
             logger.warn(131, x.toString(), y.toString());
@@ -345,17 +348,17 @@ export class MapLayer
         const tile = this.createDynamic(num, x, y);
         const staticTile = this.getTile(x, y);
         if (staticTile) {
-            staticTile.clearTrigger();
+            staticTile.tileEvent().clear();
         }
-        if (!keepTrigger) {
-            tile.clearTrigger();
+        if (!keepEvent) {
+            tile.tileEvent().clear();
         }
         return tile;
     }
 
     transferToStatic(
         tile: IDynamicTile,
-        keepTrigger: boolean = true
+        keepEvent: boolean = true
     ): IStaticTile | null {
         const x = tile.x;
         const y = tile.y;
@@ -367,7 +370,7 @@ export class MapLayer
             logger.warn(129, x.toString(), y.toString());
         }
         this.setBlock(tile.num(), x, y);
-        this.syncStaticTrigger(tile, keepTrigger);
+        this.syncStaticEvent(tile, keepEvent);
         this.removeTile(tile);
         this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
         return this.getTile(x, y);
@@ -375,7 +378,7 @@ export class MapLayer
 
     transferToStaticIfSafe(
         tile: IDynamicTile,
-        keepTrigger: boolean = true
+        keepEvent: boolean = true
     ): IStaticTile | null {
         const x = tile.x;
         const y = tile.y;
@@ -385,7 +388,7 @@ export class MapLayer
         }
         if (this.getBlock(tile.x, tile.y) !== 0) return null;
         this.setBlock(tile.num(), x, y);
-        this.syncStaticTrigger(tile, keepTrigger);
+        this.syncStaticEvent(tile, keepEvent);
         this.removeTile(tile);
         this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
         return this.getTile(x, y);
@@ -463,6 +466,25 @@ export class MapLayer
             })
         );
         this.setBlock(num, x, y);
+    }
+
+    event(x: number, y: number): ILayerEventView | null {
+        if (!this.inMap(x, y)) return null;
+        let xMap = this.pointEvents.get(y);
+        if (!xMap) {
+            xMap = new Map();
+            this.pointEvents.set(y, xMap);
+        }
+        let eventView = xMap.get(x);
+        if (!eventView) {
+            eventView = new LayerEventView();
+            xMap.set(x, eventView);
+        }
+        return eventView;
+    }
+
+    getPointEvent(x: number, y: number): ReadonlyMap<number, string> | null {
+        return this.event(x, y)?.get() ?? null;
     }
 
     //#endregion
@@ -595,7 +617,11 @@ export class MapLayer
         const blocks = new Map<number, IDynamicBlockSave[]>();
         for (const tile of this.iterateDynamicTiles()) {
             const index = this.map.indexer.locaterToIndex(tile.locator);
-            const list = blocks.getOrInsert(index, []);
+            let list = blocks.get(index);
+            if (!list) {
+                list = [];
+                blocks.set(index, list);
+            }
             list.push(tile.saveState(SaveCompression.NoCompression));
         }
         return blocks;
