@@ -344,6 +344,7 @@ export class CoreState implements ICoreState {
             state.setLayerAlias(bg, 'bg');
             state.setLayerAlias(bg2, 'bg2');
             state.setLayerAlias(event, 'event');
+            state.setEventLayer(event);
             state.setLayerAlias(fg, 'fg');
             state.setLayerAlias(fg2, 'fg2');
             state.setActiveStatus(false);
