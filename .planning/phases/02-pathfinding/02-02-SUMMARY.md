@@ -276,3 +276,51 @@ None - no external service configuration required.
 - `pnpm exec eslint` 目标目录（path/ + data-common mover 两文件）— 0 problems
 
 **提交：** `d9ee80f`（refactor，指令 1–8）、本提交（test，指令 9 + 本记录）
+
+## Optimizations (user round 2)
+
+> 用户对 Wave 2 的第二轮优化指令（3 条全部落实），外加一处用户 `7dd4f39` 契约变更（`getLocationData`：地图内坐标恒返回 `ILayerLocation`，仅越界返回 `null`；`ILayerLocation.static` 改为可空）引发的测试夹具对齐。用户授权修改 `path/types.ts`（cost 字段、builder `useCostFunction`、`build(start)` 签名）。
+
+### 指令落实明细
+
+| # | 指令 | 落实情况 | 验证 |
+| - | ---- | ---- | ---- |
+| 1 | 图构建时预计算节点损失 | `getNodeCost` 从 finder 移入 builder（私有 `resolveCost`，置于 `build` 之前），每个节点在出图时调用损失函数恰一次并写入 `IPathGraphNode.cost`；NaN/负数告警 174 并回退损失 1，**每个非法节点每次构建最多告警一次**（非每次松弛）；Infinity 为合法损失（用户 `e27015c` 拍板），无告警、正常参与寻路；`search()` 直接读 `node.cost`，finder 的 `getNodeCost` 删除 | graph.test.ts 4 个新用例（预计算值上 `node.cost`、Infinity 无告警、NaN/负数各告警恰一次且回退 1）；system.test.ts NaN/Infinity 用例复跑绿 |
+| 2 | 以绑定移动器位置为 BFS 中心建图 | `build(start)` 以起始位置为 BFS 起点，仅沿 `canPass` 可通行有向边扩展，**可达区域外节点完全不入图**（对齐 D-02「仅包含从当前位置可以到达的位置」原语义）；`shouldHit` 仍将目标格标记为终端节点；图层未绑定或起始位置越界 → 告警 173 + 空图（契约与原状一致）；`finder.find` 传入 `start`，`system.getPath` 本就传移动器当前位置，system.ts 无需改动 | graph.test.ts 新用例：墙体隔断区域（3 列地图中央墙列）右侧列 3 节点不入图（nodes.size === 3）；越界起点告警 173 + 空图；未注入谓词时图仅含起始节点 |
+| 3 | 移除冗余 ILocationData null 检查 | 复核 `mapLayer.ts` 现行契约（`getLocationData`：`!inMap` 才返回 `null`）后，删除全图扫描的 `blocks` null 数组模式与 `if (!loc) continue` / `if (!next) continue` 分支；`layer.inMap(x, y)` 成为唯一的图外过滤，入图坐标经 `!` 非空断言取值 | `check:type` 0 诊断；测试全绿 |
+
+### 附带对齐（用户 `7dd4f39` 契约变更涟漪）
+
+- 用户 `7dd4f39` 将 `ILayerLocation.static` 类型改为 `IStaticTile \| null`，path 三个测试文件的 `FixturePredicate` 中 `curr?.static.raw()` 等 10 处由此产生 `TS18047`，阻塞本计划类型门（过滤 `src[\\/]path[\\/]` 需 0 诊断）。按用户自身在 `eventPath.test.ts` 的 `?.static?.` 风格对齐为 `?.static?.raw()`，运行时行为不变（地图内坐标恒有静态图块）。[Rule 3 - 阻塞类型门]
+- graph.test.ts 夹具补注册墙体图块（num 6），使 BFS 可达性新用例的墙列语义真实生效。
+
+### 性能对比（100x100，种子 20260909，5 轮 min/avg，二叉堆基线 → 本轮）
+
+```text
+[pathfinding-perf] map=100x100 steps=198 elapsed=58.86ms
+[pathfinding-segmented] map=100x100 steps=198 runs=5
+  graph_build: min=26.23ms avg=31.01ms
+  full_find(build+search): min=30.73ms avg=33.26ms
+  search_only(approx = find - build): min=-9.19ms avg=2.25ms
+```
+
+| 分段 | 基线（二叉堆轮） | 本轮 | 变化 |
+| ---- | ---- | ---- | ---- |
+| graph_build | min=34.59 avg=40.15 | min=26.23 avg=31.01 | avg −23% |
+| full_find | min=44.02 avg=48.82 | min=30.73 avg=33.26 | avg −32% |
+| search_only | avg≈8.67 | avg=2.25 | avg −74%（损失查表变字段读取） |
+| 完整流水线 | ~77ms（steps=198） | 58.86ms（steps=198） | −24% |
+
+- search_only 为 `find - build` 近似值，min 为负属两计时点分轮测量的正常抖动
+- steps=198 不变：最优路径完全一致，优化不改变寻路结果
+
+### 验证汇总（本轮全部复核）
+
+- `pnpm exec vitest run "packages-user/data-system/src/path"` — 3 文件 27 passed（新增 4 个 BFS/损失语义用例）
+- `pnpm exec vitest run "packages-user/data-common/src/common/mover.test.ts"` — 4/4 绿
+- `pnpm exec vitest run "packages-user/data-base/src"` — 3 文件 16 passed（getLocationData 契约回归守卫）
+- `pnpm check:type` 过滤 `src[\\/]path[\\/]|common[\\/]mover` — 0 诊断（其余为 client-modules 等处 legacy 既有诊断，不在本计划范围）
+- `pnpm check:circular` — 18 条循环均为既有基线，无涉及 path/
+- `pnpm exec eslint packages-user/data-system/src/path` — 0 problems
+
+**提交：** `239ac0d`（refactor(02-02)，指令 1–3 + 夹具对齐 + 类型门修复）、SUMMARY 记录提交见文末
