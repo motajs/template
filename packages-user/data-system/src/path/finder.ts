@@ -15,6 +15,87 @@ import {
     PathCostFunction
 } from './types';
 
+interface IDistanceHeapEntry {
+    /** 条目的键值，堆中键值最小的条目最先取出 */
+    key: number;
+    /** 条目携带的值 */
+    value: number;
+}
+
+class DistanceHeap {
+    private readonly entries: IDistanceHeapEntry[] = [];
+    private size: number = 0;
+
+    /**
+     * 将指定位置的条目逐层上浮至其键值不再大于父条目的位置
+     * @param index 条目所在位置
+     */
+    private siftUp(index: number): void {
+        while (index > 0) {
+            const parent = (index - 1) >> 1;
+            if (this.entries[parent]!.key <= this.entries[index]!.key) break;
+            const temp = this.entries[parent]!;
+            this.entries[parent] = this.entries[index]!;
+            this.entries[index] = temp;
+            index = parent;
+        }
+    }
+
+    /**
+     * 将指定位置的条目逐层下沉至其键值不再大于子条目的位置
+     * @param index 条目所在位置
+     */
+    private siftDown(index: number): void {
+        while (true) {
+            const left = index * 2 + 1;
+            const right = left + 1;
+            let smallest = index;
+            if (
+                left < this.size &&
+                this.entries[left]!.key < this.entries[smallest]!.key
+            ) {
+                smallest = left;
+            }
+            if (
+                right < this.size &&
+                this.entries[right]!.key < this.entries[smallest]!.key
+            ) {
+                smallest = right;
+            }
+            if (smallest === index) break;
+            const temp = this.entries[smallest]!;
+            this.entries[smallest] = this.entries[index]!;
+            this.entries[index] = temp;
+            index = smallest;
+        }
+    }
+
+    /**
+     * 插入一个键值条目，键值相同的条目按插入先后取出
+     * @param key 条目的键值
+     * @param value 条目携带的值
+     */
+    push(key: number, value: number): void {
+        this.entries[this.size] = { key, value };
+        this.siftUp(this.size);
+        this.size++;
+    }
+
+    /**
+     * 取出键值最小的条目，堆为空时返回 `null`
+     */
+    pop(): IDistanceHeapEntry | null {
+        if (this.size === 0) return null;
+        const top = this.entries[0]!;
+        this.size--;
+        if (this.size > 0) {
+            this.entries[0] = this.entries[this.size]!;
+            this.siftDown(0);
+        }
+        return top;
+    }
+}
+
 export class PathfindingFinder implements IPathfinder {
     /** 当前对象对应的数据层对象 */
     readonly state: IStateBase;
@@ -55,13 +136,13 @@ export class PathfindingFinder implements IPathfinder {
     }
 
     /**
-     * 获取进入指定位置节点的损失，损失值为负数时抛出警告并按损失 1 处理
+     * 获取进入指定位置节点的损失，损失值不是有限数字或为负数时告警并按损失 1 处理
      * @param block 位置信息
      */
     private getNodeCost(block: ILayerLocation): number {
         if (!this.cost) return 1;
         const value = this.cost(block);
-        if (value < 0) {
+        if (!Number.isFinite(value) || value < 0) {
             logger.warn(174);
             return 1;
         }
@@ -90,17 +171,17 @@ export class PathfindingFinder implements IPathfinder {
         const prev: Map<number, IPathfindingStep> = new Map();
         const visited: Set<number> = new Set();
         dist.set(startIndex, 0);
+        const heap: DistanceHeap = new DistanceHeap();
+        heap.push(0, startIndex);
 
         while (true) {
-            let currIndex = -1;
-            let currDist = Infinity;
-            for (const [index, value] of dist) {
-                if (!visited.has(index) && value < currDist) {
-                    currIndex = index;
-                    currDist = value;
-                }
-            }
-            if (currIndex === -1) return [];
+            const entry = heap.pop();
+            if (!entry) return [];
+            if (visited.has(entry.value)) continue;
+            const currIndex = entry.value;
+            const currDist = entry.key;
+            // 取出的条目可能已过期，仅当其键值与当前最小损失一致时才有效
+            if (currDist !== dist.get(currIndex)) continue;
             if (currIndex === targetIndex) break;
             visited.add(currIndex);
             const node = graph.nodes.get(currIndex);
@@ -119,6 +200,7 @@ export class PathfindingFinder implements IPathfinder {
                         from: { x: node.x, y: node.y },
                         to: { x: next.x, y: next.y }
                     });
+                    heap.push(total, edge.to);
                 }
             }
         }
