@@ -550,16 +550,18 @@ await executor.execute<void>([{ id, env }], { custom: {} });
 
 ## Open Questions
 
-1. **D-08 OnTouch 派发路径**
+> **解决机制（已制度化闭环）**：以下全部待决问题经 **02-01 Task 3 的 `checkpoint:human-verify`（D-07 用户拍板关卡）** 解决——AI 起草接口草案并列出各选项，用户逐项拍板，结论记录于 `02-INTERFACE-DRAFT.md` 末尾「拍板记录」节。未经拍板不得实现（D-07）。
+
+1. **D-08 OnTouch 派发路径** — RESOLVED-BY: D-07 拍板关卡（02-01 Task 3；方案 A 直派 executor / 方案 B 撞击步已在草案并列，附 P2 结论「方案 B 对 inPass=0 目标不生效」）
    - What we know: mover 的 Hit 链对 `inPass=0` 真墙格不生效（cannotEnter 为空实现）
    - What's unclear: 用户期望的 OnTouch 派发语义（直派 executor vs 改 hit 语义）
    - Recommendation: 接口草案中两方案并列，用户拍板（D-07 关卡内解决）
-2. **L0 `&&` 缺陷修复**
+2. **L0 `&&` 缺陷修复** — RESOLVED-BY: D-07 拍板关卡（02-01 Task 1 铺设 skip 回归测试、Task 3 关卡内 go/no-go；02-02 Task 1 按拍板结果执行修复并翻绿）
    - What we know: 逐字引用与推理链完整（Pitfall 1）
    - What's unclear: 是否属有意设计；是否允许本阶段修 L0
    - Recommendation: planner 首个任务设 `checkpoint:human-verify`，用户确认后修 + 回归测试
-3. **打断时序**：stop 后 await 兑现再起新寻路，还是 onEnd 回调驱动——接口草案定夺
-4. **斜向（Dir8）寻路**：`FaceDirection` 含 4 斜向且 canPass 对斜向直接放行（moverImpl.ts:67-75），但 PassBit 只有 4 位。图是否含斜向边（默认建议：仅 4 正交向，与 PassBit 掩码语义一致）——接口草案定夺
+3. **打断时序** — RESOLVED-BY: D-07 拍板关卡（02-01 草案选项 1/2 并列、Task 3 拍板；02-03 Task 3 按拍板时序实现）——stop 后 await 兑现再起新寻路，还是 onEnd 回调驱动
+4. **斜向（Dir8）寻路** — RESOLVED-BY: D-07 拍板关卡（02-01 草案第 (6) 节并列 4 向/8 向、Task 3 拍板）——`FaceDirection` 含 4 斜向且 canPass 对斜向直接放行（moverImpl.ts:67-75），但 PassBit 只有 4 位。图是否含斜向边（默认建议：仅 4 正交向，与 PassBit 掩码语义一致）
 
 ## Environment Availability
 
