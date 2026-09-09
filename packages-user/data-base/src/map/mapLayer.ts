@@ -54,8 +54,6 @@ export class MapLayer
     /** 图层参考基准，用于存档压缩对比 */
     private refArray: Uint32Array | null = null;
 
-    //#region 点事件操作
-
     /** 点事件视图，key = y * width + x */
     private readonly pointEvents: Map<number, ILayerEventView> = new Map();
 
@@ -124,6 +122,8 @@ export class MapLayer
         }
         this.posTileMap.delete(tile);
     }
+
+    //#region 点事件操作
 
     /**
      * 将动态图块的事件同步回当前静态格点

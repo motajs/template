@@ -25,10 +25,36 @@ export class EventExecutor implements IGameEventExecutor {
         this.reduce = reduce;
     }
 
+    /**
+     * 折叠事件的原始返回值
+     * @param mode 折叠模式
+     * @param results 原始返回值
+     */
+    private reduceResults(mode: EventReduceMode, results: any[]): any {
+        if (mode === EventReduceMode.OrReduce) {
+            return results.reduce((prev, curr) => {
+                if (typeof curr !== 'boolean') {
+                    logger.warn(172, String(curr));
+                }
+                return prev || curr;
+            }, false);
+        } else if (mode === EventReduceMode.AndReduce) {
+            return results.reduce((prev, curr) => {
+                if (typeof curr !== 'boolean') {
+                    logger.warn(172, String(curr));
+                }
+                return prev && curr;
+            }, true);
+        } else {
+            return results;
+        }
+    }
+
     async execute<R = void>(
         events: IGameEventInvocation[],
         param: IBlockEventParam
     ): Promise<R> {
+        // 事件执行
         const results: any[] = [];
         for (const invocation of events) {
             const id = invocation.id;
@@ -47,13 +73,9 @@ export class EventExecutor implements IGameEventExecutor {
             if (event.trigger !== invocation.env.trigger) continue;
 
             const result = await event.execute(param, invocation.env);
-            if (
-                this.reduce !== EventReduceMode.NoReduce &&
-                typeof result !== 'boolean'
-            ) {
-                logger.warn(172, String(result));
-            }
             results.push(result);
+
+            // 执行模式
             if (this.mode === EventExecuteMode.CutIfFalsy && !result) {
                 break;
             } else if (this.mode === EventExecuteMode.CutIfTruthy && result) {
@@ -61,20 +83,6 @@ export class EventExecutor implements IGameEventExecutor {
             }
         }
 
-        let reduced: any = results;
-        if (this.reduce === EventReduceMode.OrReduce) {
-            reduced = false;
-            for (const result of results) {
-                reduced ||= result;
-                if (reduced) break;
-            }
-        } else if (this.reduce === EventReduceMode.AndReduce) {
-            reduced = true;
-            for (const result of results) {
-                reduced &&= result;
-                if (!reduced) break;
-            }
-        }
-        return reduced;
+        return this.reduceResults(this.reduce, results);
     }
 }

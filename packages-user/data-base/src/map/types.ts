@@ -95,6 +95,11 @@ export interface IReadonlyEventView {
     get(): ReadonlyMap<number, string>;
 
     /**
+     * 获取当前事件的参考基准
+     */
+    ref(): ReadonlyMap<number, string>;
+
+    /**
      * 当前事件是否与参考基准不同
      */
     dirty(): boolean;
