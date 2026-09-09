@@ -34,15 +34,15 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. 引擎能执行踩踏触发事件驱动的事件执行链路（对话/开门依赖 A2 内建函数清单，延后到收尾工作）
   4. 事件系统保持面向初学者的简单抽象，未引入复杂场景的通用表达能力
 
-**Plans**: 8/10 plans executed
+**Plans**: 9/10 plans executed
 Plans:
 
 - [x] 01-04-PLAN.md
 - [x] 01-05-PLAN.md
 - [x] 01-06-PLAN.md
 - [x] 01-07-PLAN.md
-- [ ] 01-08-PLAN.md
-- [ ] 01-09-PLAN.md
+- [x] 01-08-PLAN.md — GameEventStore add/get/duplicate-warning regression; rawEvent and cycle baselines preserved
+- [ ] 01-09-PLAN.md — GameMap point-event-only save aggregation; production registration deferred
 - [x] 01-10-PLAN.md
 
 **Wave 1**
@@ -135,7 +135,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. 事件系统 | 8/10 | In Progress|  |
+| 1. 事件系统 | 9/10 | In Progress|  |
 | 2. 寻路系统 | 0/TBD | Not started | - |
 | 3. 数据端完成 | 0/TBD | Not started | - |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
