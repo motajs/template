@@ -14,6 +14,7 @@ import {
     type IPassCheckHandler,
     type IPassPredicate
 } from '@user/data-base';
+import { PathfindingGraphBuilder } from './graph';
 import { type PathfindingSystem } from './system';
 
 vi.hoisted(() => {
@@ -64,8 +65,21 @@ beforeAll(async () => {
 /** 性能地图边长，共 100 x 100 = 10000 个节点 */
 const MAP_SIZE = 100;
 
+/** 分段测量重复运行的次数 */
+const RUNS = 5;
+
 /** 性能测试的宽松耗时上限，单位 ms，仅作 sanity 把关 */
 const ELAPSED_LIMIT_MS = 5000;
+
+/**
+ * 汇总一组耗时数据的最小值与平均值
+ * @param times 耗时列表，单位 ms
+ */
+function stat(times: number[]): string {
+    const min = Math.min(...times);
+    const avg = times.reduce((a, b) => a + b, 0) / times.length;
+    return `min=${min.toFixed(2)}ms avg=${avg.toFixed(2)}ms`;
+}
 
 interface TestTile extends IObjectMovable {
     x: number;
@@ -268,17 +282,29 @@ function createPerformanceSystem(rows: number[], width: number) {
     system.finder.useMapState(maps);
     system.finder.useMapLayer(layer);
     system.finder.usePassPredicate(predicate);
-    return system;
+    return {
+        system,
+        buildGraph: (): ReturnType<PathfindingGraphBuilder['build']> => {
+            const builder = new PathfindingGraphBuilder();
+            builder.useMapState(maps);
+            builder.useMapLayer(layer);
+            builder.usePassPredicate(predicate);
+            return builder.build();
+        }
+    };
 }
 
 describe('pathfinding performance', () => {
     // 验证 100 x 100 障碍地图上从建图到最优路径发现的完整寻路耗时处于可用量级
     it('completes the full find pipeline on a 100x100 map within the sanity bound', () => {
         const rows = generateRows(MAP_SIZE);
-        const system = createPerformanceSystem(rows, MAP_SIZE);
+        const fixture = createPerformanceSystem(rows, MAP_SIZE);
 
         const start = performance.now();
-        const steps = system.getPath({ x: MAP_SIZE - 1, y: MAP_SIZE - 1 });
+        const steps = fixture.system.getPath({
+            x: MAP_SIZE - 1,
+            y: MAP_SIZE - 1
+        });
         const elapsed = performance.now() - start;
 
         // 审查要求输出结构化性能数据供汇报使用
@@ -290,5 +316,44 @@ describe('pathfinding performance', () => {
 
         expect(steps.length).toBeGreaterThan(0);
         expect(elapsed).toBeLessThan(ELAPSED_LIMIT_MS);
+    });
+
+    // 验证分段测量图构建与搜索各自耗时，多轮运行以确认总耗时的主要来源
+    it('measures graph build and search phases separately over multiple runs', () => {
+        const rows = generateRows(MAP_SIZE);
+        const fixture = createPerformanceSystem(rows, MAP_SIZE);
+        const target: ITileLocator = { x: MAP_SIZE - 1, y: MAP_SIZE - 1 };
+
+        const buildTimes: number[] = [];
+        const findTimes: number[] = [];
+        let steps = 0;
+
+        for (let i = 0; i < RUNS; i++) {
+            const b0 = performance.now();
+            const graph = fixture.buildGraph();
+            const b1 = performance.now();
+            buildTimes.push(b1 - b0);
+
+            const f0 = performance.now();
+            const result = fixture.system.getPath(target);
+            const f1 = performance.now();
+            findTimes.push(f1 - f0);
+            steps = result.length;
+            expect(graph.nodes.size).toBeGreaterThan(0);
+        }
+
+        // 审查要求输出结构化分段性能数据供汇报使用
+        // eslint-disable-next-line no-console
+        console.log(
+            `[pathfinding-segmented] map=${MAP_SIZE}x${MAP_SIZE} ` +
+                `steps=${steps} runs=${RUNS}\n` +
+                `  graph_build: ${stat(buildTimes)}\n` +
+                `  full_find(build+search): ${stat(findTimes)}\n` +
+                `  search_only(approx = find - build): ${stat(
+                    findTimes.map((t, i) => t - buildTimes[i]!)
+                )}`
+        );
+
+        expect(steps).toBeGreaterThan(0);
     });
 });

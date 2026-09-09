@@ -5,7 +5,7 @@ import {
     InternalDirectionGroup,
     logger
 } from '@motajs/common';
-import { FaceDirection, IDataCommon } from '@user/data-common';
+import { FaceDirection } from '@user/data-common';
 import {
     ILayerLocation,
     IMapLayer,
