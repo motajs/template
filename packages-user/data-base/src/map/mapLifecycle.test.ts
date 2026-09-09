@@ -1,3 +1,4 @@
+// 测试图块默认事件、点事件存读档、压缩聚合和尺寸变化
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { type IResizableMapLayer } from './types';
 import {

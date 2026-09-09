@@ -1,3 +1,4 @@
+// 测试 LayerEventView 的参考基准、dirty 状态和恢复行为
 import { describe, expect, it, vi } from 'vitest';
 import { LayerEventView } from './eventView';
 

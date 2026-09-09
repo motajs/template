@@ -1,3 +1,4 @@
+// 测试 CoreState legacy 地图初始化对 event layer 的绑定
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 interface TestModules {

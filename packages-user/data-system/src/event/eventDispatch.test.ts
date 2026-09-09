@@ -1,3 +1,4 @@
+// 测试事件 trigger 过滤、来源环境、执行顺序、await、cut/reduce 和移动钩子
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     BlockEventType,

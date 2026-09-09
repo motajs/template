@@ -1,3 +1,4 @@
+// 测试 raw 地图事件校验、点事件加载和 event layer 绑定
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     type IDataCommon,

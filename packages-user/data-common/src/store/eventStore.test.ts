@@ -1,3 +1,4 @@
+// 测试 GameEventStore 的 add/get、未知 ID 和重复 ID 告警覆盖
 import { AnonTokyoInterpreter } from 'anon-tokyo';
 import {
     afterAll,
