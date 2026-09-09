@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 01
 current_phase_name: event
 status: executing
-stopped_at: Completed 01-08-PLAN.md
-last_updated: "2026-09-09T02:18:11.542Z"
+stopped_at: Completed 01-09-PLAN.md
+last_updated: "2026-09-09T02:27:56.618Z"
 last_activity: 2026-09-08
 last_activity_desc: Phase 01 Plan 05 decision recording completed
-state_head: 6e96abb7a2209ac79b901276c7147ebb32abad49
+state_head: 8b2e58e9a2f9b4a279e94dd1ea697e9621f919b3
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-07)
 ## Current Position
 
 Phase: 01 (event) — EXECUTING
-Plan: 9 of 10
+Plan: 10 of 10
 Status: Ready to execute next plan
 Last activity: 2026-09-08 — Phase 01 execution started
 
@@ -65,6 +65,7 @@ Progress: [█████░░░░░] 50%
 | Phase 01 P10 | 25min | 2 tasks | 5 files |
 | Phase 01 P07 | 25min | 2 tasks | 5 files |
 | Phase 01 P08 | 3min | 1 tasks | 1 files |
+| Phase 01 P09 | 8min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Plan 01-07 dispatches one approved source-aware point/static/dynamic invocation sequence with trigger filtering before cut/reduce.
 - [Phase 01]: Plans 01-08 and 01-09 remain unexecuted; their revised scope preserves rawEvent/Promise<R>/as adapters/cycles, tests only eventStore behavior, and isolates GameMap point-event aggregation without production registration.
 - [Phase 01]: Plan 01-08 regression-tests GameEventStore through the public barrel and preserves rawEvent, Promise, and eventStore-cycle deferrals.
+- [Phase 01]: Plan 01-09 preserves non-empty pointEvents as valid GameMap layer save content for LowCompression and HighCompression.
+- [Phase 01]: Plan 01-09 validates point-event aggregation without production registration, map-id binding, rawEvent changes, or eventStore cycle repair.
 
 ### Pending Todos
 
@@ -106,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-09T02:18:11.503Z
-Stopped at: Completed 01-08-PLAN.md
+Last session: 2026-09-09T02:27:56.577Z
+Stopped at: Completed 01-09-PLAN.md
 Resume file: None
