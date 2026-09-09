@@ -104,7 +104,7 @@ function createFixture(
         eventSystem: { executor }
     };
     const mover = new modules.DefaultHeroMoveTopImpl(state);
-    return { events, executor, layer, dynamic, mover, state };
+    return { events, executor, layer, map: map!, dynamic, mover, state };
 }
 
 function addEvent(
@@ -144,6 +144,38 @@ function invocation(id: string, trigger: number) {
 }
 
 describe('source-aware matching dispatch', () => {
+    it('executes a map-bound point id through the event layer and mover', async () => {
+        const calls: EventCall[] = [];
+        const fixture = createFixture({ 1: { 50: 'legacy-point-enter' } });
+        addEvent(
+            fixture.events,
+            'legacy-point-enter',
+            modules.EventTrigger.OnEnter,
+            true,
+            calls
+        );
+
+        expect(fixture.map.eventLayer).toBe(fixture.layer);
+        await fixture.mover.enter({
+            state: fixture.state,
+            currLoc: { x: 0, y: 0 },
+            nextLoc: { x: 1, y: 0 },
+            direction: 0,
+            floorId: 'F1',
+            face: new modules.Dir8FaceHandler()
+        });
+
+        expect(calls).toHaveLength(1);
+        expect(calls[0]).toMatchObject({
+            id: 'legacy-point-enter',
+            trigger: modules.EventTrigger.OnEnter,
+            type: modules.BlockEventType.PointEvent,
+            tile: null,
+            hero: { x: 1, y: 0 },
+            triggerLocator: { x: 1, y: 0 }
+        });
+    });
+
     it('source-aware matching dispatch', async () => {
         const calls: EventCall[] = [];
         const fixture = createFixture({
