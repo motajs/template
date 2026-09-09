@@ -180,9 +180,16 @@ export class HeroMover<T extends IHeroLocation>
             if (this.ignoreTerrain) {
                 return HeroMoveCode.Step;
             } else {
-                const canPass = this.topImpl.canPass(handler);
+                const passHandler = {
+                    currLoc: handler.currLoc,
+                    nextLoc: handler.nextLoc,
+                    direction: handler.direction,
+                    floorId: handler.floorId
+                };
+                const predicate = this.topImpl.predicate();
+                const canPass = predicate.canPass(passHandler);
                 if (canPass) {
-                    const hit = this.topImpl.shouldHit(handler);
+                    const hit = predicate.shouldHit(passHandler);
                     if (hit) return HeroMoveCode.Hit;
                     else return HeroMoveCode.Step;
                 } else {

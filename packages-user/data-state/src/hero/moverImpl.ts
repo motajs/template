@@ -7,6 +7,8 @@ import {
     IHeroMoveTopHandler,
     IHeroMoveTopImpl,
     IMapState,
+    IPassCheckHandler,
+    IPassPredicate,
     IReadonlyTileBase
 } from '@user/data-base';
 import { EventTrigger, FaceDirection, PassBit } from '@user/data-common';
@@ -20,23 +22,11 @@ interface IEventSource {
     readonly tile: IReadonlyTileBase | null;
 }
 
-export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
-    /** 地图存储对象 */
-    private readonly maps: IMapState;
-    /** 游戏事件执行器 */
-    private readonly executor: IGameEventExecutor;
+interface IDefaultHeroPassPredicate extends IPassPredicate {}
 
-    constructor(state: IStateSystem) {
-        this.maps = state.maps;
-        this.executor = state.eventSystem.executor;
-    }
+class DefaultHeroPassPredicate implements IDefaultHeroPassPredicate {
+    constructor(private readonly maps: IMapState) {}
 
-    //#region 通行性判断
-
-    /**
-     * 将朝向转换为对应的通行性位掩码。
-     * @param dir 朝向
-     */
     private directionToPassBit(dir: FaceDirection): number {
         switch (dir) {
             case FaceDirection.Up:
@@ -52,19 +42,33 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
         }
     }
 
-    inBound(x: number, y: number, floorId: string | undefined): boolean {
-        if (isNil(floorId)) return false;
-        const layerState = this.maps.getMap(floorId);
-        if (!layerState) return false;
-        const { width, height } = layerState;
-        return x >= 0 && y >= 0 && x < width && y < height;
+    private oppositeDirection(dir: FaceDirection): FaceDirection {
+        switch (dir) {
+            case FaceDirection.Up:
+                return FaceDirection.Down;
+            case FaceDirection.Right:
+                return FaceDirection.Left;
+            case FaceDirection.Down:
+                return FaceDirection.Up;
+            case FaceDirection.Left:
+                return FaceDirection.Right;
+            case FaceDirection.LeftUp:
+                return FaceDirection.RightDown;
+            case FaceDirection.RightUp:
+                return FaceDirection.LeftDown;
+            case FaceDirection.LeftDown:
+                return FaceDirection.RightUp;
+            case FaceDirection.RightDown:
+                return FaceDirection.LeftUp;
+            default:
+                return FaceDirection.Unknown;
+        }
     }
 
-    canPass(handler: IHeroMoveTopHandler): boolean {
-        const { currLoc, nextLoc, direction, floorId, face } = handler;
+    canPass(handler: IPassCheckHandler): boolean {
+        const { currLoc, nextLoc, direction, floorId } = handler;
         if (isNil(floorId)) return false;
 
-        // 四角朝向直接判定为可通行
         if (
             direction === FaceDirection.LeftDown ||
             direction === FaceDirection.LeftUp ||
@@ -81,37 +85,29 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
 
         const { x, y } = currLoc;
         const { x: nx, y: ny } = nextLoc;
-
-        const opposite = face.opposite(direction);
         const leaveMask = this.directionToPassBit(direction);
-        const enterMask = this.directionToPassBit(opposite);
-
+        const enterMask = this.directionToPassBit(
+            this.oppositeDirection(direction)
+        );
         let canLeave = true;
         let canEnter = true;
 
-        // 判断事件层
         const curr = event.getLocationData(x, y);
         const next = event.getLocationData(nx, ny);
-        const currRaw = curr?.static.raw();
-        const nextRaw = next?.static.raw();
-        if (currRaw) {
-            canLeave = !!(leaveMask & currRaw.pass.outPass);
-        }
-        if (nextRaw) {
-            canEnter = !!(enterMask & nextRaw.pass.inPass);
-        }
-
+        const currRaw = curr?.static?.raw();
+        const nextRaw = next?.static?.raw();
+        if (currRaw) canLeave = !!(leaveMask & currRaw.pass.outPass);
+        if (nextRaw) canEnter = !!(enterMask & nextRaw.pass.inPass);
         if (!canLeave || !canEnter) return false;
 
-        // 判断其他层
         for (const layer of map.layerList) {
             if (layer === event) continue;
             const curr = layer.getLocationData(x, y);
             const next = layer.getLocationData(nx, ny);
             let canLeave = true;
             let canEnter = true;
-            const currRaw = curr?.static.raw();
-            const nextRaw = next?.static.raw();
+            const currRaw = curr?.static?.raw();
+            const nextRaw = next?.static?.raw();
             if (currRaw?.pass.onlyEvents) {
                 canLeave = !!(leaveMask & currRaw.pass.outPass);
             }
@@ -124,20 +120,45 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
         return true;
     }
 
-    shouldHit(handler: IHeroMoveTopHandler): boolean {
+    shouldHit(handler: IPassCheckHandler): boolean {
         const { nextLoc, floorId } = handler;
+        if (isNil(floorId)) return false;
+        const map = this.maps.getMap(floorId);
+        if (!map) return false;
+        const eventLayer = map.eventLayer;
+        if (!eventLayer) return false;
+        const next = eventLayer.getLocationData(nextLoc.x, nextLoc.y);
+        const nextRaw = next?.static?.raw();
+        return !!nextRaw && !nextRaw.eventPass;
+    }
+}
+
+export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
+    /** 地图存储对象 */
+    private readonly maps: IMapState;
+    /** 游戏事件执行器 */
+    private readonly executor: IGameEventExecutor;
+    /** 勇士移动使用的通行性谓词 */
+    private readonly passPredicate: IPassPredicate;
+
+    constructor(state: IStateSystem) {
+        this.maps = state.maps;
+        this.executor = state.eventSystem.executor;
+        this.passPredicate = new DefaultHeroPassPredicate(this.maps);
+    }
+
+    //#region 通行性判断
+
+    inBound(x: number, y: number, floorId: string | undefined): boolean {
         if (isNil(floorId)) return false;
         const layerState = this.maps.getMap(floorId);
         if (!layerState) return false;
-        const eventLayer = layerState.eventLayer;
-        if (!eventLayer) return false;
+        const { width, height } = layerState;
+        return x >= 0 && y >= 0 && x < width && y < height;
+    }
 
-        const { x: nx, y: ny } = nextLoc;
-
-        const next = eventLayer.getLocationData(nx, ny);
-        const nextRaw = next?.static.raw();
-        if (!nextRaw) return false;
-        return !nextRaw.eventPass;
+    predicate(): IPassPredicate {
+        return this.passPredicate;
     }
 
     //#endregion
