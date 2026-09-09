@@ -47,20 +47,17 @@ export class MapLayer
     /** 坐标到动态图块集合的映射，外层 key = y，内层 key = x */
     private readonly tilePosMap: Map<number, Map<number, Set<IDynamicTile>>> =
         new Map();
-    /** 点事件视图，外层 key = y，内层 key = x */
-    private readonly pointEvents: Map<number, Map<number, ILayerEventView>> =
-        new Map();
-    /** 点事件的原始纯基准，外层 key = y，内层 key = x */
-    private readonly pointEventBaselines: Map<
-        number,
-        Map<number, ReadonlyMap<number, string>>
-    > = new Map();
     /** 动态图块到其当前坐标的映射 */
     private readonly posTileMap: Map<IDynamicTile, ITileLocator> = new Map();
     /** 图层脏标记 */
     private layerDirty: boolean = false;
     /** 图层参考基准，用于存档压缩对比 */
     private refArray: Uint32Array | null = null;
+
+    //#region 点事件操作
+
+    /** 点事件视图，key = y * width + x */
+    private readonly pointEvents: Map<number, ILayerEventView> = new Map();
 
     constructor(
         array: Uint32Array,
@@ -138,80 +135,45 @@ export class MapLayer
         if (!staticTile) return;
         staticTile.set(staticTile.num());
         if (keepEvent) {
-            staticTile.tileEvent().clear();
-            for (const [priority, id] of tile.tileEvent().get()) {
-                staticTile.tileEvent().set(priority, id);
+            const staticEvent = staticTile.tileEvent();
+            const dynamicEvent = tile.tileEvent();
+            staticEvent.clear();
+            for (const [priority, id] of dynamicEvent.get()) {
+                staticEvent.set(priority, id);
             }
         }
-    }
-
-    /**
-     * 记录尚未保存过的点事件纯基准
-     * @param x 点事件横坐标
-     * @param y 点事件纵坐标
-     * @param eventView 点事件视图
-     */
-    private capturePointEventBaseline(
-        x: number,
-        y: number,
-        eventView: ILayerEventView
-    ): void {
-        const yMap = this.pointEventBaselines.get(y);
-        if (yMap?.has(x)) return;
-        if (eventView.dirty()) return;
-        const target = yMap ?? new Map<number, ReadonlyMap<number, string>>();
-        target.set(x, new Map(eventView.get()));
-        if (!yMap) this.pointEventBaselines.set(y, target);
     }
 
     /**
      * 将所有已创建的点事件视图恢复到原始纯基准
      */
     private resetPointEvents(): void {
-        for (const [y, xMap] of this.pointEvents) {
-            for (const [x, eventView] of xMap) {
-                this.capturePointEventBaseline(x, y, eventView);
-            }
-        }
-        for (const [y, xMap] of this.pointEvents) {
-            for (const [x, eventView] of xMap) {
-                eventView.clear();
-                const baseline = this.pointEventBaselines.get(y)?.get(x);
-                if (baseline) {
-                    for (const [priority, id] of baseline) {
-                        eventView.set(priority, id);
-                    }
-                }
-                eventView.markPure();
+        for (const eventView of this.pointEvents.values()) {
+            const reference = eventView.ref();
+            eventView.clear();
+            for (const [priority, id] of reference) {
+                eventView.set(priority, id);
             }
         }
     }
 
     /**
-     * 裁剪超出新图层范围的点事件及其纯基准
+     * 裁剪超出新图层范围的点事件，并按新宽度重建索引
      * @param width 新图层宽度
      * @param height 新图层高度
      */
     private cropPointEvents(width: number, height: number): void {
-        for (const [y, xMap] of this.pointEvents) {
-            if (y >= height) {
-                this.pointEvents.delete(y);
-                continue;
+        const pointEvents = new Map<number, ILayerEventView>();
+        for (const [index, eventView] of this.pointEvents) {
+            const x = index % this.width;
+            const y = Math.floor(index / this.width);
+            if (x < width && y < height) {
+                pointEvents.set(y * width + x, eventView);
             }
-            for (const x of xMap.keys()) {
-                if (x >= width) xMap.delete(x);
-            }
-            if (xMap.size === 0) this.pointEvents.delete(y);
         }
-        for (const [y, xMap] of this.pointEventBaselines) {
-            if (y >= height) {
-                this.pointEventBaselines.delete(y);
-                continue;
-            }
-            for (const x of xMap.keys()) {
-                if (x >= width) xMap.delete(x);
-            }
-            if (xMap.size === 0) this.pointEventBaselines.delete(y);
+        this.pointEvents.clear();
+        for (const [index, eventView] of pointEvents) {
+            this.pointEvents.set(index, eventView);
         }
     }
 
@@ -220,12 +182,9 @@ export class MapLayer
      */
     private savePointEvents(): Map<number, ReadonlyMap<number, string>> {
         const pointEvents = new Map<number, ReadonlyMap<number, string>>();
-        for (const [y, xMap] of this.pointEvents) {
-            for (const [x, eventView] of xMap) {
-                if (!eventView.dirty()) continue;
-                const index = this.map.indexer.locToIndex(x, y);
-                pointEvents.set(index, new Map(eventView.get()));
-            }
+        for (const [index, eventView] of this.pointEvents) {
+            if (!eventView.dirty()) continue;
+            pointEvents.set(index, new Map(eventView.get()));
         }
         return pointEvents;
     }
@@ -240,7 +199,8 @@ export class MapLayer
         this.resetPointEvents();
         if (!save) return;
         for (const [index, events] of save) {
-            const { x, y } = this.map.indexer.indexToLocator(index);
+            const x = index % this.width;
+            const y = Math.floor(index / this.width);
             const eventView = this.event(x, y);
             if (!eventView) continue;
             eventView.clear();
@@ -249,6 +209,31 @@ export class MapLayer
             }
         }
     }
+
+    event(x: number, y: number): ILayerEventView | null {
+        if (!this.inMap(x, y)) return null;
+        const index = y * this.width + x;
+        const getOrInsertComputed = this.pointEvents.getOrInsertComputed;
+        if (getOrInsertComputed) {
+            return getOrInsertComputed.call(
+                this.pointEvents,
+                index,
+                () => new LayerEventView()
+            );
+        }
+        let eventView = this.pointEvents.get(index);
+        if (!eventView) {
+            eventView = new LayerEventView();
+            this.pointEvents.set(index, eventView);
+        }
+        return eventView;
+    }
+
+    getPointEvent(x: number, y: number): ReadonlyMap<number, string> | null {
+        return this.event(x, y)?.get() ?? null;
+    }
+
+    //#endregion
 
     //#region 静态图层操作
 
@@ -432,9 +417,11 @@ export class MapLayer
         const tile = new DynamicTile(num, x, y, this);
         const location = this.getLocationData(x, y);
         if (location) {
-            tile.tileEvent().clear();
-            for (const [priority, id] of location.static.tileEvent().get()) {
-                tile.tileEvent().set(priority, id);
+            const tileEvent = tile.tileEvent();
+            const staticEvent = location.static.tileEvent();
+            tileEvent.clear();
+            for (const [priority, id] of staticEvent.get()) {
+                tileEvent.set(priority, id);
             }
         }
         this.addTileToPosMap(tile, x, y);
@@ -580,27 +567,6 @@ export class MapLayer
         this.setBlock(num, x, y);
     }
 
-    event(x: number, y: number): ILayerEventView | null {
-        if (!this.inMap(x, y)) return null;
-        let xMap = this.pointEvents.get(y);
-        if (!xMap) {
-            xMap = new Map();
-            this.pointEvents.set(y, xMap);
-        }
-        let eventView = xMap.get(x);
-        if (!eventView) {
-            eventView = new LayerEventView();
-            xMap.set(x, eventView);
-        } else {
-            this.capturePointEventBaseline(x, y, eventView);
-        }
-        return eventView;
-    }
-
-    getPointEvent(x: number, y: number): ReadonlyMap<number, string> | null {
-        return this.event(x, y)?.get() ?? null;
-    }
-
     //#endregion
 
     //#region 图层操作
@@ -616,10 +582,8 @@ export class MapLayer
 
     dirty(): boolean {
         if (this.layerDirty) return true;
-        for (const xMap of this.pointEvents.values()) {
-            for (const eventView of xMap.values()) {
-                if (eventView.dirty()) return true;
-            }
+        for (const eventView of this.pointEvents.values()) {
+            if (eventView.dirty()) return true;
         }
         return false;
     }
@@ -693,7 +657,6 @@ export class MapLayer
     resize2(width: number, height: number): void {
         this.layerDirty = true;
         this.pointEvents.clear();
-        this.pointEventBaselines.clear();
         if (this.width === width && this.height === height) {
             this.empty = true;
             this.mapArray.fill(0);

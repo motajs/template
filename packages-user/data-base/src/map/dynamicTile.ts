@@ -45,20 +45,6 @@ export class DynamicTile
         this.restoreDefaultEvents();
     }
 
-    /**
-     * 根据当前图块原始数据恢复默认事件并建立干净基准
-     */
-    private restoreDefaultEvents(): void {
-        this.tileEvent().clear();
-        const data = this.raw();
-        if (data) {
-            for (const [priority, id] of Object.entries(data.events)) {
-                this.tileEvent().set(Number(priority), id);
-            }
-        }
-        this.tileEvent().markPure();
-    }
-
     num(): number {
         return this.tileNum;
     }
@@ -115,10 +101,11 @@ export class DynamicTile
 
     saveState(): Readonly<IDynamicBlockSave> {
         let save: IDynamicBlockSave;
-        if (this.tileEvent().dirty()) {
+        const eventView = this.tileEvent();
+        if (eventView.dirty()) {
             save = {
                 num: this.num(),
-                events: new Map(this.tileEvent().get())
+                events: new Map(eventView.get())
             };
         } else {
             save = {
@@ -131,9 +118,10 @@ export class DynamicTile
     loadState(save: Readonly<IDynamicBlockSave>): void {
         this.restoreDefaultEvents();
         if (save.events) {
-            this.tileEvent().clear();
+            const eventView = this.tileEvent();
+            eventView.clear();
             for (const [priority, id] of save.events) {
-                this.tileEvent().set(priority, id);
+                eventView.set(priority, id);
             }
         }
     }

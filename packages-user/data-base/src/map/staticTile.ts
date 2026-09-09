@@ -16,20 +16,6 @@ export class StaticTile
         this.restoreDefaultEvents();
     }
 
-    /**
-     * 根据当前图块原始数据恢复默认事件并建立干净基准
-     */
-    private restoreDefaultEvents(): void {
-        this.tileEvent().clear();
-        const data = this.raw();
-        if (data) {
-            for (const [priority, id] of Object.entries(data.events)) {
-                this.tileEvent().set(Number(priority), id);
-            }
-        }
-        this.tileEvent().markPure();
-    }
-
     num(): number {
         return this.layer.getBlock(this.locator.x, this.locator.y);
     }
@@ -48,14 +34,16 @@ export class StaticTile
     }
 
     shouldSave(): boolean {
-        return this.tileEvent().dirty();
+        const eventView = this.tileEvent();
+        return eventView.dirty();
     }
 
     saveState(): Readonly<IStaticBlockSave> {
         let save: IStaticBlockSave;
-        if (this.tileEvent().dirty()) {
+        const eventView = this.tileEvent();
+        if (eventView.dirty()) {
             save = {
-                events: new Map(this.tileEvent().get())
+                events: new Map(eventView.get())
             };
         } else {
             save = {};
@@ -66,9 +54,10 @@ export class StaticTile
     loadState(save: Readonly<IStaticBlockSave>): void {
         this.restoreDefaultEvents();
         if (save.events) {
-            this.tileEvent().clear();
+            const eventView = this.tileEvent();
+            eventView.clear();
             for (const [priority, id] of save.events) {
-                this.tileEvent().set(priority, id);
+                eventView.set(priority, id);
             }
         }
     }

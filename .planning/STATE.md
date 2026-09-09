@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 01
 current_phase_name: event
 status: executing
-stopped_at: Phase 01 verification passed; ready for phase completion
-last_updated: "2026-09-09T03:53:57.000Z"
+stopped_at: Completed 01-13-PLAN.md
+last_updated: "2026-09-09T04:51:31.356Z"
 last_activity: 2026-09-09
 last_activity_desc: "Phase 01 verification passed: user confirmed compile-cache reuse and setRaw invalidation with no issue reported"
-state_head: b9213dd
+state_head: a297311ea60082fd4c2f1454e1c6bee0286356be
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 13
+  completed_plans: 13
 milestone_name: milestone
 ---
 
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-09-07)
 ## Current Position
 
 Phase: 01 (event) — EXECUTING
-Plan: 12 of 12 (gap closure complete)
-Status: Phase verification passed; ready for completion transition
-Last activity: 2026-09-09 — Phase 01 verification passed; focused tests/type/lint evidence is green in phase scope
+Plan: 13 of 13 (point-event reference/storage refactor complete)
+Status: Plan 01-13 verification complete; ready for phase completion transition
+Last activity: 2026-09-09 — Plan 01-13 focused tests/lint passed; repository-wide type diagnostics remain deferred outside plan scope
 
 Progress: [█████████░] 92%
 
@@ -68,6 +68,7 @@ Progress: [█████████░] 92%
 | Phase 01 P09 | 8min | 2 tasks | 2 files |
 | Phase 01 P11 | 13min | 2 tasks | 3 files |
 | Phase 01 P12 | 20min | 2 tasks | 6 files |
+| Phase 01 P13 | 30 | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Gap-closure plan 01-12 repairs only the missing IBlockEventEnv import, focused fixture typing, and reported CRLF/Prettier errors; it preserves all locked deferrals and public contracts.
 - [Phase 01]: Gap-closure Plan 01-12 imports IBlockEventEnv and types only the focused event/map fixtures without changing runtime behavior or public contracts.
 - [Phase 01]: Gap-closure Plan 01-12 preserves serialized registration/map-id binding, rawEvent/cache/Promise/as, and eventStore-cycle deferrals.
+- [Phase 01]: Plan 01-13: LayerEventView owns point-event refs with O(1) dirty state; MapLayer uses flat index storage and ref-first overlays; MapTileBase centralizes default restoration.
+- [Phase 01]: Plan 01-13 preserves the approved save shape, resize semantics, locked deferrals, and leaves types.ts and executor.ts user edits untouched.
 
 ### Pending Todos
 
@@ -108,15 +111,17 @@ None yet.
 - 01-08 rawEvent cache-safety and no-as implementation assumptions are explicitly removed from the revised executable scope; the 01-05 current contract remains unchanged.
 - eventStore circular paths are explicitly preserved as the Phase 01 baseline; the revised 01-08 regression does not require those paths to disappear.
 - Plan 01-12 leaves the repository-wide type gate blocked only by pre-existing diagnostics outside the plan-owned files; these are recorded in the phase deferred-items ledger.
+- Plan 01-13 records the same repository-wide type gate diagnostics outside its implementation and test files in the phase deferred-items ledger.
 
 ## Deferred Items
 
 | Category | Item | Status | Deferred At | Milestone |
 |----------|------|--------|-------------|-----------|
 | quality gate | Pre-existing TypeScript diagnostics outside Plan 01-12 files | deferred | 2026-09-09 | v1.0 |
+| quality gate | Pre-existing TypeScript diagnostics outside Plan 01-13 files | deferred | 2026-09-09 | v1.0 |
 
 ## Session Continuity
 
-Last session: 2026-09-09T03:36:51.913Z
-Stopped at: Phase 01 verification passed; ready for completion
+Last session: 2026-09-09T04:51:31.227Z
+Stopped at: Completed 01-13-PLAN.md
 Resume file: None

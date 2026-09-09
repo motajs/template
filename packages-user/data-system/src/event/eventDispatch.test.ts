@@ -301,6 +301,8 @@ describe('source-aware matching dispatch', () => {
         expect(calls[0].tile).toBeNull();
         expect(calls[1].tile).toBe(fixture.dynamic);
         expect(calls[2].tile).toBe(fixture.layer.getLocationData(1, 0)!.static);
+        expect(calls[1].triggerLocator).toEqual({ x: 1, y: 0 });
+        expect(calls[2].triggerLocator).toEqual({ x: 1, y: 0 });
     });
 
     it('awaits each source before continuing to the next one', async () => {

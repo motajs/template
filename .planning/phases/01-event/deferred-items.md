@@ -1,6 +1,15 @@
-# Deferred Items
+# Deferred Items — Phase 01 Plan 13
 
-- `pnpm check:type` remains red on pre-existing files outside Plan 01-12,
-  including legacy client exports, the TileStore trigger contract, and legacy
-  hero/tile consumers. The plan-owned diagnostics are resolved; these unrelated
-  diagnostics are deferred without runtime or public-contract changes.
+## Pre-existing repository-wide diagnostics
+
+`pnpm check:type` remains blocked by diagnostics outside the files owned by
+Plan 01-13. The failures are in the legacy/client integration surfaces and
+the pre-existing `TileStore`/`ITileStore` trigger-shape mismatch, including:
+
+- `packages-user/client-modules/**`
+- `packages-user/data-common/src/store/tileStore.ts`
+- `packages-user/data-state/**`
+- `packages-user/legacy-plugin-data/**`
+- `packages/legacy-ui/src/tools/equipbox.tsx`
+
+No type errors were reported in the Plan 01-13 implementation or test files.

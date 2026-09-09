@@ -37,6 +37,21 @@ export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
 
     abstract set(num: number): void;
 
+    /**
+     * 根据当前图块原始数据恢复默认事件并建立干净基准
+     */
+    protected restoreDefaultEvents(): void {
+        const eventView = this.tileEvent();
+        eventView.clear();
+        const data = this.raw();
+        if (data) {
+            for (const [priority, id] of Object.entries(data.events)) {
+                eventView.set(Number(priority), id);
+            }
+        }
+        eventView.markPure();
+    }
+
     setFaceDirection(direction: FaceDirection): number {
         const cur = this.num();
         const next = this.layer.faceBinder.getFaceOf(cur, direction);

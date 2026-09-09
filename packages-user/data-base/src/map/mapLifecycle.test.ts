@@ -267,4 +267,33 @@ describe('MapLayer point event lifecycle', () => {
         layer.resize2(1, 1);
         expect(layer.getPointEvent(0, 0)).toEqual(new Map());
     });
+
+    it('reindexes preserved point events when the layer width changes', () => {
+        const { layer } = createMapState({
+            1: { 1: 'top-right' },
+            3: { 1: 'bottom-right' }
+        });
+
+        layer.resize(3, 2);
+
+        expect(layer.getPointEvent(1, 0)).toEqual(new Map([[1, 'top-right']]));
+        expect(layer.getPointEvent(1, 1)).toEqual(
+            new Map([[1, 'bottom-right']])
+        );
+
+        layer.event(1, 1)!.set(2, 'runtime-event');
+        expect(
+            layer.saveState(SaveCompression.NoCompression).pointEvents
+        ).toEqual(
+            new Map([
+                [
+                    4,
+                    new Map([
+                        [1, 'bottom-right'],
+                        [2, 'runtime-event']
+                    ])
+                ]
+            ])
+        );
+    });
 });
