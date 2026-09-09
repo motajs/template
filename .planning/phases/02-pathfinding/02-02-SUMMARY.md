@@ -22,7 +22,7 @@ affects: [02-03, phase-04-rendering]
 actuals:
   tokens: 13900        # chars/4 over realized diff（本计划 10 个文件，+1569/-8 行 + 类规则补丁）
   tasks: 3
-  commits: 5           # MEASURED: git rev-list --count 9efadc9(plan_head_before)..HEAD；含 1 个用户穿插提交 0e6536f（dev.md 类规则），本计划自身 4 个
+  commits: 7           # MEASURED: git rev-list --count 9efadc9(plan_head_before)..HEAD；含 2 个用户穿插提交（0e6536f、ffedb80）与 1 个 SUMMARY 修订，本计划自身 5 个
 
 # Tech tracking
 tech-stack:
@@ -37,6 +37,7 @@ key-files:
   created:
     - packages-user/data-system/src/path/graph.ts
     - packages-user/data-system/src/path/graph.test.ts
+    - packages-user/data-system/src/path/finder.ts
     - packages-user/data-system/src/path/system.ts
     - packages-user/data-system/src/path/system.test.ts
     - packages-user/data-system/src/path/index.ts
@@ -141,7 +142,7 @@ status: complete
 
 - **Task 1（tracer）**：mover.ts:651 回写条件按拍板 `&&`→`||`，4 个 skip 回归用例（x 正交/y 正交/斜向/传送）全部翻绿——多步逐步移动自此能以真实坐标计算后续步骤（RESEARCH P1 收口）
 - **Task 2**：path/types.ts 落地用户逐字授权的 moveTo/teleportTo 返回类型修正（仅两处 `| null`，diff 断言通过）；新建 graph.ts 有向图构建器——邻域经 `useDirGroup` + `IDirectionMapper.map(group)`（默认 `InternalDirectionGroup.Dir4`）、边可行性由注入 `IPassPredicate.canPass` 判定（单向门由谓词不对称产生）、`shouldHit` 真图块分类为仅可作终点的终端节点、`inMap`+`isNil` 守卫 + warn 173；graph.test.ts 6 用例绿（单向门 A→B 可行 B→A 不可行、Dir8 组 8 邻域、终端分类、空图守卫）
-- **Task 3**：system.ts 落地 `PathfindingSystem`/`PathfindingFinder`（骨架照 GameEventSystem/useXxx 注入惯例）——自写 O(V²) Dijkstra（默认每格损失 1、`PathCostFunction` 可注入、损失守卫 warn 174）、`find`/`getPath` 返回 `IPathfindingStep[]`（dir/from/to）且不移动任何对象、不可达返回空数组、moveTo/teleportTo 经结构化 `hasMover` 守卫取 `IMoverController` 构成 `IPathfindingController { controller, path }`（无路径/未绑定/移动中返回 null）、`PathFallbackPolicy` 回退决策（null 默认必定逐步、策略以步骤序列为入参）、interrupt 占位；index.ts barrel + data-system barrel 追加；system.test.ts 12 用例绿
+- **Task 3**：system.ts/finder.ts 落地 `PathfindingSystem`/`PathfindingFinder`（骨架照 GameEventSystem/useXxx 注入惯例，后按新风格规则拆分一文件一类）——自写 O(V²) Dijkstra（默认每格损失 1、`PathCostFunction` 可注入、损失守卫 warn 174）、`find`/`getPath` 返回 `IPathfindingStep[]`（dir/from/to）且不移动任何对象、不可达返回空数组、moveTo/teleportTo 经结构化 `hasMover` 守卫取 `IMoverController` 构成 `IPathfindingController { controller, path }`（无路径/未绑定/移动中返回 null）、`PathFallbackPolicy` 回退决策（null 默认必定逐步、策略以步骤序列为入参）、interrupt 占位；index.ts barrel + data-system barrel 追加；system.test.ts 12 用例绿
 - **logger.json**：登记本阶段新码 warn 173（寻路输入非法/绑定缺失）、warn 174（损失值非有限或负数）
 
 ## Task Commits
@@ -151,11 +152,12 @@ Each task was committed atomically:
 1. **Task 1: 按拍板结果修复 L0 坐标回写缺陷并翻绿回归测试** - `e1f6101` (fix)
 2. **Task 2: 授权的 types.ts 返回类型修正 + 有向图构建** - `0cd6ab6` (feat)
 3. **Task 3: 最小损失搜索 + 仅取路径 + 回退策略槽位** - `53d019f` (feat)
-4. **补丁: 用户新增类规则合规（IPathfindingGraphBuilder 接口声明 + implements）** - `e199d99` (refactor)
+4. **补丁 1: 用户新增类规则合规（IPathfindingGraphBuilder 接口声明 + implements）** - `e199d99` (refactor)
+5. **补丁 2: 用户新增风格规则合规（finder.ts 独立文件 + 去临时函数常量 + eslint 清理）** - `cbcaec8` (refactor)
 
 **Plan metadata:** (本提交 — docs(02-02): complete)
 
-_注：期间用户穿插提交 `0e6536f`（docs: 更新类相关规则），非本计划产出；已按新规则补齐合规补丁。_
+_注：期间用户穿插提交 `0e6536f`（docs: 更新类相关规则）与 `ffedb80`（docs: 调整风格要求），非本计划产出；均已按新规则补齐合规补丁（e199d99 / cbcaec8）。_
 
 ## Files Created/Modified
 
@@ -190,10 +192,20 @@ _注：期间用户穿插提交 `0e6536f`（docs: 更新类相关规则），非
 - **Verification:** `pnpm exec vitest run "packages-user/data-system/src/path"` 18 passed；check:type path 过滤 0 诊断
 - **Committed in:** e199d99 (refactor(02-02))
 
+**2. [Rule 3 - Blocking] 用户新增风格规则（dev.md `ffedb80`）中途生效，合规重构**
+- **Found during:** SUMMARY 收口阶段（用户穿插提交 `ffedb80`：不得将对象上的函数声明为临时变量、一个文件通常只容纳一个类、向外暴露的接口类型应放 types.ts）
+- **Issue:** graph.ts/system.ts 存在 3 处 `const fn = this.fn` 形态；PathfindingFinder 与 PathfindingSystem 同文件
+- **Fix:** 3 处改为守卫后直接 `this.fn()` 调用（`this.predicate`/`this.cost`/`this.policy`）；PathfindingFinder 抽取至独立 `finder.ts`（一文件一类），path barrel 追加 finder 导出；顺带清理 eslint 两处（未使用导入、mover.test.ts 既有 import 折叠）；复跑 22/22 绿、eslint 0 错、check:type path 过滤 0 诊断、circular 0
+- **Files modified:** packages-user/data-system/src/path/{finder.ts(新), system.ts, graph.ts, graph.test.ts, index.ts}, packages-user/data-common/src/common/mover.test.ts
+- **Verification:** vitest 3 文件 22 passed；eslint 目标目录 0 problems
+- **Committed in:** cbcaec8 (refactor(02-02))
+
+**待用户决策（未擅动）：** 「向外暴露的接口类型应放到 types.ts」与「path/types.ts 为用户所有（D-07：除授权修正外不得改动）」冲突——`IPathGraph*`/`IPathfindingGraphBuilder` 现 co-located 于 graph.ts、`IMovableWithMover` 于 system.ts。在用户授权扩展 path/types.ts 之前保持现状，02-03/用户可择机裁夺。
+
 ---
 
-**Total deviations:** 1 auto-fixed（1 blocking rule compliance）。
-**Impact on plan:** 合规补丁为纯接口声明抽取，零行为变更；不影响验收面。
+**Total deviations:** 2 auto-fixed（2 blocking rule compliance）。
+**Impact on plan:** 两笔均为用户中途新增 dev.md 规则的合规重构，纯声明/结构归位，零行为变更；不影响验收面。
 
 ## Issues Encountered
 
@@ -222,7 +234,7 @@ None - no external service configuration required.
 
 ## Self-Check: PASSED
 
-- SUMMARY.md 与全部 10 个计划内文件均在盘；Task 1/2/3 与合规补丁提交（`e1f6101`、`0cd6ab6`、`53d019f`、`e199d99`）均在 git log 中确认
-- 验证命令复跑：mover.test.ts 4/4 + path 目录 18/18 全绿；`check:type` 过滤 `src[\\/]path[\\/]` 无输出；`check:circular` 无 path 相关路径（既有基线循环不变）
+- SUMMARY.md 与全部 11 个计划内文件（含 finder.ts）均在盘；Task 1/2/3 与两笔合规补丁提交（`e1f6101`、`0cd6ab6`、`53d019f`、`e199d99`、`cbcaec8`）均在 git log 中确认
+- 验证命令复跑（合规补丁后）：mover.test.ts 4/4 + path 目录 18/18 全绿；eslint 目标目录 0 problems；`check:type` 过滤 `src[\\/]path[\\/]` 无输出；`check:circular` 无 path 相关路径（既有基线循环不变）
 - requirements.ready-ids：0/2 ready（PATH-01/PATH-02 与 02-03 共享，shared-ID 门生效），frontmatter `requirements-completed: []`
 - broken-windows 台账：02-01 的 skipped-test #4 标记 fixed；新增 #5（interrupt 占位 stub, open）
