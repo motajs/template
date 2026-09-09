@@ -648,7 +648,7 @@ export abstract class ObjectMover<T extends IObjectMovable>
             const loc = await this.onStepEnd(code, step, this.tile, controller);
             const before: ITileLocator = { x: this.tile.x, y: this.tile.y };
             const curr: ITileLocator = { x: loc.x, y: loc.y };
-            if (this.tile.x !== loc.x && this.tile.y !== loc.y) {
+            if (this.tile.x !== loc.x || this.tile.y !== loc.y) {
                 this.tile.setPos(loc.x, loc.y);
             }
             await this.onStepSettled(before, curr, this.tile, step, controller);

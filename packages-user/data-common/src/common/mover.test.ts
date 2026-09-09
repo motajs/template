@@ -127,7 +127,7 @@ function createMover(tile: TestTile) {
 
 describe('object mover position writeback', () => {
     // 验证正交步（仅 x 变化）移动后经 setPos 回写 x 轴坐标，覆盖 mover.ts:651 条件缺陷场景
-    it.skip('writes back the x position after an orthogonal x-only step', async () => {
+    it('writes back the x position after an orthogonal x-only step', async () => {
         const tile = new TestTile();
         tile.x = 0;
         tile.y = 0;
@@ -142,7 +142,7 @@ describe('object mover position writeback', () => {
     });
 
     // 验证正交步（仅 y 变化）移动后经 setPos 回写 y 轴坐标，覆盖另一正交方向
-    it.skip('writes back the y position after an orthogonal y-only step', async () => {
+    it('writes back the y position after an orthogonal y-only step', async () => {
         const tile = new TestTile();
         tile.x = 0;
         tile.y = 0;
@@ -157,7 +157,7 @@ describe('object mover position writeback', () => {
     });
 
     // 验证斜向步移动后经 setPos 双轴同时回写，保证修复不破坏双轴步语义
-    it.skip('writes back both axes after a diagonal step', async () => {
+    it('writes back both axes after a diagonal step', async () => {
         const tile = new TestTile();
         tile.x = 1;
         tile.y = 1;
@@ -172,7 +172,7 @@ describe('object mover position writeback', () => {
     });
 
     // 验证传送步（ObjectMoveType.Teleport）移动后经 setPos 双轴回写至目标坐标
-    it.skip('writes back both axes after a teleport step', async () => {
+    it('writes back both axes after a teleport step', async () => {
         const tile = new TestTile();
         tile.x = 1;
         tile.y = 1;
