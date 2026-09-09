@@ -3,6 +3,7 @@ import {
     IDirectionDescriptor,
     IDirectionMapper,
     InternalDirectionGroup,
+    ITileLocator,
     logger
 } from '@motajs/common';
 import { FaceDirection } from '@user/data-common';
@@ -18,7 +19,8 @@ import {
     IPathGraph,
     IPathGraphEdge,
     IPathGraphNode,
-    IPathfindingGraphBuilder
+    IPathfindingGraphBuilder,
+    PathCostFunction
 } from './types';
 
 /**
@@ -43,6 +45,8 @@ export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
     private maps: IMapState | null = null;
     /** 绑定的地图图层，图节点来源 */
     private layer: IMapLayer | null = null;
+    /** 注入的损失函数，未注入时每格损失 1 */
+    private cost: PathCostFunction | null = null;
     /** 注入的通行性谓词，用于判定边的可行性与终端节点 */
     private predicate: IPassPredicate | null = null;
     /** 邻域方向组别，默认四正交方向 */
@@ -57,6 +61,10 @@ export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
 
     useMapLayer(layer: IMapLayer | null): void {
         this.layer = layer;
+    }
+
+    useCostFunction(cost: PathCostFunction | null): void {
+        this.cost = cost;
     }
 
     usePassPredicate(predicate: IPassPredicate | null): void {
@@ -81,9 +89,24 @@ export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
         return undefined;
     }
 
-    build(): IPathGraph {
+    /**
+     * 获取进入指定位置节点的损失，损失值为 NaN 或负数时告警并按损失 1 处理，
+     * Infinity 为合法损失值
+     * @param block 位置信息
+     */
+    private resolveCost(block: ILayerLocation): number {
+        if (!this.cost) return 1;
+        const value = this.cost(block);
+        if (Number.isNaN(value) || value < 0) {
+            logger.warn(174);
+            return 1;
+        }
+        return value;
+    }
+
+    build(start: ITileLocator): IPathGraph {
         const layer = this.layer;
-        if (isNil(layer)) {
+        if (isNil(layer) || !layer.inMap(start.x, start.y)) {
             logger.warn(173);
             return { width: 0, height: 0, nodes: new Map() };
         }
@@ -92,28 +115,21 @@ export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
         const height = layer.height;
         const floorId = this.resolveFloorId();
         const state = layer.state;
-        const blocks: (ILayerLocation | null)[] = new Array(
-            width * height
-        ).fill(null);
-
-        // 收集图内全部图块作为图节点
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                if (!layer.inMap(x, y)) continue;
-                const loc = layer.getLocationData(x, y);
-                if (!loc) continue;
-                blocks[y * width + x] = loc;
-            }
-        }
+        const dirs: IDirectionDescriptor[] = [...this.mapper.map(this.group)];
 
         const terminals: Set<number> = new Set();
         const adjacency: Map<number, IPathGraphEdge[]> = new Map();
-        const dirs: IDirectionDescriptor[] = [...this.mapper.map(this.group)];
+        const blocks: Map<number, ILayerLocation> = new Map();
+        const startIndex = start.y * width + start.x;
+        blocks.set(startIndex, layer.getLocationData(start.x, start.y)!);
+        adjacency.set(startIndex, []);
 
-        // 逐节点判定邻域边可行性
-        for (let index = 0; index < blocks.length; index++) {
-            const block = blocks[index];
-            if (!block) continue;
+        // 以起始位置为中心 BFS，仅沿可通行有向边扩展，不可达区域不入图
+        const queue: number[] = [startIndex];
+        let head = 0;
+        while (head < queue.length) {
+            const index = queue[head++]!;
+            const block = blocks.get(index)!;
             const x = index % width;
             const y = Math.floor(index / width);
             const edges: IPathGraphEdge[] = [];
@@ -123,8 +139,7 @@ export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
                 const nx = x + desc.x;
                 const ny = y + desc.y;
                 if (!layer.inMap(nx, ny)) continue;
-                const next = blocks[ny * width + nx];
-                if (!next) continue;
+                const next = layer.getLocationData(nx, ny)!;
                 const handler: IPassCheckHandler = {
                     currLoc: block.locator,
                     nextLoc: next.locator,
@@ -135,23 +150,28 @@ export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
                 if (isNil(this.predicate) || !this.predicate.canPass(handler)) {
                     continue;
                 }
+                const nextIndex = ny * width + nx;
                 if (this.predicate.shouldHit(handler)) {
-                    terminals.add(ny * width + nx);
+                    terminals.add(nextIndex);
                 }
-                edges.push({ dir, to: ny * width + nx });
+                edges.push({ dir, to: nextIndex });
+                if (!blocks.has(nextIndex)) {
+                    blocks.set(nextIndex, next);
+                    adjacency.set(nextIndex, []);
+                    queue.push(nextIndex);
+                }
             }
             adjacency.set(index, edges);
         }
 
         const nodes: Map<number, IPathGraphNode> = new Map();
-        for (let index = 0; index < blocks.length; index++) {
-            const block = blocks[index];
-            if (!block) continue;
+        for (const [index, block] of blocks) {
             nodes.set(index, {
                 index,
                 x: index % width,
                 y: Math.floor(index / width),
                 block,
+                cost: this.resolveCost(block),
                 terminal: terminals.has(index),
                 edges: adjacency.get(index) ?? []
             });

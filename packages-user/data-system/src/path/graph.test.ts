@@ -1,4 +1,4 @@
-// 测试寻路有向图构建：邻域方向组、单向门、终端节点分类与边界守卫
+// 测试寻路有向图构建：BFS 可达过滤、邻域方向组、单向门、终端节点分类、损失预计算与边界守卫
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { FaceDirection } from '@user/data-common';
 import {
@@ -101,6 +101,15 @@ const SINK_TILE: TestTileDefinition = {
     eventPass: true
 };
 
+/** 墙体图块：不可进入也不可离开 */
+const WALL_TILE: TestTileDefinition = {
+    num: 6,
+    id: 'wall',
+    outPass: 0,
+    inPass: 0,
+    eventPass: true
+};
+
 /** 撞击图块：四向可进可出但事件不通行，构成终端节点 */
 const HIT_TILE: TestTileDefinition = {
     num: 5,
@@ -112,6 +121,7 @@ const HIT_TILE: TestTileDefinition = {
 
 const ALL_TILES: TestTileDefinition[] = [
     OPEN_TILE,
+    WALL_TILE,
     ONEWAY_TILE,
     SINK_TILE,
     HIT_TILE
@@ -176,8 +186,8 @@ class FixturePredicate implements IPassPredicate {
         // 判断事件层
         const curr = event.getLocationData(currLoc.x, currLoc.y);
         const next = event.getLocationData(nextLoc.x, nextLoc.y);
-        const currRaw = curr?.static.raw();
-        const nextRaw = next?.static.raw();
+        const currRaw = curr?.static?.raw();
+        const nextRaw = next?.static?.raw();
         if (currRaw) {
             canLeave = !!(leaveMask & currRaw.pass.outPass);
         }
@@ -191,8 +201,8 @@ class FixturePredicate implements IPassPredicate {
             if (layer === event) continue;
             const other = layer.getLocationData(currLoc.x, currLoc.y);
             const otherNext = layer.getLocationData(nextLoc.x, nextLoc.y);
-            const otherRaw = other?.static.raw();
-            const otherNextRaw = otherNext?.static.raw();
+            const otherRaw = other?.static?.raw();
+            const otherNextRaw = otherNext?.static?.raw();
             if (otherRaw?.pass.onlyEvents) {
                 canLeave = !!(leaveMask & otherRaw.pass.outPass);
             }
@@ -209,7 +219,7 @@ class FixturePredicate implements IPassPredicate {
         if (!event) return false;
         const { nextLoc } = handler;
         const next = event.getLocationData(nextLoc.x, nextLoc.y);
-        const nextRaw = next?.static.raw();
+        const nextRaw = next?.static?.raw();
         if (!nextRaw) return false;
         return !nextRaw.eventPass;
     }
@@ -271,23 +281,23 @@ function createFixture(
 }
 
 describe('pathfinding graph building', () => {
-    // 验证未注入谓词时图节点齐备但所有边均不可行
-    it('builds nodes without edges when no predicate is injected', () => {
+    // 验证未注入谓词时无可通行边，BFS 仅包含起始位置自身且无损失告警
+    it('includes only the start node when no predicate is injected', () => {
         const { map, builder } = createFixture(
             [1, 1, 1, 1, 1, 1, 1, 1, 1],
             3,
             null
         );
         builder.useMapLayer(map.getLayerByAlias('event'));
-        const graph = builder.build();
+        const graph = builder.build({ x: 1, y: 1 });
 
         expect(graph.width).toBe(3);
         expect(graph.height).toBe(3);
-        expect(graph.nodes.size).toBe(9);
-        for (const node of graph.nodes.values()) {
-            expect(node.edges).toHaveLength(0);
-            expect(node.terminal).toBe(false);
-        }
+        expect(graph.nodes.size).toBe(1);
+        const start = graph.nodes.get(1 * 3 + 1)!;
+        expect(start.edges).toHaveLength(0);
+        expect(start.terminal).toBe(false);
+        expect(start.cost).toBe(1);
     });
 
     // 验证注入谓词后中心节点邻域方向数与 DirectionMapper 四正交组一致为 4
@@ -304,7 +314,7 @@ describe('pathfinding graph building', () => {
             new modules.Dir8FaceHandler()
         );
         builder.usePassPredicate(predicate);
-        const graph = builder.build();
+        const graph = builder.build({ x: 1, y: 1 });
 
         const center = graph.nodes.get(1 * 3 + 1)!;
         expect(center.edges).toHaveLength(expected.length);
@@ -333,7 +343,7 @@ describe('pathfinding graph building', () => {
         );
         builder.usePassPredicate(predicate);
         builder.useDirGroup(InternalDirectionGroup.Dir8);
-        const graph = builder.build();
+        const graph = builder.build({ x: 1, y: 1 });
 
         const center = graph.nodes.get(1 * 3 + 1)!;
         expect(center.edges).toHaveLength(8);
@@ -347,7 +357,7 @@ describe('pathfinding graph building', () => {
             new modules.Dir8FaceHandler()
         );
         builder.usePassPredicate(predicate);
-        const graph = builder.build();
+        const graph = builder.build({ x: 0, y: 0 });
 
         const source = graph.nodes.get(0)!;
         const sink = graph.nodes.get(1)!;
@@ -364,7 +374,7 @@ describe('pathfinding graph building', () => {
             new modules.Dir8FaceHandler()
         );
         builder.usePassPredicate(predicate);
-        const graph = builder.build();
+        const graph = builder.build({ x: 0, y: 0 });
 
         const hit = graph.nodes.get(1)!;
         expect(hit.terminal).toBe(true);
@@ -381,9 +391,135 @@ describe('pathfinding graph building', () => {
         const builder = new modules.PathfindingGraphBuilder();
         builder.useMapLayer(null);
 
-        const result = modules.logger.catch(() => builder.build());
+        const result = modules.logger.catch(() =>
+            builder.build({ x: 0, y: 0 })
+        );
 
         expect(result.ret.nodes.size).toBe(0);
         expect(result.info.map(info => info.code)).toContain(173);
+    });
+
+    // 验证起始位置越界时构建入口同样告警新码 173 并返回空图
+    it('warns the registered code and returns an empty graph when start is out of map', () => {
+        const { builder } = createFixture([1, 1, 1, 1, 1, 1, 1, 1, 1], 3, null);
+
+        const result = modules.logger.catch(() =>
+            builder.build({ x: 3, y: 0 })
+        );
+
+        expect(result.ret.nodes.size).toBe(0);
+        expect(result.ret.width).toBe(0);
+        expect(result.info.map(info => info.code)).toContain(173);
+    });
+
+    // 验证墙体隔断区域不进入有向图：图仅包含从起始位置沿可通行边可达的节点
+    it('excludes walled-off regions from the graph', () => {
+        const { map, builder } = createFixture(
+            [1, 6, 1, 1, 6, 1, 1, 6, 1],
+            3,
+            null
+        );
+        builder.usePassPredicate(
+            new FixturePredicate(map, new modules.Dir8FaceHandler())
+        );
+        const graph = builder.build({ x: 0, y: 0 });
+
+        expect(graph.nodes.size).toBe(3);
+        expect(graph.nodes.has(0)).toBe(true);
+        expect(graph.nodes.has(3)).toBe(true);
+        expect(graph.nodes.has(6)).toBe(true);
+        expect(graph.nodes.has(2)).toBe(false);
+        expect(graph.nodes.has(5)).toBe(false);
+        expect(graph.nodes.has(8)).toBe(false);
+    });
+
+    // 验证节点损失在构建时预计算：自定义损失函数的取值直接出现在 node.cost 上
+    it('precomputes node costs from the injected cost function at build time', () => {
+        const { map, builder } = createFixture(
+            [1, 1, 1, 1, 1, 1, 1, 1, 1],
+            3,
+            null
+        );
+        builder.usePassPredicate(
+            new FixturePredicate(map, new modules.Dir8FaceHandler())
+        );
+        builder.useCostFunction(block =>
+            block.locator.x === 1 && block.locator.y === 1 ? 7 : 3
+        );
+        const graph = builder.build({ x: 1, y: 1 });
+
+        expect(graph.nodes.get(1 * 3 + 1)!.cost).toBe(7);
+        expect(graph.nodes.get(0)!.cost).toBe(3);
+        expect(graph.nodes.get(2 * 3 + 2)!.cost).toBe(3);
+    });
+
+    // 验证 Infinity 是合法损失值：构建时不告警，损失值原样保留在节点上
+    it('allows Infinity as a legitimate node cost without warning', () => {
+        const { map, builder } = createFixture(
+            [1, 1, 1, 1, 1, 1, 1, 1, 1],
+            3,
+            null
+        );
+        builder.usePassPredicate(
+            new FixturePredicate(map, new modules.Dir8FaceHandler())
+        );
+        builder.useCostFunction(block =>
+            block.locator.x === 1 && block.locator.y === 1
+                ? Number.POSITIVE_INFINITY
+                : 1
+        );
+
+        const result = modules.logger.catch(() =>
+            builder.build({ x: 0, y: 0 })
+        );
+
+        expect(result.info.map(info => info.code)).not.toContain(174);
+        expect(result.ret.nodes.get(1 * 3 + 1)!.cost).toBe(
+            Number.POSITIVE_INFINITY
+        );
+    });
+
+    // 验证 NaN 损失在构建时告警新码 174 且每个非法节点仅告警一次，并回退为损失 1
+    it('warns once per invalid node per build and falls back to unit cost on NaN', () => {
+        const { map, builder } = createFixture(
+            [1, 1, 1, 1, 1, 1, 1, 1, 1],
+            3,
+            null
+        );
+        builder.usePassPredicate(
+            new FixturePredicate(map, new modules.Dir8FaceHandler())
+        );
+        builder.useCostFunction(block =>
+            block.locator.x === 1 && block.locator.y === 1 ? Number.NaN : 1
+        );
+
+        const result = modules.logger.catch(() =>
+            builder.build({ x: 0, y: 0 })
+        );
+
+        expect(result.info.filter(info => info.code === 174)).toHaveLength(1);
+        expect(result.ret.nodes.get(1 * 3 + 1)!.cost).toBe(1);
+    });
+
+    // 验证负数损失同样在构建时告警新码 174 并回退为损失 1
+    it('warns and falls back to unit cost on negative node cost', () => {
+        const { map, builder } = createFixture(
+            [1, 1, 1, 1, 1, 1, 1, 1, 1],
+            3,
+            null
+        );
+        builder.usePassPredicate(
+            new FixturePredicate(map, new modules.Dir8FaceHandler())
+        );
+        builder.useCostFunction(block =>
+            block.locator.x === 1 && block.locator.y === 1 ? -2 : 1
+        );
+
+        const result = modules.logger.catch(() =>
+            builder.build({ x: 0, y: 0 })
+        );
+
+        expect(result.info.filter(info => info.code === 174)).toHaveLength(1);
+        expect(result.ret.nodes.get(1 * 3 + 1)!.cost).toBe(1);
     });
 });

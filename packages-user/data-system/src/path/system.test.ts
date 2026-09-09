@@ -178,8 +178,8 @@ class FixturePredicate implements IPassPredicate {
         let canEnter = true;
         const curr = event.getLocationData(currLoc.x, currLoc.y);
         const next = event.getLocationData(nextLoc.x, nextLoc.y);
-        const currRaw = curr?.static.raw();
-        const nextRaw = next?.static.raw();
+        const currRaw = curr?.static?.raw();
+        const nextRaw = next?.static?.raw();
         if (currRaw) {
             canLeave = !!(leaveMask & currRaw.pass.outPass);
         }
@@ -194,7 +194,7 @@ class FixturePredicate implements IPassPredicate {
         if (!event) return false;
         const { nextLoc } = handler;
         const next = event.getLocationData(nextLoc.x, nextLoc.y);
-        const nextRaw = next?.static.raw();
+        const nextRaw = next?.static?.raw();
         if (!nextRaw) return false;
         return !nextRaw.eventPass;
     }

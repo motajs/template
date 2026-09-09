@@ -140,8 +140,10 @@ export interface IPathGraphNode {
     readonly x: number;
     /** 节点纵坐标 */
     readonly y: number;
-    /** 节点对应的位置信息，用于损失计算 */
+    /** 节点对应的位置信息 */
     readonly block: ILayerLocation;
+    /** 进入该节点的损失，构建图时由损失函数计算 */
+    readonly cost: number;
     /** 该节点是否仅可作为路径终点，不可作为中间节点 */
     readonly terminal: boolean;
     /** 该节点的全部出边 */
@@ -171,6 +173,12 @@ export interface IPathfindingGraphBuilder {
     useMapLayer(layer: IMapLayer | null): void;
 
     /**
+     * 设置构建图时使用的损失函数，未注入时每格损失 1
+     * @param cost 损失函数
+     */
+    useCostFunction(cost: PathCostFunction | null): void;
+
+    /**
      * 注入判定边可行性的通行性谓词
      * @param predicate 通行性谓词
      */
@@ -183,9 +191,11 @@ export interface IPathfindingGraphBuilder {
     useDirGroup(group: number): void;
 
     /**
-     * 构建有向图。图层未绑定时告警并返回空图，不包含任何节点与边
+     * 以起始位置为中心构建有向图：沿可通行有向边 BFS 扩展，
+     * 仅包含从起始位置可达的节点。图层未绑定或起始位置越界时告警并返回空图
+     * @param start BFS 起始位置
      */
-    build(): IPathGraph;
+    build(start: ITileLocator): IPathGraph;
 }
 
 //#endregion

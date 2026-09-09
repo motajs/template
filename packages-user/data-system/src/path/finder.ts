@@ -1,6 +1,5 @@
 import { InternalDirectionGroup, ITileLocator, logger } from '@motajs/common';
 import {
-    ILayerLocation,
     IMapLayer,
     IMapState,
     IPassPredicate,
@@ -136,21 +135,6 @@ export class PathfindingFinder implements IPathfinder {
     }
 
     /**
-     * 获取进入指定位置节点的损失，损失值为 NaN 或负数时告警并按损失 1 处理，
-     * Infinity 为合法损失值
-     * @param block 位置信息
-     */
-    private getNodeCost(block: ILayerLocation): number {
-        if (!this.cost) return 1;
-        const value = this.cost(block);
-        if (Number.isNaN(value) || value < 0) {
-            logger.warn(174);
-            return 1;
-        }
-        return value;
-    }
-
-    /**
      * 在有向图上执行最小损失搜索，终端节点仅可作为路径终点，不可作为中间节点
      * @param graph 寻路有向图
      * @param start 寻路起始位置
@@ -192,7 +176,7 @@ export class PathfindingFinder implements IPathfinder {
                 const next = graph.nodes.get(edge.to);
                 if (!next) continue;
                 if (next.terminal && edge.to !== targetIndex) continue;
-                const total = currDist + this.getNodeCost(next.block);
+                const total = currDist + next.cost;
                 const known = dist.get(edge.to);
                 if (isNil(known) || total < known) {
                     dist.set(edge.to, total);
@@ -241,9 +225,10 @@ export class PathfindingFinder implements IPathfinder {
         const builder = new PathfindingGraphBuilder();
         builder.useMapState(maps);
         builder.useMapLayer(layer);
+        builder.useCostFunction(this.cost);
         builder.usePassPredicate(this.predicate);
         builder.useDirGroup(this.group);
-        const graph = builder.build();
+        const graph = builder.build(start);
         return this.search(graph, start, target);
     }
 }
