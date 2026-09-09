@@ -190,6 +190,29 @@ function addEvent(
     });
 }
 
+function addBlockingEvent(
+    events: Map<string, object>,
+    id: string,
+    trigger: number,
+    calls: EventCall[],
+    blocked: Promise<void>
+): void {
+    events.set(id, {
+        trigger,
+        execute: async (
+            _param: unknown,
+            env: {
+                trigger: number;
+                heroLocator: Readonly<{ x: number; y: number }>;
+            }
+        ) => {
+            calls.push({ id, trigger: env.trigger, hero: env.heroLocator });
+            await blocked;
+            return true;
+        }
+    });
+}
+
 describe('hero pathfinding integration', () => {
     // 验证勇士按最小路径逐步移动并按事件链顺序执行途经事件
     it('moves the hero to the target and triggers the traversed event', async () => {
@@ -277,6 +300,56 @@ describe('hero pathfinding integration', () => {
 
         expect(path).toEqual([]);
         expect(fixture.pathfinding.moveTo({ x: 2, y: 0 })).toBeNull();
+        expect({ x: fixture.hero.x, y: fixture.hero.y }).toEqual({
+            x: 0,
+            y: 0
+        });
+    });
+
+    // 验证新寻路会停止旧移动并从兑现后的最新坐标接管
+    it('hands over a moving path to a new target', async () => {
+        const calls: EventCall[] = [];
+        let release: () => void = () => {};
+        const blocked = new Promise<void>(resolve => {
+            release = resolve;
+        });
+        const fixture = createFixture();
+        addBlockingEvent(fixture.events, 'middle-enter', 2, calls, blocked);
+
+        fixture.pathfinding.moveTo({ x: 2, y: 0 });
+        await Promise.resolve();
+        await Promise.resolve();
+        const next = fixture.pathfinding.moveTo({ x: 0, y: 0 });
+        expect(next).not.toBeNull();
+        release();
+        await next!.controller.onEnd;
+
+        expect({ x: fixture.hero.x, y: fixture.hero.y }).toEqual({
+            x: 0,
+            y: 0
+        });
+    });
+
+    // 验证显式打断后移动器可再次启动新的寻路
+    it('leaves the mover restartable after explicit interruption', async () => {
+        const calls: EventCall[] = [];
+        let release: () => void = () => {};
+        const blocked = new Promise<void>(resolve => {
+            release = resolve;
+        });
+        const fixture = createFixture();
+        addBlockingEvent(fixture.events, 'middle-enter', 2, calls, blocked);
+
+        fixture.pathfinding.moveTo({ x: 2, y: 0 });
+        await Promise.resolve();
+        await Promise.resolve();
+        const interrupted = fixture.pathfinding.interrupt();
+        release();
+        await interrupted;
+
+        const resumed = fixture.pathfinding.moveTo({ x: 0, y: 0 });
+        expect(resumed).not.toBeNull();
+        await resumed!.controller.onEnd;
         expect({ x: fixture.hero.x, y: fixture.hero.y }).toEqual({
             x: 0,
             y: 0

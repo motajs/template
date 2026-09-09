@@ -1,4 +1,4 @@
-import { ITileLocator } from '@motajs/common';
+import { ITileLocator, logger } from '@motajs/common';
 import {
     BlockEventType,
     IBlockEventEnv,
@@ -87,11 +87,74 @@ class HeroPathfindingController implements IHeroPathfindingController {
     }
 }
 
+class QueuedHeroPathfindingController implements IPathfindingController {
+    private current: IPathfindingController | null = null;
+    private currentPath: IPathfindingStep[] = [];
+    private cancelled: boolean = false;
+    private completed: boolean = false;
+    private readonly completion: Promise<void>;
+
+    constructor(start: () => Promise<IPathfindingController | null>) {
+        this.completion = Promise.resolve()
+            .then(start)
+            .then(async result => {
+                if (!result) {
+                    this.completed = true;
+                    return;
+                }
+                this.current = result;
+                this.currentPath = [...result.path];
+                if (this.cancelled) {
+                    await result.controller.stop();
+                    this.completed = true;
+                    return;
+                }
+                await result.controller.onEnd;
+                this.completed = true;
+            });
+    }
+
+    get controller(): Readonly<IMoverController> {
+        return this;
+    }
+
+    get path(): readonly IPathfindingStep[] {
+        return this.currentPath;
+    }
+
+    get done(): boolean {
+        return this.completed;
+    }
+
+    get onEnd(): Promise<void> {
+        return this.completion;
+    }
+
+    isCancelled(): boolean {
+        return this.cancelled;
+    }
+
+    push(...steps: Readonly<ObjectMoveStep>[]): void {
+        this.current?.controller.push(...steps);
+    }
+
+    insert(...steps: Readonly<ObjectMoveStep>[]): void {
+        this.current?.controller.insert(...steps);
+    }
+
+    stop(): Promise<void> {
+        this.cancelled = true;
+        if (this.current) return this.current.controller.stop();
+        return this.completion;
+    }
+}
+
 export class HeroPathfinding implements IHeroPathfinding {
     readonly state: IHeroPathfindingState;
     readonly finder: IPathfinder;
 
     private readonly system: PathfindingSystem;
+    private active: IPathfindingController | null = null;
 
     constructor(state: IHeroPathfindingState, topImpl: IHeroMoveTopImpl) {
         this.state = state;
@@ -149,35 +212,67 @@ export class HeroPathfinding implements IHeroPathfinding {
     }
 
     moveTo(target: ITileLocator): IPathfindingController | null {
+        if (this.isMoving()) return this.queueAfterInterrupt(target, false);
         this.bindCurrentLayer();
         const resolved = this.resolvePath(target);
-        if (resolved.path.length === 0) return null;
-        const destination = resolved.adjacent ?? target;
-        const result = this.system.moveTo(destination);
-        if (!result) return null;
-        if (!resolved.adjacent || !resolved.target) return result;
-        return {
-            controller: new HeroPathfindingController(result.controller, () =>
-                this.finishAdjacentTouch(resolved)
-            ),
-            path: result.path
-        };
+        return this.startResolved(target, resolved, false);
     }
 
     teleportTo(target: ITileLocator): IPathfindingController | null {
+        if (this.isMoving()) return this.queueAfterInterrupt(target, true);
         this.bindCurrentLayer();
         const resolved = this.resolvePath(target);
+        return this.startResolved(target, resolved, true);
+    }
+
+    private isMoving(): boolean {
+        return this.active !== null && !this.active.controller.done;
+    }
+
+    private queueAfterInterrupt(
+        target: ITileLocator,
+        teleport: boolean
+    ): IPathfindingController {
+        const queued = new QueuedHeroPathfindingController(async () => {
+            await this.system.interrupt();
+            if (queued.isCancelled()) return null;
+            this.bindCurrentLayer();
+            const resolved = this.resolvePath(target);
+            return this.startResolved(target, resolved, teleport);
+        });
+        this.active = queued;
+        return queued;
+    }
+
+    private startResolved(
+        target: ITileLocator,
+        resolved: IResolvedPath,
+        teleport: boolean
+    ): IPathfindingController | null {
         if (resolved.path.length === 0) return null;
         const destination = resolved.adjacent ?? target;
-        const result = this.system.teleportTo(destination);
-        if (!result) return null;
-        if (!resolved.adjacent || !resolved.target) return result;
-        return {
-            controller: new HeroPathfindingController(result.controller, () =>
-                this.finishAdjacentTouch(resolved)
-            ),
-            path: result.path
-        };
+        const result = teleport
+            ? this.system.teleportTo(destination)
+            : this.system.moveTo(destination);
+        if (!result) {
+            logger.error(65);
+            return null;
+        }
+        const wrapped =
+            resolved.adjacent && resolved.target
+                ? {
+                      controller: new HeroPathfindingController(
+                          result.controller,
+                          () => this.finishAdjacentTouch(resolved)
+                      ),
+                      path: result.path
+                  }
+                : result;
+        this.active = wrapped;
+        void wrapped.controller.onEnd.then(() => {
+            if (this.active === wrapped) this.active = null;
+        });
+        return wrapped;
     }
 
     private resolvePath(target: ITileLocator): IResolvedPath {
@@ -298,7 +393,10 @@ export class HeroPathfinding implements IHeroPathfinding {
     }
 
     interrupt(): Promise<void> {
-        return this.system.interrupt();
+        const active = this.active;
+        this.active = null;
+        if (!active) return this.system.interrupt();
+        return active.controller.stop().then(() => this.system.interrupt());
     }
 
     useMapState(maps: IMapState | null): void {

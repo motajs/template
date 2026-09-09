@@ -63,7 +63,8 @@
         "61": "Cannot create game map '$3' from raw data since map area cannot be divided by width evenly: area = $1 while divider = $2.",
         "62": "Cannot add $1 from raw data for game map '$2' since Expected a number for the key of $3, but got $4.",
         "63": "Cannot create game map '$2' from raw data since the '$1' container is missing, null, or not an object.",
-        "64": "Cannot create game map '$2' from raw data since the '$1' value has an invalid type or range."
+        "64": "Cannot create game map '$2' from raw data since the '$1' value has an invalid type or range.",
+        "65": "Cannot start pathfinding movement because the mover is already active."
     },
     "warn": {
         "1": "Resource with type of 'none' is loaded.",
