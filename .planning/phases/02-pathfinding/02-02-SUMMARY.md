@@ -238,3 +238,41 @@ None - no external service configuration required.
 - 验证命令复跑（合规补丁后）：mover.test.ts 4/4 + path 目录 18/18 全绿；eslint 目标目录 0 problems；`check:type` 过滤 `src[\\/]path[\\/]` 无输出；`check:circular` 无 path 相关路径（既有基线循环不变）
 - requirements.ready-ids：0/2 ready（PATH-01/PATH-02 与 02-03 共享，shared-ID 门生效），frontmatter `requirements-completed: []`
 - broken-windows 台账：02-01 的 skipped-test #4 标记 fixed；新增 #5（interrupt 占位 stub, open）
+
+## Review Fixes (user audit round 1)
+
+> 用户对 Wave 2 产出的代码审查修复轮（9 条指令全部落实）；根因已由用户在 `9a60442` 自行修复（`useMover(mover: IObjectMover<IObjectMovable> | null)`），本轮对齐实现侧。
+
+### 性能测试结果（完整 find 流水线：建图 + 最优路径发现）
+
+```text
+[pathfinding-perf] map=100x100 steps=198 elapsed=608.55ms
+```
+
+- 地图：100 x 100（10000 节点），固定种子生成约 20% 墙体的确定性障碍图案，起点 (0,0) 至终点 (99,99)
+- 最优步数：198（恰为 99 + 99 的曼哈顿距离，绕障未增加步数）
+- 总耗时：608.55 ms（`performance.now()` 计时，宽松 sanity 上限 5000 ms），`pnpm exec vitest run` 单测 619ms 完成全流程
+
+### 指令落实明细
+
+| # | 指令 | 落实情况 | 验证 |
+| - | ---- | ---- | ---- |
+| 1 | 禁止 `'mover' in xxx` 运行时形状检查 | 删除 `IMovableWithMover` 接口与 `hasMover` 结构化守卫，`PathfindingSystem` 直接持有 `IObjectMover<IObjectMovable> \| null` 类型绑定，位置经 `mover.tile.x/y` 读取；path/*.ts 复扫 0 残留 | grep `'mover' in` 无命中；23/23 测试绿 |
+| 2 | 类与接口本身不带 doc 注释 | 移除 `PathfindingGraphBuilder`/`PathfindingFinder`/`PathfindingSystem` 类注释与 `IPathfindingGraphBuilder` 接口注释（类型迁入 types.ts 时同样不写接口注释）；测试侧移除纯复述的 `TestTileDefinition`/`TestTile`/`SystemFixture` 注释 | 逐文件核查；例外：测试 `FixturePredicate` 保留（「复刻 DefaultHeroMoveTopImpl 掩码语义」为来源说明，dev.md 特殊情况例外） |
+| 3 | 实现侧不重复接口已有的注释 | 类实现侧与接口逐字重复的方法 jsdoc 全部移除（useMapState/useMapLayer/useCostFunction/usePassPredicate/useDirGroup/useFallbackPolicy/useMover/moveTo/teleportTo/interrupt/build）；仅保留内容确不相同者：`find`（告警+空数组契约、不可达语义）与 `getPath`（未绑定告警语义） | 类型门 0 诊断 |
+| 4 | 导出类型归位 types.ts | `IPathGraphEdge`/`IPathGraphNode`/`IPathGraph`/`IPathfindingGraphBuilder` 迁入 path/types.ts，graph.ts/finder.ts 改由 `./types` 导入；未改动用户既有接口语义 | `pnpm check:type` 过滤 `src[\\/]path[\\/]` 无输出 |
+| 5 | 私有方法先于调用者 | `resolveFloorId` 移至 `build` 前；`getNodeCost`→`search`→`find` 链式前置；`startMove` 移至 `moveTo`/`teleportTo` 前 | 代码走查 |
+| 6 | 短文件不用 region | 移除 graph.ts/finder.ts/system.ts 全部 `#region`/`#endregion`（移动器识别/寻路系统等 5 处） | grep 无命中 |
+| 7 | 注释面向 API 使用者而非维护者 | `search` jsdoc 去除「Dijkstra」算法叙述；`getNodeCost` 去除「非负权不变式」内部不变量叙述；`interrupt` 去除「03 计划接线」计划性叙述（其余与接口重复故整条移除）；保留的 jsdoc 均为可观察行为契约 | 代码走查 |
+| 8 | 对齐新 types.ts（`useMover`） | `useMover` 参数改收 `IObjectMover<IObjectMovable> \| null`，字段 `movable`→`mover`，测试改传 `tile.mover`，测试描述同步（movable→mover）；path/*.ts 无 `movable` 残留标识符 | grep `movable` 无命中；check:type 0 诊断 |
+| 9 | 性能测试 | 新建 `path/performance.test.ts`：100x100 固定种子障碍图，计时 `system.getPath()`（绑定系统上的完整建图+搜索流水线），结构化输出 map/steps/elapsed，断言找到路径且耗时低于 5000ms sanity 上限，常驻通过不 skip | 见上方性能结果 |
+
+### 验证汇总（修复轮全部复核）
+
+- `pnpm exec vitest run "packages-user/data-system/src/path"` — 4 文件 23 passed（含新增性能测试）
+- `pnpm exec vitest run "packages-user/data-common/src/common/mover.test.ts"` — 4/4 绿
+- `pnpm check:type` 过滤 `src[\\/]path[\\/]|common[\\/]mover` — 0 诊断（其余 legacy 既有诊断不在本计划范围）
+- `pnpm check:circular` — 无涉及 path 的循环（`common/mover.ts` 所在循环节点全部为本轮未触碰的既有基线边）
+- `pnpm exec eslint` 目标目录（path/ + data-common mover 两文件）— 0 problems
+
+**提交：** `d9ee80f`（refactor，指令 1–8）、本提交（test，指令 9 + 本记录）
