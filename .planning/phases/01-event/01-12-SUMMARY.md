@@ -103,7 +103,7 @@ Each executable task was committed atomically:
 1. **Task 1: Repair the phase-owned type gate without changing contracts** - `15d9f25` (fix)
 2. **Task 2: Normalize the reported Phase 01 files to CRLF/Prettier** - `f423aad` (style)
 
-**Plan metadata:** pending final execution metadata commit.
+**Plan metadata:** `ad16141` (docs: complete execution metadata)
 
 ## Files Created/Modified
 
