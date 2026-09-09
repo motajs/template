@@ -124,6 +124,7 @@ function createFloor(offset: number): LegacyFloor {
 }
 
 describe('CoreState legacy event-layer initialization', () => {
+    // 验证 legacy 地图初始化选择 event alias 图层且不改变其他装配结果
     it('selects the event alias layer without changing map assembly', () => {
         const maps = createFakeMapState();
         const initializer = Object.create(

@@ -94,6 +94,7 @@ function createMapState(
 }
 
 describe('MapLayer tile defaults snapshots conversion and movement', () => {
+    // 验证静态/动态图块默认事件、存档快照、转换和移动后的点事件归属
     it('tile defaults snapshots conversion and movement', () => {
         const { layer } = createMapState();
         const staticTile = layer.getTile(0, 0)!;
@@ -176,6 +177,7 @@ describe('MapLayer tile defaults snapshots conversion and movement', () => {
 });
 
 describe('MapLayer point event lifecycle', () => {
+    // 验证点事件的 dirty、存档覆盖、基准恢复和不同压缩模式
     it('point event lifecycle', () => {
         const { layer } = createMapState({ 1: { 5: 'raw-point' } });
         const point = layer.event(1, 0)!;
@@ -240,6 +242,7 @@ describe('MapLayer point event lifecycle', () => {
         expect(point.dirty()).toBe(false);
     });
 
+    // 验证只有点事件变化时 GameMap 仍保留对应图层存档
     it('map saves layers containing only point events', () => {
         const { map, layer } = createMapState({}, [0, 0, 0, 0]);
         layer.setZIndex(7);
@@ -267,6 +270,7 @@ describe('MapLayer point event lifecycle', () => {
         }
     });
 
+    // 验证 resize 裁剪范围外事件，resize2 清空全部点事件
     it('resize preserves in-range point events and resize2 clears them', () => {
         const { layer } = createMapState({
             0: { 1: 'top-left' },
@@ -280,6 +284,7 @@ describe('MapLayer point event lifecycle', () => {
         expect(layer.getPointEvent(0, 0)).toEqual(new Map());
     });
 
+    // 验证改变图层宽度后，保留的点事件会使用新索引继续查询
     it('reindexes preserved point events when the layer width changes', () => {
         const { layer } = createMapState({
             1: { 1: 'top-right' },

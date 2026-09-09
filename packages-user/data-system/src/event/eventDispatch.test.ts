@@ -225,6 +225,7 @@ function invocation(id: string, trigger: EventTrigger): IGameEventInvocation {
 }
 
 describe('source-aware matching dispatch', () => {
+    // 验证地图绑定的点事件 ID 能经过 event layer 和 mover 执行一次
     it('executes a map-bound point id through the event layer and mover', async () => {
         const calls: EventCall[] = [];
         const fixture = createFixture({ 1: { 50: 'legacy-point-enter' } });
@@ -257,6 +258,7 @@ describe('source-aware matching dispatch', () => {
         });
     });
 
+    // 验证点、静态图块和动态图块按来源携带正确环境并过滤 trigger
     it('source-aware matching dispatch', async () => {
         const calls: EventCall[] = [];
         const fixture = createFixture({
@@ -317,6 +319,7 @@ describe('source-aware matching dispatch', () => {
         expect(calls[2].triggerLocator).toEqual({ x: 1, y: 0 });
     });
 
+    // 验证来源事件按排序顺序逐个 await，不会并行执行
     it('awaits each source before continuing to the next one', async () => {
         const calls: EventCall[] = [];
         let release: () => void = () => {};
@@ -384,6 +387,7 @@ describe('source-aware matching dispatch', () => {
 });
 
 describe('event execute modes and reductions', () => {
+    // 验证 cut 和 reduce 只作用于 trigger 匹配且实际执行的事件
     it('applies cut and reduce only to matching events', async () => {
         const calls: string[] = [];
         const fixture = createFixture();
@@ -475,6 +479,7 @@ describe('event execute modes and reductions', () => {
         ).resolves.toBe(true);
     });
 
+    // 验证未知事件 ID 只告警并跳过，后续合法事件仍继续执行
     it('warns for unknown ids and continues with valid events', async () => {
         const calls: string[] = [];
         const fixture = createFixture();
@@ -500,6 +505,7 @@ describe('event execute modes and reductions', () => {
 });
 
 describe('enter leave hit trigger hooks', () => {
+    // 验证 enter、leave、hit 使用正确 trigger 和角色/触发坐标
     it('maps enter leave and hit to their approved triggers and coordinates', async () => {
         const calls: EventCall[] = [];
         const fixture = createFixture(

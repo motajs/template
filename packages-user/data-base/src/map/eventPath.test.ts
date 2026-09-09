@@ -64,6 +64,7 @@ function createMapState() {
 }
 
 describe('MapState raw event path', () => {
+    // 验证 raw.events 能绑定到点事件视图，并选择 alias=event 的图层
     it('raw point events and event layer', () => {
         const mapState = createMapState();
         const map = mapState.fromRaw(createRaw());

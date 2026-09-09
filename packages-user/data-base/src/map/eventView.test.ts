@@ -8,6 +8,7 @@ vi.hoisted(() => {
 });
 
 describe('LayerEventView reference tracking', () => {
+    // 验证新增、删除和清空事件时 dirty 状态能随参考基准正确变化
     it('keeps dirty state in sync with set, delete, and clear', () => {
         const view = new LayerEventView();
 
@@ -29,6 +30,7 @@ describe('LayerEventView reference tracking', () => {
         expect(view.dirty()).toBe(false);
     });
 
+    // 验证 ref 返回稳定快照，并可通过恢复事件内容变回 clean 而不重设基准
     it('exposes a stable reference snapshot and restores it without markPure', () => {
         const view = new LayerEventView();
         view.set(10, 'first');
