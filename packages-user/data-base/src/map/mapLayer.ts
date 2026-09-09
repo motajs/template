@@ -263,9 +263,9 @@ export class MapLayer
     }
 
     getLocationData(x: number, y: number): ILayerLocation | null {
+        if (!this.inMap(x, y)) return null;
         const staticTile = this.getTile(x, y);
-        if (!staticTile) return null;
-        const num = staticTile.num();
+        const num = staticTile?.num() ?? -1;
         const dynamics = this.getDynamicTilesAt(x, y);
         return {
             locator: { x, y },
@@ -406,7 +406,7 @@ export class MapLayer
     createDynamic(num: number, x: number, y: number): IDynamicTile {
         const tile = new DynamicTile(num, x, y, this);
         const location = this.getLocationData(x, y);
-        if (location) {
+        if (location?.static) {
             const tileEvent = tile.tileEvent();
             const staticEvent = location.static.tileEvent();
             tileEvent.clear();
@@ -679,7 +679,7 @@ export class MapLayer
         const blocks = new Map<number, IStaticBlockSave>();
         for (const location of this.iterateBlocks()) {
             const tile = location.static;
-            if (!tile.shouldSave()) continue;
+            if (!tile || !tile.shouldSave()) continue;
             const index = this.map.indexer.locaterToIndex(location.locator);
             blocks.set(index, tile.saveState(SaveCompression.NoCompression));
         }
@@ -817,7 +817,7 @@ export class MapLayer
         for (const [index, tileSave] of save) {
             const { x, y } = this.map.indexer.indexToLocator(index);
             const location = this.getLocationData(x, y);
-            if (!location) continue;
+            if (!location?.static) continue;
             location.static.loadState(tileSave, SaveCompression.NoCompression);
         }
     }

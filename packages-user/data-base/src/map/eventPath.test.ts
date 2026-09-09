@@ -77,7 +77,7 @@ describe('MapState raw event path', () => {
         expect(layer?.event(1, 0)?.ref()).toEqual(
             new Map([[5, 'point-event']])
         );
-        expect(layer?.getLocationData(1, 0)?.static.tileEvent().get()).toEqual(
+        expect(layer?.getLocationData(1, 0)?.static?.tileEvent().get()).toEqual(
             new Map()
         );
         expect(layer?.event(1, 0)?.dirty()).toBe(false);

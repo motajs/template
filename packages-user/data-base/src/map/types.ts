@@ -254,7 +254,7 @@ export interface ILayerLocation {
     /** 该点包含的所有动态图块 */
     readonly dynamics: Iterable<IDynamicTile>;
     /** 该点的静态图块原始数据 */
-    readonly static: IStaticTile;
+    readonly static: IStaticTile | null;
 }
 
 export interface IMapLayerHooks extends IHookBase {
