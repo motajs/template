@@ -22,7 +22,7 @@ affects: [02-03, phase-04-rendering]
 actuals:
   tokens: 13900        # chars/4 over realized diff（本计划 10 个文件，+1569/-8 行 + 类规则补丁）
   tasks: 3
-  commits: 7           # MEASURED: git rev-list --count 9efadc9(plan_head_before)..HEAD；含 2 个用户穿插提交（0e6536f、ffedb80）与 1 个 SUMMARY 修订，本计划自身 5 个
+  commits: 9           # MEASURED: git rev-list --count 9efadc9(plan_head_before)..HEAD；含 2 个用户穿插提交（0e6536f、ffedb80），本计划自身 7 个（3 任务 + 2 合规补丁 + 2 计划元数据文档）
 
 # Tech tracking
 tech-stack:
