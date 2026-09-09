@@ -16,3 +16,8 @@
   **What:** `CoreState` 原有 `TileStore<LegacyTileData>` 装配在 `this.tileStore` 与 `MapState` 构造处
   被仓库当前接口泛型诊断命中；本计划仅在同一构造器追加寻路接线，不改变既有 TileStore 契约，
   按范围边界规则留给后续数据层类型收口。
+
+- packages-user/ 下的既有 lint:user 诊断（52 errors，集中在 client-modules 与 legacy-plugin-*）
+  status: open
+  **What:** 阶段门禁 `pnpm lint:user` 仍被本计划未修改的渲染与 legacy 文件阻塞；计划归属文件的
+  ESLint 检查为 0 problems，按范围边界规则不修复无关基线问题。

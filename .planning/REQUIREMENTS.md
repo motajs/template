@@ -15,8 +15,8 @@ Requirements for the engine's completion. Each maps to roadmap phases.
 
 ### 寻路（Pathfinding）
 
-- [ ] **PATH-01**: 引擎支持自动寻路
-- [ ] **PATH-02**: 移动端通过点击地图触发自动寻路移动
+- [x] **PATH-01**: 引擎支持自动寻路
+- [x] **PATH-02**: 移动端通过点击地图触发自动寻路移动
 
 ### 数据端（Data）
 
@@ -55,8 +55,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVT-01 | Phase 1 | Complete |
 | EVT-02 | Phase 1 | Complete |
 | EVT-03 | Phase 1 | Complete |
-| PATH-01 | Phase 2 | Pending |
-| PATH-02 | Phase 2 | Pending |
+| PATH-01 | Phase 2 | Complete |
+| PATH-02 | Phase 2 | Complete |
 | DATA-01 | Phase 3 | Pending |
 | REND-01 | Phase 4 | Pending |
 | REND-02 | Phase 4 | Pending |

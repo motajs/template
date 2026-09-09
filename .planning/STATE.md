@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 milestone: v1.0
 current_phase: 02
 current_phase_name: 寻路系统
-status: executing
-stopped_at: Phase 2 paused after Wave 2 (02-02) - user code review before Wave 3 (02-03)
-last_updated: "2026-09-09T09:48:36.334Z"
+status: verifying
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-09-09T13:26:49.286Z"
 last_activity: 2026-09-09
 last_activity_desc: Phase 02 execution started
-state_head: b6b4b3320a1271d5a7fcc46c12ce90f8659a8d14
+state_head: 7a3b6e35c1dfce17e605ba870a023524acba8eec
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 16
-  completed_plans: 15
+  completed_plans: 16
 milestone_name: milestone
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-09-07)
 
 Phase: 02 (寻路系统) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-09-09 — Phase 02 execution started
 
 Progress: [█████████░] 92%
@@ -71,6 +71,7 @@ Progress: [█████████░] 92%
 | Phase 01 P13 | 30 | 3 tasks | 11 files |
 | Phase 02 P01 | 25min | 3 tasks | 2 files |
 | Phase 02 P02 | 29min | 3 tasks | 10 files |
+| Phase 02 P03 | 30 min | 4 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,9 @@ Recent decisions affecting current work:
 - [Phase 02]: [Phase 02]: 02-02 L2 经结构化守卫 hasMover 取移动器（零 as），mover.start() 返回 null 即已有移动进行中契约检测点
 - [Phase 02]: [Phase 02]: 02-02 终端节点（canPass 且 shouldHit）在搜索层约束：可作终点不可穿越；D-08 情形 1 由 02-03 直接 find() 判定相邻格
 - [Phase 02]: [Phase 02]: 02-02 moveTo 恒逐步，回退策略仅作用于 teleportTo 且 null 默认必定逐步（与用户 types.ts jsdoc 逐字对齐）
+- [Phase 02]: L3 HeroPathfinding 注入 DefaultHeroMoveTopImpl 的 IPassPredicate，L2 图搜索与 hero mover 共享同一通行性语义。
+- [Phase 02]: D-08 no-pass 目标采用可达相邻格 + 面朝目标 + source-aware OnTouch 直派；无相邻可达格返回空路径。
+- [Phase 02]: 同步寻路接口通过 queued controller 实现 stop 后 await，再从最新坐标重算并启动新路径。
 
 ### Pending Todos
 
@@ -132,6 +136,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-09T09:48:36.226Z
-Stopped at: Phase 2 paused after Wave 2 (02-02) - user code review before Wave 3 (02-03)
-Resume file: .planning/phases/02-pathfinding/02-02-SUMMARY.md
+Last session: 2026-09-09T13:26:49.198Z
+Stopped at: Completed 02-03-PLAN.md
+Resume file: None
