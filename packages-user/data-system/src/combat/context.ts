@@ -1,0 +1,922 @@
+import { IRange, ITileLocator, logger } from '@motajs/common';
+import {
+    IAuraConverter,
+    IAuraView,
+    IDamageSystem,
+    IEnemyAuraView,
+    IEnemyCommonQueryEffect,
+    IEnemyContext,
+    IEnemyFinalEffect,
+    IEnemyHandler,
+    IEnemySpecialModifier,
+    IEnemySpecialQueryEffect,
+    IEnemyView,
+    IMapDamage,
+    IReadonlyEnemyHandler
+} from './types';
+import {
+    IReadonlyHeroAttribute,
+    IEnemy,
+    IReadonlyEnemy,
+    ISpecial,
+    IStateBase
+} from '@user/data-base';
+import { EnemyView } from './enemy';
+import { ILocationIndexer, MapLocIndexer } from '@user/data-common';
+
+export class EnemyContext<TEnemy, THero> implements IEnemyContext<
+    TEnemy,
+    THero
+> {
+    /** 坐标索引 -> 怪物视图 */
+    private readonly enemyViewMap: Map<number, EnemyView<TEnemy>> = new Map();
+    /** 坐标索引 -> 计算前怪物对象 */
+    private readonly enemyMap: Map<number, IEnemy<TEnemy>> = new Map();
+    /** 怪物视图 -> 坐标索引 */
+    private readonly locatorViewMap: Map<IEnemyView<TEnemy>, number> =
+        new Map();
+    /** 计算前怪物对象 -> 坐标索引 */
+    private readonly locatorEnemyMap: Map<IEnemy<TEnemy>, number> = new Map();
+    /** 计算后怪物对象 -> 怪物视图 */
+    private readonly computedToView: Map<
+        IReadonlyEnemy<TEnemy>,
+        EnemyView<TEnemy>
+    > = new Map();
+
+    /** 当前已注册的光环转换器 */
+    private readonly auraConverter: Set<IAuraConverter<TEnemy, THero>> =
+        new Set();
+    /** 光环转换器是否启用 */
+    private readonly converterStatus: Map<
+        IAuraConverter<TEnemy, THero>,
+        boolean
+    > = new Map();
+    /** 所有已被转换的光环 */
+    private readonly convertedAura: Map<ISpecial<any>, IAuraView<TEnemy>> =
+        new Map();
+
+    /** 普通查询效果注册，特殊属性 -> 此特殊属性的查询效果列表，按照优先级从高到低排序 */
+    private readonly commonQueryMap: Map<
+        number,
+        IEnemyCommonQueryEffect<TEnemy, THero>[]
+    > = new Map();
+
+    /** 特殊查询效果注册，特殊属性 -> 此特殊属性的特殊查询效果列表，按照优先级从高到低排序 */
+    private readonly specialQueryEffects: Map<
+        number,
+        IEnemySpecialQueryEffect<TEnemy, THero>[]
+    > = new Map();
+
+    /** 最终效果列表，按照优先级从高到低排列 */
+    private readonly finalEffects: IEnemyFinalEffect<TEnemy, THero>[] = [];
+    /** 添加的无来源全局光环列表 */
+    private readonly globalAuraList: Set<IAuraView<TEnemy>> = new Set();
+    /** 排序后的光环视图，视图优先级 -> 光环视图列表 */
+    private readonly sortedAura: Map<number, Set<IAuraView<TEnemy>>> =
+        new Map();
+
+    /** 当怪物更新后，需要对上下文进行全量刷新的怪物列表 */
+    private readonly needTotallyRefresh: Set<IEnemyView<TEnemy>> = new Set();
+    /** 所有实际查询了上下文的常规查询效果，这些怪物需要在上下文或其他怪物刷新时一并刷新 */
+    private readonly requestedCommonContext: Set<IEnemyView<TEnemy>> =
+        new Set();
+    /** 所有需要被标记为脏的怪物 */
+    private readonly dirtyEnemy: Set<IEnemyView<TEnemy>> = new Set();
+
+    /** 当前绑定的勇士属性对象 */
+    private bindedHero: IReadonlyHeroAttribute<THero> | null = null;
+    /** 地图伤害对象 */
+    private mapDamage: IMapDamage<TEnemy, THero> | null = null;
+    /** 伤害系统对象 */
+    private damageSystem: IDamageSystem<TEnemy, THero> | null = null;
+
+    /** 索引工具 */
+    readonly indexer: ILocationIndexer = new MapLocIndexer();
+
+    /** 当前是否需要全量刷新 */
+    private needUpdate: boolean = true;
+
+    built: boolean = false;
+    width: number = 0;
+    height: number = 0;
+
+    constructor(readonly state: IStateBase) {}
+
+    resize(width: number, height: number): void {
+        this.clear();
+        this.width = width;
+        this.height = height;
+        this.indexer.setWidth(width);
+        this.needUpdate = true;
+    }
+
+    registerAuraConverter(converter: IAuraConverter<TEnemy, THero>): void {
+        this.auraConverter.add(converter);
+        this.converterStatus.set(converter, true);
+        this.needUpdate = true;
+    }
+
+    unregisterAuraConverter(converter: IAuraConverter<TEnemy, THero>): void {
+        this.auraConverter.delete(converter);
+        this.converterStatus.delete(converter);
+        this.needUpdate = true;
+    }
+
+    setAuraConverterEnabled(
+        converter: IAuraConverter<TEnemy, THero>,
+        enabled: boolean
+    ): void {
+        if (!this.auraConverter.has(converter)) return;
+        this.converterStatus.set(converter, enabled);
+        this.needUpdate = true;
+    }
+
+    registerCommonQueryEffect(
+        code: number,
+        effect: IEnemyCommonQueryEffect<TEnemy, THero>
+    ): void {
+        const array = this.commonQueryMap.getOrInsert(code, []);
+        array.push(effect);
+        array.sort((a, b) => b.priority - a.priority);
+        this.needUpdate = true;
+    }
+
+    unregisterCommonQueryEffect(
+        code: number,
+        effect: IEnemyCommonQueryEffect<TEnemy, THero>
+    ): void {
+        const array = this.commonQueryMap.get(code);
+        if (!array) return;
+        const index = array.indexOf(effect);
+        if (index === -1) return;
+        array.splice(index, 1);
+        this.needUpdate = true;
+    }
+
+    registerSpecialQueryEffect(
+        effect: IEnemySpecialQueryEffect<TEnemy, THero>
+    ): void {
+        const list = this.specialQueryEffects.getOrInsert(effect.priority, []);
+        list.push(effect);
+        this.needUpdate = true;
+    }
+
+    unregisterSpecialQueryEffect(
+        effect: IEnemySpecialQueryEffect<TEnemy, THero>
+    ): void {
+        const list = this.specialQueryEffects.get(effect.priority);
+        if (!list) return;
+        const index = list.indexOf(effect);
+        if (index !== -1) {
+            list.splice(index, 1);
+        }
+        if (list.length === 0) {
+            this.specialQueryEffects.delete(effect.priority);
+        }
+        this.needUpdate = true;
+    }
+
+    registerFinalEffect(effect: IEnemyFinalEffect<TEnemy, THero>): void {
+        this.finalEffects.push(effect);
+        this.finalEffects.sort((a, b) => b.priority - a.priority);
+        this.needUpdate = true;
+    }
+
+    unregisterFinalEffect(effect: IEnemyFinalEffect<TEnemy, THero>): void {
+        const index = this.finalEffects.indexOf(effect);
+        if (index !== -1) {
+            this.finalEffects.splice(index, 1);
+        }
+        this.needUpdate = true;
+    }
+
+    bindHero(hero: IReadonlyHeroAttribute<THero> | null): void {
+        this.bindedHero = hero;
+        this.needUpdate = true;
+        this.damageSystem?.bindHeroStatus(hero);
+        this.mapDamage?.refreshAll();
+    }
+
+    getBindedHero(): IReadonlyHeroAttribute<THero> | null {
+        return this.bindedHero;
+    }
+
+    /**
+     * 创建可修改信息对象
+     * @param enemy 怪物对象
+     * @param locator 怪物位置
+     */
+    private createHandler(
+        enemy: IEnemy<TEnemy>,
+        locator: ITileLocator
+    ): IEnemyHandler<TEnemy, THero> {
+        return {
+            enemy,
+            context: this,
+            locator,
+            hero: this.bindedHero!,
+            state: this.state
+        };
+    }
+
+    getEnemyLocator(enemy: IEnemy<TEnemy>): Readonly<ITileLocator> | null {
+        const index = this.locatorEnemyMap.get(enemy);
+        if (index === undefined) return null;
+        return this.indexer.indexToLocator(index);
+    }
+
+    getEnemyLocatorByView(
+        view: IEnemyView<TEnemy>
+    ): Readonly<ITileLocator> | null {
+        const index = this.locatorViewMap.get(view);
+        if (index === undefined) return null;
+        return this.indexer.indexToLocator(index);
+    }
+
+    getEnemyByLocator(locator: ITileLocator): IEnemyView<TEnemy> | null {
+        const index = this.indexer.locToIndex(locator.x, locator.y);
+        return this.enemyViewMap.get(index) ?? null;
+    }
+
+    getEnemyByLoc(x: number, y: number): IEnemyView<TEnemy> | null {
+        const index = this.indexer.locToIndex(x, y);
+        return this.enemyViewMap.get(index) ?? null;
+    }
+
+    getViewByComputed(
+        enemy: IReadonlyEnemy<TEnemy>
+    ): IEnemyView<TEnemy> | null {
+        return this.computedToView.get(enemy) ?? null;
+    }
+
+    /**
+     * 删除指定索引位置的怪物以及与之关联的所有运行时状态
+     * @param index 地图索引
+     */
+    private deleteEnemyAt(index: number) {
+        const view = this.enemyViewMap.get(index);
+        const enemy = this.enemyMap.get(index);
+        if (!view || !enemy) return;
+        this.needUpdate = true;
+
+        if (this.mapDamage) {
+            this.mapDamage.deleteEnemy(view);
+        }
+        if (this.damageSystem) {
+            this.damageSystem.deleteEnemy(view);
+        }
+
+        this.needTotallyRefresh.delete(view);
+        this.dirtyEnemy.delete(view);
+        this.requestedCommonContext.delete(view);
+
+        this.computedToView.delete(view.getComputingEnemy());
+        this.enemyViewMap.delete(index);
+        this.enemyMap.delete(index);
+        this.locatorViewMap.delete(view);
+        this.locatorEnemyMap.delete(enemy);
+    }
+
+    setEnemyAt(locator: ITileLocator, enemy: IEnemy<TEnemy>): void {
+        const index = this.indexer.locToIndex(locator.x, locator.y);
+        this.deleteEnemyAt(index);
+
+        const view = new EnemyView<TEnemy>(enemy, this);
+        this.enemyMap.set(index, enemy);
+        this.enemyViewMap.set(index, view);
+        this.locatorEnemyMap.set(enemy, index);
+        this.locatorViewMap.set(view, index);
+        this.computedToView.set(view.getComputingEnemy(), view);
+
+        if (this.mapDamage) {
+            this.mapDamage.markEnemyDirty(view);
+        }
+        if (this.damageSystem) {
+            this.damageSystem.markDirty(view);
+        }
+
+        this.needUpdate = true;
+    }
+
+    deleteEnemy(locator: ITileLocator): void {
+        const index = this.indexer.locToIndex(locator.x, locator.y);
+        this.deleteEnemyAt(index);
+    }
+
+    /**
+     * 在指定范围内筛选出当前上下文中的怪物视图
+     * @param range 范围对象
+     * @param param 范围参数
+     */
+    private *internalScanRange<T>(
+        range: IRange<T>,
+        param: T
+    ): Iterable<[ITileLocator, EnemyView<TEnemy>]> {
+        range.bindHost(this);
+        const keys = new Set(this.enemyViewMap.keys());
+        const matched = range.autoDetect(keys, param);
+        const viewMap = this.enemyViewMap;
+        for (const index of matched) {
+            const view = viewMap.get(index);
+            if (view) {
+                const locator = this.indexer.indexToLocator(index);
+                yield [locator, view];
+            }
+        }
+    }
+
+    scanRange<T>(
+        range: IRange<T>,
+        param: T
+    ): Iterable<[ITileLocator, IEnemyView<TEnemy>]> {
+        return this.internalScanRange(range, param);
+    }
+
+    *iterateEnemy(): Iterable<[ITileLocator, IEnemyView<TEnemy>]> {
+        for (const [index, view] of this.enemyViewMap) {
+            const locator = this.indexer.indexToLocator(index);
+            yield [locator, view];
+        }
+    }
+
+    addAura(aura: IAuraView<TEnemy>): void {
+        this.globalAuraList.add(aura);
+        this.needUpdate = true;
+    }
+
+    deleteAura(aura: IAuraView<TEnemy>): void {
+        this.globalAuraList.delete(aura);
+        this.needUpdate = true;
+    }
+
+    attachMapDamage(damage: IMapDamage<TEnemy, THero> | null): void {
+        this.mapDamage = damage;
+        if (damage) {
+            damage.refreshAll();
+        }
+    }
+
+    getMapDamage(): IMapDamage<TEnemy, THero> | null {
+        return this.mapDamage;
+    }
+
+    attachDamageSystem(system: IDamageSystem<TEnemy, THero> | null): void {
+        this.damageSystem = system;
+        if (system) {
+            system.bindHeroStatus(this.bindedHero);
+        }
+    }
+
+    getDamageSystem(): IDamageSystem<TEnemy, THero> | null {
+        return this.damageSystem;
+    }
+
+    /**
+     * 将怪物身上的特殊属性尝试转换为光环视图
+     * @param special 特殊属性
+     * @param enemy 怪物对象
+     * @param locator 怪物位置
+     */
+    private convertSpecial(
+        special: ISpecial<any>,
+        handler: IReadonlyEnemyHandler<TEnemy, THero>
+    ): IEnemyAuraView<TEnemy, any, any> | null {
+        let matched: IAuraConverter<TEnemy, THero> | null = null;
+        for (const converter of this.auraConverter) {
+            if (!this.converterStatus.get(converter)) continue;
+            if (converter.shouldConvert(special, handler)) {
+                if (matched) {
+                    logger.warn(97, special.code.toString());
+                    return null;
+                }
+                matched = converter;
+            }
+        }
+
+        if (!matched) return null;
+        return matched.convert(special, handler, this);
+    }
+
+    /**
+     * 将光环按优先级插入到有序表中
+     * @param aura 光环视图
+     */
+    private insertIntoSortedAura(aura: IAuraView<TEnemy>): void {
+        const set = this.sortedAura.getOrInsertComputed(
+            aura.priority,
+            () => new Set()
+        );
+        set.add(aura);
+    }
+
+    /**
+     * 从优先级表中移除一个光环
+     * @param aura 光环视图
+     */
+    private removeFromSortedAura(aura: IAuraView<TEnemy>): void {
+        const set = this.sortedAura.get(aura.priority);
+        if (set) {
+            set.delete(aura);
+            if (set.size === 0) {
+                this.sortedAura.delete(aura.priority);
+            }
+        }
+    }
+
+    /**
+     * 执行特殊属性修饰器，并返回因此受到影响的光环集合
+     * @param modifier 特殊属性修饰器
+     * @param enemy 目标怪物
+     * @param locator 怪物位置
+     * @param currentPriority 当前处理的优先级
+     */
+    private processSpecialModifier(
+        modifier: IEnemySpecialModifier<TEnemy>,
+        handler: IEnemyHandler<TEnemy, THero>,
+        currentPriority: number
+    ): Set<IAuraView<TEnemy>> {
+        const enemy = handler.enemy;
+        const affectedAuras = new Set<IAuraView<TEnemy>>();
+        const toAdd = modifier.add(handler);
+        const toDelete = modifier.delete(handler);
+
+        if (toAdd.length > 0 && toDelete.length > 0) {
+            logger.warn(100);
+            return affectedAuras;
+        }
+
+        for (const adding of toAdd) {
+            const aura = this.convertSpecial(adding, handler);
+            if (aura) {
+                // 新生成的光环只能影响之后的阶段，不能反过来影响当前优先级链
+                if (import.meta.env.DEV && aura.priority > currentPriority) {
+                    logger.warn(
+                        99,
+                        aura.priority.toString(),
+                        currentPriority.toString()
+                    );
+                    continue;
+                }
+                this.convertedAura.set(adding, aura);
+                this.insertIntoSortedAura(aura);
+                affectedAuras.add(aura);
+            }
+            enemy.addSpecial(adding);
+        }
+
+        for (const deleting of toDelete) {
+            enemy.deleteSpecial(deleting);
+            const aura = this.convertedAura.get(deleting);
+            if (aura) {
+                // 当前阶段不允许删除同优先级或更高优先级的已生效光环。
+                if (import.meta.env.DEV && aura.priority >= currentPriority) {
+                    logger.warn(
+                        98,
+                        aura.priority.toString(),
+                        currentPriority.toString()
+                    );
+                    continue;
+                }
+                this.removeFromSortedAura(aura);
+                this.convertedAura.delete(deleting);
+                affectedAuras.add(aura);
+            }
+        }
+
+        for (const special of enemy.iterateSpecials()) {
+            const success = modifier.modify(handler, special);
+            if (!success) continue;
+            const aura = this.convertedAura.get(special);
+            if (!aura) continue;
+            affectedAuras.add(aura);
+
+            if (import.meta.env.DEV && aura.priority >= currentPriority) {
+                logger.warn(
+                    98,
+                    aura.priority.toString(),
+                    currentPriority.toString()
+                );
+            }
+        }
+
+        return affectedAuras;
+    }
+
+    /**
+     * 执行单个特殊查询效果
+     * @param effect 特殊查询效果
+     * @param currentPriority 当前处理的优先级
+     */
+    private processSpecialQuery(
+        effect: IEnemySpecialQueryEffect<TEnemy, THero>,
+        currentPriority: number
+    ): void {
+        const modifier = effect.for(this);
+
+        for (const [index, view] of this.enemyViewMap) {
+            const locator = this.indexer.indexToLocator(index);
+            const enemy = view.getComputingEnemy();
+            const handler = this.createHandler(enemy, locator);
+
+            if (!modifier.shouldQuery(handler)) continue;
+
+            const affectedAuras = this.processSpecialModifier(
+                modifier,
+                handler,
+                currentPriority
+            );
+
+            if (affectedAuras.size > 0) {
+                this.needTotallyRefresh.add(view);
+            } else {
+                this.requestedCommonContext.add(view);
+            }
+        }
+    }
+
+    /**
+     * 执行光环带来的特殊属性修饰效果
+     * @param aura 光环视图
+     * @param currentPriority 当前处理的优先级
+     */
+    private processAuraSpecial(
+        aura: IAuraView<TEnemy>,
+        currentPriority: number
+    ): void {
+        const param = aura.getRangeParam();
+        const iter = this.internalScanRange(aura.range, param);
+
+        for (const [locator, enemyView] of iter) {
+            const enemy = enemyView.getComputingEnemy();
+            const base = enemyView.getBaseEnemy();
+            const handler = this.createHandler(enemy, locator);
+            const modifier = aura.applySpecial(handler, base);
+            if (!modifier) continue;
+
+            this.processSpecialModifier(modifier, handler, currentPriority);
+            this.needTotallyRefresh.add(enemyView);
+        }
+    }
+
+    /**
+     * 构建所有由特殊属性衍生出的光环与特殊查询结果
+     */
+    private buildupSpecials(): void {
+        for (const aura of this.globalAuraList) {
+            this.insertIntoSortedAura(aura);
+        }
+
+        for (const [index, view] of this.enemyViewMap) {
+            const enemy = view.getComputingEnemy();
+            const locator = this.indexer.indexToLocator(index);
+            const handler = this.createHandler(enemy, locator);
+
+            for (const special of enemy.iterateSpecials()) {
+                const aura = this.convertSpecial(special, handler);
+                if (!aura) continue;
+                this.convertedAura.set(special, aura);
+                this.insertIntoSortedAura(aura);
+            }
+        }
+
+        const processedPriorities = new Set<number>();
+
+        // 由于期间可能会产生新优先级的光环，所以要用 while (true) 而不是直接遍历
+        while (true) {
+            let maxPriority: number | null = null;
+            for (const priority of this.sortedAura.keys()) {
+                if (!processedPriorities.has(priority)) {
+                    if (maxPriority === null || priority > maxPriority) {
+                        maxPriority = priority;
+                    }
+                }
+            }
+            for (const priority of this.specialQueryEffects.keys()) {
+                if (!processedPriorities.has(priority)) {
+                    if (maxPriority === null || priority > maxPriority) {
+                        maxPriority = priority;
+                    }
+                }
+            }
+
+            if (maxPriority === null) break;
+            processedPriorities.add(maxPriority);
+
+            const auras = this.sortedAura.get(maxPriority);
+            if (auras) {
+                for (const aura of auras) {
+                    if (aura.couldApplySpecial) {
+                        this.processAuraSpecial(aura, maxPriority);
+                    }
+                }
+            }
+
+            const effects = this.specialQueryEffects.get(maxPriority);
+            if (effects) {
+                for (const effect of effects) {
+                    this.processSpecialQuery(effect, maxPriority);
+                }
+            }
+        }
+    }
+
+    /**
+     * 按优先级执行所有基础属性光环效果
+     */
+    private buildupBase(): void {
+        const priorities = [...this.sortedAura.keys()].sort((a, b) => b - a);
+        for (const p of priorities) {
+            const auras = this.sortedAura.get(p);
+            if (!auras) continue;
+            for (const aura of auras) {
+                const param = aura.getRangeParam();
+                const iter = this.internalScanRange(aura.range, param);
+                for (const [locator, view] of iter) {
+                    const enemy = view.getComputingEnemy();
+                    const base = view.getBaseEnemy();
+                    const handler = this.createHandler(enemy, locator);
+                    aura.apply(handler, base);
+                }
+            }
+        }
+    }
+
+    /**
+     * 执行常规查询效果，并记录哪些怪物查询了上下文
+     */
+    private buildupQuery(): void {
+        for (const [index, view] of this.enemyViewMap) {
+            const enemy = view.getComputingEnemy();
+            const locator = this.indexer.indexToLocator(index);
+            const handler = this.createHandler(enemy, locator);
+            let queried = false;
+            const query = () => {
+                queried = true;
+                return this;
+            };
+            for (const special of enemy.iterateSpecials()) {
+                const effects = this.commonQueryMap.get(special.code);
+                if (!effects) continue;
+                for (const effect of effects) {
+                    effect.apply(handler, special, query);
+                }
+            }
+            if (queried) {
+                this.requestedCommonContext.add(view);
+            }
+        }
+    }
+
+    /**
+     * 执行最终效果阶段
+     */
+    private buildupFinal(): void {
+        for (const [index, view] of this.enemyViewMap) {
+            const enemy = view.getComputingEnemy();
+            const locator = this.indexer.indexToLocator(index);
+            const handler = this.createHandler(enemy, locator);
+            for (const effect of this.finalEffects) {
+                effect.apply(handler);
+            }
+        }
+    }
+
+    buildup(): void {
+        if (!this.needUpdate) return;
+        if (!this.bindedHero) {
+            logger.warn(110);
+            return;
+        }
+        this.needUpdate = false;
+        this.sortedAura.clear();
+        this.convertedAura.clear();
+        this.dirtyEnemy.clear();
+        this.needTotallyRefresh.clear();
+        this.requestedCommonContext.clear();
+        const hasAura = this.auraConverter.size > 0;
+        const hasSpecialQuery = this.specialQueryEffects.size > 0;
+        if (hasAura || hasSpecialQuery) {
+            this.buildupSpecials();
+            this.buildupBase();
+        }
+        if (this.commonQueryMap.size > 0) {
+            this.buildupQuery();
+        }
+        if (this.finalEffects.length > 0) {
+            this.buildupFinal();
+        }
+
+        if (this.damageSystem) {
+            this.damageSystem.markAllDirty();
+        }
+
+        if (this.mapDamage) {
+            this.mapDamage.refreshAll();
+        }
+    }
+
+    markDirty(view: IEnemyView<TEnemy>): void {
+        if (!this.locatorViewMap.has(view)) return;
+        this.dirtyEnemy.add(view);
+        if (this.damageSystem) {
+            this.damageSystem.markDirty(view);
+        }
+    }
+
+    /**
+     * 在局部刷新期间执行特殊属性修饰器，但不重建光环拓扑
+     * @param modifier 特殊属性修饰器
+     * @param enemy 目标怪物
+     * @param locator 怪物位置
+     */
+    private refreshSpecialModifier(
+        modifier: IEnemySpecialModifier<TEnemy>,
+        handler: IEnemyHandler<TEnemy, THero>
+    ): void {
+        const enemy = handler.enemy;
+        const toAdd = modifier.add(handler);
+        const toDelete = modifier.delete(handler);
+
+        if (toAdd.length > 0 && toDelete.length > 0) {
+            logger.warn(100);
+            return;
+        }
+
+        for (const adding of toAdd) {
+            enemy.addSpecial(adding);
+            if (import.meta.env.DEV) {
+                const aura = this.convertSpecial(adding, handler);
+                if (aura) {
+                    logger.warn(101, adding.code.toString());
+                }
+            }
+        }
+
+        for (const deleting of toDelete) {
+            enemy.deleteSpecial(deleting);
+            if (import.meta.env.DEV) {
+                const aura = this.convertSpecial(deleting, handler);
+                if (aura) {
+                    logger.warn(101, deleting.code.toString());
+                }
+            }
+        }
+
+        for (const special of enemy.iterateSpecials()) {
+            const success = modifier.modify(handler, special);
+            if (import.meta.env.DEV && success) {
+                const aura = this.convertedAura.get(special);
+                if (aura) {
+                    logger.warn(101, special.code.toString());
+                }
+            }
+        }
+    }
+
+    /**
+     * 刷新单个怪物视图的计算结果
+     * @param view 怪物视图
+     */
+    private refreshEnemy(view: EnemyView<TEnemy>): void {
+        const locator = this.getEnemyLocatorByView(view);
+        if (!locator) return;
+
+        view.reset();
+        const enemy = view.getComputingEnemy();
+        const base = view.getBaseEnemy();
+        const handler = this.createHandler(enemy, locator);
+
+        const specialPriorities = new Set<number>();
+        for (const priority of this.sortedAura.keys()) {
+            specialPriorities.add(priority);
+        }
+        for (const priority of this.specialQueryEffects.keys()) {
+            specialPriorities.add(priority);
+        }
+
+        const orderedSpecialPriorities = [...specialPriorities].sort(
+            (a, b) => b - a
+        );
+
+        for (const priority of orderedSpecialPriorities) {
+            const auras = this.sortedAura.get(priority);
+            const effects = this.specialQueryEffects.get(priority);
+
+            if (auras) {
+                for (const aura of auras) {
+                    if (!aura.couldApplySpecial) continue;
+                    const param = aura.getRangeParam();
+                    aura.range.bindHost(this);
+                    // 局部刷新只重新判断“这个怪物是否被该光环命中”
+                    if (!aura.range.inRange(locator.x, locator.y, param)) {
+                        continue;
+                    }
+                    const modifier = aura.applySpecial(handler, base);
+                    if (!modifier) continue;
+                    this.refreshSpecialModifier(modifier, handler);
+                }
+            }
+
+            if (effects) {
+                for (const effect of effects) {
+                    const modifier = effect.for(this);
+                    if (!modifier.shouldQuery(handler)) continue;
+                    this.refreshSpecialModifier(modifier, handler);
+                }
+            }
+        }
+
+        const basePriorities = [...this.sortedAura.keys()].sort(
+            (a, b) => b - a
+        );
+        for (const priority of basePriorities) {
+            const auras = this.sortedAura.get(priority);
+            if (!auras) continue;
+            for (const aura of auras) {
+                const param = aura.getRangeParam();
+                aura.range.bindHost(this);
+                if (!aura.range.inRange(locator.x, locator.y, param)) continue;
+                aura.apply(handler, base);
+            }
+        }
+
+        this.requestedCommonContext.delete(view);
+        let queried = false;
+        const query = () => {
+            queried = true;
+            return this;
+        };
+        for (const special of enemy.iterateSpecials()) {
+            const effects = this.commonQueryMap.get(special.code);
+            if (!effects) continue;
+            for (const effect of effects) {
+                effect.apply(handler, special, query);
+            }
+        }
+        if (queried) {
+            this.requestedCommonContext.add(view);
+        }
+
+        for (const effect of this.finalEffects) {
+            effect.apply(handler);
+        }
+
+        this.dirtyEnemy.delete(view);
+
+        if (this.damageSystem) {
+            this.damageSystem.markDirty(view);
+        }
+
+        if (this.mapDamage) {
+            this.mapDamage.markEnemyDirty(view);
+        }
+    }
+
+    requestRefresh(view: IEnemyView<TEnemy>): void {
+        if (!this.dirtyEnemy.has(view)) return;
+        if (this.needTotallyRefresh.has(view)) {
+            this.needUpdate = true;
+        }
+        if (this.needUpdate) {
+            this.buildup();
+            return;
+        }
+
+        this.refreshEnemy(view as EnemyView<TEnemy>);
+
+        for (const requestedView of this.requestedCommonContext) {
+            if (requestedView === view) continue;
+            this.refreshEnemy(requestedView as EnemyView<TEnemy>);
+        }
+    }
+
+    clear(): void {
+        this.enemyViewMap.clear();
+        this.enemyMap.clear();
+        this.locatorViewMap.clear();
+        this.locatorEnemyMap.clear();
+        this.computedToView.clear();
+        this.globalAuraList.clear();
+        this.sortedAura.clear();
+        this.needTotallyRefresh.clear();
+        this.requestedCommonContext.clear();
+        this.dirtyEnemy.clear();
+        if (this.damageSystem) {
+            this.damageSystem.markAllDirty();
+        }
+        if (this.mapDamage) {
+            this.mapDamage.refreshAll();
+        }
+    }
+
+    destroy(): void {
+        this.clear();
+        this.attachMapDamage(null);
+        this.attachDamageSystem(null);
+        this.auraConverter.clear();
+        this.commonQueryMap.clear();
+        this.specialQueryEffects.clear();
+        this.finalEffects.length = 0;
+        this.bindedHero = null;
+    }
+}

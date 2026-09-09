@@ -522,45 +522,45 @@ export class MinimapDrawer {
             ctx.textBaseline = 'middle';
             ctx.font = `3px "normal"`;
             ctx.strokeStyle = 'black';
-            Mota.require('@user/data-state').ensureFloorDamage(floorId);
+            // Mota.require('@user/data-state').ensureFloorDamage(floorId);
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             ctx.fillRect(x - 6, y - 2, 12, 4);
             ctx.fillStyle = 'white';
-            const enemy = core.status.maps[floorId].enemy.list;
-            if (enemy.size === 0) {
-                ctx.strokeStyle = 'lightgreen';
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                ctx.beginPath();
-                ctx.moveTo(x - 1.5, y);
-                ctx.lineTo(x - 0.5, y + 1);
-                ctx.lineTo(x + 1.5, y - 1);
-                ctx.stroke();
-            } else if (enemy.size <= 2) {
-                const idSet = new Set<EnemyIds>();
-                enemy.forEach(v => {
-                    idSet.add(v.id);
-                });
-                const ids: EnemyIds[] = [...idSet];
-                if (ids.length === 1) {
-                    core.drawIcon(ctx, ids[0], x - 2, y - 2, 4, 4);
-                } else if (ids.length === 2) {
-                    core.drawIcon(ctx, ids[0], x - 4, y - 2, 4, 4);
-                    core.drawIcon(ctx, ids[1], x, y - 2, 4, 4);
-                } else {
-                    core.drawIcon(ctx, ids[0], x - 5, y - 2, 4, 4);
-                    core.drawIcon(ctx, ids[1], x - 1, y - 2, 4, 4);
-                    ctx.fillStyle = 'white';
-                    ctx.strokeStyle = 'black';
-                    ctx.strokeText('…', x + 4, y);
-                    ctx.fillText('…', x + 4, y);
-                }
-            } else {
-                ctx.fillStyle = 'white';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(`+${enemy.size}`, x, y);
-            }
+            // const enemy = core.status.maps[floorId].enemy.list;
+            // if (enemy.size === 0) {
+            //     ctx.strokeStyle = 'lightgreen';
+            //     ctx.lineCap = 'round';
+            //     ctx.lineJoin = 'round';
+            //     ctx.beginPath();
+            //     ctx.moveTo(x - 1.5, y);
+            //     ctx.lineTo(x - 0.5, y + 1);
+            //     ctx.lineTo(x + 1.5, y - 1);
+            //     ctx.stroke();
+            // } else if (enemy.size <= 2) {
+            //     const idSet = new Set<EnemyIds>();
+            //     enemy.forEach(v => {
+            //         idSet.add(v.id);
+            //     });
+            //     const ids: EnemyIds[] = [...idSet];
+            //     if (ids.length === 1) {
+            //         core.drawIcon(ctx, ids[0], x - 2, y - 2, 4, 4);
+            //     } else if (ids.length === 2) {
+            //         core.drawIcon(ctx, ids[0], x - 4, y - 2, 4, 4);
+            //         core.drawIcon(ctx, ids[1], x, y - 2, 4, 4);
+            //     } else {
+            //         core.drawIcon(ctx, ids[0], x - 5, y - 2, 4, 4);
+            //         core.drawIcon(ctx, ids[1], x - 1, y - 2, 4, 4);
+            //         ctx.fillStyle = 'white';
+            //         ctx.strokeStyle = 'black';
+            //         ctx.strokeText('…', x + 4, y);
+            //         ctx.fillText('…', x + 4, y);
+            //     }
+            // } else {
+            //     ctx.fillStyle = 'white';
+            //     ctx.textAlign = 'center';
+            //     ctx.textBaseline = 'middle';
+            //     ctx.fillText(`+${enemy.size}`, x, y);
+            // }
 
             ctx.restore();
         }

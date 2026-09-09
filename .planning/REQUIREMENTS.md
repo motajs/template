@@ -1,0 +1,75 @@
+# Requirements: 魔塔游戏引擎（mota-ts）
+
+**Defined:** 2026-09-07
+**Core Value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
+
+## v1 Requirements
+
+Requirements for the engine's completion. Each maps to roadmap phases.
+
+### 事件系统（Event）
+
+- [x] **EVT-01**: 引擎提供事件系统的数据/序列化接口，支持 blockly 式低代码定义（编辑器在外部项目）
+- [x] **EVT-02**: 事件系统能驱动简单场景的事件流程（踩踏触发链路；对话、开门依赖 A2 内建函数清单，延后到收尾工作）
+- [x] **EVT-03**: 事件系统定位为初学者抽象，仅覆盖简单场景，不为复杂场景追求通用表达
+
+### 寻路（Pathfinding）
+
+- [ ] **PATH-01**: 引擎支持自动寻路
+- [ ] **PATH-02**: 移动端通过点击地图触发自动寻路移动
+
+### 数据端（Data）
+
+- [ ] **DATA-01**: 数据端（L0–L3）接口实现完成——用户设计的接口全部落地，数据层各系统（地图/角色/敌人/flag/战斗/触发器/存档/回放）可用，并可在 Node 环境独立运行回放验证
+
+### 渲染适配与双布局（Render）
+
+- [ ] **REND-01**: 渲染端适配新数据层接口
+- [ ] **REND-02**: 渲染端同时支持移动端与桌面端布局
+
+### Legacy 移植（Legacy）
+
+- [ ] **LEGACY-01**: 删除被新接口覆盖的 legacy 系统
+- [ ] **LEGACY-02**: 将仍需要的 legacy 内容迁移到新接口；无新接口覆盖时才新增接口（设计由用户把控）
+
+### 测试（Testing）
+
+- [ ] **TEST-01**: 为核心系统（数据层等）补齐单元测试
+
+## Out of Scope
+
+Explicitly excluded. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| 可视化编辑器（blockly UI） | 位于独立项目，不在本仓库 |
+| 复杂场景的通用事件表达能力 | 事件系统定位为初学者抽象，避免为表达力过度设计 |
+| 收尾工作的提前规划 | 随测试逐步发现，执行期处理 |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| EVT-01 | Phase 1 | Complete |
+| EVT-02 | Phase 1 | Complete |
+| EVT-03 | Phase 1 | Complete |
+| PATH-01 | Phase 2 | Pending |
+| PATH-02 | Phase 2 | Pending |
+| DATA-01 | Phase 3 | Pending |
+| REND-01 | Phase 4 | Pending |
+| REND-02 | Phase 4 | Pending |
+| LEGACY-01 | Phase 5 | Pending |
+| LEGACY-02 | Phase 5 | Pending |
+| TEST-01 | Phase 6 | Pending |
+
+**Coverage:**
+
+- v1 requirements: 11 total
+- Mapped to phases: 11
+- Unmapped: 0 ✓
+
+---
+*Requirements defined: 2026-09-07*
+*Last updated: 2026-09-07 after initial definition*

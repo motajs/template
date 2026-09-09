@@ -9,5 +9,5 @@
     "vueIndentScriptAndStyle": false,
     "arrowParens": "avoid",
     "trailingComma": "none",
-    "endOfLine": "auto"
+    "endOfLine": "crlf"
 }

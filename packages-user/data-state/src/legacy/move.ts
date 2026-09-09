@@ -1,10 +1,10 @@
 import EventEmitter from 'eventemitter3';
 import { backDir, toDir } from './utils';
 import { loading } from '@user/data-base';
-import type { RenderAdapter } from '@motajs/render';
 import type { HeroKeyMover } from '@user/client-modules';
 import { sleep } from '@motajs/common';
-import { fromDirectionString, state } from '..';
+import { state } from '..';
+import { fromDirectionString } from '@user/data-common';
 
 // todo: 转身功能
 
@@ -272,13 +272,13 @@ export class HeroMover extends ObjectMoverBase {
         return super.startMove();
     }
 
-    private checkAutoSave(x: number, y: number, nx: number, ny: number) {
-        const index = `${x},${y}`;
-        const nIndex = `${nx},${ny}`;
-        const map = core.status.thisMap.enemy.mapDamage;
-        const dam = map[index];
-        const nextDam = map[nIndex];
-        if (!dam || !nextDam) return;
+    private checkAutoSave(_x: number, _y: number, _nx: number, _ny: number) {
+        // const index = `${x},${y}`;
+        // const nIndex = `${nx},${ny}`;
+        // const map = core.status.thisMap.enemy.mapDamage;
+        // const dam = map[index];
+        // const nextDam = map[nIndex];
+        // if (!dam || !nextDam) return;
         // 可以在这里判断地图伤害，并进行自动存档，例如在进入或离开地图伤害时存档
         // if (dam.damage > 0 || nextDam.damage > 0) {
         // core.autosave()

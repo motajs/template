@@ -10,10 +10,11 @@ import type * as RenderVue from '@motajs/render-vue';
 import type * as System from '@motajs/system';
 import type * as UserClientBase from '@user/client-base';
 import type * as ClientModules from '@user/client-modules';
+import type * as DataCommon from '@user/data-common';
 import type * as DataBase from '@user/data-base';
-import type * as DataFallback from '@user/data-fallback';
+import type * as DataSystem from '@user/data-system';
 import type * as DataState from '@user/data-state';
-import type * as DataUtils from '@user/data-utils';
+import type * as DataFallback from '@user/data-fallback';
 import type * as LegacyPluginClient from '@user/legacy-plugin-client';
 import type * as LegacyPluginData from '@user/legacy-plugin-data';
 // ---------- 必要的第三方库
@@ -34,10 +35,11 @@ interface ModuleInterface {
     '@motajs/system': typeof System;
     '@user/client-base': typeof UserClientBase;
     '@user/client-modules': typeof ClientModules;
+    '@user/data-common': typeof DataCommon;
     '@user/data-base': typeof DataBase;
+    '@user/data-system': typeof DataSystem;
     '@user/data-fallback': typeof DataFallback;
     '@user/data-state': typeof DataState;
-    '@user/data-utils': typeof DataUtils;
     '@user/legacy-plugin-client': typeof LegacyPluginClient;
     '@user/legacy-plugin-data': typeof LegacyPluginData;
     // ---------- 必要的第三方库

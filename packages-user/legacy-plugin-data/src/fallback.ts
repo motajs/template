@@ -1,13 +1,9 @@
 import type { TimingFn } from 'mutate-animate';
-import {
-    fromDirectionString,
-    heroMoveCollection,
-    MoveStep,
-    state
-} from '@user/data-state';
+import { heroMoveCollection, MoveStep, state } from '@user/data-state';
 import { hook, loading } from '@user/data-base';
 import { Patch, PatchClass } from '@motajs/legacy-common';
 import { isNil } from 'lodash-es';
+import { fromDirectionString } from '@user/data-common';
 
 // 向后兼容用，会充当两个版本间过渡的作用
 
@@ -59,8 +55,6 @@ export function initFallback() {
 
     Mota.r(() => {
         // ----- 引入
-        const { mainRenderer } = Mota.require('@user/client-modules');
-        const Animation = Mota.require('MutateAnimate');
 
         const patch = new Patch(PatchClass.Control);
         const patch2 = new Patch(PatchClass.Events);
@@ -331,8 +325,8 @@ export function initFallback() {
                         callback?.();
                     };
 
-                    const layer = state.layer.getLayerByAlias('event')!;
-                    layer.openDoor(x, y).then(cb);
+                    // const layer = state.maps.getLayerByAlias('event')!;
+                    // layer.openDoor(x, y).then(cb);
 
                     const animate = fallbackIds++;
                     core.animateFrame.lastAsyncId = animate;
@@ -379,9 +373,9 @@ export function initFallback() {
                 if (core.status.replay.speed === 24) {
                     cb();
                 } else {
-                    const num = state.idNumberMap.get(id)!;
-                    const layer = state.layer.getLayerByAlias('event')!;
-                    layer.closeDoor(num, x, y).then(cb);
+                    // const num = state.tileStore.idToNumber(id)!;
+                    // const layer = state.maps.getLayerByAlias('event')!;
+                    // layer.closeDoor(num, x, y).then(cb);
 
                     const animate = fallbackIds++;
                     core.animateFrame.lastAsyncId = animate;
@@ -521,20 +515,20 @@ export function initFallback() {
                 // 先使用 mainMapRenderer 妥协
                 const { client } = Mota.require('@user/client-modules');
                 const renderer = client.mainMapRenderer;
-                if (renderer.layerState !== state.layer) {
-                    callback?.();
-                    return;
-                }
-                const layer = state.layer.getLayerByAlias('event');
-                if (!layer) {
-                    callback?.();
-                    return;
-                }
+                // if (renderer.layerState !== state.maps) {
+                //     callback?.();
+                //     return;
+                // }
+                // const layer = state.maps.getLayerByAlias('event');
+                // if (!layer) {
+                //     callback?.();
+                //     return;
+                // }
                 core.removeBlock(sx, sy);
-                const moving = renderer.addMovingBlock(layer, block.id, sx, sy);
+                // const moving = renderer.addMovingBlock(layer, block.id, sx, sy);
                 core.updateStatusBar();
-                await moving.moveRelative(fn, time);
-                moving.destroy();
+                // await moving.moveRelative(fn, time);
+                // moving.destroy();
 
                 if (keep) {
                     core.setBlock(block.id, ex, ey);

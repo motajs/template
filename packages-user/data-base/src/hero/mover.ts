@@ -1,138 +1,268 @@
-import { Hookable, HookController, IHookController } from '@motajs/common';
+import { ITileLocator, logger } from '@motajs/common';
+import {
+    FaceDirection,
+    IFaceHandler,
+    IMoverController,
+    ObjectMoveStep,
+    ObjectMover,
+    ObjectMoveType,
+    IDataCommon
+} from '@user/data-common';
+import {
+    HeroMoveCode,
+    IHeroLocation,
+    IHeroMover,
+    IHeroMoverConfig,
+    IHeroMoveTopHandler,
+    IHeroMoveTopImpl
+} from './types';
 import { isNil } from 'lodash-es';
-import { getFaceMovement, nextFaceDirection } from '../common/utils';
-import { IHeroFollower, IHeroMover, IHeroMovingHooks } from './types';
-import { FaceDirection } from '../common';
 
-const DEFAULT_HERO_IMAGE: ImageIds = 'hero.png';
-
-export class HeroMover
-    extends Hookable<IHeroMovingHooks>
-    implements IHeroMover
+export class HeroMover<T extends IHeroLocation>
+    extends ObjectMover<T>
+    implements IHeroMover<T>
 {
-    x: number = 0;
-    y: number = 0;
-    direction: FaceDirection = FaceDirection.Down;
-    image: ImageIds = DEFAULT_HERO_IMAGE;
+    readonly state: IDataCommon;
 
-    /** 当前勇士是否正在移动 */
-    moving: boolean = false;
-    alpha: number = 1;
+    /** 是否不记录进路线系统 */
+    private noRoute: boolean = false;
+    /** 是否忽略地形碰撞检测 */
+    private ignoreTerrain: boolean = false;
+    /** 是否在特定时机触发自动存档 */
+    private autoSave: boolean = false;
+    /** 是否允许到达地图外 */
+    private allowOutBound: boolean = false;
 
-    readonly followers: IHeroFollower[] = [];
+    /** 勇士移动顶层实现对象 */
+    private topImpl: IHeroMoveTopImpl | null = null;
 
-    protected createController(
-        hook: Partial<IHeroMovingHooks>
-    ): IHookController<IHeroMovingHooks> {
-        return new HookController(this, hook);
+    constructor(
+        readonly tile: T,
+        faceHandler: IFaceHandler<FaceDirection>
+    ) {
+        super(faceHandler, tile.getCurrentFaceDirection());
+        this.state = tile.state;
     }
 
-    setPosition(x: number, y: number): void {
-        this.x = x;
-        this.y = y;
-        this.forEachHook(hook => {
-            hook.onSetPosition?.(x, y);
-        });
+    config(config: Partial<IHeroMoverConfig>): this {
+        if (!isNil(config.noRoute)) {
+            this.noRoute = config.noRoute;
+        }
+        if (!isNil(config.ignoreTerrain)) {
+            this.ignoreTerrain = config.ignoreTerrain;
+        }
+        if (!isNil(config.autoSave)) {
+            this.autoSave = config.autoSave;
+        }
+        if (!isNil(config.allowOutBound)) {
+            this.allowOutBound = config.allowOutBound;
+        }
+        return this;
     }
 
-    turn(direction?: FaceDirection): void {
-        const next = isNil(direction)
-            ? nextFaceDirection(this.direction)
-            : direction;
-        this.direction = next;
-        this.forEachHook(hook => {
-            hook.onTurnHero?.(next);
-        });
+    getConfig(): Readonly<IHeroMoverConfig> {
+        return {
+            noRoute: this.noRoute,
+            ignoreTerrain: this.ignoreTerrain,
+            autoSave: this.autoSave,
+            allowOutBound: this.allowOutBound
+        };
     }
 
-    startMove(): void {
-        this.moving = true;
-        this.forEachHook(hook => {
-            hook.onStartMove?.();
-        });
+    useTopImplementation(impl: IHeroMoveTopImpl | null): void {
+        this.topImpl = impl;
     }
 
-    async move(dir: FaceDirection, time: number = 100): Promise<void> {
-        await Promise.all(
-            this.forEachHook(hook => {
-                return hook.onMoveHero?.(dir, time);
-            })
-        );
-        const { x, y } = getFaceMovement(dir);
-        this.x += x;
-        this.y += y;
+    /**
+     * 创建顶层信息对象
+     * @param curr 勇士所在位置
+     * @param dir 勇士移动方向
+     * @param floorId 当前楼层 id
+     */
+    private createHandler(
+        curr: ITileLocator,
+        step: Readonly<ObjectMoveStep>,
+        floorId: string | undefined
+    ): IHeroMoveTopHandler {
+        switch (step.type) {
+            case ObjectMoveType.Dir:
+            case ObjectMoveType.DirFace:
+            case ObjectMoveType.Special: {
+                const { x, y } = this.faceHandler.movement(this.moveDirection);
+                const nx = curr.x + x;
+                const ny = curr.y + y;
+                return {
+                    currLoc: { x: curr.x, y: curr.y },
+                    nextLoc: { x: nx, y: ny },
+                    direction: this.moveDirection,
+                    floorId,
+                    face: this.faceHandler,
+                    state: this.state
+                };
+            }
+            case ObjectMoveType.Jump:
+            case ObjectMoveType.Teleport: {
+                const nx = step.rel ? curr.x + step.x : step.x;
+                const ny = step.rel ? curr.y + step.y : step.y;
+                return {
+                    currLoc: { x: curr.x, y: curr.y },
+                    nextLoc: { x: nx, y: ny },
+                    direction: this.moveDirection,
+                    floorId,
+                    face: this.faceHandler,
+                    state: this.state
+                };
+            }
+            case ObjectMoveType.AnimDir:
+            case ObjectMoveType.Face:
+            case ObjectMoveType.Speed: {
+                return {
+                    currLoc: { x: curr.x, y: curr.y },
+                    nextLoc: { x: curr.x, y: curr.y },
+                    direction: this.moveDirection,
+                    floorId,
+                    face: this.faceHandler,
+                    state: this.state
+                };
+            }
+        }
     }
 
-    async endMove(): Promise<void> {
-        if (!this.moving) return;
-        await Promise.all(
-            this.forEachHook(hook => {
-                return hook.onEndMove?.();
-            })
-        );
-        this.moving = false;
+    /**
+     * 根据当前位置及要移动至的位置创建信息对象
+     * @param curr 当前位置
+     * @param next 移动至的位置
+     * @param floorId 楼层 id
+     */
+    private createHandlerFromLoc(
+        curr: ITileLocator,
+        next: ITileLocator,
+        floorId: string | undefined
+    ): IHeroMoveTopHandler {
+        return {
+            currLoc: { x: curr.x, y: curr.y },
+            nextLoc: { x: next.x, y: next.y },
+            direction: this.moveDirection,
+            floorId,
+            face: this.faceHandler,
+            state: this.state
+        };
     }
 
-    async jumpHero(
-        x: number,
-        y: number,
-        time: number = 500,
-        waitFollower: boolean = false
+    protected async onMoveStart(): Promise<void> {
+        if (!this.topImpl) {
+            logger.warn(144);
+        }
+    }
+
+    protected async onMoveEnd(): Promise<void> {}
+
+    protected async onStepStart(
+        step: Readonly<ObjectMoveStep>,
+        tile: IHeroLocation
+    ): Promise<number> {
+        if (!this.topImpl) return HeroMoveCode.Stop;
+
+        const type = step.type;
+        const handler = this.createHandler(tile, step, tile.floorId);
+
+        // 边界判断
+        const { x: nx, y: ny } = handler.nextLoc;
+        const inBound = this.topImpl.inBound(nx, ny, handler.floorId);
+        if (!this.allowOutBound && !inBound) return HeroMoveCode.CannotMove;
+
+        // 移动步判断
+        if (
+            type === ObjectMoveType.Dir ||
+            type === ObjectMoveType.DirFace ||
+            type === ObjectMoveType.Special
+        ) {
+            if (this.ignoreTerrain) {
+                return HeroMoveCode.Step;
+            } else {
+                const canPass = this.topImpl.canPass(handler);
+                if (canPass) {
+                    const hit = this.topImpl.shouldHit(handler);
+                    if (hit) return HeroMoveCode.Hit;
+                    else return HeroMoveCode.Step;
+                } else {
+                    return HeroMoveCode.CannotMove;
+                }
+            }
+        }
+
+        // 跳跃和瞬移
+        if (type === ObjectMoveType.Jump || type === ObjectMoveType.Teleport) {
+            if (this.ignoreTerrain) {
+                return HeroMoveCode.Step;
+            } else {
+                if (inBound) {
+                    return HeroMoveCode.Step;
+                } else {
+                    return HeroMoveCode.Stop;
+                }
+            }
+        }
+
+        // 其他的一律可以直接执行
+        return HeroMoveCode.Step;
+    }
+
+    protected async onStepEnd(
+        code: number,
+        step: Readonly<ObjectMoveStep>,
+        tile: IHeroLocation,
+        controller: Readonly<IMoverController>
+    ): Promise<ITileLocator> {
+        if (!this.topImpl) return { x: tile.x, y: tile.y };
+
+        const trigger = !this.ignoreTerrain;
+
+        const handler = this.createHandler(tile, step, tile.floorId);
+
+        if (code === HeroMoveCode.CannotMove) {
+            if (trigger) {
+                await this.topImpl.cannotEnter(handler);
+            }
+            // 这里不能 await，因为其 Promise 会在当前步结束后兑现，如果 await 就会卡住
+            controller.stop();
+            return { x: tile.x, y: tile.y };
+        }
+
+        if (code === HeroMoveCode.Stop) {
+            controller.stop();
+            return { x: tile.x, y: tile.y };
+        }
+
+        if (code === HeroMoveCode.Hit) {
+            if (trigger) {
+                await this.topImpl.hit(handler);
+            }
+            controller.stop();
+            return { x: tile.x, y: tile.y };
+        }
+
+        if (code === HeroMoveCode.Step) {
+            return handler.nextLoc;
+        }
+
+        return { x: tile.x, y: tile.y };
+    }
+
+    protected async onStepSettled(
+        before: ITileLocator,
+        curr: ITileLocator,
+        tile: T
     ): Promise<void> {
-        await Promise.all(
-            this.forEachHook(hook => {
-                return hook.onJumpHero?.(x, y, time, waitFollower);
-            })
-        );
-        this.x = x;
-        this.y = y;
-    }
+        if (!this.topImpl) return;
 
-    setImage(image: ImageIds): void {
-        this.image = image;
-        this.forEachHook(hook => {
-            hook.onSetImage?.(image);
-        });
-    }
+        const handler = this.createHandlerFromLoc(before, curr, tile.floorId);
 
-    setAlpha(alpha: number): void {
-        this.alpha = alpha;
-        this.forEachHook(hook => {
-            hook.onSetAlpha?.(alpha);
-        });
-    }
+        const trigger = !this.ignoreTerrain;
 
-    setFollowerAlpha(identifier: string, alpha: number): void {
-        const follower = this.followers.find(v => v.identifier === identifier);
-        if (!follower) return;
-        follower.alpha = alpha;
-        this.forEachHook(hook => {
-            hook.onSetFollowerAlpha?.(identifier, alpha);
-        });
-    }
-
-    addFollower(follower: number, identifier: string): void {
-        this.followers.push({ num: follower, identifier, alpha: 1 });
-        this.forEachHook(hook => {
-            hook.onAddFollower?.(follower, identifier);
-        });
-    }
-
-    removeFollower(identifier: string, animate: boolean = false): void {
-        const index = this.followers.findIndex(
-            v => v.identifier === identifier
-        );
-        if (index === -1) return;
-        this.followers.splice(index, 1);
-        this.forEachHook(hook => {
-            hook.onRemoveFollower?.(identifier, animate);
-        });
-    }
-
-    removeAllFollowers(): void {
-        this.followers.length = 0;
-        this.forEachHook(hook => {
-            hook.onRemoveAllFollowers?.();
-        });
+        if (trigger) {
+            await this.topImpl.leave(handler);
+            await this.topImpl.enter(handler);
+        }
     }
 }

@@ -8,8 +8,10 @@
         "test": "vitest",
         "preview": "vite preview",
         "declare": "tsx script/declare.ts",
-        "type": "vue-tsc --noEmit",
         "lines": "tsx script/lines.ts packages packages-user",
+        "lint:packages": "eslint packages/",
+        "lint:user": "eslint packages-user/",
+        "lint:custom": "eslint",
         "build:packages": "vue-tsc --noEmit && tsx script/build-packages.ts",
         "build:game": "tsx script/declare.ts && vue-tsc --noEmit && tsx script/build-game.ts",
         "build:lib": "vue-tsc --noEmit && tsx script/build-lib.ts",
@@ -17,6 +19,7 @@
         "docs:build": "vitepress build docs",
         "docs:preview": "vitepress preview docs",
         "pack:template": "tsx script/pack-template.ts",
+        "check:type": "vue-tsc --noEmit",
         "check:circular": "madge --circular src/main.ts"
     },
     "dependencies": {
