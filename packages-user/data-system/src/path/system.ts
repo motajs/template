@@ -57,7 +57,7 @@ export class PathfindingSystem implements IPathfindingSystem {
      * 绑定寻路移动对象，可绑定勇士位置或任意动态图块
      * @param movable 移动对象，传入 `null` 解绑
      */
-    useMovable(movable: IObjectMovable | null): void {
+    useMover(movable: IObjectMovable | null): void {
         this.movable = movable;
     }
 

@@ -335,7 +335,7 @@ function createSystem(rows: number[], width: number): SystemFixture {
     const layer = map.getLayerByAlias('event')!;
     const system = new modules.PathfindingSystem(commonState as never);
     const tile = createTestTile();
-    system.useMovable(tile);
+    system.useMover(tile);
     system.finder.useMapState(maps);
     system.finder.useMapLayer(layer);
     return { map, layer, system, tile };
@@ -478,11 +478,11 @@ describe('pathfinding system', () => {
     it('returns null from moveTo when movable is unbound or unreachable', () => {
         const fixture = createSystem([1, 6, 1, 1, 6, 1, 1, 6, 1], 3);
         injectPredicate(fixture);
-        fixture.system.useMovable(null);
+        fixture.system.useMover(null);
 
         expect(fixture.system.moveTo({ x: 2, y: 1 })).toBeNull();
 
-        fixture.system.useMovable(fixture.tile);
+        fixture.system.useMover(fixture.tile);
         expect(fixture.system.moveTo({ x: 2, y: 1 })).toBeNull();
     });
 

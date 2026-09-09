@@ -9,7 +9,8 @@ import {
 import {
     FaceDirection,
     IMoverController,
-    IObjectMovable
+    IObjectMovable,
+    IObjectMover
 } from '@user/data-common';
 
 export interface IPathfindingStep {
@@ -85,9 +86,9 @@ export interface IPathfindingSystem extends IDataBaseExtended {
 
     /**
      * 绑定寻路移动对象，可绑定勇士位置或任意 `IObjectMovable`，如动态图块
-     * @param movable 移动对象
+     * @param mover 移动对象
      */
-    useMovable(movable: IObjectMovable | null): void;
+    useMover(mover: IObjectMover<IObjectMovable> | null): void;
 
     /**
      * 设置瞬移回退策略，默认必定回退为逐步寻路
