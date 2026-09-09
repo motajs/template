@@ -889,3 +889,32 @@ export interface IMapState
 }
 
 //#endregion
+
+//#region 通行检测
+
+export interface IPassCheckHandler extends IDataCommonExtended {
+    /** 当前位置 */
+    readonly currLoc: ITileLocator;
+    /** 要移动至的位置 */
+    readonly nextLoc: ITileLocator;
+    /** 移动方向 */
+    readonly direction: FaceDirection;
+    /** 当前楼层 id */
+    readonly floorId: string | undefined;
+}
+
+export interface IPassPredicate {
+    /**
+     * 检查在指定楼层中，能否从某一个移动入某一格
+     * @param handler 通行性检查信息对象
+     */
+    canPass(handler: IPassCheckHandler): boolean;
+
+    /**
+     * 检查在指定楼层中，从某一个移动至某一格时是否会产生撞击行为
+     * @param handler 通行性检查信息对象
+     */
+    shouldHit(handler: IPassCheckHandler): boolean;
+}
+
+//#endregion

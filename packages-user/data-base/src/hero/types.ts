@@ -13,6 +13,7 @@ import {
     IObjectMover,
     ISaveableContent
 } from '@user/data-common';
+import { IPassPredicate } from '../map';
 
 //#region 勇士属性
 
@@ -301,24 +302,17 @@ export interface IHeroMoveTopHandler extends IDataCommonExtended {
 
 export interface IHeroMoveTopImpl {
     /**
+     * 获取用于检查通行性的谓词对象
+     */
+    predicate(): IPassPredicate;
+
+    /**
      * 检查目标位置是否在地图范围内
      * @param x 横坐标
      * @param y 纵坐标
      * @param floorId 楼层 id
      */
     inBound(x: number, y: number, floorId: string | undefined): boolean;
-
-    /**
-     * 判断在指定楼层中，从指定坐标向指定方向移动一格是否可通行
-     * @param handler 通行性检查对象
-     */
-    canPass(handler: IHeroMoveTopHandler): boolean;
-
-    /**
-     * 判断在指定楼层中，从指定坐标向指定方向移动时是否应该产生撞击，撞击将会触发目标位置的撞击触发器
-     * @param handler 通行性检查对象
-     */
-    shouldHit(handler: IHeroMoveTopHandler): boolean;
 
     /**
      * 勇士正常移动到某个图块上时触发进入触发器
