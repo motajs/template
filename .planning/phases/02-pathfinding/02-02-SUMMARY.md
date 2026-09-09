@@ -324,3 +324,57 @@ None - no external service configuration required.
 - `pnpm exec eslint packages-user/data-system/src/path` — 0 problems
 
 **提交：** `239ac0d`（refactor(02-02)，指令 1–3 + 夹具对齐 + 类型门修复）、SUMMARY 记录提交见文末
+
+## Performance Test Upgrade (user round 3)
+
+> 用户对性能测试的第三轮升级指令（2 条全部落实）：计时改用 Performance API 的 mark/measure（`performance.now` 存在时钟分辨率误差），并新增多尺寸地图矩阵覆盖小图性能。仅改动 `performance.test.ts`（夹具/谓词/地图生成逻辑不变），未触碰生产代码与 02-03。
+
+### 指令落实明细
+
+| # | 指令 | 落实情况 | 验证 |
+| - | ---- | ---- | ---- |
+| 1 | performance.mark + measure 替代 performance.now | 新增顶层 `measureCall<T>(name, fn)` 辅助函数：测量前 `clearMarks/clearMeasures` 清理同名条目（防累积），段边界 `performance.mark`，段后 `performance.measure(name, startMark, endMark)` 并读取 `PerformanceMeasure.duration`；完整流水线与 graph_build / full_find 分段均经此包装 | vitest 全绿；eslint 0 |
+| 2 | 多尺寸地图矩阵 | `MAP_SIZES = [10, 30, 60, 100, 150]`，两个用例均遍历矩阵：完整流水线逐尺寸单次 mark/measure 计时；分段测量逐尺寸 `RUNS=5` 轮取 min+avg；sanity 上限改为 `500 + size²` ms 的按尺寸放宽函数；每尺寸一条 `[pathfinding-perf]` / 一段 `[pathfinding-segmented]` 结构化输出，供编排器逐行转发 | 5 尺寸 steps=18/58/118/198/300（恰为曼哈顿距离，绕障零损耗） |
+
+### 性能结果（多尺寸矩阵，种子 20260909，mark/measure 计时）
+
+```text
+[pathfinding-perf] map=10x10 steps=18 elapsed=3.29ms
+[pathfinding-perf] map=30x30 steps=58 elapsed=9.51ms
+[pathfinding-perf] map=60x60 steps=118 elapsed=25.54ms
+[pathfinding-perf] map=100x100 steps=198 elapsed=36.61ms
+[pathfinding-perf] map=150x150 steps=300 elapsed=91.74ms
+
+[pathfinding-segmented] map=10x10 steps=18 runs=5
+  graph_build: min=0.23ms avg=0.31ms
+  full_find(build+search): min=0.32ms avg=0.97ms
+  search_only(approx = find - build): min=-0.14ms avg=0.67ms
+[pathfinding-segmented] map=30x30 steps=58 runs=5
+  graph_build: min=1.93ms avg=2.80ms
+  full_find(build+search): min=2.52ms avg=2.84ms
+  search_only(approx = find - build): min=-2.98ms avg=0.04ms
+[pathfinding-segmented] map=60x60 steps=118 runs=5
+  graph_build: min=8.38ms avg=10.42ms
+  full_find(build+search): min=11.19ms avg=12.20ms
+  search_only(approx = find - build): min=-2.01ms avg=1.78ms
+[pathfinding-segmented] map=100x100 steps=198 runs=5
+  graph_build: min=25.91ms avg=28.59ms
+  full_find(build+search): min=32.29ms avg=35.82ms
+  search_only(approx = find - build): min=4.99ms avg=7.23ms
+[pathfinding-segmented] map=150x150 steps=300 runs=5
+  graph_build: min=67.47ms avg=72.83ms
+  full_find(build+search): min=83.53ms avg=87.44ms
+  search_only(approx = find - build): min=-7.05ms avg=14.60ms
+```
+
+- 缩放趋势：节点数 100→22500（225 倍）时 graph_build avg 0.31→72.83ms（约 235 倍），近线性于节点数；search_only 全程占比小（100x100 avg 7.23ms），总耗时主要由建图主导
+- search_only 为 `find - build` 近似值，min 为负属分轮测量的正常抖动；steps 随尺寸恰为曼哈顿距离，最优路径零绕障
+- 套件总时长约 2s（单文件 run），符合「数秒内」约束
+
+### 验证汇总（本轮）
+
+- `pnpm exec vitest run "packages-user/data-system/src/path/performance.test.ts"` — 2 passed（常驻通过，无 skip）
+- `pnpm exec vitest run "packages-user/data-system/src/path"` — 3 文件 27 passed
+- `pnpm exec eslint "packages-user/data-system/src/path/performance.test.ts"` — 0 problems
+
+**提交：** `2b483cd`（test(02-02)，本轮指令 1–2）、本提交（docs，SUMMARY 记录）
