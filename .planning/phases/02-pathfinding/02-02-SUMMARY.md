@@ -378,3 +378,38 @@ None - no external service configuration required.
 - `pnpm exec eslint "packages-user/data-system/src/path/performance.test.ts"` — 0 problems
 
 **提交：** `2b483cd`（test(02-02)，本轮指令 1–2）、本提交（docs，SUMMARY 记录）
+
+## Real-map Performance Round (user round 4)
+
+> 用户追加指令：将六张真实 13x13 游戏地图加入性能测试并逐图测量。仅改动 `performance.test.ts`（生产代码与 02-03 未触碰），提交 `f1a9e62`。
+
+### 落实明细
+
+- **夹具参数化**：`createPerformanceSystem` 新增可选参数 `start`（移动器起始位置，经 `tile.setPos` 落位）与 `defs`（图块定义表），`buildGraph` 改以该起点 BFS 建图；合成矩阵默认值（start 左上角、num 1 开阔/num 6 墙体）完全不变
+- **真实地图图块语义**：数字 1 → 墙体（outPass/inPass 0），数字 0/2/3/4/5/6 → 空地（outPass/inPass 15）；id 全部唯一避免 TileStore warn 134
+- **端点解析 `resolveEndpoints`**：按行序取先后两个入口（数字 5）作 start/target；入口不足两个时以固定种子 20260909 伪随机抽取非墙空地补足并单独记录所选图块
+- **测量**：每图 20 轮（13x13 极小，样本加密稳定均值），分段输出 build(min/avg)、find(min/avg)、search(≈find−build avg)；不可达不硬断言，输出 `unreachable=yes|no` 作有效数据
+
+### 性能结果（六张真实地图，种子 20260909，mark/measure，20 轮）
+
+```text
+[pathfinding-realmap] map=1 seed-picked start=(6,1) target=(7,11)
+[pathfinding-realmap] map=1 13x13 start=(6,1) target=(7,11) steps=15 build=0.23/0.37ms find=0.26/0.27ms search=-0.10ms unreachable=no
+[pathfinding-realmap] map=2 13x13 start=(12,11) target=(1,12) steps=16 build=0.25/0.29ms find=0.28/0.39ms search=0.10ms unreachable=no
+[pathfinding-realmap] map=3 13x13 start=(10,6) target=(2,10) steps=12 build=0.21/0.23ms find=0.23/0.29ms search=0.06ms unreachable=no
+[pathfinding-realmap] map=4 13x13 start=(6,1) target=(6,11) steps=14 build=0.25/0.27ms find=0.28/0.34ms search=0.07ms unreachable=no
+[pathfinding-realmap] map=5 13x13 start=(11,1) target=(0,7) steps=17 build=0.21/0.29ms find=0.23/0.28ms search=-0.01ms unreachable=no
+[pathfinding-realmap] map=6 13x13 start=(0,1) target=(6,12) steps=19 build=0.23/0.34ms find=0.25/0.32ms search=-0.01ms unreachable=no
+```
+
+- 六图全部可达（steps 12–19）；单图全流程 build+search 合计约 0.3–0.4ms，主要耗时仍由建图主导，search 占比极小（接近计时抖动量级，故个别轮次出现负值近似）
+- 事实核对：用户备注称地图 1 无入口，实际其 (6,1) 处有一个入口 5——按「仅一个入口」分支处理：start = 该入口，target = 种子抽选空地 (7,11)（已单独记录），结果可达
+- 地图 6 中 (10,9) 的数字 6 按语义注册为空地，与预期一致
+
+### 验证汇总（本轮）
+
+- `pnpm exec vitest run "packages-user/data-system/src/path/performance.test.ts"` — 3 passed
+- `pnpm exec vitest run "packages-user/data-system/src/path"` — 3 文件 28 passed
+- `pnpm exec eslint "packages-user/data-system/src/path/performance.test.ts"` — 0 problems
+
+**提交：** `f1a9e62`（test(02-02)，真实地图用例）、本提交（docs，SUMMARY 记录）
