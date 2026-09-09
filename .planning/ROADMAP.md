@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. 引擎能执行踩踏触发事件驱动的事件执行链路（对话/开门依赖 A2 内建函数清单，延后到收尾工作）
   4. 事件系统保持面向初学者的简单抽象，未引入复杂场景的通用表达能力
 
-**Plans**: 11/11 plans executed
+**Plans**: 12/12 plans executed
 Plans:
 
 - [x] 01-04-PLAN.md
@@ -45,6 +45,7 @@ Plans:
 - [x] 01-09-PLAN.md — GameMap point-event-only save aggregation; production registration deferred
 - [x] 01-10-PLAN.md
 - [x] 01-11-PLAN.md — CoreState legacy map initialization selects eventLayer; existing source-aware movement path remains reachable
+- [x] 01-12-PLAN.md — Close phase-owned type diagnostics and CRLF/Prettier quality-gate gaps without behavior changes
 
 **Wave 1**
 
@@ -61,6 +62,10 @@ Plans:
 **Wave 8** *(blocked on completed event ingestion, dispatch, and persistence gap plans)*
 
 - [x] 01-11-PLAN.md — CoreState legacy map initialization selects eventLayer; existing source-aware dispatch remains reachable
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
+- [x] 01-12-PLAN.md — Phase-owned type and CRLF/Prettier gap closure
 
 ### Phase 2: 寻路系统
 
@@ -140,7 +145,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. 事件系统 | 11/11 | In Progress|  |
+| 1. 事件系统 | 12/12 | In Progress|  |
 | 2. 寻路系统 | 0/TBD | Not started | - |
 | 3. 数据端完成 | 0/TBD | Not started | - |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |

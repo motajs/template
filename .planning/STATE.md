@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 01
 current_phase_name: event
 status: executing
-stopped_at: Completed 01-11-PLAN.md
-last_updated: "2026-09-09T03:01:22.995Z"
+stopped_at: Completed 01-12-PLAN.md
+last_updated: "2026-09-09T03:36:51.958Z"
 last_activity: 2026-09-09
-last_activity_desc: Phase 01 valid verification gap isolated to CoreState event-layer wiring
-state_head: 073e009816765605564508a2362598b4e587b5fa
+last_activity_desc: "Plan 01-12 closed phase-owned type and CRLF/Prettier gaps; unrelated repository type diagnostics remain"
+state_head: f423aad84a4a6ea3fa04fc0fac4fb33de1a2e0a4
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 12
+  completed_plans: 12
 milestone_name: milestone
 ---
 
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-09-07)
 ## Current Position
 
 Phase: 01 (event) — EXECUTING
-Plan: 11 of 11
-Status: Ready to execute next gap-closure plan
-Last activity: 2026-09-09 — Phase 01 gap closure plan 01-11 created
+Plan: 12 of 12 (gap closure complete)
+Status: Plan complete; phase verification pending unrelated repository type diagnostics
+Last activity: 2026-09-09 — Plan 01-12 executed; focused type and formatting gaps closed
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Progress: [█████████░] 91%
 | Phase 01 P08 | 3min | 1 tasks | 1 files |
 | Phase 01 P09 | 8min | 2 tasks | 2 files |
 | Phase 01 P11 | 13min | 2 tasks | 3 files |
+| Phase 01 P12 | 20min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,9 @@ Recent decisions affecting current work:
 - [Phase 01]: Plan 01-09 validates point-event aggregation without production registration, map-id binding, rawEvent changes, or eventStore cycle repair.
 - [Phase 01]: Phase 01 Plan 11 wires each legacy event alias layer to GameMap.eventLayer without adding serialized registration or map-id binding.
 - [Phase 01]: Phase 01 Plan 11 preserves source-aware invocation, point-event persistence, rawEvent/cache/Promise/as, and eventStore-cycle deferrals.
+- [Phase 01]: Gap-closure plan 01-12 repairs only the missing IBlockEventEnv import, focused fixture typing, and reported CRLF/Prettier errors; it preserves all locked deferrals and public contracts.
+- [Phase 01]: Gap-closure Plan 01-12 imports IBlockEventEnv and types only the focused event/map fixtures without changing runtime behavior or public contracts.
+- [Phase 01]: Gap-closure Plan 01-12 preserves serialized registration/map-id binding, rawEvent/cache/Promise/as, and eventStore-cycle deferrals.
 
 ### Pending Todos
 
@@ -103,15 +107,16 @@ None yet.
 - 数据层 L0–L3 接口设计仍在进行中（由用户主导），DATA-01（Phase 3）依赖接口设计落地
 - 01-08 rawEvent cache-safety and no-as implementation assumptions are explicitly removed from the revised executable scope; the 01-05 current contract remains unchanged.
 - eventStore circular paths are explicitly preserved as the Phase 01 baseline; the revised 01-08 regression does not require those paths to disappear.
+- Plan 01-12 leaves the repository-wide type gate blocked only by pre-existing diagnostics outside the plan-owned files; these are recorded in the phase deferred-items ledger.
 
 ## Deferred Items
 
 | Category | Item | Status | Deferred At | Milestone |
 |----------|------|--------|-------------|-----------|
-| *(none)* | | | | |
+| quality gate | Pre-existing TypeScript diagnostics outside Plan 01-12 files | deferred | 2026-09-09 | v1.0 |
 
 ## Session Continuity
 
-Last session: 2026-09-09T03:01:22.954Z
-Stopped at: Completed 01-11-PLAN.md
+Last session: 2026-09-09T03:36:51.913Z
+Stopped at: Completed 01-12-PLAN.md
 Resume file: None
