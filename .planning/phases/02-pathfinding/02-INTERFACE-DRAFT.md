@@ -1,8 +1,9 @@
-# 寻路系统接口草案（DRAFT 待拍板）
+# 寻路系统接口草案（已拍板）
 
-> **状态：DRAFT 待拍板** —— 本文档全部命名、签名、文件归属均为草案，未经用户拍板（D-07）不得实现。
+> **状态：已拍板（2026-09-09）** —— 六项决策全部经用户拍板，结论逐字记录于文末「拍板记录」节；02-02/02-03 以本文档 + 拍板记录为执行依据（D-07）。
+> **接口事实源：`packages-user/data-system/src/pathfinding/types.ts` 由用户亲自编写（user-owned）——02-02 与 02-03 不得创建或重写该文件，所有实现以用户编写的 types.ts 为准。**
 > 依据：02-CONTEXT.md 决策 D-01…D-11、02-RESEARCH.md、02-PATTERNS.md；绑定面接口逐字引用既有代码，未做任何修改。
-> 草案产出：2026-09-09（02-01 Task 1）。用户可直接编辑本文档，执行者将逐字应用修改并记录至文末「拍板记录」。
+> 草案产出：2026-09-09（02-01 Task 1）。拍板完成：2026-09-09（02-01 Task 3，用户逐项拍板）。
 
 ## 0. 范围声明（D-11）
 
@@ -10,7 +11,8 @@
 
 ## 1. 接口签名草案
 
-> 以下全部类型与命名均为 **DRAFT 待拍板**。绑定面直接引用既有接口
+> **拍板结论**：本节签名为草案参考；**最终接口签名以用户亲自编写的 `packages-user/data-system/src/pathfinding/types.ts` 为准（user-owned）**，02-02/02-03 不得创建或重写该文件。
+> 以下类型与命名沿用草案形态，命名以用户 types.ts 实际内容为准。绑定面直接引用既有接口
 > （`IObjectMovable`、`IMapLayer`、`ITileLocator`、`ObjectMoveStep`、`EventTrigger`），不重定义。
 > 命名 / 注释 / 类型遵循 dev.md：接口 `I` 前缀大驼峰、函数类型单独 `type`、
 > 对象类型单独 `interface`、jsDoc 中文注释、接口方法间空行。
@@ -21,7 +23,7 @@ import { IHeroMoveTopHandler, IMapLayer, IMapState } from '@user/data-base';
 import { FaceDirection, IObjectMovable } from '@user/data-common';
 
 /**
- * 寻路损失函数类型（DRAFT 待拍板）
+ * 寻路损失函数类型（已拍板，签名以用户 types.ts 为准）
  * 计算从一格移动至相邻一格的损失，默认实现为每格损失 1（D-01）
  * @param from 移动起点坐标
  * @param to 移动终点坐标
@@ -30,7 +32,7 @@ import { FaceDirection, IObjectMovable } from '@user/data-common';
 type IPathfindingCostFunction = (from: ITileLocator, to: ITileLocator) => number;
 
 /**
- * 通行性谓词函数类型（DRAFT 待拍板）
+ * 通行性谓词函数类型（已拍板，签名以用户 types.ts 为准）
  * 判定在指定楼层从一格向指定方向移动一格是否可通行，
  * 语义须与 DefaultHeroMoveTopImpl.canPass 一致（事件层永远参与判定，
  * 其余层仅当 pass.onlyEvents 为真时参与）。L2 不 import L3，
@@ -40,7 +42,7 @@ type IPathfindingCostFunction = (from: ITileLocator, to: ITileLocator) => number
 type IPathfindingPassPredicate = (handler: IHeroMoveTopHandler) => boolean;
 
 /**
- * 瞬移回退策略函数类型（DRAFT 待拍板）
+ * 瞬移回退策略函数类型（已拍板，签名以用户 types.ts 为准）
  * 由该函数决策瞬移是否回退为逐步寻路（D-05）
  * @param path 完整路径坐标序列，含起点
  * @param arrivals 瞬移逐步兑现时每一步会到达的位置
@@ -53,35 +55,35 @@ type IPathfindingFallbackPolicy = (
 
 export interface IPathfindingSystem {
     /**
-     * 绑定寻路所用的地图状态对象（DRAFT 待拍板）
+     * 绑定寻路所用的地图状态对象（已拍板，签名以用户 types.ts 为准）
      * 用于按楼层 id 获取楼层与事件层；未绑定时寻路告警并返回空路径
      * @param maps 地图状态对象，传入 `null` 解绑
      */
     useMapState(maps: IMapState | null): void;
 
     /**
-     * 绑定构建有向图所用的地图图层（DRAFT 待拍板，D-03）
+     * 绑定构建有向图所用的地图图层（已拍板，签名以用户 types.ts 为准，D-03）
      * 通常绑定事件层；图仅包含从当前位置可达的位置（D-02）
      * @param layer 地图图层对象，传入 `null` 解绑
      */
     useMapLayer(layer: IMapLayer | null): void;
 
     /**
-     * 绑定寻路移动对象（DRAFT 待拍板，D-03）
+     * 绑定寻路移动对象（已拍板，签名以用户 types.ts 为准，D-03）
      * 可绑定勇士位置或任意 `IObjectMovable`（如动态图块、跟随者）
      * @param movable 移动对象，传入 `null` 解绑
      */
     useMovable(movable: IObjectMovable | null): void;
 
     /**
-     * 注入自定义损失函数（DRAFT 待拍板，D-01）
+     * 注入自定义损失函数（已拍板，签名以用户 types.ts 为准，D-01）
      * 未注入时使用默认实现：每格损失 1
      * @param cost 损失函数，传入 `null` 恢复默认
      */
     useCostFunction(cost: IPathfindingCostFunction | null): void;
 
     /**
-     * 注入通行性谓词（DRAFT 待拍板）
+     * 注入通行性谓词（已拍板，签名以用户 types.ts 为准）
      * 未注入时使用 PassBit 掩码默认判定（不含多层 onlyEvents 语义）；
      * 推荐由 L3 注入与 DefaultHeroMoveTopImpl.canPass 同源的谓词，
      * 保证图边判定与逐步移动判定单一事实源
@@ -90,7 +92,7 @@ export interface IPathfindingSystem {
     usePassPredicate(predicate: IPathfindingPassPredicate | null): void;
 
     /**
-     * 注入瞬移回退策略（DRAFT 待拍板，D-05）
+     * 注入瞬移回退策略（已拍板，签名以用户 types.ts 为准，D-05）
      * 未注入时使用默认实现：路径上存在事件即回退为逐步寻路
      * （事件可能改变状态，瞬移会跳过副作用）
      * @param policy 回退策略函数，传入 `null` 恢复默认
@@ -98,7 +100,7 @@ export interface IPathfindingSystem {
     useFallbackPolicy(policy: IPathfindingFallbackPolicy | null): void;
 
     /**
-     * 仅获取从当前位置至目标位置的最小损失路径（DRAFT 待拍板，D-06）
+     * 仅获取从当前位置至目标位置的最小损失路径（已拍板，签名以用户 types.ts 为准，D-06）
      * 不产生任何移动
      * @param target 目标坐标
      * @returns 路径坐标序列（含起点与终点）；
@@ -107,7 +109,7 @@ export interface IPathfindingSystem {
     getPath(target: ITileLocator): Readonly<ITileLocator[]>;
 
     /**
-     * 逐步寻路至目标位置（DRAFT 待拍板，D-04 / D-09）
+     * 逐步寻路至目标位置（已拍板，签名以用户 types.ts 为准，D-04 / D-09）
      * 复用现有 hero mover 逐步执行，每步走 enter/leave/hit 钩子，
      * 途经事件自然触发；有向图上逐步搜索即自然避障（D-02）
      * @param target 目标坐标
@@ -116,7 +118,7 @@ export interface IPathfindingSystem {
     moveTo(target: ITileLocator): Readonly<IMoverController> | null;
 
     /**
-     * 瞬移至目标位置（DRAFT 待拍板，D-04）
+     * 瞬移至目标位置（已拍板，签名以用户 types.ts 为准，D-04）
      * 瞬移前经回退策略判定，判定需要回退则自动退为逐步寻路
      * @param target 目标坐标
      * @returns 移动控制器；无法寻路、无路径或已有移动进行中时返回 `null`
@@ -124,15 +126,15 @@ export interface IPathfindingSystem {
     teleportTo(target: ITileLocator): Readonly<IMoverController> | null;
 
     /**
-     * 打断当前自动寻路（DRAFT 待拍板，D-10）
+     * 打断当前自动寻路（已拍板，签名以用户 types.ts 为准，D-10）
      * 新的方向输入或新的寻路调用可随时打断并接管；
-     * 兑现时序见草案第 5 节两个选项，待用户拍板
+     * 兑现时序已拍板：选项 1（见第 5 节）
      */
     interrupt(): Promise<void>;
 }
 ```
 
-**语义补充说明（同样待拍板）：**
+**语义补充说明（已拍板）：**
 
 - **不可达目标双语义（D-08）**：目标本身为 no-pass 类图块且四周有可达相邻格 → 移动至该相邻格、勇士面朝目标、触发目标 OnTouch（派发方案见第 3 节）；其他情况 → 忽略本次寻路移动，`getPath` 返回空数组、`moveTo`/`teleportTo` 返回 `null`。
 - **有向图（D-02）**：图仅包含从当前位置可到达的位置；每条边 = 从 A 向方向 d 走一步，需 A 的 `outPass` 含 d 位且 B 的 `inPass` 含 opposite(d) 位（掩码语义见 02-RESEARCH Pattern 2），单向通行由掩码不对称天然产生。
@@ -140,7 +142,9 @@ export interface IPathfindingSystem {
 - **打断入口（D-10）**：`interrupt()` 暴露给玩家输入接管；寻路系统内部同时持有当前 `IMoverController` 引用以识别"移动已自然终止"（`HeroMover.onStepEnd` 在 CannotMove/Stop/Hit 时自行 stop）。
 - **图构建时机**：默认每次寻路动态构建、不缓存（数据端状态可变——敌人/门/道具），此为 AI 自主裁量项（CONTEXT「agent's Discretion」），如用户有缓存需求请在拍板时说明。
 
-## 2. 文件归属提案（待拍板，可调整）
+## 2. 文件归属提案（已拍板：按草案原样，types.ts 除外）
+
+> **拍板结论**：文件归属按草案原样（L2 `packages-user/data-system/src/pathfinding/` 的 graph/system/index + L3 `packages-user/data-state/src/pathfinding/heroPathfinding.ts`）；**唯一例外：`types.ts` 由用户提供**（见拍板记录第 1 项），02-02/02-03 不得创建或重写。
 
 依据 02-RESEARCH 分层论证（L2 禁 import L3，防循环依赖；`IMapLayer` 在 L1、`IObjectMovable` 在 L0，L2 可同时引用二者）：
 
@@ -156,7 +160,9 @@ export interface IPathfindingSystem {
 
 修改面：`data-system/src/index.ts` 追加 pathfinding barrel 导出；`data-state/src/index.ts` 追加寻路接线导出；`data-state/src/core.ts` 在 `useTopImplementation` 接线点之后追加寻路系统初始化。**用户可调整以上归属**（例如将默认回退策略实现放在 L2 或 L3），拍板时注明即可。
 
-## 3. D-08 OnTouch 派发两方案（并列，待拍板）
+## 3. D-08 OnTouch 派发两方案（已拍板：触发语义由用户指定，见拍板记录第 4 项）
+
+> **拍板结论（用户原话）**："如果是由 CannotIn 或 CannotOut 导致无法从一格到另一格，无论目标是不是 no pass，都不应该触发 hit，只有 CannotIn 和 CannotOut 允许到达，且目标位置是 no pass 时才触发。" —— 即 **hit/OnTouch 的触发条件 = 通行掩码（CannotIn/CannotOut）允许到达 且 目标位置为 no-pass；掩码导致的不可达一律不触发**。实现机制（直接派发 OnTouch 或撞击步）必须与该触发条件语义一致。
 
 目标场景：目标格本身是 no-pass 类图块且四周存在可达相邻格（D-08 情况 1）——移动到相邻格后面朝目标，并触发目标位置的 OnTouch 触发器（走 Phase 1 事件链路）。
 
@@ -173,9 +179,11 @@ export interface IPathfindingSystem {
 - **P2 结论（对方案 B 不生效的原因）**：撞击触发（`Hit` → `topImpl.hit()` → OnTouch 派发）只在 `canPass=true` 且 `eventPass=false` 的格上发生（`data-base/hero/mover.ts:183-190` 判定顺序 + `moverImpl.ts:127-141` `shouldHit`）；`inPass=0` 的真 no-pass 格走 `CannotMove → cannotEnter()`，而 `cannotEnter` 当前为空实现（`moverImpl.ts:259-263`「新事件触发器没有无法进入的对应项，保留空实现以满足移动接口」）→ **方案 B 对 D-08 的目标场景（no-pass 目标格）不生效**。
 - **若坚持选 B**：须同时修改 `cannotEnter` 语义（新增 OnTouch 派发或等价行为），影响面扩至 L0/L3 移动链路，且「走入可通行格」与「触碰 no-pass 格」的触发条件需重新对齐。
 
-**推荐：方案 A**。由用户拍板（D-08）。
+**推荐：方案 A**。~~由用户拍板（D-08）~~ → **已拍板**：用户指定触发语义（掩码允许到达 + 目标 no-pass 才触发；掩码不可达一律不触发），实现机制须与该语义一致——方案 A 直派 OnTouch 与该语义一致，可按 A 落地；方案 B 的 hit 链（`inPass=0` 走 CannotMove）不得作为掩码不可达时的触发路径。
 
 ## 4. P1 缺陷调查：mover.ts:651 坐标回写条件（`&&` 疑为 `||`）
+
+> **拍板结论：go** —— 用户确认 `&&` 为缺陷，授权 02-02 将 651 行条件改为 `||` 语义，并翻绿 mover.test.ts 的 4 个回归用例（见拍板记录第 3 项）。
 
 **逐字引用**（`packages-user/data-common/src/common/mover.ts:648-654`，条件位于 **651 行**）：
 
@@ -203,7 +211,9 @@ if (this.tile.x !== loc.x && this.tile.y !== loc.y) {   // ← 651 行：&& 疑�
 - **go**——确认 `&&` 为手误，授权 02-02 将该行改为 `||` 并翻绿回归用例；
 - **no-go**——若该条件属有意设计（如「仅双轴同时变化才回写」），请用户给出**替代坐标回写语义**；否则逐步寻路无法成立（每多走一步，位置误差累积一格）。
 
-## 5. 打断时序两选项（D-10，待拍板）
+## 5. 打断时序两选项（D-10，已拍板：选项 1）
+
+> **拍板结论**：选项 1 —— `stop()` 后 await 兑现，再查新位置起新寻路（无竞态，最多延迟一步）。
 
 **既有机制约束（逐字）**：
 
@@ -223,9 +233,11 @@ if (this.tile.x !== loc.x && this.tile.y !== loc.y) {   // ← 651 行：&& 疑�
 - **优点**：响应更快，不阻塞调用方。
 - **缺点**：需自行处理回调竞态——多次接管时旧回调作废、回调执行期间再次打断的重入、回调与自然终止（CannotMove/Stop/Hit）的重复触发，实现复杂度显著更高。
 
-**推荐：选项 1**（时序正确性优先；一步时延在魔塔节奏下可接受）。待拍板。
+**推荐：选项 1**（时序正确性优先；一步时延在魔塔节奏下可接受）。**已拍板：选项 1**。
 
-## 6. 图方向性选项（待拍板）
+## 6. 图方向性选项（已拍板：仅 4 正交向）
+
+> **拍板结论**：仅 4 正交向（与 PassBit 四位掩码一致；不含斜向）。
 
 ### 选项 1：仅 4 正交向（推荐）
 
@@ -239,7 +251,7 @@ if (this.tile.x !== loc.x && this.tile.y !== loc.y) {   // ← 651 行：&& 疑�
 - 斜向直达，路径更短，视觉上更自然。
 - **代价**：需为斜向定义 `outPass`/`inPass` 掩码语义（`PassBit` 仅 4 位，需扩展枚举与图块数据结构）；须修改 `canPass` 对斜向的直接放行行为，影响 L0/L1/L3 多处判定语义与既有存档数据；影响面大，建议不纳入本阶段。
 
-**推荐：仅 4 正交向**。待拍板。
+**推荐：仅 4 正交向**。**已拍板：仅 4 正交向**。
 
 ## 7. 边界守卫与损失值守卫要求（威胁缓解 T-02-01 / T-02-02）
 
@@ -249,13 +261,13 @@ if (this.tile.x !== loc.x && this.tile.y !== loc.y) {   // ← 651 行：&& 疑�
 - **损失值守卫（T-02-02）**：自定义损失函数返回非有限数（NaN/Infinity）或负数 → `logger.warn(新数字码)` 并按默认损失 1 处理，保证 Dijkstra 非负权不变式。
 - 新日志码在 `packages/common/src/logger.json` 集中登记：**新 error 码从 65 起、新 warn 码从 173 起**（本阶段一次性登记，避免撞码）。
 
-## 拍板记录（待用户填写）
+## 拍板记录（2026-09-09，用户逐项拍板，原话忠实整理）
 
-> 用户逐项给出结论（含「按草案原样」），或直接编辑上文草案后回复 approved；执行者将逐字应用修改并在此记录。
+> 以下为用户对六项决策的逐项结论（原话整理，忠实记录）；执行者已按结论同步标注上文各节。**02-02/02-03 以本记录为执行依据。**
 
-1. **接口签名清单**（主接口命名、方法签名、注入槽位命名、损失 / 回退 / 谓词函数类型签名）：待拍板
-2. **文件归属层**（L2/L3 文件放置提案或调整）：待拍板
-3. **P1 修复 go/no-go**（mover.ts:651 条件是否确认为缺陷并授权改为 `||`；若否，请给出替代坐标回写语义）：待拍板
-4. **D-08 OnTouch 派发**（方案 A 直派 executor / 方案 B 撞击步）：待拍板
-5. **打断时序**（选项 1 stop 后 await 兑现 / 选项 2 onEnd 回调驱动）：待拍板
-6. **图方向性**（仅 4 正交向 / 含 8 向）：待拍板
+1. **接口签名清单**（主接口命名、方法签名、注入槽位命名、损失 / 回退 / 谓词函数类型签名）：**用户将亲自编写 `packages-user/data-system/src/pathfinding/types.ts` —— 该文件是接口事实源（user-owned）。02-02 与 02-03 不得创建或重写该文件；所有实现以用户编写的 types.ts 为准。**
+2. **文件归属层**（L2/L3 文件放置提案或调整）：**按草案原样**（L2 `packages-user/data-system/src/pathfinding/` 的 graph/system/index + L3 `packages-user/data-state/src/pathfinding/heroPathfinding.ts`），但 **types.ts 由用户提供**（见第 1 项）。
+3. **P1 修复 go/no-go**（mover.ts:651 条件是否确认为缺陷并授权改为 `||`）：**go** —— 授权 02-02 将 `packages-user/data-common/src/common/mover.ts:651` 的条件 `this.tile.x !== loc.x && this.tile.y !== loc.y` 修复为 `||` 语义，并翻绿 mover.test.ts 的 4 个回归用例。
+4. **D-08 OnTouch 派发**（方案 A 直派 executor / 方案 B 撞击步）——**用户原话**："如果是由 CannotIn 或 CannotOut 导致无法从一格到另一格，无论目标是不是 no pass，都不应该触发 hit，只有 CannotIn 和 CannotOut 允许到达，且目标位置是 no pass 时才触发。" —— 即：hit/OnTouch 的触发条件 = 通行掩码（CannotIn/CannotOut）允许到达 且 目标位置为 no-pass；**掩码导致的不可达一律不触发**。实现机制（直接派发 OnTouch 或撞击步）必须与该触发条件语义一致。
+5. **打断时序**（选项 1 stop 后 await 兑现 / 选项 2 onEnd 回调驱动）：**选项 1** —— `stop()` 后 await 兑现，再查新位置起新寻路（无竞态，最多延迟一步）。
+6. **图方向性**（仅 4 正交向 / 含 8 向）：**仅 4 正交向**（与 PassBit 四位掩码一致；不含斜向）。
