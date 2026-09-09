@@ -223,15 +223,22 @@ describe('MapLayer point event lifecycle', () => {
         point.set(7, 'point-only');
         expect(layer.dirty()).toBe(true);
 
-        const save = map.saveState(modules.SaveCompression.LowCompression);
-        const layerSave = save.layers.get(7);
-        expect(layerSave).toBeDefined();
-        expect(layerSave?.fullMap).toBeUndefined();
-        expect(layerSave?.staticBlocks?.size).toBe(0);
-        expect(layerSave?.dynamicBlocks?.size).toBe(0);
-        expect(layerSave?.pointEvents).toEqual(
-            new Map([[1, new Map([[7, 'point-only']])]])
-        );
+        const compressionLevels = [
+            modules.SaveCompression.LowCompression,
+            modules.SaveCompression.HighCompression
+        ];
+        for (const compression of compressionLevels) {
+            const save = map.saveState(compression);
+            const layerSave = save.layers.get(7);
+            expect(layerSave).toBeDefined();
+            expect(layerSave?.fullMap).toBeUndefined();
+            expect(layerSave?.rows).toBeUndefined();
+            expect(layerSave?.staticBlocks?.size).toBe(0);
+            expect(layerSave?.dynamicBlocks?.size).toBe(0);
+            expect(layerSave?.pointEvents).toEqual(
+                new Map([[1, new Map([[7, 'point-only']])]])
+            );
+        }
     });
 
     it('resize preserves in-range point events and resize2 clears them', () => {
