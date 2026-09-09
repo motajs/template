@@ -121,3 +121,67 @@ export interface IPathfindingSystem extends IDataBaseExtended {
      */
     interrupt(): Promise<void>;
 }
+
+export interface IPathGraphEdge {
+    /** 本条边对应的移动方向 */
+    readonly dir: FaceDirection;
+    /** 边指向的节点索引，值为 y * width + x */
+    readonly to: number;
+}
+
+export interface IPathGraphNode {
+    /** 节点索引，值为 y * width + x */
+    readonly index: number;
+    /** 节点横坐标 */
+    readonly x: number;
+    /** 节点纵坐标 */
+    readonly y: number;
+    /** 节点对应的位置信息，用于损失计算 */
+    readonly block: ILayerLocation;
+    /** 该节点是否仅可作为路径终点，不可作为中间节点 */
+    readonly terminal: boolean;
+    /** 该节点的全部出边 */
+    readonly edges: readonly IPathGraphEdge[];
+}
+
+export interface IPathGraph {
+    /** 图宽度 */
+    readonly width: number;
+    /** 图高度 */
+    readonly height: number;
+    /** 图内全部节点，键为节点索引 */
+    readonly nodes: ReadonlyMap<number, IPathGraphNode>;
+}
+
+export interface IPathfindingGraphBuilder {
+    /**
+     * 绑定地图状态对象，用于解析图层所属楼层 id
+     * @param maps 地图状态对象，传入 `null` 解绑
+     */
+    useMapState(maps: IMapState | null): void;
+
+    /**
+     * 绑定构建有向图所用的地图图层
+     * @param layer 地图图层对象，传入 `null` 解绑
+     */
+    useMapLayer(layer: IMapLayer | null): void;
+
+    /**
+     * 注入判定边可行性的通行性谓词
+     * @param predicate 通行性谓词，传入 `null` 解绑
+     */
+    usePassPredicate(predicate: IPassPredicate | null): void;
+
+    /**
+     * 设置邻域使用的方向组
+     * @param group 朝向组
+     */
+    useDirGroup(group: number): void;
+
+    /**
+     * 构建有向图。图层未绑定时告警并返回空图，
+     * 不包含任何节点与边
+     * @returns 构建的有向图
+     */
+    build(): IPathGraph;
+}

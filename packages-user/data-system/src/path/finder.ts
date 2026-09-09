@@ -7,16 +7,14 @@ import {
     IStateBase
 } from '@user/data-base';
 import { isNil } from 'lodash-es';
-import { IPathGraph, PathfindingGraphBuilder } from './graph';
-import { IPathfinder, IPathfindingStep, PathCostFunction } from './types';
+import { PathfindingGraphBuilder } from './graph';
+import {
+    IPathfinder,
+    IPathfindingStep,
+    IPathGraph,
+    PathCostFunction
+} from './types';
 
-//#region 寻路求解器
-
-/**
- * 寻路求解器，在动态构建的有向图上执行最小损失搜索。
- * 损失函数与通行性谓词均为可注入槽位，未注入损失函数时每格损失 1，
- * 未注入谓词时所有边均不可通行
- */
 export class PathfindingFinder implements IPathfinder {
     /** 当前对象对应的数据层对象 */
     readonly state: IStateBase;
@@ -36,80 +34,43 @@ export class PathfindingFinder implements IPathfinder {
         this.state = state;
     }
 
-    /**
-     * 绑定寻路所用的地图状态对象
-     * @param maps 地图状态对象，传入 `null` 解绑
-     */
     useMapState(maps: IMapState | null): void {
         this.maps = maps;
     }
 
-    /**
-     * 绑定构建有向图所用的地图图层
-     * @param layer 地图图层对象，传入 `null` 解绑
-     */
     useMapLayer(layer: IMapLayer | null): void {
         this.layer = layer;
     }
 
-    /**
-     * 设置自定义损失函数
-     * @param cost 损失函数，传入 `null` 恢复默认
-     */
     useCostFunction(cost: PathCostFunction | null): void {
         this.cost = cost;
     }
 
-    /**
-     * 设置通行性谓词
-     * @param predicate 通行性谓词，传入 `null` 恢复默认
-     */
     usePassPredicate(predicate: IPassPredicate | null): void {
         this.predicate = predicate;
     }
 
-    /**
-     * 设置寻路使用的朝向组
-     * @param group 朝向组
-     */
     useDirGroup(group: number): void {
         this.group = group;
     }
 
     /**
-     * 在当前绑定状态下执行寻路，返回损失最小的步骤序列。
-     * 地图状态或图层未绑定、坐标越界等非法输入下告警并返回空数组；
-     * 目标不可达时同样返回空数组
-     * @param start 寻路起始位置
-     * @param target 寻路目标位置
+     * 获取进入指定位置节点的损失，损失值非有限数或负数时
+     * 告警并按默认损失 1 处理
+     * @param block 位置信息
      */
-    find(start: ITileLocator, target: ITileLocator): IPathfindingStep[] {
-        const maps = this.maps;
-        const layer = this.layer;
-        if (isNil(maps) || isNil(layer)) {
-            logger.warn(173);
-            return [];
+    private getNodeCost(block: ILayerLocation): number {
+        if (!this.cost) return 1;
+        const value = this.cost(block);
+        if (!Number.isFinite(value) || value < 0) {
+            logger.warn(174);
+            return 1;
         }
-        if (
-            !layer.inMap(start.x, start.y) ||
-            !layer.inMap(target.x, target.y)
-        ) {
-            logger.warn(173);
-            return [];
-        }
-
-        // 数据端状态可变，每次寻路动态构建图，不做缓存
-        const builder = new PathfindingGraphBuilder();
-        builder.useMapState(maps);
-        builder.useMapLayer(layer);
-        builder.usePassPredicate(this.predicate);
-        builder.useDirGroup(this.group);
-        const graph = builder.build();
-        return this.search(graph, start, target);
+        return value;
     }
 
     /**
-     * 在有向图上执行 Dijkstra 最小损失搜索，
+     * 在有向图上执行最小损失搜索，
      * 终端节点仅可作为路径终点，不可作为中间节点
      * @param graph 寻路有向图
      * @param start 寻路起始位置
@@ -177,19 +138,31 @@ export class PathfindingFinder implements IPathfinder {
     }
 
     /**
-     * 获取进入指定位置节点的损失，非有限数或负数时
-     * 告警并按默认损失 1 处理，保证搜索的非负权不变式
-     * @param block 位置信息
+     * 地图状态或图层未绑定、坐标越界等非法输入下告警并返回空数组，
+     * 目标不可达时同样返回空数组
      */
-    private getNodeCost(block: ILayerLocation): number {
-        if (!this.cost) return 1;
-        const value = this.cost(block);
-        if (!Number.isFinite(value) || value < 0) {
-            logger.warn(174);
-            return 1;
+    find(start: ITileLocator, target: ITileLocator): IPathfindingStep[] {
+        const maps = this.maps;
+        const layer = this.layer;
+        if (isNil(maps) || isNil(layer)) {
+            logger.warn(173);
+            return [];
         }
-        return value;
+        if (
+            !layer.inMap(start.x, start.y) ||
+            !layer.inMap(target.x, target.y)
+        ) {
+            logger.warn(173);
+            return [];
+        }
+
+        // 数据端状态可变，每次寻路动态构建图，不做缓存
+        const builder = new PathfindingGraphBuilder();
+        builder.useMapState(maps);
+        builder.useMapLayer(layer);
+        builder.usePassPredicate(this.predicate);
+        builder.useDirGroup(this.group);
+        const graph = builder.build();
+        return this.search(graph, start, target);
     }
 }
-
-//#endregion

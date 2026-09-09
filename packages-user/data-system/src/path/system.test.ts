@@ -68,7 +68,6 @@ beforeAll(async () => {
     };
 });
 
-/** 测试图块定义，键为图块数字 */
 interface TestTileDefinition {
     /** 图块数字 */
     num: number;
@@ -111,7 +110,6 @@ const HIT_TILE: TestTileDefinition = {
 
 const ALL_TILES: TestTileDefinition[] = [OPEN_TILE, WALL_TILE, HIT_TILE];
 
-/** 测试用移动对象接口，记录 setPos 调用并携带移动器 */
 interface TestTile extends IObjectMovable {
     /** 当前横坐标 */
     x: number;
@@ -202,7 +200,6 @@ class FixturePredicate implements IPassPredicate {
     }
 }
 
-/** 寻路系统测试夹具 */
 interface SystemFixture {
     /** 楼层地图对象 */
     map: IGameMap;
@@ -335,7 +332,7 @@ function createSystem(rows: number[], width: number): SystemFixture {
     const layer = map.getLayerByAlias('event')!;
     const system = new modules.PathfindingSystem(commonState as never);
     const tile = createTestTile();
-    system.useMover(tile);
+    system.useMover(tile.mover);
     system.finder.useMapState(maps);
     system.finder.useMapLayer(layer);
     return { map, layer, system, tile };
@@ -474,15 +471,15 @@ describe('pathfinding system', () => {
         expect(fixture.tile.y).toBe(0);
     });
 
-    // 验证 moveTo 未绑定移动对象或无路径时返回 null 而非异常
-    it('returns null from moveTo when movable is unbound or unreachable', () => {
+    // 验证未绑定移动器或无路径时 moveTo 返回 null 而非异常
+    it('returns null from moveTo when mover is unbound or unreachable', () => {
         const fixture = createSystem([1, 6, 1, 1, 6, 1, 1, 6, 1], 3);
         injectPredicate(fixture);
         fixture.system.useMover(null);
 
         expect(fixture.system.moveTo({ x: 2, y: 1 })).toBeNull();
 
-        fixture.system.useMover(fixture.tile);
+        fixture.system.useMover(fixture.tile.mover);
         expect(fixture.system.moveTo({ x: 2, y: 1 })).toBeNull();
     });
 

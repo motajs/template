@@ -61,7 +61,6 @@ beforeAll(async () => {
     };
 });
 
-/** 测试图块定义，键为图块数字 */
 interface TestTileDefinition {
     /** 图块数字 */
     num: number;
