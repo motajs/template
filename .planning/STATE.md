@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 01
 current_phase_name: event
 status: executing
-stopped_at: Completed 01-09-PLAN.md
-last_updated: "2026-09-09T02:27:56.618Z"
-last_activity: 2026-09-08
-last_activity_desc: Phase 01 Plan 05 decision recording completed
-state_head: 8b2e58e9a2f9b4a279e94dd1ea697e9621f919b3
+stopped_at: Completed 01-11-PLAN.md
+last_updated: "2026-09-09T03:01:22.995Z"
+last_activity: 2026-09-09
+last_activity_desc: Phase 01 valid verification gap isolated to CoreState event-layer wiring
+state_head: 073e009816765605564508a2362598b4e587b5fa
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 11
+  completed_plans: 11
 milestone_name: milestone
 ---
 
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-09-07)
 ## Current Position
 
 Phase: 01 (event) — EXECUTING
-Plan: 10 of 10
-Status: Ready to execute next plan
-Last activity: 2026-09-08 — Phase 01 execution started
+Plan: 11 of 11
+Status: Ready to execute next gap-closure plan
+Last activity: 2026-09-09 — Phase 01 gap closure plan 01-11 created
 
-Progress: [██████████] 100%
+Progress: [█████████░] 91%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [██████████] 100%
 | Phase 01 P07 | 25min | 2 tasks | 5 files |
 | Phase 01 P08 | 3min | 1 tasks | 1 files |
 | Phase 01 P09 | 8min | 2 tasks | 2 files |
+| Phase 01 P11 | 13min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Plan 01-08 regression-tests GameEventStore through the public barrel and preserves rawEvent, Promise, and eventStore-cycle deferrals.
 - [Phase 01]: Plan 01-09 preserves non-empty pointEvents as valid GameMap layer save content for LowCompression and HighCompression.
 - [Phase 01]: Plan 01-09 validates point-event aggregation without production registration, map-id binding, rawEvent changes, or eventStore cycle repair.
+- [Phase 01]: Phase 01 Plan 11 wires each legacy event alias layer to GameMap.eventLayer without adding serialized registration or map-id binding.
+- [Phase 01]: Phase 01 Plan 11 preserves source-aware invocation, point-event persistence, rawEvent/cache/Promise/as, and eventStore-cycle deferrals.
 
 ### Pending Todos
 
@@ -109,6 +112,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-09T02:27:56.577Z
-Stopped at: Completed 01-09-PLAN.md
+Last session: 2026-09-09T03:01:22.954Z
+Stopped at: Completed 01-11-PLAN.md
 Resume file: None
