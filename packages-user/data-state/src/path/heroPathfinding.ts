@@ -1,12 +1,25 @@
 import { ITileLocator } from '@motajs/common';
 import {
+    BlockEventType,
+    IBlockEventEnv,
+    IBlockEventParam,
+    IGameEventInvocation,
     IHeroMoveTopImpl,
     IHeroState,
     IMapLayer,
     IMapState,
+    IReadonlyTileBase,
     IPassPredicate
 } from '@user/data-base';
-import { IHeroAttr, IObjectMovable, IObjectMover } from '@user/data-common';
+import {
+    EventTrigger,
+    FaceDirection,
+    IHeroAttr,
+    IMoverController,
+    IObjectMovable,
+    IObjectMover,
+    ObjectMoveStep
+} from '@user/data-common';
 import {
     IPathfinder,
     IPathfindingController,
@@ -24,6 +37,56 @@ interface IHeroPathfindingState extends IStateSystem {
 
 interface IHeroPathfinding extends IPathfindingSystem {}
 
+interface IEventSource {
+    readonly priority: number;
+    readonly id: string;
+    readonly type: BlockEventType;
+    readonly tile: IReadonlyTileBase | null;
+}
+
+interface IResolvedPath {
+    readonly path: IPathfindingStep[];
+    readonly adjacent: Readonly<ITileLocator> | null;
+    readonly target: Readonly<ITileLocator> | null;
+}
+
+interface IHeroPathfindingController extends IMoverController {}
+
+class HeroPathfindingController implements IHeroPathfindingController {
+    private completed: boolean = false;
+    private readonly completion: Promise<void>;
+
+    constructor(
+        private readonly delegate: Readonly<IMoverController>,
+        afterMove: () => Promise<void>
+    ) {
+        this.completion = delegate.onEnd.then(async () => {
+            await afterMove();
+            this.completed = true;
+        });
+    }
+
+    get done(): boolean {
+        return this.completed;
+    }
+
+    get onEnd(): Promise<void> {
+        return this.completion;
+    }
+
+    push(...steps: Readonly<ObjectMoveStep>[]): void {
+        this.delegate.push(...steps);
+    }
+
+    insert(...steps: Readonly<ObjectMoveStep>[]): void {
+        this.delegate.insert(...steps);
+    }
+
+    stop(): Promise<void> {
+        return this.delegate.stop();
+    }
+}
+
 export class HeroPathfinding implements IHeroPathfinding {
     readonly state: IHeroPathfindingState;
     readonly finder: IPathfinder;
@@ -37,7 +100,32 @@ export class HeroPathfinding implements IHeroPathfinding {
         this.system.useMover(state.hero.location.mover);
         this.finder.useMapState(state.maps);
         this.finder.usePassPredicate(topImpl.predicate());
+        this.system.useFallbackPolicy(path => this.hasEvent(path));
         this.bindCurrentLayer();
+    }
+
+    private hasEvent(path: readonly IPathfindingStep[]): boolean {
+        const layer = this.finderLayer();
+        if (!layer) return false;
+        for (const step of path) {
+            const loc = layer.getLocationData(step.to.x, step.to.y);
+            if (!loc) continue;
+            const point = layer.getPointEvent(step.to.x, step.to.y);
+            if (point && point.size > 0) return true;
+            if (loc.static && loc.static.tileEvent().get().size > 0) {
+                return true;
+            }
+            for (const tile of loc.dynamics) {
+                if (tile.tileEvent().get().size > 0) return true;
+            }
+        }
+        return false;
+    }
+
+    private finderLayer(): IMapLayer | null {
+        const floorId = this.state.hero.location.floorId;
+        const map = floorId ? this.state.maps.getMap(floorId) : null;
+        return map?.eventLayer ?? null;
     }
 
     private bindCurrentLayer(): void {
@@ -57,17 +145,156 @@ export class HeroPathfinding implements IHeroPathfinding {
 
     getPath(target: ITileLocator): IPathfindingStep[] {
         this.bindCurrentLayer();
-        return this.system.getPath(target);
+        return this.resolvePath(target).path;
     }
 
     moveTo(target: ITileLocator): IPathfindingController | null {
         this.bindCurrentLayer();
-        return this.system.moveTo(target);
+        const resolved = this.resolvePath(target);
+        if (resolved.path.length === 0) return null;
+        const destination = resolved.adjacent ?? target;
+        const result = this.system.moveTo(destination);
+        if (!result) return null;
+        if (!resolved.adjacent || !resolved.target) return result;
+        return {
+            controller: new HeroPathfindingController(result.controller, () =>
+                this.finishAdjacentTouch(resolved)
+            ),
+            path: result.path
+        };
     }
 
     teleportTo(target: ITileLocator): IPathfindingController | null {
         this.bindCurrentLayer();
-        return this.system.teleportTo(target);
+        const resolved = this.resolvePath(target);
+        if (resolved.path.length === 0) return null;
+        const destination = resolved.adjacent ?? target;
+        const result = this.system.teleportTo(destination);
+        if (!result) return null;
+        if (!resolved.adjacent || !resolved.target) return result;
+        return {
+            controller: new HeroPathfindingController(result.controller, () =>
+                this.finishAdjacentTouch(resolved)
+            ),
+            path: result.path
+        };
+    }
+
+    private resolvePath(target: ITileLocator): IResolvedPath {
+        const path = this.system.getPath(target);
+        if (path.length > 0) {
+            return { path, adjacent: null, target: null };
+        }
+        const layer = this.finderLayer();
+        if (!layer || !this.isNoPass(layer, target)) {
+            return { path: [], adjacent: null, target: null };
+        }
+
+        const start = this.state.hero.location;
+        const candidates: ReadonlyArray<Readonly<ITileLocator>> = [
+            { x: target.x, y: target.y - 1 },
+            { x: target.x + 1, y: target.y },
+            { x: target.x, y: target.y + 1 },
+            { x: target.x - 1, y: target.y }
+        ];
+        for (const adjacent of candidates) {
+            if (!layer.inMap(adjacent.x, adjacent.y)) continue;
+            const adjacentPath = this.finder.find(
+                { x: start.x, y: start.y },
+                adjacent
+            );
+            if (adjacentPath.length > 0) {
+                return { path: adjacentPath, adjacent, target };
+            }
+        }
+        return { path: [], adjacent: null, target: null };
+    }
+
+    private isNoPass(layer: IMapLayer, target: ITileLocator): boolean {
+        const raw = layer.getLocationData(target.x, target.y)?.static?.raw();
+        if (!raw) return false;
+        return (
+            !raw.eventPass || raw.pass.inPass === 0 || raw.pass.outPass === 0
+        );
+    }
+
+    private directionTo(target: ITileLocator): FaceDirection {
+        const hero = this.state.hero.location;
+        if (target.x > hero.x) return FaceDirection.Right;
+        if (target.x < hero.x) return FaceDirection.Left;
+        if (target.y > hero.y) return FaceDirection.Down;
+        return FaceDirection.Up;
+    }
+
+    private async finishAdjacentTouch(resolved: IResolvedPath): Promise<void> {
+        const adjacent = resolved.adjacent!;
+        const target = resolved.target!;
+        const mover = this.state.hero.location.mover;
+        mover.setFaceDir(this.directionTo(target));
+        await this.dispatchTouch(adjacent, target);
+    }
+
+    private async dispatchTouch(
+        heroLoc: Readonly<ITileLocator>,
+        target: Readonly<ITileLocator>
+    ): Promise<void> {
+        const layer = this.finderLayer();
+        if (!layer) return;
+        const pointSources: IEventSource[] = [];
+        const tileSources: IEventSource[] = [];
+        const point = layer.getPointEvent(target.x, target.y);
+        const loc = layer.getLocationData(target.x, target.y);
+        if (point) {
+            for (const [priority, id] of point) {
+                pointSources.push({
+                    priority,
+                    id,
+                    type: BlockEventType.PointEvent,
+                    tile: null
+                });
+            }
+        }
+        if (loc) {
+            if (loc.static) {
+                for (const [priority, id] of loc.static.tileEvent().get()) {
+                    tileSources.push({
+                        priority,
+                        id,
+                        type: BlockEventType.TileEvent,
+                        tile: loc.static
+                    });
+                }
+            }
+            for (const tile of loc.dynamics) {
+                for (const [priority, id] of tile.tileEvent().get()) {
+                    tileSources.push({
+                        priority,
+                        id,
+                        type: BlockEventType.TileEvent,
+                        tile
+                    });
+                }
+            }
+        }
+        pointSources.sort((a, b) => b.priority - a.priority);
+        tileSources.sort((a, b) => b.priority - a.priority);
+        const invocations: IGameEventInvocation[] = [];
+        for (const source of [...pointSources, ...tileSources]) {
+            const env: IBlockEventEnv = {
+                state: this.state,
+                type: source.type,
+                trigger: EventTrigger.OnTouch,
+                heroLocator: heroLoc,
+                triggerLocator: target,
+                tile: source.tile,
+                layer,
+                map: layer.map
+            };
+            invocations.push({ id: source.id, env });
+        }
+        if (invocations.length === 0) return;
+        const param: IBlockEventParam = { custom: {} };
+        await this.state.eventSystem.executor.execute<void>(invocations, param);
     }
 
     interrupt(): Promise<void> {

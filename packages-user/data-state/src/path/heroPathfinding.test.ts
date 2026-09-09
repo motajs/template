@@ -40,7 +40,7 @@ interface HeroFixture {
     y: number;
     floorId: string;
     state: unknown;
-    mover?: unknown;
+    mover?: { readonly faceDirection: number };
     setPos(x: number, y: number): void;
     getCurrentFaceDirection(): number;
 }
@@ -68,7 +68,13 @@ beforeAll(async () => {
     };
 });
 
-function createFixture() {
+interface FixtureOptions {
+    readonly middleEvent?: boolean;
+    readonly targetNoPass?: boolean;
+    readonly sealedTarget?: boolean;
+}
+
+function createFixture(options: FixtureOptions = {}) {
     const tileStore: ITileStore = new modules.TileStore() as never;
     tileStore.addTile({
         num: 1,
@@ -76,6 +82,14 @@ function createFixture() {
         events: {},
         type: 0,
         pass: { onlyEvents: false, outPass: 15, inPass: 15 },
+        eventPass: true
+    });
+    tileStore.addTile({
+        num: 2,
+        id: 'wall',
+        events: { 40: 'wall-touch' },
+        type: 0,
+        pass: { onlyEvents: false, outPass: 0, inPass: 0 },
         eventPass: true
     });
     const faceManager = new modules.FaceManager();
@@ -94,9 +108,20 @@ function createFixture() {
     const eventMap = maps.fromRaw({
         floorId: 'F1',
         width: 3,
-        map: { 0: [1, 1, 1] },
+        map: {
+            0: options.sealedTarget
+                ? [1, 2, 2]
+                : options.targetNoPass
+                  ? [1, 1, 2]
+                  : [1, 1, 1]
+        },
         layerAlias: { 0: 'event' },
-        events: { 0: { 1: { 30: 'middle-enter' } } }
+        events: {
+            0:
+                options.middleEvent === false
+                    ? {}
+                    : { 1: { 30: 'middle-enter' } }
+        }
     })!;
     const events = new Map<string, object>();
     const store = {
@@ -188,5 +213,73 @@ describe('hero pathfinding integration', () => {
         expect(calls).toEqual([
             { id: 'middle-enter', trigger: 2, hero: { x: 1, y: 0 } }
         ]);
+    });
+
+    // 验证无事件路径的瞬移一步到达目标
+    it('teleports directly when the path has no events', async () => {
+        const fixture = createFixture({ middleEvent: false });
+        const result = fixture.pathfinding.teleportTo({ x: 2, y: 0 });
+        expect(result).not.toBeNull();
+        await result!.controller.onEnd;
+
+        expect({ x: fixture.hero.x, y: fixture.hero.y }).toEqual({
+            x: 2,
+            y: 0
+        });
+    });
+
+    // 验证默认策略检测途经事件并自动回退为逐步移动
+    it('falls back to step movement when the path has an event', async () => {
+        const calls: EventCall[] = [];
+        const fixture = createFixture();
+        addEvent(fixture.events, 'middle-enter', 2, calls);
+
+        const result = fixture.pathfinding.teleportTo({ x: 2, y: 0 });
+        expect(result).not.toBeNull();
+        await result!.controller.onEnd;
+
+        expect({ x: fixture.hero.x, y: fixture.hero.y }).toEqual({
+            x: 2,
+            y: 0
+        });
+        expect(calls).toEqual([
+            { id: 'middle-enter', trigger: 2, hero: { x: 1, y: 0 } }
+        ]);
+    });
+
+    // 验证 no-pass 目标移动至相邻格、面朝目标并派发 OnTouch
+    it('touches a no-pass target from its reachable adjacent cell', async () => {
+        const calls: EventCall[] = [];
+        const fixture = createFixture({
+            middleEvent: false,
+            targetNoPass: true
+        });
+        addEvent(fixture.events, 'wall-touch', 1, calls);
+
+        const result = fixture.pathfinding.moveTo({ x: 2, y: 0 });
+        expect(result).not.toBeNull();
+        await result!.controller.onEnd;
+
+        expect({ x: fixture.hero.x, y: fixture.hero.y }).toEqual({
+            x: 1,
+            y: 0
+        });
+        expect(fixture.hero.mover!.faceDirection).toBe(3);
+        expect(calls).toEqual([
+            { id: 'wall-touch', trigger: 1, hero: { x: 1, y: 0 } }
+        ]);
+    });
+
+    // 验证四邻无可达格时不可达目标不移动且不触发事件
+    it('ignores a no-pass target without a reachable adjacent cell', () => {
+        const fixture = createFixture({ sealedTarget: true });
+        const path = fixture.pathfinding.getPath({ x: 2, y: 0 });
+
+        expect(path).toEqual([]);
+        expect(fixture.pathfinding.moveTo({ x: 2, y: 0 })).toBeNull();
+        expect({ x: fixture.hero.x, y: fixture.hero.y }).toEqual({
+            x: 0,
+            y: 0
+        });
     });
 });
