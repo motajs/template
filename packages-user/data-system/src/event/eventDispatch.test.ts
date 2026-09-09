@@ -1,17 +1,60 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+    BlockEventType,
+    type IBlockEventEnv,
+    type IGameEventInvocation
+} from '@user/data-base';
+import {
+    type IDataCommon,
+    type IGameEventStore,
+    type IReadonlyGameEvent,
+    type ITileStore,
+    EventTrigger
+} from '@user/data-common';
+import { type IStateSystem } from '../types';
+import { EventExecuteMode, EventReduceMode } from './types';
+import { AnonTokyoInterpreter } from 'anon-tokyo';
+
+vi.hoisted(() => {
+    vi.stubGlobal('main', { replayChecking: true });
+    vi.stubGlobal('location', { origin: 'http://localhost' });
+});
+
+const eventTriggers = {
+    OnEnter: EventTrigger.OnEnter,
+    OnLeave: EventTrigger.OnLeave,
+    OnTouch: EventTrigger.OnTouch
+} as const;
+
+const blockEventTypes = {
+    PointEvent: BlockEventType.PointEvent,
+    TileEvent: BlockEventType.TileEvent
+} as const;
+
+const eventExecuteModes = {
+    Normal: EventExecuteMode.Normal,
+    CutIfFalsy: EventExecuteMode.CutIfFalsy,
+    CutIfTruthy: EventExecuteMode.CutIfTruthy
+} as const;
+
+const eventReduceModes = {
+    NoReduce: EventReduceMode.NoReduce,
+    OrReduce: EventReduceMode.OrReduce,
+    AndReduce: EventReduceMode.AndReduce
+} as const;
 
 interface TestModules {
     EventExecutor: typeof import('./executor').EventExecutor;
-    DefaultHeroMoveTopImpl: typeof import('@user/data-state/hero/moverImpl').DefaultHeroMoveTopImpl;
+    DefaultHeroMoveTopImpl: typeof import('@user/data-state').DefaultHeroMoveTopImpl;
     MapState: typeof import('@user/data-base').MapState;
     TileStore: typeof import('@user/data-common').TileStore;
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
     FaceManager: typeof import('@user/data-common').FaceManager;
     Dir8FaceHandler: typeof import('@user/data-common').Dir8FaceHandler;
-    EventTrigger: typeof import('@user/data-common').EventTrigger;
-    BlockEventType: typeof import('@user/data-base').BlockEventType;
-    EventExecuteMode: typeof import('./types').EventExecuteMode;
-    EventReduceMode: typeof import('./types').EventReduceMode;
+    EventTrigger: typeof eventTriggers;
+    BlockEventType: typeof blockEventTypes;
+    EventExecuteMode: typeof eventExecuteModes;
+    EventReduceMode: typeof eventReduceModes;
 }
 
 interface EventCall {
@@ -29,22 +72,21 @@ beforeAll(async () => {
     vi.stubGlobal('main', { replayChecking: true });
     vi.stubGlobal('location', { origin: 'http://localhost' });
     const executorModule = await import('./executor');
-    const moverModule = await import('@user/data-state/hero/moverImpl');
+    const stateModule = await import('../../../data-state/src/hero');
     const baseModule = await import('@user/data-base');
     const commonModule = await import('@user/data-common');
-    const eventModule = await import('./types');
     modules = {
         EventExecutor: executorModule.EventExecutor,
-        DefaultHeroMoveTopImpl: moverModule.DefaultHeroMoveTopImpl,
+        DefaultHeroMoveTopImpl: stateModule.DefaultHeroMoveTopImpl,
         MapState: baseModule.MapState,
         TileStore: commonModule.TileStore,
         RoleFaceBinder: commonModule.RoleFaceBinder,
         FaceManager: commonModule.FaceManager,
         Dir8FaceHandler: commonModule.Dir8FaceHandler,
-        EventTrigger: commonModule.EventTrigger,
-        BlockEventType: baseModule.BlockEventType,
-        EventExecuteMode: eventModule.EventExecuteMode,
-        EventReduceMode: eventModule.EventReduceMode
+        EventTrigger: eventTriggers,
+        BlockEventType: blockEventTypes,
+        EventExecuteMode: eventExecuteModes,
+        EventReduceMode: eventReduceModes
     };
 });
 
@@ -53,7 +95,7 @@ function createFixture(
     staticEvent: string = 'static-enter',
     dynamicEvent: string = 'dynamic-enter'
 ) {
-    const tileStore = new modules.TileStore();
+    const tileStore: ITileStore = new modules.TileStore() as never;
     tileStore.addTile({
         num: 1,
         id: 'static',
@@ -72,7 +114,7 @@ function createFixture(
     });
     const faceManager = new modules.FaceManager();
     faceManager.register(1, new modules.Dir8FaceHandler());
-    const commonState = {
+    const commonState: IDataCommon = {
         tileStore,
         itemStore: {},
         mapStore: {},
@@ -80,7 +122,7 @@ function createFixture(
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
         saveSystem: {}
-    };
+    } as never;
     const maps = new modules.MapState(tileStore, commonState);
     const map = maps.fromRaw({
         floorId: 'F1',
@@ -93,18 +135,35 @@ function createFixture(
     const dynamic = layer.createDynamic(2, 1, 0);
     dynamic.set(2);
     const events = new Map<string, object>();
-    const store = {
-        getEvent(id: string) {
-            return events.get(id) ?? null;
+    const store: IGameEventStore = {
+        addEvent() {},
+        getEvent<
+            P extends Record<string, any>,
+            E extends Record<string, any>,
+            R = void
+        >(id: string): IReadonlyGameEvent<P, E, R> | null {
+            return events.get(id) as never;
         }
     };
-    const executor = new modules.EventExecutor({}, () => store);
+    const executor = new modules.EventExecutor(
+        {} as AnonTokyoInterpreter,
+        () => store
+    );
     const state = {
         maps,
         eventSystem: { executor }
     };
-    const mover = new modules.DefaultHeroMoveTopImpl(state);
-    return { events, executor, layer, map: map!, dynamic, mover, state };
+    const fixtureState: IStateSystem & IDataCommon = state as never;
+    const mover = new modules.DefaultHeroMoveTopImpl(fixtureState);
+    return {
+        events,
+        executor,
+        layer,
+        map: map!,
+        dynamic,
+        mover,
+        state: fixtureState
+    };
 }
 
 function addEvent(
@@ -139,8 +198,18 @@ function addEvent(
     });
 }
 
-function invocation(id: string, trigger: number) {
-    return { id, env: { trigger } };
+function invocation(id: string, trigger: EventTrigger): IGameEventInvocation {
+    const env: IBlockEventEnv = {
+        state: {} as IDataCommon,
+        type: BlockEventType.CommonEvent,
+        trigger,
+        heroLocator: { x: 0, y: 0 },
+        triggerLocator: null,
+        tile: null,
+        layer: null,
+        map: null
+    };
+    return { id, env };
 }
 
 describe('source-aware matching dispatch', () => {

@@ -1,4 +1,15 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { type IResizableMapLayer } from './types';
+import {
+    type IDataCommon,
+    type ITileStore,
+    SaveCompression
+} from '@user/data-common';
+
+vi.hoisted(() => {
+    vi.stubGlobal('main', { replayChecking: true });
+    vi.stubGlobal('location', { origin: 'http://localhost' });
+});
 
 interface TestModules {
     MapState: typeof import('./mapState').MapState;
@@ -6,7 +17,6 @@ interface TestModules {
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
     FaceManager: typeof import('@user/data-common').FaceManager;
     Dir8FaceHandler: typeof import('@user/data-common').Dir8FaceHandler;
-    SaveCompression: typeof import('@user/data-common').SaveCompression;
 }
 
 let modules: TestModules;
@@ -21,8 +31,7 @@ beforeAll(async () => {
         TileStore: commonModule.TileStore,
         RoleFaceBinder: commonModule.RoleFaceBinder,
         FaceManager: commonModule.FaceManager,
-        Dir8FaceHandler: commonModule.Dir8FaceHandler,
-        SaveCompression: commonModule.SaveCompression
+        Dir8FaceHandler: commonModule.Dir8FaceHandler
     };
 });
 
@@ -30,7 +39,7 @@ function createMapState(
     pointEvents: Record<number, Record<number, string>> = {},
     blocks: number[] = [1, 1, 1, 1]
 ) {
-    const tileStore = new modules.TileStore();
+    const tileStore: ITileStore = new modules.TileStore() as never;
     tileStore.addTile({
         num: 1,
         id: 'base',
@@ -49,7 +58,7 @@ function createMapState(
     });
     const faceManager = new modules.FaceManager();
     faceManager.register(1, new modules.Dir8FaceHandler());
-    const state = {
+    const state: IDataCommon = {
         tileStore,
         itemStore: {},
         mapStore: {},
@@ -57,7 +66,7 @@ function createMapState(
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
         saveSystem: {}
-    };
+    } as never;
     const mapState = new modules.MapState(tileStore, state);
     const map = mapState.fromRaw({
         floorId: 'F1',
@@ -66,7 +75,10 @@ function createMapState(
         layerAlias: { 0: 'event' },
         events: { 0: pointEvents }
     });
-    return { map: map!, layer: map!.getLayerByAlias('event')! };
+    return {
+        map: map!,
+        layer: map!.getLayerByAlias('event')! as IResizableMapLayer
+    };
 }
 
 describe('MapLayer tile defaults snapshots conversion and movement', () => {
@@ -94,20 +106,22 @@ describe('MapLayer tile defaults snapshots conversion and movement', () => {
         );
         expect(dynamicTile.tileEvent().dirty()).toBe(false);
 
-        const cleanSave = dynamicTile.saveState();
+        const cleanSave = dynamicTile.saveState(SaveCompression.NoCompression);
         expect(cleanSave.events).toBeUndefined();
-        dynamicTile.loadState(cleanSave);
+        dynamicTile.loadState(cleanSave, SaveCompression.NoCompression);
         expect(dynamicTile.tileEvent().get()).toEqual(
             new Map([[20, 'alternate-event']])
         );
         expect(dynamicTile.tileEvent().dirty()).toBe(false);
 
         dynamicTile.tileEvent().set(30, 'override-event');
-        const overrideSave = dynamicTile.saveState();
+        const overrideSave = dynamicTile.saveState(
+            SaveCompression.NoCompression
+        );
         const savedEvents = new Map(overrideSave.events!);
         dynamicTile.tileEvent().set(30, 'changed-after-save');
         expect(overrideSave.events).toEqual(savedEvents);
-        dynamicTile.loadState(overrideSave);
+        dynamicTile.loadState(overrideSave, SaveCompression.NoCompression);
         expect(dynamicTile.tileEvent().get()).toEqual(
             new Map([
                 [20, 'alternate-event'],
@@ -169,9 +183,9 @@ describe('MapLayer point event lifecycle', () => {
         expect(point.dirty()).toBe(false);
 
         const compressionLevels = [
-            modules.SaveCompression.NoCompression,
-            modules.SaveCompression.LowCompression,
-            modules.SaveCompression.HighCompression
+            SaveCompression.NoCompression,
+            SaveCompression.LowCompression,
+            SaveCompression.HighCompression
         ];
         for (const compression of compressionLevels) {
             point.set(7, 'saved-point');
@@ -208,7 +222,7 @@ describe('MapLayer point event lifecycle', () => {
                 height: 2,
                 fullMap: new Uint32Array([1, 1, 1, 1])
             },
-            modules.SaveCompression.NoCompression
+            SaveCompression.NoCompression
         );
         expect(point.get()).toEqual(new Map([[5, 'raw-point']]));
         expect(point.dirty()).toBe(false);
@@ -224,8 +238,8 @@ describe('MapLayer point event lifecycle', () => {
         expect(layer.dirty()).toBe(true);
 
         const compressionLevels = [
-            modules.SaveCompression.LowCompression,
-            modules.SaveCompression.HighCompression
+            SaveCompression.LowCompression,
+            SaveCompression.HighCompression
         ];
         for (const compression of compressionLevels) {
             const save = map.saveState(compression);

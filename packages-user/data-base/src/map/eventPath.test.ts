@@ -1,4 +1,9 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+    type IDataCommon,
+    type IMapRawData,
+    type ITileStore
+} from '@user/data-common';
 
 interface TestModules {
     MapState: typeof import('./mapState').MapState;
@@ -22,7 +27,7 @@ beforeAll(async () => {
     };
 });
 
-function createRaw() {
+function createRaw(): IMapRawData {
     return {
         floorId: 'F1',
         width: 2,
@@ -33,8 +38,8 @@ function createRaw() {
 }
 
 function createMapState() {
-    const tileStore = new modules.TileStore();
-    const state = {
+    const tileStore: ITileStore = new modules.TileStore() as never;
+    const state: IDataCommon = {
         tileStore,
         itemStore: {},
         mapStore: {},
@@ -42,7 +47,7 @@ function createMapState() {
         roleFace: new modules.RoleFaceBinder(),
         faceManager: {},
         saveSystem: {}
-    };
+    } as never;
     return new modules.MapState(tileStore, state);
 }
 
@@ -64,7 +69,13 @@ describe('MapState raw event path', () => {
 });
 
 describe('MapState malformed raw event structures', () => {
-    const cases = [
+    interface MalformedCase {
+        name: string;
+        mutate(raw: IMapRawData): void;
+        code: number;
+    }
+
+    const cases: MalformedCase[] = [
         {
             name: 'missing raw.map container',
             mutate: raw => Reflect.set(raw, 'map', null),
