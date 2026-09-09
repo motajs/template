@@ -13,6 +13,8 @@ import {
     IObjectMover
 } from '@user/data-common';
 
+//#region 寻路系统
+
 export interface IPathfindingStep {
     /** 移动方向 */
     readonly dir: FaceDirection;
@@ -105,14 +107,12 @@ export interface IPathfindingSystem extends IDataBaseExtended {
     /**
      * 逐步寻路至目标位置，触发途经事件
      * @param target 目标坐标
-     * @returns 移动控制器。无法寻路、无路径或已有移动进行中时返回 `null`
      */
     moveTo(target: ITileLocator): IPathfindingController | null;
 
     /**
      * 瞬移至目标位置。瞬移前经回退策略判定，判定需要回退则自动退为逐步寻路
      * @param target 目标坐标
-     * @returns 移动控制器；无法寻路、无路径或已有移动进行中时返回 `null`
      */
     teleportTo(target: ITileLocator): IPathfindingController | null;
 
@@ -121,6 +121,10 @@ export interface IPathfindingSystem extends IDataBaseExtended {
      */
     interrupt(): Promise<void>;
 }
+
+//#endregion
+
+//#region 路径图
 
 export interface IPathGraphEdge {
     /** 本条边对应的移动方向 */
@@ -156,19 +160,19 @@ export interface IPathGraph {
 export interface IPathfindingGraphBuilder {
     /**
      * 绑定地图状态对象，用于解析图层所属楼层 id
-     * @param maps 地图状态对象，传入 `null` 解绑
+     * @param maps 地图状态对象
      */
     useMapState(maps: IMapState | null): void;
 
     /**
      * 绑定构建有向图所用的地图图层
-     * @param layer 地图图层对象，传入 `null` 解绑
+     * @param layer 地图图层对象
      */
     useMapLayer(layer: IMapLayer | null): void;
 
     /**
      * 注入判定边可行性的通行性谓词
-     * @param predicate 通行性谓词，传入 `null` 解绑
+     * @param predicate 通行性谓词
      */
     usePassPredicate(predicate: IPassPredicate | null): void;
 
@@ -179,9 +183,9 @@ export interface IPathfindingGraphBuilder {
     useDirGroup(group: number): void;
 
     /**
-     * 构建有向图。图层未绑定时告警并返回空图，
-     * 不包含任何节点与边
-     * @returns 构建的有向图
+     * 构建有向图。图层未绑定时告警并返回空图，不包含任何节点与边
      */
     build(): IPathGraph;
 }
+
+//#endregion

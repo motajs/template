@@ -239,6 +239,6 @@
         "171": "Event id '$1' not found in event store, event will be skipped.",
         "172": "Event returned non-boolean value '$1' during reduction. JavaScript short-circuit semantics will be used.",
         "173": "Pathfinding input is invalid or a required binding (map state, map layer) is missing. An empty result will be returned.",
-        "174": "Pathfinding cost function returned a non-finite or negative value. Default cost 1 will be used instead."
+        "174": "Pathfinding cost function returned a negative value. Default cost 1 will be used instead."
     }
 }

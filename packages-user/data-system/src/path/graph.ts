@@ -91,7 +91,7 @@ export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
         const width = layer.width;
         const height = layer.height;
         const floorId = this.resolveFloorId();
-        const state: IDataCommon = layer.state;
+        const state = layer.state;
         const blocks: (ILayerLocation | null)[] = new Array(
             width * height
         ).fill(null);

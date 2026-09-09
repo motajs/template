@@ -55,14 +55,13 @@ export class PathfindingFinder implements IPathfinder {
     }
 
     /**
-     * 获取进入指定位置节点的损失，损失值非有限数或负数时
-     * 告警并按默认损失 1 处理
+     * 获取进入指定位置节点的损失，损失值为负数时抛出警告并按损失 1 处理
      * @param block 位置信息
      */
     private getNodeCost(block: ILayerLocation): number {
         if (!this.cost) return 1;
         const value = this.cost(block);
-        if (!Number.isFinite(value) || value < 0) {
+        if (value < 0) {
             logger.warn(174);
             return 1;
         }
@@ -70,8 +69,7 @@ export class PathfindingFinder implements IPathfinder {
     }
 
     /**
-     * 在有向图上执行最小损失搜索，
-     * 终端节点仅可作为路径终点，不可作为中间节点
+     * 在有向图上执行最小损失搜索，终端节点仅可作为路径终点，不可作为中间节点
      * @param graph 寻路有向图
      * @param start 寻路起始位置
      * @param target 寻路目标位置

@@ -34,10 +34,6 @@ export class PathfindingSystem implements IPathfindingSystem {
         this.policy = policy;
     }
 
-    /**
-     * 未绑定移动器时告警并返回空数组
-     * @param target 目标坐标
-     */
     getPath(target: ITileLocator): IPathfindingStep[] {
         const mover = this.mover;
         if (isNil(mover)) {
@@ -49,8 +45,7 @@ export class PathfindingSystem implements IPathfindingSystem {
     }
 
     /**
-     * 按指定移动方式启动寻路移动，返回控制器包装。
-     * 已有移动进行中时返回 `null`
+     * 按指定移动方式启动寻路移动，返回控制器包装。已有移动进行中时返回 `null`
      * @param path 寻路步骤序列
      * @param teleport 是否瞬移
      */
@@ -64,7 +59,7 @@ export class PathfindingSystem implements IPathfindingSystem {
         if (current && !current.controller.done) return null;
 
         if (teleport) {
-            const last = path[path.length - 1];
+            const last = path.at(-1)!;
             mover.tp(last.to.x, last.to.y);
         } else {
             for (const step of path) {
@@ -72,7 +67,6 @@ export class PathfindingSystem implements IPathfindingSystem {
             }
         }
 
-        // 移动器移动中时启动失败，对应已有移动进行中的契约
         const controller = mover.start();
         if (!controller) return null;
         const result: IPathfindingController = { controller, path };
@@ -89,10 +83,11 @@ export class PathfindingSystem implements IPathfindingSystem {
     teleportTo(target: ITileLocator): IPathfindingController | null {
         const path = this.getPath(target);
         if (path.length === 0) return null;
-        if (isNil(this.policy) || this.policy(path)) {
+        if (!this.policy || this.policy(path)) {
             return this.startMove(path, false);
+        } else {
+            return this.startMove(path, true);
         }
-        return this.startMove(path, true);
     }
 
     async interrupt(): Promise<void> {
