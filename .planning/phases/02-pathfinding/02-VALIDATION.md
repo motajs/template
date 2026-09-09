@@ -42,9 +42,15 @@ Type/lint gates (per Phase 01 conventions): `pnpm check:type` (filtered via `Sel
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 02-01-01 | 01 | 1 | PATH-01 | — | N/A | unit | `pnpm exec vitest run "packages-user/data-system/src/pathfinding/*.test.ts"` | ❌ W0 | ⬜ pending |
-| 02-01-02 | 01 | 1 | PATH-01 | — | N/A | unit (L0 regression) | `pnpm exec vitest run "packages-user/data-common/src/common/mover.test.ts"` | ❌ W0 | ⬜ pending |
-| 02-02-01 | 02 | 2 | PATH-01 | — | N/A | unit | `pnpm exec vitest run "packages-user/data-state/src/hero/*.test.ts"` | ❌ W0 | ⬜ pending |
+| 02-01-01 | 01 | 1 | PATH-01 | — | N/A | draft-artifact check | `if (!(Test-Path ".planning/phases/02-pathfinding/02-INTERFACE-DRAFT.md")) { exit 1 }; ...`（见 02-01 Task 1 verify） | ❌ W0 | ⬜ pending |
+| 02-01-02 | 01 | 1 | PATH-01 | — | N/A | unit (skip scaffold) | `pnpm exec vitest run "packages-user/data-common/src/common/mover.test.ts"` | ❌ W0 | ⬜ pending |
+| 02-01-03 | 01 | 1 | PATH-01 | — | — | checkpoint:human-verify | 人工拍板六项决策（无自动命令；拍板记录节断言） | — | ⬜ pending |
+| 02-02-01 | 02 | 2 | PATH-01 | T-02-01..03 前置 | L0 回写修复 | unit (L0 regression) | `pnpm exec vitest run "packages-user/data-common/src/common/mover.test.ts"` | ❌ W0 | ⬜ pending |
+| 02-02-02 | 02 | 2 | PATH-01 | T-02-01 | inMap/isNil 守卫 + warn 码 | unit | `pnpm exec vitest run "packages-user/data-system/src/pathfinding/graph.test.ts"` | ❌ W0 | ⬜ pending |
+| 02-02-03 | 02 | 2 | PATH-01 | T-02-02, T-02-03 | 损失值守卫 + 网格上界 | unit | `pnpm exec vitest run "packages-user/data-system/src/pathfinding/system.test.ts"` | ❌ W0 | ⬜ pending |
+| 02-03-01 | 03 | 3 | PATH-01 | — | N/A | unit (e2e slice) | `pnpm exec vitest run "packages-user/data-state/src/pathfinding/heroPathfinding.test.ts"` | ❌ W0 | ⬜ pending |
+| 02-03-02 | 03 | 3 | PATH-01, PATH-02 | T-02-04 | OnTouch env 判空填实 | unit | 同上 | ❌ W0 | ⬜ pending |
+| 02-03-03 | 03 | 3 | PATH-01 | T-02-05 | 打断接管时序 | unit + gates | 同上; `pnpm check:type 2>&1 \| Select-String -Pattern "pathfinding\|mover\.ts\|core\.ts"` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
