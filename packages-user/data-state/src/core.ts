@@ -16,9 +16,12 @@ import {
     IEnemyAttr,
     ISaveSystem,
     SaveSystem,
+    GameEventStore,
+    IGameEventStore,
     IItemStore,
     ItemStore,
-    IMapStore
+    IMapStore,
+    MapStore
 } from '@user/data-common';
 import {
     EnemyManager,
@@ -38,12 +41,10 @@ import {
 import {
     DamageSystem,
     EnemyContext,
+    GameEventSystem,
     IEnemyContext,
-    ITriggerCollector,
-    ITriggerRegistry,
-    MapDamage,
-    TriggerCollector,
-    TriggerRegistry
+    IGameEventSystem,
+    MapDamage
 } from '@user/data-system';
 import {
     CommonAuraConverter,
@@ -76,7 +77,6 @@ import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
 import { DefaultHeroMoveTopImpl } from './hero';
-import { MapStore } from '../../data-common/src/store/mapStore';
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
@@ -86,6 +86,7 @@ export class CoreState implements ICoreState {
     readonly tileStore: ITileStore<LegacyTileData>;
     readonly itemStore: IItemStore<IHeroAttr, LegacyItemData>;
     readonly mapStore: IMapStore;
+    readonly eventStore: IGameEventStore;
 
     // Layer 1 数据层，所有可存档内容都在这，一般用于数据存储
     readonly maps: IMapState;
@@ -95,8 +96,7 @@ export class CoreState implements ICoreState {
 
     // Layer 2 执行层，游戏逻辑对象都在这，包括一些需要操作数据层的逻辑系统等
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
-    readonly triggerRegistry: ITriggerRegistry;
-    readonly triggerCollector: ITriggerCollector;
+    readonly eventSystem: IGameEventSystem;
 
     // Layer 3 用户层，也就是最顶层的内容，一般仅用于初始化以及仅供渲染端调用的顶层模块
     readonly loadProgress: ILoadProgressTotal;
@@ -147,6 +147,10 @@ export class CoreState implements ICoreState {
         // 地图
         const mapStore = new MapStore();
         this.mapStore = mapStore;
+        // 游戏事件
+        const eventStore = new GameEventStore();
+        this.eventStore = eventStore;
+        // TODO: 后续在此初始化路径注册外部序列化事件定义与地图事件 id 绑定。
 
         //#endregion
 
@@ -199,12 +203,9 @@ export class CoreState implements ICoreState {
         enemyContext.bindHero(heroAttribute);
         this.enemyContext = enemyContext;
 
-        // 触发器注册与收集器
-        const triggerRegistry = new TriggerRegistry(this);
-        const triggerCollector = new TriggerCollector();
-        triggerCollector.attachRegistry(triggerRegistry);
-        this.triggerRegistry = triggerRegistry;
-        this.triggerCollector = triggerCollector;
+        // 游戏事件系统
+        const eventSystem = new GameEventSystem(this);
+        this.eventSystem = eventSystem;
 
         //#endregion
 

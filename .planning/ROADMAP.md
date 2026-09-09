@@ -13,7 +13,7 @@
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: 事件系统** - blockly 式低代码事件定义，驱动简单场景事件流程
+- [ ] **Phase 1: 事件系统** - blockly 式低代码事件定义，驱动简单场景事件流程（验证已通过，待完成阶段收尾）
 - [ ] **Phase 2: 寻路系统** - 自动寻路与移动端点击地图触发移动
 - [ ] **Phase 3: 数据端完成** - 数据端 L0–L3 接口全部落地，可在 Node 环境独立跑回放验证
 - [ ] **Phase 4: 渲染适配与双布局** - 新数据层 ↔ 已重构渲染端对接，支持移动端与桌面端双布局
@@ -145,7 +145,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. 事件系统 | 12/12 | In Progress|  |
+| 1. 事件系统 | 12/12 | Ready to complete |  |
 | 2. 寻路系统 | 0/TBD | Not started | - |
 | 3. 数据端完成 | 0/TBD | Not started | - |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |

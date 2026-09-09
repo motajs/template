@@ -16,6 +16,7 @@ import {
 } from './types';
 import {
     IDataCommon,
+    ILocationIndexer,
     ITileStore,
     MapLocIndexer,
     SaveCompression
@@ -36,7 +37,7 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
     private layerHookMap: Map<IMapLayer, IMapLayerHookController> = new Map();
 
     /** 坐标索引器 */
-    readonly indexer = new MapLocIndexer();
+    readonly indexer: ILocationIndexer = new MapLocIndexer();
 
     active: boolean = false;
     eventLayer: IMapLayer | null = null;

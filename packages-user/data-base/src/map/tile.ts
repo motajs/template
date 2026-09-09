@@ -3,11 +3,16 @@ import {
     FaceDirection,
     IDataCommon,
     IDataCommonExtended,
-    IMapBlockRawData,
     ISaveableContent,
     ITileRawData
 } from '@user/data-common';
-import { IMapBlockSaveBase, IMapLayer, ITileBase } from './types';
+import { LayerEventView } from './eventView';
+import {
+    ILayerEventView,
+    IMapBlockSaveBase,
+    IMapLayer,
+    ITileBase
+} from './types';
 
 export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
     implements ITileBase, IDataCommonExtended, ISaveableContent<Readonly<TSave>>
@@ -15,12 +20,15 @@ export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
     readonly state: IDataCommon;
     readonly layer: IMapLayer;
     locator: ITileLocator;
-    triggers: Set<number> | null = null;
+    /** 该图块实例绑定的图块事件 */
+    private readonly tileEvents: ILayerEventView;
 
     constructor(x: number, y: number, layer: IMapLayer) {
         this.layer = layer;
         this.state = layer.state;
         this.locator = { x, y };
+        this.tileEvents = new LayerEventView();
+        this.tileEvents.markPure();
     }
 
     abstract num(): number;
@@ -28,10 +36,6 @@ export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
     abstract raw(): ITileRawData | null;
 
     abstract set(num: number): void;
-
-    block(): IMapBlockRawData | null {
-        return null;
-    }
 
     setFaceDirection(direction: FaceDirection): number {
         const cur = this.num();
@@ -44,24 +48,12 @@ export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
         }
     }
 
-    clearTrigger(): void {
-        this.triggers = null;
+    tileEvent(): ILayerEventView {
+        return this.tileEvents;
     }
 
-    addTrigger(trigger: number): void {
-        if (!this.triggers) {
-            this.triggers = new Set();
-        }
-        this.triggers.add(trigger);
-    }
-
-    deleteTrigger(trigger: number): void {
-        if (!this.triggers) return;
-        this.triggers.delete(trigger);
-    }
-
-    useEmptyTrigger(): void {
-        this.triggers = new Set();
+    pointEvent(): ILayerEventView | null {
+        return this.layer.event(this.locator.x, this.locator.y);
     }
 
     abstract saveState(): Readonly<TSave>;

@@ -1,6 +1,7 @@
-//#region tile
-
 import { IFacedTileLocator } from '@motajs/common';
+import { IReadonlyGameEvent } from '../event';
+
+//#region tile
 
 export const enum TileType {
     /** 未知或尚未归类的图块 */
@@ -48,8 +49,8 @@ export interface ITileRawData {
     readonly num: number;
     /** 图块字符串 id */
     readonly id: string;
-    /** 默认触发器类型 */
-    readonly trigger: number;
+    /** 默认事件，键表示优先级，值表示事件 id */
+    readonly events: Record<number, string>;
     /** 图块逻辑类型 */
     readonly type: TileType;
     /** 图块的通行性对象 */
@@ -81,7 +82,7 @@ export interface ITileStore<TLegacy = unknown> {
      * 获取指定图块数字对应的默认触发器类型
      * @param num 图块数字
      */
-    getTrigger(num: number): number;
+    getTrigger(num: number): number[];
 
     /**
      * 获取指定图块数字对应的图块类型
@@ -296,13 +297,6 @@ export interface IChangeFloorData {
     readonly relatedPos?: ChangeFloorPos;
 }
 
-export interface IMapBlockRawData {
-    /** 此点的静态触发器类型（仅对该点生效，不会跟随任何图块移动） */
-    readonly trigger?: number;
-    /** 楼层切换信息 */
-    readonly changeFloor?: IChangeFloorData;
-}
-
 export interface IMapRawData {
     /** 楼层 id */
     readonly floorId: string;
@@ -312,8 +306,8 @@ export interface IMapRawData {
     readonly map: Record<number, number[]>;
     /** 每个地图图层的字符串别名 */
     readonly layerAlias: Record<number, string>;
-    /** 每个地图图层中，指定位置图块的额外数据，外层 key 为图层 zIndex，内层 key 为图块位置索引 */
-    readonly blockData: Record<number, Record<number, IMapBlockRawData>>;
+    /** 每个地图图层中，指定位置图块的事件数据，外层键为图层纵深，中层键为图块位置索引，内层键为事件优先级 */
+    readonly events: Record<number, Record<number, Record<number, string>>>;
 }
 
 export interface IMapStore {
@@ -328,6 +322,34 @@ export interface IMapStore {
      * @param map 地图原始数据
      */
     addMap(map: IMapRawData): void;
+}
+
+//#endregion
+
+//#region event
+
+export interface IGameEventStore {
+    /**
+     * 添加事件实例
+     * @param id 事件 id
+     * @param event 事件内容
+     */
+    addEvent(
+        id: string,
+        event: IReadonlyGameEvent<Record<string, any>, Record<string, any>, any>
+    ): void;
+
+    /**
+     * 根据事件 id 获取事件实例
+     * @param id 事件 id
+     */
+    getEvent<
+        P extends Record<string, any>,
+        E extends Record<string, any>,
+        R = void
+    >(
+        id: string
+    ): IReadonlyGameEvent<P, E, R> | null;
 }
 
 //#endregion

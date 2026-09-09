@@ -1,15 +1,13 @@
 import { IStateBase } from '@user/data-base';
 import { IEnemyContext } from './combat';
-import { ITriggerCollector, ITriggerRegistry } from './trigger';
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
+import { IGameEventSystem } from './event';
 
 export interface IStateSystem extends IStateBase {
     /** 怪物上下文 */
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
-    /** 触发器注册 */
-    readonly triggerRegistry: ITriggerRegistry;
-    /** 触发器收集器 */
-    readonly triggerCollector: ITriggerCollector;
+    /** 游戏事件系统 */
+    readonly eventSystem: IGameEventSystem;
 }
 
 export interface IStateSystemExtended {
