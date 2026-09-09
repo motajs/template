@@ -184,7 +184,8 @@ export class HeroMover<T extends IHeroLocation>
                     currLoc: handler.currLoc,
                     nextLoc: handler.nextLoc,
                     direction: handler.direction,
-                    floorId: handler.floorId
+                    floorId: handler.floorId,
+                    state: handler.state
                 };
                 const predicate = this.topImpl.predicate();
                 const canPass = predicate.canPass(passHandler);
