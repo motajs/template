@@ -218,7 +218,10 @@ interface SystemFixture {
  * 创建测试用移动对象，移动器由工厂注入
  */
 function createTestTile(): TestTile {
-    class TestMover extends modules.ObjectMover<TestTile> {
+    class TestMover
+        extends modules.ObjectMover<TestTile>
+        implements IObjectMover<TestTile>
+    {
         readonly tile: TestTile;
 
         constructor(tile: TestTile) {

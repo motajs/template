@@ -74,11 +74,47 @@ function directionOf(x: number, y: number): FaceDirection {
 //#region 有向图构建
 
 /**
+ * 寻路有向图构建器接口，声明图构建的绑定槽位与构建入口
+ */
+export interface IPathfindingGraphBuilder {
+    /**
+     * 绑定地图状态对象，用于解析图层所属楼层 id
+     * @param maps 地图状态对象，传入 `null` 解绑
+     */
+    useMapState(maps: IMapState | null): void;
+
+    /**
+     * 绑定构建有向图所用的地图图层
+     * @param layer 地图图层对象，传入 `null` 解绑
+     */
+    useMapLayer(layer: IMapLayer | null): void;
+
+    /**
+     * 注入判定边可行性的通行性谓词
+     * @param predicate 通行性谓词，传入 `null` 解绑
+     */
+    usePassPredicate(predicate: IPassPredicate | null): void;
+
+    /**
+     * 设置邻域使用的方向组
+     * @param group 朝向组
+     */
+    useDirGroup(group: number): void;
+
+    /**
+     * 构建有向图。图层未绑定时告警并返回空图，
+     * 不包含任何节点与边
+     * @returns 构建的有向图
+     */
+    build(): IPathGraph;
+}
+
+/**
  * 寻路有向图构建器，将地图图层转换为以通行性谓词判定边的有向图。
  * 邻域方向由注入的方向组决定，默认仅包含四正交方向；
  * 谓词未注入时所有边均不可通行
  */
-export class PathfindingGraphBuilder {
+export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
     /** 绑定的地图状态对象，用于解析图层所属楼层 id */
     private maps: IMapState | null = null;
     /** 绑定的地图图层，图节点来源 */
@@ -91,43 +127,22 @@ export class PathfindingGraphBuilder {
     /** 方向组解析对象 */
     private readonly mapper: IDirectionMapper = new DirectionMapper();
 
-    /**
-     * 绑定地图状态对象，用于解析楼层 id
-     * @param maps 地图状态对象，传入 `null` 解绑
-     */
     useMapState(maps: IMapState | null): void {
         this.maps = maps;
     }
 
-    /**
-     * 绑定构建有向图所用的地图图层
-     * @param layer 地图图层对象，传入 `null` 解绑
-     */
     useMapLayer(layer: IMapLayer | null): void {
         this.layer = layer;
     }
 
-    /**
-     * 注入判定边可行性的通行性谓词
-     * @param predicate 通行性谓词，传入 `null` 解绑
-     */
     usePassPredicate(predicate: IPassPredicate | null): void {
         this.predicate = predicate;
     }
 
-    /**
-     * 设置邻域使用的方向组
-     * @param group 朝向组
-     */
     useDirGroup(group: number): void {
         this.group = group;
     }
 
-    /**
-     * 构建有向图。图层未绑定时告警并返回空图，
-     * 不包含任何节点与边
-     * @returns 构建的有向图
-     */
     build(): IPathGraph {
         const layer = this.layer;
         if (isNil(layer)) {
