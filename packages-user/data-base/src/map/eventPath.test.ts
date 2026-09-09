@@ -16,6 +16,17 @@ let modules: TestModules;
 
 beforeAll(async () => {
     vi.stubGlobal('main', { replayChecking: true });
+    Map.prototype.getOrInsertComputed ??= function <K, V>(
+        this: Map<K, V>,
+        key: K,
+        callback: (key: K) => V
+    ): V {
+        const existing = this.get(key);
+        if (existing !== undefined) return existing;
+        const value = callback(key);
+        this.set(key, value);
+        return value;
+    };
     const mapModule = await import('./mapState');
     const commonModule = await import('@user/data-common');
     const loggerModule = await import('@motajs/common');

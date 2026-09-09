@@ -18,6 +18,17 @@ import { AnonTokyoInterpreter } from 'anon-tokyo';
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
     vi.stubGlobal('location', { origin: 'http://localhost' });
+    Map.prototype.getOrInsertComputed ??= function <K, V>(
+        this: Map<K, V>,
+        key: K,
+        callback: (key: K) => V
+    ): V {
+        const existing = this.get(key);
+        if (existing !== undefined) return existing;
+        const value = callback(key);
+        this.set(key, value);
+        return value;
+    };
 });
 
 const eventTriggers = {
