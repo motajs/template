@@ -237,6 +237,7 @@
         "169": "The current floor is the last or the first floor in the map list, so related floor change method will not work.",
         "170": "Game event id '$1' has already been used, old event will be overridden.",
         "171": "Event id '$1' not found in event store, event will be skipped.",
-        "172": "Event returned non-boolean value '$1' during reduction. JavaScript short-circuit semantics will be used."
+        "172": "Event returned non-boolean value '$1' during reduction. JavaScript short-circuit semantics will be used.",
+        "173": "Pathfinding input is invalid or a required binding (map state, map layer) is missing. An empty result will be returned."
     }
 }

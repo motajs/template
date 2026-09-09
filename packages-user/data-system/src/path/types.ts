@@ -106,14 +106,14 @@ export interface IPathfindingSystem extends IDataBaseExtended {
      * @param target 目标坐标
      * @returns 移动控制器。无法寻路、无路径或已有移动进行中时返回 `null`
      */
-    moveTo(target: ITileLocator): IPathfindingController;
+    moveTo(target: ITileLocator): IPathfindingController | null;
 
     /**
      * 瞬移至目标位置。瞬移前经回退策略判定，判定需要回退则自动退为逐步寻路
      * @param target 目标坐标
      * @returns 移动控制器；无法寻路、无路径或已有移动进行中时返回 `null`
      */
-    teleportTo(target: ITileLocator): IPathfindingController;
+    teleportTo(target: ITileLocator): IPathfindingController | null;
 
     /**
      * 打断当前自动寻路。新的方向输入或新的寻路调用可随时打断并接管
