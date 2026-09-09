@@ -4,11 +4,13 @@ import { FaceDirection } from '@user/data-common';
 import {
     type IDataCommon,
     type IFaceHandler,
-    type IGameMap,
-    type IPassCheckHandler,
-    type IPassPredicate,
     type ITileStore
 } from '@user/data-common';
+import {
+    type IGameMap,
+    type IPassCheckHandler,
+    type IPassPredicate
+} from '@user/data-base';
 import { InternalDirectionGroup } from '@motajs/common';
 
 vi.hoisted(() => {
@@ -87,7 +89,8 @@ const ONEWAY_TILE: TestTileDefinition = {
     num: 3,
     id: 'oneway',
     outPass: 0b0010,
-    inPass: 0
+    inPass: 0,
+    eventPass: true
 };
 
 /** 汇入图块：仅可从左方向进入，不可离开 */

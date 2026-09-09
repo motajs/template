@@ -1,9 +1,7 @@
 // 验证 L0 ObjectMover 单步移动后的坐标回写行为（正交 / 斜向 / 传送步），为 mover.ts:651 条件缺陷的修复铺设回归用例
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { type ITileLocator } from '@motajs/common';
-import {
-    FaceDirection
-} from '@user/data-common';
+import { FaceDirection } from '@user/data-common';
 import {
     type IObjectMovable,
     type ObjectMoveStep,

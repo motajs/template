@@ -194,9 +194,10 @@ export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
                     floorId,
                     state
                 };
-                const predicate = this.predicate;
-                if (isNil(predicate) || !predicate.canPass(handler)) continue;
-                if (predicate.shouldHit(handler)) {
+                if (isNil(this.predicate) || !this.predicate.canPass(handler)) {
+                    continue;
+                }
+                if (this.predicate.shouldHit(handler)) {
                     terminals.add(ny * width + nx);
                 }
                 edges.push({ dir, to: ny * width + nx });
