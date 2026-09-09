@@ -2,13 +2,13 @@
 gsd_state_version: "1.0"
 milestone: v1.0
 current_phase: 02
-current_phase_name: pathfinding
+current_phase_name: 寻路系统
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-09-09T07:10:43.282Z"
+stopped_at: Completed 02-01-PLAN.md (用户六项拍板已记录)
+last_updated: "2026-09-09T07:49:55.948Z"
 last_activity: 2026-09-09
-last_activity_desc: "Phase 01 verification passed: user confirmed compile-cache reuse and setRaw invalidation with no issue reported"
-state_head: 1ad8176f682f182b71a76f800412d5050e8aeacb
+last_activity_desc: Phase 02 execution started
+state_head: 5a1b12e146705983ab9f598da185cb0f5973b982
 progress:
   total_phases: 6
   completed_phases: 0
@@ -24,14 +24,14 @@ milestone_name: milestone
 See: .planning/PROJECT.md (updated 2026-09-07)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 01 — event
+**Current focus:** Phase 02 — 寻路系统
 
 ## Current Position
 
-Phase: 02 (pathfinding) — READY TO EXECUTE
-Plan: 13 of 13 (point-event reference/storage refactor complete)
-Status: Plan 01-13 verification complete; ready for phase completion transition
-Last activity: 2026-09-09 — Plan 01-13 focused tests/lint passed; repository-wide type diagnostics remain deferred outside plan scope
+Phase: 02 (寻路系统) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-09-09 — Phase 02 execution started
 
 Progress: [█████████░] 92%
 
@@ -69,6 +69,7 @@ Progress: [█████████░] 92%
 | Phase 01 P11 | 13min | 2 tasks | 3 files |
 | Phase 01 P12 | 20min | 2 tasks | 6 files |
 | Phase 01 P13 | 30 | 3 tasks | 11 files |
+| Phase 02 P01 | 25min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,10 @@ Recent decisions affecting current work:
 - [Phase 01]: Gap-closure Plan 01-12 preserves serialized registration/map-id binding, rawEvent/cache/Promise/as, and eventStore-cycle deferrals.
 - [Phase 01]: Plan 01-13: LayerEventView owns point-event refs with O(1) dirty state; MapLayer uses flat index storage and ref-first overlays; MapTileBase centralizes default restoration.
 - [Phase 01]: Plan 01-13 preserves the approved save shape, resize semantics, locked deferrals, and leaves types.ts and executor.ts user edits untouched.
+- [Phase 02]: [Phase 02] 02-01 拍板：pathfinding/types.ts 由用户亲自编写（接口事实源），02-02/02-03 不得创建或重写该文件
+- [Phase 02]: [Phase 02] 02-01 拍板：mover.ts:651 坐标回写缺陷 go——授权 02-02 改为 || 并翻绿 4 个回归用例
+- [Phase 02]: [Phase 02] 02-01 拍板：D-08 触发语义=通行掩码允许到达且目标 no-pass 才触发 hit/OnTouch，掩码不可达一律不触发；实现机制须与该语义一致
+- [Phase 02]: [Phase 02] 02-01 拍板：打断时序选选项 1（stop 后 await 兑现再起新寻路）；图方向性仅 4 正交向；文件归属按草案原样（types.ts 除外）
 
 ### Pending Todos
 
@@ -122,6 +127,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-09T06:27:22.453Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-pathfinding/02-CONTEXT.md
+Last session: 2026-09-09T07:49:38.684Z
+Stopped at: Completed 02-01-PLAN.md (用户六项拍板已记录)
+Resume file: None

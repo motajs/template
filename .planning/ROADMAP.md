@@ -80,11 +80,11 @@ Plans:
   2. 移动端点击地图上的可达格时，角色自动寻路移动到该格
   3. 寻路正确避开不可通行格（碰撞/障碍/墙体）
 
-**Plans**: 3 plans
+**Plans**: 1/3 plans executed
 **UI hint**: yes
 Plans:
 
-- [ ] 02-01-PLAN.md — 接口草案 + mover.ts:651 缺陷调查 + 回归脚手架 + D-07 用户拍板关卡（checkpoint）
+- [x] 02-01-PLAN.md — 接口草案 + mover.ts:651 缺陷调查 + 回归脚手架 + D-07 用户拍板关卡（checkpoint）
 - [ ] 02-02-PLAN.md — L0 坐标回写缺陷修复 + L2 寻路核心（有向图 + 最小损失 + 仅取路径 + 回退策略槽位）
 - [ ] 02-03-PLAN.md — L3 接线（逐步/瞬移/回退默认策略/D-08 双语义/打断接管）+ barrel/logger 装配 + 阶段门禁
 
@@ -165,7 +165,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. 事件系统 | 13/13 | In Progress|  |
-| 2. 寻路系统 | 0/TBD | Not started | - |
+| 2. 寻路系统 | 1/3 | In Progress|  |
 | 3. 数据端完成 | 0/TBD | Not started | - |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
