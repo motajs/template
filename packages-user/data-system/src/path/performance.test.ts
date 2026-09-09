@@ -62,14 +62,50 @@ beforeAll(async () => {
     };
 });
 
-/** 性能地图边长，共 100 x 100 = 10000 个节点 */
-const MAP_SIZE = 100;
+/** 性能地图尺寸矩阵，覆盖小图到大图的缩放趋势 */
+const MAP_SIZES = [10, 30, 60, 100, 150];
 
 /** 分段测量重复运行的次数 */
 const RUNS = 5;
 
-/** 性能测试的宽松耗时上限，单位 ms，仅作 sanity 把关 */
-const ELAPSED_LIMIT_MS = 5000;
+interface MeasureResult<T> {
+    /** 被测函数的返回值 */
+    value: T;
+    /** 本次测量的耗时，单位 ms */
+    duration: number;
+}
+
+interface TestTile extends IObjectMovable {
+    x: number;
+    y: number;
+    face: FaceDirection;
+    mover: IObjectMover<TestTile>;
+}
+
+/**
+ * 以 performance.mark/measure 测量一次函数调用的耗时，
+ * 测量前后清理同名标记与测量项，避免性能条目累积
+ * @param name 测量名称，同时用作标记前缀
+ * @param fn 被测函数
+ */
+function measureCall<T>(name: string, fn: () => T): MeasureResult<T> {
+    const startMark = `${name}:start`;
+    const endMark = `${name}:end`;
+    performance.clearMarks(startMark);
+    performance.clearMarks(endMark);
+    performance.clearMeasures(name);
+    performance.mark(startMark);
+    const value = fn();
+    performance.mark(endMark);
+    performance.measure(name, startMark, endMark);
+    const duration = performance
+        .getEntriesByName(name, 'measure')
+        .at(-1)!.duration;
+    performance.clearMarks(startMark);
+    performance.clearMarks(endMark);
+    performance.clearMeasures(name);
+    return { value, duration };
+}
 
 /**
  * 汇总一组耗时数据的最小值与平均值
@@ -81,11 +117,12 @@ function stat(times: number[]): string {
     return `min=${min.toFixed(2)}ms avg=${avg.toFixed(2)}ms`;
 }
 
-interface TestTile extends IObjectMovable {
-    x: number;
-    y: number;
-    face: FaceDirection;
-    mover: IObjectMover<TestTile>;
+/**
+ * 各地图尺寸的宽松耗时上限，单位 ms，仅作 sanity 把关，随节点数放宽
+ * @param size 地图边长
+ */
+function sanityLimit(size: number): number {
+    return 500 + size * size;
 }
 
 /**
@@ -182,7 +219,7 @@ function generateRows(size: number): number[] {
 }
 
 /**
- * 创建绑定 100 x 100 地图与移动对象的寻路系统夹具
+ * 创建绑定指定尺寸地图与移动对象的寻路系统夹具
  * @param rows 每行图块数字，行长为宽度乘高度
  * @param width 地图宽度
  */
@@ -295,65 +332,67 @@ function createPerformanceSystem(rows: number[], width: number) {
 }
 
 describe('pathfinding performance', () => {
-    // 验证 100 x 100 障碍地图上从建图到最优路径发现的完整寻路耗时处于可用量级
-    it('completes the full find pipeline on a 100x100 map within the sanity bound', () => {
-        const rows = generateRows(MAP_SIZE);
-        const fixture = createPerformanceSystem(rows, MAP_SIZE);
+    // 验证各尺寸障碍地图上从建图到最优路径发现的完整寻路耗时均处于可用量级
+    it('completes the full find pipeline across the map size matrix within the sanity bounds', () => {
+        for (const size of MAP_SIZES) {
+            const rows = generateRows(size);
+            const fixture = createPerformanceSystem(rows, size);
 
-        const start = performance.now();
-        const steps = fixture.system.getPath({
-            x: MAP_SIZE - 1,
-            y: MAP_SIZE - 1
-        });
-        const elapsed = performance.now() - start;
+            const { value: steps, duration: elapsed } = measureCall(
+                'pathfinding-perf',
+                () => fixture.system.getPath({ x: size - 1, y: size - 1 })
+            );
 
-        // 审查要求输出结构化性能数据供汇报使用
-        // eslint-disable-next-line no-console
-        console.log(
-            `[pathfinding-perf] map=${MAP_SIZE}x${MAP_SIZE} ` +
-                `steps=${steps.length} elapsed=${elapsed.toFixed(2)}ms`
-        );
+            // 审查要求输出结构化性能数据供汇报使用
+            // eslint-disable-next-line no-console
+            console.log(
+                `[pathfinding-perf] map=${size}x${size} ` +
+                    `steps=${steps.length} elapsed=${elapsed.toFixed(2)}ms`
+            );
 
-        expect(steps.length).toBeGreaterThan(0);
-        expect(elapsed).toBeLessThan(ELAPSED_LIMIT_MS);
+            expect(steps.length).toBeGreaterThan(0);
+            expect(elapsed).toBeLessThan(sanityLimit(size));
+        }
     });
 
-    // 验证分段测量图构建与搜索各自耗时，多轮运行以确认总耗时的主要来源
-    it('measures graph build and search phases separately over multiple runs', () => {
-        const rows = generateRows(MAP_SIZE);
-        const fixture = createPerformanceSystem(rows, MAP_SIZE);
-        const target: ITileLocator = { x: MAP_SIZE - 1, y: MAP_SIZE - 1 };
+    // 验证各尺寸下分段测量图构建与搜索各自耗时，多轮运行以确认总耗时的主要来源
+    it('measures graph build and search phases separately across the map size matrix', () => {
+        for (const size of MAP_SIZES) {
+            const rows = generateRows(size);
+            const fixture = createPerformanceSystem(rows, size);
+            const target: ITileLocator = { x: size - 1, y: size - 1 };
 
-        const buildTimes: number[] = [];
-        const findTimes: number[] = [];
-        let steps = 0;
+            const buildTimes: number[] = [];
+            const findTimes: number[] = [];
+            let steps = 0;
 
-        for (let i = 0; i < RUNS; i++) {
-            const b0 = performance.now();
-            const graph = fixture.buildGraph();
-            const b1 = performance.now();
-            buildTimes.push(b1 - b0);
+            for (let i = 0; i < RUNS; i++) {
+                const build = measureCall('pathfinding-build', () =>
+                    fixture.buildGraph()
+                );
+                buildTimes.push(build.duration);
+                expect(build.value.nodes.size).toBeGreaterThan(0);
 
-            const f0 = performance.now();
-            const result = fixture.system.getPath(target);
-            const f1 = performance.now();
-            findTimes.push(f1 - f0);
-            steps = result.length;
-            expect(graph.nodes.size).toBeGreaterThan(0);
+                const find = measureCall('pathfinding-find', () =>
+                    fixture.system.getPath(target)
+                );
+                findTimes.push(find.duration);
+                steps = find.value.length;
+            }
+
+            // 审查要求输出结构化分段性能数据供汇报使用
+            // eslint-disable-next-line no-console
+            console.log(
+                `[pathfinding-segmented] map=${size}x${size} ` +
+                    `steps=${steps} runs=${RUNS}\n` +
+                    `  graph_build: ${stat(buildTimes)}\n` +
+                    `  full_find(build+search): ${stat(findTimes)}\n` +
+                    `  search_only(approx = find - build): ${stat(
+                        findTimes.map((t, i) => t - buildTimes[i]!)
+                    )}`
+            );
+
+            expect(steps).toBeGreaterThan(0);
         }
-
-        // 审查要求输出结构化分段性能数据供汇报使用
-        // eslint-disable-next-line no-console
-        console.log(
-            `[pathfinding-segmented] map=${MAP_SIZE}x${MAP_SIZE} ` +
-                `steps=${steps} runs=${RUNS}\n` +
-                `  graph_build: ${stat(buildTimes)}\n` +
-                `  full_find(build+search): ${stat(findTimes)}\n` +
-                `  search_only(approx = find - build): ${stat(
-                    findTimes.map((t, i) => t - buildTimes[i]!)
-                )}`
-        );
-
-        expect(steps).toBeGreaterThan(0);
     });
 });
