@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 3
+open_count: 4
 waived_count: 0
-fixed_count: 0
-total_count: 3
-last_updated: 2026-09-08T15:54:23.173Z
+fixed_count: 1
+total_count: 5
+last_updated: 2026-09-09T09:34:59.707Z
 ---
 
 # Broken Windows Ledger
@@ -18,6 +18,8 @@ last_updated: 2026-09-08T15:54:23.173Z
 | 1 | 01 | stub | packages-user/data-state/src/core.ts | 153 | Serialized event registration and map-id binding remains an intentional deferred TODO. | open |  | 2026-09-08T15:06:40.634Z |  |
 | 2 | 01 | unrun-verify | .planning/phases/01-event/01-05-SUMMARY.md |  | Downstream implementation verification was not run because the user explicitly prohibited downstream plan execution. | open |  | 2026-09-08T15:37:54.227Z |  |
 | 3 | 01 | deviation | packages-user/data-base/src/map/mapLayer.ts |  | Replaced unsupported Map upsert runtime calls so the raw map event path runs under Node Vitest. | open |  | 2026-09-08T15:54:23.173Z |  |
+| 4 | 02 | skipped-test | packages-user/data-common/src/common/mover.test.ts |  | 4 个 it.skip 坐标回写回归用例（x/y 正交、斜向、传送），待 02-02 修复 mover.ts:651 后翻绿 | fixed |  | 2026-09-09T07:51:25.555Z | 2026-09-09T09:34:39.843Z |
+| 5 | 02 | stub | packages-user/data-system/src/path/system.ts | 254 | interrupt() is an intentional placeholder that only stops the in-flight move; takeover sequencing (stop-then-await per approved option 1) is implemented by 02-03 Task 4 | open |  | 2026-09-09T09:34:59.707Z |  |
 
 ````json
 [
@@ -55,6 +57,30 @@ last_updated: 2026-09-08T15:54:23.173Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-09-08T15:54:23.173Z",
+    "resolved_at": null
+  },
+  {
+    "id": 4,
+    "kind": "skipped-test",
+    "phase": "02",
+    "file": "packages-user/data-common/src/common/mover.test.ts",
+    "line": null,
+    "description": "4 个 it.skip 坐标回写回归用例（x/y 正交、斜向、传送），待 02-02 修复 mover.ts:651 后翻绿",
+    "status": "fixed",
+    "reason": "",
+    "recorded_at": "2026-09-09T07:51:25.555Z",
+    "resolved_at": "2026-09-09T09:34:39.843Z"
+  },
+  {
+    "id": 5,
+    "kind": "stub",
+    "phase": "02",
+    "file": "packages-user/data-system/src/path/system.ts",
+    "line": 254,
+    "description": "interrupt() is an intentional placeholder that only stops the in-flight move; takeover sequencing (stop-then-await per approved option 1) is implemented by 02-03 Task 4",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-09T09:34:59.707Z",
     "resolved_at": null
   }
 ]

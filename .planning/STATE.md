@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 02
 current_phase_name: 寻路系统
 status: executing
-stopped_at: Phase 2 paused before Wave 2 - awaiting user-authored packages-user/data-system/src/pathfinding/types.ts
-last_updated: "2026-09-09T07:53:34.629Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-09-09T09:37:40.341Z"
 last_activity: 2026-09-09
 last_activity_desc: Phase 02 execution started
-state_head: 0a3122c7449b4ec8a932fbf7f32feb89ea13c7ad
+state_head: e199d99d19e67182fd29ec4b24ea91eca39658c9
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 16
-  completed_plans: 14
+  completed_plans: 15
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-07)
 ## Current Position
 
 Phase: 02 (寻路系统) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-09-09 — Phase 02 execution started
 
@@ -70,6 +70,7 @@ Progress: [█████████░] 92%
 | Phase 01 P12 | 20min | 2 tasks | 6 files |
 | Phase 01 P13 | 30 | 3 tasks | 11 files |
 | Phase 02 P01 | 25min | 3 tasks | 2 files |
+| Phase 02 P02 | 29min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,10 @@ Recent decisions affecting current work:
 - [Phase 02]: [Phase 02] 02-01 拍板：mover.ts:651 坐标回写缺陷 go——授权 02-02 改为 || 并翻绿 4 个回归用例
 - [Phase 02]: [Phase 02] 02-01 拍板：D-08 触发语义=通行掩码允许到达且目标 no-pass 才触发 hit/OnTouch，掩码不可达一律不触发；实现机制须与该语义一致
 - [Phase 02]: [Phase 02] 02-01 拍板：打断时序选选项 1（stop 后 await 兑现再起新寻路）；图方向性仅 4 正交向；文件归属按草案原样（types.ts 除外）
+- [Phase 02]: [Phase 02]: 02-02 floorId 解析经 iterateAllMaps 引用匹配（fromRaw 楼层默认 inactive，激活层迭代会使真实谓词拿不到 floorId）
+- [Phase 02]: [Phase 02]: 02-02 L2 经结构化守卫 hasMover 取移动器（零 as），mover.start() 返回 null 即已有移动进行中契约检测点
+- [Phase 02]: [Phase 02]: 02-02 终端节点（canPass 且 shouldHit）在搜索层约束：可作终点不可穿越；D-08 情形 1 由 02-03 直接 find() 判定相邻格
+- [Phase 02]: [Phase 02]: 02-02 moveTo 恒逐步，回退策略仅作用于 teleportTo 且 null 默认必定逐步（与用户 types.ts jsdoc 逐字对齐）
 
 ### Pending Todos
 
@@ -127,6 +132,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-09T07:53:34.535Z
-Stopped at: Phase 2 paused before Wave 2 - awaiting user-authored packages-user/data-system/src/pathfinding/types.ts
-Resume file: .planning/phases/02-pathfinding/02-INTERFACE-DRAFT.md
+Last session: 2026-09-09T09:37:24.371Z
+Stopped at: Completed 02-02-PLAN.md
+Resume file: None
