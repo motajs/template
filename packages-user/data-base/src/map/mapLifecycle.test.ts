@@ -27,7 +27,8 @@ beforeAll(async () => {
 });
 
 function createMapState(
-    pointEvents: Record<number, Record<number, string>> = {}
+    pointEvents: Record<number, Record<number, string>> = {},
+    blocks: number[] = [1, 1, 1, 1]
 ) {
     const tileStore = new modules.TileStore();
     tileStore.addTile({
@@ -61,7 +62,7 @@ function createMapState(
     const map = mapState.fromRaw({
         floorId: 'F1',
         width: 2,
-        map: { 0: [1, 1, 1, 1] },
+        map: { 0: blocks },
         layerAlias: { 0: 'event' },
         events: { 0: pointEvents }
     });
@@ -211,6 +212,26 @@ describe('MapLayer point event lifecycle', () => {
         );
         expect(point.get()).toEqual(new Map([[5, 'raw-point']]));
         expect(point.dirty()).toBe(false);
+    });
+
+    it('map saves layers containing only point events', () => {
+        const { map, layer } = createMapState({}, [0, 0, 0, 0]);
+        layer.setZIndex(7);
+        const point = layer.event(1, 0)!;
+
+        expect(layer.dirty()).toBe(false);
+        point.set(7, 'point-only');
+        expect(layer.dirty()).toBe(true);
+
+        const save = map.saveState(modules.SaveCompression.LowCompression);
+        const layerSave = save.layers.get(7);
+        expect(layerSave).toBeDefined();
+        expect(layerSave?.fullMap).toBeUndefined();
+        expect(layerSave?.staticBlocks?.size).toBe(0);
+        expect(layerSave?.dynamicBlocks?.size).toBe(0);
+        expect(layerSave?.pointEvents).toEqual(
+            new Map([[1, new Map([[7, 'point-only']])]])
+        );
     });
 
     it('resize preserves in-range point events and resize2 clears them', () => {
