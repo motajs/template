@@ -410,6 +410,27 @@ describe('pathfinding system', () => {
         expect(result.ret).toHaveLength(2);
     });
 
+    // 验证 Infinity 是合法损失值：不告警且路径绕开高损失格
+    it('allows Infinity as a legitimate cost without warning', () => {
+        const fixture = createSystem([1, 1, 1, 1, 1, 1, 1, 1, 1], 3);
+        injectPredicate(fixture);
+        const cost: PathCostFunction = block =>
+            block.locator.x === 1 && block.locator.y === 1
+                ? Number.POSITIVE_INFINITY
+                : 1;
+        fixture.system.finder.useCostFunction(cost);
+
+        const result = modules.logger.catch(() =>
+            fixture.system.finder.find({ x: 0, y: 1 }, { x: 2, y: 1 })
+        );
+
+        expect(result.info.map(info => info.code)).not.toContain(174);
+        expect(result.ret).toHaveLength(4);
+        for (const step of result.ret) {
+            expect(step.to).not.toEqual({ x: 1, y: 1 });
+        }
+    });
+
     // 验证不可达目标返回空数组且不移动对象
     it('returns an empty path and never moves for unreachable targets', () => {
         const fixture = createSystem([1, 6, 1, 1, 6, 1, 1, 6, 1], 3);

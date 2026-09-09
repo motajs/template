@@ -136,13 +136,14 @@ export class PathfindingFinder implements IPathfinder {
     }
 
     /**
-     * 获取进入指定位置节点的损失，损失值不是有限数字或为负数时告警并按损失 1 处理
+     * 获取进入指定位置节点的损失，损失值为 NaN 或负数时告警并按损失 1 处理，
+     * Infinity 为合法损失值
      * @param block 位置信息
      */
     private getNodeCost(block: ILayerLocation): number {
         if (!this.cost) return 1;
         const value = this.cost(block);
-        if (!Number.isFinite(value) || value < 0) {
+        if (Number.isNaN(value) || value < 0) {
             logger.warn(174);
             return 1;
         }
