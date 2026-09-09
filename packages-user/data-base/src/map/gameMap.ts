@@ -183,6 +183,7 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
         if (save.rows && save.rows.size > 0) return false;
         if (save.staticBlocks && save.staticBlocks.size > 0) return false;
         if (save.dynamicBlocks && save.dynamicBlocks.size > 0) return false;
+        if (save.pointEvents && save.pointEvents.size > 0) return false;
         return true;
     }
 
