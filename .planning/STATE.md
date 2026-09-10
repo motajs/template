@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 02
 current_phase_name: 寻路系统
 status: verifying
-stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-09-10T01:41:42.684Z"
+stopped_at: Completed 02-05-PLAN.md
+last_updated: "2026-09-10T01:49:11.198Z"
 last_activity: 2026-09-09
 last_activity_desc: Phase 02 execution started
-state_head: 93453db41702d3d14d2cc69c992bfb92fee48eee
+state_head: 154df6a0697b0ecf1b4b96b2a151aa9e00094964
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 18
-  completed_plans: 17
+  completed_plans: 18
 milestone_name: milestone
 ---
 
@@ -73,6 +73,7 @@ Progress: [█████████░] 92%
 | Phase 02 P02 | 29min | 3 tasks | 10 files |
 | Phase 02 P03 | 30 min | 4 tasks | 9 files |
 | Phase 02 P04 | 10 min | 2 tasks | 7 files |
+| Phase 02 P05 | 5min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,9 @@ Recent decisions affecting current work:
 - [Phase 02]: D-07 remains authoritative: path/types.ts matches the user baseline except for the two authorized nullable returns; graph helper contracts stay implementation-owned.
 - [Phase 02]: The concrete useMover bridge remains in PathfindingSystem so HeroPathfinding can bind IObjectMover without expanding the user-authored interface.
 - [Phase 02]: D-11 remains intact: this plan modifies no client click adapter or Phase 1 file.
+- [Phase 02]: Phase 02 Plan 05 sets Vitest testTimeout and hookTimeout to 30 seconds to cover full-suite beforeAll import cost.
+- [Phase 02]: Phase 02 Plan 05 adds deterministic pnpm test:ci while preserving interactive pnpm test.
+- [Phase 02]: Phase 02 Plan 05 preserves D-11 by modifying no client click adapter or Phase 1 file.
 
 ### Pending Todos
 
@@ -140,6 +144,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-10T01:41:42.588Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-09-10T01:49:11.100Z
+Stopped at: Completed 02-05-PLAN.md
 Resume file: None
