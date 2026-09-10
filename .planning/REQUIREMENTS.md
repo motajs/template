@@ -20,7 +20,7 @@ Requirements for the engine's completion. Each maps to roadmap phases.
 
 ### 数据端（Data）
 
-- [ ] **DATA-01**: 数据端（L0–L3）接口实现完成——用户设计的接口全部落地，数据层各系统（地图/角色/敌人/flag/战斗/触发器/存档/回放）可用，并可在 Node 环境独立运行回放验证
+- [x] **DATA-01**: 数据端（L0–L3）接口实现完成——用户设计的接口全部落地，数据层各系统（地图/角色/敌人/flag/战斗/触发器/存档/回放）可用，并可在 Node 环境独立运行回放验证
 
 ### 渲染适配与双布局（Render）
 
@@ -57,7 +57,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVT-03 | Phase 1 | Complete |
 | PATH-01 | Phase 2 | Complete |
 | PATH-02 | Phase 2 | Complete |
-| DATA-01 | Phase 3 | Pending |
+| DATA-01 | Phase 3 | Complete |
 | REND-01 | Phase 4 | Pending |
 | REND-02 | Phase 4 | Pending |
 | LEGACY-01 | Phase 5 | Pending |
