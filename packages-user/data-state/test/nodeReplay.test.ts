@@ -5,7 +5,7 @@ import {
     IReplayVerifierRuntime,
     IReplayVerifierSnapshot,
     verifyReplay
-} from '../../../script/test-data-node';
+} from './replayVerifier';
 
 enum TestCommandOutcome {
     Success,
