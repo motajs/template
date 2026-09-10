@@ -81,6 +81,8 @@ Plans:
   3. 寻路正确避开不可通行格（碰撞/障碍/墙体）
 
 **Plans**: 5/5 plans executed
+
+**Scope correction (2026-09-10):** 用户审查确认本阶段不交付未授权的 `HeroPathfinding` L3 勇士封装；当前阶段保留 L2 寻路核心、共享通行性谓词与 DataCommon 方向映射依赖，勇士或渲染侧接线不作为本阶段实现内容。
 **UI hint**: yes
 Plans:
 

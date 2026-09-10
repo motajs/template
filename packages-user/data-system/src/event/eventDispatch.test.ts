@@ -63,6 +63,7 @@ interface TestModules {
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
     FaceManager: typeof import('@user/data-common').FaceManager;
     Dir8FaceHandler: typeof import('@user/data-common').Dir8FaceHandler;
+    DirectionMapper: typeof import('@motajs/common').DirectionMapper;
     EventTrigger: typeof eventTriggers;
     BlockEventType: typeof blockEventTypes;
     EventExecuteMode: typeof eventExecuteModes;
@@ -95,6 +96,7 @@ beforeAll(async () => {
         RoleFaceBinder: commonModule.RoleFaceBinder,
         FaceManager: commonModule.FaceManager,
         Dir8FaceHandler: commonModule.Dir8FaceHandler,
+        DirectionMapper: (await import('@motajs/common')).DirectionMapper,
         EventTrigger: eventTriggers,
         BlockEventType: blockEventTypes,
         EventExecuteMode: eventExecuteModes,
@@ -133,6 +135,7 @@ function createFixture(
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
+        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
     const maps = new modules.MapState(tileStore, commonState);

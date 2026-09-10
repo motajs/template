@@ -29,6 +29,7 @@ interface TestModules {
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
     FaceManager: typeof import('@user/data-common').FaceManager;
     Dir8FaceHandler: typeof import('@user/data-common').Dir8FaceHandler;
+    DirectionMapper: typeof import('@motajs/common').DirectionMapper;
 }
 
 let modules: TestModules;
@@ -38,12 +39,14 @@ beforeAll(async () => {
     vi.stubGlobal('location', { origin: 'http://localhost' });
     const mapModule = await import('./mapState');
     const commonModule = await import('@user/data-common');
+    const motaModule = await import('@motajs/common');
     modules = {
         MapState: mapModule.MapState,
         TileStore: commonModule.TileStore,
         RoleFaceBinder: commonModule.RoleFaceBinder,
         FaceManager: commonModule.FaceManager,
-        Dir8FaceHandler: commonModule.Dir8FaceHandler
+        Dir8FaceHandler: commonModule.Dir8FaceHandler,
+        DirectionMapper: motaModule.DirectionMapper
     };
 });
 
@@ -77,6 +80,7 @@ function createMapState(
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
+        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
     const mapState = new modules.MapState(tileStore, state);

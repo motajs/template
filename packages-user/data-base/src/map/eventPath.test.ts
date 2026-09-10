@@ -10,6 +10,7 @@ interface TestModules {
     MapState: typeof import('./mapState').MapState;
     TileStore: typeof import('@user/data-common').TileStore;
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
+    DirectionMapper: typeof import('@motajs/common').DirectionMapper;
     logger: typeof import('@motajs/common').logger;
 }
 
@@ -35,6 +36,7 @@ beforeAll(async () => {
         MapState: mapModule.MapState,
         TileStore: commonModule.TileStore,
         RoleFaceBinder: commonModule.RoleFaceBinder,
+        DirectionMapper: loggerModule.DirectionMapper,
         logger: loggerModule.logger
     };
 });
@@ -58,6 +60,7 @@ function createMapState() {
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager: {},
+        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
     return new modules.MapState(tileStore, state);

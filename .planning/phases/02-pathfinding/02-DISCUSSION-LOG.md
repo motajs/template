@@ -77,3 +77,16 @@
 ## Deferred Ideas
 
 - 移动端点击地图触发寻路的渲染端接线 → Phase 4 渲染适配
+
+---
+
+## 执行修正（2026-09-10）
+
+本次执行直接处理用户对 Phase 2 产物的结构审查意见，跳过新的 Plan 阶段；以下四项为本次执行的约束与验收依据：
+
+1. `IPathGraphEdge`、`IPathGraphNode`、`IPathGraph`、`IPathfindingGraphBuilder` 的类型声明与注释必须位于 `data-system/src/path/types.ts`，不得放在 `graph.ts`。
+2. 删除未获用户要求的 `data-state/src/path/heroPathfinding.ts` 及其测试、barrel 和 `CoreState` 接线；Phase 2 不交付勇士专用 L3 寻路封装。
+3. `DirectionMapper` 必须作为 `IDataCommon` 的共享依赖由主对象挂载，`PathfindingGraphBuilder` 不得自行构造。
+4. 通行性谓词不得命名或实现为勇士专属对象；提取到独立 `predicate.ts`，接口命名为 `DefaultPassPredicate`。
+
+本记录作为本次直接执行的范围来源；执行结果写入 `02-06-SUMMARY.md`，验证以修改后的 L2 代码和现有测试为准。

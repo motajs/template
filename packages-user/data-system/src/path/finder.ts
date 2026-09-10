@@ -7,8 +7,12 @@ import {
 } from '@user/data-base';
 import { isNil } from 'lodash-es';
 import { PathfindingGraphBuilder } from './graph';
-import { IPathfinder, IPathfindingStep, PathCostFunction } from './types';
-import { IPathGraph } from './graph';
+import {
+    IPathfinder,
+    IPathfindingStep,
+    IPathGraph,
+    PathCostFunction
+} from './types';
 
 interface IDistanceHeapEntry {
     /** 条目的键值，堆中键值最小的条目最先取出 */

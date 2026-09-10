@@ -4,10 +4,10 @@ milestone: v1.0
 current_phase: 02
 current_phase_name: 寻路系统
 status: verifying
-stopped_at: Completed 02-05-PLAN.md
-last_updated: "2026-09-10T01:49:11.198Z"
-last_activity: 2026-09-09
-last_activity_desc: Phase 02 execution started
+stopped_at: Completed direct execution correction 02-06
+last_updated: "2026-09-10T11:06:00.000Z"
+last_activity: 2026-09-10
+last_activity_desc: Phase 02 structural correction executed from user review
 state_head: 154df6a0697b0ecf1b4b96b2a151aa9e00094964
 progress:
   total_phases: 6
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-09-07)
 
 Phase: 02 (寻路系统) — EXECUTING
 Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-09-09 — Phase 02 execution started
+Status: Phase complete — verification must be regenerated after direct scope correction
+Last activity: 2026-09-10 — Phase 02 structural correction executed from user review
 
 Progress: [█████████░] 92%
 
@@ -122,6 +122,9 @@ Recent decisions affecting current work:
 - [Phase 02]: Phase 02 Plan 05 sets Vitest testTimeout and hookTimeout to 30 seconds to cover full-suite beforeAll import cost.
 - [Phase 02]: Phase 02 Plan 05 adds deterministic pnpm test:ci while preserving interactive pnpm test.
 - [Phase 02]: Phase 02 Plan 05 preserves D-11 by modifying no client click adapter or Phase 1 file.
+- [Phase 02]: 2026-09-10 用户结构审查修正：graph 类型及注释归回 path/types.ts；删除未授权的 HeroPathfinding L3 封装及其接线。
+- [Phase 02]: 2026-09-10 用户结构审查修正：DirectionMapper 由 IDataCommon 主对象共享注入；通行性谓词提取为 predicate.ts 的 DefaultPassPredicate。
+- [Phase 02]: 2026-09-10 直接执行摘要 02-06：旧的 L3 HeroPathfinding 相关验证记录仅代表历史实现，必须按修正后的 L2 范围重新验证。
 
 ### Pending Todos
 

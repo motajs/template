@@ -40,6 +40,7 @@ interface TestModules {
     ObjectMover: typeof import('@user/data-common').ObjectMover;
     FaceManager: typeof import('@user/data-common').FaceManager;
     Dir8FaceHandler: typeof import('@user/data-common').Dir8FaceHandler;
+    DirectionMapper: typeof import('@motajs/common').DirectionMapper;
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
 }
 
@@ -51,6 +52,7 @@ beforeAll(async () => {
     const systemModule = await import('./system');
     const baseModule = await import('@user/data-base');
     const commonModule = await import('@user/data-common');
+    const motaModule = await import('@motajs/common');
     modules = {
         PathfindingSystem: systemModule.PathfindingSystem,
         MapState: baseModule.MapState,
@@ -58,7 +60,8 @@ beforeAll(async () => {
         ObjectMover: commonModule.ObjectMover,
         FaceManager: commonModule.FaceManager,
         Dir8FaceHandler: commonModule.Dir8FaceHandler,
-        RoleFaceBinder: commonModule.RoleFaceBinder
+        RoleFaceBinder: commonModule.RoleFaceBinder,
+        DirectionMapper: motaModule.DirectionMapper
     };
 });
 
@@ -289,6 +292,7 @@ function createPerformanceSystem(
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
+        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
     const maps = new modules.MapState(tileStore, commonState);

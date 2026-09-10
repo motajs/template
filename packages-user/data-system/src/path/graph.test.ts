@@ -260,6 +260,7 @@ function createFixture(
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
+        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
     const maps = new modules.MapState(tileStore, commonState);

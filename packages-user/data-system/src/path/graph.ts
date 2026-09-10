@@ -1,7 +1,5 @@
 import {
-    DirectionMapper,
     IDirectionDescriptor,
-    IDirectionMapper,
     InternalDirectionGroup,
     ITileLocator,
     logger
@@ -15,79 +13,13 @@ import {
     IPassPredicate
 } from '@user/data-base';
 import { isNil } from 'lodash-es';
-import { PathCostFunction } from './types';
-
-export interface IPathGraphEdge {
-    /** 本条边对应的移动方向 */
-    readonly dir: FaceDirection;
-    /** 边指向的节点索引，值为 y * width + x */
-    readonly to: number;
-}
-
-export interface IPathGraphNode {
-    /** 节点索引，值为 y * width + x */
-    readonly index: number;
-    /** 节点横坐标 */
-    readonly x: number;
-    /** 节点纵坐标 */
-    readonly y: number;
-    /** 节点对应的位置信息 */
-    readonly block: ILayerLocation;
-    /** 进入该节点的损失，构建图时由损失函数计算 */
-    readonly cost: number;
-    /** 该节点是否仅可作为路径终点，不可作为中间节点 */
-    readonly terminal: boolean;
-    /** 该节点的全部出边 */
-    readonly edges: readonly IPathGraphEdge[];
-}
-
-export interface IPathGraph {
-    /** 图宽度 */
-    readonly width: number;
-    /** 图高度 */
-    readonly height: number;
-    /** 图内全部节点，键为节点索引 */
-    readonly nodes: ReadonlyMap<number, IPathGraphNode>;
-}
-
-export interface IPathfindingGraphBuilder {
-    /**
-     * 绑定地图状态对象，用于解析图层所属楼层 id
-     * @param maps 地图状态对象
-     */
-    useMapState(maps: IMapState | null): void;
-
-    /**
-     * 绑定构建有向图所用的地图图层
-     * @param layer 地图图层对象
-     */
-    useMapLayer(layer: IMapLayer | null): void;
-
-    /**
-     * 设置构建图时使用的损失函数，未注入时每格损失 1
-     * @param cost 损失函数
-     */
-    useCostFunction(cost: PathCostFunction | null): void;
-
-    /**
-     * 注入判定边可行性的通行性谓词
-     * @param predicate 通行性谓词
-     */
-    usePassPredicate(predicate: IPassPredicate | null): void;
-
-    /**
-     * 设置邻域使用的方向组
-     * @param group 朝向组
-     */
-    useDirGroup(group: number): void;
-
-    /**
-     * 以起始位置为中心构建有向图：沿可通行有向边 BFS 扩展，
-     * 仅包含从起始位置可达的节点。图层未绑定或起始位置越界时告警并返回空图
-     * @param start BFS 起始位置
-     */
-    build(start: ITileLocator): IPathGraph;
-}
+import {
+    IPathGraph,
+    IPathGraphEdge,
+    IPathGraphNode,
+    IPathfindingGraphBuilder,
+    PathCostFunction
+} from './types';
 
 /**
  * 将方向描述器的坐标增量解析为对应的朝向
@@ -117,9 +49,6 @@ export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
     private predicate: IPassPredicate | null = null;
     /** 邻域方向组别，默认四正交方向 */
     private group: number = InternalDirectionGroup.Dir4;
-
-    /** 方向组解析对象 */
-    private readonly mapper: IDirectionMapper = new DirectionMapper();
 
     useMapState(maps: IMapState | null): void {
         this.maps = maps;
@@ -181,7 +110,9 @@ export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
         const height = layer.height;
         const floorId = this.resolveFloorId();
         const state = layer.state;
-        const dirs: IDirectionDescriptor[] = [...this.mapper.map(this.group)];
+        const dirs: IDirectionDescriptor[] = [
+            ...layer.state.directionMapper.map(this.group)
+        ];
 
         const terminals: Set<number> = new Set();
         const adjacency: Map<number, IPathGraphEdge[]> = new Map();

@@ -43,6 +43,7 @@ interface TestModules {
     ObjectMover: typeof import('@user/data-common').ObjectMover;
     FaceManager: typeof import('@user/data-common').FaceManager;
     Dir8FaceHandler: typeof import('@user/data-common').Dir8FaceHandler;
+    DirectionMapper: typeof import('@motajs/common').DirectionMapper;
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
     logger: typeof import('@motajs/common').logger;
 }
@@ -63,6 +64,7 @@ beforeAll(async () => {
         ObjectMover: commonModule.ObjectMover,
         FaceManager: commonModule.FaceManager,
         Dir8FaceHandler: commonModule.Dir8FaceHandler,
+        DirectionMapper: motaModule.DirectionMapper,
         RoleFaceBinder: commonModule.RoleFaceBinder,
         logger: motaModule.logger
     };
@@ -319,6 +321,7 @@ function createSystem(rows: number[], width: number): SystemFixture {
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
+        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
     const maps = new modules.MapState(tileStore, commonState);

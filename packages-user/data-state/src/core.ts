@@ -75,9 +75,8 @@ import {
 } from './legacy';
 import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
-import { logger } from '@motajs/common';
+import { DirectionMapper, IDirectionMapper, logger } from '@motajs/common';
 import { DefaultHeroMoveTopImpl } from './hero';
-import { HeroPathfinding } from './path';
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
@@ -88,6 +87,7 @@ export class CoreState implements ICoreState {
     readonly itemStore: IItemStore<IHeroAttr, LegacyItemData>;
     readonly mapStore: IMapStore;
     readonly eventStore: IGameEventStore;
+    readonly directionMapper: IDirectionMapper;
 
     // Layer 1 数据层，所有可存档内容都在这，一般用于数据存储
     readonly maps: IMapState;
@@ -102,9 +102,6 @@ export class CoreState implements ICoreState {
     // Layer 3 用户层，也就是最顶层的内容，一般仅用于初始化以及仅供渲染端调用的顶层模块
     readonly loadProgress: ILoadProgressTotal;
     readonly dataLoader: IMotaDataLoader;
-    /** 勇士寻路入口 */
-    readonly pathfinding: HeroPathfinding;
-
     /** 可存档对象映射 */
     private readonly saveables: Map<string, ISaveableContent<any>> = new Map();
     /** 所有已添加的可存档对象 */
@@ -153,6 +150,7 @@ export class CoreState implements ICoreState {
         // 游戏事件
         const eventStore = new GameEventStore();
         this.eventStore = eventStore;
+        this.directionMapper = new DirectionMapper();
         // TODO: 后续在此初始化路径注册外部序列化事件定义与地图事件 id 绑定。
 
         //#endregion
@@ -238,7 +236,6 @@ export class CoreState implements ICoreState {
         // 勇士顶层初始化
         const heroMoveTopImpl = new DefaultHeroMoveTopImpl(this);
         this.hero.location.mover.useTopImplementation(heroMoveTopImpl);
-        this.pathfinding = new HeroPathfinding(this, heroMoveTopImpl);
 
         //#endregion
     }
