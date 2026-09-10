@@ -272,23 +272,23 @@ export class ReplayArray
             return {
                 paramType: 6,
                 paramValue: arr,
-                byteLength: arr.length
+                byteLength: arr.length + 2
             };
         } else if (typeof param === 'string') {
             const arr = this.textEncoder.encode(param);
-            if (arr.length < 248) {
+            if (arr.length > 0 && arr.length <= 248) {
                 // 8 ~ 255 - string
                 return {
-                    paramType: arr.length + 8,
+                    paramType: arr.length + 7,
                     paramValue: arr,
-                    byteLength: arr.length
+                    byteLength: arr.length + 1
                 };
             } else {
                 // 7 - string
                 return {
                     paramType: 7,
                     paramValue: arr,
-                    byteLength: arr.length
+                    byteLength: arr.length + 5
                 };
             }
         }
@@ -346,45 +346,47 @@ export class ReplayArray
      * @param params 参数列表
      */
     private setParamArray(startIndex: number, params: INormalizedParam[]) {
+        let index = startIndex;
         params.forEach(param => {
-            this.paramView.setInt8(startIndex, param.paramType);
+            this.paramView.setInt8(index, param.paramType);
 
             const num = param.paramValue as number;
             const arr = param.paramValue as Uint8Array;
 
             if (param.paramType === 0) {
                 // 0 - boolean
-                this.paramView.setInt8(startIndex + 1, num);
+                this.paramView.setInt8(index + 1, num);
             } else if (param.paramType === 1) {
                 // 1 - int8
-                this.paramView.setInt8(startIndex + 1, num);
+                this.paramView.setInt8(index + 1, num);
             } else if (param.paramType === 2) {
                 // 2 - int16
-                this.paramView.setInt16(startIndex + 1, num);
+                this.paramView.setInt16(index + 1, num);
             } else if (param.paramType === 3) {
                 // 3 - int32
-                this.paramView.setInt32(startIndex + 1, num);
+                this.paramView.setInt32(index + 1, num);
             } else if (param.paramType === 4) {
                 // 4 - int64
                 const high = Math.floor(num / 2147483648);
                 const low = num % 2147483648;
-                this.paramView.setInt32(startIndex + 1, low);
-                this.paramView.setInt32(startIndex + 5, high);
+                this.paramView.setInt32(index + 1, low);
+                this.paramView.setInt32(index + 5, high);
             } else if (param.paramType === 5) {
                 // 5 - float
-                this.paramView.setFloat64(startIndex + 1, num);
+                this.paramView.setFloat64(index + 1, num);
             } else if (param.paramType === 6) {
                 // 6 - bigint
-                this.paramArray[startIndex + 1] = arr.length;
-                this.paramArray.set(arr, startIndex + 2);
+                this.paramArray[index + 1] = arr.length;
+                this.paramArray.set(arr, index + 2);
             } else if (param.paramType === 7) {
                 // 7 - string
-                this.paramView.setInt32(startIndex + 1, arr.length);
-                this.paramArray.set(arr, startIndex + 5);
+                this.paramView.setInt32(index + 1, arr.length);
+                this.paramArray.set(arr, index + 5);
             } else {
                 // 8 ~ 256 - string
-                this.paramArray.set(arr, startIndex + 1);
+                this.paramArray.set(arr, index + 1);
             }
+            index += param.byteLength;
         });
     }
 
@@ -631,13 +633,13 @@ export class ReplayArray
             const length = this.paramView.getInt32(startIndex + 1);
             const endIndex = startIndex + 5 + length;
             const arr = this.paramArray.slice(startIndex + 5, endIndex);
-            byte = length + 2;
+            byte = length + 5;
             value = this.textDecoder.decode(arr);
         } else {
             // 8 ~ 255 - string
             const length = type - 7;
             const endIndex = startIndex + 1 + length;
-            const arr = this.paramArray.slice(startIndex + 5, endIndex);
+            const arr = this.paramArray.slice(startIndex + 1, endIndex);
             byte = length + 1;
             value = this.textDecoder.decode(arr);
         }

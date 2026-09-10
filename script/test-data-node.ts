@@ -40,8 +40,6 @@ interface IClosedLoopModule {
 }
 
 const require = createRequire(import.meta.url);
-const closedLoopModule =
-    require('../packages-user/data-state/test/fixtures/closed-loop.ts') as IClosedLoopModule;
 
 interface IReplayVerifierSandbox {
     readonly ended: boolean;
@@ -301,6 +299,8 @@ function createRuntime(fixture: IClosedLoopFixture): IReplayVerifierRuntime {
 }
 
 export async function runNodeReplayVerifier(): Promise<void> {
+    const closedLoopModule =
+        require('../packages-user/data-state/test/fixtures/closed-loop.ts') as IClosedLoopModule;
     const fixture = closedLoopModule.createClosedLoopFixture();
     await verifyReplay(createRuntime(fixture));
 }
