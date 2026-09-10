@@ -117,8 +117,13 @@ type EventBuiltinHandler = (
     env: IBlockEventEnv
 ) => void | Promise<void>;
 
+function isBuiltinParameter(value: BuiltinParameter): value is BuiltinParameter {
+    return value !== null && typeof value === 'object';
+}
+
 function createBuiltin(handler: EventBuiltinHandler): BuiltInFunction['func'] {
     return (param: BuiltinParameter, env: BuiltinEnvironment) => {
+        if (!isBuiltinParameter(param)) return;
         if (!isBlockEventEnv(env)) return;
         return handler(param, env);
     };

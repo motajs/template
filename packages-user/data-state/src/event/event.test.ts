@@ -27,6 +27,20 @@ interface EventFixture {
     readonly env: IBlockEventEnv;
 }
 
+type RegisteredBuiltin = ReturnType<
+    typeof createEventBuiltinRegistrations
+>[number];
+
+function invokeBuiltin(
+    registration: RegisteredBuiltin,
+    param: null | undefined,
+    env: IBlockEventEnv
+): Promise<void> {
+    return Promise.resolve(
+        Reflect.apply(registration.func, undefined, [param, env])
+    );
+}
+
 function createFixture(): EventFixture {
     const state = new CoreState();
     state.tileStore.addTile({
@@ -205,6 +219,20 @@ describe('event built-ins', () => {
                 func: expect.any(Function)
             });
         }
+    });
+
+    // 验证真实注册的 eventSetBlock 对 null 参数安全返回且不修改状态
+    it('safely resolves a null parameter through the eventSetBlock registration', async () => {
+        const fixture = createFixture();
+        const registration = createEventBuiltinRegistrations().find(
+            item => item.name === EventBuiltinName.SetBlock
+        );
+        expect(registration).toBeDefined();
+        if (!registration) throw new Error('eventSetBlock registration missing');
+        await expect(
+            invokeBuiltin(registration, null, fixture.env)
+        ).resolves.toBeUndefined();
+        expect(fixture.layer.getBlock(0, 0)).toBe(1);
     });
 
     // 验证缺失地图、勇士和事件 id 时所有函数都安全返回
