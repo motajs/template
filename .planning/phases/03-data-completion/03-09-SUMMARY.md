@@ -107,7 +107,7 @@ Each task was committed atomically:
 1. **Task 1: GAP-03-03 decorate production replay command entrances** - `fc9a1ad` (feat)
 2. **Task 2: GAP-03-03 production decoration and async-boundary regression** - `160a0d5` (test)
 
-**Plan metadata:** pending final metadata commit
+**Plan metadata:** `f8d7b70` (docs)
 
 ## Files Created/Modified
 
