@@ -120,7 +120,7 @@ Each task was committed atomically:
 1. **Task 1: Restore the authorized path contract while preserving the end-to-end path stack** - `a2aedb3` (refactor)
 2. **Task 2: Close the nullable static event-source type gap** - `93453db` (fix)
 
-**Plan metadata:** pending final metadata commit
+**Plan metadata:** `78b0295` (docs: complete plan)
 
 ## Files Created/Modified
 
