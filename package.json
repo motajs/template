@@ -6,6 +6,7 @@
     "scripts": {
         "dev": "tsx script/dev.ts",
         "test": "vitest",
+        "test:ci": "vitest run",
         "preview": "vite preview",
         "declare": "tsx script/declare.ts",
         "lines": "tsx script/lines.ts packages packages-user",
