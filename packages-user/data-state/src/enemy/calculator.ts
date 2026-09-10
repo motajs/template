@@ -6,7 +6,6 @@ import {
 } from '@user/data-system';
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import { IVampireValue } from './special';
-import { state } from '../ins';
 import { logger } from '@motajs/common';
 
 export class MainDamageCalculator implements IDamageCalculator<
@@ -30,7 +29,10 @@ export class MainDamageCalculator implements IDamageCalculator<
         let monHp = enemy.getAttribute('hp');
 
         // 无敌
-        if (enemy.hasSpecial(20) && core.itemCount('cross') < 1) {
+        if (
+            enemy.hasSpecial(20) &&
+            (handler.state.hero.items.getItemState('cross')?.count ?? 0) < 1
+        ) {
             return { damage: Infinity, turn: 0 };
         }
 
@@ -147,7 +149,7 @@ export class MainDamageCalculator implements IDamageCalculator<
 
         // 仇恨，无法被魔防减伤
         if (enemy.hasSpecial(17)) {
-            damage += state.flags.getFieldValueDefaults('hatred', 0);
+            damage += handler.state.flags.getFieldValueDefaults('hatred', 0);
         }
 
         return {

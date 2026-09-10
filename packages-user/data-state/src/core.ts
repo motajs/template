@@ -15,7 +15,6 @@ import {
     IHeroAttr,
     IEnemyAttr,
     ISaveSystem,
-    SaveSystem,
     GameEventStore,
     IGameEventStore,
     IItemStore,
@@ -33,7 +32,6 @@ import {
     FlagSystem,
     IMotaDataLoader,
     MotaDataLoader,
-    loading,
     IReadonlyEnemy,
     IMapState,
     MapState
@@ -68,11 +66,9 @@ import {
     TILE_WIDTH
 } from './shared';
 import {
-    ItemLegacyBridge,
-    LegacyItemData,
-    LegacyTileData,
-    TileLegacyBridge
-} from './legacy';
+    createLegacyDependencies,
+    ILegacyLoadData
+} from './legacy/dependencies';
 import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { DirectionMapper, IDirectionMapper, logger } from '@motajs/common';
@@ -83,8 +79,8 @@ export class CoreState implements ICoreState {
     readonly saveSystem: ISaveSystem;
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
-    readonly tileStore: ITileStore<LegacyTileData>;
-    readonly itemStore: IItemStore<IHeroAttr, LegacyItemData>;
+    readonly tileStore: ITileStore;
+    readonly itemStore: IItemStore<IHeroAttr, unknown>;
     readonly mapStore: IMapStore;
     readonly eventStore: IGameEventStore;
     readonly directionMapper: IDirectionMapper;
@@ -113,10 +109,12 @@ export class CoreState implements ICoreState {
     > = new Map();
 
     constructor() {
+        const legacy = createLegacyDependencies();
+
         //#region L0 初始化
 
         // 存档系统
-        this.saveSystem = new SaveSystem();
+        this.saveSystem = legacy.saveSystem;
         // 配置存档系统，一般情况下不建议动，除非你知道你在干什么
         this.saveSystem.config({
             autosaveLevel: SaveCompression.LowCompression,
@@ -137,12 +135,17 @@ export class CoreState implements ICoreState {
         this.faceManager.registerById('dir8', dir8);
 
         // 图块
-        const tileStore = new TileStore<LegacyTileData>();
-        tileStore.attachLegacyConverter(new TileLegacyBridge());
+        const tileStore = new TileStore();
+        if (legacy.tileConverter) {
+            tileStore.attachLegacyConverter(legacy.tileConverter);
+        }
         this.tileStore = tileStore;
         // 道具
-        const itemStore = new ItemStore<IHeroAttr, LegacyItemData>();
-        itemStore.attachLegacyConverter(new ItemLegacyBridge(this));
+        const itemStore = new ItemStore();
+        const itemConverter = legacy.createItemConverter(this);
+        if (itemConverter) {
+            itemStore.attachLegacyConverter(itemConverter);
+        }
         this.itemStore = itemStore;
         // 地图
         const mapStore = new MapStore();
@@ -173,7 +176,7 @@ export class CoreState implements ICoreState {
 
         // 怪物管理器
         const comparer = new MainEnemyComparer();
-        const enemyManager = new EnemyManager(new EnemyLegacyBridge());
+        const enemyManager = new EnemyManager(legacy.enemyBridge);
         enemyManager.attachEnemyComparer(comparer);
         enemyManager.setAttributeDefaults('hp', 0);
         enemyManager.setAttributeDefaults('atk', 0);
@@ -217,20 +220,9 @@ export class CoreState implements ICoreState {
         this.addSaveableContent('@system/flags', this.flags);
         this.addSaveableContent('@system/maps', this.maps);
         this.addSaveableContent('@system/enemy', this.enemyManager);
-        // 初始化存档数据库，不要动
-        loading.once('coreInit', () => {
-            this.saveSystem.init(`@game/${core.firstData.name}`);
-        });
-
-        // 加载初始化，先使用兼容层实现
-        loading.once('loaded', () => {
-            this.initTileStore(core.maps.blocksInfo);
-            this.initItemStore(core.items.items);
-            this.initEnemyManager(enemys_fcae963b_31c9_42b4_b48c_bb48d09f3f80);
-            this.initMapState(
-                core.floorIds,
-                core.floors as Record<FloorIds, ResolvedFloor>
-            );
+        // 旧样板初始化只能经由内部边界进入，Node 路径不会注册加载回调
+        legacy.registerLoading(data => {
+            this.initLegacyData(data);
         });
 
         // 勇士顶层初始化
@@ -242,11 +234,18 @@ export class CoreState implements ICoreState {
 
     //#region 私有方法
 
+    private initLegacyData(data: ILegacyLoadData): void {
+        this.initTileStore(data.tiles);
+        this.initItemStore(data.items);
+        this.initEnemyManager(data.enemies);
+        this.initMapState(data.floors, data.maps);
+    }
+
     /**
      * 初始化图块存储对象
      * @param data 旧样板图块定义对象
      */
-    private initTileStore(data: typeof core.maps.blocksInfo) {
+    private initTileStore(data: ILegacyLoadData['tiles']) {
         const entries = Object.entries(data);
         for (const [key, block] of entries) {
             this.tileStore.fromLegacy(Number(key), block);
@@ -277,7 +276,7 @@ export class CoreState implements ICoreState {
      * 初始化道具存储对象
      * @param data 旧样板道具定义对象
      */
-    private initItemStore(data: typeof core.items.items) {
+    private initItemStore(data: ILegacyLoadData['items']) {
         const entries = Object.entries(data);
         for (const [id, legacy] of entries) {
             const num = this.tileStore.idToNumber(id);
@@ -293,7 +292,7 @@ export class CoreState implements ICoreState {
      * 初始化怪物管理器对象
      * @param data 旧样板怪物存储对象
      */
-    private initEnemyManager(data: Record<EnemyIds, Enemy>) {
+    private initEnemyManager(data: ILegacyLoadData['enemies']) {
         const manager = this.enemyManager;
         const reference = new Map<number, IReadonlyEnemy<IEnemyAttr>>();
         for (const [id, enemy] of Object.entries(structuredClone(data))) {
@@ -326,8 +325,8 @@ export class CoreState implements ICoreState {
     }
 
     private initMapState(
-        floors: FloorIds[],
-        data: Record<FloorIds, ResolvedFloor>
+        floors: ILegacyLoadData['floors'],
+        data: ILegacyLoadData['maps']
     ) {
         const reference = new Map<string, Map<number, Uint32Array>>();
         for (const id of floors) {
@@ -435,4 +434,8 @@ export class CoreState implements ICoreState {
     }
 
     //#endregion
+}
+
+export function createCoreState(): CoreState {
+    return new CoreState();
 }

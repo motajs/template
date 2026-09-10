@@ -40,7 +40,7 @@ export class HeroMover<T extends IHeroLocation>
         readonly tile: T,
         faceHandler: IFaceHandler<FaceDirection>
     ) {
-        super(faceHandler, tile.getCurrentFaceDirection());
+        super(faceHandler, FaceDirection.Unknown);
         this.state = tile.state;
     }
 
