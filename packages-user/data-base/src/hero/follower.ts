@@ -1,7 +1,6 @@
 import {
     Hookable,
     HookController,
-    IFacedTileLocator,
     IHookController,
     logger
 } from '@motajs/common';
@@ -9,6 +8,7 @@ import {
     FaceDirection,
     IDataCommon,
     IFaceHandler,
+    IFacedTileLocator,
     SaveCompression
 } from '@user/data-common';
 import { HeroLocation } from './location';

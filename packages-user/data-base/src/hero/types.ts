@@ -1,5 +1,4 @@
 import {
-    IFacedTileLocator,
     IHookBase,
     IHookable,
     ITileLocator
@@ -8,6 +7,7 @@ import {
     FaceDirection,
     IDataCommonExtended,
     IFaceHandler,
+    IFacedTileLocator,
     IItemRawData,
     IObjectMovable,
     IObjectMover,

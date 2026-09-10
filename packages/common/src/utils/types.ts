@@ -1,5 +1,3 @@
-import { FaceDirection } from '@user/data-common';
-
 export interface ISearchable4Dir {
     /** 获取上侧元素 */
     up(): ISearchable4Dir | null;
@@ -142,11 +140,6 @@ export interface ITileLocator {
     x: number;
     /** 图块所在纵坐标 */
     y: number;
-}
-
-export interface IFacedTileLocator extends ITileLocator {
-    /** 图块朝向 */
-    direction: FaceDirection;
 }
 
 export const enum InternalDirectionGroup {

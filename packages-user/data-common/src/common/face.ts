@@ -1,7 +1,7 @@
 import { logger } from '@motajs/common';
-import { IFaceData, IRoleFaceBinder } from '../common';
+import { IFaceData, IRoleFaceBinder } from './types';
 import { isNil } from 'lodash-es';
-import { FaceDirection } from '.';
+import { FaceDirection } from './types';
 
 interface FaceInfo {
     /** 此图块的朝向 */

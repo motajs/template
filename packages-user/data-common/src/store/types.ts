@@ -1,4 +1,4 @@
-import { IFacedTileLocator } from '@motajs/common';
+import { IFacedTileLocator } from '../common';
 import { IReadonlyGameEvent } from '../event';
 
 //#region tile

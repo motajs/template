@@ -1,3 +1,5 @@
+import { ITileLocator } from '@motajs/common';
+
 export const enum FaceDirection {
     Unknown,
     Left,
@@ -8,6 +10,11 @@ export const enum FaceDirection {
     RightUp,
     LeftDown,
     RightDown
+}
+
+export interface IFacedTileLocator extends ITileLocator {
+    /** 图块朝向 */
+    direction: FaceDirection;
 }
 
 export interface IFaceData {

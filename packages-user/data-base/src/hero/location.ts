@@ -1,10 +1,14 @@
 import {
     Hookable,
     HookController,
-    IFacedTileLocator,
     IHookController
 } from '@motajs/common';
-import { FaceDirection, IDataCommon, IFaceHandler } from '@user/data-common';
+import {
+    FaceDirection,
+    IDataCommon,
+    IFaceHandler,
+    IFacedTileLocator
+} from '@user/data-common';
 import { HeroMover } from './mover';
 import {
     IHeroLocation,
