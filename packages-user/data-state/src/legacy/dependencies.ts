@@ -4,6 +4,7 @@ import {
     IEnemyAttr,
     ISaveSystem,
     ITileLegacyConverter,
+    IMapRawData,
     MemorySaveSystem,
     SaveSystem
 } from '@user/data-common';
@@ -12,6 +13,16 @@ import { IStateSystem } from '@user/data-system';
 import { EnemyLegacyBridge } from '../enemy/legacy';
 import { ItemLegacyBridge, LegacyItemData } from './item';
 import { LegacyTileData, TileLegacyBridge } from './tile';
+import { ISerializedEventDefinitions } from './events';
+
+/** CoreState 内部显式数据加载所需的序列化事件与原始地图 */
+export interface ILegacySerializedLoadData {
+    readonly events: ISerializedEventDefinitions;
+    readonly maps: readonly IMapRawData[];
+}
+
+/** 仅供 CoreState 与 legacy 数据源之间使用的加载方法标识 */
+export const LOAD_SERIALIZED_DATA = Symbol('loadSerializedData');
 
 export interface ILegacyLoadData {
     readonly tiles: typeof core.maps.blocksInfo;
@@ -19,6 +30,7 @@ export interface ILegacyLoadData {
     readonly enemies: Record<EnemyIds, Enemy>;
     readonly floors: FloorIds[];
     readonly maps: Record<FloorIds, ResolvedFloor>;
+    readonly serialized?: ILegacySerializedLoadData;
 }
 
 export interface ILegacyDependencies {

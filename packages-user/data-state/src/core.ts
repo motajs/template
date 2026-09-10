@@ -21,7 +21,8 @@ import {
     ItemStore,
     IMapStore,
     MapStore,
-    IReplaySystem
+    IReplaySystem,
+    IMapRawData
 } from '@user/data-common';
 import {
     EnemyManager,
@@ -70,8 +71,11 @@ import {
 } from './shared';
 import {
     createLegacyDependencies,
-    ILegacyLoadData
+    ILegacyLoadData,
+    ILegacySerializedLoadData,
+    LOAD_SERIALIZED_DATA
 } from './legacy/dependencies';
+import { registerSerializedEvents } from './legacy/events';
 import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { DirectionMapper, IDirectionMapper, logger } from '@motajs/common';
@@ -163,7 +167,6 @@ export class CoreState implements ICoreState {
         const eventStore = new GameEventStore();
         this.eventStore = eventStore;
         this.directionMapper = new DirectionMapper();
-        // TODO: 后续在此初始化路径注册外部序列化事件定义与地图事件 id 绑定。
 
         //#endregion
 
@@ -261,7 +264,21 @@ export class CoreState implements ICoreState {
         this.initTileStore(data.tiles);
         this.initItemStore(data.items);
         this.initEnemyManager(data.enemies);
-        this.initMapState(data.floors, data.maps);
+        if (data.serialized) {
+            this[LOAD_SERIALIZED_DATA](data.serialized);
+        } else {
+            this.initMapState(data.floors, data.maps);
+        }
+    }
+
+    /** 经内部加载边界注册序列化事件并绑定原始地图事件 id */
+    [LOAD_SERIALIZED_DATA](data: ILegacySerializedLoadData): void {
+        registerSerializedEvents(
+            this.eventStore,
+            this.eventSystem.executor.interpreter,
+            data.events
+        );
+        this.initRawMapState(data.maps);
     }
 
     /**
@@ -417,6 +434,20 @@ export class CoreState implements ICoreState {
             }
 
             reference.set(id, ref);
+        }
+        this.maps.compareWith(reference);
+    }
+
+    private initRawMapState(data: readonly IMapRawData[]): void {
+        const reference = new Map<string, Map<number, Uint32Array>>();
+        for (const raw of data) {
+            const state = this.maps.fromRaw(raw);
+            if (!state) continue;
+            const ref = new Map<number, Uint32Array>();
+            for (const [zIndex, map] of Object.entries(raw.map)) {
+                ref.set(Number(zIndex), new Uint32Array(map));
+            }
+            reference.set(raw.floorId, ref);
         }
         this.maps.compareWith(reference);
     }
