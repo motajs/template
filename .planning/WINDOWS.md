@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 14
+open_count: 12
 waived_count: 0
-fixed_count: 3
+fixed_count: 5
 total_count: 17
-last_updated: 2026-09-10T09:18:59.589Z
+last_updated: 2026-09-10T12:20:54.566Z
 ---
 
 # Broken Windows Ledger
@@ -15,7 +15,7 @@ last_updated: 2026-09-10T09:18:59.589Z
 
 | id | phase | kind | file | line | description | status | reason | recorded_at | resolved_at |
 |----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
-| 1 | 01 | stub | packages-user/data-state/src/core.ts | 153 | Serialized event registration and map-id binding remains an intentional deferred TODO. | open |  | 2026-09-08T15:06:40.634Z |  |
+| 1 | 01 | stub | packages-user/data-state/src/core.ts | 153 | Serialized event registration and map-id binding remains an intentional deferred TODO. | fixed |  | 2026-09-08T15:06:40.634Z | 2026-09-10T12:20:52.319Z |
 | 2 | 01 | unrun-verify | .planning/phases/01-event/01-05-SUMMARY.md |  | Downstream implementation verification was not run because the user explicitly prohibited downstream plan execution. | open |  | 2026-09-08T15:37:54.227Z |  |
 | 3 | 01 | deviation | packages-user/data-base/src/map/mapLayer.ts |  | Replaced unsupported Map upsert runtime calls so the raw map event path runs under Node Vitest. | open |  | 2026-09-08T15:54:23.173Z |  |
 | 4 | 02 | skipped-test | packages-user/data-common/src/common/mover.test.ts |  | 4 个 it.skip 坐标回写回归用例（x/y 正交、斜向、传送），待 02-02 修复 mover.ts:651 后翻绿 | fixed |  | 2026-09-09T07:51:25.555Z | 2026-09-09T09:34:39.843Z |
@@ -28,7 +28,7 @@ last_updated: 2026-09-10T09:18:59.589Z
 | 11 | 03 | unrun-verify | .planning/phases/03-data-completion/deferred-items.md |  | Repository type gate remains non-zero on pre-existing render/legacy and Tile contract diagnostics; owned Node tracer and data tests pass. | fixed |  | 2026-09-10T07:45:45.249Z | 2026-09-10T07:58:56.466Z |
 | 12 | 03 | unrun-verify | .planning/phases/03-data-completion/deferred-items.md |  | Repository type gate remains non-zero on pre-existing render/legacy diagnostics; Tile contract diagnostics are resolved. | open |  | 2026-09-10T07:58:50.208Z |  |
 | 13 | 03 | deviation | packages-user/data-common/src/store/tileStore.test.ts |  | Applied ESLint/Prettier CRLF formatting required by the project after functional Tile tests passed. | open |  | 2026-09-10T07:59:02.467Z |  |
-| 14 | 03 | stub | packages-user/data-state/src/core.ts | 166 | Existing deferred serialized event registration and map-event-id binding TODO; preserved by Plan 03-03. | open |  | 2026-09-10T08:47:49.808Z |  |
+| 14 | 03 | stub | packages-user/data-state/src/core.ts | 166 | Existing deferred serialized event registration and map-event-id binding TODO; preserved by Plan 03-03. | fixed |  | 2026-09-10T08:47:49.808Z | 2026-09-10T12:20:54.566Z |
 | 15 | 03 | deviation | packages-user/data-common/src/replay/array.ts |  | Repaired replay parameter encoding so diagnostic params remain original and deterministic. | open |  | 2026-09-10T09:18:58.279Z |  |
 | 16 | 03 | deviation | packages-user/data-state/test/replayVerifier.ts |  | Added a package-local verifier harness shared by Vitest and the Node runner to avoid composite-script import resolution. | open |  | 2026-09-10T09:18:58.946Z |  |
 | 17 | 03 | deviation | packages-user/data-state/test/fixtures/closed-loop.ts |  | Applied repository Prettier/CRLF formatting to the fixed replay fixture and runner files. | open |  | 2026-09-10T09:18:59.589Z |  |
@@ -42,10 +42,10 @@ last_updated: 2026-09-10T09:18:59.589Z
     "file": "packages-user/data-state/src/core.ts",
     "line": 153,
     "description": "Serialized event registration and map-id binding remains an intentional deferred TODO.",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-08T15:06:40.634Z",
-    "resolved_at": null
+    "resolved_at": "2026-09-10T12:20:52.319Z"
   },
   {
     "id": 2,
@@ -198,10 +198,10 @@ last_updated: 2026-09-10T09:18:59.589Z
     "file": "packages-user/data-state/src/core.ts",
     "line": 166,
     "description": "Existing deferred serialized event registration and map-event-id binding TODO; preserved by Plan 03-03.",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-10T08:47:49.808Z",
-    "resolved_at": null
+    "resolved_at": "2026-09-10T12:20:54.566Z"
   },
   {
     "id": 15,
