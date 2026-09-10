@@ -11,16 +11,16 @@ global command numbers.
 
 `ReplayCommandCode` is the sole owner of these numeric values:
 
-| Order | Enum member | Stable code | Route command | Action |
-|---:|---|---:|---|---|
-| 1 | `Up` | `0` | `up` | Move the hero one step upward |
-| 2 | `Right` | `1` | `right` | Move the hero one step rightward |
-| 3 | `Down` | `2` | `down` | Move the hero one step downward |
-| 4 | `Left` | `3` | `left` | Move the hero one step leftward |
-| 5 | `AutoPathfindToPoint` | `4` | `auto-pathfind-to-point` | Move the hero to the encoded target point |
-| 6 | `UseItem` | `5` | `use-item` | Call the hero item-use entry point |
-| 7 | `Equip` | `6` | `equip` | Equip the encoded equipment instance into the encoded slot |
-| 8 | `Unequip` | `7` | `unequip` | Unequip the encoded numeric slot |
+| Order | Enum member           | Stable code | Route command            | Action                                                     |
+| ----: | --------------------- | ----------: | ------------------------ | ---------------------------------------------------------- |
+|     1 | `Up`                  |         `0` | `up`                     | Move the hero one step upward                              |
+|     2 | `Right`               |         `1` | `right`                  | Move the hero one step rightward                           |
+|     3 | `Down`                |         `2` | `down`                   | Move the hero one step downward                            |
+|     4 | `Left`                |         `3` | `left`                   | Move the hero one step leftward                            |
+|     5 | `AutoPathfindToPoint` |         `4` | `auto-pathfind-to-point` | Move the hero to the encoded target point                  |
+|     6 | `UseItem`             |         `5` | `use-item`               | Call the hero item-use entry point                         |
+|     7 | `Equip`               |         `6` | `equip`                  | Equip the encoded equipment instance into the encoded slot |
+|     8 | `Unequip`             |         `7` | `unequip`                | Unequip the encoded numeric slot                           |
 
 The values `0` through `7` are part of the replay format. They must not be
 renumbered, inferred from registration-map iteration, replaced with strings,
@@ -34,13 +34,13 @@ The command route continues to use the existing primitive
 `ReplayParamValue[]` representation. The command implementations validate
 their parameter count and primitive types before touching state:
 
-| Command | Parameters | State access |
-|---|---|---|
-| `up`, `right`, `down`, `left` | none | `CoreState.hero.location.mover` |
-| `auto-pathfind-to-point` | numeric `x`, numeric `y` | the internally owned `PathfindingSystem`, bound to the hero mover |
-| `use-item` | one numeric item number or string item id | `CoreState.hero.items.useItem(item)` |
-| `equip` | numeric equipment `uid`, numeric or string slot, optional boolean `autoUnload` | `CoreState.hero.equip.equip(uid, slot, autoUnload)` |
-| `unequip` | one numeric slot | `CoreState.hero.equip.unequip(slot)` |
+| Command                       | Parameters                                                                     | State access                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `up`, `right`, `down`, `left` | none                                                                           | `CoreState.hero.location.mover`                                   |
+| `auto-pathfind-to-point`      | numeric `x`, numeric `y`                                                       | the internally owned `PathfindingSystem`, bound to the hero mover |
+| `use-item`                    | one numeric item number or string item id                                      | `CoreState.hero.items.useItem(item)`                              |
+| `equip`                       | numeric equipment `uid`, numeric or string slot, optional boolean `autoUnload` | `CoreState.hero.equip.equip(uid, slot, autoUnload)`               |
+| `unequip`                     | one numeric slot                                                               | `CoreState.hero.equip.unequip(slot)`                              |
 
 Invalid parameter count/types, missing targets, an already-running action, or
 a state API failure return `false`. A successful synchronous state API returns
