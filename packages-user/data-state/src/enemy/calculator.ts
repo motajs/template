@@ -137,7 +137,13 @@ export class MainDamageCalculator implements IDamageCalculator<
         damage -= mdef;
 
         // 未开启负伤时，如果伤害为负，则设为 0
-        if (!core.flags.enableNegativeDamage && damage < 0) {
+        if (
+            !handler.state.flags.getFieldValueDefaults(
+                'enableNegativeDamage',
+                false
+            ) &&
+            damage < 0
+        ) {
             damage = 0;
         }
 
