@@ -76,6 +76,13 @@
 
 用户已调整工作区接口设计，规划以当前 `packages-user/data-common/src/store/types.ts` 为准：`ITileRawData.events` 保存默认事件映射，`ITileStore.getEvent(num)` 返回事件映射。旧的 `trigger` 标量实现不再是候选契约。
 
+### User-specified implementation scope
+
+- `createCoreState()` 暂不接收 options，直接执行 `new CoreState()`；主要初始化逻辑保留在 constructor。
+- 事件内建函数按 `data-state/src/event` 示例扩展，覆盖地图控制、玩家控制和事件临时插入控制。
+- Replay 指令按顺序覆盖上右下左移动、自动寻路至指定点、使用道具、穿装备、卸装备。
+- 最终 Node 验收只在播放完毕时比较勇士全部属性和所有地图矩阵；逐步勇士属性检查仅作为单测中的可选快速定位手段。
+
 ---
 
 ## the agent's Discretion

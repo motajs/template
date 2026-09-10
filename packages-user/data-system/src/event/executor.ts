@@ -1,12 +1,14 @@
 import { logger } from '@motajs/common';
+import { IGameEventStore } from '@user/data-common';
+import { AnonTokyoInterpreter } from 'anon-tokyo';
 import {
+    EventExecuteMode,
+    EventReduceMode,
+    IGameEventExecutor,
     IBlockEventEnv,
     IBlockEventParam,
     IGameEventInvocation
-} from '@user/data-base';
-import { IGameEventStore } from '@user/data-common';
-import { AnonTokyoInterpreter } from 'anon-tokyo';
-import { EventExecuteMode, EventReduceMode, IGameEventExecutor } from './types';
+} from './types';
 
 export class EventExecutor implements IGameEventExecutor {
     mode: EventExecuteMode = EventExecuteMode.Normal;

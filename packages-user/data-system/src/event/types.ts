@@ -1,11 +1,69 @@
+import { ITileLocator } from '@motajs/common';
 import {
-    IBlockEventEnv,
-    IBlockEventParam,
     IDataBaseExtended,
-    IGameEventInvocation
+    IGameMap,
+    IMapLayer,
+    IReadonlyTileBase
 } from '@user/data-base';
-import { IGameEventStore } from '@user/data-common';
+import {
+    EventTrigger,
+    IGameEvent,
+    IGameEventStore,
+    IReadonlyGameEvent
+} from '@user/data-common';
 import { AnonTokyoInterpreter } from 'anon-tokyo';
+
+export const enum BlockEventType {
+    /** 普通事件类型，一般是手动触发的 */
+    CommonEvent,
+    /** 点事件类型 */
+    PointEvent,
+    /** 图块事件类型 */
+    TileEvent
+}
+
+export interface IBlockEventParam {
+    /** 自定义参数 */
+    readonly custom: Record<string, any>;
+}
+
+export interface IBlockEventEnv extends IDataBaseExtended {
+    /** 事件类型 */
+    readonly type: BlockEventType;
+    /** 本次事件的触发器类型 */
+    readonly trigger: EventTrigger;
+    /** 触发事件时玩家的位置 */
+    readonly heroLocator: Readonly<ITileLocator>;
+    /** 触发事件时玩家的位置 */
+    readonly heroFloor: string;
+    /** 触发事件时触发者的位置，有可能不存在 */
+    readonly triggerLocator: Readonly<ITileLocator> | null;
+    /** 触发事件的图块，有可能不存在 */
+    readonly tile: IReadonlyTileBase | null;
+    /** 触发事件的图层，有可能不存在 */
+    readonly layer: IMapLayer | null;
+    /** 触发事件的地图，有可能不存在 */
+    readonly map: IGameMap | null;
+}
+
+export interface IGameEventInvocation {
+    /** 事件在 `IGameEventStore` 中的 id */
+    readonly id: string;
+    /** 此次调用对应的真实来源环境 */
+    readonly env: IBlockEventEnv;
+}
+
+export interface IReadonlyBlockEvent<R = void> extends IReadonlyGameEvent<
+    IBlockEventParam,
+    IBlockEventEnv,
+    R
+> {}
+
+export interface IBlockEvent<R = void> extends IGameEvent<
+    IBlockEventParam,
+    IBlockEventEnv,
+    R
+> {}
 
 export const enum EventExecuteMode {
     /** 正常顺序执行，执行完前一个后执行后一个 */

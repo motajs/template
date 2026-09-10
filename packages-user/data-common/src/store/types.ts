@@ -79,10 +79,10 @@ export interface ITileStore<TLegacy = unknown> {
     getData(num: number): ITileRawData | null;
 
     /**
-     * 获取指定图块数字对应的默认触发器类型
+     * 获取指定图块数字对应的事件列表
      * @param num 图块数字
      */
-    getTrigger(num: number): number[];
+    getEvent(num: number): ReadonlyMap<number, string>;
 
     /**
      * 获取指定图块数字对应的图块类型

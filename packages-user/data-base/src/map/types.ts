@@ -5,16 +5,13 @@ import {
     ITileLocator
 } from '@motajs/common';
 import {
-    EventTrigger,
     FaceDirection,
     IDataCommonExtended,
-    IGameEvent,
     ILocationHelper,
     IMapRawData,
     IMoverController,
     IObjectMovable,
     IObjectMover,
-    IReadonlyGameEvent,
     IRoleFaceBinder,
     ISaveableContent,
     ITileRawData
@@ -22,56 +19,6 @@ import {
 import { ITileStore } from '@user/data-common';
 
 //#region 事件信息
-
-export const enum BlockEventType {
-    /** 普通事件类型，一般是手动触发的 */
-    CommonEvent,
-    /** 点事件类型 */
-    PointEvent,
-    /** 图块事件类型 */
-    TileEvent
-}
-
-export interface IBlockEventParam {
-    /** 自定义参数 */
-    readonly custom: Record<string, any>;
-}
-
-export interface IBlockEventEnv extends IDataCommonExtended {
-    /** 事件类型 */
-    readonly type: BlockEventType;
-    /** 本次事件的触发器类型 */
-    readonly trigger: EventTrigger;
-    /** 触发事件时玩家的位置 */
-    readonly heroLocator: Readonly<ITileLocator>;
-    /** 触发事件时触发者的位置，有可能不存在 */
-    readonly triggerLocator: Readonly<ITileLocator> | null;
-    /** 触发事件的图块，有可能不存在 */
-    readonly tile: IReadonlyTileBase | null;
-    /** 触发事件的图层，有可能不存在 */
-    readonly layer: IMapLayer | null;
-    /** 触发事件的地图，有可能不存在 */
-    readonly map: IGameMap | null;
-}
-
-export interface IGameEventInvocation {
-    /** 事件在 `IGameEventStore` 中的 id */
-    readonly id: string;
-    /** 此次调用对应的真实来源环境 */
-    readonly env: IBlockEventEnv;
-}
-
-export interface IReadonlyBlockEvent<R = void> extends IReadonlyGameEvent<
-    IBlockEventParam,
-    IBlockEventEnv,
-    R
-> {}
-
-export interface IBlockEvent<R = void> extends IGameEvent<
-    IBlockEventParam,
-    IBlockEventEnv,
-    R
-> {}
 
 //#region 图块信息
 

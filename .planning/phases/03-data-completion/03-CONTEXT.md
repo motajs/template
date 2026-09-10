@@ -44,6 +44,10 @@
 - **D-20:** 循环依赖门禁覆盖四个数据包内部及其相互边界，允许依赖无环的 `@motajs/common` 基础包。
 - **D-21:** 新增专用 `pnpm test:data-node` 命令，使用 `script/test-data-node.ts` 或等价 Node runner，固定 fixture 放在 `packages-user/data-state/test/fixtures/`。
 - **D-22:** Tile 以工作区当前用户接口为准：`ITileRawData.events` 保存默认事件映射，`ITileStore.getEvent(num)` 返回事件映射；旧的 `trigger` 标量实现必须迁移到此契约。
+- **D-23:** 当前阶段暂不设计 `options`；`createCoreState()` 直接执行 `new CoreState()`，主要初始化逻辑先保留在 constructor，后续再按实际需要拆分注入项。
+- **D-24:** 阶段 3 的事件内建函数先覆盖三组常用控制：地图设置图块/转动态后移动再转静态（可选 safe 判定）/删除图块；玩家按移动序列移动/向前一步/触发面前 `onTouch`；事件临时插入指定序列或指定 id。具体签名以 `packages-user/data-state/src/event/types.ts` 和其中示例为准，新增语义不得自行发明。
+- **D-25:** 阶段 3 的 replay 指令按稳定顺序注册：上、右、下、左移动；自动寻路至指定点；使用道具；穿上装备；卸下装备。当前只测试这些指令，后续可调整。
+- **D-26:** 最终 Node 回放只在播放完毕时比较勇士全部属性和所有地图矩阵；单测可在每步后检查勇士属性作为较快的定位手段，不要求最终验证逐步比较地图矩阵。
 
 ### the agent's Discretion
 没有授权 AI 在接口语义或系统边界上自行决策的事项。
@@ -76,6 +80,8 @@
 - `packages-user/data-system/src/event/executor.ts` — event invocation and reduction behavior
 - `packages-user/data-state/src/core.ts` — current top-level four-layer construction and legacy initialization path
 - `packages-user/data-state/src/ins.ts` — current singleton entry point and its transition note
+- `packages-user/data-state/src/event/types.ts` — user-provided event parameter example and the initial event-control grouping
+- `packages-user/data-state/src/event/map.ts` — existing map-control event example to enrich without inventing a new event model
 
 </canonical_refs>
 
@@ -96,6 +102,7 @@
 - `pnpm test:ci` is the existing deterministic non-watch test command; Phase 3 needs a dedicated Node replay command in addition to the data-side test gate.
 - The current top-level path still exports `state = new CoreState()` and uses legacy globals for initial data loading, so factory creation and injectable legacy conversion require careful compatibility handling.
 - The workspace now contains a user adjustment to `ITileRawData.events` and `ITileStore.getEvent()`; implementation must follow that contract rather than restore the previous `trigger` shape.
+- `packages-user/data-state/src/event/hero.ts` and `event.ts` are currently empty, while `event/types.ts` contains the initial parameter example; these are the planned extension points for the three event-control groups.
 
 ### Integration Points
 - `packages-user/data-state/src/core.ts` is the top-level orchestration point for system construction, default registration, saveable content, replay commands, and event built-ins.
@@ -123,6 +130,7 @@
 - Full mobile/desktop rendering integration belongs to Phase 4.
 - A complete legacy event built-in catalog remains deferred until its interfaces and scope are explicitly decided; Phase 3 registers only the minimum closed-loop set.
 - Exact factory option fields, replay fixture actions, event built-in names/signatures, and snapshot field list remain user-owned details that must be confirmed before implementation if the planner cannot derive them without guessing.
+- The current `event/map.ts` example references `env.heroFloor`, which is not present in the current `IBlockEventEnv` contract; this specific mismatch requires user confirmation before implementation.
 
 </deferred>
 

@@ -24,7 +24,7 @@ export class TileStore<TLegacy = unknown> implements ITileStore<TLegacy> {
         return this.dataMap.get(num) ?? null;
     }
 
-    getTrigger(num: number): number {
+    getEvent(num: number): number {
         return this.dataMap.get(num)?.trigger ?? -1;
     }
 

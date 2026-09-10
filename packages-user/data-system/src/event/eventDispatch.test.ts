@@ -1,11 +1,6 @@
 // 测试事件 trigger 过滤、来源环境、执行顺序、await、cut/reduce 和移动钩子
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import {
-    BlockEventType,
-    type IBlockEventEnv,
-    type IGameEventInvocation
-} from '@user/data-base';
-import {
     type IDataCommon,
     type IGameEventStore,
     type IReadonlyGameEvent,
@@ -13,8 +8,15 @@ import {
     EventTrigger
 } from '@user/data-common';
 import { type IStateSystem } from '../types';
-import { EventExecuteMode, EventReduceMode } from './types';
+import {
+    EventExecuteMode,
+    EventReduceMode,
+    BlockEventType,
+    type IBlockEventEnv,
+    type IGameEventInvocation
+} from './types';
 import { AnonTokyoInterpreter } from 'anon-tokyo';
+import { IStateBase } from '@user/data-base';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -215,10 +217,11 @@ function addEvent(
 
 function invocation(id: string, trigger: EventTrigger): IGameEventInvocation {
     const env: IBlockEventEnv = {
-        state: {} as IDataCommon,
+        state: {} as IStateBase,
         type: BlockEventType.CommonEvent,
         trigger,
         heroLocator: { x: 0, y: 0 },
+        heroFloor: 'Unknown',
         triggerLocator: null,
         tile: null,
         layer: null,

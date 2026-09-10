@@ -1,9 +1,5 @@
 import { ITileLocator } from '@motajs/common';
 import {
-    BlockEventType,
-    IBlockEventEnv,
-    IBlockEventParam,
-    IGameEventInvocation,
     IHeroMoveTopHandler,
     IHeroMoveTopImpl,
     IMapState,
@@ -11,7 +7,14 @@ import {
     IReadonlyTileBase
 } from '@user/data-base';
 import { EventTrigger } from '@user/data-common';
-import { IGameEventExecutor, IStateSystem } from '@user/data-system';
+import {
+    IGameEventExecutor,
+    IStateSystem,
+    BlockEventType,
+    IBlockEventEnv,
+    IBlockEventParam,
+    IGameEventInvocation
+} from '@user/data-system';
 import { DefaultPassPredicate, DefaultPassPredicateImpl } from './predicate';
 import { isNil } from 'lodash-es';
 
@@ -30,7 +33,7 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
     /** 勇士移动使用的通行性谓词 */
     private readonly passPredicate: DefaultPassPredicate;
 
-    constructor(state: IStateSystem) {
+    constructor(private readonly state: IStateSystem) {
         this.maps = state.maps;
         this.executor = state.eventSystem.executor;
         this.passPredicate = new DefaultPassPredicateImpl(this.maps);
@@ -119,10 +122,11 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
         const invocations: IGameEventInvocation[] = [];
         for (const source of [...pointSources, ...tileSources]) {
             const env: IBlockEventEnv = {
-                state: handler.state,
+                state: this.state,
                 type: source.type,
                 trigger,
                 heroLocator: heroLoc,
+                heroFloor: handler.floorId,
                 triggerLocator: { x, y },
                 tile: source.tile,
                 layer: event,
