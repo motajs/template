@@ -63,6 +63,19 @@
 **User's choice:** 使用固定端到端录像和精确状态快照，专用 Node 命令失败返回非零；四个数据层包的类型错误与循环引用全部清零。
 **Notes:** 最终录像应覆盖顶层初始化、玩家动作、事件或状态变化和正常结束，并承担 Phase 1 验证目标。
 
+### Follow-up decisions
+
+| Decision | Selected |
+|----------|----------|
+| Node 存档 | 内存适配器；从固定初始状态 reset，并比较关键状态快照 ✓ |
+| Legacy 注入 | 通过集中依赖对象注入 converter/data source，CoreState 不读取 legacy 全局 ✓ |
+| 循环门禁 | 四个 data 包内部及其边界；允许无环的 `@motajs/common` 基础依赖 ✓ |
+| Node 命令 | `pnpm test:data-node`，使用 `script/test-data-node.ts` 或等价 runner，fixture 位于 `packages-user/data-state/test/fixtures/` ✓ |
+
+### Tile contract clarification
+
+用户已调整工作区接口设计，规划以当前 `packages-user/data-common/src/store/types.ts` 为准：`ITileRawData.events` 保存默认事件映射，`ITileStore.getEvent(num)` 返回事件映射。旧的 `trigger` 标量实现不再是候选契约。
+
 ---
 
 ## the agent's Discretion

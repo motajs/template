@@ -39,6 +39,11 @@
 - **D-15:** 提供专用 Node 验证命令，直接创建顶层实例、加载录像并在失败时返回非零状态；它与数据端单测门禁分开执行。
 - **D-16:** `data-common`、`data-base`、`data-system`、`data-state` 四层的 TypeScript 错误全部清零，并针对这四层检查循环引用。渲染端或 legacy-only 的无关问题不扩大为本阶段范围。
 - **D-17:** 本阶段系统级任务较多，遇到任何接口语义、系统边界、依赖关系或实现路径上的不确定问题，都必须暂停并提问确认，不得擅自选择“看起来合理”的方案绕过问题。
+- **D-18:** 顶层工厂采用 `createCoreState(options?)` 作为主入口；Node 使用内存存档适配器，从固定初始状态 reset，并比较关键状态快照。
+- **D-19:** legacy converter 和数据源通过集中依赖对象注入，`CoreState` 不直接读取 legacy 全局。
+- **D-20:** 循环依赖门禁覆盖四个数据包内部及其相互边界，允许依赖无环的 `@motajs/common` 基础包。
+- **D-21:** 新增专用 `pnpm test:data-node` 命令，使用 `script/test-data-node.ts` 或等价 Node runner，固定 fixture 放在 `packages-user/data-state/test/fixtures/`。
+- **D-22:** Tile 以工作区当前用户接口为准：`ITileRawData.events` 保存默认事件映射，`ITileStore.getEvent(num)` 返回事件映射；旧的 `trigger` 标量实现必须迁移到此契约。
 
 ### the agent's Discretion
 没有授权 AI 在接口语义或系统边界上自行决策的事项。
@@ -66,6 +71,7 @@
 - `packages-user/data-common/src/replay/system.ts` — replay command registration and route recording implementation
 - `packages-user/data-common/src/replay/sandbox.ts` — sequential replay execution and failure behavior
 - `packages-user/data-common/src/replay/func.ts` — existing replay safety decorators
+- `packages-user/data-common/src/store/types.ts` — current user-authored Tile raw-data and event accessor contract
 - `packages-user/data-system/src/event/system.ts` — event interpreter and built-in function registration point
 - `packages-user/data-system/src/event/executor.ts` — event invocation and reduction behavior
 - `packages-user/data-state/src/core.ts` — current top-level four-layer construction and legacy initialization path
@@ -89,6 +95,7 @@
 - Data-side code must remain DOM-free. Rendering communication is gated through `r()`/`rf()` or hooks.
 - `pnpm test:ci` is the existing deterministic non-watch test command; Phase 3 needs a dedicated Node replay command in addition to the data-side test gate.
 - The current top-level path still exports `state = new CoreState()` and uses legacy globals for initial data loading, so factory creation and injectable legacy conversion require careful compatibility handling.
+- The workspace now contains a user adjustment to `ITileRawData.events` and `ITileStore.getEvent()`; implementation must follow that contract rather than restore the previous `trigger` shape.
 
 ### Integration Points
 - `packages-user/data-state/src/core.ts` is the top-level orchestration point for system construction, default registration, saveable content, replay commands, and event built-ins.
@@ -115,6 +122,7 @@
 - Full legacy system removal and migration belongs to Phase 5.
 - Full mobile/desktop rendering integration belongs to Phase 4.
 - A complete legacy event built-in catalog remains deferred until its interfaces and scope are explicitly decided; Phase 3 registers only the minimum closed-loop set.
+- Exact factory option fields, replay fixture actions, event built-in names/signatures, and snapshot field list remain user-owned details that must be confirmed before implementation if the planner cannot derive them without guessing.
 
 </deferred>
 
