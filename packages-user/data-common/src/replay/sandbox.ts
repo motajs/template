@@ -116,7 +116,7 @@ export class ReplaySandbox
     }
 
     async step(): Promise<boolean> {
-        if (!this.pausing || !this.playing || this.ended) return false;
+        if (!this.playing || this.ended) return false;
         if (this.reader.expired) {
             logger.warn(156);
             return false;

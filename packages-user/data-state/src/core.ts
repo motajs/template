@@ -46,7 +46,6 @@ import {
 } from '@user/data-system';
 import {
     CommonAuraConverter,
-    EnemyLegacyBridge,
     GuardAuraConverter,
     MainDamageCalculator,
     MainEnemyFinalEffect,

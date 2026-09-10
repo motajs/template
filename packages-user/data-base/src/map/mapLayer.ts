@@ -213,10 +213,12 @@ export class MapLayer
     event(x: number, y: number): ILayerEventView | null {
         if (!this.inMap(x, y)) return null;
         const index = y * this.width + x;
-        return this.pointEvents.getOrInsertComputed(
-            index,
-            () => new LayerEventView()
-        );
+        let eventView = this.pointEvents.get(index);
+        if (!eventView) {
+            eventView = new LayerEventView();
+            this.pointEvents.set(index, eventView);
+        }
+        return eventView;
     }
 
     getPointEvent(x: number, y: number): ReadonlyMap<number, string> | null {
