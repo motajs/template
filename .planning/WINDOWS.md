@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 9
+open_count: 10
 waived_count: 0
-fixed_count: 2
-total_count: 11
-last_updated: 2026-09-10T07:45:45.249Z
+fixed_count: 3
+total_count: 13
+last_updated: 2026-09-10T07:59:02.467Z
 ---
 
 # Broken Windows Ledger
@@ -25,7 +25,9 @@ last_updated: 2026-09-10T07:45:45.249Z
 | 8 | 03 | stub | packages-user/data-common/src/save/memory.ts | 90 | MemorySaveSystem.saveAutosaveToDB is an intentional no-op because Node never persists to IndexedDB. | open |  | 2026-09-10T07:45:32.524Z |  |
 | 9 | 03 | stub | packages-user/data-state/src/legacy/dependencies.ts | 53 | Node legacy dependency boundary intentionally registers no browser loading callbacks. | open |  | 2026-09-10T07:45:33.228Z |  |
 | 10 | 03 | deviation | packages-user/data-base/src/map/mapLayer.ts | 216 | Replaced Map.getOrInsertComputed with explicit Map lookup so the replay event path is Node-safe without a global prototype shim. | open |  | 2026-09-10T07:45:33.930Z |  |
-| 11 | 03 | unrun-verify | .planning/phases/03-data-completion/deferred-items.md |  | Repository type gate remains non-zero on pre-existing render/legacy and Tile contract diagnostics; owned Node tracer and data tests pass. | open |  | 2026-09-10T07:45:45.249Z |  |
+| 11 | 03 | unrun-verify | .planning/phases/03-data-completion/deferred-items.md |  | Repository type gate remains non-zero on pre-existing render/legacy and Tile contract diagnostics; owned Node tracer and data tests pass. | fixed |  | 2026-09-10T07:45:45.249Z | 2026-09-10T07:58:56.466Z |
+| 12 | 03 | unrun-verify | .planning/phases/03-data-completion/deferred-items.md |  | Repository type gate remains non-zero on pre-existing render/legacy diagnostics; Tile contract diagnostics are resolved. | open |  | 2026-09-10T07:58:50.208Z |  |
+| 13 | 03 | deviation | packages-user/data-common/src/store/tileStore.test.ts |  | Applied ESLint/Prettier CRLF formatting required by the project after functional Tile tests passed. | open |  | 2026-09-10T07:59:02.467Z |  |
 
 ````json
 [
@@ -156,9 +158,33 @@ last_updated: 2026-09-10T07:45:45.249Z
     "file": ".planning/phases/03-data-completion/deferred-items.md",
     "line": null,
     "description": "Repository type gate remains non-zero on pre-existing render/legacy and Tile contract diagnostics; owned Node tracer and data tests pass.",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-10T07:45:45.249Z",
+    "resolved_at": "2026-09-10T07:58:56.466Z"
+  },
+  {
+    "id": 12,
+    "kind": "unrun-verify",
+    "phase": "03",
+    "file": ".planning/phases/03-data-completion/deferred-items.md",
+    "line": null,
+    "description": "Repository type gate remains non-zero on pre-existing render/legacy diagnostics; Tile contract diagnostics are resolved.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-10T07:58:50.208Z",
+    "resolved_at": null
+  },
+  {
+    "id": 13,
+    "kind": "deviation",
+    "phase": "03",
+    "file": "packages-user/data-common/src/store/tileStore.test.ts",
+    "line": null,
+    "description": "Applied ESLint/Prettier CRLF formatting required by the project after functional Tile tests passed.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-10T07:59:02.467Z",
     "resolved_at": null
   }
 ]
