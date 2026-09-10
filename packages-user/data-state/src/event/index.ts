@@ -117,7 +117,9 @@ type EventBuiltinHandler = (
     env: IBlockEventEnv
 ) => void | Promise<void>;
 
-function isBuiltinParameter(value: BuiltinParameter): value is BuiltinParameter {
+function isBuiltinParameter(
+    value: BuiltinParameter
+): value is BuiltinParameter {
     return value !== null && typeof value === 'object';
 }
 

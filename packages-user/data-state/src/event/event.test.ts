@@ -228,7 +228,8 @@ describe('event built-ins', () => {
             item => item.name === EventBuiltinName.SetBlock
         );
         expect(registration).toBeDefined();
-        if (!registration) throw new Error('eventSetBlock registration missing');
+        if (!registration)
+            throw new Error('eventSetBlock registration missing');
         await expect(
             invokeBuiltin(registration, null, fixture.env)
         ).resolves.toBeUndefined();
@@ -250,7 +251,9 @@ describe('event built-ins', () => {
                 expect([...fixture.layer.getMapData()]).toEqual(expectedMap);
                 expect(fixture.state.hero.location.x).toBe(expectedHero.x);
                 expect(fixture.state.hero.location.y).toBe(expectedHero.y);
-                expect([...fixture.layer.iterateDynamicTiles()]).toHaveLength(0);
+                expect([...fixture.layer.iterateDynamicTiles()]).toHaveLength(
+                    0
+                );
             }
         }
     });
