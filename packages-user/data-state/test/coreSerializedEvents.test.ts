@@ -46,10 +46,9 @@ describe('CoreState serialized event loading', () => {
         expect(executionCount).toBe(1);
         expect(fixture.eventCompleted()).toBe(true);
         expect(
-            fixture.state.hero.saveState(SaveCompression.NoCompression).attribute
-        ).toEqual(
-            fixture.expected.hero
-        );
+            fixture.state.hero.saveState(SaveCompression.NoCompression)
+                .attribute
+        ).toEqual(fixture.expected.hero);
         expect(fixture.eventLayer.getMapData()).toEqual(
             fixture.expected.maps[0].layers[2].matrix
         );
