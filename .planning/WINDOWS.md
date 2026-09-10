@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 11
+open_count: 14
 waived_count: 0
 fixed_count: 3
-total_count: 14
-last_updated: 2026-09-10T08:47:49.808Z
+total_count: 17
+last_updated: 2026-09-10T09:18:59.589Z
 ---
 
 # Broken Windows Ledger
@@ -29,6 +29,9 @@ last_updated: 2026-09-10T08:47:49.808Z
 | 12 | 03 | unrun-verify | .planning/phases/03-data-completion/deferred-items.md |  | Repository type gate remains non-zero on pre-existing render/legacy diagnostics; Tile contract diagnostics are resolved. | open |  | 2026-09-10T07:58:50.208Z |  |
 | 13 | 03 | deviation | packages-user/data-common/src/store/tileStore.test.ts |  | Applied ESLint/Prettier CRLF formatting required by the project after functional Tile tests passed. | open |  | 2026-09-10T07:59:02.467Z |  |
 | 14 | 03 | stub | packages-user/data-state/src/core.ts | 166 | Existing deferred serialized event registration and map-event-id binding TODO; preserved by Plan 03-03. | open |  | 2026-09-10T08:47:49.808Z |  |
+| 15 | 03 | deviation | packages-user/data-common/src/replay/array.ts |  | Repaired replay parameter encoding so diagnostic params remain original and deterministic. | open |  | 2026-09-10T09:18:58.279Z |  |
+| 16 | 03 | deviation | packages-user/data-state/test/replayVerifier.ts |  | Added a package-local verifier harness shared by Vitest and the Node runner to avoid composite-script import resolution. | open |  | 2026-09-10T09:18:58.946Z |  |
+| 17 | 03 | deviation | packages-user/data-state/test/fixtures/closed-loop.ts |  | Applied repository Prettier/CRLF formatting to the fixed replay fixture and runner files. | open |  | 2026-09-10T09:18:59.589Z |  |
 
 ````json
 [
@@ -198,6 +201,42 @@ last_updated: 2026-09-10T08:47:49.808Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-09-10T08:47:49.808Z",
+    "resolved_at": null
+  },
+  {
+    "id": 15,
+    "kind": "deviation",
+    "phase": "03",
+    "file": "packages-user/data-common/src/replay/array.ts",
+    "line": null,
+    "description": "Repaired replay parameter encoding so diagnostic params remain original and deterministic.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-10T09:18:58.279Z",
+    "resolved_at": null
+  },
+  {
+    "id": 16,
+    "kind": "deviation",
+    "phase": "03",
+    "file": "packages-user/data-state/test/replayVerifier.ts",
+    "line": null,
+    "description": "Added a package-local verifier harness shared by Vitest and the Node runner to avoid composite-script import resolution.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-10T09:18:58.946Z",
+    "resolved_at": null
+  },
+  {
+    "id": 17,
+    "kind": "deviation",
+    "phase": "03",
+    "file": "packages-user/data-state/test/fixtures/closed-loop.ts",
+    "line": null,
+    "description": "Applied repository Prettier/CRLF formatting to the fixed replay fixture and runner files.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-10T09:18:59.589Z",
     "resolved_at": null
   }
 ]
