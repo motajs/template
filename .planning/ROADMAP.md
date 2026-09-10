@@ -122,12 +122,12 @@ Plans:
   3. 数据端与渲染端保持双端分离，渲染相关代码经 `r()`/`rf()` 门控或走 hook，渲染端不向数据端推送更新
   4. 接口设计由用户主导，AI 仅负责实现
 
-**Plans**: 3/6 plans executed
+**Plans**: 4/6 plans executed
 Plans:
 
 - [x] 03-01-PLAN.md — Node-safe CoreState、内部 legacy 依赖边界与最小 replay tracer
 - [x] 03-02-PLAN.md — 八个事件内建函数契约 checkpoint 与最小注册实现
-- [ ] 03-03-PLAN.md — 稳定 replay enum、异步 command 与 top-level 注册
+- [x] 03-03-PLAN.md — 稳定 replay enum、异步 command 与 top-level 注册
 - [ ] 03-04-PLAN.md — 固定 Node 回放 fixture、首分歧 thrown diagnostic 与最终快照
 - [ ] 03-05-PLAN.md — DATA-01 focused closure 与四包 type/circular 最终门禁
 - [x] 03-06-PLAN.md — Tile events contract 与 legacy conversion 收口
@@ -205,7 +205,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
-| 3. 数据端完成 | 3/6 | In Progress|  |
+| 3. 数据端完成 | 4/6 | In Progress|  |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 0/TBD | Not started | - |
