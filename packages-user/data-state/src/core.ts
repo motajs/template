@@ -20,7 +20,8 @@ import {
     IItemStore,
     ItemStore,
     IMapStore,
-    MapStore
+    MapStore,
+    IReplaySystem
 } from '@user/data-common';
 import {
     EnemyManager,
@@ -42,8 +43,11 @@ import {
     GameEventSystem,
     IEnemyContext,
     IGameEventSystem,
-    MapDamage
+    MapDamage,
+    IPathfindingSystem,
+    PathfindingSystem
 } from '@user/data-system';
+import { ReplaySystem } from '../../data-common/src/replay/system';
 import {
     CommonAuraConverter,
     GuardAuraConverter,
@@ -73,6 +77,7 @@ import { isNil } from 'lodash-es';
 import { DirectionMapper, IDirectionMapper, logger } from '@motajs/common';
 import { DefaultHeroMoveTopImpl } from './hero';
 import { createEventBuiltinRegistrations } from './event';
+import { createReplayCommandItems, registerReplayCommandItems } from './replay';
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
@@ -94,6 +99,10 @@ export class CoreState implements ICoreState {
     // Layer 2 执行层，游戏逻辑对象都在这，包括一些需要操作数据层的逻辑系统等
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
     readonly eventSystem: IGameEventSystem;
+    /** 已绑定勇士移动器的寻路系统 */
+    readonly pathfinding: IPathfindingSystem;
+    /** 当前 CoreState 独立拥有的录像系统 */
+    readonly replaySystem: IReplaySystem;
 
     // Layer 3 用户层，也就是最顶层的内容，一般仅用于初始化以及仅供渲染端调用的顶层模块
     readonly loadProgress: ILoadProgressTotal;
@@ -231,6 +240,17 @@ export class CoreState implements ICoreState {
         // 勇士顶层初始化
         const heroMoveTopImpl = new DefaultHeroMoveTopImpl(this);
         this.hero.location.mover.useTopImplementation(heroMoveTopImpl);
+
+        const pathfinding = new PathfindingSystem(this);
+        pathfinding.useMover(this.hero.location.mover);
+        this.pathfinding = pathfinding;
+
+        const replaySystem = new ReplaySystem();
+        registerReplayCommandItems(
+            replaySystem,
+            createReplayCommandItems(this)
+        );
+        this.replaySystem = replaySystem;
 
         //#endregion
     }

@@ -67,6 +67,35 @@ describe('replay commands', () => {
         ).toThrow('Duplicate replay command code');
     });
 
+    // 验证每个 CoreState 都独立装配八个稳定 command 与寻路访问边界
+    it('assembles an independent top-level registry for every CoreState', () => {
+        const first = createCoreState();
+        const second = createCoreState();
+        expect(first.replaySystem).not.toBe(second.replaySystem);
+        expect(first.pathfinding).not.toBe(second.pathfinding);
+        expect(
+            REPLAY_COMMAND_ORDER.map(code =>
+                first.replaySystem.getCommand(code)
+            ).length
+        ).toBe(8);
+        expect(
+            REPLAY_COMMAND_ORDER.map(code =>
+                second.replaySystem.getCommand(code)
+            ).length
+        ).toBe(8);
+        expect(
+            REPLAY_COMMAND_ORDER.every(
+                code => first.replaySystem.getCommand(code) !== null
+            )
+        ).toBe(true);
+        expect(
+            REPLAY_COMMAND_ORDER.every(
+                code => second.replaySystem.getCommand(code) !== null
+            )
+        ).toBe(true);
+        expect(first.replaySystem.route).not.toBe(second.replaySystem.route);
+    });
+
     // 验证四向移动在 controller.onEnd 兑现前不会完成 command
     it('awaits a directional movement controller', async () => {
         const state = createCoreState();
