@@ -80,7 +80,7 @@ Plans:
   2. 移动端点击地图上的可达格时，角色自动寻路移动到该格
   3. 寻路正确避开不可通行格（碰撞/障碍/墙体）
 
-**Plans**: 3/5 plans executed
+**Plans**: 4/5 plans executed
 **UI hint**: yes
 Plans:
 
@@ -88,7 +88,7 @@ Plans:
 - [x] 02-02-PLAN.md — L0 坐标回写缺陷修复 + L2 寻路核心（有向图 + 最小损失 + 仅取路径 + 回退策略槽位）
 - [x] 02-03-PLAN.md — L3 接线（逐步/瞬移/回退默认策略/D-08 双语义/打断接管）+ barrel/logger 装配 + 阶段门禁
 
-- [ ] 02-04-PLAN.md — 恢复用户授权的 path/types.ts 契约并收口 moverImpl TS18047
+- [x] 02-04-PLAN.md — 恢复用户授权的 path/types.ts 契约并收口 moverImpl TS18047
 - [ ] 02-05-PLAN.md — 稳定全量 Vitest 门禁并提供非 watch 测试命令
 
 **Wave 1**
@@ -105,7 +105,7 @@ Plans:
 
 ### Wave 4 *(gap closure; blocked on Wave 3 completion)*
 
-- [ ] 02-04-PLAN.md — 用户契约范围与阶段类型错误收口
+- [x] 02-04-PLAN.md — 用户契约范围与阶段类型错误收口
 - [ ] 02-05-PLAN.md — 全套件超时与跳过测试门禁收口
 
 ### Phase 3: 数据端完成
@@ -173,7 +173,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. 事件系统 | 13/13 | In Progress|  |
-| 2. 寻路系统 | 3/3 | In Progress|  |
+| 2. 寻路系统 | 4/5 | In Progress|  |
 | 3. 数据端完成 | 0/TBD | Not started | - |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |

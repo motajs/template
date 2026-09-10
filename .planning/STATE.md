@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 02
 current_phase_name: 寻路系统
 status: verifying
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-09-09T13:26:49.286Z"
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-09-10T01:41:42.684Z"
 last_activity: 2026-09-09
 last_activity_desc: Phase 02 execution started
-state_head: 7a3b6e35c1dfce17e605ba870a023524acba8eec
+state_head: 93453db41702d3d14d2cc69c992bfb92fee48eee
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 16
-  completed_plans: 16
+  total_plans: 18
+  completed_plans: 17
 milestone_name: milestone
 ---
 
@@ -72,6 +72,7 @@ Progress: [█████████░] 92%
 | Phase 02 P01 | 25min | 3 tasks | 2 files |
 | Phase 02 P02 | 29min | 3 tasks | 10 files |
 | Phase 02 P03 | 30 min | 4 tasks | 9 files |
+| Phase 02 P04 | 10 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,9 @@ Recent decisions affecting current work:
 - [Phase 02]: L3 HeroPathfinding 注入 DefaultHeroMoveTopImpl 的 IPassPredicate，L2 图搜索与 hero mover 共享同一通行性语义。
 - [Phase 02]: D-08 no-pass 目标采用可达相邻格 + 面朝目标 + source-aware OnTouch 直派；无相邻可达格返回空路径。
 - [Phase 02]: 同步寻路接口通过 queued controller 实现 stop 后 await，再从最新坐标重算并启动新路径。
+- [Phase 02]: D-07 remains authoritative: path/types.ts matches the user baseline except for the two authorized nullable returns; graph helper contracts stay implementation-owned.
+- [Phase 02]: The concrete useMover bridge remains in PathfindingSystem so HeroPathfinding can bind IObjectMover without expanding the user-authored interface.
+- [Phase 02]: D-11 remains intact: this plan modifies no client click adapter or Phase 1 file.
 
 ### Pending Todos
 
@@ -136,6 +140,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-09T13:26:49.198Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-09-10T01:41:42.588Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None

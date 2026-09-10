@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 3
+open_count: 4
 waived_count: 0
 fixed_count: 2
-total_count: 5
-last_updated: 2026-09-09T13:24:24.755Z
+total_count: 6
+last_updated: 2026-09-10T01:38:48.570Z
 ---
 
 # Broken Windows Ledger
@@ -20,6 +20,7 @@ last_updated: 2026-09-09T13:24:24.755Z
 | 3 | 01 | deviation | packages-user/data-base/src/map/mapLayer.ts |  | Replaced unsupported Map upsert runtime calls so the raw map event path runs under Node Vitest. | open |  | 2026-09-08T15:54:23.173Z |  |
 | 4 | 02 | skipped-test | packages-user/data-common/src/common/mover.test.ts |  | 4 个 it.skip 坐标回写回归用例（x/y 正交、斜向、传送），待 02-02 修复 mover.ts:651 后翻绿 | fixed |  | 2026-09-09T07:51:25.555Z | 2026-09-09T09:34:39.843Z |
 | 5 | 02 | stub | packages-user/data-system/src/path/system.ts | 254 | interrupt() is an intentional placeholder that only stops the in-flight move; takeover sequencing (stop-then-await per approved option 1) is implemented by 02-03 Task 4 | fixed |  | 2026-09-09T09:34:59.707Z | 2026-09-09T13:24:24.755Z |
+| 6 | 02 | stub | packages-user/data-state/src/hero/moverImpl.ts | 284 | Existing cannotEnter() is intentionally empty because no event trigger corresponds to movement blocked by an impassable mask; D-08 direct OnTouch dispatch handles allowed adjacent no-pass targets. | open |  | 2026-09-10T01:38:48.570Z |  |
 
 ````json
 [
@@ -82,6 +83,18 @@ last_updated: 2026-09-09T13:24:24.755Z
     "reason": "",
     "recorded_at": "2026-09-09T09:34:59.707Z",
     "resolved_at": "2026-09-09T13:24:24.755Z"
+  },
+  {
+    "id": 6,
+    "kind": "stub",
+    "phase": "02",
+    "file": "packages-user/data-state/src/hero/moverImpl.ts",
+    "line": 284,
+    "description": "Existing cannotEnter() is intentionally empty because no event trigger corresponds to movement blocked by an impassable mask; D-08 direct OnTouch dispatch handles allowed adjacent no-pass targets.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-10T01:38:48.570Z",
+    "resolved_at": null
   }
 ]
 ````
