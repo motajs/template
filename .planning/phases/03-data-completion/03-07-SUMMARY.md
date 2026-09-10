@@ -114,7 +114,7 @@ Additional quality commit:
 
 3. **Prettier/CRLF normalization for changed serialized-event files** - `4b91a0b` (style)
 
-**Plan metadata:** pending final metadata commit
+**Plan metadata:** `19df30e` (docs)
 
 ## Files Created/Modified
 
