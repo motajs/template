@@ -2,7 +2,7 @@
 
 **Researched:** 2026-09-10  
 **Domain:** TypeScript data-layer integration, deterministic replay, and Node-only validation  
-**Confidence:** MEDIUM — the implementation map and current failures are verified; several public-contract decisions are intentionally unresolved
+**Confidence:** MEDIUM — the implementation map and current failures are verified; the latest user decisions resolve the previously open public-contract questions, while implementation details remain subject to the locked checkpoints below
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
@@ -36,6 +36,20 @@
 - **D-16:** `data-common`、`data-base`、`data-system`、`data-state` 四层的 TypeScript 错误全部清零，并针对这四层检查循环引用。渲染端或 legacy-only 的无关问题不扩大为本阶段范围。
 - **D-17:** 本阶段系统级任务较多，遇到任何接口语义、系统边界、依赖关系或实现路径上的不确定问题，都必须暂停并提问确认，不得擅自选择“看起来合理”的方案绕过问题。
 
+### Latest Locked Clarifications
+
+- **D-18:** Node uses an in-memory save adapter, resets from fixed initial state, and compares the approved key snapshots; this policy is constrained by the later no-options factory clarification.
+- **D-19:** Legacy converter and data source access use a centralized internal injected dependency boundary; `CoreState` does not read legacy globals directly.
+- **D-20:** The circular gate covers the four data packages internally and at their mutual boundaries, while unrelated render/legacy-only code remains outside the scope.
+- **D-21:** Add `pnpm test:data-node`, using `script/test-data-node.ts` or an equivalent Node runner, with fixtures under `packages-user/data-state/test/fixtures/`.
+- **D-22:** `ITileRawData.events` and `ITileStore.getEvent(num)` are authoritative; the scalar `trigger` implementation migrates to this contract.
+- **D-23:** `createCoreState()` has no options, directly calls `new CoreState()`, and keeps main initialization in the constructor for now.
+- **D-24:** Event built-ins cover map set/dynamic-move-static with optional safe/delete, hero sequence/forward/front `onTouch`, and temporary event sequence/id insertion.
+- **D-25:** Replay commands are registered in stable order: up, right, down, left, auto-pathfind to point, use item, equip, unequip.
+- **D-26:** Final Node replay compares only end-of-playback full hero attributes and every map matrix; per-step hero checks are unit-test diagnostics only.
+- **D-27:** Built-ins use `(param, env)` with `IBlockEventEnv`; approved names are the eight event functions in CONTEXT.md, and failure safely skips with `void`.
+- **D-28:** `CoreState` is Node-safe without a browser/legacy host: skip legacy loading and IndexedDB, use memory-capable state, and keep the public factory parameterless.
+
 ### the agent's Discretion
 
 没有授权 AI 在接口语义或系统边界上自行决策的事项。
@@ -68,9 +82,9 @@
 
 The four data packages already expose a layered contract: `IDataCommon` owns stores, facing, direction mapping, and save; `IStateBase` adds maps, hero, enemies, flags, and saveable-content registration; `IStateSystem` adds enemy context and events; and `ICoreState` adds loading and save-executor wiring. [VERIFIED: packages-user/data-common/src/types.ts:46-63; packages-user/data-base/src/types.ts:17-41; packages-user/data-system/src/types.ts:6-11; packages-user/data-state/src/types.ts:15-31] The reusable replay primitives already provide binary route storage, command registration, reset-before-playback, sequential async execution, and hooks. [VERIFIED: packages-user/data-common/src/replay/types.ts:14-20,305-353; packages-user/data-common/src/replay/system.ts:50-80; packages-user/data-common/src/replay/sandbox.ts:118-145]
 
-The main Phase 3 risk is not missing isolated systems; it is the missing Node-safe composition boundary. `CoreState` currently constructs every layer directly, installs legacy converters, waits on global loading events, reads legacy globals, and wires a singleton through `ins.ts`. [VERIFIED: packages-user/data-state/src/core.ts:81-115,139-240; packages-user/data-state/src/ins.ts:1-10] A direct Node import currently fails before construction because the common logger evaluates `main` and DOM globals at module load. [VERIFIED: direct `pnpm exec tsx` import probe on 2026-09-10; packages/common/src/logger.ts:24-40] The plan must therefore start with a user-confirmation checkpoint for the factory, legacy dependency, replay command, snapshot, built-in-function, and save-backend contracts rather than inventing public behavior. [ASSUMED]
+The main Phase 3 risk is not missing isolated systems; it is the missing Node-safe composition boundary. `CoreState` currently constructs every layer directly, installs legacy converters, waits on global loading events, reads legacy globals, and wires a singleton through `ins.ts`. [VERIFIED: packages-user/data-state/src/core.ts:81-115,139-240; packages-user/data-state/src/ins.ts:1-10] A direct Node import currently fails before construction because the common logger evaluates `main` and DOM globals at module load. [VERIFIED: direct `pnpm exec tsx` import probe on 2026-09-10; packages/common/src/logger.ts:24-40] The latest decisions now lock the implementation boundary: `createCoreState()` is no-argument and directly calls `new CoreState()`, the constructor is Node-safe, legacy conversion is reached through an internal injected dependency boundary rather than direct globals, Node uses memory-capable state, replay codes are top-level stable enum values, event built-ins use the eight approved names, and first divergence throws a verifier-local error with index/code/params/reason. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:43-52; latest user clarification]
 
-**Primary recommendation:** keep public `types.ts` files unchanged until the user resolves the contract mismatches; then build a factory-first, dependency-injected Node composition around existing replay/save/event primitives, with a fixed event-bearing fixture and separate four-package gates. [ASSUMED]
+**Primary recommendation:** keep public `types.ts` files unchanged unless the locked current contract requires an implementation correction; build a factory-first, internally dependency-injected Node composition around existing replay/save/event primitives, with a fixed event-bearing fixture and separate four-package gates. Resolve any newly exposed interface mismatch through D-02/D-17 rather than guessing. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:18-22,40-52]
 
 ## Architectural Responsibility Map
 
@@ -140,23 +154,23 @@ The diagram follows the locked responsibility split: the runtime entry creates t
 
 ### Recommended Project Structure
 
-The exact new filenames are not locked and must be confirmed before implementation. [ASSUMED]
+The phase filenames used by the plan set are now fixed by the user decisions and existing workspace layout. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:43-52]
 
 ```text
 packages-user/data-state/src/       # factory and final L0–L3 assembly
 packages-user/data-system/src/      # event/combat/path registrations
 packages-user/data-common/src/      # replay/save primitives and contracts
-script/                              # dedicated Node verifier entry (name TBD)
+script/test-data-node.ts             # dedicated Node verifier entry
 packages-user/*/src/**/*.test.ts     # closure tests near the owning package
 ```
 
 ### Pattern 1: Factory-first composition with compatibility singleton
 
-**What:** Add an explicit creation path that assembles a fresh four-layer instance, while retaining `state` only as a compatibility entry if the user confirms it remains needed. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:30-35; packages-user/data-state/src/ins.ts:1-10]
+**What:** Add the no-argument `createCoreState()` path that directly calls `new CoreState()`, while retaining `state` only as a compatibility entry where the existing browser host needs it. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:30-35,47-52; packages-user/data-state/src/ins.ts:1-10]
 
 **When to use:** Use the factory for Node replay and render-side creation; do not make the singleton the only construction route. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:30-35]
 
-**Implementation guidance:** Put initialization order and final registration at the top level, and let subsystems expose registration helpers instead of copying their internals into `CoreState`. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:30-35; dev.md:46-53]
+**Implementation guidance:** Keep the main initialization order in the `CoreState` constructor for this phase, use an internal injected legacy dependency boundary so `CoreState` never reads legacy globals directly, and let subsystems expose registration helpers instead of copying their internals into `CoreState`. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:30-35,43-52; dev.md:46-53]
 
 ### Pattern 2: Fake/state fixtures with explicit dependencies
 
@@ -172,7 +186,7 @@ packages-user/*/src/**/*.test.ts     # closure tests near the owning package
 
 **Existing behavior:** `ReplaySandbox.step()` reads one route step, looks up its command, awaits `command.execute(next)`, then awaits `onStep` hooks. [VERIFIED: packages-user/data-common/src/replay/sandbox.ts:118-145]
 
-**Pitfall to resolve:** the existing public result is only `Promise<boolean>`, while D-07 requires a first-divergence reason and index. Do not add an error shape or choose a logging protocol without user confirmation. [VERIFIED: packages-user/data-common/src/replay/types.ts:14-20; .planning/phases/03-data-completion/03-CONTEXT.md:24-29]
+**Locked failure policy:** retain the existing replay boolean command interface; the Node verifier stops at the first false/unknown/throw/mismatch by throwing an implementation-local error and reporting index, top-level stable command code, params, and reason. Do not add a new user-facing error class or alter the replay command interface. [VERIFIED: packages-user/data-common/src/replay/types.ts:14-20; .planning/phases/03-data-completion/03-CONTEXT.md:24-29,49-52; latest user clarification]
 
 ### Anti-Patterns to Avoid
 
@@ -207,7 +221,7 @@ The opened interface source says `ITileRawData` contains `events: Record<number,
 
 The implementation source instead returns a scalar `trigger` and reads `data.trigger`; `TileLegacyBridge` also returns `trigger: -1`. [VERIFIED: packages-user/data-common/src/store/tileStore.ts:23-29; packages-user/data-state/src/legacy/tile.ts:96-105]
 
-The current `pnpm check:type` run reports this exact mismatch plus unrelated client/legacy errors. This is a hard planning checkpoint: do not edit the user-owned interface, change the implementation semantics, or widen the type until the user identifies the intended contract. [VERIFIED: `pnpm check:type` run on 2026-09-10; packages-user/data-common/src/store/types.ts:47-86; packages-user/data-common/src/store/tileStore.ts:23-29]
+The current `pnpm check:type` run reports this exact mismatch plus unrelated client/legacy errors. The latest user decision makes the current `ITileRawData.events`/`getEvent()` contract authoritative, so implementation and legacy conversion must migrate to it without editing the user-owned interface or restoring the scalar trigger shape. [VERIFIED: `pnpm check:type` run on 2026-09-10; packages-user/data-common/src/store/types.ts:47-86; packages-user/data-state/src/legacy/tile.ts:96-105; .planning/phases/03-data-completion/03-CONTEXT.md:45-47]
 
 ### CoreState and singleton wiring
 
@@ -238,17 +252,17 @@ The replay safety decorators are separate from command recording: `shouldReplay`
 
 The following is a planning decomposition, not authorization to change interfaces. [ASSUMED]
 
-### Wave 0 — Contract checkpoint (blocking)
+### Wave 0 — Locked contract records (blocking execution gates)
 
-Ask the user to resolve: factory signature and return shape; replay ownership/registration location; stable command-code allocation; first-divergence reporting shape; fixed fixture encoding and exact snapshot fields; minimal built-in names/signatures; Node save/Dexie behavior; the `ITileRawData`/`ITileStore` mismatch; and whether transitive `@motajs/common` cycles/logger are in the Phase 3 repair scope. [ASSUMED]
+Record the already-resolved factory, legacy boundary, replay, diagnostic, event, save/snapshot, Tile, and circular-scope decisions in the phase contract files before implementing their consumers. These checkpoints verify completeness and prevent accidental contract drift; they are not open design questions. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:43-52]
 
 ### Wave 1 — Baseline and package gates
 
-Capture the existing type, circular, and data-test outputs; repair only implementation-side errors after the contract checkpoint; add a four-package circular command that traverses the approved boundary; and keep unrelated client/render diagnostics outside the Phase 3 gate. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:36-41; current command results above]
+Capture the existing type, circular, and data-test outputs; repair only implementation-side errors inside the approved four-package boundary; add a four-package circular command that traverses the approved mutual boundary; and keep unrelated client/render diagnostics outside the Phase 3 gate. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:36-45; current command results above]
 
 ### Wave 2 — Node-safe factory and legacy boundary
 
-Extract construction from the singleton, inject legacy conversion dependencies, and ensure importing the Node data entry does not evaluate `window`, `document`, `main`, render hooks, or browser-only loading paths. Preserve the existing singleton only as an explicitly confirmed compatibility adapter. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:30-35; packages/common/src/logger.ts:24-40; packages-user/data-base/src/game.ts:24-37,72-93; packages-user/entry-data/src/mota.ts:116-154]
+Keep the no-argument factory and constructor initialization, inject legacy conversion dependencies through an internal boundary rather than direct globals, and ensure importing the Node data entry does not evaluate `window`, `document`, `main`, render hooks, or browser-only loading paths. Preserve the existing singleton only as a compatibility adapter. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:30-35,43-52; packages/common/src/logger.ts:24-40; packages-user/data-base/src/game.ts:24-37,72-93; packages-user/entry-data/src/mota.ts:116-154]
 
 ### Wave 3 — Replay registration and state-changing entrances
 
@@ -256,7 +270,7 @@ Instantiate/register the replay system at the approved top level, add only the c
 
 ### Wave 4 — Minimal event built-ins and fixed closure fixture
 
-Register only the user-approved built-ins, create a deterministic map/event fixture, play at least one player action through the existing event dispatch path, and compare the approved exact snapshots after each required boundary and at normal end. Do not infer a complete legacy event catalog. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:24-41; packages-user/data-system/src/event/system.ts:11-18; packages-user/data-state/src/hero/moverImpl.ts:79-135]
+Register only the user-approved built-ins, create a deterministic map/event fixture, play at least one player action through the existing event dispatch path, and compare the approved full hero attributes and every map matrix only at normal end. Per-step hero checks may remain focused-test diagnostics; do not infer a complete legacy event catalog. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:24-41,48-52; packages-user/data-system/src/event/system.ts:11-18; packages-user/data-state/src/hero/moverImpl.ts:79-135]
 
 ### Wave 5 — Dedicated Node command and final gates
 
@@ -264,20 +278,20 @@ Add the user-approved Node verifier as a separate non-watch command. It must cre
 
 ## Concrete Verification Commands
 
-The first two commands are current repository commands; the Node command name remains a user decision. [VERIFIED: package.json:6-24]
+The data suite is the current repository command; the dedicated Node command and scoped gates are fixed by D-16/D-21. [VERIFIED: package.json:6-24; .planning/phases/03-data-completion/03-CONTEXT.md:36-52]
 
 ```bash
 pnpm test:ci packages-user/data-common packages-user/data-base packages-user/data-system packages-user/data-state
 pnpm check:type
 pnpm check:circular
 pnpm exec madge --circular --extensions ts packages-user/data-common/src packages-user/data-base/src packages-user/data-system/src packages-user/data-state/src
-pnpm exec <approved-phase-3-node-replay-command>
+pnpm test:data-node
 ```
 
 - The first command is the current deterministic non-watch data-package test gate and passed 58 tests in this session. [VERIFIED: command run on 2026-09-10; package.json:8-10]
 - `pnpm check:type` is necessary but currently includes unrelated packages; the phase gate must assert that no approved `data-common`, `data-base`, `data-system`, or `data-state` diagnostics remain rather than claiming the whole repository is clean. [VERIFIED: package.json:23-24; command output on 2026-09-10]
-- `pnpm check:circular` currently starts at `src/main.ts`; the explicit four-package madge invocation is needed to make D-16 observable. Its exact scope must be confirmed because current traversal includes `@motajs/common` cycles. [VERIFIED: package.json:23-24; targeted command output on 2026-09-10]
-- The final command must not be invented in the plan until its script name, fixture location, snapshot shape, and exit/report contract are approved. [ASSUMED]
+- `pnpm check:circular` currently starts at `src/main.ts`; the explicit four-package madge invocation is needed to make D-16 observable. Its scope is locked to cycles containing the four data-package nodes, while unrelated common-only dependencies remain outside the phase gate. [VERIFIED: package.json:23-24; targeted command output on 2026-09-10; .planning/phases/03-data-completion/03-CONTEXT.md:39-45]
+- `pnpm test:data-node` is fixed by D-21; its fixture path and end-only snapshot/report contract are fixed by D-13 through D-15 and D-26/D-28. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:36-52]
 
 ## Code Examples
 
@@ -304,7 +318,7 @@ Use this existing awaited boundary when a replay command represents a movement/e
 
 **What goes wrong:** The implementation and `types.ts` disagree on tile events/triggers, so a superficial type edit could change the public data model. [VERIFIED: packages-user/data-common/src/store/types.ts:47-86; packages-user/data-common/src/store/tileStore.ts:23-29; packages-user/data-state/src/legacy/tile.ts:96-105]
 
-**How to avoid:** Stop at the contract checkpoint and ask which model is authoritative; only then change the implementation. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:18-22,40-44]
+**How to avoid:** Use the locked `events`/`getEvent()` model and migrate implementation-side consumers; if another interface mismatch appears, stop under D-02/D-17 instead of changing the user-owned contract. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:18-22,45-52]
 
 ### Pitfall 2: Making Node tests pass with a permanent browser-global stub
 
@@ -336,7 +350,7 @@ This is an integration/refactor phase, so the runtime inventory is required. [VE
 
 | Category | Items Found | Action Required |
 |----------|-------------|-----------------|
-| Stored data | Existing saveable content is registered under `@system/hero`, `@system/flags`, `@system/maps`, and `@system/enemy`; `SaveSystem` persists a `Map<string, unknown>`. [VERIFIED: packages-user/data-state/src/core.ts:213-224; packages-user/data-common/src/save/system.ts:132-174] | Confirm whether the Node fixture uses in-memory save maps only or must initialize Dexie; this is a contract checkpoint, not a guessed migration. [ASSUMED] |
+| Stored data | Existing saveable content is registered under `@system/hero`, `@system/flags`, `@system/maps`, and `@system/enemy`; `SaveSystem` persists a `Map<string, unknown>`. [VERIFIED: packages-user/data-state/src/core.ts:213-224; packages-user/data-common/src/save/system.ts:132-174] | Use the locked in-memory Node path and fixture reset; do not initialize Dexie/IndexedDB in Node. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:36-52] |
 | Live service config | None found in the inspected repository sources; the current phase inputs mention no external service configuration. [ASSUMED] | None unless the user identifies a runtime service. |
 | OS-registered state | None found in the inspected repository sources; no task/service registration is part of the current scripts or phase context. [ASSUMED] | None. |
 | Secrets/env vars | None found in the inspected Phase 3 data sources; current construction instead reads legacy globals such as `core`. [VERIFIED: packages-user/data-state/src/core.ts:220-234] | Replace global reads with the approved injected dependency boundary; do not introduce environment-variable names without a decision. [ASSUMED] |
@@ -356,7 +370,7 @@ This is an integration/refactor phase, so the runtime inventory is required. [VE
 | `indexedDB` | Dexie-backed browser save initialization | ✓ absent | `undefined` | Confirm an injected/in-memory Node save policy before factory implementation. [VERIFIED: Node probe on 2026-09-10; packages-user/data-common/src/save/system.ts:61-67] |
 
 **Missing dependencies with no fallback:** None for the existing commands. [VERIFIED: tool probes on 2026-09-10]  
-**Missing dependencies with fallback:** IndexedDB is absent; the fallback policy is not locked and must be confirmed before implementing Node save initialization. [ASSUMED]
+**Missing dependencies with fallback:** IndexedDB is absent; the locked fallback is memory-capable state with fixture/explicit loading, not a browser database. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:45-52]
 
 ## Validation Architecture
 
@@ -373,8 +387,9 @@ This is an integration/refactor phase, so the runtime inventory is required. [VE
 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| DATA-01 | Fresh top-level instance can execute a fixed replay containing a player action and event/state mutation, then match exact snapshots and end normally | integration / Node smoke | `pnpm exec <approved-phase-3-node-replay-command>` | ❌ Wave 0/1 contract and fixture gap [ASSUMED] |
+| DATA-01 | Fresh top-level instance can execute a fixed replay containing a player action and event/state mutation, then match exact snapshots and end normally | integration / Node smoke | `pnpm test:data-node` | ❌ Wave 1 fixture and registry gap [ASSUMED] |
 | DATA-01 | Existing data-side closure tests remain green | unit/integration | `pnpm test:ci packages-user/data-common packages-user/data-base packages-user/data-system packages-user/data-state` | ✅ existing tests; replay closure is incomplete [VERIFIED: command run and inspected test files on 2026-09-10] |
+| DATA-01 | Enemy creation/attribute or save behavior, Flag set/read/save-load, deterministic combat damage, saveable round trip, trigger/event mutation, and replay ordering/async-stop behavior | focused closure | `pnpm test:ci packages-user/data-common packages-user/data-base packages-user/data-system packages-user/data-state` | ❌ `dataClosure.test.ts` is a planned Phase 3 artifact [ASSUMED] |
 | DATA-01 | Four data packages have no TypeScript diagnostics | type gate | `pnpm check:type` plus the approved four-package diagnostic assertion | ❌ dedicated assertion is not present in package scripts [VERIFIED: package.json:6-24] |
 | DATA-01 | Four data packages have no approved circular dependencies | static analysis | `pnpm exec madge --circular --extensions ts packages-user/data-common/src packages-user/data-base/src packages-user/data-system/src packages-user/data-state/src` | ❌ current command reports 15 cycles [VERIFIED: targeted command run on 2026-09-10] |
 
@@ -384,13 +399,12 @@ This is an integration/refactor phase, so the runtime inventory is required. [VE
 - **Per wave merge:** the same data-package suite plus the focused type and circular commands above. [ASSUMED]
 - **Phase gate:** dedicated Node replay verifier, exact snapshots, data tests, approved four-package type gate, and approved circular gate all green before verification. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:36-41]
 
-### Wave 0 Gaps
+### Locked pre-execution gates
 
-- [ ] User-approved factory and dependency bundle; no public factory contract currently exists. [VERIFIED: packages-user/data-state/src/types.ts:15-31]
-- [ ] User-approved stable replay command codes, error-reporting contract, and fixed fixture format. [VERIFIED: packages-user/data-common/src/replay/types.ts:14-20,316-353]
-- [ ] User-approved exact snapshot fields and reset/save backend policy. [VERIFIED: packages-user/data-common/src/replay/types.ts:105-110; packages-user/data-state/src/types.ts:15-31]
-- [ ] Minimal built-in-function names/signatures and state effects. [VERIFIED: packages-user/data-system/src/event/types.ts:34-46; packages-user/data-system/src/event/system.ts:11-18]
-- [ ] Node-safe logger/loading import boundary; current direct import fails on missing `main`. [VERIFIED: packages/common/src/logger.ts:24-40; direct import probe on 2026-09-10]
+- [x] No-argument factory, constructor initialization, internal legacy dependency boundary, and Node-safe memory path are locked. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:43-52]
+- [x] Stable top-level replay enum order and first-divergence thrown diagnostic fields are locked. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:48-52; latest user clarification]
+- [x] Eight event built-in names, `(param, env)`, `IBlockEventEnv`, scope, and safe `void` failure are locked. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:47-52]
+- [x] End-only full hero/map snapshot comparison, Node command, Tile events contract, and four-package circular boundary are locked. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:36-52]
 
 ## Security Domain
 
@@ -415,44 +429,28 @@ Security enforcement is enabled at ASVS level 1 in project configuration. [VERIF
 | Unknown or false replay command | Tampering / Denial of service | Stop immediately, report the approved index/code/params/reason, and return non-zero from the Node verifier. [VERIFIED: packages-user/data-common/src/replay/sandbox.ts:124-141; .planning/phases/03-data-completion/03-CONTEXT.md:24-29,36-41] |
 | Browser globals evaluated in Node | Information/control-flow boundary failure | Keep `window`/DOM/render modules out of the Node import graph and use explicit dependencies. [VERIFIED: packages/common/src/logger.ts:24-40; packages-user/entry-data/src/mota.ts:116-154; .planning/phases/03-data-completion/03-CONTEXT.md:30-35] |
 
-## Open Questions / Blockers Requiring User Confirmation
+## Resolved Contract Status
 
-1. **What is the exact factory contract?** `ICoreState` has no creation method/options, and current `CoreState` has a zero-argument constructor with global legacy reads. [VERIFIED: packages-user/data-state/src/types.ts:15-31; packages-user/data-state/src/core.ts:115-234]
-   - **Blocker:** adding a public factory/options object or changing `ICoreState` is an interface decision.
-   - **Ask:** approve the factory name/signature, dependency bundle, returned replay access, and singleton compatibility policy.
+The seven questions previously listed as blockers are resolved by the latest CONTEXT decisions and user clarifications. They are recorded here so execution does not reopen them:
 
-2. **Which tile contract is authoritative?** `ITileRawData.events`/`getTrigger(): number[]` conflict with `TileStore.trigger`/`TileLegacyBridge.trigger`. [VERIFIED: packages-user/data-common/src/store/types.ts:47-86; packages-user/data-common/src/store/tileStore.ts:23-29; packages-user/data-state/src/legacy/tile.ts:96-105]
-   - **Blocker:** either direction changes public semantics.
-   - **Ask:** confirm the intended field and trigger cardinality before type cleanup.
+1. **Factory and construction:** `createCoreState()` has no options and directly calls `new CoreState()`; main initialization remains in the constructor. The constructor must select a Node-safe memory path when no legacy/browser host exists, while the compatibility singleton remains available for the browser path. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:43-52]
+2. **Tile contract:** `ITileRawData.events` and `ITileStore.getEvent(num)` are authoritative; the implementation and legacy conversion migrate away from the scalar `trigger` shape. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:45-47]
+3. **Replay ownership:** replay commands are registered at the top level using stable enum values in the locked order: up, right, down, left, auto-pathfind to point, use item, equip, unequip. The initial tracer uses a private direct `ReplaySystem` harness; the final registry is assembled by `CoreState` after the replay contract checkpoint. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:48-50; revised 03-01/03-03 plans]
+4. **First-divergence diagnostics:** the Node verifier fails immediately by throwing an implementation-local error and reports index, top-level command code, params, and reason. The public replay boolean interface and a new user-facing error class are not changed. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:49-52; latest user clarification]
+5. **Event built-ins:** the approved names are `eventSetBlock`, `eventMoveBlock`, `eventDeleteBlock`, `eventMoveHero`, `eventMoveHeroStep`, `eventTouchFront`, `eventInsertEvents`, and `eventInsertEvent`; all use `(param, env)` with `IBlockEventEnv` and safe `void` failure. Scope is map set/dynamic-move-static with optional safe/delete, hero sequence/forward/front `onTouch`, and temporary sequence/id insertion. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:47-52]
+6. **Node save and snapshot:** Node uses memory-capable state and the fixed fixture/reset path; final replay comparison is end-only for full hero attributes and every map matrix. Per-step hero checks remain unit-test diagnostics only. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:36-52]
+7. **Circular boundary:** the gate covers the four data packages internally and at their mutual boundaries; unrelated render/legacy-only code is not widened into the gate. [VERIFIED: .planning/phases/03-data-completion/03-CONTEXT.md:39-45]
 
-3. **Where does replay live, and what are stable command codes?** No L0–L3 contract exposes `ReplaySystem`, while D-08 requires top-level stable registration. [VERIFIED: packages-user/data-common/src/types.ts:46-68; packages-user/data-base/src/types.ts:17-41; packages-user/data-state/src/types.ts:15-31; .planning/phases/03-data-completion/03-CONTEXT.md:24-35]
-   - **Blocker:** choosing a property, factory return shape, or numeric allocation would invent interface behavior.
-   - **Ask:** provide the ownership and code allocation policy.
-
-4. **How should first-divergence diagnostics be represented?** Public replay commands return only `Promise<boolean>`, while D-07 requires index, code, params, and reason. [VERIFIED: packages-user/data-common/src/replay/types.ts:14-20; .planning/phases/03-data-completion/03-CONTEXT.md:24-29]
-   - **Blocker:** logger-only, thrown-error, hook, and result-object approaches have different public behavior.
-   - **Ask:** choose the approved mechanism without changing the interface unilaterally.
-
-5. **What is the minimum built-in set and each signature?** `IGameEventInit.addBuiltinFunction` exists, but `GameEventSystem` constructs the interpreter with empty built-in/global arrays and does not expose that initializer. [VERIFIED: packages-user/data-system/src/event/types.ts:34-46; packages-user/data-system/src/event/system.ts:7-22]
-   - **Blocker:** event function names and mutations are user-owned semantics.
-   - **Ask:** list the minimal Node-fixture built-ins and their exact behavior.
-
-6. **What is the Node save policy and snapshot shape?** `SaveSystem.init` creates a Dexie database, but current Node has no `indexedDB`; `ICoreState` has no aggregate snapshot API. [VERIFIED: packages-user/data-common/src/save/system.ts:61-67; Node probe on 2026-09-10; packages-user/data-state/src/types.ts:15-31]
-   - **Blocker:** in-memory save, injected adapter, no DB initialization, and fixture-only save maps are materially different choices.
-   - **Ask:** identify the exact save backend, reset path, compression, and fields that must be compared.
-
-7. **What is the circular-check boundary?** Current targeted madge reports cycles through `@motajs/common` as well as data-package cycles, while D-16 names only four data layers. [VERIFIED: targeted madge output on 2026-09-10; .planning/phases/03-data-completion/03-CONTEXT.md:36-41]
-   - **Blocker:** changing common logger/types may expand scope beyond Phase 3.
-   - **Ask:** confirm whether all transitive cycles must disappear or only cycles whose nodes are in the four data packages.
+The remaining checkpoints in the plans are implementation-record gates for these locked contracts, not unresolved design questions. If execution exposes a genuinely new interface ambiguity, D-02/D-17 still require pausing for user clarification.
 
 ## Assumptions Log
 
 | # | Claim | Section | Risk if wrong |
 |---|-------|---------|--------------|
-| A1 | A new explicit factory and/or verifier entry can be added without changing the user-owned Layer 3 interface. | Summary / Work Breakdown | The plan may target an API the user rejects. |
-| A2 | The fixed replay fixture can use existing saveable objects for exact snapshots once the user selects fields and compression. | Runtime State / Validation | Snapshot comparison may be impossible without a new approved contract. |
-| A3 | The Node-safe boundary may require changes outside the four data packages, such as the common logger/import graph. | Work Breakdown / Security | The phase scope or dependency graph may need a user-approved adjustment. |
-| A4 | The eventual dedicated command name and fixture file path are not yet user-owned decisions. | Verification Commands | A plan with a guessed command would be non-reproducible. |
+| A1 | The no-argument factory and verifier entry can be added without changing the user-owned Layer 3 interface. | Summary / Work Breakdown | LOW — constrained by D-23/D-28 and the implementation-local Node boundary. |
+| A2 | The fixed replay fixture can use existing saveable objects for exact end snapshots. | Runtime State / Validation | LOW — D-26 fixes the compared hero/map outputs; use D-02 if an existing saveable lacks a defined representation. |
+| A3 | The Node-safe boundary may require changes to the common logger/import graph while keeping the circular gate scoped to the four data packages. | Work Breakdown / Security | LOW — the change is permitted only where required for Node import safety; unrelated render/legacy-only diagnostics remain outside the gate. |
+| A4 | The dedicated command and fixture paths are fixed by D-21. | Verification Commands | LOW — `pnpm test:data-node`, `script/test-data-node.ts`, and `packages-user/data-state/test/fixtures/`. |
 
 ## State of the Art
 
@@ -478,13 +476,13 @@ Security enforcement is enabled at ASVS level 1 in project configuration. [VERIF
 
 ### Tertiary (LOW confidence)
 
-- None used; unresolved design choices are marked `[ASSUMED]` and listed in the Assumptions Log. [VERIFIED: this artifact]
+- None used; implementation assumptions are constrained by the resolved contract status and must not reopen locked decisions. [VERIFIED: this artifact]
 
 ## Metadata
 
 **Confidence breakdown:**
 - Standard stack: HIGH — versions and commands were read from repository manifests/config and probed locally. [VERIFIED: package.json:6-24,81-98; vite.config.ts:46-49]
-- Architecture: HIGH for current code, MEDIUM for the target because factory/replay/snapshot contracts are missing. [VERIFIED: inspected source files and Open Questions above]
+- Architecture: HIGH for current code, MEDIUM for the target because implementation seams still need to be wired, but the factory/replay/snapshot contracts are now locked. [VERIFIED: inspected source files and Resolved Contract Status above]
 - Pitfalls: HIGH for observed global/type/circular failures, MEDIUM for remediation scope because D-17 forbids guessing. [VERIFIED: command results and source citations above]
 
 **Research date:** 2026-09-10  

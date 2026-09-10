@@ -122,7 +122,36 @@ Plans:
   3. 数据端与渲染端保持双端分离，渲染相关代码经 `r()`/`rf()` 门控或走 hook，渲染端不向数据端推送更新
   4. 接口设计由用户主导，AI 仅负责实现
 
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+
+- [ ] 03-01-PLAN.md — Node-safe CoreState、内部 legacy 依赖边界与最小 replay tracer
+- [ ] 03-02-PLAN.md — 八个事件内建函数契约 checkpoint 与最小注册实现
+- [ ] 03-03-PLAN.md — 稳定 replay enum、异步 command 与 top-level 注册
+- [ ] 03-04-PLAN.md — 固定 Node 回放 fixture、首分歧 thrown diagnostic 与最终快照
+- [ ] 03-05-PLAN.md — DATA-01 focused closure 与四包 type/circular 最终门禁
+- [ ] 03-06-PLAN.md — Tile events contract 与 legacy conversion 收口
+
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — Node-safe CoreState、内部 legacy 依赖边界与最小 replay tracer
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-02-PLAN.md — 八个事件内建函数契约 checkpoint 与最小注册实现
+- [ ] 03-06-PLAN.md — Tile events contract 与 legacy conversion 收口
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 03-03-PLAN.md — 稳定 replay enum、异步 command 与 top-level 注册
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 03-04-PLAN.md — 固定 Node 回放 fixture、首分歧 thrown diagnostic 与最终快照
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 03-05-PLAN.md — DATA-01 focused closure 与四包 type/circular 最终门禁
 
 ### Phase 4: 渲染适配与双布局
 
