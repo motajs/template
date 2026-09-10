@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TileStore } from '@user/data-common';
-import {
-    LegacyTileData,
-    TileLegacyBridge
-} from '../src/legacy/tile';
+import { LegacyTileData, TileLegacyBridge } from '../src/legacy/tile';
 
 describe('TileLegacyBridge events-map contract', () => {
     // 验证旧样板事件对象会转换为 TileStore 可消费的默认事件映射

@@ -107,7 +107,9 @@ export class TileStore<TLegacy = unknown> implements ITileStore<TLegacy> {
     }
 
     /** 将原始事件对象转换为运行时使用的数字键事件映射 */
-    private createEventMap(events: Record<number, string>): Map<number, string> {
+    private createEventMap(
+        events: Record<number, string>
+    ): Map<number, string> {
         const eventMap = new Map<number, string>();
         for (const [priority, event] of Object.entries(events)) {
             eventMap.set(Number(priority), event);
