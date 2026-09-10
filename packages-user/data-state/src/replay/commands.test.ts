@@ -214,6 +214,108 @@ describe('replay commands', () => {
             false
         ]);
     });
+
+    // 验证真实 registry 的生产移动入口在 controller 兑现前保持安全收集上下文
+    it('decorates real registry movement through Promise settlement', async () => {
+        const state = createCoreState();
+        const replay = new ReplaySystem();
+        registerReplayCommandItems(replay, createReplayCommandItems(state));
+        const deferred = Promise.withResolvers<void>();
+        const mover = state.hero.location.mover;
+        vi.spyOn(mover, 'start').mockReturnValue(controller(deferred.promise));
+        const warning = vi.spyOn(logger, 'warn');
+        let ended = false;
+        beginReplaySafetyCollection(replay);
+        try {
+            const action = replay
+                .getCommand(ReplayCommandCode.Right)!
+                .execute(step(ReplayCommandCode.Right, []));
+            await Promise.resolve();
+            expect(warning).not.toHaveBeenCalledWith(161);
+            deferred.resolve();
+            await expect(action).resolves.toBe(true);
+            endReplaySafetyCollection();
+            ended = true;
+
+            const detail = warning.mock.calls.find(call => call[0] === 161);
+            expect(detail).toBeDefined();
+            expect(String(detail![2])).toContain('replay command: move hero');
+        } finally {
+            if (!ended) endReplaySafetyCollection();
+            warning.mockRestore();
+        }
+    });
+
+    // 验证真实 registry 的道具和装备入口均经过生产 replay 安全边界
+    it('decorates real registry item and equipment actions', async () => {
+        const state = createCoreState();
+        const replay = new ReplaySystem();
+        registerReplayCommandItems(replay, createReplayCommandItems(state));
+        vi.spyOn(state.hero.items, 'useItem').mockReturnValue(true);
+        vi.spyOn(state.hero.equip, 'canEquipTo').mockReturnValue(
+            EquipStatus.CanEquip
+        );
+        vi.spyOn(state.hero.equip, 'getEquipped')
+            .mockReturnValueOnce(undefined)
+            .mockReturnValueOnce(99);
+        vi.spyOn(state.hero.equip, 'equip').mockImplementation(() => undefined);
+        const warning = vi.spyOn(logger, 'warn');
+        let ended = false;
+        beginReplaySafetyCollection(replay);
+        try {
+            await expect(
+                replay
+                    .getCommand(ReplayCommandCode.UseItem)!
+                    .execute(step(ReplayCommandCode.UseItem, [12]))
+            ).resolves.toBe(true);
+            await expect(
+                replay
+                    .getCommand(ReplayCommandCode.Equip)!
+                    .execute(step(ReplayCommandCode.Equip, [99, 0]))
+            ).resolves.toBe(true);
+            endReplaySafetyCollection();
+            ended = true;
+
+            const detail = warning.mock.calls.find(call => call[0] === 161);
+            expect(detail).toBeDefined();
+            expect(String(detail![2])).toContain('replay command: use item');
+            expect(String(detail![2])).toContain('replay command: equip item');
+        } finally {
+            if (!ended) endReplaySafetyCollection();
+            warning.mockRestore();
+        }
+    });
+
+    // 验证生产 command 的参数校验和寻路查询不会制造 replay 安全记录
+    it('keeps pure path queries and validation outside the safety boundary', async () => {
+        const state = createCoreState();
+        const replay = new ReplaySystem();
+        registerReplayCommandItems(replay, createReplayCommandItems(state));
+        const getPath = vi
+            .spyOn(state.pathfinding, 'getPath')
+            .mockReturnValue([]);
+        const warning = vi.spyOn(logger, 'warn');
+        let ended = false;
+        beginReplaySafetyCollection(replay);
+        try {
+            expect(state.pathfinding.getPath({ x: 1, y: 1 })).toEqual([]);
+            await expect(
+                replay
+                    .getCommand(ReplayCommandCode.UseItem)!
+                    .execute(step(ReplayCommandCode.UseItem, []))
+            ).resolves.toBe(false);
+            endReplaySafetyCollection();
+            ended = true;
+
+            expect(getPath).toHaveBeenCalledWith({ x: 1, y: 1 });
+            expect(
+                warning.mock.calls.filter(call => call[0] === 161)
+            ).toHaveLength(0);
+        } finally {
+            if (!ended) endReplaySafetyCollection();
+            warning.mockRestore();
+        }
+    });
 });
 
 describe('replay safety decorators', () => {
