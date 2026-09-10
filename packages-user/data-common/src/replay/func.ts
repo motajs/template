@@ -15,14 +15,22 @@ interface IReplaySafetyDetailQueue {
     readonly collection: IReplaySafetyCollection;
 }
 
-type ReplayDecorator = <
-    Return,
-    This,
-    Func extends (this: This, ...args: any[]) => Return
->(
-    method: Func,
-    context: ClassMethodDecoratorContext
-) => (this: This, ...args: any[]) => Return;
+interface IPromiseLike {
+    then(
+        onFulfilled?: (value: unknown) => unknown,
+        onRejected?: (reason: unknown) => unknown
+    ): unknown;
+}
+
+type ReplayMethod<This, Args extends unknown[], Return> = (
+    this: This,
+    ...args: Args
+) => Return;
+
+type ReplayDecorator = <This, Args extends unknown[], Return>(
+    method: ReplayMethod<This, Args, Return>,
+    context: ClassMethodDecoratorContext<This, ReplayMethod<This, Args, Return>>
+) => ReplayMethod<This, Args, Return>;
 
 /** 本次收集使用的录像系统 */
 let replaySystem: IReplaySystem | null = null;
@@ -46,6 +54,21 @@ let detailCode = 0;
 /** 录像收集详细信息队列，保留 50 个以确保可以在控制台重复输出 */
 const detailQueue: IReplaySafetyDetailQueue[] = [];
 
+function isPromiseLike(value: unknown): value is IPromiseLike {
+    if (!value || (typeof value !== 'object' && typeof value !== 'function')) {
+        return false;
+    }
+    return typeof (value as { then?: unknown }).then === 'function';
+}
+
+function resetReplaySafetyCollection(): void {
+    replaySystem = null;
+    collecting = false;
+    beforeLength = 0;
+    shouldIgnore = false;
+    currentCollection = null;
+}
+
 /**
  * 开始录像安全性检查收集，一般情况下不需要手动调用此接口
  * @param system 录像系统对象
@@ -58,6 +81,7 @@ export function beginReplaySafetyCollection(system: IReplaySystem): void {
     replaySystem = system;
     collecting = true;
     beforeLength = system.route.length;
+    shouldIgnore = false;
     collection.messages.length = 0;
     currentCollection = collection;
 }
@@ -70,30 +94,34 @@ export function endReplaySafetyCollection(): void {
         logger.warn(160);
         return;
     }
-    if (shouldIgnore) return;
-    if (replaySystem.route.length > beforeLength) return;
-    if (collection.messages.length === 0) return;
+    try {
+        if (shouldIgnore) return;
+        if (replaySystem.route.length > beforeLength) return;
+        if (collection.messages.length === 0) return;
 
-    // 需要把收集内容输出，这里只输出一层，完整输出需要在控制台手动调用
-    const code = detailCode++;
-    const col: IReplaySafetyCollection = {
-        name: `detail#${code}`,
-        messages: collection.messages.slice()
-    };
-    const command = `Mota.require('@user/data-common').logReplaySafetyDetail(${code});`;
-    const simplified = [...collection.messages]
-        .sort((a, b) => b.messages.length - a.messages.length)
-        .map(v => v.name)
-        .join('\n');
-    logger.warn(161, command, simplified);
+        // 需要把收集内容输出，这里只输出一层，完整输出需要在控制台手动调用
+        const code = detailCode++;
+        const col: IReplaySafetyCollection = {
+            name: `detail#${code}`,
+            messages: collection.messages.slice()
+        };
+        const command = `Mota.require('@user/data-common').logReplaySafetyDetail(${code});`;
+        const simplified = [...collection.messages]
+            .sort((a, b) => b.messages.length - a.messages.length)
+            .map(v => v.name)
+            .join('\n');
+        logger.warn(161, command, simplified);
 
-    while (detailQueue.length > 50) {
-        detailQueue.shift();
+        while (detailQueue.length > 50) {
+            detailQueue.shift();
+        }
+        detailQueue.push({
+            code,
+            collection: col
+        });
+    } finally {
+        resetReplaySafetyCollection();
     }
-    detailQueue.push({
-        code,
-        collection: col
-    });
 }
 
 /**
@@ -133,16 +161,14 @@ export function logReplaySafetyDetail(code: number): void {
  * @param message 如果录像安全检查出现问题，那么会使用此作为信息输出
  */
 export function shouldReplay(message: string): ReplayDecorator {
-    return function <
-        Return,
-        This,
-        Args extends any[],
-        Func extends (this: This, ...args: Args) => Return
-    >(
+    return function <This, Args extends unknown[], Return>(
         this: This,
-        method: Func,
-        context: ClassMethodDecoratorContext
-    ): (this: This, ...args: Args) => Return {
+        method: ReplayMethod<This, Args, Return>,
+        context: ClassMethodDecoratorContext<
+            This,
+            ReplayMethod<This, Args, Return>
+        >
+    ): ReplayMethod<This, Args, Return> {
         return function (this: This, ...args: Args): Return {
             const before = currentCollection;
             if (!before) return method.apply(this, args);
@@ -158,7 +184,18 @@ export function shouldReplay(message: string): ReplayDecorator {
 
             currentCollection = newCollection;
             const result = method.apply(this, args);
-            currentCollection = before;
+            if (isPromiseLike(result)) {
+                Promise.resolve(result).then(
+                    () => {
+                        currentCollection = before;
+                    },
+                    () => {
+                        currentCollection = before;
+                    }
+                );
+            } else {
+                currentCollection = before;
+            }
             return result;
         };
     };
@@ -169,12 +206,10 @@ export function shouldReplay(message: string): ReplayDecorator {
  * 不要使用此方法来规避控制台的录像错误警告，否则很可能导致录像出错。
  */
 export function ignoreReplay(): ReplayDecorator {
-    return function <
-        Return,
-        This,
-        Args extends any[],
-        Func extends (this: This, ...args: Args) => Return
-    >(this: This, method: Func): (this: This, ...args: Args) => Return {
+    return function <This, Args extends unknown[], Return>(
+        this: This,
+        method: ReplayMethod<This, Args, Return>
+    ): ReplayMethod<This, Args, Return> {
         return function (this: This, ...args: Args): Return {
             shouldIgnore = true;
             return method.apply(this, args);
