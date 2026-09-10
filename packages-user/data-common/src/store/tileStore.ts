@@ -17,6 +17,9 @@ export class TileStore<TLegacy = unknown> implements ITileStore<TLegacy> {
     /** 由图块数字反查图块 id 的映射表 */
     private readonly numMap: Map<number, string> = new Map();
 
+    /** 由图块数字保存的默认事件映射 */
+    private readonly eventMap: Map<number, Map<number, string>> = new Map();
+
     /** 当前挂载的旧样板图块转换器 */
     private legacyConverter: ITileLegacyConverter<TLegacy> | null = null;
 
@@ -24,8 +27,9 @@ export class TileStore<TLegacy = unknown> implements ITileStore<TLegacy> {
         return this.dataMap.get(num) ?? null;
     }
 
-    getEvent(num: number): number {
-        return this.dataMap.get(num)?.trigger ?? -1;
+    getEvent(num: number): ReadonlyMap<number, string> {
+        const events = this.eventMap.get(num);
+        return events ? new Map(events) : new Map();
     }
 
     getType(num: number): TileType {
@@ -50,6 +54,7 @@ export class TileStore<TLegacy = unknown> implements ITileStore<TLegacy> {
             }
         }
         this.dataMap.set(data.num, data);
+        this.eventMap.set(data.num, this.createEventMap(data.events));
         this.idMap.set(data.id, data.num);
         this.numMap.set(data.num, data.id);
     }
@@ -96,7 +101,17 @@ export class TileStore<TLegacy = unknown> implements ITileStore<TLegacy> {
     /** 删除一组旧的图块定义及其双向索引 */
     private deleteBy(num: number, id: string): void {
         this.dataMap.delete(num);
+        this.eventMap.delete(num);
         this.idMap.delete(id);
         this.numMap.delete(num);
+    }
+
+    /** 将原始事件对象转换为运行时使用的数字键事件映射 */
+    private createEventMap(events: Record<number, string>): Map<number, string> {
+        const eventMap = new Map<number, string>();
+        for (const [priority, event] of Object.entries(events)) {
+            eventMap.set(Number(priority), event);
+        }
+        return eventMap;
     }
 }
