@@ -6,7 +6,12 @@ import {
     TileType
 } from '@user/data-common';
 
-export type LegacyTileData = MapDataOf<keyof NumberToId>;
+interface ILegacyTileEventData {
+    /** 旧样板图块携带的默认事件映射 */
+    readonly events?: Record<number, string>;
+}
+
+export type LegacyTileData = MapDataOf<keyof NumberToId> & ILegacyTileEventData;
 
 export class TileLegacyBridge implements ITileLegacyConverter<LegacyTileData> {
     private getTileType(num: number, legacy: LegacyTileData): TileType {
@@ -93,11 +98,23 @@ export class TileLegacyBridge implements ITileLegacyConverter<LegacyTileData> {
         }
     }
 
+    /** 将旧样板事件输入复制为新的默认事件对象 */
+    private getEvents(legacy: LegacyTileData): Record<number, string> {
+        const events: Record<number, string> = {};
+        for (const [priority, event] of Object.entries(legacy.events ?? {})) {
+            const priorityNum = Number(priority);
+            if (Number.isInteger(priorityNum) && typeof event === 'string') {
+                events[priorityNum] = event;
+            }
+        }
+        return events;
+    }
+
     fromLegacy(num: number, legacy: LegacyTileData): ITileRawData {
         return {
             num,
             id: legacy.id,
-            trigger: -1,
+            events: this.getEvents(legacy),
             type: this.getTileType(num, legacy),
             pass: this.getPass(num, legacy),
             eventPass: !legacy.noPass
