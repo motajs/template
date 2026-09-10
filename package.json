@@ -7,6 +7,7 @@
         "dev": "tsx script/dev.ts",
         "test": "vitest",
         "test:ci": "vitest run",
+        "test:data-node": "tsx script/test-data-node.ts",
         "preview": "vite preview",
         "declare": "tsx script/declare.ts",
         "lines": "tsx script/lines.ts packages packages-user",
