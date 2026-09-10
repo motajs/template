@@ -82,6 +82,8 @@
 - 事件内建函数按 `data-state/src/event` 示例扩展，覆盖地图控制、玩家控制和事件临时插入控制。
 - Replay 指令按顺序覆盖上右下左移动、自动寻路至指定点、使用道具、穿装备、卸装备。
 - 最终 Node 验收只在播放完毕时比较勇士全部属性和所有地图矩阵；逐步勇士属性检查仅作为单测中的可选快速定位手段。
+- 事件内建函数统一采用 `(param, env)`，使用已确认的 8 个候选名称，失败时安全跳过并返回 `void`。
+- `createCoreState()` 无参数并调用 `new CoreState()`；constructor 在无 legacy/browser host 时走 Node-safe、内存存档路径并跳过 legacy loading。
 
 ---
 

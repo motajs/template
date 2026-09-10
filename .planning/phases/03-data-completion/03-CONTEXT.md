@@ -48,6 +48,8 @@
 - **D-24:** 阶段 3 的事件内建函数先覆盖三组常用控制：地图设置图块/转动态后移动再转静态（可选 safe 判定）/删除图块；玩家按移动序列移动/向前一步/触发面前 `onTouch`；事件临时插入指定序列或指定 id。具体签名以 `packages-user/data-state/src/event/types.ts` 和其中示例为准，新增语义不得自行发明。
 - **D-25:** 阶段 3 的 replay 指令按稳定顺序注册：上、右、下、左移动；自动寻路至指定点；使用道具；穿上装备；卸下装备。当前只测试这些指令，后续可调整。
 - **D-26:** 最终 Node 回放只在播放完毕时比较勇士全部属性和所有地图矩阵；单测可在每步后检查勇士属性作为较快的定位手段，不要求最终验证逐步比较地图矩阵。
+- **D-27:** 事件内建函数统一采用现有 `eventSetBlock(param, env)` 形式，由各自参数接口接收 `param`，使用 `IBlockEventEnv` 接收 `env`。本阶段候选名称为 `eventSetBlock`、`eventMoveBlock`、`eventDeleteBlock`、`eventMoveHero`、`eventMoveHeroStep`、`eventTouchFront`、`eventInsertEvents`、`eventInsertEvent`；失败时统一安全跳过并返回 `void`。
+- **D-28:** `createCoreState()` 保持无参数并直接调用 `new CoreState()`；`CoreState` constructor 必须具备 Node-safe 路径。检测不到 legacy/browser host 时跳过 legacy loading，不访问 `core`、`window`、DOM 或 IndexedDB，使用内存可用的数据端并由 fixture/显式加载步骤装配数据。
 
 ### the agent's Discretion
 没有授权 AI 在接口语义或系统边界上自行决策的事项。
@@ -130,7 +132,8 @@
 - Full mobile/desktop rendering integration belongs to Phase 4.
 - A complete legacy event built-in catalog remains deferred until its interfaces and scope are explicitly decided; Phase 3 registers only the minimum closed-loop set.
 - The exact factory contract is intentionally minimal for this phase: `createCoreState()` calls `new CoreState()` without options. The event fixture groups, replay command order, and final snapshot fields are user-defined in D-24 through D-26.
-- `IBlockEventEnv.heroFloor` is now part of the user-adjusted event contract and supports the existing map event example's fallback map lookup.
+- `IBlockEventEnv.heroFloor` is part of the user-adjusted event contract and supports the existing map event example's fallback map lookup.
+- The eight approved event functions use `(param, env)` and safe `void` failure behavior; parameter fields remain constrained by the existing map/hero/mover APIs.
 
 </deferred>
 
