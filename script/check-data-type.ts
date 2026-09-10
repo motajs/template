@@ -33,7 +33,8 @@ function parseDiagnostics(output: string): {
 } {
     const diagnostics: ITypeDiagnostic[] = [];
     const unparsed: string[] = [];
-    const pattern = /^(.*?\.(?:ts|tsx|vue))\((\d+),(\d+)\): error (TS\d+): (.*)$/;
+    const pattern =
+        /^(.*?\.(?:ts|tsx|vue))\((\d+),(\d+)\): error (TS\d+): (.*)$/;
 
     for (const line of output.split(/\r?\n/)) {
         if (!line.includes('error TS')) continue;
@@ -62,7 +63,9 @@ const result = spawnSync(
 );
 
 if (result.error) {
-    console.error(`type gate could not execute vue-tsc: ${result.error.message}`);
+    console.error(
+        `type gate could not execute vue-tsc: ${result.error.message}`
+    );
     process.exit(1);
 }
 

@@ -1,8 +1,4 @@
-import {
-    Hookable,
-    HookController,
-    IHookController
-} from '@motajs/common';
+import { Hookable, HookController, IHookController } from '@motajs/common';
 import {
     FaceDirection,
     IDataCommon,

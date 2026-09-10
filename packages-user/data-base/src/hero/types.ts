@@ -1,8 +1,4 @@
-import {
-    IHookBase,
-    IHookable,
-    ITileLocator
-} from '@motajs/common';
+import { IHookBase, IHookable, ITileLocator } from '@motajs/common';
 import {
     FaceDirection,
     IDataCommonExtended,
