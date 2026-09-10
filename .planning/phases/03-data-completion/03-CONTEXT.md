@@ -129,8 +129,8 @@
 - Full legacy system removal and migration belongs to Phase 5.
 - Full mobile/desktop rendering integration belongs to Phase 4.
 - A complete legacy event built-in catalog remains deferred until its interfaces and scope are explicitly decided; Phase 3 registers only the minimum closed-loop set.
-- Exact factory option fields, replay fixture actions, event built-in names/signatures, and snapshot field list remain user-owned details that must be confirmed before implementation if the planner cannot derive them without guessing.
-- The current `event/map.ts` example references `env.heroFloor`, which is not present in the current `IBlockEventEnv` contract; this specific mismatch requires user confirmation before implementation.
+- The exact factory contract is intentionally minimal for this phase: `createCoreState()` calls `new CoreState()` without options. The event fixture groups, replay command order, and final snapshot fields are user-defined in D-24 through D-26.
+- `IBlockEventEnv.heroFloor` is now part of the user-adjusted event contract and supports the existing map event example's fallback map lookup.
 
 </deferred>
 
