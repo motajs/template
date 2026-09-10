@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: 事件系统** - blockly 式低代码事件定义，驱动简单场景事件流程（验证已通过，待完成阶段收尾）
 - [ ] **Phase 2: 寻路系统** - 自动寻路与移动端点击地图触发移动
-- [ ] **Phase 3: 数据端完成** - 数据端 L0–L3 接口全部落地，可在 Node 环境独立跑回放验证
+- [x] **Phase 3: 数据端完成** - 数据端 L0–L3 接口全部落地，可在 Node 环境独立跑回放验证 (completed 2026-09-10)
 - [ ] **Phase 4: 渲染适配与双布局** - 新数据层 ↔ 已重构渲染端对接，支持移动端与桌面端双布局
 - [ ] **Phase 5: Legacy 移植** - 删除被新接口覆盖的旧系统，迁移仍需要的内容
 - [ ] **Phase 6: 单元测试** - 为核心系统补齐单元测试
@@ -122,8 +122,12 @@ Plans:
   3. 数据端与渲染端保持双端分离，渲染相关代码经 `r()`/`rf()` 门控或走 hook，渲染端不向数据端推送更新
   4. 接口设计由用户主导，AI 仅负责实现
 
-**Plans**: 6/6 plans executed
+**Plans**: 9/9 plans complete
 Plans:
+
+- [x] 03-07-PLAN.md
+- [x] 03-08-PLAN.md
+- [x] 03-09-PLAN.md
 
 - [x] 03-01-PLAN.md — Node-safe CoreState、内部 legacy 依赖边界与最小 replay tracer
 - [x] 03-02-PLAN.md — 八个事件内建函数契约 checkpoint 与最小注册实现
@@ -151,7 +155,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 03-05-PLAN.md — DATA-01 focused closure 与四包 type/circular 最终门禁
+- [x] 03-05-PLAN.md — DATA-01 focused closure 与四包 type/circular 最终门禁
 
 ### Phase 4: 渲染适配与双布局
 
@@ -205,7 +209,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
-| 3. 数据端完成 | 6/6 | In Progress|  |
+| 3. 数据端完成 | 9/9 | Complete    | 2026-09-10 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 0/TBD | Not started | - |

@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 3
-current_phase_name: data-completion
-status: executing
-stopped_at: Phase 3 context gathered
-last_updated: "2026-09-10T07:26:53.901Z"
+current_phase: 4
+current_phase_name: 渲染适配与双布局
+status: planning
+stopped_at: Phase 3 complete, ready to plan Phase 4
+last_updated: "2026-09-10T20:30:00Z"
 last_activity: 2026-09-10
-last_activity_desc: Phase 02 structural correction executed from user review
+last_activity_desc: Phase 03 verified and completed; ready to plan Phase 04
 progress:
-  total_phases: 3
-  completed_phases: 2
-  total_plans: 24
-  completed_plans: 18
+  total_phases: 6
+  completed_phases: 3
+  total_plans: 27
+  completed_plans: 27
 state_head: 2eebb0ad3fc0d3acfb19a41338c26155b7134f61
 ---
 
@@ -21,25 +21,25 @@ state_head: 2eebb0ad3fc0d3acfb19a41338c26155b7134f61
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-07)
+See: .planning/PROJECT.md (updated 2026-09-10)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 3 — data-completion
+**Current focus:** Phase 4 — 渲染适配与双布局
 
 ## Current Position
 
-Phase: 3 (data-completion) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 3
-Last activity: 2026-09-10 — Phase 3 execution started
+Phase: 4 — 渲染适配与双布局
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-09-10 — Phase 3 complete, transitioned to Phase 4
 
-Progress: [█████████░] 92%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 5
+- Total plans completed: 9
 - Average duration: N/A
 - Total execution time: 0 hours
 
@@ -47,7 +47,7 @@ Progress: [█████████░] 92%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 3 | 9 | - | - |
 
 **Recent Trend:**
 
@@ -125,6 +125,9 @@ Recent decisions affecting current work:
 - [Phase 02]: 2026-09-10 用户结构审查修正：graph 类型及注释归回 path/types.ts；删除未授权的 HeroPathfinding L3 封装及其接线。
 - [Phase 02]: 2026-09-10 用户结构审查修正：DirectionMapper 由 IDataCommon 主对象共享注入；通行性谓词提取为 predicate.ts 的 DefaultPassPredicate。
 - [Phase 02]: 2026-09-10 直接执行摘要 02-06：旧的 L3 HeroPathfinding 相关验证记录仅代表历史实现，必须按修正后的 L2 范围重新验证。
+- [Phase 03]: 数据端通过独立 Node replay、19 个数据测试文件和四包 type/circular 门禁验证。
+- [Phase 03]: IFacedTileLocator 移入 @user/data-common，移除 @motajs/common → data-common 循环依赖。
+- [Phase 03]: 序列化事件注册、null-safe built-ins 与 production replay-safety wiring 通过 gap closure 验证。
 
 ### Pending Todos
 
@@ -132,7 +135,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- 数据层 L0–L3 接口设计仍在进行中（由用户主导），DATA-01（Phase 3）依赖接口设计落地
+- Phase 4 渲染适配尚未开始，需在数据端 Phase 3 完成后对接新数据层接口
 - 01-08 rawEvent cache-safety and no-as implementation assumptions are explicitly removed from the revised executable scope; the 01-05 current contract remains unchanged.
 - eventStore circular paths are explicitly preserved as the Phase 01 baseline; the revised 01-08 regression does not require those paths to disappear.
 - Plan 01-12 leaves the repository-wide type gate blocked only by pre-existing diagnostics outside the plan-owned files; these are recorded in the phase deferred-items ledger.
@@ -147,6 +150,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-10T04:02:44.223Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-data-completion/03-CONTEXT.md
+Last session: 2026-09-10T20:30:00Z
+Stopped at: Phase 3 complete, ready to plan Phase 4
+Resume file: None

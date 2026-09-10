@@ -16,7 +16,7 @@
 - ✓ `Mota` 模块注册表（运行时 DI 容器）— 现有
 - ✓ 数据端 / 渲染端双端分离（数据端可在 Node 中独立跑回放验证）— 现有
 - ✓ 渲染引擎（WebGL2 + 自定义 Vue renderer）— 已重构完成
-- ✓ 数据层 L0–L3（data-common / data-base / data-system / data-state）— 接口设计进行中
+- ✓ 数据层 L0–L3（data-common / data-base / data-system / data-state）— Phase 3
 - ✓ `SaveSystem`（Dexie）/ `ReplaySystem`（回放验证）— 现有
 - ✓ 战斗伤害系统 + 触发器注册表 — 现有
 - ✓ audio / animate / loader / system（热键与 UI）— 现有
@@ -54,11 +54,13 @@
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| 数据层接口设计由用户完成，AI 仅实现 | 保证接口设计质量 | — Pending |
+| 数据层接口设计由用户完成，AI 仅实现 | 保证接口设计质量 | Phase 3 已按用户契约落地 |
 | 渲染层先于数据层完成重构 | 从旧引擎逐步重构的既定顺序 | — Pending |
 | 事件系统采用 blockly 式低代码，仅覆盖简单场景 | 面向初学者，避免过度设计 | — Pending |
 | 引擎含编辑器，但编辑器在独立项目 | 职责边界清晰 | — Pending |
-| AI 可在验证通过后自行创建 git commit | 以自动化验证替代逐次审批，降低碎片化提交成本 | — Pending |
+| AI 可在验证通过后自行创建 git commit | 以自动化验证替代逐次审批，降低碎片化提交成本 | 已执行 |
+
+| Phase 3 数据端通过独立 Node replay 与四包质量门禁验收 | 保证数据端不依赖 DOM 且边界可重复验证 | Phase 3 验证通过 |
 
 ## Evolution
 
@@ -78,4 +80,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-07 after initialization*
+*Last updated: 2026-09-10 after Phase 3*
