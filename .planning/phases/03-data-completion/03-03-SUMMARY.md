@@ -15,6 +15,7 @@ provides:
 affects: [03-04, 03-05, phase-4-render-adaptation]
 
 plan_head_before: dc7716c1451a8fcd8bf44e41872b8bffdb296a08
+commits: 4
 actuals:
   tokens: 9130
   tasks: 3
