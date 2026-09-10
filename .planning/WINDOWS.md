@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 10
+open_count: 11
 waived_count: 0
 fixed_count: 3
-total_count: 13
-last_updated: 2026-09-10T07:59:02.467Z
+total_count: 14
+last_updated: 2026-09-10T08:47:49.808Z
 ---
 
 # Broken Windows Ledger
@@ -28,6 +28,7 @@ last_updated: 2026-09-10T07:59:02.467Z
 | 11 | 03 | unrun-verify | .planning/phases/03-data-completion/deferred-items.md |  | Repository type gate remains non-zero on pre-existing render/legacy and Tile contract diagnostics; owned Node tracer and data tests pass. | fixed |  | 2026-09-10T07:45:45.249Z | 2026-09-10T07:58:56.466Z |
 | 12 | 03 | unrun-verify | .planning/phases/03-data-completion/deferred-items.md |  | Repository type gate remains non-zero on pre-existing render/legacy diagnostics; Tile contract diagnostics are resolved. | open |  | 2026-09-10T07:58:50.208Z |  |
 | 13 | 03 | deviation | packages-user/data-common/src/store/tileStore.test.ts |  | Applied ESLint/Prettier CRLF formatting required by the project after functional Tile tests passed. | open |  | 2026-09-10T07:59:02.467Z |  |
+| 14 | 03 | stub | packages-user/data-state/src/core.ts | 166 | Existing deferred serialized event registration and map-event-id binding TODO; preserved by Plan 03-03. | open |  | 2026-09-10T08:47:49.808Z |  |
 
 ````json
 [
@@ -185,6 +186,18 @@ last_updated: 2026-09-10T07:59:02.467Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-09-10T07:59:02.467Z",
+    "resolved_at": null
+  },
+  {
+    "id": 14,
+    "kind": "stub",
+    "phase": "03",
+    "file": "packages-user/data-state/src/core.ts",
+    "line": 166,
+    "description": "Existing deferred serialized event registration and map-event-id binding TODO; preserved by Plan 03-03.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-10T08:47:49.808Z",
     "resolved_at": null
   }
 ]
