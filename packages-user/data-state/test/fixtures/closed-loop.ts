@@ -1,4 +1,4 @@
-import { AnonTokyoInterpreter } from 'anon-tokyo';
+import { Statement, StatementType } from 'anon-tokyo';
 import {
     EventTrigger,
     FaceDirection,
@@ -18,8 +18,11 @@ import {
     IMapLayer,
     IMapStoreSave
 } from '@user/data-base';
-import { IReadonlyBlockEvent } from '@user/data-system';
 import { CoreState, createCoreState } from '../../src/core.ts';
+import {
+    ILegacySerializedLoadData,
+    LOAD_SERIALIZED_DATA
+} from '../../src/legacy/dependencies.ts';
 import { ReplayCommandCode } from '../../src/replay/types.ts';
 
 export interface IClosedLoopLayerSnapshot {
@@ -53,6 +56,8 @@ export interface IClosedLoopFixture {
     readonly sandbox: IReplaySandbox;
     readonly initialState: IClosedLoopInitialState;
     readonly expected: IClosedLoopExpectedSnapshot;
+    readonly eventId: string;
+    readonly rawEvent: Statement[];
     readonly reset: () => void;
     readonly eventCompleted: () => boolean;
 }
@@ -62,7 +67,7 @@ export function createClosedLoopFixture(): IClosedLoopFixture {
     state.tileStore.addTile({
         num: 1,
         id: 'floor',
-        events: { 10: 'mutate-map' },
+        events: {},
         type: TileType.Terrain,
         pass: { onlyEvents: false, outPass: 0b1111, inPass: 0b1111 },
         eventPass: true
@@ -76,86 +81,87 @@ export function createClosedLoopFixture(): IClosedLoopFixture {
         eventPass: true
     });
 
-    const map = state.maps.fromRaw({
-        floorId: 'F1',
-        width: 3,
-        map: {
-            0: [7, 7, 7],
-            10: [8, 8, 8],
-            20: [1, 1, 1],
-            30: [9, 9, 9],
-            40: [10, 10, 10]
-        },
-        layerAlias: {
-            0: 'bg',
-            10: 'bg2',
-            20: 'event',
-            30: 'fg',
-            40: 'fg2'
-        },
-        events: {
-            0: {},
-            10: {},
-            20: {},
-            30: {},
-            40: {}
+    const rawEvent: Statement[] = [
+        {
+            type: StatementType.Call,
+            functionName: 'eventSetBlock',
+            builtIn: true,
+            async: true,
+            parameters: { x: 1, y: 0, tile: 2 }
         }
-    });
+    ];
+    const serialized: ILegacySerializedLoadData = {
+        events: {
+            'mutate-map': {
+                trigger: EventTrigger.OnEnter,
+                rawEvent
+            }
+        },
+        maps: [
+            {
+                floorId: 'F1',
+                width: 3,
+                map: {
+                    0: [7, 7, 7],
+                    10: [8, 8, 8],
+                    20: [1, 1, 1],
+                    30: [9, 9, 9],
+                    40: [10, 10, 10]
+                },
+                layerAlias: {
+                    0: 'bg',
+                    10: 'bg2',
+                    20: 'event',
+                    30: 'fg',
+                    40: 'fg2'
+                },
+                events: {
+                    0: {},
+                    10: {},
+                    20: { 1: { 10: 'mutate-map' } },
+                    30: {},
+                    40: {}
+                }
+            },
+            {
+                floorId: 'F2',
+                width: 2,
+                map: {
+                    0: [11, 11, 11, 11],
+                    10: [12, 12, 12, 12],
+                    20: [13, 13, 13, 13],
+                    30: [14, 14, 14, 14],
+                    40: [15, 15, 15, 15]
+                },
+                layerAlias: {
+                    0: 'bg',
+                    10: 'bg2',
+                    20: 'event',
+                    30: 'fg',
+                    40: 'fg2'
+                },
+                events: {
+                    0: {},
+                    10: {},
+                    20: {},
+                    30: {},
+                    40: {}
+                }
+            }
+        ]
+    };
+    state[LOAD_SERIALIZED_DATA](serialized);
+    const map = state.maps.getMap('F1');
     if (!map || !map.eventLayer) {
         throw new Error('closed-loop fixture map was not created');
     }
-    const eventLayer = map.eventLayer;
-    const secondMap = state.maps.fromRaw({
-        floorId: 'F2',
-        width: 2,
-        map: {
-            0: [11, 11, 11, 11],
-            10: [12, 12, 12, 12],
-            20: [13, 13, 13, 13],
-            30: [14, 14, 14, 14],
-            40: [15, 15, 15, 15]
-        },
-        layerAlias: {
-            0: 'bg',
-            10: 'bg2',
-            20: 'event',
-            30: 'fg',
-            40: 'fg2'
-        },
-        events: {
-            0: {},
-            10: {},
-            20: {},
-            30: {},
-            40: {}
-        }
-    });
+    const secondMap = state.maps.getMap('F2');
     if (!secondMap || !secondMap.eventLayer) {
         throw new Error('closed-loop fixture second map was not created');
     }
+    const eventLayer = map.eventLayer;
     state.maps.setMapActiveStatus('F1', true);
     state.maps.setMapActiveStatus('F2', true);
-
-    let completed = false;
-    const event: IReadonlyBlockEvent = {
-        interpreter: new AnonTokyoInterpreter({
-            builtInFunctions: [],
-            globalFunctions: []
-        }),
-        trigger: EventTrigger.OnEnter,
-        rawEvent: [],
-        compiled: null,
-        compile: () => null,
-        execute: async (_param, env) => {
-            await Promise.resolve();
-            if (!env.layer || !env.triggerLocator) {
-                throw new Error('closed-loop event lost its map source');
-            }
-            env.layer.setBlock(2, env.triggerLocator.x, env.triggerLocator.y);
-            completed = true;
-        }
-    };
-    state.eventStore.addEvent('mutate-map', event);
 
     state.hero.location.setFloor('F1');
     state.hero.location.setPos(0, 0);
@@ -237,7 +243,6 @@ export function createClosedLoopFixture(): IClosedLoopFixture {
             initialState.enemy,
             SaveCompression.NoCompression
         );
-        completed = false;
     };
     const sandbox = replay.createReplaySandbox({
         route: replay.route,
@@ -254,6 +259,8 @@ export function createClosedLoopFixture(): IClosedLoopFixture {
         initialState,
         expected,
         reset,
-        eventCompleted: () => completed
+        eventId: 'mutate-map',
+        rawEvent,
+        eventCompleted: () => eventLayer.getBlock(1, 0) === 2
     };
 }
