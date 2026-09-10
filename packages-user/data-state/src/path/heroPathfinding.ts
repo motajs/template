@@ -202,6 +202,10 @@ export class HeroPathfinding implements IHeroPathfinding {
         this.system.useMover(mover);
     }
 
+    useMovable(movable: IObjectMovable | null): void {
+        this.system.useMovable(movable);
+    }
+
     useFallbackPolicy(policy: PathFallbackPolicy | null): void {
         this.system.useFallbackPolicy(policy);
     }

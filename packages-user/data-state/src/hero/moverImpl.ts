@@ -202,13 +202,15 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
             }
         }
         if (loc) {
-            for (const [priority, id] of loc.static.tileEvent().get()) {
-                tileSources.push({
-                    priority,
-                    id,
-                    type: BlockEventType.TileEvent,
-                    tile: loc.static
-                });
+            if (loc.static) {
+                for (const [priority, id] of loc.static.tileEvent().get()) {
+                    tileSources.push({
+                        priority,
+                        id,
+                        type: BlockEventType.TileEvent,
+                        tile: loc.static
+                    });
+                }
             }
             for (const tile of loc.dynamics) {
                 for (const [priority, id] of tile.tileEvent().get()) {

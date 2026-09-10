@@ -21,3 +21,10 @@
   status: open
   **What:** 阶段门禁 `pnpm lint:user` 仍被本计划未修改的渲染与 legacy 文件阻塞；计划归属文件的
   ESLint 检查为 0 problems，按范围边界规则不修复无关基线问题。
+
+- data-state/src/hero/moverImpl.ts 的 TS18047 诊断（`loc.static` 可能为 `null`）
+  status: resolved
+  **What:** `commonTrigger` 的静态图块事件收集在可空 `ILayerLocation.static` 上直接调用
+  `tileEvent()`，导致计划归属文件的类型门禁失败。
+  **Resolution:** 仅在 `loc.static` 非空时收集静态图块事件；动态事件收集、优先级排序、来源环境
+  与单次 executor 调用保持不变。
