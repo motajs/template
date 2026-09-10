@@ -235,6 +235,26 @@ describe('event built-ins', () => {
         expect(fixture.layer.getBlock(0, 0)).toBe(1);
     });
 
+    // 验证八个真实注册 built-in 对 null 和 undefined 都安全返回且不改变状态
+    it('safely resolves nullish parameters through every registered built-in', async () => {
+        const registrations = createEventBuiltinRegistrations();
+        const expectedMap = [1, 1, 1, 1];
+        const expectedHero = { x: 0, y: 0 };
+
+        for (const registration of registrations) {
+            for (const param of [null, undefined]) {
+                const fixture = createFixture();
+                await expect(
+                    invokeBuiltin(registration, param, fixture.env)
+                ).resolves.toBeUndefined();
+                expect([...fixture.layer.getMapData()]).toEqual(expectedMap);
+                expect(fixture.state.hero.location.x).toBe(expectedHero.x);
+                expect(fixture.state.hero.location.y).toBe(expectedHero.y);
+                expect([...fixture.layer.iterateDynamicTiles()]).toHaveLength(0);
+            }
+        }
+    });
+
     // 验证缺失地图、勇士和事件 id 时所有函数都安全返回
     it('safely skips missing targets and event ids', async () => {
         const fixture = createFixture();
