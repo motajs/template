@@ -72,6 +72,7 @@ import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { DirectionMapper, IDirectionMapper, logger } from '@motajs/common';
 import { DefaultHeroMoveTopImpl } from './hero';
+import { createEventBuiltinRegistrations } from './event';
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
@@ -207,7 +208,10 @@ export class CoreState implements ICoreState {
         this.enemyContext = enemyContext;
 
         // 游戏事件系统
-        const eventSystem = new GameEventSystem(this);
+        const eventSystem = new GameEventSystem(
+            this,
+            createEventBuiltinRegistrations()
+        );
         this.eventSystem = eventSystem;
 
         //#endregion

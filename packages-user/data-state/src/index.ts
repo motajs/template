@@ -1,4 +1,5 @@
 export * from './enemy';
+export * from './event';
 export * from './hero';
 
 export * from './core';

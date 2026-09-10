@@ -1,6 +1,6 @@
 import { IStateBase } from '@user/data-base';
 import { IGameEventStore } from '@user/data-common';
-import { AnonTokyoInterpreter } from 'anon-tokyo';
+import { AnonTokyoInterpreter, BuiltInFunction } from 'anon-tokyo';
 import { EventExecutor } from './executor';
 import { IGameEventExecutor, IGameEventSystem } from './types';
 
@@ -8,10 +8,13 @@ export class GameEventSystem implements IGameEventSystem {
     readonly executor: IGameEventExecutor;
     store: IGameEventStore | null;
 
-    constructor(readonly state: IStateBase) {
+    constructor(
+        readonly state: IStateBase,
+        builtins: ReadonlyArray<BuiltInFunction> = []
+    ) {
         this.store = state.eventStore;
         const interpreter = new AnonTokyoInterpreter({
-            builtInFunctions: [],
+            builtInFunctions: [...builtins],
             globalFunctions: []
         });
         this.executor = new EventExecutor(interpreter, () => this.store);
