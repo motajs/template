@@ -17,6 +17,8 @@ export class PathfindingSystem implements IPathfindingSystem {
 
     /** 绑定的移动器对象 */
     private mover: IObjectMover<IObjectMovable> | null = null;
+    /** 绑定的移动对象，用于保留用户契约的对象绑定入口 */
+    private movable: IObjectMovable | null = null;
     /** 注入的瞬移回退策略，未注入时必定回退为逐步寻路 */
     private policy: PathFallbackPolicy | null = null;
     /** 最近一次寻路移动的控制器包装 */
@@ -26,8 +28,13 @@ export class PathfindingSystem implements IPathfindingSystem {
         this.finder = new PathfindingFinder(state);
     }
 
+    useMovable(movable: IObjectMovable | null): void {
+        this.movable = movable;
+    }
+
     useMover(mover: IObjectMover<IObjectMovable> | null): void {
         this.mover = mover;
+        this.movable = mover ? mover.tile : null;
     }
 
     useFallbackPolicy(policy: PathFallbackPolicy | null): void {
@@ -36,11 +43,13 @@ export class PathfindingSystem implements IPathfindingSystem {
 
     getPath(target: ITileLocator): IPathfindingStep[] {
         const mover = this.mover;
-        if (isNil(mover)) {
+        const movable = this.movable;
+        if (isNil(mover) && isNil(movable)) {
             logger.warn(173);
             return [];
         }
-        const tile = mover.tile;
+        const tile = mover ? mover.tile : movable;
+        if (!tile) return [];
         return this.finder.find({ x: tile.x, y: tile.y }, target);
     }
 
