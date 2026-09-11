@@ -54,11 +54,6 @@ class ReplayUpCommand implements IReplayCommand {
         );
     }
 
-    execute(step: IReplayStepHandler): Promise<boolean> {
-        if (step.params.length !== 0) return Promise.resolve(false);
-        return Promise.resolve(this.moveHero());
-    }
-
     private moveHero(): boolean {
         const mover = this.state.hero.location.mover;
         if (mover.moving) return false;
@@ -66,6 +61,11 @@ class ReplayUpCommand implements IReplayCommand {
         const controller = mover.start();
         if (!controller) return false;
         return true;
+    }
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length !== 0) return Promise.resolve(false);
+        return Promise.resolve(this.moveHero());
     }
 }
 
@@ -82,11 +82,6 @@ class ReplayRightCommand implements IReplayCommand {
         );
     }
 
-    execute(step: IReplayStepHandler): Promise<boolean> {
-        if (step.params.length !== 0) return Promise.resolve(false);
-        return Promise.resolve(this.moveHero());
-    }
-
     private moveHero(): boolean {
         const mover = this.state.hero.location.mover;
         if (mover.moving) return false;
@@ -94,6 +89,11 @@ class ReplayRightCommand implements IReplayCommand {
         const controller = mover.start();
         if (!controller) return false;
         return true;
+    }
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length !== 0) return Promise.resolve(false);
+        return Promise.resolve(this.moveHero());
     }
 }
 
@@ -110,11 +110,6 @@ class ReplayDownCommand implements IReplayCommand {
         );
     }
 
-    execute(step: IReplayStepHandler): Promise<boolean> {
-        if (step.params.length !== 0) return Promise.resolve(false);
-        return Promise.resolve(this.moveHero());
-    }
-
     private moveHero(): boolean {
         const mover = this.state.hero.location.mover;
         if (mover.moving) return false;
@@ -122,6 +117,11 @@ class ReplayDownCommand implements IReplayCommand {
         const controller = mover.start();
         if (!controller) return false;
         return true;
+    }
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length !== 0) return Promise.resolve(false);
+        return Promise.resolve(this.moveHero());
     }
 }
 
@@ -138,11 +138,6 @@ class ReplayLeftCommand implements IReplayCommand {
         );
     }
 
-    execute(step: IReplayStepHandler): Promise<boolean> {
-        if (step.params.length !== 0) return Promise.resolve(false);
-        return Promise.resolve(this.moveHero());
-    }
-
     private moveHero(): boolean {
         const mover = this.state.hero.location.mover;
         if (mover.moving) return false;
@@ -150,6 +145,11 @@ class ReplayLeftCommand implements IReplayCommand {
         const controller = mover.start();
         if (!controller) return false;
         return true;
+    }
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length !== 0) return Promise.resolve(false);
+        return Promise.resolve(this.moveHero());
     }
 }
 
@@ -170,18 +170,18 @@ class ReplayAutoPathfindCommand implements IReplayCommand {
         );
     }
 
+    private moveToPoint(x: number, y: number): boolean {
+        const result = this.state.pathfinding.moveTo({ x, y });
+        if (!result) return false;
+        return true;
+    }
+
     execute(step: IReplayStepHandler): Promise<boolean> {
         if (step.params.length !== 2) return Promise.resolve(false);
         const x = step.params[0];
         const y = step.params[1];
         if (!isNumber(x) || !isNumber(y)) return Promise.resolve(false);
         return Promise.resolve(this.moveToPoint(x, y));
-    }
-
-    private moveToPoint(x: number, y: number): boolean {
-        const result = this.state.pathfinding.moveTo({ x, y });
-        if (!result) return false;
-        return true;
     }
 }
 
@@ -195,15 +195,15 @@ class ReplayUseItemCommand implements IReplayCommand {
         >);
     }
 
+    private useItem(item: number | string): boolean {
+        return this.state.hero.items.useItem(item);
+    }
+
     execute(step: IReplayStepHandler): Promise<boolean> {
         if (step.params.length !== 1) return Promise.resolve(false);
         const item = step.params[0];
         if (!isItem(item)) return Promise.resolve(false);
         return Promise.resolve(this.useItem(item));
-    }
-
-    private useItem(item: number | string): boolean {
-        return this.state.hero.items.useItem(item);
     }
 }
 
@@ -220,6 +220,22 @@ class ReplayEquipCommand implements IReplayCommand {
                 autoUnload: boolean | undefined
             ) => boolean
         >);
+    }
+
+    private equip(
+        uid: number,
+        slot: number | string,
+        autoUnload: boolean | undefined
+    ): boolean {
+        const equipment = this.state.hero.equip;
+        const slotIndex = resolveSlot(this.state, slot);
+        if (slotIndex === null) return false;
+        if (equipment.getEquipped(slotIndex) === uid) return true;
+        if (equipment.canEquipTo(uid, slot) === EquipStatus.CannotEquip) {
+            return false;
+        }
+        equipment.equip(uid, slot, autoUnload);
+        return equipment.getEquipped(slotIndex) === uid;
     }
 
     execute(step: IReplayStepHandler): Promise<boolean> {
@@ -239,22 +255,6 @@ class ReplayEquipCommand implements IReplayCommand {
         if (slotIndex === null) return Promise.resolve(false);
         return Promise.resolve(this.equip(uid, slot, autoUnload));
     }
-
-    private equip(
-        uid: number,
-        slot: number | string,
-        autoUnload: boolean | undefined
-    ): boolean {
-        const equipment = this.state.hero.equip;
-        const slotIndex = resolveSlot(this.state, slot);
-        if (slotIndex === null) return false;
-        if (equipment.getEquipped(slotIndex) === uid) return true;
-        if (equipment.canEquipTo(uid, slot) === EquipStatus.CannotEquip) {
-            return false;
-        }
-        equipment.equip(uid, slot, autoUnload);
-        return equipment.getEquipped(slotIndex) === uid;
-    }
 }
 
 class ReplayUnequipCommand implements IReplayCommand {
@@ -270,6 +270,13 @@ class ReplayUnequipCommand implements IReplayCommand {
         );
     }
 
+    private unequip(slot: number): boolean {
+        const equipment = this.state.hero.equip;
+        if (equipment.getEquipped(slot) === undefined) return false;
+        equipment.unequip(slot);
+        return equipment.getEquipped(slot) === undefined;
+    }
+
     execute(step: IReplayStepHandler): Promise<boolean> {
         if (step.params.length !== 1) return Promise.resolve(false);
         const slot = step.params[0];
@@ -277,13 +284,6 @@ class ReplayUnequipCommand implements IReplayCommand {
             return Promise.resolve(false);
         }
         return Promise.resolve(this.unequip(slot));
-    }
-
-    private unequip(slot: number): boolean {
-        const equipment = this.state.hero.equip;
-        if (equipment.getEquipped(slot) === undefined) return false;
-        equipment.unequip(slot);
-        return equipment.getEquipped(slot) === undefined;
     }
 }
 
