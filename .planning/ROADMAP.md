@@ -122,8 +122,16 @@ Plans:
   3. 数据端与渲染端保持双端分离，渲染相关代码经 `r()`/`rf()` 门控或走 hook，渲染端不向数据端推送更新
   4. 接口设计由用户主导，AI 仅负责实现
 
-**Plans**: 9/9 plans complete
+**Plans**: 16/16 plans complete
 Plans:
+
+- [x] 03-10-PLAN.md
+- [x] 03-11-PLAN.md
+- [x] 03-12-PLAN.md
+- [x] 03-13-PLAN.md
+- [x] 03-14-PLAN.md
+- [x] 03-15-PLAN.md
+- [x] 03-16-PLAN.md
 
 - [x] 03-07-PLAN.md
 - [x] 03-08-PLAN.md
@@ -209,7 +217,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
-| 3. 数据端完成 | 9/9 | Complete    | 2026-09-10 |
+| 3. 数据端完成 | 16/16 | Complete   | 2026-09-10 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 0/TBD | Not started | - |
