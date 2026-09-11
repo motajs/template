@@ -9,6 +9,7 @@ import {
     shouldReplay
 } from '@user/data-common';
 import { EquipStatus } from '@user/data-base';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { createCoreState } from '../core';
 import { ReplaySystem } from '../../../data-common/src/replay/system';
@@ -96,8 +97,8 @@ describe('replay commands', () => {
         expect(first.replaySystem.route).not.toBe(second.replaySystem.route);
     });
 
-    // 验证四向移动在 controller.onEnd 兑现前不会完成 command
-    it('awaits a directional movement controller', async () => {
+    // 验证四向移动不等待 controller.onEnd 即完成 command
+    it('completes directional movement without awaiting the controller', async () => {
         const state = createCoreState();
         const items = createReplayCommandItems(state);
         const deferred = Promise.withResolvers<void>();
@@ -109,20 +110,14 @@ describe('replay commands', () => {
         const result = items[ReplayCommandCode.Right].command.execute(
             step(ReplayCommandCode.Right, [])
         );
-        let settled = false;
-        void result.then(() => {
-            settled = true;
-        });
-        await Promise.resolve();
-        expect(settled).toBe(false);
         expect(move).toHaveBeenCalledWith(FaceDirection.Right);
         expect(start).toHaveBeenCalledTimes(1);
-        deferred.resolve();
         await expect(result).resolves.toBe(true);
+        deferred.resolve();
     });
 
-    // 验证自动寻路等待 PathfindingSystem 返回的完整 controller
-    it('awaits the pathfinding controller and returns false when no path exists', async () => {
+    // 验证自动寻路不等待 PathfindingSystem 返回的 controller
+    it('completes pathfinding without awaiting the controller', async () => {
         const state = createCoreState();
         const items = createReplayCommandItems(state);
         const deferred = Promise.withResolvers<void>();
@@ -134,10 +129,9 @@ describe('replay commands', () => {
         const result = items[
             ReplayCommandCode.AutoPathfindToPoint
         ].command.execute(step(ReplayCommandCode.AutoPathfindToPoint, [2, 3]));
-        await Promise.resolve();
         expect(moveTo).toHaveBeenCalledWith({ x: 2, y: 3 });
-        deferred.resolve();
         await expect(result).resolves.toBe(true);
+        deferred.resolve();
         moveTo.mockReturnValue(null);
         await expect(
             items[ReplayCommandCode.AutoPathfindToPoint].command.execute(
@@ -215,8 +209,8 @@ describe('replay commands', () => {
         ]);
     });
 
-    // 验证真实 registry 的生产移动入口在 controller 兑现前保持安全收集上下文
-    it('decorates real registry movement through Promise settlement', async () => {
+    // 验证真实 registry 的生产移动入口在同步返回时恢复安全收集上下文
+    it('restores registry movement safety context synchronously', async () => {
         const state = createCoreState();
         const replay = new ReplaySystem();
         registerReplayCommandItems(replay, createReplayCommandItems(state));
@@ -230,10 +224,8 @@ describe('replay commands', () => {
             const action = replay
                 .getCommand(ReplayCommandCode.Right)!
                 .execute(step(ReplayCommandCode.Right, []));
-            await Promise.resolve();
-            expect(warning).not.toHaveBeenCalledWith(161);
-            deferred.resolve();
             await expect(action).resolves.toBe(true);
+            deferred.resolve();
             endReplaySafetyCollection();
             ended = true;
 
@@ -319,11 +311,11 @@ describe('replay commands', () => {
 });
 
 describe('replay safety decorators', () => {
-    // 验证异步 decorator 在 Promise 兑现前保留嵌套 collection 上下文
-    it('keeps collection context through deferred nested actions', async () => {
+    // 验证同步 decorator 在方法返回后恢复嵌套 collection 上下文
+    it('restores collection context after synchronous nested actions', () => {
         interface DecoratedFixture {
             inner(): void;
-            outer(gate: Promise<void>): Promise<void>;
+            outer(): void;
         }
         const inner = shouldReplay('inner')(
             function (this: DecoratedFixture): void {},
@@ -333,16 +325,12 @@ describe('replay safety decorators', () => {
             >
         );
         const outer = shouldReplay('outer')(
-            async function (
-                this: DecoratedFixture,
-                gate: Promise<void>
-            ): Promise<void> {
-                await gate;
+            function (this: DecoratedFixture): void {
                 this.inner();
             },
             { name: 'outer' } as ClassMethodDecoratorContext<
                 DecoratedFixture,
-                (this: DecoratedFixture, gate: Promise<void>) => Promise<void>
+                (this: DecoratedFixture) => void
             >
         );
         const fixture: DecoratedFixture = {
@@ -351,27 +339,32 @@ describe('replay safety decorators', () => {
         };
 
         const replay = new ReplaySystem();
-        const gate = Promise.withResolvers<void>();
         const warning = vi.spyOn(logger, 'warn');
         const group = vi.spyOn(console, 'group').mockImplementation(() => {});
-        beginReplaySafetyCollection(replay);
-        const action = fixture.outer(gate.promise);
-        gate.resolve();
-        await action;
-        endReplaySafetyCollection();
-
-        const detail = warning.mock.calls.find(call => call[0] === 161);
-        expect(detail).toBeDefined();
-        const command = String(detail![1]);
-        const match = command.match(/\((\d+)\)/);
-        expect(match).not.toBeNull();
         const output = vi.spyOn(console, 'log').mockImplementation(() => {});
-        logReplaySafetyDetail(Number(match![1]));
-        expect(group).toHaveBeenCalled();
-        expect(output.mock.calls.flat().join(' ')).toContain('inner');
-        warning.mockRestore();
-        group.mockRestore();
-        output.mockRestore();
+        beginReplaySafetyCollection(replay);
+        try {
+            fixture.outer();
+            fixture.inner();
+            endReplaySafetyCollection();
+
+            const detail = warning.mock.calls.find(call => call[0] === 161);
+            expect(detail).toBeDefined();
+            const command = String(detail![1]);
+            const match = command.match(/\((\d+)\)/);
+            expect(match).not.toBeNull();
+            logReplaySafetyDetail(Number(match![1]));
+            expect(group).toHaveBeenCalled();
+            expect(
+                output.mock.calls.filter(call =>
+                    String(call[0]).startsWith('inner:')
+                )
+            ).toHaveLength(2);
+        } finally {
+            warning.mockRestore();
+            group.mockRestore();
+            output.mockRestore();
+        }
     });
 
     // 验证同步 collection 在结束后可重新开始且不会残留旧上下文
@@ -384,5 +377,17 @@ describe('replay safety decorators', () => {
         endReplaySafetyCollection();
         expect(warning).not.toHaveBeenCalledWith(159);
         warning.mockRestore();
+    });
+
+    // 验证用户拥有的勇士属性方法未增加 replay decorator
+    it('does not change user-owned attribute decorator placement', () => {
+        const source = readFileSync(
+            new URL(
+                '../../../data-base/src/hero/attribute.ts',
+                import.meta.url
+            ),
+            'utf8'
+        );
+        expect(source).not.toContain('shouldReplay');
     });
 });
