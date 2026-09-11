@@ -1,5 +1,5 @@
 import madge from 'madge';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import { relative, resolve } from 'node:path';
 
 const root = process.cwd();
@@ -90,7 +90,7 @@ export function classifyCycle(cycle: CircularCycle): CycleClassification {
         normalizedCycle,
         compatibilityOnly,
         approvedScope,
-        inScope: approvedScope
+        inScope: !compatibilityOnly && approvedScope
     };
 }
 
@@ -190,5 +190,3 @@ if (isMainModule()) {
         process.exit(2);
     });
 }
-
-export const scriptPath = fileURLToPath(import.meta.url);
