@@ -2,6 +2,7 @@ import { logger } from '@motajs/common';
 import {
     FaceDirection,
     IReplayStepHandler,
+    IReplaySandbox,
     IMoverController,
     beginReplaySafetyCollection,
     endReplaySafetyCollection,
@@ -40,6 +41,11 @@ function controller(onEnd: Promise<void>): Readonly<IMoverController> {
     };
 }
 
+interface IManualReplaySandbox extends IReplaySandbox {
+    playing: boolean;
+    pausing: boolean;
+}
+
 describe('replay commands', () => {
     // 验证默认 command item 只按稳定 enum 顺序提供八个实现
     it('creates the approved command order without module-owned numbering', () => {
@@ -49,10 +55,10 @@ describe('replay commands', () => {
         expect(items).toHaveLength(8);
         expect(items.map(item => item.command.execute)).toHaveLength(8);
         expect(items.map(item => item.command.constructor.name)).toEqual([
-            'ReplayUpCommand',
-            'ReplayRightCommand',
-            'ReplayDownCommand',
-            'ReplayLeftCommand',
+            'ReplayDirectionCommand',
+            'ReplayDirectionCommand',
+            'ReplayDirectionCommand',
+            'ReplayDirectionCommand',
             'ReplayAutoPathfindCommand',
             'ReplayUseItemCommand',
             'ReplayEquipCommand',
@@ -133,41 +139,81 @@ describe('replay commands', () => {
         );
     });
 
-    // 验证四向移动不等待 controller.onEnd 即完成 command
-    it('completes directional movement without awaiting the controller', async () => {
+    // 验证四向移动等待 controller.onEnd 后才完成 command 并进入下一步
+    it('awaits directional movement before the next replay step', async () => {
         const state = createCoreState();
         const items = createReplayCommandItems(state);
-        const deferred = Promise.withResolvers<void>();
+        const first = Promise.withResolvers<void>();
+        const second = Promise.withResolvers<void>();
         const mover = state.hero.location.mover;
         const move = vi.spyOn(mover, 'step');
         const start = vi
             .spyOn(mover, 'start')
-            .mockReturnValue(controller(deferred.promise));
-        const result = items[ReplayCommandCode.Right].command.execute(
-            step(ReplayCommandCode.Right, [])
-        );
+            .mockReturnValueOnce(controller(first.promise))
+            .mockReturnValueOnce(controller(second.promise));
+        const replay = new ReplaySystem();
+        registerReplayCommandItems(replay, items);
+        replay.record(ReplayCommandCode.Right);
+        replay.record(ReplayCommandCode.Right);
+        const sandbox = replay.createReplaySandbox({
+            route: replay.route,
+            reseter: { reset: () => {} }
+        }) as IManualReplaySandbox;
+        sandbox.playing = true;
+        sandbox.pausing = false;
+        const result = sandbox.step();
         expect(move).toHaveBeenCalledWith(FaceDirection.Right);
         expect(start).toHaveBeenCalledTimes(1);
+        await Promise.resolve();
+        expect(start).toHaveBeenCalledTimes(1);
+        first.resolve();
         await expect(result).resolves.toBe(true);
-        deferred.resolve();
+        const next = sandbox.step();
+        await Promise.resolve();
+        expect(start).toHaveBeenCalledTimes(2);
+        second.resolve();
+        await expect(next).resolves.toBe(true);
     });
 
-    // 验证自动寻路不等待 PathfindingSystem 返回的 controller
-    it('completes pathfinding without awaiting the controller', async () => {
+    // 验证自动寻路等待 PathfindingSystem 返回的 controller 后才进入下一步
+    it('awaits pathfinding before the next replay step', async () => {
         const state = createCoreState();
         const items = createReplayCommandItems(state);
-        const deferred = Promise.withResolvers<void>();
-        const moveTo = vi.spyOn(state.pathfinding, 'moveTo');
-        moveTo.mockReturnValue({
-            controller: controller(deferred.promise),
-            path: []
-        });
-        const result = items[
-            ReplayCommandCode.AutoPathfindToPoint
-        ].command.execute(step(ReplayCommandCode.AutoPathfindToPoint, [2, 3]));
+        const first = Promise.withResolvers<void>();
+        const second = Promise.withResolvers<void>();
+        const moveTo = vi
+            .spyOn(state.pathfinding, 'moveTo')
+            .mockReturnValueOnce({
+                controller: controller(first.promise),
+                path: []
+            })
+            .mockReturnValueOnce({
+                controller: controller(second.promise),
+                path: []
+            });
+        const replay = new ReplaySystem();
+        registerReplayCommandItems(replay, items);
+        replay.record(ReplayCommandCode.AutoPathfindToPoint, 2, 3);
+        replay.record(ReplayCommandCode.AutoPathfindToPoint, 4, 5);
+        const sandbox = replay.createReplaySandbox({
+            route: replay.route,
+            reseter: { reset: () => {} }
+        }) as IManualReplaySandbox;
+        sandbox.playing = true;
+        sandbox.pausing = false;
+        const result = sandbox.step();
         expect(moveTo).toHaveBeenCalledWith({ x: 2, y: 3 });
+        expect(moveTo).toHaveBeenCalledTimes(1);
+        await Promise.resolve();
+        expect(moveTo).toHaveBeenCalledTimes(1);
+        first.resolve();
         await expect(result).resolves.toBe(true);
-        deferred.resolve();
+        const next = sandbox.step();
+        await Promise.resolve();
+        expect(moveTo).toHaveBeenCalledWith({ x: 4, y: 5 });
+        expect(moveTo).toHaveBeenCalledTimes(2);
+        second.resolve();
+        await expect(next).resolves.toBe(true);
         moveTo.mockReturnValue(null);
         await expect(
             items[ReplayCommandCode.AutoPathfindToPoint].command.execute(
@@ -245,80 +291,16 @@ describe('replay commands', () => {
         ]);
     });
 
-    // 验证真实 registry 的生产移动入口在同步返回时恢复安全收集上下文
-    it('restores registry movement safety context synchronously', async () => {
+    // 验证生产 command 不拥有 replay safety helper 且纯查询不制造安全记录
+    it('keeps replay safety ownership below production commands', async () => {
         const state = createCoreState();
         const replay = new ReplaySystem();
         registerReplayCommandItems(replay, createReplayCommandItems(state));
-        const deferred = Promise.withResolvers<void>();
-        const mover = state.hero.location.mover;
-        vi.spyOn(mover, 'start').mockReturnValue(controller(deferred.promise));
-        const warning = vi.spyOn(logger, 'warn');
-        let ended = false;
-        beginReplaySafetyCollection(replay);
-        try {
-            const action = replay
-                .getCommand(ReplayCommandCode.Right)!
-                .execute(step(ReplayCommandCode.Right, []));
-            await expect(action).resolves.toBe(true);
-            deferred.resolve();
-            endReplaySafetyCollection();
-            ended = true;
-
-            const detail = warning.mock.calls.find(call => call[0] === 161);
-            expect(detail).toBeDefined();
-            expect(String(detail![2])).toContain('replay command: move hero');
-        } finally {
-            if (!ended) endReplaySafetyCollection();
-            warning.mockRestore();
-        }
-    });
-
-    // 验证真实 registry 的道具和装备入口均经过生产 replay 安全边界
-    it('decorates real registry item and equipment actions', async () => {
-        const state = createCoreState();
-        const replay = new ReplaySystem();
-        registerReplayCommandItems(replay, createReplayCommandItems(state));
-        vi.spyOn(state.hero.items, 'useItem').mockReturnValue(true);
-        vi.spyOn(state.hero.equip, 'canEquipTo').mockReturnValue(
-            EquipStatus.CanEquip
+        const source = readFileSync(
+            new URL('./commands.ts', import.meta.url),
+            'utf8'
         );
-        vi.spyOn(state.hero.equip, 'getEquipped')
-            .mockReturnValueOnce(undefined)
-            .mockReturnValueOnce(99);
-        vi.spyOn(state.hero.equip, 'equip').mockImplementation(() => undefined);
-        const warning = vi.spyOn(logger, 'warn');
-        let ended = false;
-        beginReplaySafetyCollection(replay);
-        try {
-            await expect(
-                replay
-                    .getCommand(ReplayCommandCode.UseItem)!
-                    .execute(step(ReplayCommandCode.UseItem, [12]))
-            ).resolves.toBe(true);
-            await expect(
-                replay
-                    .getCommand(ReplayCommandCode.Equip)!
-                    .execute(step(ReplayCommandCode.Equip, [99, 0]))
-            ).resolves.toBe(true);
-            endReplaySafetyCollection();
-            ended = true;
-
-            const detail = warning.mock.calls.find(call => call[0] === 161);
-            expect(detail).toBeDefined();
-            expect(String(detail![2])).toContain('replay command: use item');
-            expect(String(detail![2])).toContain('replay command: equip item');
-        } finally {
-            if (!ended) endReplaySafetyCollection();
-            warning.mockRestore();
-        }
-    });
-
-    // 验证生产 command 的参数校验和寻路查询不会制造 replay 安全记录
-    it('keeps pure path queries and validation outside the safety boundary', async () => {
-        const state = createCoreState();
-        const replay = new ReplaySystem();
-        registerReplayCommandItems(replay, createReplayCommandItems(state));
+        expect(source).not.toContain('shouldReplay');
         const getPath = vi
             .spyOn(state.pathfinding, 'getPath')
             .mockReturnValue([]);
@@ -427,17 +409,14 @@ describe('replay safety decorators', () => {
         expect(source).not.toContain('shouldReplay');
     });
 
-    // 验证八个 command 类各自拥有 execute 且不存在共享入口或跨类调用
-    it('keeps replay command ownership isolated in the command module', () => {
+    // 验证方向 command 共享一个参数化类且不存在旧的重复入口
+    it('keeps directional command ownership parameterized', () => {
         const source = readFileSync(
             new URL('./commands.ts', import.meta.url),
             'utf8'
         );
         const classes = [
-            'ReplayUpCommand',
-            'ReplayRightCommand',
-            'ReplayDownCommand',
-            'ReplayLeftCommand',
+            'ReplayDirectionCommand',
             'ReplayAutoPathfindCommand',
             'ReplayUseItemCommand',
             'ReplayEquipCommand',
@@ -446,6 +425,24 @@ describe('replay safety decorators', () => {
         expect(source).not.toContain('ReplayCommandEntrances');
         expect(source).not.toContain('createMoveCommand');
         expect(source).not.toMatch(/\bentries\./);
+        expect(source).not.toMatch(
+            /class\s+Replay(?:Up|Right|Down|Left)Command\b/
+        );
+        expect(
+            (source.match(/new ReplayDirectionCommand\(state,/g) ?? []).length
+        ).toBe(4);
+        expect(source).toContain(
+            'new ReplayDirectionCommand(state, FaceDirection.Up)'
+        );
+        expect(source).toContain(
+            'new ReplayDirectionCommand(state, FaceDirection.Right)'
+        );
+        expect(source).toContain(
+            'new ReplayDirectionCommand(state, FaceDirection.Down)'
+        );
+        expect(source).toContain(
+            'new ReplayDirectionCommand(state, FaceDirection.Left)'
+        );
         for (const className of classes) {
             const body = source.match(
                 new RegExp(

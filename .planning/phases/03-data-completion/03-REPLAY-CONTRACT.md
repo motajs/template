@@ -1,9 +1,9 @@
 # Phase 3 Plan 03: Replay Command Contract
 
-## User structural supersession
+## User structural supersession (S-05)
 
 本节晚于初始 replay checkpoint，优先于下方关于 command completion 和 decorator
-placement 的旧记录。S-05 又 supersedes S-02 在 replay-step completion 边界上的结论：
+placement 的旧记录。S-05 supersedes S-02 在 replay-step completion 边界上的结论：
 
 - replay command 不调用 `shouldReplay`；移动和寻路 command 必须等待各自 controller 完成后再返回，确保下一录像步不会与上一步并发。`shouldReplay` 的最终落点仍由用户放在真正改变最终状态的低层方法上。
 - 既有 `ReplaySystem`、route 和 sandbox 只做使同步 command 正常运行所需的最小兼容调整，不重新设计录像系统。
@@ -52,8 +52,8 @@ their parameter count and primitive types before touching state:
 | `unequip`                     | one numeric slot                                                               | `CoreState.hero.equip.unequip(slot)`                              |
 
 Invalid parameter count/types, missing targets, an already-running action, or
-a state API failure return `false`. A successful synchronous state API returns
-silent success.
+a state API failure return `false`. Item and equipment state APIs retain their
+existing synchronous command boundary.
 
 ## Top-level registry ownership
 
@@ -93,7 +93,7 @@ the singleton, IndexedDB, or a new options-bearing factory API. The existing
 remain the action targets; no new `ICoreState` member is required by this
 contract.
 
-## Completion boundaries
+## Completion boundaries under S-05
 
 - Four-direction movement appends one direction to the hero mover, starts it,
   and awaits the returned mover controller's `onEnd`; it returns `true` only

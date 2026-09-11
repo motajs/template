@@ -2,8 +2,7 @@ import {
     FaceDirection,
     IReplayStepHandler,
     IReplaySystem,
-    IReplayCommand,
-    shouldReplay
+    IReplayCommand
 } from '@user/data-common';
 import { EquipStatus } from '@user/data-base';
 import {
@@ -41,139 +40,44 @@ function resolveSlot(
     return index < 0 ? null : index;
 }
 
-class ReplayUpCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {
-        this.moveHero = shouldReplay('replay command: move hero')(
-            this.moveHero,
-            {
-                name: 'moveHero'
-            } as ClassMethodDecoratorContext<
-                ReplayUpCommand,
-                (this: ReplayUpCommand) => boolean
-            >
-        );
-    }
+class ReplayDirectionCommand implements IReplayCommand {
+    constructor(
+        private readonly state: IReplayCommandState,
+        private readonly direction: FaceDirection
+    ) {}
 
-    private moveHero(): boolean {
-        const mover = this.state.hero.location.mover;
-        if (mover.moving) return false;
-        mover.step(FaceDirection.Up);
-        const controller = mover.start();
-        if (!controller) return false;
-        return true;
-    }
-
-    execute(step: IReplayStepHandler): Promise<boolean> {
-        if (step.params.length !== 0) return Promise.resolve(false);
-        return Promise.resolve(this.moveHero());
-    }
-}
-
-class ReplayRightCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {
-        this.moveHero = shouldReplay('replay command: move hero')(
-            this.moveHero,
-            {
-                name: 'moveHero'
-            } as ClassMethodDecoratorContext<
-                ReplayRightCommand,
-                (this: ReplayRightCommand) => boolean
-            >
-        );
-    }
-
-    private moveHero(): boolean {
-        const mover = this.state.hero.location.mover;
-        if (mover.moving) return false;
-        mover.step(FaceDirection.Right);
-        const controller = mover.start();
-        if (!controller) return false;
-        return true;
+    private async moveHero(): Promise<boolean> {
+        try {
+            const mover = this.state.hero.location.mover;
+            if (mover.moving) return false;
+            mover.step(this.direction);
+            const controller = mover.start();
+            if (!controller) return false;
+            await controller.onEnd;
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     execute(step: IReplayStepHandler): Promise<boolean> {
         if (step.params.length !== 0) return Promise.resolve(false);
-        return Promise.resolve(this.moveHero());
-    }
-}
-
-class ReplayDownCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {
-        this.moveHero = shouldReplay('replay command: move hero')(
-            this.moveHero,
-            {
-                name: 'moveHero'
-            } as ClassMethodDecoratorContext<
-                ReplayDownCommand,
-                (this: ReplayDownCommand) => boolean
-            >
-        );
-    }
-
-    private moveHero(): boolean {
-        const mover = this.state.hero.location.mover;
-        if (mover.moving) return false;
-        mover.step(FaceDirection.Down);
-        const controller = mover.start();
-        if (!controller) return false;
-        return true;
-    }
-
-    execute(step: IReplayStepHandler): Promise<boolean> {
-        if (step.params.length !== 0) return Promise.resolve(false);
-        return Promise.resolve(this.moveHero());
-    }
-}
-
-class ReplayLeftCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {
-        this.moveHero = shouldReplay('replay command: move hero')(
-            this.moveHero,
-            {
-                name: 'moveHero'
-            } as ClassMethodDecoratorContext<
-                ReplayLeftCommand,
-                (this: ReplayLeftCommand) => boolean
-            >
-        );
-    }
-
-    private moveHero(): boolean {
-        const mover = this.state.hero.location.mover;
-        if (mover.moving) return false;
-        mover.step(FaceDirection.Left);
-        const controller = mover.start();
-        if (!controller) return false;
-        return true;
-    }
-
-    execute(step: IReplayStepHandler): Promise<boolean> {
-        if (step.params.length !== 0) return Promise.resolve(false);
-        return Promise.resolve(this.moveHero());
+        return this.moveHero();
     }
 }
 
 class ReplayAutoPathfindCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {
-        this.moveToPoint = shouldReplay('replay command: pathfind hero')(
-            this.moveToPoint,
-            {
-                name: 'moveToPoint'
-            } as ClassMethodDecoratorContext<
-                ReplayAutoPathfindCommand,
-                (
-                    this: ReplayAutoPathfindCommand,
-                    x: number,
-                    y: number
-                ) => boolean
-            >
-        );
-    }
+    constructor(private readonly state: IReplayCommandState) {}
 
-    private moveToPoint(x: number, y: number): boolean {
-        const result = this.state.pathfinding.moveTo({ x, y });
-        if (!result) return false;
-        return true;
+    private async moveToPoint(x: number, y: number): Promise<boolean> {
+        try {
+            const result = this.state.pathfinding.moveTo({ x, y });
+            if (!result) return false;
+            await result.controller.onEnd;
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     execute(step: IReplayStepHandler): Promise<boolean> {
@@ -181,19 +85,12 @@ class ReplayAutoPathfindCommand implements IReplayCommand {
         const x = step.params[0];
         const y = step.params[1];
         if (!isNumber(x) || !isNumber(y)) return Promise.resolve(false);
-        return Promise.resolve(this.moveToPoint(x, y));
+        return this.moveToPoint(x, y);
     }
 }
 
 class ReplayUseItemCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {
-        this.useItem = shouldReplay('replay command: use item')(this.useItem, {
-            name: 'useItem'
-        } as ClassMethodDecoratorContext<
-            ReplayUseItemCommand,
-            (this: ReplayUseItemCommand, item: number | string) => boolean
-        >);
-    }
+    constructor(private readonly state: IReplayCommandState) {}
 
     private useItem(item: number | string): boolean {
         return this.state.hero.items.useItem(item);
@@ -208,19 +105,7 @@ class ReplayUseItemCommand implements IReplayCommand {
 }
 
 class ReplayEquipCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {
-        this.equip = shouldReplay('replay command: equip item')(this.equip, {
-            name: 'equip'
-        } as ClassMethodDecoratorContext<
-            ReplayEquipCommand,
-            (
-                this: ReplayEquipCommand,
-                uid: number,
-                slot: number | string,
-                autoUnload: boolean | undefined
-            ) => boolean
-        >);
-    }
+    constructor(private readonly state: IReplayCommandState) {}
 
     private equip(
         uid: number,
@@ -258,17 +143,7 @@ class ReplayEquipCommand implements IReplayCommand {
 }
 
 class ReplayUnequipCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {
-        this.unequip = shouldReplay('replay command: unequip item')(
-            this.unequip,
-            {
-                name: 'unequip'
-            } as ClassMethodDecoratorContext<
-                ReplayUnequipCommand,
-                (this: ReplayUnequipCommand, slot: number) => boolean
-            >
-        );
-    }
+    constructor(private readonly state: IReplayCommandState) {}
 
     private unequip(slot: number): boolean {
         const equipment = this.state.hero.equip;
@@ -294,43 +169,35 @@ export function createReplayCommandItems(
     return [
         {
             code: ReplayCommandCode.Up,
-            // prettier-ignore
-            command: new (ReplayUpCommand)(state)
+            command: new ReplayDirectionCommand(state, FaceDirection.Up)
         },
         {
             code: ReplayCommandCode.Right,
-            // prettier-ignore
-            command: new (ReplayRightCommand)(state)
+            command: new ReplayDirectionCommand(state, FaceDirection.Right)
         },
         {
             code: ReplayCommandCode.Down,
-            // prettier-ignore
-            command: new (ReplayDownCommand)(state)
+            command: new ReplayDirectionCommand(state, FaceDirection.Down)
         },
         {
             code: ReplayCommandCode.Left,
-            // prettier-ignore
-            command: new (ReplayLeftCommand)(state)
+            command: new ReplayDirectionCommand(state, FaceDirection.Left)
         },
         {
             code: ReplayCommandCode.AutoPathfindToPoint,
-            // prettier-ignore
-            command: new (ReplayAutoPathfindCommand)(state)
+            command: new ReplayAutoPathfindCommand(state)
         },
         {
             code: ReplayCommandCode.UseItem,
-            // prettier-ignore
-            command: new (ReplayUseItemCommand)(state)
+            command: new ReplayUseItemCommand(state)
         },
         {
             code: ReplayCommandCode.Equip,
-            // prettier-ignore
-            command: new (ReplayEquipCommand)(state)
+            command: new ReplayEquipCommand(state)
         },
         {
             code: ReplayCommandCode.Unequip,
-            // prettier-ignore
-            command: new (ReplayUnequipCommand)(state)
+            command: new ReplayUnequipCommand(state)
         }
     ];
 }
