@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { Statement, StatementType } from 'anon-tokyo';
 import {
     FaceDirection,
@@ -13,7 +14,24 @@ import {
     IGameEventInvocation
 } from '@user/data-system';
 import { CoreState } from '../core';
-import { createEventBuiltinRegistrations } from './index';
+import {
+    createControlEventBuiltinRegistrations,
+    createEventBuiltinRegistrations,
+    createHeroEventBuiltinRegistrations,
+    createMapEventBuiltinRegistrations,
+    DeleteBlockEventRegistration,
+    InsertEventEventRegistration,
+    InsertEventsEventRegistration,
+    MoveBlockEventRegistration,
+    MoveHeroEventRegistration,
+    MoveHeroStepEventRegistration,
+    SetBlockEventRegistration,
+    TouchFrontEventRegistration
+} from './index';
+import { SetBlockEventRegistration as MapSetBlockEventRegistration } from './map';
+import { TouchFrontEventRegistration as HeroTouchFrontEventRegistration } from './hero';
+import { InsertEventEventRegistration as ControlInsertEventEventRegistration } from './event';
+import * as dataStateRoot from '../index';
 import { EventBuiltinName } from './types';
 
 interface EventFixture {
@@ -302,5 +320,127 @@ describe('event built-ins', () => {
                 fixture.env
             )
         ).resolves.toBeUndefined();
+    });
+});
+
+describe('event registration ownership', () => {
+    // 验证四个公开注册函数各自返回新实例且拼接顺序为地图勇士控制
+    it('keeps the three-map three-hero two-control split and stable order', () => {
+        const map = createMapEventBuiltinRegistrations();
+        const hero = createHeroEventBuiltinRegistrations();
+        const control = createControlEventBuiltinRegistrations();
+        expect(map).toHaveLength(3);
+        expect(hero).toHaveLength(3);
+        expect(control).toHaveLength(2);
+        expect(map.map(item => item.name)).toEqual([
+            EventBuiltinName.SetBlock,
+            EventBuiltinName.MoveBlock,
+            EventBuiltinName.DeleteBlock
+        ]);
+        expect(hero.map(item => item.name)).toEqual([
+            EventBuiltinName.MoveHero,
+            EventBuiltinName.MoveHeroStep,
+            EventBuiltinName.TouchFront
+        ]);
+        expect(control.map(item => item.name)).toEqual([
+            EventBuiltinName.InsertEvents,
+            EventBuiltinName.InsertEvent
+        ]);
+        const aggregate = createEventBuiltinRegistrations();
+        expect(aggregate.map(item => item.name)).toEqual(
+            [...map, ...hero, ...control].map(item => item.name)
+        );
+        expect(aggregate).toHaveLength(8);
+        expect(createMapEventBuiltinRegistrations()[0]).not.toBe(map[0]);
+        expect(createHeroEventBuiltinRegistrations()[0]).not.toBe(hero[0]);
+        expect(createControlEventBuiltinRegistrations()[0]).not.toBe(
+            control[0]
+        );
+    });
+
+    // 验证每个注册实例直接拥有自己的稳定名称与可调用函数
+    it('owns a stable name and callable function on every instance', () => {
+        for (const registration of createEventBuiltinRegistrations()) {
+            expect(
+                Object.prototype.hasOwnProperty.call(registration, 'name')
+            ).toBe(true);
+            expect(
+                Object.prototype.hasOwnProperty.call(registration, 'func')
+            ).toBe(true);
+            expect(typeof registration.name).toBe('string');
+            expect(typeof registration.func).toBe('function');
+        }
+    });
+
+    // 验证注册类分别来自地图勇士事件模块且勇士面前注册类归 hero 所有
+    it('originates registration classes from their owning event modules', () => {
+        expect(SetBlockEventRegistration).toBe(MapSetBlockEventRegistration);
+        expect(TouchFrontEventRegistration).toBe(
+            HeroTouchFrontEventRegistration
+        );
+        expect(InsertEventEventRegistration).toBe(
+            ControlInsertEventEventRegistration
+        );
+        const map = createMapEventBuiltinRegistrations();
+        const hero = createHeroEventBuiltinRegistrations();
+        const control = createControlEventBuiltinRegistrations();
+        expect(map[0]).toBeInstanceOf(MapSetBlockEventRegistration);
+        expect(map[1]).toBeInstanceOf(MoveBlockEventRegistration);
+        expect(map[2]).toBeInstanceOf(DeleteBlockEventRegistration);
+        expect(hero[0]).toBeInstanceOf(MoveHeroEventRegistration);
+        expect(hero[1]).toBeInstanceOf(MoveHeroStepEventRegistration);
+        expect(hero[2]).toBeInstanceOf(HeroTouchFrontEventRegistration);
+        expect(control[0]).toBeInstanceOf(InsertEventsEventRegistration);
+        expect(control[1]).toBeInstanceOf(ControlInsertEventEventRegistration);
+        expect(getRegistration(EventBuiltinName.TouchFront)).toBeInstanceOf(
+            HeroTouchFrontEventRegistration
+        );
+    });
+
+    // 验证两个事件 barrel 仅含导出语句且既有公开事件符号仍可从根索引导入
+    it('keeps both barrels export-only and preserves public event symbols', () => {
+        const eventBarrel = readFileSync(
+            new URL('./index.ts', import.meta.url),
+            'utf8'
+        );
+        const rootBarrel = readFileSync(
+            new URL('../index.ts', import.meta.url),
+            'utf8'
+        );
+        expect(eventBarrel).not.toMatch(/^\s*import\s/m);
+        expect(rootBarrel).not.toMatch(/^\s*import\s/m);
+        expect(eventBarrel).not.toMatch(
+            /^\s*(?:export\s+)?(?:async\s+)?function\s/m
+        );
+        const reachableNames = [
+            'createEventBuiltinRegistrations',
+            'createMapEventBuiltinRegistrations',
+            'createHeroEventBuiltinRegistrations',
+            'createControlEventBuiltinRegistrations',
+            'eventSetBlock',
+            'eventMoveBlock',
+            'eventDeleteBlock',
+            'eventMoveHero',
+            'eventMoveHeroStep',
+            'eventTouchFront',
+            'eventInsertEvents',
+            'eventInsertEvent',
+            'getPossibleMap',
+            'getPossibleLayer',
+            'appendMoveSteps',
+            'SetBlockEventRegistration',
+            'MoveBlockEventRegistration',
+            'DeleteBlockEventRegistration',
+            'MoveHeroEventRegistration',
+            'MoveHeroStepEventRegistration',
+            'TouchFrontEventRegistration',
+            'InsertEventsEventRegistration',
+            'InsertEventEventRegistration',
+            'EventBuiltinName'
+        ];
+        const rootKeys = Object.keys(dataStateRoot);
+        for (const name of reachableNames) {
+            expect(rootKeys).toContain(name);
+        }
     });
 });
