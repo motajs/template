@@ -104,14 +104,13 @@ export class CoreState implements ICoreState {
     // Layer 2 执行层，游戏逻辑对象都在这，包括一些需要操作数据层的逻辑系统等
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
     readonly eventSystem: IGameEventSystem;
-    /** 已绑定勇士移动器的寻路系统 */
     readonly pathfinding: IPathfindingSystem;
-    /** 当前 CoreState 独立拥有的录像系统 */
     readonly replaySystem: IReplaySystem;
 
     // Layer 3 用户层，也就是最顶层的内容，一般仅用于初始化以及仅供渲染端调用的顶层模块
     readonly loadProgress: ILoadProgressTotal;
     readonly dataLoader: IMotaDataLoader;
+
     /** 可存档对象映射 */
     private readonly saveables: Map<string, ISaveableContent<any>> = new Map();
     /** 所有已添加的可存档对象 */
