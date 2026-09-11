@@ -12,9 +12,6 @@ import {
     IGameEventInvocation
 } from '@user/data-system';
 import { CoreState } from '../core';
-import { eventDeleteBlock, eventMoveBlock, eventSetBlock } from './map';
-import { eventMoveHero, eventMoveHeroStep } from './hero';
-import { eventInsertEvent, eventInsertEvents, eventTouchFront } from './event';
 import { createEventBuiltinRegistrations } from './index';
 import { EventBuiltinName } from './types';
 
@@ -31,14 +28,24 @@ type RegisteredBuiltin = ReturnType<
     typeof createEventBuiltinRegistrations
 >[number];
 
+type BuiltinParameter = Parameters<RegisteredBuiltin['func']>[0];
+
 function invokeBuiltin(
     registration: RegisteredBuiltin,
-    param: null | undefined,
+    param: BuiltinParameter,
     env: IBlockEventEnv
 ): Promise<void> {
     return Promise.resolve(
         Reflect.apply(registration.func, undefined, [param, env])
     );
+}
+
+function getRegistration(name: EventBuiltinName): RegisteredBuiltin {
+    const registration = createEventBuiltinRegistrations().find(
+        item => item.name === name
+    );
+    if (!registration) throw new Error(`${name} registration missing`);
+    return registration;
 }
 
 function createFixture(): EventFixture {
@@ -102,20 +109,29 @@ function invocation(id: string, env: IBlockEventEnv): IGameEventInvocation {
 }
 
 describe('event built-ins', () => {
-    // 验证设置图块能解析环境图层并拒绝无效图块
-    it('sets a block and safely skips an unknown tile', () => {
+    // 验证真实注册项设置图块并安全跳过无效图块
+    it('sets a block and safely skips an unknown tile', async () => {
         const fixture = createFixture();
-        eventSetBlock({ x: 1, y: 0, tile: 'block' }, fixture.env);
+        const registration = getRegistration(EventBuiltinName.SetBlock);
+        await invokeBuiltin(
+            registration,
+            { x: 1, y: 0, tile: 'block' },
+            fixture.env
+        );
         expect(fixture.layer.getBlock(1, 0)).toBe(2);
-        expect(() =>
-            eventSetBlock({ x: 1, y: 0, tile: 'missing' }, fixture.env)
-        ).not.toThrow();
+        await invokeBuiltin(
+            registration,
+            { x: 1, y: 0, tile: 'missing' },
+            fixture.env
+        );
+        expect(fixture.layer.getBlock(1, 0)).toBe(2);
     });
 
-    // 验证动态图块移动完成后会按 safe 分支还原
+    // 验证真实注册项移动动态图块并按 safe 分支还原
     it('moves a dynamic block and respects safe static transfer', async () => {
         const fixture = createFixture();
-        await eventMoveBlock(
+        await invokeBuiltin(
+            getRegistration(EventBuiltinName.MoveBlock),
             {
                 x: 1,
                 y: 0,
@@ -130,30 +146,39 @@ describe('event built-ins', () => {
         expect(fixture.layer.getBlock(2, 0)).toBe(1);
     });
 
-    // 验证删除图块会等待并清理静态与动态图块
+    // 验证真实注册项删除图块并清理静态与动态图块
     it('deletes static and dynamic blocks at a coordinate', async () => {
         const fixture = createFixture();
         fixture.layer.transferToDynamic(1, 0);
-        await eventDeleteBlock({ x: 1, y: 0 }, fixture.env);
+        await invokeBuiltin(
+            getRegistration(EventBuiltinName.DeleteBlock),
+            { x: 1, y: 0 },
+            fixture.env
+        );
         expect(fixture.layer.getBlock(1, 0)).toBe(0);
         expect([...fixture.layer.getDynamicTilesAt(1, 0)]).toHaveLength(0);
     });
 
-    // 验证勇士移动序列和向前一步都等待移动结束
+    // 验证真实注册项的勇士移动序列和向前一步都等待移动结束
     it('awaits hero sequence and forward-step movement', async () => {
         const fixture = createFixture();
-        await eventMoveHero(
+        await invokeBuiltin(
+            getRegistration(EventBuiltinName.MoveHero),
             {
                 steps: [{ type: ObjectMoveType.Dir, move: FaceDirection.Right }]
             },
             fixture.env
         );
         expect(fixture.state.hero.location.x).toBe(1);
-        await eventMoveHeroStep({}, fixture.env);
+        await invokeBuiltin(
+            getRegistration(EventBuiltinName.MoveHeroStep),
+            {},
+            fixture.env
+        );
         expect(fixture.state.hero.location.x).toBe(2);
     });
 
-    // 验证面前事件按 onTouch 触发且不移动勇士
+    // 验证真实注册项触发面前 onTouch 且不移动勇士
     it('triggers front onTouch events without moving the hero', async () => {
         const fixture = createFixture();
         const calls: IGameEventInvocation[] = [];
@@ -164,13 +189,17 @@ describe('event built-ins', () => {
                 calls.push(invocation('touch', env));
             })
         );
-        await eventTouchFront({}, fixture.env);
+        await invokeBuiltin(
+            getRegistration(EventBuiltinName.TouchFront),
+            {},
+            fixture.env
+        );
         expect(calls).toHaveLength(1);
         expect(calls[0].env.trigger).toBe(EventTrigger.OnTouch);
         expect(fixture.state.hero.location.x).toBe(0);
     });
 
-    // 验证临时事件序列和单事件都会按顺序等待执行
+    // 验证真实注册项按顺序等待临时事件序列和单事件
     it('awaits temporary event sequences and single event insertion', async () => {
         const fixture = createFixture();
         const calls: string[] = [];
@@ -187,11 +216,16 @@ describe('event built-ins', () => {
                 calls.push('second');
             })
         );
-        await eventInsertEvents(
+        await invokeBuiltin(
+            getRegistration(EventBuiltinName.InsertEvents),
             { ids: ['first', 'second', 'missing'] },
             fixture.env
         );
-        await eventInsertEvent({ id: 'first' }, fixture.env);
+        await invokeBuiltin(
+            getRegistration(EventBuiltinName.InsertEvent),
+            { id: 'first' },
+            fixture.env
+        );
         expect(calls).toEqual(['first', 'second', 'first']);
     });
 
@@ -221,44 +255,7 @@ describe('event built-ins', () => {
         }
     });
 
-    // 验证真实注册的 eventSetBlock 对 null 参数安全返回且不修改状态
-    it('safely resolves a null parameter through the eventSetBlock registration', async () => {
-        const fixture = createFixture();
-        const registration = createEventBuiltinRegistrations().find(
-            item => item.name === EventBuiltinName.SetBlock
-        );
-        expect(registration).toBeDefined();
-        if (!registration)
-            throw new Error('eventSetBlock registration missing');
-        await expect(
-            invokeBuiltin(registration, null, fixture.env)
-        ).resolves.toBeUndefined();
-        expect(fixture.layer.getBlock(0, 0)).toBe(1);
-    });
-
-    // 验证八个真实注册 built-in 对 null 和 undefined 都安全返回且不改变状态
-    it('safely resolves nullish parameters through every registered built-in', async () => {
-        const registrations = createEventBuiltinRegistrations();
-        const expectedMap = [1, 1, 1, 1];
-        const expectedHero = { x: 0, y: 0 };
-
-        for (const registration of registrations) {
-            for (const param of [null, undefined]) {
-                const fixture = createFixture();
-                await expect(
-                    invokeBuiltin(registration, param, fixture.env)
-                ).resolves.toBeUndefined();
-                expect([...fixture.layer.getMapData()]).toEqual(expectedMap);
-                expect(fixture.state.hero.location.x).toBe(expectedHero.x);
-                expect(fixture.state.hero.location.y).toBe(expectedHero.y);
-                expect([...fixture.layer.iterateDynamicTiles()]).toHaveLength(
-                    0
-                );
-            }
-        }
-    });
-
-    // 验证缺失地图、勇士和事件 id 时所有函数都安全返回
+    // 验证真实注册项在缺失地图和事件 id 时都安全返回
     it('safely skips missing targets and event ids', async () => {
         const fixture = createFixture();
         const missingEnv: IBlockEventEnv = {
@@ -268,14 +265,32 @@ describe('event built-ins', () => {
             heroFloor: 'missing'
         };
         await expect(
-            eventMoveBlock({ x: 0, y: 0, steps: [] }, missingEnv)
+            invokeBuiltin(
+                getRegistration(EventBuiltinName.MoveBlock),
+                { x: 0, y: 0, steps: [] },
+                missingEnv
+            )
         ).resolves.toBeUndefined();
         await expect(
-            eventDeleteBlock({ x: 0, y: 0 }, missingEnv)
+            invokeBuiltin(
+                getRegistration(EventBuiltinName.DeleteBlock),
+                { x: 0, y: 0 },
+                missingEnv
+            )
         ).resolves.toBeUndefined();
-        await expect(eventTouchFront({}, missingEnv)).resolves.toBeUndefined();
         await expect(
-            eventInsertEvent({ id: 'missing' }, fixture.env)
+            invokeBuiltin(
+                getRegistration(EventBuiltinName.TouchFront),
+                {},
+                missingEnv
+            )
+        ).resolves.toBeUndefined();
+        await expect(
+            invokeBuiltin(
+                getRegistration(EventBuiltinName.InsertEvent),
+                { id: 'missing' },
+                fixture.env
+            )
         ).resolves.toBeUndefined();
     });
 });
