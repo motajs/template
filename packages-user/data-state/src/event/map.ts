@@ -1,3 +1,4 @@
+import { BuiltInFunction } from 'anon-tokyo';
 import { IBlockEventEnv } from '@user/data-system';
 import {
     IDeleteBlockEventParam,
@@ -8,6 +9,19 @@ import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
 import { IGameMap, IMapLayer } from '@user/data-base';
 import { appendMoveSteps } from './hero';
+import { EventBuiltinName } from './types';
+
+type MapEventBuiltinHandler<TParam> = (
+    param: TParam,
+    env: IBlockEventEnv
+) => void | Promise<void>;
+
+function createMapEventBuiltin<TParam>(
+    name: EventBuiltinName,
+    handler: MapEventBuiltinHandler<TParam>
+): BuiltInFunction {
+    return { name, func: handler as BuiltInFunction['func'] };
+}
 
 /**
  * 通过环境参量获取可能的地图对象
@@ -89,4 +103,13 @@ export async function eventDeleteBlock(
     if (layer.getTile(param.x, param.y)) {
         layer.setBlock(0, param.x, param.y);
     }
+}
+
+/** 创建地图控制事件的内建函数注册项 */
+export function createMapEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
+    return [
+        createMapEventBuiltin(EventBuiltinName.SetBlock, eventSetBlock),
+        createMapEventBuiltin(EventBuiltinName.MoveBlock, eventMoveBlock),
+        createMapEventBuiltin(EventBuiltinName.DeleteBlock, eventDeleteBlock)
+    ];
 }

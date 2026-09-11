@@ -1,3 +1,4 @@
+import { BuiltInFunction } from 'anon-tokyo';
 import { IBlockEventEnv } from '@user/data-system';
 import { IHeroLocation, IHeroMover } from '@user/data-base';
 import {
@@ -8,7 +9,23 @@ import {
     ObjectMoveType,
     ObjectSpecialStep
 } from '@user/data-common';
-import { IMoveHeroEventParam, IMoveHeroStepEventParam } from './types';
+import {
+    EventBuiltinName,
+    IMoveHeroEventParam,
+    IMoveHeroStepEventParam
+} from './types';
+
+type HeroEventBuiltinHandler<TParam> = (
+    param: TParam,
+    env: IBlockEventEnv
+) => void | Promise<void>;
+
+function createHeroEventBuiltin<TParam>(
+    name: EventBuiltinName,
+    handler: HeroEventBuiltinHandler<TParam>
+): BuiltInFunction {
+    return { name, func: handler as BuiltInFunction['func'] };
+}
 
 /** 启动勇士移动并等待其完整结束 */
 export function appendMoveSteps<T extends IObjectMovable>(
@@ -90,4 +107,12 @@ export async function eventMoveHeroStep(
     const controller = mover.start();
     if (!controller) return;
     await controller.onEnd;
+}
+
+/** 创建勇士控制事件的内建函数注册项 */
+export function createHeroEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
+    return [
+        createHeroEventBuiltin(EventBuiltinName.MoveHero, eventMoveHero),
+        createHeroEventBuiltin(EventBuiltinName.MoveHeroStep, eventMoveHeroStep)
+    ];
 }

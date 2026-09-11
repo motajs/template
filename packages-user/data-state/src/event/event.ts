@@ -1,3 +1,4 @@
+import { BuiltInFunction } from 'anon-tokyo';
 import {
     IBlockEventEnv,
     IBlockEventParam,
@@ -17,10 +18,23 @@ import {
 } from '@user/data-base';
 import { getPossibleLayer } from './map';
 import {
+    EventBuiltinName,
     IInsertEventEventParam,
     IInsertEventsEventParam,
     ITouchFrontEventParam
 } from './types';
+
+type ControlEventBuiltinHandler<TParam> = (
+    param: TParam,
+    env: IBlockEventEnv
+) => void | Promise<void>;
+
+function createControlEventBuiltin<TParam>(
+    name: EventBuiltinName,
+    handler: ControlEventBuiltinHandler<TParam>
+): BuiltInFunction {
+    return { name, func: handler as BuiltInFunction['func'] };
+}
 
 interface IEventSource {
     readonly priority: number;
@@ -198,4 +212,19 @@ export async function eventInsertEvent(
 ): Promise<void> {
     if (!param.id) return;
     await eventInsertEvents({ ids: [param.id] }, env);
+}
+
+/** 创建事件控制事件的内建函数注册项 */
+export function createControlEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
+    return [
+        createControlEventBuiltin(EventBuiltinName.TouchFront, eventTouchFront),
+        createControlEventBuiltin(
+            EventBuiltinName.InsertEvents,
+            eventInsertEvents
+        ),
+        createControlEventBuiltin(
+            EventBuiltinName.InsertEvent,
+            eventInsertEvent
+        )
+    ];
 }
