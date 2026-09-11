@@ -1,52 +1,40 @@
 {
   "version": "1.0",
-  "timestamp": "2026-09-11T14:33:17.222Z",
+  "timestamp": "2026-09-11T15:14:49.010Z",
   "phase": "03",
   "phase_name": "data-completion",
   "phase_dir": ".planning/phases/03-data-completion",
-  "plan": 17,
-  "task": 2,
-  "total_tasks": 2,
+  "plan": 18,
+  "task": 3,
+  "total_tasks": 3,
   "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Replay completion and command ownership correction", "status": "done", "commit": "df7d1e1"},
-    {"id": 2, "name": "Replay registry regression coverage", "status": "done", "commit": "4bd6a46"}
+    {"id": 1, "name": "Own event registrations as explicit classes", "status": "done", "commit": "cb716f6"},
+    {"id": 2, "name": "Move event registration assembly out of the barrel", "status": "done", "commit": "0dc30aa"},
+    {"id": 3, "name": "Cover event registration ownership and barrel purity", "status": "done", "commit": "a69130c"}
   ],
   "remaining_tasks": [
-    {"id": 18, "name": "Class-based event registrations and hero ownership", "status": "not_started"},
     {"id": 19, "name": "Multiline JSDoc and style correction", "status": "not_started"}
   ],
   "blockers": [
     {
-      "description": "User requested a pause before executing Plans 03-18 and 03-19.",
+      "description": "User requested a pause after Plan 03-18 completed, before executing Plan 03-19.",
       "type": "human_action",
-      "workaround": "Resume with /gsd-resume-work."
-    },
-    {
-      "description": "Plan 03-17 scope guard is incompatible with Windows PowerShell 5.1; its equivalent compatibility check passed.",
-      "type": "technical",
-      "workaround": "Review or replace the scope guard before relying on it in a future execution."
+      "workaround": "Resume with /gsd-resume-work or run /gsd-execute-phase 3 to execute the remaining Plan 03-19."
     }
   ],
   "async_jobs": [],
   "human_actions_pending": [],
   "decisions": [
-    {"decision": "Replay commands contain no shouldReplay calls; decorators remain user-owned at lower-level state mutation methods.", "rationale": "Replay verifies state changes and must not mark its own command entry points.", "phase": "03"},
-    {"decision": "Movement and pathfinding replay commands await controller completion.", "rationale": "The next replay step must not overlap an unfinished action.", "phase": "03"},
-    {"decision": "Directional replay commands use one parameterized class.", "rationale": "The four directional commands share identical behavior.", "phase": "03"}
+    {"decision": "event/index.ts and data-state/src/index.ts are export-only; no imports or registration assembly remain in barrels.", "rationale": "CORR-03-12 requires barrels to stop executing registration logic.", "phase": "03"},
+    {"decision": "Eight explicit registration classes own their stable EventBuiltinName and callable func; registrations.ts is the sole deterministic assembler used by CoreState.", "rationale": "CORR-03-13 replaces module-factory registrations with explicit class-based ownership.", "phase": "03"},
+    {"decision": "eventTouchFront and its invocation/target resolution moved to the hero event layer; event.ts retains only the two Statement[] insertion operations.", "rationale": "Front-touch is hero-owned; the approved eight-name order and semantics stay unchanged.", "phase": "03"},
+    {"decision": "Ran prettier --write on plan-owned files and patched the temporary scope-guard script for Windows PowerShell 5.1.", "rationale": "Rule 3 blocking fixes for the CRLF/Prettier gate and the unavailable pwsh; no repository code affected.", "phase": "03"}
   ],
   "uncommitted_files": [
-    " M .planning/STATE.md",
-    " M .planning/phases/03-data-completion/03-17-PLAN.md",
-    " M .planning/phases/03-data-completion/03-18-PLAN.md",
-    " M .planning/phases/03-data-completion/03-19-PLAN.md",
-    " M packages-user/data-common/src/save/index.ts",
-    " M packages-user/data-state/src/core.ts",
-    " M packages-user/data-state/test/coreNode.test.ts",
-    " M packages-user/data-state/test/fixtures/closed-loop.ts",
-    " M packages-user/data-state/test/nodeTracer.test.ts",
-    " M packages-user/data-system/src/types.ts"
+    " M .gsd/dispatch-isolation-sentinel.json",
+    " M .planning/phases/01-event/01-UAT.md"
   ],
-  "next_action": "Run /gsd-resume-work, then execute Plan 03-18 only after reviewing the existing plan-checker pass.",
-  "context_notes": "Plan 03-17 was executed before the latest pause instruction arrived. Plans 03-18 and 03-19 have passed plan review but were not executed. Preserve unrelated working-tree changes and do not modify user-owned decorator placement."
+  "next_action": "Run /gsd-resume-work, then execute Plan 03-19 (wave 12) via /gsd-execute-phase 3. Plan 03-19 depends on 03-18 and shares event/replay files, so it must run sequentially.",
+  "context_notes": "Plan 03-18 completed all 3 tasks and was committed (summary at .planning/phases/03-data-completion/03-18-SUMMARY.md). CORR-03-12 and CORR-03-13 are closed. Plan 03-19 (CORR-03-14, multiline JSDoc/style) is the last remaining plan for Phase 3. After 03-19, the execute-phase tail gates + verifier must run. Note the project-wide state inconsistency (ROADMAP/STATE previously claimed Phase 3 complete while 03-18/03-19 were outstanding). Preserve the two uncommitted working-tree files and user-owned @shouldReplay decorator placement."
 }
