@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 9
+open_count: 10
 waived_count: 0
 fixed_count: 8
-total_count: 17
-last_updated: 2026-09-11T06:11:49.370Z
+total_count: 18
+last_updated: 2026-09-11T06:27:22.412Z
 ---
 
 # Broken Windows Ledger
@@ -32,6 +32,7 @@ last_updated: 2026-09-11T06:11:49.370Z
 | 15 | 03 | deviation | packages-user/data-common/src/replay/array.ts |  | Repaired replay parameter encoding so diagnostic params remain original and deterministic. | open |  | 2026-09-10T09:18:58.279Z |  |
 | 16 | 03 | deviation | packages-user/data-state/test/replayVerifier.ts |  | Added a package-local verifier harness shared by Vitest and the Node runner to avoid composite-script import resolution. | open |  | 2026-09-10T09:18:58.946Z |  |
 | 17 | 03 | deviation | packages-user/data-state/test/fixtures/closed-loop.ts |  | Applied repository Prettier/CRLF formatting to the fixed replay fixture and runner files. | open |  | 2026-09-10T09:18:59.589Z |  |
+| 18 | 03 | deviation | script/check-data-circular.ts |  | Plan 03-15 scoped circular gate reports seven pre-existing legacy/render boundary cycles through data-state/src/legacy/move.ts; replay command class changes do not touch those imports. | open |  | 2026-09-11T06:27:22.412Z |  |
 
 ````json
 [
@@ -237,6 +238,18 @@ last_updated: 2026-09-11T06:11:49.370Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-09-10T09:18:59.589Z",
+    "resolved_at": null
+  },
+  {
+    "id": 18,
+    "kind": "deviation",
+    "phase": "03",
+    "file": "script/check-data-circular.ts",
+    "line": null,
+    "description": "Plan 03-15 scoped circular gate reports seven pre-existing legacy/render boundary cycles through data-state/src/legacy/move.ts; replay command class changes do not touch those imports.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-11T06:27:22.412Z",
     "resolved_at": null
   }
 ]

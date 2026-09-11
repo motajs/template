@@ -48,6 +48,16 @@ describe('replay commands', () => {
         expect(items.map(item => item.code)).toEqual(REPLAY_COMMAND_ORDER);
         expect(items).toHaveLength(8);
         expect(items.map(item => item.command.execute)).toHaveLength(8);
+        expect(items.map(item => item.command.constructor.name)).toEqual([
+            'ReplayUpCommand',
+            'ReplayRightCommand',
+            'ReplayDownCommand',
+            'ReplayLeftCommand',
+            'ReplayAutoPathfindCommand',
+            'ReplayUseItemCommand',
+            'ReplayEquipCommand',
+            'ReplayUnequipCommand'
+        ]);
     });
 
     // 验证顶层注册器按稳定顺序注册并拒绝重复 code
@@ -72,18 +82,18 @@ describe('replay commands', () => {
     it('assembles an independent top-level registry for every CoreState', () => {
         const first = createCoreState();
         const second = createCoreState();
+        const firstCommands = REPLAY_COMMAND_ORDER.map(
+            code => first.replaySystem.getCommand(code)!
+        );
+        const secondCommands = REPLAY_COMMAND_ORDER.map(
+            code => second.replaySystem.getCommand(code)!
+        );
         expect(first.replaySystem).not.toBe(second.replaySystem);
         expect(first.pathfinding).not.toBe(second.pathfinding);
-        expect(
-            REPLAY_COMMAND_ORDER.map(code =>
-                first.replaySystem.getCommand(code)
-            ).length
-        ).toBe(8);
-        expect(
-            REPLAY_COMMAND_ORDER.map(code =>
-                second.replaySystem.getCommand(code)
-            ).length
-        ).toBe(8);
+        expect(firstCommands).toHaveLength(8);
+        expect(secondCommands).toHaveLength(8);
+        expect(new Set(firstCommands).size).toBe(8);
+        expect(new Set(secondCommands).size).toBe(8);
         expect(
             REPLAY_COMMAND_ORDER.every(
                 code => first.replaySystem.getCommand(code) !== null
@@ -95,6 +105,32 @@ describe('replay commands', () => {
             )
         ).toBe(true);
         expect(first.replaySystem.route).not.toBe(second.replaySystem.route);
+        for (let index = 0; index < firstCommands.length; index++) {
+            expect(firstCommands[index]).not.toBe(secondCommands[index]);
+        }
+    });
+
+    // 验证现有 command item 扩展边界可以替换单个实现而不改变注册器
+    it('registers an existing custom command item through the current interface', () => {
+        const state = createCoreState();
+        const replay = new ReplaySystem();
+        const defaultItems = createReplayCommandItems(state);
+        const customItem: IReplayCommandItem = {
+            code: ReplayCommandCode.Up,
+            command: {
+                execute: () => Promise.resolve(true)
+            }
+        };
+        registerReplayCommandItems(replay, [
+            customItem,
+            ...defaultItems.slice(1)
+        ]);
+        expect(replay.getCommand(ReplayCommandCode.Up)).toBe(
+            customItem.command
+        );
+        expect(replay.getCommand(ReplayCommandCode.Right)).toBe(
+            defaultItems[1].command
+        );
     });
 
     // 验证四向移动不等待 controller.onEnd 即完成 command
@@ -389,5 +425,39 @@ describe('replay safety decorators', () => {
             'utf8'
         );
         expect(source).not.toContain('shouldReplay');
+    });
+
+    // 验证八个 command 类各自拥有 execute 且不存在共享入口或跨类调用
+    it('keeps replay command ownership isolated in the command module', () => {
+        const source = readFileSync(
+            new URL('./commands.ts', import.meta.url),
+            'utf8'
+        );
+        const classes = [
+            'ReplayUpCommand',
+            'ReplayRightCommand',
+            'ReplayDownCommand',
+            'ReplayLeftCommand',
+            'ReplayAutoPathfindCommand',
+            'ReplayUseItemCommand',
+            'ReplayEquipCommand',
+            'ReplayUnequipCommand'
+        ];
+        expect(source).not.toContain('ReplayCommandEntrances');
+        expect(source).not.toContain('createMoveCommand');
+        expect(source).not.toMatch(/\bentries\./);
+        for (const className of classes) {
+            const body = source.match(
+                new RegExp(
+                    `class\\s+${className}\\b[\\s\\S]*?(?=\\r?\\nclass\\s|\\r?\\nfunction\\s|\\r?\\nexport function\\s|\\r?\\n/\\*\\*/)`
+                )
+            )?.[0];
+            expect(body).toBeDefined();
+            expect(body).toMatch(/execute\s*\(/);
+            for (const otherClass of classes) {
+                if (otherClass === className) continue;
+                expect(body).not.toContain(otherClass);
+            }
+        }
     });
 });
