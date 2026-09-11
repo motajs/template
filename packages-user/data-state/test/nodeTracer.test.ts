@@ -3,7 +3,7 @@ import { createCoreState } from '../src/core';
 import { createClosedLoopFixture } from './fixtures/closed-loop';
 
 describe('Node replay tracer', () => {
-    // 验证 Node 宿主无需浏览器全局即可创建相互独立的内存状态
+    // 验证 Node 宿主无需浏览器全局即可创建相互独立的现有存档状态
     it('creates independent Node-safe CoreState instances', () => {
         const first = createCoreState();
         const second = createCoreState();

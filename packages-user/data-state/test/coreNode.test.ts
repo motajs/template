@@ -32,12 +32,12 @@ describe('Node CoreState factory', () => {
         expect(layer.getBlock(0, 0)).toBe(7);
     });
 
-    // 验证 Node 工厂路径不读取浏览器宿主并使用独立的内存存档实现
+    // 验证 Node 工厂路径不读取浏览器宿主并使用现有独立存档实现
     it('constructs through the Node-safe path without browser globals', () => {
         expect(() => createCoreState()).not.toThrow();
         const state = createCoreState();
 
-        expect(state.saveSystem.constructor.name).toBe('MemorySaveSystem');
+        expect(state.saveSystem.constructor.name).toBe('SaveSystem');
         expect(state.maps).toBeDefined();
         expect(state.eventStore).toBeDefined();
     });
