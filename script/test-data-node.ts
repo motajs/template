@@ -50,6 +50,7 @@ interface IClosedLoopFixture {
     readonly route: IReplayArray;
     readonly sandbox: IReplaySandbox;
     readonly expected: IReplayVerifierExpectedSnapshot;
+    readonly eventCompletion: Promise<void>;
 }
 
 interface IClosedLoopModule {
@@ -107,6 +108,7 @@ function createRuntime(fixture: IClosedLoopFixture): IReplayVerifierRuntime {
             sandbox.pausing = true;
             sandbox.play();
             await waitForEnded(sandbox);
+            await fixture.eventCompletion;
         },
         snapshot: () => ({
             hero: fixture.state.hero.attribute.toStructured(),

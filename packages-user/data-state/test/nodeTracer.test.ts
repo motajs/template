@@ -10,8 +10,8 @@ describe('Node replay tracer', () => {
 
         expect(first).not.toBe(second);
         expect(first.saveSystem).not.toBe(second.saveSystem);
-        expect(first.saveSystem.constructor.name).toBe('MemorySaveSystem');
-        expect(second.saveSystem.constructor.name).toBe('MemorySaveSystem');
+        expect(first.saveSystem.constructor.name).toBe('SaveSystem');
+        expect(second.saveSystem.constructor.name).toBe('SaveSystem');
     });
 
     // 验证 replay 等待真实移动与事件完成后才结束并改变事件层矩阵
