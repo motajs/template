@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 12
+open_count: 11
 waived_count: 0
-fixed_count: 5
+fixed_count: 6
 total_count: 17
-last_updated: 2026-09-10T12:20:54.566Z
+last_updated: 2026-09-11T06:04:34.207Z
 ---
 
 # Broken Windows Ledger
@@ -23,7 +23,7 @@ last_updated: 2026-09-10T12:20:54.566Z
 | 6 | 02 | stub | packages-user/data-state/src/hero/moverImpl.ts | 284 | Existing cannotEnter() is intentionally empty because no event trigger corresponds to movement blocked by an impassable mask; D-08 direct OnTouch dispatch handles allowed adjacent no-pass targets. | open |  | 2026-09-10T01:38:48.570Z |  |
 | 7 | 03 | stub | packages-user/data-common/src/save/memory.ts | 90 | MemorySaveSystem.saveAutosaveToDB is an intentional no-op because Node never persists to IndexedDB. | open |  | 2026-09-10T07:45:16.944Z |  |
 | 8 | 03 | stub | packages-user/data-common/src/save/memory.ts | 90 | MemorySaveSystem.saveAutosaveToDB is an intentional no-op because Node never persists to IndexedDB. | open |  | 2026-09-10T07:45:32.524Z |  |
-| 9 | 03 | stub | packages-user/data-state/src/legacy/dependencies.ts | 53 | Node legacy dependency boundary intentionally registers no browser loading callbacks. | open |  | 2026-09-10T07:45:33.228Z |  |
+| 9 | 03 | stub | packages-user/data-state/src/legacy/dependencies.ts | 53 | Node legacy dependency boundary intentionally registers no browser loading callbacks. | fixed |  | 2026-09-10T07:45:33.228Z | 2026-09-11T06:04:34.207Z |
 | 10 | 03 | deviation | packages-user/data-base/src/map/mapLayer.ts | 216 | Replaced Map.getOrInsertComputed with explicit Map lookup so the replay event path is Node-safe without a global prototype shim. | open |  | 2026-09-10T07:45:33.930Z |  |
 | 11 | 03 | unrun-verify | .planning/phases/03-data-completion/deferred-items.md |  | Repository type gate remains non-zero on pre-existing render/legacy and Tile contract diagnostics; owned Node tracer and data tests pass. | fixed |  | 2026-09-10T07:45:45.249Z | 2026-09-10T07:58:56.466Z |
 | 12 | 03 | unrun-verify | .planning/phases/03-data-completion/deferred-items.md |  | Repository type gate remains non-zero on pre-existing render/legacy diagnostics; Tile contract diagnostics are resolved. | open |  | 2026-09-10T07:58:50.208Z |  |
@@ -138,10 +138,10 @@ last_updated: 2026-09-10T12:20:54.566Z
     "file": "packages-user/data-state/src/legacy/dependencies.ts",
     "line": 53,
     "description": "Node legacy dependency boundary intentionally registers no browser loading callbacks.",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-10T07:45:33.228Z",
-    "resolved_at": null
+    "resolved_at": "2026-09-11T06:04:34.207Z"
   },
   {
     "id": 10,

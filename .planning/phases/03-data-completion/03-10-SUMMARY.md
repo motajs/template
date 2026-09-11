@@ -34,6 +34,7 @@ key-files:
     - packages-user/data-state/test/fixtures/closed-loop.ts
     - packages-user/data-state/test/nodeTracer.test.ts
     - script/test-data-node.ts
+    - .planning/WINDOWS.md
   deleted:
     - packages-user/data-state/src/legacy/dependencies.ts
     - packages-user/data-state/src/legacy/events.ts
@@ -100,6 +101,7 @@ status: complete
 - Deleted the Phase-3-only legacy dependency and serialized-event adapter files, including the regression that existed only for the rejected serialized-loading boundary.
 - Rebuilt the closed-loop fixture with explicit `MapState.fromRaw` maps and direct `GameEventStore` registration, using `onUpdateBlock` plus `Promise.withResolvers` as the exact verifier completion signal.
 - Preserved the `@user/data-common` `ReplaySystem` import, synchronous replay command behavior, and user-owned `@shouldReplay()` placement.
+- Marked the obsolete open broken-window entry for the deleted legacy dependency boundary as fixed.
 
 ## Task Commits
 
@@ -123,6 +125,10 @@ Each task was committed atomically:
 - Followed supersession S-01 exactly: legacy remains compatibility behavior at the existing boundaries and is not replaced with another adapter.
 - Followed supersession S-02 exactly: the replay command path does not await movement or event Promises; only the Node verifier awaits the fixture's mutation signal.
 - Did not modify `STATE.md` or `ROADMAP.md`, and preserved the pre-existing unrelated `.planning/STATE.md` and `.planning/HANDOFF.json` working-tree changes.
+
+## Broken-Windows Ledger
+
+- Fixed entry 9 in `.planning/WINDOWS.md`; the recorded Node legacy dependency stub no longer exists after this correction.
 
 ## Deviations from Plan
 
