@@ -1,52 +1,45 @@
 {
   "version": "1.0",
-  "timestamp": "2026-09-11T09:34:07.509Z",
+  "timestamp": "2026-09-11T14:33:17.222Z",
   "phase": "03",
   "phase_name": "data-completion",
   "phase_dir": ".planning/phases/03-data-completion",
   "plan": 17,
-  "task": 0,
-  "total_tasks": 3,
+  "task": 2,
+  "total_tasks": 2,
   "status": "paused",
-  "completed_tasks": [],
+  "completed_tasks": [
+    {"id": 1, "name": "Replay completion and command ownership correction", "status": "done", "commit": "df7d1e1"},
+    {"id": 2, "name": "Replay registry regression coverage", "status": "done", "commit": "4bd6a46"}
+  ],
   "remaining_tasks": [
-    {"id": 17, "name": "Replay command and movement completion correction", "status": "plan_review_pending"},
-    {"id": 18, "name": "Class-based event registrations and hero ownership", "status": "plan_review_pending"},
-    {"id": 19, "name": "Multiline JSDoc and style correction", "status": "plan_review_pending"}
+    {"id": 18, "name": "Class-based event registrations and hero ownership", "status": "not_started"},
+    {"id": 19, "name": "Multiline JSDoc and style correction", "status": "not_started"}
   ],
   "blockers": [
     {
-      "description": "User requested a session pause before executing the newly revised correction plans.",
+      "description": "User requested a pause before executing Plans 03-18 and 03-19.",
       "type": "human_action",
       "workaround": "Resume with /gsd-resume-work."
+    },
+    {
+      "description": "Plan 03-17 scope guard is incompatible with Windows PowerShell 5.1; its equivalent compatibility check passed.",
+      "type": "technical",
+      "workaround": "Review or replace the scope guard before relying on it in a future execution."
     }
   ],
   "async_jobs": [],
   "human_actions_pending": [],
   "decisions": [
-    {
-      "decision": "Replay commands must not call shouldReplay; the user will place decorators on lower-level state mutation methods.",
-      "rationale": "Replay is a verifier and should not mark its own command entry points.",
-      "phase": "03"
-    },
-    {
-      "decision": "Movement and pathfinding replay steps must await controller completion before the next step.",
-      "rationale": "A later route step must not overlap an unfinished movement action.",
-      "phase": "03"
-    },
-    {
-      "decision": "Directional replay commands share one parameterized class; event registrations use explicit classes; eventTouchFront belongs to hero events.",
-      "rationale": "Avoid duplicated replay classes and keep event ownership aligned with domain responsibility.",
-      "phase": "03"
-    }
+    {"decision": "Replay commands contain no shouldReplay calls; decorators remain user-owned at lower-level state mutation methods.", "rationale": "Replay verifies state changes and must not mark its own command entry points.", "phase": "03"},
+    {"decision": "Movement and pathfinding replay commands await controller completion.", "rationale": "The next replay step must not overlap an unfinished action.", "phase": "03"},
+    {"decision": "Directional replay commands use one parameterized class.", "rationale": "The four directional commands share identical behavior.", "phase": "03"}
   ],
   "uncommitted_files": [
+    " M .planning/STATE.md",
     " M .planning/phases/03-data-completion/03-17-PLAN.md",
     " M .planning/phases/03-data-completion/03-18-PLAN.md",
     " M .planning/phases/03-data-completion/03-19-PLAN.md",
-    " M .planning/phases/03-data-completion/03-CONTEXT.md",
-    " M .planning/phases/03-data-completion/03-REPLAY-CONTRACT.md",
-    " M .planning/phases/03-data-completion/03-VERIFICATION.md",
     " M packages-user/data-common/src/save/index.ts",
     " M packages-user/data-state/src/core.ts",
     " M packages-user/data-state/test/coreNode.test.ts",
@@ -54,6 +47,6 @@
     " M packages-user/data-state/test/nodeTracer.test.ts",
     " M packages-user/data-system/src/types.ts"
   ],
-  "next_action": "Run the plan checker against revised Plans 03-17 through 03-19, then execute Plan 03-17 only after it passes.",
-  "context_notes": "No correction code from the new batch has executed. Preserve unrelated existing working-tree changes. Do not modify user-owned @shouldReplay() placement on lower-level state methods. The seven legacy/client compatibility cycles remain a documented Phase 5 baseline."
+  "next_action": "Run /gsd-resume-work, then execute Plan 03-18 only after reviewing the existing plan-checker pass.",
+  "context_notes": "Plan 03-17 was executed before the latest pause instruction arrived. Plans 03-18 and 03-19 have passed plan review but were not executed. Preserve unrelated working-tree changes and do not modify user-owned decorator placement."
 }
