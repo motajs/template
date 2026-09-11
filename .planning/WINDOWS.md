@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 11
+open_count: 9
 waived_count: 0
-fixed_count: 6
+fixed_count: 8
 total_count: 17
-last_updated: 2026-09-11T06:04:34.207Z
+last_updated: 2026-09-11T06:11:49.370Z
 ---
 
 # Broken Windows Ledger
@@ -21,8 +21,8 @@ last_updated: 2026-09-11T06:04:34.207Z
 | 4 | 02 | skipped-test | packages-user/data-common/src/common/mover.test.ts |  | 4 个 it.skip 坐标回写回归用例（x/y 正交、斜向、传送），待 02-02 修复 mover.ts:651 后翻绿 | fixed |  | 2026-09-09T07:51:25.555Z | 2026-09-09T09:34:39.843Z |
 | 5 | 02 | stub | packages-user/data-system/src/path/system.ts | 254 | interrupt() is an intentional placeholder that only stops the in-flight move; takeover sequencing (stop-then-await per approved option 1) is implemented by 02-03 Task 4 | fixed |  | 2026-09-09T09:34:59.707Z | 2026-09-09T13:24:24.755Z |
 | 6 | 02 | stub | packages-user/data-state/src/hero/moverImpl.ts | 284 | Existing cannotEnter() is intentionally empty because no event trigger corresponds to movement blocked by an impassable mask; D-08 direct OnTouch dispatch handles allowed adjacent no-pass targets. | open |  | 2026-09-10T01:38:48.570Z |  |
-| 7 | 03 | stub | packages-user/data-common/src/save/memory.ts | 90 | MemorySaveSystem.saveAutosaveToDB is an intentional no-op because Node never persists to IndexedDB. | open |  | 2026-09-10T07:45:16.944Z |  |
-| 8 | 03 | stub | packages-user/data-common/src/save/memory.ts | 90 | MemorySaveSystem.saveAutosaveToDB is an intentional no-op because Node never persists to IndexedDB. | open |  | 2026-09-10T07:45:32.524Z |  |
+| 7 | 03 | stub | packages-user/data-common/src/save/memory.ts | 90 | MemorySaveSystem.saveAutosaveToDB is an intentional no-op because Node never persists to IndexedDB. | fixed |  | 2026-09-10T07:45:16.944Z | 2026-09-11T06:11:48.592Z |
+| 8 | 03 | stub | packages-user/data-common/src/save/memory.ts | 90 | MemorySaveSystem.saveAutosaveToDB is an intentional no-op because Node never persists to IndexedDB. | fixed |  | 2026-09-10T07:45:32.524Z | 2026-09-11T06:11:49.370Z |
 | 9 | 03 | stub | packages-user/data-state/src/legacy/dependencies.ts | 53 | Node legacy dependency boundary intentionally registers no browser loading callbacks. | fixed |  | 2026-09-10T07:45:33.228Z | 2026-09-11T06:04:34.207Z |
 | 10 | 03 | deviation | packages-user/data-base/src/map/mapLayer.ts | 216 | Replaced Map.getOrInsertComputed with explicit Map lookup so the replay event path is Node-safe without a global prototype shim. | open |  | 2026-09-10T07:45:33.930Z |  |
 | 11 | 03 | unrun-verify | .planning/phases/03-data-completion/deferred-items.md |  | Repository type gate remains non-zero on pre-existing render/legacy and Tile contract diagnostics; owned Node tracer and data tests pass. | fixed |  | 2026-09-10T07:45:45.249Z | 2026-09-10T07:58:56.466Z |
@@ -114,10 +114,10 @@ last_updated: 2026-09-11T06:04:34.207Z
     "file": "packages-user/data-common/src/save/memory.ts",
     "line": 90,
     "description": "MemorySaveSystem.saveAutosaveToDB is an intentional no-op because Node never persists to IndexedDB.",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-10T07:45:16.944Z",
-    "resolved_at": null
+    "resolved_at": "2026-09-11T06:11:48.592Z"
   },
   {
     "id": 8,
@@ -126,10 +126,10 @@ last_updated: 2026-09-11T06:04:34.207Z
     "file": "packages-user/data-common/src/save/memory.ts",
     "line": 90,
     "description": "MemorySaveSystem.saveAutosaveToDB is an intentional no-op because Node never persists to IndexedDB.",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-10T07:45:32.524Z",
-    "resolved_at": null
+    "resolved_at": "2026-09-11T06:11:49.370Z"
   },
   {
     "id": 9,
