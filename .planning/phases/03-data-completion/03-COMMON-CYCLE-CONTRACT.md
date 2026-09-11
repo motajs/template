@@ -47,9 +47,20 @@ consume. Any `common/data-common` cycle and any cycle within that transitive
 common graph is a gate failure. `@motajs/common` itself must first be proven
 acyclic; a common-only cycle is not an allowed exception.
 
-Only render-only or explicitly legacy-only cycles outside the four-package and
-transitive-common graph remain outside this phase's D-20 scope. This exclusion
-does not permit the current common/data-common cycles to remain.
+CORR-03-07 makes the compatibility boundary explicit. A cycle is
+**compatibility-only** only when every normalized member is under
+`packages-user/data-state/src/legacy/` or `packages-user/client-modules/`.
+Legacy-only and client-only cycles therefore remain outside scope, but a mixed
+legacy+data or legacy+common cycle is in-scope because it contains an approved
+data or common member and must fail non-zero. A data-only cycle and a cycle
+between `packages/common/` and `data-common` are also in-scope.
+
+The supported circular-gate fixtures exercise this exact classifier in a
+separate process: `legacy-only` and `client-only` exit 0, while `legacy-data`
+and `legacy-common` exit non-zero. These fixtures use synthetic cycle members
+and do not depend on the current repository graph. This scope correction does
+not modify legacy implementation, save architecture, replay/event code, or
+user-owned replay-safety decorator placement under S-01 and S-04.
 
 ## Approval record
 
