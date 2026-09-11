@@ -205,15 +205,6 @@ export async function eventInsertEvents(
     }
 }
 
-/** 临时执行指定事件 */
-export async function eventInsertEvent(
-    param: IInsertEventEventParam,
-    env: IBlockEventEnv
-): Promise<void> {
-    if (!param.id) return;
-    await eventInsertEvents({ ids: [param.id] }, env);
-}
-
 /** 创建事件控制事件的内建函数注册项 */
 export function createControlEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
     return [
@@ -227,4 +218,24 @@ export function createControlEventBuiltinRegistrations(): ReadonlyArray<BuiltInF
             eventInsertEvent
         )
     ];
+}
+
+/** 临时直接执行一段事件语句 */
+export async function eventInsertEvent(
+    param: IInsertEventEventParam,
+    env: IBlockEventEnv
+): Promise<void> {
+    if (param.length === 0 || !hasEventSystem(env.state)) return;
+    const depth = eventInsertDepth.get(env) ?? 0;
+    if (depth >= EVENT_INSERT_MAX_DEPTH) return;
+    eventInsertDepth.set(env, depth + 1);
+    try {
+        await env.state.eventSystem.executor.interpreter.exec(
+            param,
+            { custom: {} },
+            env
+        );
+    } finally {
+        eventInsertDepth.delete(env);
+    }
 }

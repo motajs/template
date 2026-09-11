@@ -1,4 +1,5 @@
 import { ObjectMoveStep } from '@user/data-common';
+import { Statement } from 'anon-tokyo';
 
 //#region 地图控制
 
@@ -58,11 +59,8 @@ export interface IInsertEventsEventParam {
     readonly ids: readonly string[];
 }
 
-/** 事件：临时插入一个事件 */
-export interface IInsertEventEventParam {
-    /** 事件 id */
-    readonly id: string;
-}
+/** 事件：临时执行一段事件语句 */
+export type IInsertEventEventParam = Statement[];
 
 /** 内建函数的稳定注册名称 */
 export const enum EventBuiltinName {
