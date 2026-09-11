@@ -4,6 +4,15 @@
 event built-ins；不加入完整 legacy 事件目录，不保留未决字段，也不把渲染行为放入
 数据端函数。
 
+## User structural supersession
+
+本节晚于初始 checkpoint，优先于下方旧参数记录：
+
+- `data-state/src/event/index.ts` 只负责稳定注册项和 barrel exports，不承载参数解析、环境形状检查或其他业务逻辑。
+- built-in 调用不在热路径重复执行运行时参数类型判断；具体函数直接消费已确定的参数契约。
+- `eventInsertEvents` 保留现有事件 ID 序列语义；`eventInsertEvent` 改为接收 `Statement[]` 并直接通过现有解释器执行，不读取 event store，也不接受事件 ID。
+- 事件函数仍可按既有事件执行器契约等待事件链；本节只修正 `eventInsertEvent` 的输入和 `index.ts` 的职责，不把 replay command 的同步约束扩展到普通事件执行器。
+
 ## Shared contract
 
 - 每个函数都使用 `(param, env)` 调用形式。

@@ -1,5 +1,14 @@
 # Phase 3 Plan 03: Replay Command Contract
 
+## User structural supersession
+
+本节晚于初始 replay checkpoint，优先于下方关于异步 command completion 和 decorator
+placement 的旧记录：
+
+- replay command 的状态操作必须同步完成；command 不等待移动控制器、事件链或其他 Promise，不能用异步恢复 collection context。
+- 既有 `ReplaySystem`、route 和 sandbox 只做使同步 command 正常运行所需的最小兼容调整，不重新设计录像系统。
+- `@shouldReplay()` 不在本次 correction 中移动或新增；其最终位置由用户自行放到真正改变最终状态的方法上。
+
 ## Approval
 
 The `confirm-record` checkpoint response approves one top-level replay command

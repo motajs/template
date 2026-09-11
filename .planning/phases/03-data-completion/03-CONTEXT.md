@@ -54,6 +54,15 @@
 ### the agent's Discretion
 没有授权 AI 在接口语义或系统边界上自行决策的事项。
 
+### 用户结构审查 supersession（2026-09-10）
+
+以下用户决定晚于上方 Phase 3 初始决策，作为本次 correction gap 的更高优先级约束：
+
+- **S-01：** Legacy 内容只保留兼容行为，不新增 legacy 系统、加载边界或专用适配层；`CoreState` 保留既有 `SaveSystem` 与 legacy loading 路径。该决定 supersedes D-18、D-19、D-28 中关于 `MemorySaveSystem`、Node-safe legacy boundary 和跳过既有 loading 回调的部分；暂不把存档迁移到渲染端。
+- **S-02：** replay 指令只处理同步状态变化，不等待移动控制器、事件链或其他 Promise；既有录像系统只做保证运行所需的最小兼容修改。该决定 supersedes D-06 及 replay contract 中关于 command completion 等待的部分。
+- **S-03：** `eventInsertEvent` 接收 `Statement[]` 事件语句列表并直接执行，不按事件 ID 查找或转发到 ID 序列路径。该决定 supersedes D-24 与旧 `03-EVENT-CONTRACT.md` 中单事件 ID 的语义。
+- **S-04：** `@shouldReplay()` 的最终落点由用户自行处理。本次 correction 不修改 `HeroAttribute.set`、`HeroAttribute.mul` 或其他用户指定状态修改方法的 decorator placement。
+
 </decisions>
 
 <canonical_refs>

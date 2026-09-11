@@ -1,7 +1,7 @@
 ---
 phase: 03-data-completion
 verified: 2026-09-10T13:09:33Z
-status: passed
+status: gaps_found
 score: 26/26 must-haves verified
 covered_files:
   - .planning/REQUIREMENTS.md
@@ -268,7 +268,52 @@ N/A — this is an infrastructure/data-layer phase with no user-facing UI or ext
 
 ## Gaps Summary
 
-All three prior blockers are closed in the current codebase. Serialized events now enter through the internal CoreState load path and bind raw map event ids before replay; all eight built-in registration functions safely resolve for nullish parameters; and production replay commands use the approved safety decoration only at state-changing entrances. The sequential full data regression passes **19 files / 105 tests**, `pnpm test:data-node` passes, the scoped type gate reports **0 in-scope / 27 outside-scope**, the circular gate reports **0 cycles**, and scoped lint/Prettier checks pass. No blocking gaps remain.
+The prior implementation passed its original behavioral gate, but the user structural review identified principle-level corrections that supersede parts of the Phase 3 design. These corrections must be planned and verified before the phase can be considered structurally acceptable.
+
+## Gaps
+
+- gap_id: CORR-03-01
+  truth: "Phase 3 must not add new legacy systems or new legacy loading boundaries; legacy code remains compatibility-only."
+  status: failed
+  reason: "Phase 3 introduced legacy dependency and serialized-event loading infrastructure instead of limiting legacy changes to retention."
+  severity: blocker
+  test: structural-review
+- gap_id: CORR-03-02
+  truth: "Data-state CoreState must not add a MemorySaveSystem or a Node-specific save adapter; save-system restructuring is deferred to the rendering refactor."
+  status: failed
+  reason: "CoreState and legacy dependencies select MemorySaveSystem for Node execution and move save initialization behind a new dependency boundary."
+  severity: blocker
+  test: structural-review
+- gap_id: CORR-03-03
+  truth: "data-state/src/event/index.ts contains exports and registration only; event handlers do not perform repeated runtime parameter-shape validation."
+  status: failed
+  reason: "The event barrel contains parser helpers, environment guards, and parameter type checks on every built-in invocation."
+  severity: blocker
+  test: structural-review
+- gap_id: CORR-03-04
+  truth: "eventInsertEvent receives a Statement[] event body and executes that body directly; it does not resolve an event by ID."
+  status: failed
+  reason: "The current implementation interprets eventInsertEvent as a one-ID wrapper around eventInsertEvents."
+  severity: blocker
+  test: structural-review
+- gap_id: CORR-03-05
+  truth: "Replay command execution remains synchronous and preserves the existing replay system with only the minimum required changes."
+  status: failed
+  reason: "Phase 3 added Promise-based movement/equipment command execution and async replay-safety context restoration."
+  severity: blocker
+  test: structural-review
+- gap_id: CORR-03-06
+  truth: "Each replay instruction is an independent class in one replay command file, with no shared command entrance object or inter-command dependency."
+  status: failed
+  reason: "The current implementation centralizes all commands in ReplayCommandEntrances and creates command closures around that shared object."
+  severity: blocker
+  test: structural-review
+
+## Deferred Follow-Ups
+
+- item: "Move @shouldReplay() decorators onto the actual state-changing methods such as HeroAttribute.set and HeroAttribute.mul."
+  status: user-owned
+  reason: "The user will implement and validate the Stage 3 decorator placement; this correction run must not modify it."
 
 ---
 
