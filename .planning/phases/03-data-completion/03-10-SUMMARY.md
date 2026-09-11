@@ -110,6 +110,10 @@ Each task was committed atomically:
 1. **Task 1: CORR-03-01 restore the existing compatibility loading path** - `e4e39f7` (fix)
 2. **Task 2: CORR-03-01 restore direct replay fixture coverage** - `45e3b1f` (fix)
 
+**Plan metadata:** `97e2e10` (docs: complete plan)
+
+**Ledger cleanup metadata:** `f28aaea` (docs: close removed legacy stub entry)
+
 ## Files Created/Modified
 
 - `packages-user/data-state/src/core.ts` - Restores the pre-Phase-3 compatibility assembly while retaining current event and replay wiring.
@@ -119,6 +123,7 @@ Each task was committed atomically:
 - `packages-user/data-state/src/legacy/dependencies.ts` - Deleted Phase-3 dependency factory and loading boundary.
 - `packages-user/data-state/src/legacy/events.ts` - Deleted Phase-3 serialized-event adapter.
 - `packages-user/data-state/test/coreSerializedEvents.test.ts` - Deleted regression for the removed serialized-loading boundary.
+- `.planning/WINDOWS.md` - Marks the deleted legacy dependency stub entry fixed.
 
 ## Decisions Made
 
@@ -171,3 +176,4 @@ None - no external service configuration required.
 - Task commits `e4e39f7` and `45e3b1f` are present in git history.
 - Focused compatibility, replay, Node verifier, deleted-artifact, source-reference, and diff-check gates passed.
 - Post-write self-check confirmed the summary path and both task commit hashes; unrelated `STATE.md` and `HANDOFF.json` changes remain unmodified.
+- Ledger cleanup commit `f28aaea` is present and only changes the directly related broken-window status plus this summary.
