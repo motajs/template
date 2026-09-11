@@ -22,7 +22,8 @@ import {
     IMapStore,
     MapStore,
     IReplaySystem,
-    IMapRawData
+    IMapRawData,
+    ReplaySystem
 } from '@user/data-common';
 import {
     EnemyManager,
@@ -48,7 +49,6 @@ import {
     IPathfindingSystem,
     PathfindingSystem
 } from '@user/data-system';
-import { ReplaySystem } from '../../data-common/src/replay/system';
 import {
     CommonAuraConverter,
     GuardAuraConverter,
