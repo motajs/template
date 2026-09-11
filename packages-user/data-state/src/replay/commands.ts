@@ -41,230 +41,296 @@ function resolveSlot(
     return index < 0 ? null : index;
 }
 
-interface IReplayCommandEntrances {
-    /** 执行一个方向的勇士移动 */
-    moveHero(direction: FaceDirection): boolean;
-
-    /** 执行一次指定目标点的自动寻路移动 */
-    moveToPoint(x: number, y: number): boolean;
-
-    /** 执行既有勇士道具使用入口 */
-    useItem(item: number | string): boolean;
-
-    /** 执行既有勇士装备入口 */
-    equip(
-        uid: number,
-        slot: number | string,
-        slotIndex: number,
-        autoUnload: boolean | undefined
-    ): boolean;
-
-    /** 执行既有勇士卸下装备入口 */
-    unequip(slot: number): boolean;
-}
-
-class ReplayCommandEntrances implements IReplayCommandEntrances {
+class ReplayUpCommand implements IReplayCommand {
     constructor(private readonly state: IReplayCommandState) {
         this.moveHero = shouldReplay('replay command: move hero')(
             this.moveHero,
             {
                 name: 'moveHero'
             } as ClassMethodDecoratorContext<
-                ReplayCommandEntrances,
-                (
-                    this: ReplayCommandEntrances,
-                    direction: FaceDirection
-                ) => boolean
+                ReplayUpCommand,
+                (this: ReplayUpCommand) => boolean
             >
         );
+    }
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length !== 0) return Promise.resolve(false);
+        return Promise.resolve(this.moveHero());
+    }
+
+    private moveHero(): boolean {
+        const mover = this.state.hero.location.mover;
+        if (mover.moving) return false;
+        mover.step(FaceDirection.Up);
+        const controller = mover.start();
+        if (!controller) return false;
+        return true;
+    }
+}
+
+class ReplayRightCommand implements IReplayCommand {
+    constructor(private readonly state: IReplayCommandState) {
+        this.moveHero = shouldReplay('replay command: move hero')(
+            this.moveHero,
+            {
+                name: 'moveHero'
+            } as ClassMethodDecoratorContext<
+                ReplayRightCommand,
+                (this: ReplayRightCommand) => boolean
+            >
+        );
+    }
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length !== 0) return Promise.resolve(false);
+        return Promise.resolve(this.moveHero());
+    }
+
+    private moveHero(): boolean {
+        const mover = this.state.hero.location.mover;
+        if (mover.moving) return false;
+        mover.step(FaceDirection.Right);
+        const controller = mover.start();
+        if (!controller) return false;
+        return true;
+    }
+}
+
+class ReplayDownCommand implements IReplayCommand {
+    constructor(private readonly state: IReplayCommandState) {
+        this.moveHero = shouldReplay('replay command: move hero')(
+            this.moveHero,
+            {
+                name: 'moveHero'
+            } as ClassMethodDecoratorContext<
+                ReplayDownCommand,
+                (this: ReplayDownCommand) => boolean
+            >
+        );
+    }
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length !== 0) return Promise.resolve(false);
+        return Promise.resolve(this.moveHero());
+    }
+
+    private moveHero(): boolean {
+        const mover = this.state.hero.location.mover;
+        if (mover.moving) return false;
+        mover.step(FaceDirection.Down);
+        const controller = mover.start();
+        if (!controller) return false;
+        return true;
+    }
+}
+
+class ReplayLeftCommand implements IReplayCommand {
+    constructor(private readonly state: IReplayCommandState) {
+        this.moveHero = shouldReplay('replay command: move hero')(
+            this.moveHero,
+            {
+                name: 'moveHero'
+            } as ClassMethodDecoratorContext<
+                ReplayLeftCommand,
+                (this: ReplayLeftCommand) => boolean
+            >
+        );
+    }
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length !== 0) return Promise.resolve(false);
+        return Promise.resolve(this.moveHero());
+    }
+
+    private moveHero(): boolean {
+        const mover = this.state.hero.location.mover;
+        if (mover.moving) return false;
+        mover.step(FaceDirection.Left);
+        const controller = mover.start();
+        if (!controller) return false;
+        return true;
+    }
+}
+
+class ReplayAutoPathfindCommand implements IReplayCommand {
+    constructor(private readonly state: IReplayCommandState) {
         this.moveToPoint = shouldReplay('replay command: pathfind hero')(
             this.moveToPoint,
             {
                 name: 'moveToPoint'
             } as ClassMethodDecoratorContext<
-                ReplayCommandEntrances,
-                (this: ReplayCommandEntrances, x: number, y: number) => boolean
+                ReplayAutoPathfindCommand,
+                (
+                    this: ReplayAutoPathfindCommand,
+                    x: number,
+                    y: number
+                ) => boolean
             >
         );
+    }
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length !== 2) return Promise.resolve(false);
+        const x = step.params[0];
+        const y = step.params[1];
+        if (!isNumber(x) || !isNumber(y)) return Promise.resolve(false);
+        return Promise.resolve(this.moveToPoint(x, y));
+    }
+
+    private moveToPoint(x: number, y: number): boolean {
+        const result = this.state.pathfinding.moveTo({ x, y });
+        if (!result) return false;
+        return true;
+    }
+}
+
+class ReplayUseItemCommand implements IReplayCommand {
+    constructor(private readonly state: IReplayCommandState) {
         this.useItem = shouldReplay('replay command: use item')(this.useItem, {
             name: 'useItem'
         } as ClassMethodDecoratorContext<
-            ReplayCommandEntrances,
-            (this: ReplayCommandEntrances, item: number | string) => boolean
+            ReplayUseItemCommand,
+            (this: ReplayUseItemCommand, item: number | string) => boolean
         >);
+    }
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length !== 1) return Promise.resolve(false);
+        const item = step.params[0];
+        if (!isItem(item)) return Promise.resolve(false);
+        return Promise.resolve(this.useItem(item));
+    }
+
+    private useItem(item: number | string): boolean {
+        return this.state.hero.items.useItem(item);
+    }
+}
+
+class ReplayEquipCommand implements IReplayCommand {
+    constructor(private readonly state: IReplayCommandState) {
         this.equip = shouldReplay('replay command: equip item')(this.equip, {
             name: 'equip'
         } as ClassMethodDecoratorContext<
-            ReplayCommandEntrances,
+            ReplayEquipCommand,
             (
-                this: ReplayCommandEntrances,
+                this: ReplayEquipCommand,
                 uid: number,
                 slot: number | string,
-                slotIndex: number,
                 autoUnload: boolean | undefined
             ) => boolean
         >);
+    }
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length < 2 || step.params.length > 3) {
+            return Promise.resolve(false);
+        }
+        const uid = step.params[0];
+        const slot = step.params[1];
+        const autoUnload = step.params[2];
+        if (!isNumber(uid) || !Number.isInteger(uid) || !isSlot(slot)) {
+            return Promise.resolve(false);
+        }
+        if (autoUnload !== undefined && !isBoolean(autoUnload)) {
+            return Promise.resolve(false);
+        }
+        const slotIndex = resolveSlot(this.state, slot);
+        if (slotIndex === null) return Promise.resolve(false);
+        return Promise.resolve(this.equip(uid, slot, autoUnload));
+    }
+
+    private equip(
+        uid: number,
+        slot: number | string,
+        autoUnload: boolean | undefined
+    ): boolean {
+        const equipment = this.state.hero.equip;
+        const slotIndex = resolveSlot(this.state, slot);
+        if (slotIndex === null) return false;
+        if (equipment.getEquipped(slotIndex) === uid) return true;
+        if (equipment.canEquipTo(uid, slot) === EquipStatus.CannotEquip) {
+            return false;
+        }
+        equipment.equip(uid, slot, autoUnload);
+        return equipment.getEquipped(slotIndex) === uid;
+    }
+}
+
+class ReplayUnequipCommand implements IReplayCommand {
+    constructor(private readonly state: IReplayCommandState) {
         this.unequip = shouldReplay('replay command: unequip item')(
             this.unequip,
             {
                 name: 'unequip'
             } as ClassMethodDecoratorContext<
-                ReplayCommandEntrances,
-                (this: ReplayCommandEntrances, slot: number) => boolean
+                ReplayUnequipCommand,
+                (this: ReplayUnequipCommand, slot: number) => boolean
             >
         );
     }
 
-    moveHero(direction: FaceDirection): boolean {
-        const mover = this.state.hero.location.mover;
-        if (mover.moving) return false;
-        mover.step(direction);
-        const controller = mover.start();
-        if (!controller) return false;
-        return true;
-    }
-
-    moveToPoint(x: number, y: number): boolean {
-        const result = this.state.pathfinding.moveTo({ x, y });
-        if (!result) return false;
-        return true;
-    }
-
-    useItem(item: number | string): boolean {
-        return this.state.hero.items.useItem(item);
-    }
-
-    equip(
-        uid: number,
-        slot: number | string,
-        slotIndex: number,
-        autoUnload: boolean | undefined
-    ): boolean {
-        if (this.state.hero.equip.getEquipped(slotIndex) === uid) return true;
-        if (
-            this.state.hero.equip.canEquipTo(uid, slot) ===
-            EquipStatus.CannotEquip
-        ) {
-            return false;
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (step.params.length !== 1) return Promise.resolve(false);
+        const slot = step.params[0];
+        if (!isNumber(slot) || !Number.isInteger(slot) || slot < 0) {
+            return Promise.resolve(false);
         }
-        this.state.hero.equip.equip(uid, slot, autoUnload);
-        return this.state.hero.equip.getEquipped(slotIndex) === uid;
+        return Promise.resolve(this.unequip(slot));
     }
 
-    unequip(slot: number): boolean {
-        if (this.state.hero.equip.getEquipped(slot) === undefined) {
-            return false;
-        }
-        this.state.hero.equip.unequip(slot);
-        return this.state.hero.equip.getEquipped(slot) === undefined;
+    private unequip(slot: number): boolean {
+        const equipment = this.state.hero.equip;
+        if (equipment.getEquipped(slot) === undefined) return false;
+        equipment.unequip(slot);
+        return equipment.getEquipped(slot) === undefined;
     }
-}
-
-function createMoveCommand(
-    entries: IReplayCommandEntrances,
-    direction: FaceDirection
-): IReplayCommand {
-    return {
-        execute: (step: IReplayStepHandler): Promise<boolean> => {
-            if (step.params.length !== 0) return Promise.resolve(false);
-            return Promise.resolve(entries.moveHero(direction));
-        }
-    };
 }
 
 /** 创建按稳定 enum 顺序排列的默认 replay command items */
 export function createReplayCommandItems(
     state: IReplayCommandState
 ): ReadonlyArray<IReplayCommandItem> {
-    const entries = new ReplayCommandEntrances(state);
     return [
         {
             code: ReplayCommandCode.Up,
-            command: createMoveCommand(entries, FaceDirection.Up)
+            // prettier-ignore
+            command: new (ReplayUpCommand)(state)
         },
         {
             code: ReplayCommandCode.Right,
-            command: createMoveCommand(entries, FaceDirection.Right)
+            // prettier-ignore
+            command: new (ReplayRightCommand)(state)
         },
         {
             code: ReplayCommandCode.Down,
-            command: createMoveCommand(entries, FaceDirection.Down)
+            // prettier-ignore
+            command: new (ReplayDownCommand)(state)
         },
         {
             code: ReplayCommandCode.Left,
-            command: createMoveCommand(entries, FaceDirection.Left)
+            // prettier-ignore
+            command: new (ReplayLeftCommand)(state)
         },
         {
             code: ReplayCommandCode.AutoPathfindToPoint,
-            command: {
-                execute: step => {
-                    if (step.params.length !== 2) return Promise.resolve(false);
-                    const x = step.params[0];
-                    const y = step.params[1];
-                    if (!isNumber(x) || !isNumber(y)) {
-                        return Promise.resolve(false);
-                    }
-                    return Promise.resolve(entries.moveToPoint(x, y));
-                }
-            }
+            // prettier-ignore
+            command: new (ReplayAutoPathfindCommand)(state)
         },
         {
             code: ReplayCommandCode.UseItem,
-            command: {
-                execute: step => {
-                    if (step.params.length !== 1) return Promise.resolve(false);
-                    const item = step.params[0];
-                    if (!isItem(item)) return Promise.resolve(false);
-                    return Promise.resolve(entries.useItem(item));
-                }
-            }
+            // prettier-ignore
+            command: new (ReplayUseItemCommand)(state)
         },
         {
             code: ReplayCommandCode.Equip,
-            command: {
-                execute: step => {
-                    if (step.params.length < 2 || step.params.length > 3) {
-                        return Promise.resolve(false);
-                    }
-                    const uid = step.params[0];
-                    const slot = step.params[1];
-                    const autoUnload = step.params[2];
-                    if (
-                        !isNumber(uid) ||
-                        !Number.isInteger(uid) ||
-                        !isSlot(slot)
-                    ) {
-                        return Promise.resolve(false);
-                    }
-                    if (autoUnload !== undefined && !isBoolean(autoUnload)) {
-                        return Promise.resolve(false);
-                    }
-                    const slotIndex = resolveSlot(state, slot);
-                    if (slotIndex === null) return Promise.resolve(false);
-                    return Promise.resolve(
-                        entries.equip(uid, slot, slotIndex, autoUnload)
-                    );
-                }
-            }
+            // prettier-ignore
+            command: new (ReplayEquipCommand)(state)
         },
         {
             code: ReplayCommandCode.Unequip,
-            command: {
-                execute: step => {
-                    if (step.params.length !== 1) {
-                        return Promise.resolve(false);
-                    }
-                    const slot = step.params[0];
-                    if (
-                        !isNumber(slot) ||
-                        !Number.isInteger(slot) ||
-                        slot < 0
-                    ) {
-                        return Promise.resolve(false);
-                    }
-                    return Promise.resolve(entries.unequip(slot));
-                }
-            }
+            // prettier-ignore
+            command: new (ReplayUnequipCommand)(state)
         }
     ];
 }

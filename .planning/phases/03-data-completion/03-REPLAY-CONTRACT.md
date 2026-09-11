@@ -63,6 +63,14 @@ approved enum order. The helper's registration items contain command behavior,
 while the top-level enum remains the only stable code owner. No lower layer
 registers a global code or imports the data-state root barrel to obtain one.
 
+Each approved replay instruction is an independent class in the replay command
+module. The class owns its state reference, parameter validation, action call,
+and `execute` implementation. Directional commands therefore do not share an
+entrance object, mutable command context, or closure factory, and no instruction
+constructs or delegates to another instruction. The registry creates one fresh
+instance of each class in the stable enum order while retaining the existing
+`IReplayCommandItem` extension boundary.
+
 The existing `IReplaySystem.registerCommand(code, command)` and
 `IReplayCommand.execute(step): Promise<boolean>` public contracts remain in
 force. Duplicate detection belongs to the top-level assembly helper; the
