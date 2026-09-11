@@ -5,7 +5,7 @@
 本节晚于初始 replay checkpoint，优先于下方关于异步 command completion 和 decorator
 placement 的旧记录：
 
-- replay command 的状态操作必须同步完成；command 不等待移动控制器、事件链或其他 Promise，不能用异步恢复 collection context。
+- replay command 的状态操作必须同步完成；command 不等待移动控制器、事件链或其他 Promise，collection context 在装饰方法返回时同步恢复。
 - 既有 `ReplaySystem`、route 和 sandbox 只做使同步 command 正常运行所需的最小兼容调整，不重新设计录像系统。
 - `@shouldReplay()` 不在本次 correction 中移动或新增；其最终位置由用户自行放到真正改变最终状态的方法上。
 
@@ -86,18 +86,20 @@ contract.
 ## Completion boundaries
 
 - Four-direction movement appends one direction to the hero mover, starts it,
-  and awaits the returned `mover controller.onEnd` Promise.
+  and returns `true` when the controller starts; it does not await
+  `mover controller.onEnd`.
 - Auto-pathfind calls the existing `PathfindingSystem.moveTo({ x, y })`; a null
-  result is `false`, and a non-null result is complete only after its returned
-  `controller.onEnd` Promise settles.
-- Item and equipment calls are synchronous under the current interfaces; their
+  result is `false`, and a non-null result returns `true` immediately without
+  awaiting its controller.
+- Item and equipment calls remain synchronous under the current interfaces; their
   boolean/undefined result is converted to the command's success boolean.
-- Replay safety collection remains active across every decorated Promise until
-  that Promise settles, including nested decorated calls. Synchronous queries,
-  pure calculations, and internal helpers are outside the decoration boundary.
-- A command never advances replay completion before its complete action Promise
-  settles. First-divergence thrown diagnostics remain the responsibility of
-  Plan 04 and do not change the replay boolean interface.
+- Replay safety collection is restored to its previous context immediately after
+  every decorated method returns, including nested synchronous decorated calls.
+  Synchronous queries, pure calculations, and internal helpers are outside the
+  decoration boundary.
+- `IReplayCommand.execute()` continues to return the existing `Promise<boolean>`
+  boundary, but command implementations adapt their immediate boolean result with
+  `Promise.resolve` rather than adding asynchronous command sequencing.
 
 ## Explicit exclusions
 

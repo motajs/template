@@ -15,13 +15,6 @@ interface IReplaySafetyDetailQueue {
     readonly collection: IReplaySafetyCollection;
 }
 
-interface IPromiseLike {
-    then(
-        onFulfilled?: (value: unknown) => unknown,
-        onRejected?: (reason: unknown) => unknown
-    ): unknown;
-}
-
 type ReplayMethod<This, Args extends unknown[], Return> = (
     this: This,
     ...args: Args
@@ -53,13 +46,6 @@ let currentCollection: IReplaySafetyCollection | null = null;
 let detailCode = 0;
 /** 录像收集详细信息队列，保留 50 个以确保可以在控制台重复输出 */
 const detailQueue: IReplaySafetyDetailQueue[] = [];
-
-function isPromiseLike(value: unknown): value is IPromiseLike {
-    if (!value || (typeof value !== 'object' && typeof value !== 'function')) {
-        return false;
-    }
-    return typeof (value as { then?: unknown }).then === 'function';
-}
 
 function resetReplaySafetyCollection(): void {
     replaySystem = null;
@@ -184,18 +170,7 @@ export function shouldReplay(message: string): ReplayDecorator {
 
             currentCollection = newCollection;
             const result = method.apply(this, args);
-            if (isPromiseLike(result)) {
-                Promise.resolve(result).then(
-                    () => {
-                        currentCollection = before;
-                    },
-                    () => {
-                        currentCollection = before;
-                    }
-                );
-            } else {
-                currentCollection = before;
-            }
+            currentCollection = before;
             return result;
         };
     };

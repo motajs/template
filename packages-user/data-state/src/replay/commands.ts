@@ -42,14 +42,14 @@ function resolveSlot(
 }
 
 interface IReplayCommandEntrances {
-    /** 执行一个方向的勇士移动，并等待移动控制器完成 */
-    moveHero(direction: FaceDirection): Promise<boolean>;
+    /** 执行一个方向的勇士移动 */
+    moveHero(direction: FaceDirection): boolean;
 
-    /** 执行一次指定目标点的自动寻路移动，并等待移动控制器完成 */
-    moveToPoint(x: number, y: number): Promise<boolean>;
+    /** 执行一次指定目标点的自动寻路移动 */
+    moveToPoint(x: number, y: number): boolean;
 
     /** 执行既有勇士道具使用入口 */
-    useItem(item: number | string): Promise<boolean>;
+    useItem(item: number | string): boolean;
 
     /** 执行既有勇士装备入口 */
     equip(
@@ -57,10 +57,10 @@ interface IReplayCommandEntrances {
         slot: number | string,
         slotIndex: number,
         autoUnload: boolean | undefined
-    ): Promise<boolean>;
+    ): boolean;
 
     /** 执行既有勇士卸下装备入口 */
-    unequip(slot: number): Promise<boolean>;
+    unequip(slot: number): boolean;
 }
 
 class ReplayCommandEntrances implements IReplayCommandEntrances {
@@ -74,7 +74,7 @@ class ReplayCommandEntrances implements IReplayCommandEntrances {
                 (
                     this: ReplayCommandEntrances,
                     direction: FaceDirection
-                ) => Promise<boolean>
+                ) => boolean
             >
         );
         this.moveToPoint = shouldReplay('replay command: pathfind hero')(
@@ -83,21 +83,14 @@ class ReplayCommandEntrances implements IReplayCommandEntrances {
                 name: 'moveToPoint'
             } as ClassMethodDecoratorContext<
                 ReplayCommandEntrances,
-                (
-                    this: ReplayCommandEntrances,
-                    x: number,
-                    y: number
-                ) => Promise<boolean>
+                (this: ReplayCommandEntrances, x: number, y: number) => boolean
             >
         );
         this.useItem = shouldReplay('replay command: use item')(this.useItem, {
             name: 'useItem'
         } as ClassMethodDecoratorContext<
             ReplayCommandEntrances,
-            (
-                this: ReplayCommandEntrances,
-                item: number | string
-            ) => Promise<boolean>
+            (this: ReplayCommandEntrances, item: number | string) => boolean
         >);
         this.equip = shouldReplay('replay command: equip item')(this.equip, {
             name: 'equip'
@@ -109,7 +102,7 @@ class ReplayCommandEntrances implements IReplayCommandEntrances {
                 slot: number | string,
                 slotIndex: number,
                 autoUnload: boolean | undefined
-            ) => Promise<boolean>
+            ) => boolean
         >);
         this.unequip = shouldReplay('replay command: unequip item')(
             this.unequip,
@@ -117,38 +110,36 @@ class ReplayCommandEntrances implements IReplayCommandEntrances {
                 name: 'unequip'
             } as ClassMethodDecoratorContext<
                 ReplayCommandEntrances,
-                (this: ReplayCommandEntrances, slot: number) => Promise<boolean>
+                (this: ReplayCommandEntrances, slot: number) => boolean
             >
         );
     }
 
-    async moveHero(direction: FaceDirection): Promise<boolean> {
+    moveHero(direction: FaceDirection): boolean {
         const mover = this.state.hero.location.mover;
         if (mover.moving) return false;
         mover.step(direction);
         const controller = mover.start();
         if (!controller) return false;
-        await controller.onEnd;
         return true;
     }
 
-    async moveToPoint(x: number, y: number): Promise<boolean> {
+    moveToPoint(x: number, y: number): boolean {
         const result = this.state.pathfinding.moveTo({ x, y });
         if (!result) return false;
-        await result.controller.onEnd;
         return true;
     }
 
-    async useItem(item: number | string): Promise<boolean> {
+    useItem(item: number | string): boolean {
         return this.state.hero.items.useItem(item);
     }
 
-    async equip(
+    equip(
         uid: number,
         slot: number | string,
         slotIndex: number,
         autoUnload: boolean | undefined
-    ): Promise<boolean> {
+    ): boolean {
         if (this.state.hero.equip.getEquipped(slotIndex) === uid) return true;
         if (
             this.state.hero.equip.canEquipTo(uid, slot) ===
@@ -160,7 +151,7 @@ class ReplayCommandEntrances implements IReplayCommandEntrances {
         return this.state.hero.equip.getEquipped(slotIndex) === uid;
     }
 
-    async unequip(slot: number): Promise<boolean> {
+    unequip(slot: number): boolean {
         if (this.state.hero.equip.getEquipped(slot) === undefined) {
             return false;
         }
@@ -176,7 +167,7 @@ function createMoveCommand(
     return {
         execute: (step: IReplayStepHandler): Promise<boolean> => {
             if (step.params.length !== 0) return Promise.resolve(false);
-            return entries.moveHero(direction);
+            return Promise.resolve(entries.moveHero(direction));
         }
     };
 }
@@ -213,7 +204,7 @@ export function createReplayCommandItems(
                     if (!isNumber(x) || !isNumber(y)) {
                         return Promise.resolve(false);
                     }
-                    return entries.moveToPoint(x, y);
+                    return Promise.resolve(entries.moveToPoint(x, y));
                 }
             }
         },
@@ -224,7 +215,7 @@ export function createReplayCommandItems(
                     if (step.params.length !== 1) return Promise.resolve(false);
                     const item = step.params[0];
                     if (!isItem(item)) return Promise.resolve(false);
-                    return entries.useItem(item);
+                    return Promise.resolve(entries.useItem(item));
                 }
             }
         },
@@ -250,7 +241,9 @@ export function createReplayCommandItems(
                     }
                     const slotIndex = resolveSlot(state, slot);
                     if (slotIndex === null) return Promise.resolve(false);
-                    return entries.equip(uid, slot, slotIndex, autoUnload);
+                    return Promise.resolve(
+                        entries.equip(uid, slot, slotIndex, autoUnload)
+                    );
                 }
             }
         },
@@ -269,7 +262,7 @@ export function createReplayCommandItems(
                     ) {
                         return Promise.resolve(false);
                     }
-                    return entries.unequip(slot);
+                    return Promise.resolve(entries.unequip(slot));
                 }
             }
         }
