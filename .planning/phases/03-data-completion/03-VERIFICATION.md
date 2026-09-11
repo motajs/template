@@ -1,7 +1,7 @@
 ---
 phase: 03-data-completion
 verified: 2026-09-11T07:32:03Z
-status: passed
+status: gaps_found
 score: 12/12 must-haves verified
 covered_files:
   - .planning/REQUIREMENTS.md
@@ -224,7 +224,52 @@ N/A — this is an infrastructure/data-layer phase with no user-facing UI or ext
 
 ## Gaps Summary
 
-All six prior structural correction gaps are closed in the current source. The seven live compatibility-boundary cycles are explicitly deferred to Phase 5 under the user's scope instruction, not hidden as a passing circular gate. One non-blocking documentation-format warning remains for `03-EVENT-CONTRACT.md`; the plan-scoped source/test Prettier checks pass.
+The six prior structural correction gaps are closed, but the latest user review identified seven additional design corrections that must be planned before Phase 3 is structurally final.
+
+## New User Review Gaps
+
+- gap_id: CORR-03-08
+  truth: "Replay command implementations do not call shouldReplay; replay safety belongs on lower-level state mutation methods and remains user-owned."
+  status: failed
+  reason: "commands.ts manually invokes shouldReplay in every command constructor."
+  severity: blocker
+  test: structural-review
+- gap_id: CORR-03-09
+  truth: "Movement and pathfinding replay commands await their controller completion before the next replay step can run."
+  status: failed
+  reason: "Directional and pathfinding commands currently start actions and return immediately."
+  severity: blocker
+  test: structural-review
+- gap_id: CORR-03-10
+  truth: "The four directional replay commands share one parameterized command class rather than four duplicate classes."
+  status: failed
+  reason: "ReplayUpCommand, ReplayRightCommand, ReplayDownCommand, and ReplayLeftCommand duplicate the same implementation."
+  severity: blocker
+  test: structural-review
+- gap_id: CORR-03-11
+  truth: "The replay command registry contains no manually added prettier-ignore directives."
+  status: failed
+  reason: "commands.ts contains eight prettier-ignore directives around constructor expressions."
+  severity: major
+  test: structural-review
+- gap_id: CORR-03-12
+  truth: "data-state/src/event/index.ts contains exports only; event registration assembly is owned elsewhere."
+  status: failed
+  reason: "index.ts still imports registration builders and assembles the built-in array."
+  severity: blocker
+  test: structural-review
+- gap_id: CORR-03-13
+  truth: "Event registrations use the approved class-based design, and eventTouchFront belongs to the hero event layer."
+  status: failed
+  reason: "Registrations are object factories and eventTouchFront remains in event.ts/control registration."
+  severity: blocker
+  test: structural-review
+- gap_id: CORR-03-14
+  truth: "Every function and method JSDoc touched by this correction uses multiline /** ... */ style."
+  status: failed
+  reason: "Several touched event and replay functions still use single-line JSDoc comments."
+  severity: major
+  test: structural-review
 
 ---
 

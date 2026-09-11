@@ -2,12 +2,12 @@
 
 ## User structural supersession
 
-本节晚于初始 replay checkpoint，优先于下方关于异步 command completion 和 decorator
-placement 的旧记录：
+本节晚于初始 replay checkpoint，优先于下方关于 command completion 和 decorator
+placement 的旧记录。S-05 又 supersedes S-02 在 replay-step completion 边界上的结论：
 
-- replay command 的状态操作必须同步完成；command 不等待移动控制器、事件链或其他 Promise，collection context 在装饰方法返回时同步恢复。
+- replay command 不调用 `shouldReplay`；移动和寻路 command 必须等待各自 controller 完成后再返回，确保下一录像步不会与上一步并发。`shouldReplay` 的最终落点仍由用户放在真正改变最终状态的低层方法上。
 - 既有 `ReplaySystem`、route 和 sandbox 只做使同步 command 正常运行所需的最小兼容调整，不重新设计录像系统。
-- `@shouldReplay()` 不在本次 correction 中移动或新增；其最终位置由用户自行放到真正改变最终状态的方法上。
+- `@shouldReplay()` 不在本次 correction 中移动或新增；其最终位置由用户自行处理，且不得通过 replay command 构造器间接注入。
 
 ## Approval
 
@@ -63,12 +63,14 @@ approved enum order. The helper's registration items contain command behavior,
 while the top-level enum remains the only stable code owner. No lower layer
 registers a global code or imports the data-state root barrel to obtain one.
 
-Each approved replay instruction is an independent class in the replay command
-module. The class owns its state reference, parameter validation, action call,
-and `execute` implementation. Directional commands therefore do not share an
-entrance object, mutable command context, or closure factory, and no instruction
-constructs or delegates to another instruction. The registry creates one fresh
-instance of each class in the stable enum order while retaining the existing
+Each non-directional replay instruction is an independent class in the replay
+command module. The class owns its state reference, parameter validation, action
+call, and `execute` implementation. The four directional entries use one
+parameterized `ReplayDirectionCommand` class with a distinct `FaceDirection`
+value per fresh instance; they share no mutable command context or closure
+factory, and no instruction constructs or delegates to another instruction.
+The registry creates four fresh directional instances plus one fresh instance
+of each non-directional class in stable enum order while retaining the existing
 `IReplayCommandItem` extension boundary.
 
 The existing `IReplaySystem.registerCommand(code, command)` and
@@ -94,20 +96,21 @@ contract.
 ## Completion boundaries
 
 - Four-direction movement appends one direction to the hero mover, starts it,
-  and returns `true` when the controller starts; it does not await
-  `mover controller.onEnd`.
+  and awaits the returned mover controller's `onEnd`; it returns `true` only
+  after the controller completes and returns `false` for a missing, active, or
+  failed action.
 - Auto-pathfind calls the existing `PathfindingSystem.moveTo({ x, y })`; a null
-  result is `false`, and a non-null result returns `true` immediately without
-  awaiting its controller.
+  result is `false`, and a non-null result awaits its controller's `onEnd`
+  before resolving `true`.
 - Item and equipment calls remain synchronous under the current interfaces; their
   boolean/undefined result is converted to the command's success boolean.
-- Replay safety collection is restored to its previous context immediately after
-  every decorated method returns, including nested synchronous decorated calls.
-  Synchronous queries, pure calculations, and internal helpers are outside the
-  decoration boundary.
+- Replay command implementations do not add or invoke replay-safety decorators.
+  The user-owned low-level state-mutation decorator boundary remains outside this
+  correction; synchronous item/equipment calls retain their existing command
+  boundary.
 - `IReplayCommand.execute()` continues to return the existing `Promise<boolean>`
-  boundary, but command implementations adapt their immediate boolean result with
-  `Promise.resolve` rather than adding asynchronous command sequencing.
+  boundary, with movement/pathfinding completion awaited before that Promise
+  resolves and synchronous item/equipment results adapted to the same boundary.
 
 ## Explicit exclusions
 
