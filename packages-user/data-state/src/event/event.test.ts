@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { Statement, StatementType } from 'anon-tokyo';
 import {
     FaceDirection,
     IGameEvent,
@@ -28,11 +29,9 @@ type RegisteredBuiltin = ReturnType<
     typeof createEventBuiltinRegistrations
 >[number];
 
-type BuiltinParameter = Parameters<RegisteredBuiltin['func']>[0];
-
-function invokeBuiltin(
+function invokeBuiltin<TParam>(
     registration: RegisteredBuiltin,
-    param: BuiltinParameter,
+    param: TParam,
     env: IBlockEventEnv
 ): Promise<void> {
     return Promise.resolve(
@@ -199,8 +198,8 @@ describe('event built-ins', () => {
         expect(fixture.state.hero.location.x).toBe(0);
     });
 
-    // 验证真实注册项按顺序等待临时事件序列和单事件
-    it('awaits temporary event sequences and single event insertion', async () => {
+    // 验证真实注册项按顺序等待临时事件序列并直接执行语句体
+    it('awaits id sequences and executes a direct statement body', async () => {
         const fixture = createFixture();
         const calls: string[] = [];
         fixture.state.eventStore.addEvent(
@@ -221,12 +220,23 @@ describe('event built-ins', () => {
             { ids: ['first', 'second', 'missing'] },
             fixture.env
         );
+        const body: Statement[] = [
+            {
+                type: StatementType.Call,
+                functionName: EventBuiltinName.SetBlock,
+                builtIn: true,
+                async: true,
+                parameters: { x: 3, y: 0, tile: 2 }
+            }
+        ];
         await invokeBuiltin(
             getRegistration(EventBuiltinName.InsertEvent),
-            { id: 'first' },
+            body,
             fixture.env
         );
-        expect(calls).toEqual(['first', 'second', 'first']);
+        expect(calls).toEqual(['first', 'second']);
+        expect(fixture.layer.getBlock(3, 0)).toBe(2);
+        expect(fixture.state.eventStore.getEvent('inline-body')).toBeNull();
     });
 
     // 验证默认注册项只包含批准的八个稳定名称
@@ -288,7 +298,7 @@ describe('event built-ins', () => {
         await expect(
             invokeBuiltin(
                 getRegistration(EventBuiltinName.InsertEvent),
-                { id: 'missing' },
+                [],
                 fixture.env
             )
         ).resolves.toBeUndefined();

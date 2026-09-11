@@ -118,14 +118,13 @@ interface IInsertEventsEventParam {
 ### `eventInsertEvent`
 
 ```ts
-interface IInsertEventEventParam {
-    readonly id: string;
-}
+type IInsertEventEventParam = Statement[];
 ```
 
-这是 `eventInsertEvents` 的单 id 形式：只临时执行 `id` 对应事件，复用当前 `env`，
-不写入事件存储。空 id、缺失事件、缺失事件存储或缺失执行器时安全返回 `void`，
-执行 Promise 必须等待。
+接收一段 `Statement[]` 事件语句，直接使用现有 AnonTokyo 解释器执行该语句体，
+参数为 `{ custom: {} }`，环境为当前 `env`。不读取事件存储、不解析事件 id，
+也不写入事件存储。空语句体、缺失执行器或达到嵌套插入深度上限时安全返回 `void`，
+解释器 Promise 必须等待。
 
 ## Registration
 
