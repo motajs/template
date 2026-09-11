@@ -1,20 +1,20 @@
 ---
-gsd_state_version: 1.0
+gsd_state_version: "1.0"
 milestone: v1.0
-milestone_name: milestone
-current_phase: 4
-current_phase_name: 渲染适配与双布局
-status: planning
-stopped_at: Phase 3 complete, ready to plan Phase 4
-last_updated: "2026-09-10T20:30:00Z"
-last_activity: 2026-09-10
-last_activity_desc: Phase 03 verified and completed; ready to plan Phase 04
+current_phase: 03
+current_phase_name: data-completion
+status: executing
+stopped_at: Completed 03-18-PLAN.md
+last_updated: "2026-09-11T15:13:26.381Z"
+last_activity: 2026-09-11
+last_activity_desc: Phase 03 execution started
+state_head: a69130c8ad93f6d9c6e55432fea7e6c83dc40b6a
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 27
-  completed_plans: 27
-state_head: 2eebb0ad3fc0d3acfb19a41338c26155b7134f61
+  completed_phases: 0
+  total_plans: 37
+  completed_plans: 36
+milestone_name: milestone
 ---
 
 # Project State
@@ -24,14 +24,14 @@ state_head: 2eebb0ad3fc0d3acfb19a41338c26155b7134f61
 See: .planning/PROJECT.md (updated 2026-09-10)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 4 — 渲染适配与双布局
+**Current focus:** Phase 03 — data-completion
 
 ## Current Position
 
-Phase: 4 — 渲染适配与双布局
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-10 — Phase 3 complete, transitioned to Phase 4
+Phase: 03 (data-completion) — EXECUTING
+Plan: 18 of 19
+Status: Executing Phase 03
+Last activity: 2026-09-11 — Completed 03-18-PLAN.md
 
 Progress: [█████░░░░░] 50%
 
@@ -74,6 +74,7 @@ Progress: [█████░░░░░] 50%
 | Phase 02 P03 | 30 min | 4 tasks | 9 files |
 | Phase 02 P04 | 10 min | 2 tasks | 7 files |
 | Phase 02 P05 | 5min | 2 tasks | 2 files |
+| Phase 03 P18 | 14min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -128,6 +129,8 @@ Recent decisions affecting current work:
 - [Phase 03]: 数据端通过独立 Node replay、19 个数据测试文件和四包 type/circular 门禁验证。
 - [Phase 03]: IFacedTileLocator 移入 @user/data-common，移除 @motajs/common → data-common 循环依赖。
 - [Phase 03]: 序列化事件注册、null-safe built-ins 与 production replay-safety wiring 通过 gap closure 验证。
+- [Phase 03]: Plan 03-18: event/index.ts and data-state/src/index.ts are export-only; eight explicit class-owned registrations assemble in event/registrations.ts with hero-owned eventTouchFront.
+- [Phase 03]: Plan 03-18 preserves the approved eight-name order, awaited event semantics, direct Statement[] insertion, safe missing-target behavior, and legacy/save/decorator boundaries.
 
 ### Pending Todos
 
@@ -150,6 +153,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-11T09:34:07.509Z
-Stopped at: Session resumed, rechecking Phase 3 Plans 03-17 through 03-19
-Resume file: .planning/phases/03-data-completion/.continue-here.md
+Last session: 2026-09-11T15:13:26.218Z
+Stopped at: Completed 03-18-PLAN.md
+Resume file: None
