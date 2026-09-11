@@ -139,6 +139,24 @@ describe('replay commands', () => {
         );
     });
 
+    // 验证稳定 registry 使用直接构造且不依赖手工 formatter 抑制
+    it('keeps registry construction direct and formatter-normalized', () => {
+        const source = readFileSync(
+            new URL('./commands.ts', import.meta.url),
+            'utf8'
+        );
+        expect(source).not.toContain('prettier-ignore');
+        expect(source).toContain(
+            'command: new ReplayDirectionCommand(state, FaceDirection.Up)'
+        );
+        expect(source).toContain(
+            'command: new ReplayAutoPathfindCommand(state)'
+        );
+        expect(source).toContain('command: new ReplayUseItemCommand(state)');
+        expect(source).toContain('command: new ReplayEquipCommand(state)');
+        expect(source).toContain('command: new ReplayUnequipCommand(state)');
+    });
+
     // 验证四向移动等待 controller.onEnd 后才完成 command 并进入下一步
     it('awaits directional movement before the next replay step', async () => {
         const state = createCoreState();
