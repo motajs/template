@@ -1,51 +1,14 @@
 import { BuiltInFunction } from 'anon-tokyo';
 import { IBlockEventEnv } from '@user/data-system';
 import {
+    EventBuiltinName,
     IDeleteBlockEventParam,
     IMoveBlockEventParam,
     ISetBlockEventParam
 } from './types';
 import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
-import { IGameMap, IMapLayer } from '@user/data-base';
-import { appendMoveSteps } from './hero';
-import { EventBuiltinName } from './types';
-
-type MapEventBuiltinHandler<TParam> = (
-    param: TParam,
-    env: IBlockEventEnv
-) => void | Promise<void>;
-
-function createMapEventBuiltin<TParam>(
-    name: EventBuiltinName,
-    handler: MapEventBuiltinHandler<TParam>
-): BuiltInFunction {
-    return { name, func: handler as BuiltInFunction['func'] };
-}
-
-/**
- * 通过环境参量获取可能的地图对象
- * @param env 事件环境变量
- */
-export function getPossibleMap(env: IBlockEventEnv): IGameMap | null {
-    if (env.map) return env.map;
-    if (env.layer) return env.layer.map;
-
-    const map = env.state.maps.getMap(env.heroFloor);
-    if (map) return map;
-
-    return null;
-}
-
-/** 通过环境参量获取可能的事件图层 */
-export function getPossibleLayer(env: IBlockEventEnv): IMapLayer | null {
-    if (env.layer) return env.layer;
-
-    const map = getPossibleMap(env);
-    if (map?.eventLayer) return map.eventLayer;
-
-    return null;
-}
+import { appendMoveSteps, getPossibleLayer } from './hero';
 
 export function eventSetBlock(
     param: ISetBlockEventParam,
@@ -105,11 +68,29 @@ export async function eventDeleteBlock(
     }
 }
 
+export class SetBlockEventRegistration implements BuiltInFunction {
+    readonly name: EventBuiltinName.SetBlock = EventBuiltinName.SetBlock;
+    readonly func: BuiltInFunction['func'] =
+        eventSetBlock as BuiltInFunction['func'];
+}
+
+export class MoveBlockEventRegistration implements BuiltInFunction {
+    readonly name: EventBuiltinName.MoveBlock = EventBuiltinName.MoveBlock;
+    readonly func: BuiltInFunction['func'] =
+        eventMoveBlock as BuiltInFunction['func'];
+}
+
+export class DeleteBlockEventRegistration implements BuiltInFunction {
+    readonly name: EventBuiltinName.DeleteBlock = EventBuiltinName.DeleteBlock;
+    readonly func: BuiltInFunction['func'] =
+        eventDeleteBlock as BuiltInFunction['func'];
+}
+
 /** 创建地图控制事件的内建函数注册项 */
 export function createMapEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
     return [
-        createMapEventBuiltin(EventBuiltinName.SetBlock, eventSetBlock),
-        createMapEventBuiltin(EventBuiltinName.MoveBlock, eventMoveBlock),
-        createMapEventBuiltin(EventBuiltinName.DeleteBlock, eventDeleteBlock)
+        new SetBlockEventRegistration(),
+        new MoveBlockEventRegistration(),
+        new DeleteBlockEventRegistration()
     ];
 }

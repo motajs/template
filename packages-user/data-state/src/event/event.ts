@@ -4,44 +4,15 @@ import {
     IBlockEventParam,
     IGameEventExecutor,
     IGameEventInvocation,
-    IGameEventSystem,
-    BlockEventType
+    IGameEventSystem
 } from '@user/data-system';
-import {
-    FaceDirection,
-    EventTrigger,
-    IGameEventStore
-} from '@user/data-common';
-import {
-    IStateBase,
-    IReadonlyTileBase as IReadonlyMapTileBase
-} from '@user/data-base';
-import { getPossibleLayer } from './map';
+import { IGameEventStore } from '@user/data-common';
+import { IStateBase } from '@user/data-base';
 import {
     EventBuiltinName,
     IInsertEventEventParam,
-    IInsertEventsEventParam,
-    ITouchFrontEventParam
+    IInsertEventsEventParam
 } from './types';
-
-type ControlEventBuiltinHandler<TParam> = (
-    param: TParam,
-    env: IBlockEventEnv
-) => void | Promise<void>;
-
-function createControlEventBuiltin<TParam>(
-    name: EventBuiltinName,
-    handler: ControlEventBuiltinHandler<TParam>
-): BuiltInFunction {
-    return { name, func: handler as BuiltInFunction['func'] };
-}
-
-interface IEventSource {
-    readonly priority: number;
-    readonly id: string;
-    readonly type: BlockEventType;
-    readonly tile: IReadonlyMapTileBase | null;
-}
 
 interface IEventState extends IStateBase {
     readonly eventSystem: IGameEventSystem;
@@ -56,7 +27,7 @@ function hasEventSystem(state: IStateBase): state is IEventState {
 }
 
 /** 从环境获取事件执行器和事件存储器 */
-function getEventRuntime(env: IBlockEventEnv): {
+export function getEventRuntime(env: IBlockEventEnv): {
     readonly executor: IGameEventExecutor;
     readonly store: IGameEventStore;
 } | null {
@@ -67,103 +38,6 @@ function getEventRuntime(env: IBlockEventEnv): {
         executor: env.state.eventSystem.executor,
         store
     };
-}
-
-/** 按坐标收集事件来源并保留其触发环境 */
-function collectInvocations(
-    env: IBlockEventEnv,
-    layer: NonNullable<IBlockEventEnv['layer']>,
-    x: number,
-    y: number,
-    trigger: EventTrigger
-): IGameEventInvocation[] {
-    const pointSources: IEventSource[] = [];
-    const tileSources: IEventSource[] = [];
-    const point = layer.getPointEvent(x, y);
-    const location = layer.getLocationData(x, y);
-    if (point) {
-        for (const [priority, id] of point) {
-            pointSources.push({
-                priority,
-                id,
-                type: BlockEventType.PointEvent,
-                tile: null
-            });
-        }
-    }
-    if (location) {
-        if (location.static) {
-            for (const [priority, id] of location.static.tileEvent().get()) {
-                tileSources.push({
-                    priority,
-                    id,
-                    type: BlockEventType.TileEvent,
-                    tile: location.static
-                });
-            }
-        }
-        for (const tile of location.dynamics) {
-            for (const [priority, id] of tile.tileEvent().get()) {
-                tileSources.push({
-                    priority,
-                    id,
-                    type: BlockEventType.TileEvent,
-                    tile
-                });
-            }
-        }
-    }
-    pointSources.sort((a, b) => b.priority - a.priority);
-    tileSources.sort((a, b) => b.priority - a.priority);
-
-    const hero = env.state.hero.getLocation();
-    const invocations: IGameEventInvocation[] = [];
-    for (const source of [...pointSources, ...tileSources]) {
-        const sourceEnv: IBlockEventEnv = {
-            state: env.state,
-            type: source.type,
-            trigger,
-            heroLocator: hero,
-            heroFloor: env.heroFloor,
-            triggerLocator: { x, y },
-            tile: source.tile,
-            layer,
-            map: layer.map
-        };
-        invocations.push({ id: source.id, env: sourceEnv });
-    }
-    return invocations;
-}
-
-/** 触发勇士正面的 onTouch 事件 */
-export async function eventTouchFront(
-    _param: ITouchFrontEventParam,
-    env: IBlockEventEnv
-): Promise<void> {
-    if (!env.state.hero) return;
-    const layer = getPossibleLayer(env);
-    if (!layer) return;
-    const runtime = getEventRuntime(env);
-    if (!runtime) return;
-
-    const hero = env.state.hero.getLocation();
-    const mover = env.state.hero.location.mover;
-    const direction = mover.tile.getCurrentFaceDirection();
-    if (direction === FaceDirection.Unknown) return;
-    const movement = mover.faceHandler.movement(direction);
-    const x = hero.x + movement.x;
-    const y = hero.y + movement.y;
-    if (!layer.inMap(x, y)) return;
-
-    const invocations = collectInvocations(
-        env,
-        layer,
-        x,
-        y,
-        EventTrigger.OnTouch
-    );
-    if (invocations.length === 0) return;
-    await runtime.executor.execute<void>(invocations, { custom: {} });
 }
 
 /** 过滤存在的事件 id 并构造临时事件调用 */
@@ -205,21 +79,6 @@ export async function eventInsertEvents(
     }
 }
 
-/** 创建事件控制事件的内建函数注册项 */
-export function createControlEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
-    return [
-        createControlEventBuiltin(EventBuiltinName.TouchFront, eventTouchFront),
-        createControlEventBuiltin(
-            EventBuiltinName.InsertEvents,
-            eventInsertEvents
-        ),
-        createControlEventBuiltin(
-            EventBuiltinName.InsertEvent,
-            eventInsertEvent
-        )
-    ];
-}
-
 /** 临时直接执行一段事件语句 */
 export async function eventInsertEvent(
     param: IInsertEventEventParam,
@@ -238,4 +97,25 @@ export async function eventInsertEvent(
     } finally {
         eventInsertDepth.delete(env);
     }
+}
+
+export class InsertEventsEventRegistration implements BuiltInFunction {
+    readonly name: EventBuiltinName.InsertEvents =
+        EventBuiltinName.InsertEvents;
+    readonly func: BuiltInFunction['func'] =
+        eventInsertEvents as BuiltInFunction['func'];
+}
+
+export class InsertEventEventRegistration implements BuiltInFunction {
+    readonly name: EventBuiltinName.InsertEvent = EventBuiltinName.InsertEvent;
+    readonly func: BuiltInFunction['func'] =
+        eventInsertEvent as BuiltInFunction['func'];
+}
+
+/** 创建事件控制事件的内建函数注册项 */
+export function createControlEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
+    return [
+        new InsertEventsEventRegistration(),
+        new InsertEventEventRegistration()
+    ];
 }
