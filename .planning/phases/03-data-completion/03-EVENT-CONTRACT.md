@@ -8,7 +8,7 @@ event built-ins；不加入完整 legacy 事件目录，不保留未决字段，
 
 本节晚于初始 checkpoint，优先于下方旧参数记录：
 
-- `data-state/src/event/index.ts` 只负责稳定注册项和 barrel exports，不承载参数解析、环境形状检查或其他业务逻辑。
+- `data-state/src/event/index.ts` 与 `data-state/src/index.ts` 只包含 `export` 语句，不导入、不执行装配代码；稳定注册项由 `data-state/src/event/registrations.ts` 负责装配，barrel 不承载参数解析、环境形状检查或其他业务逻辑。
 - built-in 调用不在热路径重复执行运行时参数类型判断；具体函数直接消费已确定的参数契约。
 - `eventInsertEvents` 保留现有事件 ID 序列语义；`eventInsertEvent` 改为接收 `Statement[]` 并直接通过现有解释器执行，不读取 event store，也不接受事件 ID。
 - 事件函数仍可按既有事件执行器契约等待事件链；本节只修正 `eventInsertEvent` 的输入和 `index.ts` 的职责，不把 replay command 的同步约束扩展到普通事件执行器。
@@ -23,9 +23,10 @@ event built-ins；不加入完整 legacy 事件目录，不保留未决字段，
   业务错误，不访问 DOM、render global 或 legacy global。
 - 地图删除、移动、勇士移动和临时事件序列都等待完整的 Promise 动作；没有需要等待
   的动作时同步返回 `void`。
-- 默认注册项由 `data-state/src/event` 提供，`CoreState` 只负责把注册项传给
-  `GameEventSystem`；`GameEventSystem` 通过现有 `AnonTokyoInterpreter` 的
-  `builtInFunctions` 初始化项装配。函数实现不复制到 `CoreState`。
+- 默认注册项由 `data-state/src/event/registrations.ts` 装配，`CoreState` 从该模块导入
+  `createEventBuiltinRegistrations` 并传给 `GameEventSystem`；`GameEventSystem`
+  通过现有 `AnonTokyoInterpreter` 的 `builtInFunctions` 初始化项装配。函数实现不复制到
+  `CoreState`。
 - 注册项只包含下表八个稳定名称。
 
 ## Parameter contracts
@@ -128,17 +129,35 @@ type IInsertEventEventParam = Statement[];
 
 ## Registration
 
-`data-state/src/event/index.ts` 提供稳定名称对应的默认注册项，顺序为：
+八项注册由 `data-state/src/event/registrations.ts` 作为唯一装配者直接构造。`CoreState`
+在创建 `GameEventSystem` 时从该模块导入 `createEventBuiltinRegistrations` 并传入该
+注册项集合；`GameEventSystem` 将其转换为 AnonTokyo 的 built-in function entries。
+除这八项外，本阶段不注册任何 legacy built-in。
 
-1. `eventSetBlock`
-2. `eventMoveBlock`
-3. `eventDeleteBlock`
-4. `eventMoveHero`
-5. `eventMoveHeroStep`
-6. `eventTouchFront`
-7. `eventInsertEvents`
-8. `eventInsertEvent`
+四个公开注册函数保持既有调用签名，且均可从 `event/index.ts` 与
+`data-state/src/index.ts` 访问：
 
-`CoreState` 在创建 `GameEventSystem` 时传入该注册项集合；`GameEventSystem` 将其
-转换为 AnonTokyo 的 built-in function entries。除这八项外，本阶段不注册任何
-legacy built-in。
+| 导出                                       | 行为                                 |
+| ------------------------------------------ | ------------------------------------ |
+| `createMapEventBuiltinRegistrations()`     | 返回地图组三个全新实例               |
+| `createHeroEventBuiltinRegistrations()`    | 返回勇士组三个全新实例               |
+| `createControlEventBuiltinRegistrations()` | 返回事件控制组两个全新实例           |
+| `createEventBuiltinRegistrations()`        | 按 map → hero → control 拼接八个实例 |
+
+每个注册项都是显式类实例，类同时拥有稳定的 `name`（`EventBuiltinName`）与对应的
+可调用 `func`，不使用通用工厂或描述符数组。稳定顺序与所有权为：
+
+1. `eventSetBlock` — `map.ts` 的 `SetBlockEventRegistration`
+2. `eventMoveBlock` — `map.ts` 的 `MoveBlockEventRegistration`
+3. `eventDeleteBlock` — `map.ts` 的 `DeleteBlockEventRegistration`
+4. `eventMoveHero` — `hero.ts` 的 `MoveHeroEventRegistration`
+5. `eventMoveHeroStep` — `hero.ts` 的 `MoveHeroStepEventRegistration`
+6. `eventTouchFront` — `hero.ts` 的 `TouchFrontEventRegistration`
+7. `eventInsertEvents` — `event.ts` 的 `InsertEventsEventRegistration`
+8. `eventInsertEvent` — `event.ts` 的 `InsertEventEventRegistration`
+
+`eventTouchFront` 及其来源收集与目标解析辅助函数属于 hero 事件层；`event.ts` 只保留
+`eventInsertEvents` 与直接执行 `Statement[]` 的 `eventInsertEvent`。`event/index.ts`
+与 `data-state/src/index.ts` 保持 `export`-only，不成为第二装配者。事件语义、等待语义、
+`Statement[]` 直接执行、缺失目标安全返回、legacy/save 边界与用户自有的 decorator
+落点均保持不变。

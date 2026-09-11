@@ -254,12 +254,3 @@ export class TouchFrontEventRegistration implements BuiltInFunction {
     readonly func: BuiltInFunction['func'] =
         eventTouchFront as BuiltInFunction['func'];
 }
-
-/** 创建勇士控制事件的内建函数注册项 */
-export function createHeroEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
-    return [
-        new MoveHeroEventRegistration(),
-        new MoveHeroStepEventRegistration(),
-        new TouchFrontEventRegistration()
-    ];
-}

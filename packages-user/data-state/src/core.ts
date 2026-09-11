@@ -81,7 +81,7 @@ import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
 import { DirectionMapper, IDirectionMapper, logger } from '@motajs/common';
 import { DefaultHeroMoveTopImpl } from './hero';
-import { createEventBuiltinRegistrations } from './event';
+import { createEventBuiltinRegistrations } from './event/registrations';
 import { createReplayCommandItems, registerReplayCommandItems } from './replay';
 
 export class CoreState implements ICoreState {

@@ -111,11 +111,3 @@ export class InsertEventEventRegistration implements BuiltInFunction {
     readonly func: BuiltInFunction['func'] =
         eventInsertEvent as BuiltInFunction['func'];
 }
-
-/** 创建事件控制事件的内建函数注册项 */
-export function createControlEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
-    return [
-        new InsertEventsEventRegistration(),
-        new InsertEventEventRegistration()
-    ];
-}

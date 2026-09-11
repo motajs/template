@@ -85,12 +85,3 @@ export class DeleteBlockEventRegistration implements BuiltInFunction {
     readonly func: BuiltInFunction['func'] =
         eventDeleteBlock as BuiltInFunction['func'];
 }
-
-/** 创建地图控制事件的内建函数注册项 */
-export function createMapEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
-    return [
-        new SetBlockEventRegistration(),
-        new MoveBlockEventRegistration(),
-        new DeleteBlockEventRegistration()
-    ];
-}
