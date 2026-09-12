@@ -14,7 +14,9 @@ import {
     InsertEventsEventRegistration
 } from './event';
 
-/** 创建地图控制事件的内建函数注册项 */
+/**
+ * 创建地图控制事件的内建函数注册项
+ */
 export function createMapEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
     return [
         new SetBlockEventRegistration(),
@@ -23,7 +25,9 @@ export function createMapEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunct
     ];
 }
 
-/** 创建勇士控制事件的内建函数注册项 */
+/**
+ * 创建勇士控制事件的内建函数注册项
+ */
 export function createHeroEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
     return [
         new MoveHeroEventRegistration(),
@@ -32,7 +36,9 @@ export function createHeroEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunc
     ];
 }
 
-/** 创建事件控制事件的内建函数注册项 */
+/**
+ * 创建事件控制事件的内建函数注册项
+ */
 export function createControlEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
     return [
         new InsertEventsEventRegistration(),
@@ -40,7 +46,9 @@ export function createControlEventBuiltinRegistrations(): ReadonlyArray<BuiltInF
     ];
 }
 
-/** 组装八个批准事件 built-in 的稳定注册项 */
+/**
+ * 组装八个批准事件 built-in 的稳定注册项
+ */
 export function createEventBuiltinRegistrations(): ReadonlyArray<BuiltInFunction> {
     return [
         ...createMapEventBuiltinRegistrations(),

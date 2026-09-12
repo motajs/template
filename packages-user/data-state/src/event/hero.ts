@@ -29,7 +29,9 @@ import {
 } from './types';
 import { getEventRuntime } from './event';
 
-/** 通过环境参量获取可能的地图对象 */
+/**
+ * 通过环境参量获取可能的地图对象
+ */
 export function getPossibleMap(env: IBlockEventEnv): IGameMap | null {
     if (env.map) return env.map;
     if (env.layer) return env.layer.map;
@@ -40,7 +42,9 @@ export function getPossibleMap(env: IBlockEventEnv): IGameMap | null {
     return null;
 }
 
-/** 通过环境参量获取可能的事件图层 */
+/**
+ * 通过环境参量获取可能的事件图层
+ */
 export function getPossibleLayer(env: IBlockEventEnv): IMapLayer | null {
     if (env.layer) return env.layer;
 
@@ -50,7 +54,9 @@ export function getPossibleLayer(env: IBlockEventEnv): IMapLayer | null {
     return null;
 }
 
-/** 启动勇士移动并等待其完整结束 */
+/**
+ * 将移动步骤按顺序追加到移动器，不启动移动
+ */
 export function appendMoveSteps<T extends IObjectMovable>(
     mover: IObjectMover<T>,
     steps: readonly ObjectMoveStep[]
@@ -89,7 +95,9 @@ export function appendMoveSteps<T extends IObjectMovable>(
     }
 }
 
-/** 启动勇士移动并等待其完整结束 */
+/**
+ * 启动勇士移动并等待其完整结束
+ */
 async function startHeroMove(
     mover: IHeroMover<IHeroLocation>,
     steps: readonly ObjectMoveStep[]
@@ -101,14 +109,18 @@ async function startHeroMove(
     await controller.onEnd;
 }
 
-/** 获取可以执行移动的勇士移动器 */
+/**
+ * 获取可以执行移动的勇士移动器
+ */
 function getHeroMover(env: IBlockEventEnv): IHeroMover<IHeroLocation> | null {
     const hero = env.state.hero;
     if (!hero) return null;
     return hero.location.mover;
 }
 
-/** 按指定移动序列移动勇士 */
+/**
+ * 按指定移动序列移动勇士
+ */
 export async function eventMoveHero(
     param: IMoveHeroEventParam,
     env: IBlockEventEnv
@@ -118,7 +130,9 @@ export async function eventMoveHero(
     await startHeroMove(mover, param.steps);
 }
 
-/** 让勇士沿当前朝向移动一步 */
+/**
+ * 让勇士沿当前朝向移动一步
+ */
 export async function eventMoveHeroStep(
     _param: IMoveHeroStepEventParam,
     env: IBlockEventEnv
@@ -139,7 +153,9 @@ interface IEventSource {
     readonly tile: IReadonlyMapTileBase | null;
 }
 
-/** 按坐标收集事件来源并保留其触发环境 */
+/**
+ * 按坐标收集事件来源并保留其触发环境
+ */
 function collectInvocations(
     env: IBlockEventEnv,
     layer: NonNullable<IBlockEventEnv['layer']>,
@@ -205,7 +221,9 @@ function collectInvocations(
     return invocations;
 }
 
-/** 触发勇士正面的 onTouch 事件 */
+/**
+ * 触发勇士正面的 onTouch 事件
+ */
 export async function eventTouchFront(
     _param: ITouchFrontEventParam,
     env: IBlockEventEnv

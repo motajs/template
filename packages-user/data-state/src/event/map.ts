@@ -10,6 +10,9 @@ import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
 import { appendMoveSteps, getPossibleLayer } from './hero';
 
+/**
+ * 在解析出的目标图层设置静态图块，目标或图块缺失时安全返回
+ */
 export function eventSetBlock(
     param: ISetBlockEventParam,
     env: IBlockEventEnv
@@ -28,7 +31,9 @@ export function eventSetBlock(
     layer.setBlock(num, param.x, param.y);
 }
 
-/** 将动态图块移动完成后还原为静态图块 */
+/**
+ * 将动态图块移动完成后还原为静态图块
+ */
 export async function eventMoveBlock(
     param: IMoveBlockEventParam,
     env: IBlockEventEnv
@@ -53,7 +58,9 @@ export async function eventMoveBlock(
     }
 }
 
-/** 删除目标坐标的静态图块和动态图块 */
+/**
+ * 删除目标坐标的静态图块和动态图块
+ */
 export async function eventDeleteBlock(
     param: IDeleteBlockEventParam,
     env: IBlockEventEnv

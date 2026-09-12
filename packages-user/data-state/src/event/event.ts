@@ -21,12 +21,16 @@ interface IEventState extends IStateBase {
 const EVENT_INSERT_MAX_DEPTH = 32;
 const eventInsertDepth: WeakMap<IBlockEventEnv, number> = new WeakMap();
 
-/** 判断状态是否包含事件执行器 */
+/**
+ * 判断状态是否包含事件执行器
+ */
 function hasEventSystem(state: IStateBase): state is IEventState {
     return 'eventSystem' in state;
 }
 
-/** 从环境获取事件执行器和事件存储器 */
+/**
+ * 从环境获取事件执行器和事件存储器
+ */
 export function getEventRuntime(env: IBlockEventEnv): {
     readonly executor: IGameEventExecutor;
     readonly store: IGameEventStore;
@@ -40,7 +44,9 @@ export function getEventRuntime(env: IBlockEventEnv): {
     };
 }
 
-/** 过滤存在的事件 id 并构造临时事件调用 */
+/**
+ * 过滤存在的事件 id 并构造临时事件调用
+ */
 function collectEventInvocations(
     ids: readonly string[],
     env: IBlockEventEnv,
@@ -59,7 +65,9 @@ function collectEventInvocations(
     return invocations;
 }
 
-/** 临时按顺序执行指定事件 */
+/**
+ * 临时按顺序执行指定事件
+ */
 export async function eventInsertEvents(
     param: IInsertEventsEventParam,
     env: IBlockEventEnv
@@ -79,7 +87,9 @@ export async function eventInsertEvents(
     }
 }
 
-/** 临时直接执行一段事件语句 */
+/**
+ * 临时直接执行一段事件语句
+ */
 export async function eventInsertEvent(
     param: IInsertEventEventParam,
     env: IBlockEventEnv
