@@ -16,7 +16,7 @@
     {
       "number": "3",
       "name": "数据端完成",
-      "status": "complete"
+      "status": "in_progress"
     },
     {
       "number": "4",
@@ -39,5 +39,5 @@
     "label": "Advance to the next step",
     "reason": "Phase 03 of 6 · executing"
   },
-  "updated_at": "2026-09-11T15:11:54.298Z"
+  "updated_at": "2026-09-12T05:27:47.436Z"
 }
