@@ -221,7 +221,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
-| 3. 数据端完成 | 19/19 | In Progress|  |
+| 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 0/TBD | Not started | - |
