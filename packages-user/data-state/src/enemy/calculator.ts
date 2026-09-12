@@ -1,13 +1,12 @@
 import {
     CriticalableHeroStatus,
     IDamageCalculator,
-    IEnemyDamageInfo,
+    IEnemyDamageInfoBase,
     IReadonlyEnemyHandler
-} from '@user/data-base';
-import { IEnemyAttr } from './types';
+} from '@user/data-system';
+import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import { IVampireValue } from './special';
-import { IHeroAttr } from '../hero';
-import { state } from '../ins';
+import { logger } from '@motajs/common';
 
 export class MainDamageCalculator implements IDamageCalculator<
     IEnemyAttr,
@@ -16,13 +15,9 @@ export class MainDamageCalculator implements IDamageCalculator<
     /** 当前是否正在计算支援怪的伤害 */
     private inGuard: boolean = false;
 
-    /**
-     * 计算战斗伤害信息
-     * @param handler 信息对象
-     */
     calculate(
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
-    ): IEnemyDamageInfo {
+    ): IEnemyDamageInfoBase {
         const { enemy, locator, hero } = handler;
         const hp = hero.getBaseAttribute('hp');
         const atk = hero.getFinalAttribute('atk');
@@ -34,7 +29,10 @@ export class MainDamageCalculator implements IDamageCalculator<
         let monHp = enemy.getAttribute('hp');
 
         // 无敌
-        if (enemy.hasSpecial(20) && core.itemCount('cross') < 1) {
+        if (
+            enemy.hasSpecial(20) &&
+            (handler.state.hero.items.getItemState('cross')?.count ?? 0) < 1
+        ) {
             return { damage: Infinity, turn: 0 };
         }
 
@@ -91,10 +89,17 @@ export class MainDamageCalculator implements IDamageCalculator<
             // 因此回合数需要加上打支援怪的回合数
             for (const guard of guards) {
                 // 直接把 enemy 传过去，因此支援的 enemy 会吃到其原本所在位置的光环加成
+                const view = handler.context.getEnemyByLocator(guard);
+                if (!view) {
+                    logger.warn(137, guard.x.toString(), guard.y.toString());
+                    continue;
+                }
                 const extraInfo = this.calculate({
-                    enemy: guard.getComputedEnemy(),
+                    enemy: view.getComputedEnemy(),
+                    context: handler.context,
                     locator,
-                    hero
+                    hero,
+                    state: handler.state
                 });
                 turn += extraInfo.turn;
                 damage += extraInfo.damage;
@@ -132,7 +137,13 @@ export class MainDamageCalculator implements IDamageCalculator<
         damage -= mdef;
 
         // 未开启负伤时，如果伤害为负，则设为 0
-        if (!core.flags.enableNegativeDamage && damage < 0) {
+        if (
+            !handler.state.flags.getFieldValueDefaults(
+                'enableNegativeDamage',
+                false
+            ) &&
+            damage < 0
+        ) {
             damage = 0;
         }
 
@@ -144,7 +155,7 @@ export class MainDamageCalculator implements IDamageCalculator<
 
         // 仇恨，无法被魔防减伤
         if (enemy.hasSpecial(17)) {
-            damage += state.flags.getFieldValueDefaults('hatred', 0);
+            damage += handler.state.flags.getFieldValueDefaults('hatred', 0);
         }
 
         return {
@@ -153,11 +164,6 @@ export class MainDamageCalculator implements IDamageCalculator<
         };
     }
 
-    /**
-     * 获取临界计算的上界
-     * @param handler 信息对象
-     * @param attribute 目标属性名
-     */
     getCriticalLimit(
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
         attribute: CriticalableHeroStatus<IHeroAttr>

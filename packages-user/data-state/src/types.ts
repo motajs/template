@@ -1,61 +1,31 @@
-import { ILayerState } from './map';
-import { IRoleFaceBinder } from './common';
-import {
-    IEnemyContext,
-    IEnemyManager,
-    IHeroFollower,
-    IHeroState,
-    IMotaDataLoader
-} from '@user/data-base';
-import { IEnemyAttr } from './enemy/types';
-import { IHeroAttr } from './hero';
-import { IFlagSystem } from '../../data-base/src/flag/types';
+import { IMotaDataLoader, IStateBase } from '@user/data-base';
 import { ILoadProgressTotal } from '@motajs/loader';
+import { IStateSystem } from '@user/data-system';
+import { ISaveableContent } from '@user/data-common';
 
-export interface IGameDataState {
-    /** 怪物管理器 */
-    readonly enemyManager: IEnemyManager<IEnemyAttr>;
+export interface ISaveableExecutor<T> {
+    /**
+     * 当数据读取后执行的函数，允许对其他存档对象进行读取
+     * @param data 对应可存档对象的存档数据
+     * @param state 当前的基础状态
+     */
+    afterLoad(data: T, state: IStateBase): void;
 }
 
-export interface IStateSaveData {
-    /** 跟随者列表 */
-    readonly followers: readonly IHeroFollower[];
-}
-
-export interface ICoreState {
-    /** 朝向绑定 */
-    readonly roleFace: IRoleFaceBinder;
-    /** id 到图块数字的映射 */
-    readonly idNumberMap: Map<string, number>;
-    /** 图块数字到 id 的映射 */
-    readonly numberIdMap: Map<number, string>;
-
+export interface ICoreState extends IStateSystem {
     /** 加载进度对象 */
     readonly loadProgress: ILoadProgressTotal;
     /** 数据端加载对象 */
     readonly dataLoader: IMotaDataLoader;
 
-    /** 地图状态 */
-    readonly layer: ILayerState;
-    /** 勇士状态 */
-    readonly hero: IHeroState<IHeroAttr>;
-
-    /** 怪物管理器 */
-    readonly enemyManager: IEnemyManager<IEnemyAttr>;
-    /** 怪物上下文 */
-    readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
-
-    /** Flag 系统 */
-    readonly flags: IFlagSystem;
-
     /**
-     * 保存状态
+     * 将某个存档执行器绑定至指定的可存档对象，一个可存档对象只能绑定一个执行器，
+     * 但一个执行器可以绑定多个可存档对象，主要用来在读档后进行一些全局性的操作
+     * @param content 可存档对象或其注册 id
+     * @param executor 可存档对象对应的执行器
      */
-    saveState(): IStateSaveData;
-
-    /**
-     * 加载状态
-     * @param data 状态对象
-     */
-    loadState(data: IStateSaveData): void;
+    bindSaveableExecuter<T>(
+        content: ISaveableContent<T> | string,
+        executor: ISaveableExecutor<T>
+    ): void;
 }

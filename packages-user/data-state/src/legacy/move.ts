@@ -1,10 +1,14 @@
 import EventEmitter from 'eventemitter3';
 import { backDir, toDir } from './utils';
 import { loading } from '@user/data-base';
-import type { RenderAdapter } from '@motajs/render';
 import type { HeroKeyMover } from '@user/client-modules';
 import { sleep } from '@motajs/common';
-import { fromDirectionString, state } from '..';
+import { fromDirectionString } from '@user/data-common';
+
+function getDataStateMover() {
+    if (typeof Mota === 'undefined') return null;
+    return Mota.require('@user/data-state').state.hero.location.mover;
+}
 
 // todo: 转身功能
 
@@ -272,13 +276,13 @@ export class HeroMover extends ObjectMoverBase {
         return super.startMove();
     }
 
-    private checkAutoSave(x: number, y: number, nx: number, ny: number) {
-        const index = `${x},${y}`;
-        const nIndex = `${nx},${ny}`;
-        const map = core.status.thisMap.enemy.mapDamage;
-        const dam = map[index];
-        const nextDam = map[nIndex];
-        if (!dam || !nextDam) return;
+    private checkAutoSave(_x: number, _y: number, _nx: number, _ny: number) {
+        // const index = `${x},${y}`;
+        // const nIndex = `${nx},${ny}`;
+        // const map = core.status.thisMap.enemy.mapDamage;
+        // const dam = map[index];
+        // const nextDam = map[nIndex];
+        // if (!dam || !nextDam) return;
         // 可以在这里判断地图伤害，并进行自动存档，例如在进入或离开地图伤害时存档
         // if (dam.damage > 0 || nextDam.damage > 0) {
         // core.autosave()
@@ -288,7 +292,7 @@ export class HeroMover extends ObjectMoverBase {
     protected async onMoveStart(controller: IMoveController): Promise<void> {
         this.beforeMoveSpeed = this.moveSpeed;
         if (!core.isReplaying() || core.status.replay.speed <= 12) {
-            state.hero.mover.startMove();
+            getDataStateMover()?.start();
         }
         // 这里要检查前面那一格能不能走，不能走则不触发平滑视角，以避免撞墙上视角卡住
         if (!this.ignoreTerrain) {
@@ -310,7 +314,6 @@ export class HeroMover extends ObjectMoverBase {
     protected async onMoveEnd(controller: IMoveController): Promise<void> {
         this.moveSpeed = this.beforeMoveSpeed;
         this.onSetMoveSpeed(this.moveSpeed, controller);
-        await state.hero.mover.endMove();
         // viewport.sync('endMove');
         core.clearContinueAutomaticRoute();
         core.stopAutomaticRoute();
@@ -442,22 +445,17 @@ export class HeroMover extends ObjectMoverBase {
         const replaying = core.isReplaying();
         if (replaying) {
             if (core.status.replay.speed > 12) {
-                await state.hero.mover.endMove();
                 await sleep(speed);
-                state.hero.mover.setPosition(x, y);
+                getDataStateMover()?.setPos(x, y);
             } else {
-                state.hero.mover.startMove();
-                await state.hero.mover.move(
-                    fromDirectionString(moveDir),
-                    this.moveSpeed / core.status.replay.speed
-                );
+                const mover = getDataStateMover();
+                mover?.step(fromDirectionString(moveDir));
+                await mover?.start()?.onEnd;
             }
         } else {
-            state.hero.mover.startMove();
-            await state.hero.mover.move(
-                fromDirectionString(moveDir),
-                this.moveSpeed
-            );
+            const mover = getDataStateMover();
+            mover?.step(fromDirectionString(moveDir));
+            await mover?.start()?.onEnd;
         }
     }
 

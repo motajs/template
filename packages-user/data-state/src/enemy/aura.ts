@@ -14,13 +14,11 @@ import {
     IEnemyContext,
     IEnemySpecialModifier,
     IEnemyView,
-    IReadonlyEnemyHandler,
-    IReadonlyEnemy,
-    ISpecial
-} from '@user/data-base';
+    IReadonlyEnemyHandler
+} from '@user/data-system';
+import { IReadonlyEnemy, ISpecial } from '@user/data-base';
 import { IHaloValue } from './special';
-import { IEnemyAttr } from './types';
-import { IHeroAttr } from '../hero';
+import { IHeroAttr, IEnemyAttr } from '@user/data-common';
 
 const FULL_RANGE = new FullRange();
 const RECT_RANGE = new RectRange();
@@ -177,7 +175,7 @@ export class GuardAura implements IEnemyAuraView<
         if (locator.x === this.locator.x && locator.y === this.locator.y) {
             return;
         }
-        enemy.getAttribute('guard').add(this.sourceView);
+        enemy.getAttribute('guard').add(this.locator);
     }
 
     applySpecial(): IEnemySpecialModifier<IEnemyAttr> | null {

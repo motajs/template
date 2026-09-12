@@ -2,7 +2,7 @@ import { IFlagCommonField, IFlagSystem, IFlagSystemSave } from './types';
 import { FlagCommonField } from './field';
 
 export class FlagSystem implements IFlagSystem {
-    private readonly fieldMap: Map<PropertyKey, FlagCommonField<any>> =
+    private readonly fieldMap: Map<PropertyKey, IFlagCommonField<any>> =
         new Map();
 
     occupied(field: PropertyKey): boolean {

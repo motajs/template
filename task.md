@@ -23,3 +23,7 @@
 - 寻路系统
 - `core.status.hero`
 - `core.status.hero.flags`
+
+# 其他备忘录
+
+- 大地图远景？

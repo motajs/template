@@ -1,4 +1,3 @@
-export { default as Book } from './book.vue';
 export { default as BookDetail } from './bookDetail.vue';
 export { default as Equipbox } from './equipbox.vue';
 export { default as Fly } from './fly.vue';

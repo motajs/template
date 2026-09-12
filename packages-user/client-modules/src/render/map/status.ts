@@ -1,4 +1,4 @@
-import { IMapLayer } from '@user/data-state';
+import { IMapLayer } from '@user/data-base';
 import { IBlockStatus, IMapVertexStatus } from './types';
 
 export class StaticBlockStatus implements IBlockStatus {

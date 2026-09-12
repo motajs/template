@@ -4,7 +4,6 @@ import { VirtualKey } from '@motajs/legacy-system';
 
 export const mainUi = new UiController();
 mainUi.register(
-    new GameUi('book', UI.Book),
     new GameUi('toolbox', UI.Toolbox),
     new GameUi('equipbox', UI.Equipbox),
     new GameUi('settings', UI.Settings),

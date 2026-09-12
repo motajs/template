@@ -10,7 +10,7 @@ import {
     IMaterialManager,
     ITrackedAssetData
 } from '@user/client-base';
-import { ILayerState, IMapLayer } from '@user/data-state';
+import { IGameMap, IMapLayer } from '@user/data-base';
 import { TimingFn } from 'mutate-animate';
 
 export const enum MapBackgroundRepeat {
@@ -339,7 +339,7 @@ export interface IMapRenderer {
     /** 顶点数组生成器 */
     readonly vertex: IMapVertexGenerator;
     /** 使用的地图状态对象 */
-    readonly layerState: ILayerState;
+    readonly layerState: IGameMap;
 
     /** 地图宽度 */
     readonly mapWidth: number;
@@ -432,7 +432,7 @@ export interface IMapRenderer {
      * 设置渲染器使用的地图状态
      * @param layerState 地图状态
      */
-    setLayerState(layerState: ILayerState): void;
+    setLayerState(layerState: IGameMap): void;
 
     /**
      * 根据标识符获取图层

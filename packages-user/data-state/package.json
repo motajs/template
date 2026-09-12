@@ -3,7 +3,8 @@
     "dependencies": {
         "@motajs/types": "workspace:*",
         "@motajs/common": "workspace:*",
+        "@user/data-common": "workspace:*",
         "@user/data-base": "workspace:*",
-        "@user/data-utils": "workspace:*"
+        "@user/data-system": "workspace:*"
     }
 }

@@ -1,4 +1,4 @@
-import { IMapLayer } from '@user/data-state';
+import { IMapLayer } from '@user/data-base';
 import {
     IBlockData,
     IBlockSplitter,

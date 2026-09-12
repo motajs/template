@@ -2,7 +2,6 @@
     "name": "@user/legacy-plugin-data",
     "dependencies": {
         "@user/data-state": "workspace:*",
-        "@user/data-base": "workspace:*",
-        "@user/data-utils": "workspace:*"
+        "@user/data-base": "workspace:*"
     }
 }

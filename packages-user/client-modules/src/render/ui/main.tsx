@@ -243,7 +243,7 @@ const MainScene = defineComponent(() => {
             >
                 <map-render
                     renderer={mainMapRenderer}
-                    layerState={state.layer}
+                    layerState={state.maps}
                     extension={mainMapExtension}
                     loc={[0, 0, MAP_WIDTH, MAP_HEIGHT]}
                 />

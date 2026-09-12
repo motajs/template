@@ -70,13 +70,18 @@ class GameLoading extends EventEmitter<GameLoadEvent> {
 }
 
 export const loading = new GameLoading();
-main.loading = loading;
+if (typeof main !== 'undefined') {
+    main.loading = loading;
+}
 
 let clientRegistered = false;
 let dataRegistered = false;
 
 function checkRegistered() {
-    if (main.replayChecking || main.mode === 'editor') {
+    if (
+        typeof main !== 'undefined' &&
+        (main.replayChecking || main.mode === 'editor')
+    ) {
         clientRegistered = true;
     }
     if (clientRegistered && dataRegistered) {
@@ -168,8 +173,8 @@ class GameListener extends EventEmitter<ListenerEvent> {
 
     constructor() {
         super();
-        if (main.replayChecking) return;
-        if (window.core) {
+        if (typeof main === 'undefined' || main.replayChecking) return;
+        if (typeof window !== 'undefined' && window.core) {
             this.init();
         } else {
             loading.once('coreInit', () => {
