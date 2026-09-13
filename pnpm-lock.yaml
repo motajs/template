@@ -309,12 +309,12 @@ importers:
       '@user/data-state':
         specifier: workspace:*
         version: link:../data-state
-      '@user/data-utils':
-        specifier: workspace:*
-        version: link:../data-utils
 
   packages-user/data-state:
     dependencies:
+      '@motajs/anon-tokyo':
+        specifier: workspace:*
+        version: link:../../packages/anon-tokyo
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
@@ -324,24 +324,18 @@ importers:
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
+      '@user/data-common':
+        specifier: workspace:*
+        version: link:../data-common
       '@user/data-system':
         specifier: workspace:*
         version: link:../data-system
-      '@user/data-utils':
-        specifier: workspace:*
-        version: link:../data-utils
 
   packages-user/data-system:
     dependencies:
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
-      '@user/data-base':
-        specifier: workspace:*
-        version: link:../data-base
-
-  packages-user/data-utils:
-    dependencies:
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
@@ -396,15 +390,18 @@ importers:
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
+      '@user/data-common':
+        specifier: workspace:*
+        version: link:../data-common
       '@user/data-fallback':
         specifier: workspace:*
         version: link:../data-fallback
       '@user/data-state':
         specifier: workspace:*
         version: link:../data-state
-      '@user/data-utils':
+      '@user/data-system':
         specifier: workspace:*
-        version: link:../data-utils
+        version: link:../data-system
       '@user/legacy-plugin-data':
         specifier: workspace:*
         version: link:../legacy-plugin-data
@@ -426,11 +423,10 @@ importers:
       '@user/data-state':
         specifier: workspace:*
         version: link:../data-state
-      '@user/data-utils':
-        specifier: workspace:*
-        version: link:../data-utils
 
   packages/animate: {}
+
+  packages/anon-tokyo: {}
 
   packages/audio:
     dependencies:
