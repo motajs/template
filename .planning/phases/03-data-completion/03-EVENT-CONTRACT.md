@@ -1,37 +1,35 @@
 # Phase 3 Event Built-in Contract
 
-本文件记录 `confirm-record` checkpoint 的确认结果。范围只包含本阶段批准的八个
-event built-ins；不加入完整 legacy 事件目录，不保留未决字段，也不把渲染行为放入
-数据端函数。
+本文件记录八个 event built-ins 的稳定契约。范围只包含批准的八个 built-ins；不加入
+完整 legacy 事件目录，不保留未决字段，也不把渲染行为放入数据端函数。
 
-## User structural supersession
-
-本节晚于初始 checkpoint，优先于下方旧参数记录：
-
-- `data-state/src/event/index.ts` 与 `data-state/src/index.ts` 只包含 `export` 语句，不导入、不执行装配代码；稳定注册项由 `data-state/src/event/registrations.ts` 负责装配，barrel 不承载参数解析、环境形状检查或其他业务逻辑。
-- built-in 调用不在热路径重复执行运行时参数类型判断；具体函数直接消费已确定的参数契约。
-- `eventInsertEvents` 保留现有事件 ID 序列语义；`eventInsertEvent` 改为接收 `Statement[]` 并直接通过现有解释器执行，不读取 event store，也不接受事件 ID。
-- 事件函数仍可按既有事件执行器契约等待事件链；本节只修正 `eventInsertEvent` 的输入和 `index.ts` 的职责，不把 replay command 的同步约束扩展到普通事件执行器。
+> **实现同步（quick 260913-qtq）：** 内建函数改为类式 `BuiltInFunction` 实现，函数名
+> 使用短名（`setBlock` 等），注册收口为单一 `createEventRegistrations()`，共享工具
+> 迁至 `event/utils.ts`。本节取代下方任何与旧类名 / 旧注册函数 / `EventBuiltinName`
+> 相关的历史描述。
 
 ## Shared contract
 
-- 每个函数都使用 `(param, env)` 调用形式。
-- `env` 的类型固定为 `IBlockEventEnv`。目标解析顺序为：明确的
-  `env.layer`，`env.map` 的 `eventLayer`，最后是通过 `env.heroFloor` 从
-  `env.state.maps` 获取的地图及其 `eventLayer`。
-- 目标、图块、勇士、事件存储或事件 id 缺失时，函数安全跳过并返回 `void`；不抛出
-  业务错误，不访问 DOM、render global 或 legacy global。
-- 地图删除、移动、勇士移动和临时事件序列都等待完整的 Promise 动作；没有需要等待
-  的动作时同步返回 `void`。
-- 默认注册项由 `data-state/src/event/registrations.ts` 装配，`CoreState` 从该模块导入
-  `createEventBuiltinRegistrations` 并传给 `GameEventSystem`；`GameEventSystem`
-  通过现有 `AnonTokyoInterpreter` 的 `builtInFunctions` 初始化项装配。函数实现不复制到
-  `CoreState`。
-- 注册项只包含下表八个稳定名称。
+- 每个 built-in 是一个类，实现 `BuiltInFunction<P, E>`（来自 `@motajs/anon-tokyo`）：
+  以 `name` 声明稳定函数名，以 `func(param, env)` 方法实现行为。
+- `env` 的类型固定为 `IBlockEventEnv`。目标解析顺序为：明确的 `env.layer` →
+  `env.map` 的 `eventLayer` → 通过 `env.heroFloor` 从 `env.state.maps` 取得的地图及其
+  `eventLayer`（由 `event/utils.ts` 的 `getPossibleLayer` 提供）。
+- 目标、图块、勇士、事件存储或事件 id 缺失时，函数安全跳过并返回 `void`；不抛业务
+  错误，不访问 DOM、render global 或 legacy global。
+- 地图删除、移动、勇士移动和临时事件序列都等待完整的 Promise 动作；没有需要等待的
+  动作时同步返回 `void`。
+- 移动序列统一通过 `IObjectMover.push(steps)` 追加，再 `start()` 并等待控制器
+  `onEnd`；不逐条调用移动方法。
+- 共享功能性函数放在 `event/utils.ts`，**不经 `event/index.ts` 导出**；非公共的
+  功能性函数作为所属类的私有方法。
+- `map.ts` / `hero.ts` / `event.ts` 只包含 built-in 类，不包含落单函数。
+- 默认注册项由 `data-state/src/event/registrations.ts` 的唯一函数
+  `createEventRegistrations()` 装配；`CoreState` 从该模块导入并传给 `GameEventSystem`。
 
 ## Parameter contracts
 
-### `eventSetBlock`
+### `setBlock` — `map.ts` 的 `EventSetBlock`
 
 ```ts
 interface ISetBlockEventParam {
@@ -41,10 +39,10 @@ interface ISetBlockEventParam {
 }
 ```
 
-在解析出的目标图层设置 `(x, y)` 的静态图块。`tile` 通过 `env.state.tileStore`
-解析；图块 id、地图、图层或坐标目标不可用时安全返回 `void`。
+在解析出的目标图层设置 `(x, y)` 的静态图块。`tile` 通过 `env.state.tileStore` 解析；
+图块 id、地图、图层或坐标目标不可用时安全返回 `void`。
 
-### `eventMoveBlock`
+### `moveBlock` — `map.ts` 的 `EventMoveBlock`
 
 ```ts
 interface IMoveBlockEventParam {
@@ -55,12 +53,11 @@ interface IMoveBlockEventParam {
 }
 ```
 
-从 `(x, y)` 将静态图块转为动态图块，按 `steps` 完整移动，再转回静态图块。
-`safe` 为 `true` 时使用 `transferToStaticIfSafe`，否则使用
-`transferToStatic`。源图块、动态图块、移动控制器或目标静态图块不可用时安全返回
-`void`；移动控制器的 `onEnd` 和最终转换都必须等待。
+从 `(x, y)` 将静态图块转为动态图块，`push` 入 `steps` 后完整移动，再转回静态图块。
+`safe` 为 `true` 时使用 `transferToStaticIfSafe`，否则使用 `transferToStatic`。源图块、
+动态图块、移动控制器或目标静态图块不可用时安全返回 `void`。
 
-### `eventDeleteBlock`
+### `deleteBlock` — `map.ts` 的 `EventDeleteBlock`
 
 ```ts
 interface IDeleteBlockEventParam {
@@ -69,10 +66,10 @@ interface IDeleteBlockEventParam {
 }
 ```
 
-删除目标坐标的静态图块，并等待该坐标所有动态图块的删除 Promise。地图、图层或
-坐标不可用时安全返回 `void`。
+删除目标坐标的静态图块，并等待该坐标所有动态图块的删除 Promise。地图、图层或坐标
+不可用时安全返回 `void`。
 
-### `eventMoveHero`
+### `moveHero` — `hero.ts` 的 `EventMoveHero`
 
 ```ts
 interface IMoveHeroEventParam {
@@ -80,31 +77,31 @@ interface IMoveHeroEventParam {
 }
 ```
 
-把完整 `steps` 队列加入 `env.state.hero.location.mover` 并启动一次移动。勇士或
+把完整 `steps` 队列 `push` 进 `env.state.hero.location.mover` 并启动一次移动。勇士或
 移动器缺失、移动已在进行中或动作无法启动时安全返回 `void`；启动成功后等待
 `IMoverController.onEnd`。
 
-### `eventMoveHeroStep`
+### `moveHeroStep` — `hero.ts` 的 `EventMoveHeroStep`
 
 ```ts
 interface IMoveHeroStepEventParam {}
 ```
 
-不读取额外字段，使用勇士当前移动方向执行一次 `forward(1)`。勇士、移动器或控制器
-缺失时安全返回 `void`，启动成功后等待 `onEnd`。
+不读取额外字段，使用勇士当前移动方向执行一次 `forward(1)`。移动器或控制器缺失、
+移动已在进行中时安全返回 `void`，启动成功后等待 `onEnd`。
 
-### `eventTouchFront`
+### `touchFront` — `hero.ts` 的 `EventTouchFront`
 
 ```ts
 interface ITouchFrontEventParam {}
 ```
 
-不读取额外字段。以勇士当前位置和当前朝向计算面前一格，收集该坐标的点事件、静态
-图块事件和动态图块事件，以 `EventTrigger.OnTouch` 通过现有事件执行器顺序触发。
-缺少勇士、地图、图层、目标位置或事件执行器时安全返回 `void`；事件执行 Promise
-必须等待。该函数只触发 `onTouch`，不移动勇士。
+不读取额外字段。以勇士当前位置和当前朝向计算面前一格，收集该坐标的点事件、静态图块
+事件和动态图块事件，以 `EventTrigger.OnTouch` 通过现有事件执行器顺序触发。来源收集由
+该类的私有方法 `collectInvocations` 完成。缺少地图、图层、目标位置或事件执行器时安全
+返回 `void`；该函数只触发 `onTouch`，不移动勇士。
 
-### `eventInsertEvents`
+### `insertEvents` — `event.ts` 的 `EventInsertEvents`
 
 ```ts
 interface IInsertEventsEventParam {
@@ -112,52 +109,42 @@ interface IInsertEventsEventParam {
 }
 ```
 
-按 `ids` 顺序临时构造事件调用，复用当前 `env`，通过当前事件执行器执行一次；不把
-这些事件写入 `IGameEventStore`，也不改变地图持久化数据。空序列、缺失事件存储、缺失
-事件 id 或缺失执行器时安全跳过；执行 Promise 必须等待。
+按 `ids` 顺序临时构造事件调用，复用当前 `env`，通过当前事件执行器执行一次；不把这些
+事件写入 `IGameEventStore`，也不改变地图持久化数据。有效 id 过滤由该类的私有方法
+`collectInvocations` 完成。空序列、缺失事件存储、缺失事件 id 或缺失执行器时安全跳过；
+执行 Promise 必须等待。
 
-### `eventInsertEvent`
+### `insertEvent` — `event.ts` 的 `EventInsertEvent`
 
 ```ts
 type IInsertEventEventParam = Statement[];
 ```
 
-接收一段 `Statement[]` 事件语句，直接使用现有 AnonTokyo 解释器执行该语句体，
-参数为 `{ custom: {} }`，环境为当前 `env`。不读取事件存储、不解析事件 id，
-也不写入事件存储。空语句体、缺失执行器或达到嵌套插入深度上限时安全返回 `void`，
-解释器 Promise 必须等待。
+接收一段 `Statement[]` 事件语句，直接使用现有 AnonTokyo 解释器执行该语句体。不读取
+事件存储、不解析事件 id，也不写入事件存储。空语句体、缺失执行器或达到嵌套插入深度
+上限时安全返回 `void`，解释器 Promise 必须等待。
 
 ## Registration
 
-八项注册由 `data-state/src/event/registrations.ts` 作为唯一装配者直接构造。`CoreState`
-在创建 `GameEventSystem` 时从该模块导入 `createEventBuiltinRegistrations` 并传入该
-注册项集合；`GameEventSystem` 将其转换为 AnonTokyo 的 built-in function entries。
-除这八项外，本阶段不注册任何 legacy built-in。
+`data-state/src/event/registrations.ts` 只导出一个函数
+`createEventRegistrations()`，按稳定顺序直接构造八个类的实例并返回
+`BuiltInFunction[]`；不做分类包装，不引入工厂或描述符数组。`CoreState` 在创建
+`GameEventSystem` 时导入该函数并传入注册项集合。除这八项外，本阶段不注册任何 legacy
+built-in。
 
-四个公开注册函数保持既有调用签名，且均可从 `event/index.ts` 与
-`data-state/src/index.ts` 访问：
+稳定顺序与所有权：
 
-| 导出                                       | 行为                                 |
-| ------------------------------------------ | ------------------------------------ |
-| `createMapEventBuiltinRegistrations()`     | 返回地图组三个全新实例               |
-| `createHeroEventBuiltinRegistrations()`    | 返回勇士组三个全新实例               |
-| `createControlEventBuiltinRegistrations()` | 返回事件控制组两个全新实例           |
-| `createEventBuiltinRegistrations()`        | 按 map → hero → control 拼接八个实例 |
+1. `setBlock` — `map.ts` 的 `EventSetBlock`
+2. `moveBlock` — `map.ts` 的 `EventMoveBlock`
+3. `deleteBlock` — `map.ts` 的 `EventDeleteBlock`
+4. `moveHero` — `hero.ts` 的 `EventMoveHero`
+5. `moveHeroStep` — `hero.ts` 的 `EventMoveHeroStep`
+6. `touchFront` — `hero.ts` 的 `EventTouchFront`
+7. `insertEvents` — `event.ts` 的 `EventInsertEvents`
+8. `insertEvent` — `event.ts` 的 `EventInsertEvent`
 
-每个注册项都是显式类实例，类同时拥有稳定的 `name`（`EventBuiltinName`）与对应的
-可调用 `func`，不使用通用工厂或描述符数组。稳定顺序与所有权为：
-
-1. `eventSetBlock` — `map.ts` 的 `SetBlockEventRegistration`
-2. `eventMoveBlock` — `map.ts` 的 `MoveBlockEventRegistration`
-3. `eventDeleteBlock` — `map.ts` 的 `DeleteBlockEventRegistration`
-4. `eventMoveHero` — `hero.ts` 的 `MoveHeroEventRegistration`
-5. `eventMoveHeroStep` — `hero.ts` 的 `MoveHeroStepEventRegistration`
-6. `eventTouchFront` — `hero.ts` 的 `TouchFrontEventRegistration`
-7. `eventInsertEvents` — `event.ts` 的 `InsertEventsEventRegistration`
-8. `eventInsertEvent` — `event.ts` 的 `InsertEventEventRegistration`
-
-`eventTouchFront` 及其来源收集与目标解析辅助函数属于 hero 事件层；`event.ts` 只保留
-`eventInsertEvents` 与直接执行 `Statement[]` 的 `eventInsertEvent`。`event/index.ts`
-与 `data-state/src/index.ts` 保持 `export`-only，不成为第二装配者。事件语义、等待语义、
+`touchFront` 及其来源收集属于 hero 事件层；`event.ts` 只保留 `insertEvents` 与直接执行
+`Statement[]` 的 `insertEvent`。`event/index.ts` 与 `data-state/src/index.ts` 保持
+`export`-only，不成为第二装配者；`event/utils.ts` 不参与导出。事件语义、等待语义、
 `Statement[]` 直接执行、缺失目标安全返回、legacy/save 边界与用户自有的 decorator
 落点均保持不变。

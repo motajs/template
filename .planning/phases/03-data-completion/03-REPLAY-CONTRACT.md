@@ -1,120 +1,112 @@
-# Phase 3 Plan 03: Replay Command Contract
+# Phase 3 Replay Command Contract
 
-## User structural supersession (S-05)
+本文件记录录像指令的稳定契约。数值指令码属于录像格式的一部分，注册项提供实现但不
+分配全局指令编号。
 
-本节晚于初始 replay checkpoint，优先于下方关于 command completion 和 decorator
-placement 的旧记录。S-05 supersedes S-02 在 replay-step completion 边界上的结论：
-
-- replay command 不调用 `shouldReplay`；移动和寻路 command 必须等待各自 controller 完成后再返回，确保下一录像步不会与上一步并发。`shouldReplay` 的最终落点仍由用户放在真正改变最终状态的低层方法上。
-- 既有 `ReplaySystem`、route 和 sandbox 只做使同步 command 正常运行所需的最小兼容调整，不重新设计录像系统。
-- `@shouldReplay()` 不在本次 correction 中移动或新增；其最终位置由用户自行处理，且不得通过 replay command 构造器间接注入。
-
-## Approval
-
-The `confirm-record` checkpoint response approves one top-level replay command
-enum. Numeric values are stable and are assigned once in the locked D-25 order;
-module registration items provide implementations only and never allocate
-global command numbers.
+> **实现同步（quick 260913-qtq 及后续）：** 指令改为 `BaseReplayCommand` 基类 + 类
+> 实现；寻路指令码改名 `Teleport`；参数改为纯数值 / 固定数量；注册收口为 `CoreState`
+> 的私有 `registerReplayCommands()`；移动指令新增 `notExecuted` 批量收尾。本节取代
+> 下方任何与旧指令名 / 旧注册辅助 / 字符串参数相关的历史描述。
 
 ## Stable enum and registration order
 
-`ReplayCommandCode` is the sole owner of these numeric values:
+`ReplayCommandCode` 是这些数值的唯一拥有者：
 
-| Order | Enum member           | Stable code | Route command            | Action                                                     |
-| ----: | --------------------- | ----------: | ------------------------ | ---------------------------------------------------------- |
-|     1 | `Up`                  |         `0` | `up`                     | Move the hero one step upward                              |
-|     2 | `Right`               |         `1` | `right`                  | Move the hero one step rightward                           |
-|     3 | `Down`                |         `2` | `down`                   | Move the hero one step downward                            |
-|     4 | `Left`                |         `3` | `left`                   | Move the hero one step leftward                            |
-|     5 | `AutoPathfindToPoint` |         `4` | `auto-pathfind-to-point` | Move the hero to the encoded target point                  |
-|     6 | `UseItem`             |         `5` | `use-item`               | Call the hero item-use entry point                         |
-|     7 | `Equip`               |         `6` | `equip`                  | Equip the encoded equipment instance into the encoded slot |
-|     8 | `Unequip`             |         `7` | `unequip`                | Unequip the encoded numeric slot                           |
+| Order | Enum member | Stable code | Action |
+| ----: | ----------- | ----------: | ------ |
+| 1 | `Up` | `0` | 勇士向上移动一步 |
+| 2 | `Right` | `1` | 勇士向右移动一步 |
+| 3 | `Down` | `2` | 勇士向下移动一步 |
+| 4 | `Left` | `3` | 勇士向左移动一步 |
+| 5 | `Teleport` | `4` | 瞬移 / 自动寻路到编码的目标点 |
+| 6 | `UseItem` | `5` | 调用勇士道具使用入口 |
+| 7 | `Equip` | `6` | 将编码装备穿到编码槽位 |
+| 8 | `Unequip` | `7` | 卸下编码的数值槽位 |
 
-The values `0` through `7` are part of the replay format. They must not be
-renumbered, inferred from registration-map iteration, replaced with strings,
-or allocated by `data-common`, `data-system`, or an individual command module.
-The top-level registry must register exactly these eight entries in this table's
-order and reject duplicate codes before delegating to `ReplaySystem`.
+`0`–`7` 属于录像格式，不得重编号、不得由注册表遍历推断、不得替换为字符串、也不得由
+`data-common` / `data-system` 或单个指令模块分配。裸名 `REPLAY_COMMAND_ORDER` 保留为
+测试读取的稳定顺序。
+
+## Command shape
+
+`replay/commands.ts` 中每个指令实现 `IReplayCommand`。公共基类
+`BaseReplayCommand` 提供：
+
+- `name: string` — 指令的字符串名称（用于参数校验日志）。
+- `paramTypes: readonly string[]` — 期望的 JS 参数类型列表。
+- `protected assertParameter(command, parameter, expect)` — 校验参数数量与类型；
+  数量不符记 `logger.error(2001)`，类型不符记 `logger.error(2002)`，校验失败返回 `false`。
+- `abstract wrappedExecute(step): Promise<boolean>` — 参数校验后的实际逻辑。
+- `execute(step): Promise<boolean>` — 先校验参数，再委托 `wrappedExecute`。
+
+指令不调用 `shouldReplay`；`shouldReplay` 的落点仍由用户放在真正改变最终状态的底层
+方法上。需要跨步收尾的指令实现可选的 `notExecuted()`（见“移动指令”）。
 
 ## Command parameter boundary
 
-The command route continues to use the existing primitive
-`ReplayParamValue[]` representation. The command implementations validate
-their parameter count and primitive types before touching state:
+指令参数使用现有 `ReplayParamValue[]`。每个指令在 `wrappedExecute` 首行以注释记录期望
+的二进制参数类型；参数数量固定，**不允许可选参数，也不使用字符串参数**：
 
-| Command                       | Parameters                                                                     | State access                                                      |
-| ----------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| `up`, `right`, `down`, `left` | none                                                                           | `CoreState.hero.location.mover`                                   |
-| `auto-pathfind-to-point`      | numeric `x`, numeric `y`                                                       | the internally owned `PathfindingSystem`, bound to the hero mover |
-| `use-item`                    | one numeric item number or string item id                                      | `CoreState.hero.items.useItem(item)`                              |
-| `equip`                       | numeric equipment `uid`, numeric or string slot, optional boolean `autoUnload` | `CoreState.hero.equip.equip(uid, slot, autoUnload)`               |
-| `unequip`                     | one numeric slot                                                               | `CoreState.hero.equip.unequip(slot)`                              |
+| Command | 参数（二进制类型注释） | 状态访问 |
+| ------- | ---------------------- | -------- |
+| `move`（四个方向实例） | 无 | `CoreState.hero.location.mover` |
+| `teleport` | `[int16 x, int16 y]` | 内部拥有的、绑定勇士移动器的 `PathfindingSystem` |
+| `use-item` | `[int16 item]` | `CoreState.hero.items.useItem(item)` |
+| `equip` | `[int16 uid, int8 slot, bool autoUnload]` | `CoreState.hero.equip.equip(uid, slot, autoUnload)` |
+| `unequip` | `[int8 slot]` | `CoreState.hero.equip.unequip(slot)` |
 
-Invalid parameter count/types, missing targets, an already-running action, or
-a state API failure return `false`. Item and equipment state APIs retain their
-existing synchronous command boundary.
+非法参数数量 / 类型、目标缺失、动作已在进行中或状态 API 无效果时返回 `false`。每个
+`return false` 位置对应一个独立 logger 错误码，确保录像报错可溯源（当前 `2003`–`2008`）。
+
+## Completion boundaries
+
+- **移动指令（`ReplayMoveCommand`，四个方向实例）：** `wrappedExecute` 只把方向追加到
+  移动器（`mover.step(direction)`），不启动；`notExecuted()` 调用 `mover.start()` 并
+  等待 `onEnd`。这样连续移动步骤可以合并成一次移动，由下一次不同指令或录像结束触发
+  收尾。
+- **瞬移指令（`ReplayTeleportCommand`）：** 调用 `PathfindingSystem.teleportTo({ x, y })`；
+  返回 `null` 记 `2005` 并返回 `false`，否则等待其 `controller.onEnd`。
+- **使用物品（`ReplayUseItemCommand`）：** 直接返回 `hero.items.useItem(item)`；失败记
+  `2006` 并返回 `false`。
+- **装备（`ReplayEquipCommand`）：** 调用 `equipment.equip(uid, slot, autoUnload)`；
+  `getEquipped(slot) !== uid` 记 `2007` 并返回 `false`。
+- **卸下（`ReplayUnequipCommand`）：** 调用 `equipment.unequip(slot)`；
+  `getEquipped(slot) !== undefined` 记 `2008` 并返回 `false`。
+- 移动 / 瞬移在 `execute` 返回 `Promise<boolean>` 之前等待控制器完成；道具与装备沿用
+  既有同步边界，其结果被适配为同一布尔边界。
+
+## Sandbox finalization
+
+`ReplaySandbox.step()` 在播放下一步之前，先对**上一步**指令调用 `notExecuted?.()`（记
+`warn 175` 表示收尾失败）；当读取流结束（录像结束）时，先对最后一步执行同样的收尾，
+再标记结束。收尾逻辑封装为私有 `finalizeLast()`。这保证以连续移动结尾的录像最终也会
+启动并等待移动。
 
 ## Top-level registry ownership
 
-`CoreState` is the final assembly boundary. A fresh `CoreState` owns a fresh
-`ReplaySystem` and invokes one data-state replay registration helper with the
-approved enum order. The helper's registration items contain command behavior,
-while the top-level enum remains the only stable code owner. No lower layer
-registers a global code or imports the data-state root barrel to obtain one.
+`CoreState` 是最终装配边界。一个 `CoreState` 拥有独立的 `ReplaySystem`，并通过私有方法
+`registerReplayCommands()` **逐个直接注册**八个稳定指令码：
 
-Each non-directional replay instruction is an independent class in the replay
-command module. The class owns its state reference, parameter validation, action
-call, and `execute` implementation. The four directional entries use one
-parameterized `ReplayDirectionCommand` class with a distinct `FaceDirection`
-value per fresh instance; they share no mutable command context or closure
-factory, and no instruction constructs or delegates to another instruction.
-The registry creates four fresh directional instances plus one fresh instance
-of each non-directional class in stable enum order while retaining the existing
-`IReplayCommandItem` extension boundary.
+```ts
+this.replaySystem.registerCommand(
+    ReplayCommandCode.Up,
+    new ReplayMoveCommand(this, FaceDirection.Up)
+);
+// …共八条，按 Up/Right/Down/Left/Teleport/UseItem/Equip/Unequip 顺序
+```
 
-The existing `IReplaySystem.registerCommand(code, command)` and
-`IReplayCommand.execute(step): Promise<boolean>` public contracts remain in
-force. Duplicate detection belongs to the top-level assembly helper; the
-existing `ReplaySystem` remains the route/command storage boundary.
+不再有 `data-state/replay` 下的工厂 / 注册辅助函数，也不使用 `IReplayCommandItem` /
+`IReplayCommandRegistry` 扩展边界。重复指令码由既有 `ReplaySystem.registerCommand`
+（记 `warn 163`）处理。
 
 ## CoreState and Node runner access
 
-The public `ICoreState` contract is not expanded for replay. The concrete
-`CoreState` construction path is the approved access seam: `createCoreState()`
-creates an independent instance, and the Node runner imports that factory from
-`data-state/src/core.ts`, never the compatibility singleton from `ins.ts`.
-
-The concrete state instance owns the replay system and the internally bound
-pathfinding system needed by command implementations. Node verification may
-consume those concrete assembly seams, but it must not depend on browser globals,
-the singleton, IndexedDB, or a new options-bearing factory API. The existing
-`hero`, `maps`, `eventSystem`, `hero.items`, and `hero.equip` state boundaries
-remain the action targets; no new `ICoreState` member is required by this
-contract.
-
-## Completion boundaries under S-05
-
-- Four-direction movement appends one direction to the hero mover, starts it,
-  and awaits the returned mover controller's `onEnd`; it returns `true` only
-  after the controller completes and returns `false` for a missing, active, or
-  failed action.
-- Auto-pathfind calls the existing `PathfindingSystem.moveTo({ x, y })`; a null
-  result is `false`, and a non-null result awaits its controller's `onEnd`
-  before resolving `true`.
-- Item and equipment calls remain synchronous under the current interfaces; their
-  boolean/undefined result is converted to the command's success boolean.
-- Replay command implementations do not add or invoke replay-safety decorators.
-  The user-owned low-level state-mutation decorator boundary remains outside this
-  correction; synchronous item/equipment calls retain their existing command
-  boundary.
-- `IReplayCommand.execute()` continues to return the existing `Promise<boolean>`
-  boundary, with movement/pathfinding completion awaited before that Promise
-  resolves and synchronous item/equipment results adapted to the same boundary.
+公共 `ICoreState` 契约不为 replay 扩展。`createCoreState()` 创建独立实例；Node runner
+从 `data-state/src/core.ts` 导入该工厂，而非兼容单例。具体状态实例拥有 replay system
+与内部绑定移动器的寻路系统；`hero.location.mover`、`hero.items`、`hero.equip`、
+`state.pathfinding` 是既有动作目标，不新增 `ICoreState` 成员。
 
 ## Explicit exclusions
 
-This record does not authorize a new public `ICoreState` replay property, a
-second command-code owner, a string-code route format, a reordered registry, a
-Phase 4 render click boundary, or reuse of the Plan 01 private direct tracer as
-the final registry.
+本记录不授权新增公共 `ICoreState` replay 属性、第二个指令码拥有者、字符串指令码格式、
+重排注册表、Phase 4 渲染点击边界，或把 Plan 01 的私有 tracer 当作最终注册表。
