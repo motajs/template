@@ -50,9 +50,6 @@ export interface IMoveHeroEventParam {
 /** 事件：向前移动一步 */
 export interface IStepHeroEventParam {}
 
-/** 事件：勇士向前一步，前方不可通行时触发撞击 */
-export interface ITouchFrontEventParam {}
-
 //#endregion
 
 //#region 事件控制

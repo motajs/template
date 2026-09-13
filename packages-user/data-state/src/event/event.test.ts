@@ -18,11 +18,9 @@ import {
     EventMoveBlock,
     EventMoveHero,
     EventStepHero,
-    EventSetBlock,
-    EventTouchFront
+    EventSetBlock
 } from './index';
 import { EventSetBlock as MapEventSetBlock } from './map';
-import { EventTouchFront as HeroEventTouchFront } from './hero';
 import { EventInsertEvent as ControlEventInsertEvent } from './event';
 import * as dataStateRoot from '../index';
 
@@ -307,9 +305,8 @@ describe('event registration ownership', () => {
         expect(registrations[2]).toBeInstanceOf(EventRemoveBlock);
         expect(registrations[3]).toBeInstanceOf(EventMoveHero);
         expect(registrations[4]).toBeInstanceOf(EventStepHero);
-        expect(registrations[5]).toBeInstanceOf(EventTouchFront);
-        expect(registrations[6]).toBeInstanceOf(EventInsertEvents);
-        expect(registrations[7]).toBeInstanceOf(EventInsertEvent);
+        expect(registrations[5]).toBeInstanceOf(EventInsertEvents);
+        expect(registrations[6]).toBeInstanceOf(EventInsertEvent);
         expect(createEventRegistrations()).not.toBe(registrations);
         expect(createEventRegistrations()[0]).not.toBe(registrations[0]);
     });
@@ -326,11 +323,7 @@ describe('event registration ownership', () => {
     // 验证注册类分别来自地图勇士事件模块且勇士面前注册类归 hero 所有
     it('originates registration classes from their owning event modules', () => {
         expect(EventSetBlock).toBe(MapEventSetBlock);
-        expect(EventTouchFront).toBe(HeroEventTouchFront);
         expect(EventInsertEvent).toBe(ControlEventInsertEvent);
-        expect(getRegistration('touchFront')).toBeInstanceOf(
-            HeroEventTouchFront
-        );
     });
 
     // 验证事件 barrel 仅含导出语句且既有公开事件符号仍可从根索引导入

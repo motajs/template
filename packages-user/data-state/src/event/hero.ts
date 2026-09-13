@@ -1,11 +1,6 @@
 import { BuiltInFunction } from '@motajs/anon-tokyo';
 import { IBlockEventEnv } from '@user/data-system';
-import {
-    IMoveHeroEventParam,
-    IStepHeroEventParam,
-    ITouchFrontEventParam
-} from './types';
-import { getPossibleLayer } from './utils';
+import { IMoveHeroEventParam, IStepHeroEventParam } from './types';
 
 export class EventMoveHero implements BuiltInFunction<
     IMoveHeroEventParam,
@@ -17,10 +12,12 @@ export class EventMoveHero implements BuiltInFunction<
         const mover = env.state.hero.location.mover;
         if (mover.moving) return;
 
+        mover.config({ noRoute: true });
         mover.push([...param.steps]);
         const controller = mover.start();
         if (!controller) return;
         await controller.onEnd;
+        mover.config({ noRoute: false });
     }
 }
 
@@ -34,29 +31,11 @@ export class EventStepHero implements BuiltInFunction<
         const mover = env.state.hero.location.mover;
         if (mover.moving) return;
 
+        mover.config({ noRoute: true });
         mover.forward(1);
         const controller = mover.start();
         if (!controller) return;
         await controller.onEnd;
-    }
-}
-
-export class EventTouchFront implements BuiltInFunction<
-    ITouchFrontEventParam,
-    IBlockEventEnv
-> {
-    name: string = 'touchFront';
-
-    async func(_param: ITouchFrontEventParam, env: IBlockEventEnv) {
-        const layer = getPossibleLayer(env);
-        if (!layer) return;
-
-        const mover = env.state.hero.location.mover;
-
-        if (mover.moving) return;
-        mover.forward();
-        const controller = mover.start();
-        if (!controller) return;
-        await controller.onEnd;
+        mover.config({ noRoute: false });
     }
 }

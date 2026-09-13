@@ -1,6 +1,6 @@
 import { BuiltInFunction } from '@motajs/anon-tokyo';
 import { EventRemoveBlock, EventMoveBlock, EventSetBlock } from './map';
-import { EventMoveHero, EventStepHero, EventTouchFront } from './hero';
+import { EventMoveHero, EventStepHero } from './hero';
 import { EventInsertEvent, EventInsertEvents } from './event';
 
 /**
@@ -16,7 +16,6 @@ export function createEventRegistrations(): BuiltInFunction[] {
         // 玩家控制
         new EventMoveHero(),
         new EventStepHero(),
-        new EventTouchFront(),
 
         // 事件控制
         new EventInsertEvents(),
