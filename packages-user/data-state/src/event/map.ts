@@ -1,4 +1,4 @@
-import { BuiltInFunction } from 'anon-tokyo';
+import { BuiltInFunction } from '@motajs/anon-tokyo';
 import { IBlockEventEnv } from '@user/data-system';
 import {
     EventBuiltinName,
@@ -9,6 +9,28 @@ import {
 import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
 import { appendMoveSteps, getPossibleLayer } from './hero';
+
+export class EventSetBlock implements BuiltInFunction<
+    ISetBlockEventParam,
+    IBlockEventEnv
+> {
+    name: string = 'setBlock';
+
+    func(param: ISetBlockEventParam, env: IBlockEventEnv) {
+        const layer = getPossibleLayer(env);
+        if (!layer) return;
+
+        if (!layer.inMap(param.x, param.y)) return;
+
+        const num = env.state.tileStore.num(param.tile);
+        if (isNil(num)) {
+            logger.warn(1001);
+            return;
+        }
+
+        layer.setBlock(num, param.x, param.y);
+    }
+}
 
 /**
  * 在解析出的目标图层设置静态图块，目标或图块缺失时安全返回
