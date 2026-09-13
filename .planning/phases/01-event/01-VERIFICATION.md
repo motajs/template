@@ -32,6 +32,8 @@ covered_files:
   - .planning/phases/01-event/01-11-SUMMARY.md
   - .planning/phases/01-event/01-12-PLAN.md
   - .planning/phases/01-event/01-12-SUMMARY.md
+  - .planning/phases/01-event/01-13-PLAN.md
+  - .planning/phases/01-event/01-13-SUMMARY.md
   - .planning/phases/01-event/01-CONTEXT.md
   - .planning/phases/01-event/01-DISCUSSION-LOG.md
   - .planning/phases/01-event/01-PATTERNS.md
@@ -69,7 +71,7 @@ covered_files:
   - packages-user/data-system/src/index.ts
   - packages-user/data-system/src/types.ts
   - packages/common/src/logger.json
-covered_digest: "v1:sha256:c66c50e1eb272fd25b750aaca1bc4cecb4fb6c8875e964b74a3bfed5ddf693d3"
+covered_digest: "v1:sha256:e4fdc082d2d9a1d4f2815d26a688594bcf08775c8b36944e49be1eea3e95200d"
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:

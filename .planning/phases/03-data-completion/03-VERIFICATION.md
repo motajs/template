@@ -103,7 +103,7 @@ covered_files:
   - script/check-data-type.ts
   - script/check-touched-jsdoc.ts
   - script/test-data-node.ts
-covered_digest: "v1:sha256:eaaeb8cdc7d622537838d7ec2474f51d2ca0ec04c1b2606d7e0cb397b4cfd490"
+covered_digest: "v1:sha256:f9f65e02f16130c47027d5af2fb93f5cb27e67f28e25534c8d24d4f3f1259ac4"
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:

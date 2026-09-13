@@ -1,6 +1,6 @@
 # Phase 3 Event Built-in Contract
 
-本文件记录八个 event built-ins 的稳定契约。范围只包含批准的八个 built-ins；不加入
+本文件记录七个 event built-ins 的稳定契约。范围只包含批准的七个 built-ins；不加入
 完整 legacy 事件目录，不保留未决字段，也不把渲染行为放入数据端函数。
 
 > **实现同步：** 内建函数为类式 `BuiltInFunction` 实现，函数名使用短名；触发来源收集
@@ -41,7 +41,7 @@
 - `hit` 使用 `handler.nextLoc`，trigger 为 `OnTouch`。
 
 调用前移动器已将 `state.hero.location` 置为对应位置，因此 `heroLocator` 取自状态而非
-handler 参数。`touchFront` 只负责让勇士向前一步；前方的撞击判定与 `OnTouch` 由移动器
+handler 参数。`stepHero` 只负责让勇士向前一步；前方的撞击判定与 `OnTouch` 由移动器
 的 hit 路径产生。
 
 ## Parameter contracts
@@ -111,16 +111,6 @@ interface IStepHeroEventParam {}
 不读取额外字段，使用勇士当前移动方向执行一次 `forward(1)`。移动器缺失或控制器缺失、
 移动已在进行中时安全返回 `void`，启动成功后等待 `onEnd`。
 
-### `touchFront` — `hero.ts` 的 `EventTouchFront`
-
-```ts
-interface ITouchFrontEventParam {}
-```
-
-不读取额外字段，让勇士向前一步（`mover.forward()` + `start()` + 等待 `onEnd`）。前方可
-通行则正常前进；不可通行时移动器会走撞击路径并触发前方 `OnTouch`。取不到事件图层或
-移动器、移动已在进行中时安全返回 `void`。
-
 ### `insertEvents` — `event.ts` 的 `EventInsertEvents`
 
 ```ts
@@ -146,9 +136,9 @@ type IInsertEventEventParam = Statement[];
 ## Registration
 
 `data-state/src/event/registrations.ts` 只导出一个函数
-`createEventRegistrations()`，按稳定顺序直接构造八个类的实例并返回
+`createEventRegistrations()`，按稳定顺序直接构造七个类的实例并返回
 `BuiltInFunction[]`；不做分类包装，不引入工厂或描述符数组。`CoreState` 在创建
-`GameEventSystem` 时导入该函数并传入注册项集合。除这八项外，本阶段不注册任何 legacy
+`GameEventSystem` 时导入该函数并传入注册项集合。除这七项外，本阶段不注册任何 legacy
 built-in。
 
 稳定顺序与所有权：
@@ -158,9 +148,8 @@ built-in。
 3. `removeBlock` — `map.ts` 的 `EventRemoveBlock`
 4. `moveHero` — `hero.ts` 的 `EventMoveHero`
 5. `stepHero` — `hero.ts` 的 `EventStepHero`
-6. `touchFront` — `hero.ts` 的 `EventTouchFront`
-7. `insertEvents` — `event.ts` 的 `EventInsertEvents`
-8. `insertEvent` — `event.ts` 的 `EventInsertEvent`
+6. `insertEvents` — `event.ts` 的 `EventInsertEvents`
+7. `insertEvent` — `event.ts` 的 `EventInsertEvent`
 
 `event/index.ts` 与 `data-state/src/index.ts` 保持 `export`-only，不成为第二装配者；
 `event/utils.ts` 不参与导出。事件语义、等待语义、`Statement[]` 直接执行、缺失目标安全

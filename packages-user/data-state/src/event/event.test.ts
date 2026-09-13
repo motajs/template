@@ -183,13 +183,6 @@ describe('event built-ins', () => {
         expect(fixture.state.hero.location.x).toBe(2);
     });
 
-    // 验证真实注册项让勇士向前一步，前方撞击判定由移动器负责
-    it('steps the hero forward through touchFront', async () => {
-        const fixture = createFixture();
-        await invokeBuiltin(getRegistration('touchFront'), {}, fixture.env);
-        expect(fixture.state.hero.location.x).toBe(1);
-    });
-
     // 验证真实注册项按顺序等待临时事件序列并直接执行语句体
     it('awaits id sequences and executes a direct statement body', async () => {
         const fixture = createFixture();
@@ -227,7 +220,7 @@ describe('event built-ins', () => {
         expect(fixture.state.eventStore.getEvent('inline-body')).toBeNull();
     });
 
-    // 验证默认注册项只包含批准的八个稳定名称
+    // 验证默认注册项只包含批准的七个稳定名称
     it('registers exactly the approved built-ins in AnonTokyo', () => {
         const fixture = createFixture();
         const names = createEventRegistrations().map(item => item.name);
@@ -237,7 +230,6 @@ describe('event built-ins', () => {
             'removeBlock',
             'moveHero',
             'stepHero',
-            'touchFront',
             'insertEvents',
             'insertEvent'
         ]);
@@ -277,26 +269,22 @@ describe('event built-ins', () => {
             )
         ).resolves.toBeUndefined();
         await expect(
-            invokeBuiltin(getRegistration('touchFront'), {}, missingEnv)
-        ).resolves.toBeUndefined();
-        await expect(
             invokeBuiltin(getRegistration('insertEvent'), [], fixture.env)
         ).resolves.toBeUndefined();
     });
 });
 
 describe('event registration ownership', () => {
-    // 验证单一注册函数按地图勇士控制三类顺序返回全部八个新鲜实例
-    it('returns the eight fresh registrations in stable category order', () => {
+    // 验证单一注册函数按地图勇士控制三类顺序返回全部七个新鲜实例
+    it('returns the seven fresh registrations in stable category order', () => {
         const registrations = createEventRegistrations();
-        expect(registrations).toHaveLength(8);
+        expect(registrations).toHaveLength(7);
         expect(registrations.map(item => item.name)).toEqual([
             'setBlock',
             'moveBlock',
             'removeBlock',
             'moveHero',
             'stepHero',
-            'touchFront',
             'insertEvents',
             'insertEvent'
         ]);
@@ -348,7 +336,6 @@ describe('event registration ownership', () => {
             'EventRemoveBlock',
             'EventMoveHero',
             'EventStepHero',
-            'EventTouchFront',
             'EventInsertEvents',
             'EventInsertEvent'
         ];
