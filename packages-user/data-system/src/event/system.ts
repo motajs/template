@@ -1,6 +1,6 @@
 import { IStateBase } from '@user/data-base';
 import { IGameEventStore } from '@user/data-common';
-import { AnonTokyoInterpreter, BuiltInFunction } from 'anon-tokyo';
+import { AnonTokyoInterpreter, BuiltInFunction } from '@motajs/anon-tokyo';
 import { EventExecutor } from './executor';
 import { IGameEventExecutor, IGameEventSystem } from './types';
 

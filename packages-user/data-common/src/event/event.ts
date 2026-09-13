@@ -2,7 +2,7 @@ import {
     AnonTokyoInterpreter,
     AnonTokyoExecutable,
     Statement
-} from 'anon-tokyo';
+} from '@motajs/anon-tokyo';
 import { EventTrigger, IGameEvent } from './types';
 
 export class GameEvent<

@@ -11,7 +11,7 @@ import {
     IGameEventStore,
     IReadonlyGameEvent
 } from '@user/data-common';
-import { AnonTokyoInterpreter } from 'anon-tokyo';
+import { AnonTokyoInterpreter } from '@motajs/anon-tokyo';
 
 export const enum BlockEventType {
     /** 普通事件类型，一般是手动触发的 */

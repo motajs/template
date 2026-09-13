@@ -1,6 +1,6 @@
 import { logger } from '@motajs/common';
 import { IGameEventStore } from '@user/data-common';
-import { AnonTokyoInterpreter } from 'anon-tokyo';
+import { AnonTokyoInterpreter } from '@motajs/anon-tokyo';
 import {
     EventExecuteMode,
     EventReduceMode,

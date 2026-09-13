@@ -2,7 +2,7 @@ import {
     AnonTokyoExecutable,
     AnonTokyoInterpreter,
     Statement
-} from 'anon-tokyo';
+} from '@motajs/anon-tokyo';
 
 export const enum EventTrigger {
     /** 无触发器，事件需要手动执行 */

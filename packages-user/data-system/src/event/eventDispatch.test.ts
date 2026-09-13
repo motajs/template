@@ -15,7 +15,7 @@ import {
     type IBlockEventEnv,
     type IGameEventInvocation
 } from './types';
-import { AnonTokyoInterpreter } from 'anon-tokyo';
+import { AnonTokyoInterpreter } from '@motajs/anon-tokyo';
 import { IStateBase } from '@user/data-base';
 
 vi.hoisted(() => {

@@ -294,6 +294,9 @@ importers:
 
   packages-user/data-common:
     dependencies:
+      '@motajs/anon-tokyo':
+        specifier: workspace:*
+        version: link:../../packages/anon-tokyo
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
@@ -333,6 +336,9 @@ importers:
 
   packages-user/data-system:
     dependencies:
+      '@motajs/anon-tokyo':
+        specifier: workspace:*
+        version: link:../../packages/anon-tokyo
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
