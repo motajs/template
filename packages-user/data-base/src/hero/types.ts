@@ -311,13 +311,13 @@ export interface IHeroMoveTopImpl {
     inBound(x: number, y: number, floorId: string | undefined): boolean;
 
     /**
-     * 勇士正常移动到某个图块上时触发进入触发器
+     * 勇士正常移动到某个图块上时触发进入触发器，此时勇士位置处于目标位置
      * @param handler 移动信息对象
      */
     enter(handler: IHeroMoveTopHandler): Promise<void>;
 
     /**
-     * 勇士将要离开当前图块时触发离开触发器
+     * 勇士将要离开当前图块时触发离开触发器，此时勇士位置处于目标位置
      * @param handler 移动信息对象
      */
     leave(handler: IHeroMoveTopHandler): Promise<void>;

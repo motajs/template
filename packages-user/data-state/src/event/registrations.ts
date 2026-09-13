@@ -1,6 +1,6 @@
 import { BuiltInFunction } from '@motajs/anon-tokyo';
-import { EventDeleteBlock, EventMoveBlock, EventSetBlock } from './map';
-import { EventMoveHero, EventMoveHeroStep, EventTouchFront } from './hero';
+import { EventRemoveBlock, EventMoveBlock, EventSetBlock } from './map';
+import { EventMoveHero, EventStepHero, EventTouchFront } from './hero';
 import { EventInsertEvent, EventInsertEvents } from './event';
 
 /**
@@ -11,11 +11,11 @@ export function createEventRegistrations(): BuiltInFunction[] {
         // 地图控制
         new EventSetBlock(),
         new EventMoveBlock(),
-        new EventDeleteBlock(),
+        new EventRemoveBlock(),
 
         // 玩家控制
         new EventMoveHero(),
-        new EventMoveHeroStep(),
+        new EventStepHero(),
         new EventTouchFront(),
 
         // 事件控制

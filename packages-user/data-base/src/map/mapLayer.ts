@@ -234,6 +234,7 @@ export class MapLayer
     }
 
     setBlock(block: number, x: number, y: number): void {
+        if (!this.inMap(x, y)) return;
         const index = y * this.width + x;
         if (block === this.mapArray[index]) return;
         this.mapArray[index] = block;
@@ -251,6 +252,15 @@ export class MapLayer
             return -1;
         }
         return this.mapArray[y * this.width + x];
+    }
+
+    removeBlock(x: number, y: number): number {
+        if (!this.inMap(x, y)) {
+            return -1;
+        }
+        const before = this.getBlock(x, y);
+        this.setBlock(0, x, y);
+        return before;
     }
 
     getTile(x: number, y: number): IStaticTile | null {

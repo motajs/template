@@ -6,7 +6,6 @@ import {
 } from '@user/data-system';
 import { IGameEventStore } from '@user/data-common';
 import { IInsertEventEventParam, IInsertEventsEventParam } from './types';
-import { enterEventInsert, exitEventInsert, getEventExecutor } from './utils';
 
 export class EventInsertEvents implements BuiltInFunction<
     IInsertEventsEventParam,
@@ -17,19 +16,10 @@ export class EventInsertEvents implements BuiltInFunction<
     async func(param: IInsertEventsEventParam, env: IBlockEventEnv) {
         if (param.ids.length === 0) return;
 
-        const executor = getEventExecutor(env);
-        if (!executor) return;
         const store = env.state.eventStore;
-        if (!store) return;
-
-        if (!enterEventInsert(env)) return;
-        try {
-            const invocations = this.collectInvocations(param.ids, env, store);
-            if (invocations.length === 0) return;
-            await executor.execute<void>(invocations, { custom: {} });
-        } finally {
-            exitEventInsert(env);
-        }
+        const invocations = this.collectInvocations(param.ids, env, store);
+        if (invocations.length === 0) return;
+        await env.system.executor.execute<void>(invocations, { custom: {} });
     }
 
     /**
@@ -42,13 +32,9 @@ export class EventInsertEvents implements BuiltInFunction<
     ): IGameEventInvocation[] {
         const invocations: IGameEventInvocation[] = [];
         for (const id of ids) {
-            if (
-                !id ||
-                !store.getEvent<IBlockEventParam, IBlockEventEnv, void>(id)
-            ) {
-                continue;
+            if (store.getEvent<IBlockEventParam, IBlockEventEnv, void>(id)) {
+                invocations.push({ id, env });
             }
-            invocations.push({ id, env });
         }
         return invocations;
     }
@@ -63,14 +49,6 @@ export class EventInsertEvent implements BuiltInFunction<
     async func(param: IInsertEventEventParam, env: IBlockEventEnv) {
         if (param.length === 0) return;
 
-        const executor = getEventExecutor(env);
-        if (!executor) return;
-
-        if (!enterEventInsert(env)) return;
-        try {
-            await executor.interpreter.exec(param, { custom: {} }, env);
-        } finally {
-            exitEventInsert(env);
-        }
+        await env.system.executor.interpreter.exec(param, { custom: {} }, env);
     }
 }

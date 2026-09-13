@@ -21,16 +21,20 @@ export interface IMoveBlockEventParam {
     readonly y: number;
     /** 移动步骤 */
     readonly steps: readonly ObjectMoveStep[];
+    /** 是否保留图块的图块事件 */
+    readonly keepEvent?: boolean;
     /** 是否仅在目标位置安全时转回静态图块 */
     readonly safe?: boolean;
 }
 
 /** 事件：删除图块 */
-export interface IDeleteBlockEventParam {
+export interface IRemoveBlockEventParam {
     /** 横坐标 */
     readonly x: number;
     /** 纵坐标 */
     readonly y: number;
+    /** 是否一并删除动态图块 */
+    readonly dynamic?: boolean;
 }
 
 //#endregion
@@ -44,7 +48,7 @@ export interface IMoveHeroEventParam {
 }
 
 /** 事件：向前移动一步 */
-export interface IMoveHeroStepEventParam {}
+export interface IStepHeroEventParam {}
 
 /** 事件：触发勇士面前的 onTouch */
 export interface ITouchFrontEventParam {}

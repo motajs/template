@@ -334,7 +334,7 @@ export interface IObjectMover<T extends IObjectMovable> extends IHookable<
      * 直接在当前的移动规划后追加新的移动步
      * @param steps 要追加的移动步
      */
-    push(steps: ObjectMoveStep[]): this;
+    push(steps: readonly ObjectMoveStep[]): this;
 
     /**
      * 清空尚未执行的步骤队列

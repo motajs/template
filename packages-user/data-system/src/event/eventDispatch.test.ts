@@ -59,6 +59,7 @@ const eventReduceModes = {
 
 interface TestModules {
     EventExecutor: typeof import('./executor').EventExecutor;
+    GameEventSystem: typeof import('./system').GameEventSystem;
     DefaultHeroMoveTopImpl: typeof import('@user/data-state').DefaultHeroMoveTopImpl;
     MapState: typeof import('@user/data-base').MapState;
     TileStore: typeof import('@user/data-common').TileStore;
@@ -87,11 +88,13 @@ beforeAll(async () => {
     vi.stubGlobal('main', { replayChecking: true });
     vi.stubGlobal('location', { origin: 'http://localhost' });
     const executorModule = await import('./executor');
+    const systemModule = await import('./system');
     const stateModule = await import('../../../data-state/src/hero');
     const baseModule = await import('@user/data-base');
     const commonModule = await import('@user/data-common');
     modules = {
         EventExecutor: executorModule.EventExecutor,
+        GameEventSystem: systemModule.GameEventSystem,
         DefaultHeroMoveTopImpl: stateModule.DefaultHeroMoveTopImpl,
         MapState: baseModule.MapState,
         TileStore: commonModule.TileStore,
@@ -166,15 +169,26 @@ function createFixture(
         {} as AnonTokyoInterpreter,
         () => store
     );
-    const state = {
+    const heroLocation: {
+        x: number;
+        y: number;
+        floorId: string | undefined;
+    } = { x: 0, y: 0, floorId: 'F1' };
+    const state: Record<string, unknown> = {
         maps,
-        eventSystem: { executor }
+        hero: { location: heroLocation },
+        eventStore: store,
+        eventSystem: null
     };
     const fixtureState: IStateSystem & IDataCommon = state as never;
+    const eventSystem = new modules.GameEventSystem(fixtureState, []);
+    state.eventSystem = eventSystem;
     const mover = new modules.DefaultHeroMoveTopImpl(fixtureState);
     return {
         events,
         executor,
+        eventSystem,
+        heroLocation,
         layer,
         map: map!,
         dynamic,
@@ -207,7 +221,7 @@ function addEvent(
                 trigger: env.trigger,
                 type: env.type,
                 tile: env.tile,
-                hero: env.heroLocator,
+                hero: { x: env.heroLocator.x, y: env.heroLocator.y },
                 triggerLocator: env.triggerLocator
             });
             return result;
@@ -220,6 +234,7 @@ function invocation(id: string, trigger: EventTrigger): IGameEventInvocation {
         state: {} as IStateBase,
         type: BlockEventType.CommonEvent,
         trigger,
+        system: {} as never,
         heroLocator: { x: 0, y: 0 },
         heroFloor: 'Unknown',
         triggerLocator: null,
@@ -244,6 +259,8 @@ describe('source-aware matching dispatch', () => {
         );
 
         expect(fixture.map.eventLayer).toBe(fixture.layer);
+        fixture.heroLocation.x = 1;
+        fixture.heroLocation.y = 0;
         await fixture.mover.enter({
             state: fixture.state,
             currLoc: { x: 0, y: 0 },
@@ -299,6 +316,8 @@ describe('source-aware matching dispatch', () => {
             calls
         );
 
+        fixture.heroLocation.x = 1;
+        fixture.heroLocation.y = 0;
         await fixture.mover.enter({
             state: fixture.state,
             currLoc: { x: 0, y: 0 },
@@ -350,7 +369,7 @@ describe('source-aware matching dispatch', () => {
                     trigger: env.trigger,
                     type: env.type,
                     tile: env.tile,
-                    hero: env.heroLocator,
+                    hero: { x: env.heroLocator.x, y: env.heroLocator.y },
                     triggerLocator: env.triggerLocator
                 });
                 await pending;
@@ -551,8 +570,14 @@ describe('enter leave hit trigger hooks', () => {
             floorId: 'F1',
             face: new modules.Dir8FaceHandler()
         };
+        fixture.heroLocation.x = 1;
+        fixture.heroLocation.y = 0;
         await fixture.mover.enter(handler);
+        fixture.heroLocation.x = 0;
+        fixture.heroLocation.y = 0;
         await fixture.mover.leave(handler);
+        fixture.heroLocation.x = 0;
+        fixture.heroLocation.y = 0;
         await fixture.mover.hit(handler);
 
         expect(calls.map(call => call.id)).toEqual([

@@ -275,7 +275,7 @@ export interface IMapLayerHookController extends IHookController<IMapLayerHooks>
 
 interface ILayerStatic {
     /**
-     * 设置某一点的图块，会标记图层为脏
+     * 设置某一点的静态图块，会标记图层为脏
      * @param block 图块数字
      * @param x 图块横坐标
      * @param y 图块纵坐标
@@ -283,12 +283,19 @@ interface ILayerStatic {
     setBlock(block: number, x: number, y: number): void;
 
     /**
-     * 获取指定点的图块数字
+     * 获取指定点的静态图块数字
      * @param x 图块横坐标
      * @param y 图块纵坐标
      * @returns 指定点的图块，如果没有图块，返回 0，如果不在地图上，返回 -1
      */
     getBlock(x: number, y: number): number;
+
+    /**
+     * 移除某一点的静态图块
+     * @param x 图块横坐标
+     * @param y 图块纵坐标
+     */
+    removeBlock(x: number, y: number): number;
 
     /**
      * 获取指定点的静态图块实例
@@ -365,7 +372,7 @@ interface ILayerDynamic {
      * 从静态图层读取并清除指定位置的图块，创建对应动态图块并返回
      * @param x 横坐标
      * @param y 纵坐标
-     * @param keepEvent 是否将静态图块的事件保留至动态图块，不论是否保留，此格的静态事件都会被清空
+     * @param keepEvent 是否将静态图块的图块事件保留至动态图块，不论是否保留，此格的静态图块事件都会被清空
      */
     transferToDynamic(
         x: number,
@@ -376,7 +383,7 @@ interface ILayerDynamic {
     /**
      * 将动态图块还原为静态图块
      * @param tile 要还原的动态图块
-     * @param keepEvent 是否保留动态图块的事件至静态图块，若不保留，那么此格将回退为静态图块本身的事件
+     * @param keepEvent 是否保留动态图块的图块事件至静态图块，若不保留，那么此格将回退为静态图块原始的图块事件
      */
     transferToStatic(
         tile: IDynamicTile,
@@ -386,7 +393,7 @@ interface ILayerDynamic {
     /**
      * 仅当目标位置不存在静态图块时才还原为静态图块，否则不转换
      * @param tile 要还原的动态图块
-     * @param keepEvent 是否保留动态图块的事件至静态图块，若不保留，那么此格将回退为静态图块本身的事件
+     * @param keepEvent 是否保留动态图块的图块事件至静态图块，若不保留，那么此格将回退为静态图块原始的图块事件
      */
     transferToStaticIfSafe(
         tile: IDynamicTile,
@@ -626,6 +633,8 @@ export interface IGameMap
     readonly height: number;
     /** 当前楼层的默认事件层 */
     readonly eventLayer: IMapLayer | null;
+    /** 当前楼层的楼层 id */
+    readonly floorId: string;
 
     /**
      * 添加图层，使用楼层预设的宽高

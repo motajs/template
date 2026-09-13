@@ -34,8 +34,10 @@ export interface IBlockEventEnv extends IDataBaseExtended {
     readonly trigger: EventTrigger;
     /** 触发事件时玩家的位置 */
     readonly heroLocator: Readonly<ITileLocator>;
+    /** 事件系统对象 */
+    readonly system: IGameEventSystem;
     /** 触发事件时玩家的位置 */
-    readonly heroFloor: string;
+    readonly heroFloor: string | undefined;
     /** 触发事件时触发者的位置，有可能不存在 */
     readonly triggerLocator: Readonly<ITileLocator> | null;
     /** 触发事件的图块，有可能不存在 */
@@ -145,4 +147,19 @@ export interface IGameEventSystem extends IDataBaseExtended {
      * @param store 事件存储器
      */
     useStore(store: IGameEventStore | null): void;
+
+    /**
+     * 收集指定图层在指定坐标下的所有事件，按照先点事件，后图块事件的顺序排序，
+     * 分别对于点事件和图块事件，不论是否在动态图块上，均按照事件优先级排序。
+     * @param layer 要收集的图层
+     * @param trigger 要收集的触发器
+     * @param x 横坐标
+     * @param y 纵坐标
+     */
+    collectEvent(
+        layer: IMapLayer,
+        trigger: EventTrigger,
+        x: number,
+        y: number
+    ): IGameEventInvocation[];
 }

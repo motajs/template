@@ -8,20 +8,16 @@ import {
     EventTrigger,
     TileType
 } from '@user/data-common';
-import {
-    BlockEventType,
-    IBlockEventEnv,
-    IGameEventInvocation
-} from '@user/data-system';
+import { BlockEventType, IBlockEventEnv } from '@user/data-system';
 import { CoreState } from '../core';
 import {
     createEventRegistrations,
-    EventDeleteBlock,
+    EventRemoveBlock,
     EventInsertEvent,
     EventInsertEvents,
     EventMoveBlock,
     EventMoveHero,
-    EventMoveHeroStep,
+    EventStepHero,
     EventSetBlock,
     EventTouchFront
 } from './index';
@@ -86,6 +82,7 @@ function createFixture(): EventFixture {
         state,
         type: BlockEventType.CommonEvent,
         trigger: EventTrigger.None,
+        system: state.eventSystem,
         heroLocator: state.hero.getLocation(),
         heroFloor: 'F1',
         triggerLocator: null,
@@ -111,10 +108,6 @@ function createEvent(
         setTrigger: () => {},
         setRaw: () => {}
     };
-}
-
-function invocation(id: string, env: IBlockEventEnv): IGameEventInvocation {
-    return { id, env };
 }
 
 describe('event built-ins', () => {
@@ -155,17 +148,26 @@ describe('event built-ins', () => {
         expect(fixture.layer.getBlock(2, 0)).toBe(1);
     });
 
-    // 验证真实注册项删除图块并清理静态与动态图块
-    it('deletes static and dynamic blocks at a coordinate', async () => {
+    // 验证真实注册项移除静态图块，并可按 dynamic 选项一并移除动态图块
+    it('removes static blocks and optionally dynamic blocks', async () => {
         const fixture = createFixture();
-        fixture.layer.transferToDynamic(1, 0);
+        fixture.layer.setBlock(2, 1, 0);
         await invokeBuiltin(
-            getRegistration('deleteBlock'),
+            getRegistration('removeBlock'),
             { x: 1, y: 0 },
             fixture.env
         );
         expect(fixture.layer.getBlock(1, 0)).toBe(0);
+
+        fixture.layer.setBlock(1, 1, 0);
+        fixture.layer.transferToDynamic(1, 0);
+        await invokeBuiltin(
+            getRegistration('removeBlock'),
+            { x: 1, y: 0, dynamic: true },
+            fixture.env
+        );
         expect([...fixture.layer.getDynamicTilesAt(1, 0)]).toHaveLength(0);
+        expect(fixture.layer.getBlock(1, 0)).toBe(0);
     });
 
     // 验证真实注册项的勇士移动序列和向前一步都等待移动结束
@@ -179,25 +181,15 @@ describe('event built-ins', () => {
             fixture.env
         );
         expect(fixture.state.hero.location.x).toBe(1);
-        await invokeBuiltin(getRegistration('moveHeroStep'), {}, fixture.env);
+        await invokeBuiltin(getRegistration('stepHero'), {}, fixture.env);
         expect(fixture.state.hero.location.x).toBe(2);
     });
 
-    // 验证真实注册项触发面前 onTouch 且不移动勇士
-    it('triggers front onTouch events without moving the hero', async () => {
+    // 验证真实注册项让勇士向前一步，前方撞击判定由移动器负责
+    it('steps the hero forward through touchFront', async () => {
         const fixture = createFixture();
-        const calls: IGameEventInvocation[] = [];
-        fixture.layer.event(1, 0)!.set(10, 'touch');
-        fixture.state.eventStore.addEvent(
-            'touch',
-            createEvent(fixture.state, EventTrigger.OnTouch, async env => {
-                calls.push(invocation('touch', env));
-            })
-        );
         await invokeBuiltin(getRegistration('touchFront'), {}, fixture.env);
-        expect(calls).toHaveLength(1);
-        expect(calls[0].env.trigger).toBe(EventTrigger.OnTouch);
-        expect(fixture.state.hero.location.x).toBe(0);
+        expect(fixture.state.hero.location.x).toBe(1);
     });
 
     // 验证真实注册项按顺序等待临时事件序列并直接执行语句体
@@ -244,9 +236,9 @@ describe('event built-ins', () => {
         expect(names).toEqual([
             'setBlock',
             'moveBlock',
-            'deleteBlock',
+            'removeBlock',
             'moveHero',
-            'moveHeroStep',
+            'stepHero',
             'touchFront',
             'insertEvents',
             'insertEvent'
@@ -281,7 +273,7 @@ describe('event built-ins', () => {
         ).resolves.toBeUndefined();
         await expect(
             invokeBuiltin(
-                getRegistration('deleteBlock'),
+                getRegistration('removeBlock'),
                 { x: 0, y: 0 },
                 missingEnv
             )
@@ -303,18 +295,18 @@ describe('event registration ownership', () => {
         expect(registrations.map(item => item.name)).toEqual([
             'setBlock',
             'moveBlock',
-            'deleteBlock',
+            'removeBlock',
             'moveHero',
-            'moveHeroStep',
+            'stepHero',
             'touchFront',
             'insertEvents',
             'insertEvent'
         ]);
         expect(registrations[0]).toBeInstanceOf(EventSetBlock);
         expect(registrations[1]).toBeInstanceOf(EventMoveBlock);
-        expect(registrations[2]).toBeInstanceOf(EventDeleteBlock);
+        expect(registrations[2]).toBeInstanceOf(EventRemoveBlock);
         expect(registrations[3]).toBeInstanceOf(EventMoveHero);
-        expect(registrations[4]).toBeInstanceOf(EventMoveHeroStep);
+        expect(registrations[4]).toBeInstanceOf(EventStepHero);
         expect(registrations[5]).toBeInstanceOf(EventTouchFront);
         expect(registrations[6]).toBeInstanceOf(EventInsertEvents);
         expect(registrations[7]).toBeInstanceOf(EventInsertEvent);
@@ -360,9 +352,9 @@ describe('event registration ownership', () => {
             'createEventRegistrations',
             'EventSetBlock',
             'EventMoveBlock',
-            'EventDeleteBlock',
+            'EventRemoveBlock',
             'EventMoveHero',
-            'EventMoveHeroStep',
+            'EventStepHero',
             'EventTouchFront',
             'EventInsertEvents',
             'EventInsertEvent'

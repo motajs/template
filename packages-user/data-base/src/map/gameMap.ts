@@ -48,6 +48,7 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
     constructor(
         public readonly state: IDataCommon,
         public readonly tileStore: ITileStore,
+        public readonly floorId: string,
         public width: number,
         public height: number
     ) {

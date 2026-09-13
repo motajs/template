@@ -252,7 +252,8 @@ export class MapState implements IMapState {
         } else {
             this.maps.push(id);
         }
-        const state = new GameMap(this.state, this.tileStore, width, height);
+        const tile = this.tileStore;
+        const state = new GameMap(this.state, tile, id, width, height);
         // 若已设置参考基准，新楼层直接视为全脏
         if (this.compared) {
             state.markDirty(true);

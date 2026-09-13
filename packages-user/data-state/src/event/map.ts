@@ -1,7 +1,7 @@
 import { BuiltInFunction } from '@motajs/anon-tokyo';
 import { IBlockEventEnv } from '@user/data-system';
 import {
-    IDeleteBlockEventParam,
+    IRemoveBlockEventParam,
     IMoveBlockEventParam,
     ISetBlockEventParam
 } from './types';
@@ -39,40 +39,40 @@ export class EventMoveBlock implements BuiltInFunction<
 
     async func(param: IMoveBlockEventParam, env: IBlockEventEnv) {
         const layer = getPossibleLayer(env);
-        if (!layer || !layer.inMap(param.x, param.y)) return;
-        if (!layer.getTile(param.x, param.y)) return;
+        if (!layer) return;
 
-        const dynamic = layer.transferToDynamic(param.x, param.y);
+        const { x, y, keepEvent } = param;
+        const dynamic = layer.transferToDynamic(x, y, keepEvent);
         if (!dynamic) return;
 
-        if (dynamic.mover.moving) return;
-        dynamic.mover.push([...param.steps]);
+        dynamic.mover.push(param.steps);
         const controller = dynamic.mover.start();
         if (!controller) return;
         await controller.onEnd;
 
         if (param.safe) {
-            layer.transferToStaticIfSafe(dynamic);
+            layer.transferToStaticIfSafe(dynamic, keepEvent);
         } else {
-            layer.transferToStatic(dynamic);
+            layer.transferToStatic(dynamic, keepEvent);
         }
     }
 }
 
-export class EventDeleteBlock implements BuiltInFunction<
-    IDeleteBlockEventParam,
+export class EventRemoveBlock implements BuiltInFunction<
+    IRemoveBlockEventParam,
     IBlockEventEnv
 > {
-    name: string = 'deleteBlock';
+    name: string = 'removeBlock';
 
-    async func(param: IDeleteBlockEventParam, env: IBlockEventEnv) {
+    async func(param: IRemoveBlockEventParam, env: IBlockEventEnv) {
         const layer = getPossibleLayer(env);
         if (!layer || !layer.inMap(param.x, param.y)) return;
 
-        const dynamics = [...layer.getDynamicTilesAt(param.x, param.y)];
-        await Promise.all(dynamics.map(tile => layer.deleteDynamic(tile)));
-        if (layer.getTile(param.x, param.y)) {
-            layer.setBlock(0, param.x, param.y);
+        if (param.dynamic) {
+            const dynamics = [...layer.getDynamicTilesAt(param.x, param.y)];
+            await Promise.all(dynamics.map(tile => layer.deleteDynamic(tile)));
         }
+
+        layer.removeBlock(param.x, param.y);
     }
 }
