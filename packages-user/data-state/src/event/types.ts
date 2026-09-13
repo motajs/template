@@ -1,5 +1,5 @@
 import { ObjectMoveStep } from '@user/data-common';
-import { Statement } from 'anon-tokyo';
+import { Statement } from '@motajs/anon-tokyo';
 
 //#region 地图控制
 
@@ -61,17 +61,5 @@ export interface IInsertEventsEventParam {
 
 /** 事件：临时执行一段事件语句 */
 export type IInsertEventEventParam = Statement[];
-
-/** 内建函数的稳定注册名称 */
-export const enum EventBuiltinName {
-    SetBlock = 'eventSetBlock',
-    MoveBlock = 'eventMoveBlock',
-    DeleteBlock = 'eventDeleteBlock',
-    MoveHero = 'eventMoveHero',
-    MoveHeroStep = 'eventMoveHeroStep',
-    TouchFront = 'eventTouchFront',
-    InsertEvents = 'eventInsertEvents',
-    InsertEvent = 'eventInsertEvent'
-}
 
 //#endregion

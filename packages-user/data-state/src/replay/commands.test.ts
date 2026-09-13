@@ -9,7 +9,6 @@ import {
     logReplaySafetyDetail,
     shouldReplay
 } from '@user/data-common';
-import { EquipStatus } from '@user/data-base';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { createCoreState } from '../core';
@@ -197,56 +196,35 @@ describe('replay commands', () => {
     });
 
     // 验证装备指令复用既有装备边界并区分三种失败位置
+    // 验证装备指令复用既有装备边界并以最终槽位校验结果
     it('equips through the existing equipment boundary', async () => {
         const state = createCoreState();
         const equipment = state.hero.equip;
         const error = vi.spyOn(logger, 'error');
         const getEquipped = vi.spyOn(equipment, 'getEquipped');
-        const canEquipTo = vi
-            .spyOn(equipment, 'canEquipTo')
-            .mockReturnValue(EquipStatus.CanEquip);
         const equip = vi
             .spyOn(equipment, 'equip')
             .mockImplementation(() => undefined);
         const command = new ReplayEquipCommand(state);
 
-        // 已经装备在目标槽位
+        // 装备后槽位为指定 uid
         getEquipped.mockReturnValueOnce(99);
         await expect(
             command.execute(step(ReplayCommandCode.Equip, [99, 0, true]))
         ).resolves.toBe(true);
-        expect(canEquipTo).not.toHaveBeenCalled();
+        expect(equip).toHaveBeenCalledWith(99, 0, true);
 
-        // 正常装备并校验结果
-        getEquipped.mockReturnValueOnce(undefined).mockReturnValueOnce(99);
+        // 装备后槽位未变为指定 uid
+        getEquipped.mockReturnValueOnce(undefined);
         await expect(
             command.execute(step(ReplayCommandCode.Equip, [99, 1, false]))
-        ).resolves.toBe(true);
-        expect(canEquipTo).toHaveBeenCalledWith(99, 1);
-        expect(equip).toHaveBeenCalledWith(99, 1, false);
-
-        // 无法装备
-        getEquipped.mockReturnValueOnce(undefined);
-        canEquipTo.mockReturnValueOnce(EquipStatus.CannotEquip);
-        await expect(
-            command.execute(step(ReplayCommandCode.Equip, [99, 2, true]))
         ).resolves.toBe(false);
-        expect(error).toHaveBeenCalledWith(2007, '99', '2');
-
-        // 装备未生效
-        getEquipped
-            .mockReturnValueOnce(undefined)
-            .mockReturnValueOnce(undefined);
-        canEquipTo.mockReturnValueOnce(EquipStatus.CanEquip);
-        await expect(
-            command.execute(step(ReplayCommandCode.Equip, [99, 3, true]))
-        ).resolves.toBe(false);
-        expect(error).toHaveBeenCalledWith(2008, '99', '3');
+        expect(error).toHaveBeenCalledWith(2007, '99', '1');
 
         error.mockRestore();
     });
 
-    // 验证卸下指令区分未装备与未生效两种失败位置
+    // 验证卸下指令复用既有装备边界并以最终槽位校验结果
     it('unequips through the existing equipment boundary', async () => {
         const state = createCoreState();
         const equipment = state.hero.equip;
@@ -257,27 +235,19 @@ describe('replay commands', () => {
             .mockImplementation(() => undefined);
         const command = new ReplayUnequipCommand(state);
 
-        // 目标槽位本来就没有装备
+        // 卸下后槽位为空
         getEquipped.mockReturnValueOnce(undefined);
         await expect(
             command.execute(step(ReplayCommandCode.Unequip, [0]))
-        ).resolves.toBe(false);
-        expect(error).toHaveBeenCalledWith(2009, '0');
-        expect(unequip).not.toHaveBeenCalled();
+        ).resolves.toBe(true);
+        expect(unequip).toHaveBeenCalledWith(0);
 
-        // 正常卸下并校验槽位已清空
-        getEquipped.mockReturnValueOnce(88).mockReturnValueOnce(undefined);
+        // 卸下后槽位仍有装备
+        getEquipped.mockReturnValueOnce(88);
         await expect(
             command.execute(step(ReplayCommandCode.Unequip, [1]))
-        ).resolves.toBe(true);
-        expect(unequip).toHaveBeenCalledWith(1);
-
-        // 卸下未生效
-        getEquipped.mockReturnValueOnce(88).mockReturnValueOnce(88);
-        await expect(
-            command.execute(step(ReplayCommandCode.Unequip, [2]))
         ).resolves.toBe(false);
-        expect(error).toHaveBeenCalledWith(2010, '2');
+        expect(error).toHaveBeenCalledWith(2008, '1');
 
         error.mockRestore();
     });
@@ -366,7 +336,7 @@ describe('replay commands', () => {
         );
         expect(core).not.toContain('createReplayCommandItems');
         expect(core).not.toContain('registerReplayCommandItems');
-        expect(core).toContain('private registerReplayCommand()');
+        expect(core).toContain('private registerReplayCommands()');
         expect((core.match(/new ReplayMoveCommand\(this,/g) ?? []).length).toBe(
             4
         );

@@ -1,4 +1,4 @@
-import { Statement, StatementType } from 'anon-tokyo';
+import { Statement, StatementType } from '@motajs/anon-tokyo';
 import {
     EventTrigger,
     FaceDirection,
@@ -82,7 +82,7 @@ export function createClosedLoopFixture(): IClosedLoopFixture {
     const rawEvent: Statement[] = [
         {
             type: StatementType.Call,
-            functionName: 'eventSetBlock',
+            functionName: 'setBlock',
             builtIn: true,
             async: false,
             parameters: { x: 1, y: 0, tile: 2 }

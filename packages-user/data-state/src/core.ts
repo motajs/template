@@ -81,7 +81,7 @@ import {
 } from './legacy';
 import { isNil } from 'lodash-es';
 import { DefaultHeroMoveTopImpl } from './hero';
-import { createEventBuiltinRegistrations } from './event/registrations';
+import { createEventRegistrations } from './event/registrations';
 import {
     ReplayCommandCode,
     ReplayEquipCommand,
@@ -222,7 +222,7 @@ export class CoreState implements ICoreState {
         // 游戏事件系统
         const eventSystem = new GameEventSystem(
             this,
-            createEventBuiltinRegistrations()
+            createEventRegistrations()
         );
         this.eventSystem = eventSystem;
 
