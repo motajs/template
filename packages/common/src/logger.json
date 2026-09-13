@@ -69,7 +69,12 @@
         "2002": "Replay($1): Replay parameter type mismatch: index $2, expected $3, got $4.",
         "2003": "Replay(move): Expected hero to be stopped before execute moving step.",
         "2004": "Replay(move): Unexpected move controller missing while executing move behavior.",
-        "2005": "Replay(teleport): Cannot find a way to target position: $1,$2."
+        "2005": "Replay(teleport): Cannot find a way to target position: $1,$2.",
+        "2006": "Replay(use-item): Failed to use item number $1.",
+        "2007": "Replay(equip): Cannot equip uid $1 into slot $2.",
+        "2008": "Replay(equip): Equipping uid $1 into slot $2 did not take effect.",
+        "2009": "Replay(unequip): No equipment in slot $1.",
+        "2010": "Replay(unequip): Unequipping slot $1 did not take effect."
     },
     "warn": {
         "1": "Resource with type of 'none' is loaded.",

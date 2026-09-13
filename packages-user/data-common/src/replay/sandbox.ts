@@ -126,22 +126,18 @@ export class ReplaySandbox
         }
         const next = this.reader.read();
         if (!next) {
+            // notExecuted
+            if (!(await this.finalizeLast())) {
+                return false;
+            }
+            this.last = -1;
             this.ending = true;
             return false;
         }
 
         // notExecuted
-        if (this.last !== -1) {
-            const last = this.system.getCommand(this.last);
-            if (!last) {
-                logger.warn(157, this.last.toString());
-                return false;
-            }
-            const success = (await last.notExecuted?.()) ?? true;
-            if (!success) {
-                logger.warn(175, this.last.toString());
-                return false;
-            }
+        if (!(await this.finalizeLast())) {
+            return false;
         }
         this.last = next.command;
 
@@ -164,6 +160,24 @@ export class ReplaySandbox
         // hook
         await Promise.all(this.forEachHook(hook => hook.onStep?.(next)));
 
+        return true;
+    }
+
+    /**
+     * 触发上一步指令的连续步骤后处理
+     */
+    private async finalizeLast(): Promise<boolean> {
+        if (this.last === -1) return true;
+        const last = this.system.getCommand(this.last);
+        if (!last) {
+            logger.warn(157, this.last.toString());
+            return false;
+        }
+        const success = (await last.notExecuted?.()) ?? true;
+        if (!success) {
+            logger.warn(175, this.last.toString());
+            return false;
+        }
         return true;
     }
 }

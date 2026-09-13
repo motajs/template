@@ -82,7 +82,14 @@ import {
 import { isNil } from 'lodash-es';
 import { DefaultHeroMoveTopImpl } from './hero';
 import { createEventBuiltinRegistrations } from './event/registrations';
-import { createReplayCommandItems, registerReplayCommandItems } from './replay';
+import {
+    ReplayCommandCode,
+    ReplayEquipCommand,
+    ReplayMoveCommand,
+    ReplayTeleportCommand,
+    ReplayUnequipCommand,
+    ReplayUseItemCommand
+} from './replay';
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
@@ -252,17 +259,51 @@ export class CoreState implements ICoreState {
         pathfinding.useMover(this.hero.location.mover);
         this.pathfinding = pathfinding;
 
-        const replaySystem = new ReplaySystem();
-        registerReplayCommandItems(
-            replaySystem,
-            createReplayCommandItems(this)
-        );
-        this.replaySystem = replaySystem;
+        this.replaySystem = new ReplaySystem();
+        this.registerReplayCommand();
 
         //#endregion
     }
 
     //#region 私有方法
+
+    /**
+     * 注册全部录像指令
+     */
+    private registerReplayCommand() {
+        this.replaySystem.registerCommand(
+            ReplayCommandCode.Up,
+            new ReplayMoveCommand(this, FaceDirection.Up)
+        );
+        this.replaySystem.registerCommand(
+            ReplayCommandCode.Right,
+            new ReplayMoveCommand(this, FaceDirection.Right)
+        );
+        this.replaySystem.registerCommand(
+            ReplayCommandCode.Down,
+            new ReplayMoveCommand(this, FaceDirection.Down)
+        );
+        this.replaySystem.registerCommand(
+            ReplayCommandCode.Left,
+            new ReplayMoveCommand(this, FaceDirection.Left)
+        );
+        this.replaySystem.registerCommand(
+            ReplayCommandCode.AutoPathfindToPoint,
+            new ReplayTeleportCommand(this)
+        );
+        this.replaySystem.registerCommand(
+            ReplayCommandCode.UseItem,
+            new ReplayUseItemCommand(this)
+        );
+        this.replaySystem.registerCommand(
+            ReplayCommandCode.Equip,
+            new ReplayEquipCommand(this)
+        );
+        this.replaySystem.registerCommand(
+            ReplayCommandCode.Unequip,
+            new ReplayUnequipCommand(this)
+        );
+    }
 
     /**
      * 初始化图块存储对象
