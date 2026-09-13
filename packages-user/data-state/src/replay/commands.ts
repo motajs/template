@@ -4,7 +4,6 @@ import {
     IReplayCommand,
     ReplayParamValue
 } from '@user/data-common';
-import { EquipStatus } from '@user/data-base';
 import { IStateSystem } from '@user/data-system';
 import { logger } from '@motajs/common';
 
@@ -178,16 +177,9 @@ export class ReplayEquipCommand
             boolean
         ];
         const equipment = this.state.hero.equip;
-        if (equipment.getEquipped(slot) === uid) {
-            return true;
-        }
-        if (equipment.canEquipTo(uid, slot) === EquipStatus.CannotEquip) {
-            logger.error(2007, uid.toString(), slot.toString());
-            return false;
-        }
         equipment.equip(uid, slot, autoUnload);
         if (equipment.getEquipped(slot) !== uid) {
-            logger.error(2008, uid.toString(), slot.toString());
+            logger.error(2007, uid.toString(), slot.toString());
             return false;
         }
         return true;
@@ -209,13 +201,9 @@ export class ReplayUnequipCommand
         // Parameter: [int8 slot]
         const slot = step.params[0] as number;
         const equipment = this.state.hero.equip;
-        if (equipment.getEquipped(slot) === undefined) {
-            logger.error(2009, slot.toString());
-            return false;
-        }
         equipment.unequip(slot);
-        if (equipment.getEquipped(slot) !== undefined) {
-            logger.error(2010, slot.toString());
+        if (equipment.getEquipped(slot) !== void 0) {
+            logger.error(2008, slot.toString());
             return false;
         }
         return true;

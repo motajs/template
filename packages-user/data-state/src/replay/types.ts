@@ -9,7 +9,7 @@ export const enum ReplayCommandCode {
     /** 向左移动一步 */
     Left = 3,
     /** 自动寻路至目标点 */
-    AutoPathfindToPoint = 4,
+    Teleport = 4,
     /** 使用道具 */
     UseItem = 5,
     /** 装备物品 */
@@ -24,7 +24,7 @@ export const REPLAY_COMMAND_ORDER: readonly ReplayCommandCode[] = [
     ReplayCommandCode.Right,
     ReplayCommandCode.Down,
     ReplayCommandCode.Left,
-    ReplayCommandCode.AutoPathfindToPoint,
+    ReplayCommandCode.Teleport,
     ReplayCommandCode.UseItem,
     ReplayCommandCode.Equip,
     ReplayCommandCode.Unequip

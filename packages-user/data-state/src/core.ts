@@ -226,6 +226,9 @@ export class CoreState implements ICoreState {
         );
         this.eventSystem = eventSystem;
 
+        // 录像系统
+        this.replaySystem = new ReplaySystem();
+
         //#endregion
 
         //#region L3 初始化
@@ -259,8 +262,8 @@ export class CoreState implements ICoreState {
         pathfinding.useMover(this.hero.location.mover);
         this.pathfinding = pathfinding;
 
-        this.replaySystem = new ReplaySystem();
-        this.registerReplayCommand();
+        // 录像系统初始化注册
+        this.registerReplayCommands();
 
         //#endregion
     }
@@ -270,7 +273,7 @@ export class CoreState implements ICoreState {
     /**
      * 注册全部录像指令
      */
-    private registerReplayCommand() {
+    private registerReplayCommands() {
         this.replaySystem.registerCommand(
             ReplayCommandCode.Up,
             new ReplayMoveCommand(this, FaceDirection.Up)
@@ -288,7 +291,7 @@ export class CoreState implements ICoreState {
             new ReplayMoveCommand(this, FaceDirection.Left)
         );
         this.replaySystem.registerCommand(
-            ReplayCommandCode.AutoPathfindToPoint,
+            ReplayCommandCode.Teleport,
             new ReplayTeleportCommand(this)
         );
         this.replaySystem.registerCommand(

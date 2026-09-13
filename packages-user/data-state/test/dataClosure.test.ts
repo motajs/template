@@ -205,7 +205,7 @@ describe('DATA-01 closure', () => {
             ReplayCommandCode.Right,
             ReplayCommandCode.Down,
             ReplayCommandCode.Left,
-            ReplayCommandCode.AutoPathfindToPoint,
+            ReplayCommandCode.Teleport,
             ReplayCommandCode.UseItem,
             ReplayCommandCode.Equip,
             ReplayCommandCode.Unequip

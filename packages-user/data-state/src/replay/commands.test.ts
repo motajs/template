@@ -54,7 +54,7 @@ describe('replay commands', () => {
             ReplayCommandCode.Right,
             ReplayCommandCode.Down,
             ReplayCommandCode.Left,
-            ReplayCommandCode.AutoPathfindToPoint,
+            ReplayCommandCode.Teleport,
             ReplayCommandCode.UseItem,
             ReplayCommandCode.Equip,
             ReplayCommandCode.Unequip
@@ -155,7 +155,7 @@ describe('replay commands', () => {
 
         let result: boolean | undefined;
         const pending = command
-            .execute(step(ReplayCommandCode.AutoPathfindToPoint, [2, 3]))
+            .execute(step(ReplayCommandCode.Teleport, [2, 3]))
             .then(value => {
                 result = value;
             });
@@ -169,7 +169,7 @@ describe('replay commands', () => {
         const error = vi.spyOn(logger, 'error');
         teleport.mockReturnValueOnce(null);
         await expect(
-            command.execute(step(ReplayCommandCode.AutoPathfindToPoint, [4, 5]))
+            command.execute(step(ReplayCommandCode.Teleport, [4, 5]))
         ).resolves.toBe(false);
         expect(error).toHaveBeenCalledWith(2005, '4', '5');
         error.mockRestore();
@@ -327,10 +327,8 @@ describe('replay commands', () => {
         const unequip = new ReplayUnequipCommand(state);
         const invalid = [
             move.execute(step(ReplayCommandCode.Up, [1])),
-            teleport.execute(
-                step(ReplayCommandCode.AutoPathfindToPoint, ['x', 1])
-            ),
-            teleport.execute(step(ReplayCommandCode.AutoPathfindToPoint, [1])),
+            teleport.execute(step(ReplayCommandCode.Teleport, ['x', 1])),
+            teleport.execute(step(ReplayCommandCode.Teleport, [1])),
             useItem.execute(step(ReplayCommandCode.UseItem, [])),
             useItem.execute(step(ReplayCommandCode.UseItem, ['id'])),
             equip.execute(step(ReplayCommandCode.Equip, [1, 0])),

@@ -71,10 +71,8 @@
         "2004": "Replay(move): Unexpected move controller missing while executing move behavior.",
         "2005": "Replay(teleport): Cannot find a way to target position: $1,$2.",
         "2006": "Replay(use-item): Failed to use item number $1.",
-        "2007": "Replay(equip): Cannot equip uid $1 into slot $2.",
-        "2008": "Replay(equip): Equipping uid $1 into slot $2 did not take effect.",
-        "2009": "Replay(unequip): No equipment in slot $1.",
-        "2010": "Replay(unequip): Unequipping slot $1 did not take effect."
+        "2007": "Replay(equip): Equipping uid $1 into slot $2 failed.",
+        "2008": "Replay(unequip): Unequipping slot $1 failed."
     },
     "warn": {
         "1": "Resource with type of 'none' is loaded.",
