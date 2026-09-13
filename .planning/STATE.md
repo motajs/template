@@ -6,9 +6,9 @@ current_phase: 4
 current_phase_name: 渲染适配与双布局
 status: planning
 stopped_at: Phase 3 complete — session stopped by user; next is Phase 4 discuss/plan
-last_updated: "2026-09-12T05:40:08.183Z"
-last_activity: 2026-09-12
-last_activity_desc: Phase 03 complete, transitioned to Phase 4
+last_updated: "2026-09-13T11:20:00.000Z"
+last_activity: 2026-09-13
+last_activity_desc: Completed quick task 260913-qtq (event built-ins refactor + anon-tokyo import rename)
 progress:
   total_phases: 3
   completed_phases: 3
@@ -134,6 +134,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Plan 03-18 preserves the approved eight-name order, awaited event semantics, direct Statement[] insertion, safe missing-target behavior, and legacy/save/decorator boundaries.
 - [Phase 03]: Plan 03-19: script/check-touched-jsdoc.ts derives its inventory from the passed files (top-level functions plus class methods) and enumerates constructors as explicit exemptions.
 - [Phase 03]: Plan 03-19: multiline JSDoc requires the opener alone on its line and the closing marker on its own line; the cleanup is scoped to replay/event correction files only.
+- [quick 260913-qtq]: 内建函数名改用短名（setBlock/moveBlock/... ），删除 EventBuiltinName 枚举；类内使用字面量名称。
+- [quick 260913-qtq]: anon-tokyo 以内嵌 workspace 包 @motajs/anon-tokyo 为唯一来源，全仓统一引用并声明 workspace 依赖。
+- [quick 260913-qtq]: 事件注册收口为单一 createEventRegistrations()，不做分类包装；共享工具放 event/utils.ts 且不经 index 导出。
 
 ### Pending Todos
 
@@ -147,6 +150,12 @@ None yet.
 - Plan 01-12 leaves the repository-wide type gate blocked only by pre-existing diagnostics outside the plan-owned files; these are recorded in the phase deferred-items ledger.
 - Plan 01-13 records the same repository-wide type gate diagnostics outside its implementation and test files in the phase deferred-items ledger.
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260913-qtq | event built-ins refactor and anon-tokyo import rename | 2026-09-13 | f0fd2f5 | [260913-qtq-event-built-ins-refactor-and-anon-tokyo-](./quick/260913-qtq-event-built-ins-refactor-and-anon-tokyo-/) |
+
 ## Deferred Items
 
 | Category | Item | Status | Deferred At | Milestone |
@@ -156,6 +165,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-12T05:40:08.149Z
-Stopped at: Phase 3 complete — session stopped by user; next is Phase 4 discuss/plan
+Last session: 2026-09-13T11:20:00.000Z
+Stopped at: Completed quick task 260913-qtq (event built-ins refactor + anon-tokyo import rename)
 Resume file: None
