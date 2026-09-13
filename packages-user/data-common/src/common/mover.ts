@@ -331,6 +331,12 @@ export interface IObjectMover<T extends IObjectMovable> extends IHookable<
     animDir(dir: ObjectAnimDirection): this;
 
     /**
+     * 直接在当前的移动规划后追加新的移动步
+     * @param steps 要追加的移动步
+     */
+    push(steps: ObjectMoveStep[]): this;
+
+    /**
      * 清空尚未执行的步骤队列
      */
     clear(): this;
@@ -611,6 +617,11 @@ export abstract class ObjectMover<T extends IObjectMovable>
             type: ObjectMoveType.AnimDir,
             dir
         });
+        return this;
+    }
+
+    push(steps: ObjectMoveStep[]): this {
+        this.moveQueue.push(...steps);
         return this;
     }
 

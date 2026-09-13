@@ -9,8 +9,8 @@ import {
 } from './type';
 
 export interface BuiltInFunction<
-    P extends Record<string, any>,
-    E extends Record<string, any>
+    P extends Record<string, any> = any,
+    E extends Record<string, any> = any
 > {
     name: string;
     save?: boolean;
