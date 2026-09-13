@@ -179,8 +179,9 @@ export function shouldReplay(message: string): ReplayDecorator {
 /**
  * 将一个类的方法标记为忽略录像安全检查，一般用于异步内容等不是立刻会触发状态修改的方法，
  * 不要使用此方法来规避控制台的录像错误警告，否则很可能导致录像出错。
+ * @param _msg 忽略录像记录的原因
  */
-export function ignoreReplay(): ReplayDecorator {
+export function ignoreReplay(_msg: string): ReplayDecorator {
     return function <This, Args extends unknown[], Return>(
         this: This,
         method: ReplayMethod<This, Args, Return>

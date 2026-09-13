@@ -1,5 +1,5 @@
 import { logger } from '@motajs/common';
-import { IGameEventStore } from '@user/data-common';
+import { IGameEventStore, ignoreReplay } from '@user/data-common';
 import { AnonTokyoInterpreter } from '@motajs/anon-tokyo';
 import {
     EventExecuteMode,
@@ -52,6 +52,8 @@ export class EventExecutor implements IGameEventExecutor {
         }
     }
 
+    // @ts-expect-error 泛型无法推导
+    @ignoreReplay('事件一般由其他动作被动触发，不应计入录像')
     async execute<R = void>(
         events: IGameEventInvocation[],
         param: IBlockEventParam
