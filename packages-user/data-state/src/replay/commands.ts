@@ -2,7 +2,8 @@ import {
     FaceDirection,
     IReplayStepHandler,
     IReplaySystem,
-    IReplayCommand
+    IReplayCommand,
+    ReplayParamValue
 } from '@user/data-common';
 import { EquipStatus } from '@user/data-base';
 import {
@@ -12,6 +13,8 @@ import {
     ReplayCommandCode,
     REPLAY_COMMAND_ORDER
 } from './types';
+import { IStateSystem } from '@user/data-system';
+import { logger } from '@motajs/common';
 
 /**
  * 判断未知值是否为有限数值
@@ -55,69 +58,137 @@ function resolveSlot(
     return index < 0 ? null : index;
 }
 
-class ReplayDirectionCommand implements IReplayCommand {
+//#region 指令基类
+
+export abstract class BaseReplayCommand implements IReplayCommand {
+    /** 当前的状态对象 */
+    protected readonly state: IStateSystem;
+
+    /** 此录像步的字符串名称 */
+    protected abstract readonly name: string;
+    /** 预期的参数类型列表 */
+    protected abstract readonly paramTypes: readonly string[];
+
+    constructor(state: IStateSystem) {
+        this.state = state;
+    }
+
+    /**
+     * 判断指令参数是否符合预期
+     * @param command 指令的名称
+     * @param parameter 指令读取到的参数列表
+     * @param expect 指令的预期参数列表
+     */
+    protected assertParameter(
+        command: string,
+        parameter: readonly ReplayParamValue[],
+        expect: readonly string[]
+    ) {
+        if (parameter.length !== expect.length) {
+            const e = expect.length.toString();
+            const p = parameter.length.toString();
+            logger.error(2001, command, e, p);
+            return false;
+        }
+
+        return parameter.every((v, i) => {
+            const type = typeof v;
+            if (type === expect[i]) {
+                return true;
+            } else {
+                logger.error(2002, command, i.toString(), expect[i], type);
+                return false;
+            }
+        });
+    }
+
+    /**
+     * 执行录像步，已进行必要的参数校验，内部仅包含录像逻辑，不必包含参数校验
+     * @param step 当前录像步信息
+     */
+    abstract wrappedExecute(step: IReplayStepHandler): Promise<boolean>;
+
+    execute(step: IReplayStepHandler): Promise<boolean> {
+        if (!this.assertParameter(this.name, step.params, this.paramTypes)) {
+            return Promise.resolve(false);
+        } else {
+            return this.wrappedExecute(step);
+        }
+    }
+}
+
+//#endregion
+
+//#region 移动指令
+
+export class ReplayMoveCommand
+    extends BaseReplayCommand
+    implements IReplayCommand
+{
+    protected readonly name: string = 'move';
+    protected readonly paramTypes: readonly string[] = [];
+
     constructor(
-        private readonly state: IReplayCommandState,
+        state: IStateSystem,
         private readonly direction: FaceDirection
-    ) {}
-
-    /**
-     * 按构造方向启动一次勇士移动并等待移动结束
-     */
-    private async moveHero(): Promise<boolean> {
-        try {
-            const mover = this.state.hero.location.mover;
-            if (mover.moving) return false;
-            mover.step(this.direction);
-            const controller = mover.start();
-            if (!controller) return false;
-            await controller.onEnd;
-            return true;
-        } catch {
-            return false;
-        }
+    ) {
+        super(state);
     }
 
-    /**
-     * 校验录像步参数并执行一次方向移动
-     */
-    execute(step: IReplayStepHandler): Promise<boolean> {
-        if (step.params.length !== 0) return Promise.resolve(false);
-        return this.moveHero();
+    async wrappedExecute(): Promise<boolean> {
+        // Parameter: []
+        const mover = this.state.hero.location.mover;
+        if (mover.moving) {
+            logger.error(2003);
+            return false;
+        }
+        mover.step(this.direction);
+
+        return true;
+    }
+
+    async notExecuted(): Promise<boolean> {
+        const mover = this.state.hero.location.mover;
+        const controller = mover.start();
+        if (!controller) {
+            logger.error(2004);
+            return false;
+        }
+        await controller.onEnd;
+        return true;
     }
 }
 
-class ReplayAutoPathfindCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {}
+//#endregion
 
-    /**
-     * 自动寻路到目标坐标并等待寻路结束
-     */
-    private async moveToPoint(x: number, y: number): Promise<boolean> {
-        try {
-            const result = this.state.pathfinding.moveTo({ x, y });
-            if (!result) return false;
-            await result.controller.onEnd;
-            return true;
-        } catch {
+//#region 瞬移指令
+
+export class ReplayTeleportCommand
+    extends BaseReplayCommand
+    implements IReplayCommand
+{
+    protected readonly name: string = 'teleport';
+    protected readonly paramTypes: readonly string[] = ['number', 'number'];
+
+    async wrappedExecute(step: IReplayStepHandler): Promise<boolean> {
+        // Parameter: [int16 x, int16 y]
+        const [x, y] = step.params as [number, number];
+        const result = this.state.pathfinding.teleportTo({ x, y });
+        if (!result) {
+            logger.error(2005, x.toString(), y.toString());
             return false;
         }
-    }
-
-    /**
-     * 校验录像步参数并执行一次自动寻路
-     */
-    execute(step: IReplayStepHandler): Promise<boolean> {
-        if (step.params.length !== 2) return Promise.resolve(false);
-        const x = step.params[0];
-        const y = step.params[1];
-        if (!isNumber(x) || !isNumber(y)) return Promise.resolve(false);
-        return this.moveToPoint(x, y);
+        await result.controller.onEnd;
+        return true;
     }
 }
 
-class ReplayUseItemCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {}
+//#endregion
+
+//#region 使用物品指令
+
+export class ReplayUseItemCommand implements IReplayCommand {
+    constructor(private readonly state: IStateSystem) {}
 
     /**
      * 使用指定道具并返回现有状态接口的结果
@@ -137,8 +208,12 @@ class ReplayUseItemCommand implements IReplayCommand {
     }
 }
 
-class ReplayEquipCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {}
+//#endregion
+
+//#region 装备指令
+
+export class ReplayEquipCommand implements IReplayCommand {
+    constructor(private readonly state: IStateSystem) {}
 
     /**
      * 将指定装备穿到目标槽位并返回是否穿装成功
@@ -181,8 +256,12 @@ class ReplayEquipCommand implements IReplayCommand {
     }
 }
 
-class ReplayUnequipCommand implements IReplayCommand {
-    constructor(private readonly state: IReplayCommandState) {}
+//#endregion
+
+//#region 卸下装备指令
+
+export class ReplayUnequipCommand implements IReplayCommand {
+    constructor(private readonly state: IStateSystem) {}
 
     /**
      * 卸下指定槽位的装备并返回是否卸下成功
@@ -207,32 +286,34 @@ class ReplayUnequipCommand implements IReplayCommand {
     }
 }
 
+//#endregion
+
 /**
  * 创建按稳定 enum 顺序排列的默认 replay command items
  */
 export function createReplayCommandItems(
-    state: IReplayCommandState
+    state: IStateSystem
 ): ReadonlyArray<IReplayCommandItem> {
     return [
         {
             code: ReplayCommandCode.Up,
-            command: new ReplayDirectionCommand(state, FaceDirection.Up)
+            command: new ReplayMoveCommand(state, FaceDirection.Up)
         },
         {
             code: ReplayCommandCode.Right,
-            command: new ReplayDirectionCommand(state, FaceDirection.Right)
+            command: new ReplayMoveCommand(state, FaceDirection.Right)
         },
         {
             code: ReplayCommandCode.Down,
-            command: new ReplayDirectionCommand(state, FaceDirection.Down)
+            command: new ReplayMoveCommand(state, FaceDirection.Down)
         },
         {
             code: ReplayCommandCode.Left,
-            command: new ReplayDirectionCommand(state, FaceDirection.Left)
+            command: new ReplayMoveCommand(state, FaceDirection.Left)
         },
         {
             code: ReplayCommandCode.AutoPathfindToPoint,
-            command: new ReplayAutoPathfindCommand(state)
+            command: new ReplayTeleportCommand(state)
         },
         {
             code: ReplayCommandCode.UseItem,

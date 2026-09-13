@@ -1,4 +1,5 @@
-import { ICoreState, ISaveableExecutor } from './types';
+import { DirectionMapper, IDirectionMapper, logger } from '@motajs/common';
+import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import {
     IRoleFaceBinder,
     IFaceManager,
@@ -50,6 +51,7 @@ import {
     IPathfindingSystem,
     PathfindingSystem
 } from '@user/data-system';
+import { ICoreState, ISaveableExecutor } from './types';
 import {
     CommonAuraConverter,
     EnemyLegacyBridge,
@@ -77,9 +79,7 @@ import {
     LegacyTileData,
     TileLegacyBridge
 } from './legacy';
-import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import { isNil } from 'lodash-es';
-import { DirectionMapper, IDirectionMapper, logger } from '@motajs/common';
 import { DefaultHeroMoveTopImpl } from './hero';
 import { createEventBuiltinRegistrations } from './event/registrations';
 import { createReplayCommandItems, registerReplayCommandItems } from './replay';
@@ -347,6 +347,11 @@ export class CoreState implements ICoreState {
         manager.compareWith(reference);
     }
 
+    /**
+     * 初始化地图状态
+     * @param floors 楼层列表
+     * @param data 每个楼层对应的旧版地图信息
+     */
     private initMapState(
         floors: FloorIds[],
         data: Record<FloorIds, ResolvedFloor>

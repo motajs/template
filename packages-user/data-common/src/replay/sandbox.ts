@@ -31,6 +31,9 @@ export class ReplaySandbox
     /** 录像的流式读取器 */
     private reader: Readonly<IReplayReadStream>;
 
+    /** 上一步播放的指令 */
+    private last: number = -1;
+
     constructor(
         readonly route: IReplayArray,
         readonly system: IReplaySystem,
@@ -126,6 +129,23 @@ export class ReplaySandbox
             this.ending = true;
             return false;
         }
+
+        // notExecuted
+        if (this.last !== -1) {
+            const last = this.system.getCommand(this.last);
+            if (!last) {
+                logger.warn(157, this.last.toString());
+                return false;
+            }
+            const success = (await last.notExecuted?.()) ?? true;
+            if (!success) {
+                logger.warn(175, this.last.toString());
+                return false;
+            }
+        }
+        this.last = next.command;
+
+        // execute
         const command = this.system.getCommand(next.command);
         if (!command) {
             logger.warn(157, next.command.toString());
@@ -140,7 +160,10 @@ export class ReplaySandbox
             );
             return false;
         }
+
+        // hook
         await Promise.all(this.forEachHook(hook => hook.onStep?.(next)));
+
         return true;
     }
 }

@@ -64,7 +64,12 @@
         "62": "Cannot add $1 from raw data for game map '$2' since Expected a number for the key of $3, but got $4.",
         "63": "Cannot create game map '$2' from raw data since the '$1' container is missing, null, or not an object.",
         "64": "Cannot create game map '$2' from raw data since the '$1' value has an invalid type or range.",
-        "65": "Cannot start pathfinding movement because the mover is already active."
+        "65": "Cannot start pathfinding movement because the mover is already active.",
+        "2001": "Replay($1): Replay parameter count mismatch: expected $2, got $3.",
+        "2002": "Replay($1): Replay parameter type mismatch: index $2, expected $3, got $4.",
+        "2003": "Replay(move): Expected hero to be stopped before execute moving step.",
+        "2004": "Replay(move): Unexpected move controller missing while executing move behavior.",
+        "2005": "Replay(teleport): Cannot find a way to target position: $1,$2."
     },
     "warn": {
         "1": "Resource with type of 'none' is loaded.",
@@ -241,6 +246,7 @@
         "172": "Event returned non-boolean value '$1' during reduction. JavaScript short-circuit semantics will be used.",
         "173": "Pathfinding input is invalid or a required binding (map state, map layer) is missing. An empty result will be returned.",
         "174": "Pathfinding cost function returned a negative or NaN value. Default cost 1 will be used instead.",
+        "175": "Replay error: Replay not executed execution failed. Command code: $1.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }

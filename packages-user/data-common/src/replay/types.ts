@@ -18,6 +18,12 @@ export interface IReplayCommand {
      * @returns 当此录像步执行完毕时兑现的 `Promise`，兑现值表示此录像步是否播放成功
      */
     execute(step: IReplayStepHandler): Promise<boolean>;
+
+    /**
+     * 若上一步是当前录像指令，而下一步不是，触发此函数，一般用于连续步骤的后处理
+     * @returns 当此后处理执行完毕时兑现的 `Promise`，兑现值表示是否执行成功
+     */
+    notExecuted?(): Promise<boolean>;
 }
 
 export interface IReplaySandboxHooks extends IHookBase {
