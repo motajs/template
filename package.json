@@ -62,6 +62,7 @@
         "@types/fontmin": "^0.9.5",
         "@types/fs-extra": "^11.0.4",
         "@types/lodash-es": "^4.17.12",
+        "@types/madge": "^5.0.3",
         "@types/node": "^22.19.15",
         "@types/ws": "^8.18.1",
         "@vitejs/plugin-legacy": "^7.2.1",
