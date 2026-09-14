@@ -49,3 +49,17 @@ D-30：`registerSpecial` 的覆盖语义只能经被排除的 legacy 转换路�
 | 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `manager.ts` `EnemyManager.createEnemy` / `createEnemyById` | 注册复用映射后，按复用 code/id 创建怪物返回 `null` | `addPrefab(code=1, id='slime')` → `reusePrefab(1, 100, 'slime-reuse')` → `createEnemy(100)` 返回 `null`，而 `getPrefab(100)` 能解析到来源模板 | `createEnemy`/`createEnemyById` 直接 `prefabByCode.get(code)`/`prefabById.get(id)`，未像 `getPrefab`/`getPrefabById`/`internalGetPrefab` 那样先经 `reuseByCode`/`reuseById` 解析 | 复用映射（面朝方向图块复用同一模板）对应的 code/id 无法生成怪物；当前生产代码尚无调用方，属潜在功能缺口 | 在 `createEnemy`/`createEnemyById` 中改用 `internalGetPrefab`（或先查复用映射再取模板） | `manager.test.ts` `creates enemies for reused codes and ids through the reuse mapping`（#06-03-1） | 中 |
+
+## #06-04 录像系统（packages-user/data-common/src/replay）
+
+本计划按 D-43 三阶段（构件 → 组合/流水线 → 完整/集成）执行，发现 4 处疑似 bug
+（`#06-04-1..4`），均按 D-05 以正确预期的 `it.skip` 用例登记；`pnpm test:ci` 全绿
+（36 文件 / 347 通过 / 9 跳过，其中 4 条为本计划新增 skip）。D-32：不测存读档；
+D-40：不做完整播放/二次录制（归 06-07），`error 2001–2008` 未触及。
+
+| 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `array.ts` `ReplayArray.get`（int64 解码） | int64 参数写入后读回值与写入值不同 | `array.add(0, [2147483648])` → `array.get(0).params` 得到 `[2147483647]`，应为 `[2147483648]` | `decodeParam` 的 type 4 分支为 `value = low + high * 2147483647`，乘数应为 `2^31 = 2147483648` | 所有超出 int32 范围（int64 位宽）的录像参数读回值偏移 `high`；二次录制比对会误判不一致 | 将乘数改为 `2147483648` | `array.test.ts` `round-trips int64 values above the int32 range`（#06-04-1） | 中 |
+| `array.ts` `ReplayArray`（bigint 编码） | 多字节 bigint 编码只保留最低字节，其余写 0，读回值远小于写入值 | `array.add(0, [0x0102030405060708n])` → `array.get(0).params` 得到 `[8n]`，应为 `[0x0102030405060708n]` | `normalizeParam` 编码循环 `base = param - total; remain = base % 256n` 未按字节右移，`total` 仅累积低位，导致 i≥1 时 `remain` 恒为 0；解码又用 `getInt8` 读无符号字节 | 任何需要 >1 字节的 bigint 参数无法正确往返 | 编码改为按位取字节（如 `(param >> (8n * BigInt(i))) % 256n`），解码改用无符号字节 | `array.test.ts` `round-trips a multi-byte bigint`（#06-04-2） | 中 |
+| `array.ts` `ReplayArray.delete` | 删除中间步骤后索引数组未按删除位置回退，后续步骤读到错误参数 | `add(1,[10])`、`add(2,[20])`、`add(3,[30])` → `delete(1)` → `get(1).params` 期望 `[30]`，实际 `[false]` | 回退循环 `for (let i = paramStart; i < this.length; i++) this.indexArray[i] -= paramLength` 以 `paramStart`（参数字节偏移）当作命令索引起点，应从 `index` 起；且 `indexArray[index+1]` 对末步取到未初始化 0 | 删除任意非首步都会破坏其后步骤的参数读取；录像编辑不可靠 | 回退从 `index` 起（`for (let i = index; i < this.length; i++)`），并以 `paramUsed` 或哨兵替代 `indexArray[length]` 表示末步参数终点 | `array.test.ts` `deletes a middle step and shifts later param indexes`（#06-04-3） | 中 |
+| `array.ts` `ReplayArray.insert` | 已有参数时插入步骤会丢失插入点之后的参数 | `add(1,[10])`、`add(3,[30])` → `insert(1, 2, [20])` → 读流第三条参数期望 `[30]`，实际 `[false]` | `this.paramArray.copyWithin(paramStart, paramStart + length)` 位移方向相反，应把 `[paramStart, …)` 移到 `paramStart + length` | 带参数的录像插入功能不可用，后续步骤参数错位 | 改为 `this.paramArray.copyWithin(paramStart + length, paramStart)` | `array.test.ts` `reads the new order after inserting a step`（#06-04-4） | 中 |

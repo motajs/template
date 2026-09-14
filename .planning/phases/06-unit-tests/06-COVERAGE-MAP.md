@@ -26,6 +26,23 @@
 | 96 | enemy/enemy.ts | `warns 96 and keeps the existing special on a duplicate code` | 06-03 |
 | 117 | enemy/manager.ts | `warns 117 on a repeat compareWith and refreshes the dirty set` | 06-03 |
 | 118 | enemy/manager.ts | `warns 118 and marks dirty when no comparer is attached` | 06-03 |
+| 148 | replay/array.ts | `warns code 148 for an unknown param type` | 06-04 |
+| 149 | replay/array.ts | `warns code 149 for an illegal expand multiplier` | 06-04 |
+| 150 | replay/array.ts | `warns code 150 when the command array is full` | 06-04 |
+| 151 | replay/array.ts | `warns code 151 for an out-of-range boolean byte` | 06-04 |
+| 152 | replay/array.ts | `warns code 152 for an out-of-range bigint` | 06-04 |
+| 153 | replay/array.ts | `warns code 153 when a command exceeds 255 params` | 06-04 |
+| 154 | replay/array.ts | `warns code 154 when narrowing a command above 255` | 06-04 |
+| 155 | replay/array.ts | `warns code 155 when reading an expired stream` | 06-04 |
+| 156 | replay/sandbox.ts | `warns code 156 when the read stream expired`、`warns code 156 when playing with an expired stream` | 06-04 |
+| 157 | replay/sandbox.ts | `warns code 157 for an unknown command` | 06-04 |
+| 158 | replay/sandbox.ts | `warns code 158 and stops when a command returns false` | 06-04 |
+| 159 | replay/func.ts | `warns code 159 when beginning during another collection` | 06-04 |
+| 160 | replay/func.ts | `warns code 160 when ending outside a collection` | 06-04 |
+| 161 | replay/func.ts | `collects nested decorated calls and warns code 161` | 06-04 |
+| 162 | replay/func.ts | `warns code 162 when the detail code is unknown` | 06-04 |
+| 163 | replay/system.ts | `warns code 163 on a duplicate registration and keeps the original` | 06-04 |
+| 175 | replay/sandbox.ts | `warns code 175 when notExecuted fails` | 06-04 |
 
 ## 06-01 战斗系统（packages-user/data-system/src/combat）
 
@@ -63,4 +80,24 @@ D-30：排除一切名称含 legacy 的接口/方法（`fromLegacyEnemy`/`addPre
 假桥接仅作必需协作对象。`registerSpecial` 的覆盖语义只能经被排除的 legacy 转换路径观测，
 故仅覆盖「注册/重复注册不报错」的最小正常用例。
 一条疑似缺陷 `#06-03-1`（`createEnemy`/`createEnemyById` 未走复用映射）按 D-05 以 `it.skip`
+的正确预期用例登记，详见 `06-TEST-FINDINGS.md`。
+
+## 06-04 录像系统（packages-user/data-common/src/replay）
+
+模块归属：148 / 149 / 150 / 151 / 152 / 153 / 154 / 155 → `replay/array.ts`（编码、数组扩容与读流）；
+156 / 157 / 158 / 175 → `replay/sandbox.ts`（播放器步进、收尾与读取流校验）；
+159 / 160 / 161 / 162 → `replay/func.ts`（播放安全收集装饰器）；
+163 → `replay/system.ts`（重复注册）。
+
+阶段 1（构件级）完成 `ReplayArray` 单类型编解码与 `add`/`insert`/`delete`/`set`/`get` 单次读回，
+并观测 148/151/152/153；
+阶段 2（组合/流水线）完成读流/缓冲区组合、位宽切换与扩容，观测 149/150/154/155，并覆盖 `func.ts`
+安全收集生命周期（159/160/161/162）；
+阶段 3（完整/集成）完成 `ReplaySystem` 注册/录制/沙箱生命周期（163）与 `ReplaySandbox` 播放控制
+（156/157/158/175），含 play/pause/resume/stop 与失败即停。
+
+D-32：不测 `ReplayArray.saveState`/`loadState`，存读档往返归 06-09。
+D-40：不做完整录像播放与二次录制比对，`error 2001–2008` 归 06-07，本计划未触及。
+四条编解码/编辑缺陷 `#06-04-1`（int64 解码乘数）、`#06-04-2`（多字节 bigint 编码）、
+`#06-04-3`（delete 索引回退）、`#06-04-4`（insert 参数位移方向）按 D-05 以 `it.skip`
 的正确预期用例登记，详见 `06-TEST-FINDINGS.md`。
