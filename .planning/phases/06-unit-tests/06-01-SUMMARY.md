@@ -14,7 +14,8 @@ affects: [06-unit-tests, 06-02, 06-03, 06-08]
 actuals:
   tokens: 15725
   tasks: 3
-  commits: 4
+  commits: 6
+  plan_head_before: 3bcf2fc40761989238aeacfdbeb5b6c84a64642b
 
 tech-stack:
   added: []
@@ -174,3 +175,9 @@ None. Three `it.skip` tests are intentional D-05 markers for suspected bugs, tra
 ---
 *Phase: 06-unit-tests*
 *Completed: 2026-09-14*
+
+## Self-Check: PASSED
+
+- Created files verified present: `damage.test.ts`, `mapDamage.test.ts`, `context.test.ts`, `combat.test.ts`, `COVERAGE.md`, `06-TEST-FINDINGS.md`, `06-01-SUMMARY.md`.
+- Task commits verified in history: `59b709e`, `15f329b`, `484da2d`, `6c8f85a`, plus metadata `6cf828c`.
+- Focused runs and full `pnpm test:ci` green (23 files, 153 passed, 3 documented skips).
