@@ -1,4 +1,4 @@
-// 测试怪物上下文：阶段 1（构件级）覆盖全部公开方法、单光环三范围、单效果与生命周期
+// 测试怪物上下文：阶段 1 覆盖全部公开方法、单光环三范围、单效果与生命周期；阶段 2 覆盖光环流水线、嵌套/优先级、四阶段顺序、刷新路径与警告码
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { type IRange } from '@motajs/common';
 import {
@@ -842,5 +842,484 @@ describe('EnemyContext lifecycle', () => {
         fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('e1'));
         fixture.context.buildup();
         expect(applied).toHaveLength(0);
+    });
+});
+
+describe('EnemyContext aura pipeline', () => {
+    // 验证全量构建会把怪物特殊属性经转换器变成光环并施加基础属性效果
+    it('converts an enemy special into an aura during a full buildup', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        const enemy = createEnemy('e1');
+        enemy.addSpecial(createSpecial(20) as never);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
+        const aura = new FakeAura({
+            priority: 1,
+            range: new modules.FullRange(),
+            param: undefined,
+            onApply: handler => handler.enemy.addAttribute('atk', 4)
+        });
+        const converter = new FakeConverter([20], () => aura);
+        fixture.context.registerAuraConverter(converter);
+
+        fixture.context.buildup();
+
+        const view = fixture.context.getEnemyByLoc(0, 0)!;
+        expect(converter.shouldConvertCalls).toEqual([20]);
+        expect(converter.convertCalls).toEqual([20]);
+        expect(view.getComputedEnemy().getAttribute('atk')).toBe(6);
+    });
+
+    // 验证两层嵌套：光环施加的特殊属性经第二转换器产生新光环并再次施加效果
+    it('propagates a two-layer nested aura', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        const enemy = createEnemy('e1');
+        enemy.addSpecial(createSpecial(20) as never);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
+        const outerAura = new FakeAura({
+            priority: 10,
+            range: new modules.FullRange(),
+            param: undefined,
+            couldApplyBase: false,
+            couldApplySpecial: true,
+            onApplySpecial: () => ({
+                add: () => [createSpecial(21) as never],
+                delete: () => [],
+                modify: () => false
+            })
+        });
+        const innerAura = new FakeAura({
+            priority: 5,
+            range: new modules.FullRange(),
+            param: undefined,
+            onApply: handler => handler.enemy.addAttribute('atk', 7)
+        });
+        const converter = new FakeConverter([20, 21], code =>
+            code === 20 ? outerAura : innerAura
+        );
+        fixture.context.registerAuraConverter(converter);
+
+        fixture.context.buildup();
+
+        const computed = fixture.context.getEnemyByLoc(0, 0)!.getComputedEnemy();
+        expect(converter.convertCalls).toContain(21);
+        expect(computed.hasSpecial(21)).toBe(true);
+        expect(computed.getAttribute('atk')).toBe(9);
+    });
+
+    // 验证新增光环优先级高于当前阶段时告警 99 且不参与后续效果
+    it('warns 99 and skips a higher-priority nested aura', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        const enemy = createEnemy('e1');
+        enemy.addSpecial(createSpecial(20) as never);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
+        const outerAura = new FakeAura({
+            priority: 10,
+            range: new modules.FullRange(),
+            param: undefined,
+            couldApplyBase: false,
+            couldApplySpecial: true,
+            onApplySpecial: () => ({
+                add: () => [createSpecial(21) as never],
+                delete: () => [],
+                modify: () => false
+            })
+        });
+        const blockedAura = new FakeAura({
+            priority: 50,
+            range: new modules.FullRange(),
+            param: undefined,
+            onApply: handler => handler.enemy.addAttribute('atk', 100)
+        });
+        const converter = new FakeConverter([20, 21], code =>
+            code === 20 ? outerAura : blockedAura
+        );
+        fixture.context.registerAuraConverter(converter);
+
+        const result = modules.logger.catch(() => fixture.context.buildup());
+
+        expect(result.info.map(v => v.code)).toContain(99);
+        expect(
+            fixture.context
+                .getEnemyByLoc(0, 0)!
+                .getComputedEnemy()
+                .getAttribute('atk')
+        ).toBe(2);
+    });
+
+    // 验证删除同级已生效光环时走 delete 分支告警 98
+    it('warns 98 when deleting an aura of the current priority', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        const enemy = createEnemy('e1');
+        enemy.addSpecial(createSpecial(20) as never);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
+        fixture.context.registerAuraConverter(
+            new FakeConverter([20], () => new FakeAura({
+                priority: 10,
+                range: new modules.FullRange(),
+                param: undefined,
+                couldApplyBase: false
+            }))
+        );
+        fixture.context.registerSpecialQueryEffect({
+            priority: 10,
+            for: () => ({
+                add: () => [],
+                delete: handler => [...handler.enemy.iterateSpecials()],
+                modify: () => false,
+                shouldQuery: () => true
+            })
+        });
+
+        const result = modules.logger.catch(() => fixture.context.buildup());
+
+        expect(result.info.map(v => v.code)).toContain(98);
+    });
+
+    // 验证修改同级已生效光环时走 modify 分支告警 98
+    it('warns 98 when modifying an aura of the current priority', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        const enemy = createEnemy('e1');
+        enemy.addSpecial(createSpecial(20) as never);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
+        fixture.context.registerAuraConverter(
+            new FakeConverter([20], () => new FakeAura({
+                priority: 10,
+                range: new modules.FullRange(),
+                param: undefined,
+                couldApplyBase: false
+            }))
+        );
+        fixture.context.registerSpecialQueryEffect({
+            priority: 10,
+            for: () => ({
+                add: () => [],
+                delete: () => [],
+                modify: () => true,
+                shouldQuery: () => true
+            })
+        });
+
+        const result = modules.logger.catch(() => fixture.context.buildup());
+
+        expect(result.info.map(v => v.code)).toContain(98);
+    });
+});
+
+describe('EnemyContext effect stage ordering', () => {
+    // 验证四个效果阶段按 specials -> base -> query -> final 顺序执行且存在阶段间可见性
+    it('runs the four buildup stages in order with forward visibility', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        const enemy = createEnemy('e1');
+        enemy.addSpecial(createSpecial(20) as never);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
+        const order: string[] = [];
+        const seen = { queryAtk: -1, queryDef: -1, queryHp: -1, finalAtk: -1, finalDef: -1 };
+        const aura = new FakeAura({
+            priority: 1,
+            range: new modules.FullRange(),
+            param: undefined,
+            couldApplySpecial: true,
+            onApply: handler => {
+                order.push('base');
+                handler.enemy.addAttribute('atk', 5);
+            },
+            onApplySpecial: () => {
+                order.push('special');
+                return { add: () => [], delete: () => [], modify: () => false };
+            }
+        });
+        fixture.context.registerAuraConverter(new FakeConverter([20], () => aura));
+        fixture.context.registerCommonQueryEffect(20, {
+            priority: 1,
+            apply: handler => {
+                order.push('query');
+                seen.queryAtk = handler.enemy.getAttribute('atk');
+                seen.queryDef = handler.enemy.getAttribute('def');
+                seen.queryHp = handler.enemy.getAttribute('hp');
+                handler.enemy.addAttribute('def', 1);
+            }
+        });
+        fixture.context.registerFinalEffect({
+            priority: 1,
+            apply: handler => {
+                order.push('final');
+                seen.finalAtk = handler.enemy.getAttribute('atk');
+                seen.finalDef = handler.enemy.getAttribute('def');
+                handler.enemy.addAttribute('hp', 1);
+            }
+        });
+
+        fixture.context.buildup();
+
+        expect(order).toEqual(['special', 'base', 'query', 'final']);
+        expect(seen.queryAtk).toBe(7);
+        expect(seen.queryDef).toBe(0);
+        expect(seen.queryHp).toBe(10);
+        expect(seen.finalAtk).toBe(7);
+        expect(seen.finalDef).toBe(1);
+    });
+
+    // 验证更高优先级的光环与最终效果会更先执行
+    it('runs higher-priority auras and effects first', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        fixture.context.registerAuraConverter(new FakeConverter([]));
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('e1'));
+        const order: string[] = [];
+        fixture.context.addAura(
+            new FakeAura({
+                priority: 1,
+                range: new modules.FullRange(),
+                param: undefined,
+                onApply: () => {
+                    order.push('aura-low');
+                }
+            })
+        );
+        fixture.context.addAura(
+            new FakeAura({
+                priority: 5,
+                range: new modules.FullRange(),
+                param: undefined,
+                onApply: () => {
+                    order.push('aura-high');
+                }
+            })
+        );
+        fixture.context.registerFinalEffect({
+            priority: 1,
+            apply: () => {
+                order.push('final-low');
+            }
+        });
+        fixture.context.registerFinalEffect({
+            priority: 5,
+            apply: () => {
+                order.push('final-high');
+            }
+        });
+
+        fixture.context.buildup();
+
+        expect(order).toEqual([
+            'aura-high',
+            'aura-low',
+            'final-high',
+            'final-low'
+        ]);
+    });
+});
+
+describe('EnemyContext refresh paths and DEV warnings', () => {
+    // 验证全量构建后可通过 markDirty + requestRefresh 走局部刷新路径
+    it('refreshes a single enemy locally when it is marked dirty', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        fixture.context.registerAuraConverter(new FakeConverter([]));
+        let applyCount = 0;
+        fixture.context.addAura(
+            new FakeAura({
+                priority: 1,
+                range: new modules.FullRange(),
+                param: undefined,
+                onApply: handler => {
+                    applyCount++;
+                    handler.enemy.addAttribute('atk', 3);
+                }
+            })
+        );
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('e1'));
+        fixture.context.buildup();
+        const view = fixture.context.getEnemyByLoc(0, 0)!;
+
+        expect(applyCount).toBe(1);
+        expect(view.getComputedEnemy().getAttribute('atk')).toBe(5);
+
+        fixture.context.markDirty(view);
+        fixture.context.requestRefresh(view);
+
+        expect(applyCount).toBe(2);
+        expect(view.getComputedEnemy().getAttribute('atk')).toBe(5);
+    });
+
+    // 验证局部刷新期间存在需要整链重算的怪物时回退为全量构建
+    it('falls back to a full buildup when the enemy needs total refresh', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        const enemy = createEnemy('e1');
+        enemy.addSpecial(createSpecial(20) as never);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
+        let specialCalls = 0;
+        const aura = new FakeAura({
+            priority: 1,
+            range: new modules.FullRange(),
+            param: undefined,
+            couldApplyBase: false,
+            couldApplySpecial: true,
+            onApplySpecial: () => {
+                specialCalls++;
+                return { add: () => [], delete: () => [], modify: () => false };
+            }
+        });
+        const converter = new FakeConverter([20], () => aura);
+        fixture.context.registerAuraConverter(converter);
+        fixture.context.buildup();
+        const view = fixture.context.getEnemyByLoc(0, 0)!;
+
+        expect(specialCalls).toBe(1);
+        expect(converter.convertCalls).toHaveLength(1);
+
+        fixture.context.markDirty(view);
+        fixture.context.requestRefresh(view);
+
+        expect(specialCalls).toBe(2);
+        expect(converter.convertCalls).toHaveLength(2);
+    });
+
+    // 验证两个转换器同时命中同一特殊属性时告警 97 并跳过转换
+    it('warns 97 when multiple converters match the same special', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        const enemy = createEnemy('e1');
+        enemy.addSpecial(createSpecial(20) as never);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
+        const createAura = () =>
+            new FakeAura({
+                priority: 1,
+                range: new modules.FullRange(),
+                param: undefined,
+                onApply: handler => handler.enemy.addAttribute('atk', 50)
+            });
+        fixture.context.registerAuraConverter(new FakeConverter([20], createAura));
+        fixture.context.registerAuraConverter(new FakeConverter([20], createAura));
+
+        const result = modules.logger.catch(() => fixture.context.buildup());
+
+        expect(result.info.map(v => v.code)).toContain(97);
+        expect(
+            fixture.context
+                .getEnemyByLoc(0, 0)!
+                .getComputedEnemy()
+                .getAttribute('atk')
+        ).toBe(2);
+    });
+
+    // 验证 add 与 delete 同时非空时告警 100，整链与局部刷新各一次
+    it('warns 100 when both add and delete are non-empty', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('e1'));
+        const modifier = {
+            add: () => [createSpecial(30) as never],
+            delete: () => [createSpecial(31) as never],
+            modify: () => false,
+            shouldQuery: () => true
+        };
+        fixture.context.registerSpecialQueryEffect({
+            priority: 1,
+            for: () => modifier
+        });
+
+        const buildupResult = modules.logger.catch(() =>
+            fixture.context.buildup()
+        );
+        expect(buildupResult.info.map(v => v.code)).toContain(100);
+
+        const view = fixture.context.getEnemyByLoc(0, 0)!;
+        fixture.context.markDirty(view);
+        const refreshResult = modules.logger.catch(() =>
+            fixture.context.requestRefresh(view)
+        );
+
+        expect(refreshResult.info.map(v => v.code)).toContain(100);
+    });
+
+    // 验证局部刷新期间删除可转换特殊属性时告警 101
+    it('warns 101 when a local refresh removes a converted special', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('e1'));
+        fixture.context.registerAuraConverter(
+            new FakeConverter([40], () => new FakeAura({
+                priority: 1,
+                range: new modules.FullRange(),
+                param: undefined
+            }))
+        );
+        fixture.context.registerSpecialQueryEffect({
+            priority: 1,
+            for: () => ({
+                add: () => [],
+                delete: () => [createSpecial(40) as never],
+                modify: () => false,
+                shouldQuery: () => true
+            })
+        });
+        fixture.context.buildup();
+        const view = fixture.context.getEnemyByLoc(0, 0)!;
+        fixture.context.markDirty(view);
+
+        const result = modules.logger.catch(() =>
+            fixture.context.requestRefresh(view)
+        );
+
+        expect(result.info.map(v => v.code)).toContain(101);
+    });
+
+    // 验证局部刷新期间新增可转换特殊属性时告警 101
+    it('warns 101 when a local refresh adds a converted special', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('e1'));
+        fixture.context.registerAuraConverter(
+            new FakeConverter([40], () => new FakeAura({
+                priority: 50,
+                range: new modules.FullRange(),
+                param: undefined
+            }))
+        );
+        fixture.context.registerSpecialQueryEffect({
+            priority: 1,
+            for: () => ({
+                add: () => [createSpecial(40) as never],
+                delete: () => [],
+                modify: () => false,
+                shouldQuery: () => true
+            })
+        });
+        modules.logger.catch(() => fixture.context.buildup());
+        const view = fixture.context.getEnemyByLoc(0, 0)!;
+        fixture.context.markDirty(view);
+
+        const result = modules.logger.catch(() =>
+            fixture.context.requestRefresh(view)
+        );
+
+        expect(result.info.map(v => v.code)).toContain(101);
+    });
+
+    // 验证未绑定勇士时构建告警 110 且不刷新
+    it('warns 110 and skips buildup without a bound hero', () => {
+        const fixture = createContextFixture();
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('e1'));
+
+        const result = modules.logger.catch(() => fixture.context.buildup());
+
+        expect(result.info.map(v => v.code)).toContain(110);
+
+        fixture.context.bindHero(fixture.hero);
+        fixture.context.buildup();
+        expect(
+            fixture.context
+                .getEnemyByLoc(0, 0)!
+                .getComputedEnemy()
+                .getAttribute('atk')
+        ).toBe(2);
     });
 });
