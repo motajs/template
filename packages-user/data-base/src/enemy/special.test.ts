@@ -1,6 +1,7 @@
 // 测试 special 数据模型：可序列化特殊属性的数值/名称/描述单元，以及无属性特殊属性
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { type ICommonSpecialConfig } from './special';
+import { type ISpecial } from './types';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -60,6 +61,30 @@ function makeNoneConfig(): ICommonSpecialConfig<void> {
         getDescription: () => '怪物首先攻击。',
         fromLegacyEnemy: () => undefined
     };
+}
+
+/**
+ * 构造一个内联配置的可序列化数值特殊属性实例
+ * @param code 特殊属性代码
+ * @param value 特殊属性数值
+ */
+function createValueSpecial(code: number, value: number): ISpecial<number> {
+    return modules.defineCommonSerializableSpecial<number>(
+        code,
+        value,
+        makeCommonConfig()
+    )(undefined as never);
+}
+
+/**
+ * 构造一个内联配置的无属性特殊属性实例
+ * @param code 特殊属性代码
+ */
+function createNoneSpecial(code: number): ISpecial<void> {
+    return modules.defineNonePropertySpecial(
+        code,
+        makeNoneConfig()
+    )(undefined as never);
 }
 
 describe('CommonSerializableSpecial units', () => {
@@ -132,5 +157,47 @@ describe('NonePropertySpecial units', () => {
 
         expect(special.getSpecialName()).toBe('先攻');
         expect(special.getDescription()).toBe('怪物首先攻击。');
+    });
+});
+
+describe('Special clone and deep equality', () => {
+    // 验证可序列化特殊属性的 clone 深拷贝数值且与来源互相独立
+    it('clones a serializable special without aliasing its value', () => {
+        const source = createValueSpecial(6, 3);
+        const clone = source.clone();
+
+        expect(clone).not.toBe(source);
+        expect(clone.code).toBe(6);
+        expect(clone.getValue()).toBe(3);
+
+        clone.setValue(9);
+
+        expect(source.getValue()).toBe(3);
+        expect(clone.getValue()).toBe(9);
+    });
+
+    // 验证可序列化特殊属性按 code 与深比较数值判定相等
+    it('compares serializable specials by code and value', () => {
+        expect(
+            createValueSpecial(6, 3).deepEqualsTo(createValueSpecial(6, 3))
+        ).toBe(true);
+        expect(
+            createValueSpecial(6, 3).deepEqualsTo(createValueSpecial(6, 5))
+        ).toBe(false);
+        expect(
+            createValueSpecial(6, 3).deepEqualsTo(createValueSpecial(7, 3))
+        ).toBe(false);
+    });
+
+    // 验证无属性特殊属性的 clone 独立且 deepEqualsTo 仅按 code 判定
+    it('clones a none-property special and compares by code only', () => {
+        const source = createNoneSpecial(1);
+        const clone = source.clone();
+
+        expect(clone).not.toBe(source);
+        expect(clone.code).toBe(1);
+        expect(clone.getValue()).toBeUndefined();
+        expect(clone.deepEqualsTo(source)).toBe(true);
+        expect(clone.deepEqualsTo(createNoneSpecial(2))).toBe(false);
     });
 });
