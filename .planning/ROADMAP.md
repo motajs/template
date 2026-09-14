@@ -210,11 +210,11 @@ Plans:
   3. 测试在本地可运行且全部通过
    4. 测试由 AI 编写并运行，通过验证后可提交
 
-**Plans**: 9 plans replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后)
+**Plans**: 1/9 plans executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后)
 
 Plans:
 
-- [ ] 06-01-PLAN.md — Combat L2 (data-system/src/combat) + EnemyContext aura pipeline / effect combos / full interface & code coverage (D-21..D-27)
+- [x] 06-01-PLAN.md — Combat L2 (data-system/src/combat) + EnemyContext aura pipeline / effect combos / full interface & code coverage (D-21..D-27)
 - [ ] 06-02-PLAN.md — enemy top-level BASIC functionality only (data-state/src/enemy；单分支，无组合，无 save/load)
 - [ ] 06-03-PLAN.md — Enemy data model full public surface except legacy (data-base/src/enemy；无 save/load)
 - [ ] 06-04-PLAN.md — Replay focus ReplayArray ops + encode/decode + system/sandbox/decorators (data-common/src/replay；无 save/load，完整播放→06-07)
@@ -251,4 +251,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 2/9 | In Progress|  |
+| 6. 单元测试 | 1/9 | In Progress|  |
