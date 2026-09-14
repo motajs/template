@@ -22,6 +22,10 @@
 | 140 | combat/combat.ts | `sorts scripts by descending priority and rejects duplicates` | 06-01 |
 | 141 | combat/combat.ts | `warns 141 when the damage context cannot produce damage info` | 06-01 |
 | 137 | enemy/calculator.ts | `warns 137 when a guard locator has no enemy` | 06-02 |
+| 53 | enemy/manager.ts | `logs error 53 for non-serializable default attribute values` | 06-03 |
+| 96 | enemy/enemy.ts | `warns 96 and keeps the existing special on a duplicate code` | 06-03 |
+| 117 | enemy/manager.ts | `warns 117 on a repeat compareWith and refreshes the dirty set` | 06-03 |
+| 118 | enemy/manager.ts | `warns 118 and marks dirty when no comparer is attached` | 06-03 |
 
 ## 06-01 战斗系统（packages-user/data-system/src/combat）
 
@@ -43,3 +47,20 @@
 阶段 3（完整/集成）完成 mapDamage 五视图 + `MainMapDamageConverter` + `MainMapDamageReducer`。
 本计划只覆盖顶层实现**基本功能**（D-35），跨特殊属性/光环的组合语义见 06-07；
 无 `it.skip`/`it.todo`，`06-TEST-FINDINGS.md` 无 `#06-02-N` 条目。
+
+## 06-03 enemy 数据模型（packages-user/data-base/src/enemy）
+
+模块归属：96 → `enemy/enemy.ts`（`Enemy.addSpecial` 重复 special）；
+53 / 117 / 118 → `enemy/manager.ts`（`setAttributeDefaults` 非法默认值 / `compareWith` 多次调用 /
+无 comparer 的 `updateDirty`）。
+
+阶段 1（构件级）完成 `Enemy` 属性单元与 special 单方法单元；
+阶段 2（组合/流水线）完成 special CRUD 组合与 `clone`/`copyFrom`/`deepEqualsTo` 独立性；
+阶段 3（完整/集成）完成 `EnemyManager` 注册表 / prefab / reuse / modify / comparer 脏跟踪，并观测 53/117/118。
+
+D-32：本计划不测 `saveState`/`loadState`，其专属码 119/120 与存读档往返归 06-09。
+D-30：排除一切名称含 legacy 的接口/方法（`fromLegacyEnemy`/`addPrefabFromLegacy`/`IEnemyLegacyBridge`）；
+假桥接仅作必需协作对象。`registerSpecial` 的覆盖语义只能经被排除的 legacy 转换路径观测，
+故仅覆盖「注册/重复注册不报错」的最小正常用例。
+一条疑似缺陷 `#06-03-1`（`createEnemy`/`createEnemyById` 未走复用映射）按 D-05 以 `it.skip`
+的正确预期用例登记，详见 `06-TEST-FINDINGS.md`。
