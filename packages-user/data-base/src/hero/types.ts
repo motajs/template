@@ -336,8 +336,6 @@ export interface IHeroMoveTopImpl {
 }
 
 export interface IHeroMoverConfig {
-    /** 是否不记录进路线系统 */
-    noRoute: boolean;
     /** 是否忽略地形碰撞检测 */
     ignoreTerrain: boolean;
     /** 是否在特定时机触发自动存档 */
@@ -562,10 +560,9 @@ export interface IHeroItems<THero>
     /**
      * 使用道具，仅对 Constant 与 Consumable 类型生效。Consumable 类型使用后数量减一。
      * @param item 道具图块数字或字符串 id
-     * @param noRoute 是否不计入录像
      * @returns 道具是否使用成功
      */
-    useItem(item: number | string, noRoute?: boolean): boolean;
+    useItem(item: number | string): boolean;
 
     /**
      * 获取指定道具的持有数量

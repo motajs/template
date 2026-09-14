@@ -181,38 +181,6 @@ export interface IReplayArrayConfig {
     paramMaxLength: number;
 }
 
-export interface IReplayMetadataSave {
-    /** 当前录像使用的指令码宽度 */
-    readonly commandWidth: ReplayCommandWidth;
-}
-
-export interface IReplayArraySave {
-    /**
-     * 指令数组，在 Uint8 位宽下，两个字节为一组，第一个字节为参数数量，第二个字节为指令标识。
-     * 在 Uint16 位宽下，三个字节为一组，第一个字节为参数数量，后两个字节组成的 uint16 为指令标识。
-     */
-    readonly commands: ArrayBuffer;
-
-    /**
-     * 参数数组，由参数类型和参数值组成。参数类型占据一个字节，参数值根据类型不同占据不同的字节。
-     * 参数类型列表（包含参数类型字节）：
-     *
-     * - 0: boolean --- 2 Byte
-     * - 1: int8    --- 2 Byte
-     * - 2: int16   --- 3 Byte
-     * - 3: int32   --- 5 Byte
-     * - 4: int64   --- 9 Byte
-     * - 5: float   --- 9 Byte
-     * - 6: bigint  --- n + 1 Byte, 其中 n 是 bigint 的字节数
-     * - 7: string  --- n + 1 Byte, 其中 n 是字符串编码后的字节数
-     * - 8 ~ 255: n - 7 长度的字符串  --- n + 1 Byte, 其中 n 是字符串编码后的字节数
-     */
-    readonly params: ArrayBuffer;
-
-    /** 录像元数据 */
-    readonly metadata: IReplayMetadataSave;
-}
-
 export interface IReplayArray {
     /** 录像中的总步数 */
     readonly length: number;
@@ -307,6 +275,17 @@ export interface IReplayArray {
         paramBuffer: ArrayBuffer,
         length: number
     ): void;
+
+    /**
+     * 暂时禁用录像记录功能，之后的任何记录将不会生效，
+     * 一般用于在被动触发的函数中调用会记录录像的方法时临时禁用录像记录
+     */
+    disable(): void;
+
+    /**
+     * 将录像记录功能从禁用状态恢复为启用状态
+     */
+    revert(): void;
 }
 
 export interface IReplaySystemHooks extends IHookBase {
@@ -343,11 +322,28 @@ export interface IReplaySandboxConfig {
 export interface IReplaySystemSave {
     /** 录像长度 */
     readonly length: number;
-    /** 指令位宽 */
+    /** 当前录像使用的指令码宽度 */
     readonly commandWidth: number;
-    /** 指令数组 */
+
+    /**
+     * 指令数组，在 Uint8 位宽下，两个字节为一组，第一个字节为参数数量，第二个字节为指令标识。
+     * 在 Uint16 位宽下，三个字节为一组，第一个字节为参数数量，后两个字节组成的 uint16 为指令标识。
+     */
     readonly commandArray: ArrayBuffer;
-    /** 参数数组 */
+    /**
+     * 参数数组，由参数类型和参数值组成。参数类型占据一个字节，参数值根据类型不同占据不同的字节。
+     * 参数类型列表（包含参数类型字节）：
+     *
+     * - 0: boolean --- 2 Byte
+     * - 1: int8    --- 2 Byte
+     * - 2: int16   --- 3 Byte
+     * - 3: int32   --- 5 Byte
+     * - 4: int64   --- 9 Byte
+     * - 5: float   --- 9 Byte
+     * - 6: bigint  --- n + 1 Byte, 其中 n 是 bigint 的字节数
+     * - 7: string  --- n + 1 Byte, 其中 n 是字符串编码后的字节数
+     * - 8 ~ 255: n - 7 长度的字符串  --- n + 1 Byte, 其中 n 是字符串编码后的字节数
+     */
     readonly paramArray: ArrayBuffer;
 }
 
@@ -390,4 +386,17 @@ export interface IReplaySystem
      * 释放当前活跃的沙箱
      */
     releaseSandbox(): void;
+
+    /**
+     * 暂时禁用录像记录功能，之后的任何记录将不会生效，
+     * 一般用于在被动触发的函数中调用会记录录像的方法时临时禁用录像记录
+     */
+    disable(): void;
+
+    /**
+     * 将录像记录功能从禁用状态恢复为上一个禁用状态。
+     * 具体来说，每次调用 `disable` 时都会使得录像禁用层数加一，此方法可以使其减一，直到减为 0。
+     * 这么做的目的是为了防止嵌套禁用调用时出现下层启用后上层意外记录录像的问题。
+     */
+    revert(): void;
 }

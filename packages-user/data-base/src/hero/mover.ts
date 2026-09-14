@@ -25,8 +25,6 @@ export class HeroMover<T extends IHeroLocation>
 {
     readonly state: IDataCommon;
 
-    /** 是否不记录进路线系统 */
-    private noRoute: boolean = false;
     /** 是否忽略地形碰撞检测 */
     private ignoreTerrain: boolean = false;
     /** 是否在特定时机触发自动存档 */
@@ -46,9 +44,6 @@ export class HeroMover<T extends IHeroLocation>
     }
 
     config(config: Partial<IHeroMoverConfig>): this {
-        if (!isNil(config.noRoute)) {
-            this.noRoute = config.noRoute;
-        }
         if (!isNil(config.ignoreTerrain)) {
             this.ignoreTerrain = config.ignoreTerrain;
         }
@@ -63,7 +58,6 @@ export class HeroMover<T extends IHeroLocation>
 
     getConfig(): Readonly<IHeroMoverConfig> {
         return {
-            noRoute: this.noRoute,
             ignoreTerrain: this.ignoreTerrain,
             autoSave: this.autoSave,
             allowOutBound: this.allowOutBound
@@ -179,25 +173,23 @@ export class HeroMover<T extends IHeroLocation>
             type === ObjectMoveType.Special
         ) {
             // 录像记录
-            if (!this.noRoute) {
-                const replay = this.state.replaySystem;
-                switch (handler.direction) {
-                    case FaceDirection.Up:
-                        replay.route.add(ReplayCommandCode.Up, []);
-                        break;
-                    case FaceDirection.Right:
-                        replay.route.add(ReplayCommandCode.Right, []);
-                        break;
-                    case FaceDirection.Left:
-                        replay.route.add(ReplayCommandCode.Left, []);
-                        break;
-                    case FaceDirection.Down:
-                        replay.route.add(ReplayCommandCode.Down, []);
-                        break;
-                    default:
-                        logger.warn(176);
-                        break;
-                }
+            const replay = this.state.replaySystem;
+            switch (handler.direction) {
+                case FaceDirection.Up:
+                    replay.route.add(ReplayCommandCode.Up, []);
+                    break;
+                case FaceDirection.Right:
+                    replay.route.add(ReplayCommandCode.Right, []);
+                    break;
+                case FaceDirection.Left:
+                    replay.route.add(ReplayCommandCode.Left, []);
+                    break;
+                case FaceDirection.Down:
+                    replay.route.add(ReplayCommandCode.Down, []);
+                    break;
+                default:
+                    logger.warn(176);
+                    break;
             }
 
             // 移动判断

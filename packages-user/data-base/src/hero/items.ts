@@ -112,7 +112,7 @@ export class HeroItems<THero> implements IHeroItems<THero> {
         this.addItem(item, 1);
     }
 
-    useItem(item: number | string, noRoute: boolean = false): boolean {
+    useItem(item: number | string): boolean {
         const state = this.internalGetItemState(item);
         if (!state) return false;
 
@@ -126,10 +126,8 @@ export class HeroItems<THero> implements IHeroItems<THero> {
 
         if (!raw.effect.canUse(raw)) return false;
 
-        if (!noRoute) {
-            const replay = this.state.replaySystem;
-            replay.route.add(ReplayCommandCode.UseItem, [raw.num]);
-        }
+        const replay = this.state.replaySystem;
+        replay.route.add(ReplayCommandCode.UseItem, [raw.num]);
 
         raw.effect.useEffect(raw);
 

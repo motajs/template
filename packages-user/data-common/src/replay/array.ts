@@ -2,13 +2,11 @@ import { logger } from '@motajs/common';
 import {
     IReplayArray,
     IReplayArrayConfig,
-    IReplayArraySave,
     IReplayReadStream,
     IReplayStepHandler,
     ReplayCommandWidth,
     ReplayParamValue
 } from './types';
-import { ISaveableContent } from '../save';
 
 interface INormalizedParam {
     /**
@@ -46,9 +44,7 @@ interface IDecodedCommand {
     readonly paramCount: number;
 }
 
-export class ReplayArray
-    implements IReplayArray, ISaveableContent<IReplayArraySave>
-{
+export class ReplayArray implements IReplayArray {
     length: number = 0;
     commandWidth: ReplayCommandWidth = ReplayCommandWidth.Uint8;
 
@@ -88,6 +84,9 @@ export class ReplayArray
 
     /** 所有可用的读取流 */
     private readonly readStreams: Set<IReplayReadStream>;
+
+    /** 当前是否处于禁用状态 */
+    private disabled: number = 0;
 
     constructor(config: Readonly<IReplayArrayConfig>) {
         this.textEncoder = new TextEncoder();
@@ -391,6 +390,7 @@ export class ReplayArray
     }
 
     add(command: number, params: ReplayParamValue[]): void {
+        if (this.disabled >= 0) return;
         const normalized = this.normalizeParamList(params);
         const length = this.calculateParamsLength(normalized);
         this.checkBufferExpand(length);
@@ -410,6 +410,7 @@ export class ReplayArray
     }
 
     insert(index: number, command: number, params: ReplayParamValue[]): void {
+        if (this.disabled >= 0) return;
         const normalized = this.normalizeParamList(params);
         const length = this.calculateParamsLength(normalized);
         this.checkBufferExpand(length);
@@ -439,6 +440,7 @@ export class ReplayArray
     }
 
     delete(index: number): void {
+        if (this.disabled >= 0) return;
         const commandSize = this.getCommandSize();
         const commandStart = index * commandSize;
         const paramStart = this.indexArray[index];
@@ -472,6 +474,7 @@ export class ReplayArray
     }
 
     set(index: number, command: number, params: ReplayParamValue[]): void {
+        if (this.disabled >= 0) return;
         const normalized = this.normalizeParamList(params);
         const length = this.calculateParamsLength(normalized);
         const paramStart = this.indexArray[index];
@@ -510,6 +513,7 @@ export class ReplayArray
     }
 
     setCommandWidth(width: ReplayCommandWidth): void {
+        this.disable();
         const oldWidth = this.commandWidth;
         const oldSize = this.getCommandSize();
         this.commandWidth = width;
@@ -549,6 +553,7 @@ export class ReplayArray
         this.commandView = newView;
 
         this.expireStreams();
+        this.revert();
     }
 
     //#endregion
@@ -767,6 +772,7 @@ export class ReplayArray
         paramBuffer: ArrayBuffer,
         length: number
     ): void {
+        this.disabled = 0;
         this.commandWidth = commandWidth;
         this.commandBuffer = commandBuffer;
         this.commandArray = new Uint8Array(commandBuffer);
@@ -797,29 +803,13 @@ export class ReplayArray
         return this.paramBuffer;
     }
 
-    //#region 存读档
-
-    saveState(): IReplayArraySave {
-        return {
-            commands: this.commandBuffer,
-            params: this.paramBuffer,
-            metadata: {
-                commandWidth: this.commandWidth
-            }
-        };
+    disable(): void {
+        this.disabled++;
     }
 
-    loadState(state: IReplayArraySave): void {
-        this.commandBuffer = state.commands;
-        this.paramBuffer = state.params;
-        this.commandWidth = state.metadata.commandWidth;
-
-        this.commandView = new DataView(this.commandBuffer);
-        this.paramView = new DataView(this.paramBuffer);
-        this.commandArray = new Uint8Array(this.commandBuffer);
-        this.paramArray = new Uint8Array(this.paramBuffer);
-        this.indexArray = new Uint32Array(this.indexBuffer);
-
-        this.expireStreams();
+    revert(): void {
+        if (this.disabled > 0) {
+            this.disabled--;
+        }
     }
 }

@@ -86,6 +86,14 @@ export class ReplaySystem
         this.sandbox = null;
     }
 
+    disable(): void {
+        this.route.disable();
+    }
+
+    revert(): void {
+        this.route.revert();
+    }
+
     saveState(): IReplaySystemSave {
         return {
             length: this.route.length,

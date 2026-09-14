@@ -95,6 +95,60 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         }
     }
 
+    /**
+     * 判断一个装备是否已经装备至某个装备槽，如果已装备的装备槽与目标装备槽不符，那么根据 `autoUnload` 判断是否卸下
+     * @param uid 装备实例 uid
+     * @param slot 要装备至的装备槽
+     * @param autoUnload 当要装备的装备已经处于某个装备槽，是否自动将其卸下
+     * @returns 是否需要进行后续的装备操作
+     */
+    private checkEuipped(
+        uid: number,
+        slot: number | string,
+        autoUnload: boolean
+    ): boolean {
+        // 检查有没有同 uid 装备
+        for (const [index, curr] of this.equips) {
+            if (curr !== uid) continue;
+            if (index === slot || this.slots[index] === slot) {
+                // 指定装备已经装备至了指定装备槽，直接忽略
+                return false;
+            } else {
+                // 否则看 autoUnload
+                if (autoUnload) {
+                    this.unequip(index);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 获取可以装备至的装备槽
+     * @param slot 数字装备槽或字符串装备槽
+     * @returns 可装备至的数字装备槽，-1 表示没有可用槽位
+     */
+    private getCouldEquipSlot(slot: number | string): number {
+        if (typeof slot === 'number') return slot;
+        let first = -1;
+        let empty = -1;
+        this.slots.forEach((name, index) => {
+            if (name !== slot) return;
+            if (first === -1) first = index;
+            if (empty !== -1 && !this.equips.has(index)) {
+                empty = index;
+            }
+        });
+        if (empty === -1) {
+            return first;
+        } else {
+            return empty;
+        }
+    }
+
     equip(
         uid: number,
         slot: number | string,
@@ -104,71 +158,42 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
             return void 0;
         }
 
-        // 检查有没有同 uid 装备
-        for (const [index, curr] of this.equips) {
-            if (curr !== uid) continue;
-            if (index === slot || this.slots[index] === slot) {
-                // 指定装备已经装备至了指定装备槽，直接忽略
-                return void 0;
-            } else {
-                // 否则看 autoUnload
-                if (autoUnload) {
-                    this.unequip(index);
-                    break;
-                } else {
-                    return void 0;
-                }
-            }
-        }
-
         const state = this.store.get(uid);
         if (!state) {
             logger.warn(146, uid.toString());
             return void 0;
         }
 
-        // 记录录像
-        // TODO: 可以考虑把禁用录像记录放到录像系统里面，避免每个可能由代码触发的行动都写一个 noRoute 参数
+        // 由于期间会调用 `unload` 卸下装备，因此需要暂时禁用录像记录
         const replay = this.state.replaySystem;
+        replay.disable();
+
+        // 如果装备已装备，那么应该根据 `autoUnload` 决定是否卸下
+        const next = this.checkEuipped(uid, slot, autoUnload);
+        if (!next) {
+            replay.revert();
+            return void 0;
+        }
+
+        // 接下来获取可用装备槽
+        const available = this.getCouldEquipSlot(slot);
+        if (available === -1) {
+            logger.warn(147, uid.toString());
+            replay.revert();
+            return void 0;
+        }
+
+        // 然后执行真正的装备效果
+        const curr = this.equips.get(available);
+        this.unequip(available);
+        this.equips.set(available, uid);
+        this.loadEquipEffect(state);
+
+        // 最后恢复录像记录并记录录像
+        replay.revert();
         replay.route.add(ReplayCommandCode.Equip, [uid]);
 
-        if (typeof slot === 'number') {
-            // 数字槽位，直接进行指定替换
-            const curr = this.equips.get(slot);
-            this.unequip(slot);
-            this.equips.set(slot, uid);
-            this.loadEquipEffect(state);
-            return curr;
-        } else {
-            // 字符串槽位，需要判断是否包含空槽
-            let first = -1;
-            let empty = -1;
-            this.slots.forEach((name, index) => {
-                if (name !== slot) return;
-                if (first === -1) first = index;
-                if (empty !== -1 && !this.equips.has(index)) {
-                    empty = index;
-                }
-            });
-            if (empty === -1) {
-                // 无空槽，替换第一个匹配的槽位
-                if (first === -1) {
-                    logger.warn(147, uid.toString());
-                    return void 0;
-                } else {
-                    const curr = this.equips.get(first);
-                    this.unequip(first);
-                    this.equips.set(first, uid);
-                    this.loadEquipEffect(state);
-                    return curr;
-                }
-            } else {
-                // 此时有空槽，直接装备上就行
-                this.equips.set(empty, uid);
-                this.loadEquipEffect(state);
-                return void 0;
-            }
-        }
+        return curr;
     }
 
     unequip(slot: number): number | undefined {
