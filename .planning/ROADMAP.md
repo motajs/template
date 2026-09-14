@@ -210,31 +210,34 @@ Plans:
   3. 测试在本地可运行且全部通过
    4. 测试由 AI 编写并运行，通过验证后可提交
 
-**Plans**: 2/9 plans executed (data-layer slice; non-data render/legacy coverage deferred)
+**Plans**: 9 plans replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后)
 
 Plans:
 
-- [x] 06-01-PLAN.md — Combat L2 (data-system/src/combat) behavior tests + phase tracer
-- [x] 06-02-PLAN.md — Combat L3 (data-state/src/enemy) calculator/aura/special/mapDamage tests
-- [ ] 06-03-PLAN.md — Enemy data model (data-base/src/enemy) tests
-- [ ] 06-04-PLAN.md — Replay (data-common/src/replay) tests + replay integration
-- [ ] 06-05-PLAN.md — Hero core (attribute/modifier/location/state) tests
-- [ ] 06-06-PLAN.md — Hero storage (equipment/equipStore/items/follower/mover) tests
-- [ ] 06-07-PLAN.md — Map (gameMap/mapState/mapLayer/tile) expanded tests
-- [ ] 06-08-PLAN.md — Combat closure + saveables round-trip integration tests
-- [ ] 06-09-PLAN.md — Flag + common auxiliary tests
+- [ ] 06-01-PLAN.md — Combat L2 (data-system/src/combat) + EnemyContext aura pipeline / effect combos / full interface & code coverage (D-21..D-27)
+- [ ] 06-02-PLAN.md — enemy top-level BASIC functionality only (data-state/src/enemy；单分支，无组合，无 save/load)
+- [ ] 06-03-PLAN.md — Enemy data model full public surface except legacy (data-base/src/enemy；无 save/load)
+- [ ] 06-04-PLAN.md — Replay focus ReplayArray ops + encode/decode + system/sandbox/decorators (data-common/src/replay；无 save/load，完整播放→06-07)
+- [ ] 06-05-PLAN.md — Hero ALL files incl. rendering + async mover (data-base/src/hero；无 save/load)
+- [ ] 06-06-PLAN.md — Map ALL interfaces, emphasis static/dynamic tiles + static arrays (data-base/src/map；无 save/load)
+- [ ] 06-07-PLAN.md — Top-level integration: damage combos + map+replay play + second-play re-record equality; error 2001–2008 (BLOCKED: pre-execution user confirmation)
+- [ ] 06-08-PLAN.md — Flag full surface + common (utils/indexer/faceManager+face/mover) (无 save/load)
+- [ ] 06-09-PLAN.md — Save/load independent system: every saveState/loadState class + CoreState top-level (BLOCKED: pre-execution user confirmation)
 
-**Wave 1** *(all plans; independent new test files, no shared production edits)*
+**Wave 1** *(independent test-writing plans; no shared production edits)*
 
-- [x] 06-01-PLAN.md
+- [ ] 06-01-PLAN.md
 - [ ] 06-02-PLAN.md
 - [ ] 06-03-PLAN.md
 - [ ] 06-04-PLAN.md
 - [ ] 06-05-PLAN.md
 - [ ] 06-06-PLAN.md
-- [ ] 06-07-PLAN.md
 - [ ] 06-08-PLAN.md
-- [ ] 06-09-PLAN.md
+
+**Wave 2** *(blocked on Wave 1 + user confirmation)*
+
+- [ ] 06-07-PLAN.md — depends on 06-02/06-04/06-06; requires user to wire replay recording
+- [ ] 06-09-PLAN.md — depends on 06-03/06-05/06-06/06-08; requires user to adjust CoreState saveables + add public save/load entry
 
 ## Progress
 

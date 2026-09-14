@@ -72,7 +72,7 @@
 ### 阶段级覆盖规则与计划重构（2026-09-14 第二轮补充讨论）
 > 由用户对全部计划的逐条补充得出。**这些规则对 06-03..06-09 全部生效，并回溯要求 06-01/06-02 返工。**
 
-- **D-28（计划重排）：** 重排编号为：
+- **D-28:** 计划重排 —— 重排编号为：
   - 06-01 战斗系统（系统层，`data-system/src/combat`，见 D-21..D-27）
   - 06-02 enemy 顶层实现（`data-state/src/enemy`，只做基本功能）
   - 06-03 enemy 数据模型（`data-base/src/enemy`）
@@ -83,11 +83,11 @@
   - 06-08 flag + common
   - 06-09 存档（独立系统，所有 saveState/loadState + CoreState 顶层验证）
   原 06-06 合并进 06-05；原 06-08 的 saveables 往返部分移到 06-09。
-- **D-29（返工）：** 已执行的 06-01、06-02 标记为 **superseded**（SUMMARY 改名保留），重规划后按同号重跑，确保「接口 + warn/error code 全覆盖」落到原计划。
-- **D-30（接口全覆盖）：** 除名称含 legacy 的接口/方法（`fromLegacy`、`*LegacyBridge`、`*LegacyConverter` 等）外，**每个公开方法至少一条正常用例**。
-- **D-31（warn/error 全覆盖）：** 以 `packages/common/src/logger.json` 为权威码表；范围 = 本计划模块**可达**的 code（排除其他层如渲染/音频，及 legacy 路径）；每个 code 至少一条触发断言（经 `logger.catch`）；产出**阶段级 `06-COVERAGE-MAP.md`**（code → 模块 → 用例）映射表。
-- **D-32（存读档集中）：** 所有 `saveState`/`loadState` 测试从各计划移出，集中到 06-09。唯一例外：06-07 的录像播放所需状态重置可**最小使用**存档数据，但不测存读档本身。
-- **D-33（执行节奏）：** **每个计划执行前先向用户确认**；执行完暂停，用中文**分条简要汇报**本计划验证结果；详细结果写入共用的 `06-TEST-FINDINGS.md`。
+- **D-29:** 返工 —— 已执行的 06-01、06-02 标记为 **superseded**（SUMMARY 改名保留），重规划后按同号重跑，确保「接口 + warn/error code 全覆盖」落到原计划。
+- **D-30:** 接口全覆盖 —— 除名称含 legacy 的接口/方法（`fromLegacy`、`*LegacyBridge`、`*LegacyConverter` 等）外，**每个公开方法至少一条正常用例**。
+- **D-31:** warn/error 全覆盖 —— 以 `packages/common/src/logger.json` 为权威码表；范围 = 本计划模块**可达**的 code（排除其他层如渲染/音频，及 legacy 路径）；每个 code 至少一条触发断言（经 `logger.catch`）；产出**阶段级 `06-COVERAGE-MAP.md`**（code → 模块 → 用例）映射表。
+- **D-32:** 存读档集中 —— 所有 `saveState`/`loadState` 测试从各计划移出，集中到 06-09。唯一例外：06-07 的录像播放所需状态重置可**最小使用**存档数据，但不测存读档本身。
+- **D-33:** 执行节奏 —— **每个计划执行前先向用户确认**；执行完暂停，用中文**分条简要汇报**本计划验证结果；详细结果写入共用的 `06-TEST-FINDINGS.md`。
 
 ### 各计划边界
 - **D-35:** 06-02 只测顶层实现**基本功能**（单分支、按预期输出）；属性/加成**组合**后移至 06-07。范围：`MainDamageCalculator` / `MainEnemyFinalEffect` / `MainEnemyComparer` / `CommonAura(+Converter)` / `GuardAura(+Converter)` / `registerSpecials` / mapDamage 五视图 + converter + reducer。
