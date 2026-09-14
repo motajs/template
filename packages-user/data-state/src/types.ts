@@ -12,7 +12,8 @@ export interface ISaveableExecutor<T> {
     afterLoad(data: T, state: IStateBase): void;
 }
 
-export interface ICoreState extends IStateSystem {
+export interface ICoreState
+    extends IStateSystem, ISaveableContent<ReadonlyMap<string, unknown>> {
     /** 加载进度对象 */
     readonly loadProgress: ILoadProgressTotal;
     /** 数据端加载对象 */

@@ -1,5 +1,25 @@
 import { IHookable, IHookBase } from '@motajs/common';
 
+/** 录像指令码，数值属于录像格式的一部分 */
+export const enum ReplayCommandCode {
+    /** 向上移动一步 */
+    Up,
+    /** 向右移动一步 */
+    Right,
+    /** 向下移动一步 */
+    Down,
+    /** 向左移动一步 */
+    Left,
+    /** 自动寻路瞬移至目标点 */
+    Teleport,
+    /** 使用道具 */
+    UseItem,
+    /** 装备物品 */
+    Equip,
+    /** 卸下装备 */
+    Unequip
+}
+
 export type ReplayParamValue = number | string | boolean | bigint;
 
 export interface IReplayStepHandler {

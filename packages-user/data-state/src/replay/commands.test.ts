@@ -7,7 +7,8 @@ import {
     beginReplaySafetyCollection,
     endReplaySafetyCollection,
     logReplaySafetyDetail,
-    shouldReplay
+    shouldReplay,
+    ReplayCommandCode
 } from '@user/data-common';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
@@ -20,7 +21,18 @@ import {
     ReplayUnequipCommand,
     ReplayUseItemCommand
 } from './commands';
-import { ReplayCommandCode, REPLAY_COMMAND_ORDER } from './types';
+
+/** 供测试读取的稳定指令码顺序 */
+export const REPLAY_COMMAND_ORDER: readonly ReplayCommandCode[] = [
+    ReplayCommandCode.Up,
+    ReplayCommandCode.Right,
+    ReplayCommandCode.Down,
+    ReplayCommandCode.Left,
+    ReplayCommandCode.Teleport,
+    ReplayCommandCode.UseItem,
+    ReplayCommandCode.Equip,
+    ReplayCommandCode.Unequip
+];
 
 function step(
     command: number,

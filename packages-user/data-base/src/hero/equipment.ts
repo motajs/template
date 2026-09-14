@@ -1,5 +1,5 @@
 import { isNil } from 'lodash-es';
-import { IDataCommon } from '@user/data-common';
+import { IDataCommon, ReplayCommandCode } from '@user/data-common';
 import {
     EquipStatus,
     IEquipmentState,
@@ -127,6 +127,11 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
             return void 0;
         }
 
+        // 记录录像
+        // TODO: 可以考虑把禁用录像记录放到录像系统里面，避免每个可能由代码触发的行动都写一个 noRoute 参数
+        const replay = this.state.replaySystem;
+        replay.route.add(ReplayCommandCode.Equip, [uid]);
+
         if (typeof slot === 'number') {
             // 数字槽位，直接进行指定替换
             const curr = this.equips.get(slot);
@@ -175,6 +180,10 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
             logger.warn(146, uid.toString());
             return void 0;
         }
+
+        // 记录录像
+        const replay = this.state.replaySystem;
+        replay.route.add(ReplayCommandCode.Unequip, [slot]);
 
         this.unloadEquipEffect(state);
         this.equips.delete(slot);

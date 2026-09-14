@@ -4,14 +4,26 @@ import {
     IReplaySandbox,
     IHeroAttr,
     ReplaySystem,
-    SaveCompression
+    SaveCompression,
+    ReplayCommandCode
 } from '@user/data-common';
 import { IEnemy, IReadonlyHeroAttribute } from '@user/data-base';
 import { IReadonlyEnemyHandler } from '@user/data-system';
 import { createCoreState, CoreState } from '../src/core';
 import { MainDamageCalculator } from '../src/enemy/calculator';
-import { REPLAY_COMMAND_ORDER, ReplayCommandCode } from '../src/replay/types';
 import { createClosedLoopFixture } from './fixtures/closed-loop';
+
+/** 供测试读取的稳定指令码顺序 */
+export const REPLAY_COMMAND_ORDER: readonly ReplayCommandCode[] = [
+    ReplayCommandCode.Up,
+    ReplayCommandCode.Right,
+    ReplayCommandCode.Down,
+    ReplayCommandCode.Left,
+    ReplayCommandCode.Teleport,
+    ReplayCommandCode.UseItem,
+    ReplayCommandCode.Equip,
+    ReplayCommandCode.Unequip
+];
 
 vi.hoisted(() => {
     Map.prototype.getOrInsert ??= function <K, V>(

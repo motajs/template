@@ -1,6 +1,10 @@
 import { ITileLocator, logger } from '@motajs/common';
-import { IObjectMovable, IObjectMover } from '@user/data-common';
-import { IStateBase } from '@user/data-base';
+import {
+    IObjectMovable,
+    IObjectMover,
+    ReplayCommandCode
+} from '@user/data-common';
+import { HeroMover, IStateBase } from '@user/data-base';
 import { isNil } from 'lodash-es';
 import { PathfindingFinder } from './finder';
 import {
@@ -95,6 +99,15 @@ export class PathfindingSystem implements IPathfindingSystem {
         if (!this.policy || this.policy(path)) {
             return this.startMove(path, false);
         } else {
+            // 录像记录
+            // TODO：后续需要调整设计方式，最好不用 instanceof
+            if (this.mover instanceof HeroMover) {
+                const replay = this.state.replaySystem;
+                replay.route.add(ReplayCommandCode.Teleport, [
+                    target.x,
+                    target.y
+                ]);
+            }
             return this.startMove(path, true);
         }
     }

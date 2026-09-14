@@ -6,7 +6,8 @@ import {
     ObjectMoveStep,
     ObjectMover,
     ObjectMoveType,
-    IDataCommon
+    IDataCommon,
+    ReplayCommandCode
 } from '@user/data-common';
 import {
     HeroMoveCode,
@@ -177,6 +178,29 @@ export class HeroMover<T extends IHeroLocation>
             type === ObjectMoveType.DirFace ||
             type === ObjectMoveType.Special
         ) {
+            // 录像记录
+            if (!this.noRoute) {
+                const replay = this.state.replaySystem;
+                switch (handler.direction) {
+                    case FaceDirection.Up:
+                        replay.route.add(ReplayCommandCode.Up, []);
+                        break;
+                    case FaceDirection.Right:
+                        replay.route.add(ReplayCommandCode.Right, []);
+                        break;
+                    case FaceDirection.Left:
+                        replay.route.add(ReplayCommandCode.Left, []);
+                        break;
+                    case FaceDirection.Down:
+                        replay.route.add(ReplayCommandCode.Down, []);
+                        break;
+                    default:
+                        logger.warn(176);
+                        break;
+                }
+            }
+
+            // 移动判断
             if (this.ignoreTerrain) {
                 return HeroMoveCode.Step;
             } else {
