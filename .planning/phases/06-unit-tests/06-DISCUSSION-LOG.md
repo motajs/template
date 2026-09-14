@@ -5,7 +5,7 @@
 
 **Date:** 2026-09-14
 **Phase:** 6-单元测试
-**Areas discussed:** 测试层级与 fixture 策略, 问题记录与门禁策略, 存读档等价判定, 怪物数据验证含义
+**Areas discussed:** 测试层级与 fixture 策略, 问题记录与门禁策略, 存读档等价判定, 怪物数据验证含义, 光环测试形态, 光环覆盖深度, 系统层效果组合, EnemyContext 覆盖判据
 
 ---
 
@@ -126,6 +126,151 @@
 
 ---
 
+## 补充讨论（2026-09-14）：战斗系统覆盖深化（仅 06-01）
+
+> 范围严格限定在战斗系统本身（`data-system/src/combat`）；顶层实现（`data-state` 的 calculator / CommonAura / GuardAura / 特殊属性语义 / 支援递归）不纳入本讨论。
+
+### 光环测试形态
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 系统测试在 data-system，顶层实现验证在 data-state | 明确系统功能与顶层实现分工 | ✓（顶层部分经用户后续校正后移出本讨论） |
+| data-system/combat 内 | 真实 EnemyContext + 真实 converter，用假 Enemy | |
+| 两处分工 | 类单测留 data-state，集成放 data-system | |
+
+**User's choice:** 系统功能测试归 `data-system`；顶层验证归 `data-state`（顶层内容不属本次讨论）
+**Notes:** 后续校正：本次仅讨论 06-01 战斗系统问题，顶层实现无关内容不纳入。
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 手动装配（推荐） | new EnemyContext + registerAuraConverter + setEnemyAt | ✓ |
+| 经 CoreState | 集成度高但重 | |
+| 两者都要 | 核心手动 + CoreState 烟雾 | |
+
+**User's choice:** 手动装配
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 保留并新增（推荐） | 类单测 + 新增集成测试，互补 | ✓ |
+| 迁移合并 | 改写为集成用例 | |
+| 只要嵌套集成 | | |
+
+**User's choice:** 保留并新增
+**Notes:** 校正后该 data-state 类单测改动不属本次讨论范围；战斗系统内沿用「保留并新增」原则。
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 复用 06-01 harness（推荐） | vi.hoisted 全局 stub + 动态 import 包 | ✓ |
+| 真实顶层 import | 直接 import @user/data-state | |
+
+**User's choice:** 复用 06-01 harness
+
+### 光环覆盖深度
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 三种范围 + 范围外（推荐） | Full / Rect / Manhattan + 范围外不生效 | ✓ |
+| 只覆盖一种 | | |
+| 你决定 | | |
+
+**User's choice:** 三种范围 + 范围外
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 一层 + 两层（推荐） | 光环→特殊属性；光环→特殊属性→再转换出光环 | |
+| 仅一层 | | |
+| 两层 + 优先级边界 | | ✓ |
+
+**User's choice:** 两层 + 优先级边界
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 全部警告码（推荐） | 97/98/99/100/101 | ✓ |
+| 只 98/99 | | |
+| 不专门覆盖 | | |
+
+**User's choice:** 全部警告码 97/98/99/100/101
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 纳入（推荐） | 支援怪吃到位置光环加成 + 递归累加 | ✓ |
+| 不纳入 | | |
+| 只补交叉点 | | |
+
+**User's choice:** 纳入
+**Notes:** 后续校正：支援/guard 的验证归属顶层（`data-state`），不属 06-01 战斗系统，本次排除。
+
+### 系统层效果组合与边界
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 光环↔常规查询 | query 读到光环改过的属性 | ✓ |
+| 光环特殊↔特殊查询 | 同优先级链上的 add/delete/modify 相互影响 | ✓ |
+| final-effect 阶段顺序 | final 最后执行、不能查询上下文 | ✓ |
+| 优先级/阶段顺序 | 同优先级内顺序、跨优先级传播 | ✓ |
+
+**User's choice:** 四类全纳入
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 明确切开（推荐） | data-system 只用 fake 效果/光环驱动，不重测顶层语义 | ✓ |
+| 允许少量交叉 | | |
+| 你决定 | | |
+
+**User's choice:** 明确切开
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 断言顺序 + 可见性（推荐） | 四阶段顺序 + 阶段间可见性 | ✓ |
+| 只断言结果 | | |
+| 只断言关键顺序 | | |
+
+**User's choice:** 断言顺序 + 可见性
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 纳入系统伤害流程（推荐） | 属性→伤害联动，注入 fake 计算器 | ✓ |
+| 不纳入 | | |
+| 只加烟雾 | | |
+
+**User's choice:** 纳入系统伤害流程
+
+### EnemyContext 覆盖判据
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 全接口 + 按需边界（推荐） | 每个公开方法≥1 正常用例 | ✓ |
+| 全接口 + 全边界 | 最严 | |
+| 只关键接口 | | |
+
+**User's choice:** 全接口 + 按需边界
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 警告码 | 97/98/99/100/101/110 | ✓ |
+| 未知/空输入 | null 或 no-op | ✓ |
+| 生命周期清空 | resize/clear/destroy | ✓ |
+| 脏标记守卫 | markDirty/requestRefresh 守卫 | |
+
+**User's choice:** 警告码、未知/空输入、生命周期清空
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 写入 must_haves（推荐） | 作为阶段完成判据 | ✓ |
+| 只进验收标准 | | |
+
+**User's choice:** 写入 must_haves
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 两条都要（推荐） | 全量 buildup + 局部 requestRefresh | ✓ |
+| 只全量 | | |
+| 只局部 | | |
+
+**User's choice:** 两条都要
+
+---
+
 ## the agent's Discretion
 
 - 各系统内部具体测哪些函数/边界、用例命名与文件切分。
@@ -135,3 +280,4 @@
 - Phase 6 非数据端覆盖（渲染/legacy）延后。
 - CoreState 端到端存读档（需公开入口或可注入后端）未纳入本次。
 - Phase 5 若改动数据端接口，本阶段测试需同步调整。
+- 顶层实现（`data-state` 的 calculator / CommonAura / GuardAura / 特殊属性语义 / 支援递归）与 data-state 现有测试改动不属 06-01 战斗系统深化讨论。
