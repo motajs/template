@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-09-14T00:53:17.655Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-09-14T01:09:15.227Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 06 execution started
-state_head: 6c8f85a2be68d9696844ee863a8bb6787b6fde45
+state_head: 7b956705d3ecf72553561c3f124039a9100ad3be
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 46
-  completed_plans: 38
+  completed_plans: 39
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 Status: Ready to execute
 Last activity: 2026-09-14 — Phase 06 execution started
 
@@ -77,6 +77,7 @@ Progress: [█████░░░░░] 50%
 | Phase 03 P18 | 14min | 3 tasks | 8 files |
 | Phase 03 P19 | 8min | 2 tasks | 6 files |
 | Phase 06 P01 | 9min | 3 tasks | 6 files |
+| Phase 06 P02 | 9min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,8 @@ Recent decisions affecting current work:
 - [quick 260913-qtq]: 事件注册收口为单一 createEventRegistrations()，不做分类包装；共享工具放 event/utils.ts 且不经 index 导出。
 - [Phase 06]: 06-01：combat Layer-2 以行为单测覆盖（DamageContext/DamageSystem/MapDamage/EnemyContext/CombatFlow），三处疑似 bug 只记录不修复，按 D-05 写成 it.skip 正确预期用例并登记 06-TEST-FINDINGS.md #06-01-1..3
 - [Phase 06]: 06-01：Node 测试须同时 polyfill Map.getOrInsert 与 getOrInsertComputed（EnemyContext 使用前者）
+- [Phase 06]: 06-02：enemy 顶层实现以 6 个同目录行为单测覆盖（calculator/final/comparer/aura/special/mapDamage），fixture 全部 inline，未修改任何生产代码
+- [Phase 06]: 06-02：未发现疑似 bug，06-TEST-FINDINGS.md 无新增 #06-02-N；BetweenDamageView 方向去重语义与 plan 措辞不符但实现正确，仅记录澄清
 
 ### Pending Todos
 
@@ -168,6 +171,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-14T00:53:17.425Z
-Stopped at: Completed 06-01-PLAN.md
+Last session: 2026-09-14T01:09:14.983Z
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None
