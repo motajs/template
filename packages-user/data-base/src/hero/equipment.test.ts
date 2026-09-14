@@ -103,7 +103,9 @@ function createItem(
 function createEnv(): TestEnv {
     const tileStore = new TileStore();
     const itemStore = new ItemStore<IHeroAttr, unknown>();
-    const state = { tileStore, itemStore } as never;
+    // 录像系统桩，仅用于满足装备/卸下时的 route.add 记录
+    const replaySystem = { route: { add: vi.fn() } };
+    const state = { tileStore, itemStore, replaySystem } as never;
     const attribute = new HeroAttribute<IHeroAttr>(createBaseAttr());
     const store = new HeroEquipsStore<IHeroAttr>(state);
     const equipment = new HeroEquipment<IHeroAttr>(store, attribute);

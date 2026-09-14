@@ -62,7 +62,9 @@ function createState(): IDataCommon {
         pass: { onlyEvents: false, inPass: 15, outPass: 15 },
         eventPass: true
     });
-    return { tileStore, itemStore } as never;
+    // 录像系统桩，仅用于满足移动时的 route.add 记录
+    const replaySystem = { route: { add: vi.fn() } };
+    return { tileStore, itemStore, replaySystem } as never;
 }
 
 /** 构造一个停在原点的勇士位置对象 */

@@ -8,6 +8,7 @@ import {
     IReplayArray,
     IEnemyAttr,
     IHeroAttr,
+    ReplayCommandCode,
     SaveCompression,
     TileType
 } from '@user/data-common';
@@ -20,7 +21,6 @@ import {
     IMapStoreSave
 } from '@user/data-base';
 import { CoreState, createCoreState } from '../../src/core.ts';
-import { ReplayCommandCode } from '../../src/replay/types.ts';
 
 export interface IClosedLoopLayerSnapshot {
     readonly zIndex: number;

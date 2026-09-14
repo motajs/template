@@ -58,7 +58,9 @@ interface ItemFixture {
 function createEnv(): TestEnv {
     const tileStore = new TileStore();
     const itemStore = new ItemStore<IHeroAttr, unknown>();
-    const state = { tileStore, itemStore } as never;
+    // 录像系统桩，仅用于满足道具使用时的 route.add 记录
+    const replaySystem = { route: { add: vi.fn() } };
+    const state = { tileStore, itemStore, replaySystem } as never;
     return {
         state,
         tileStore,
