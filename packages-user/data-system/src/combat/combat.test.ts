@@ -139,9 +139,15 @@ class FakeScript implements ICombatScript<TestEnemyAttr, TestHeroAttr> {
     }
 }
 
+type TestCombatFlow = import('./combat').CombatFlow<
+    TestEnemyAttr,
+    TestHeroAttr
+>;
+type TestHeroAttribute = import('@user/data-base').HeroAttribute<TestHeroAttr>;
+
 interface CombatFixture {
     /** 被测战斗流程对象 */
-    flow: InstanceType<TestModules['CombatFlow']>;
+    flow: TestCombatFlow;
     /** 数据层状态假对象 */
     state: IStateBase;
     /** 怪物上下文假对象 */
@@ -149,7 +155,7 @@ interface CombatFixture {
     /** 伤害上下文假对象 */
     damage: IDamageContext<TestEnemyAttr, TestHeroAttr>;
     /** 可修改勇士属性 */
-    hero: InstanceType<TestModules['HeroAttribute']>;
+    hero: TestHeroAttribute;
     /** 怪物视图假对象 */
     view: IEnemyView<TestEnemyAttr>;
     /** 计算后怪物 */

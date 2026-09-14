@@ -6,11 +6,9 @@ import {
     type IDamageSystem,
     type IEnemyContext,
     type IEnemyView,
-    type IMapDamageInfo,
-    type IReadonlyEnemyHandler
+    type IMapDamageInfo
 } from '@user/data-system';
 import {
-    type IEnemy,
     type IReadonlyEnemy,
     type IReadonlyHeroAttribute,
     type ISpecial
@@ -77,10 +75,19 @@ beforeAll(async () => {
         AmbushDamageView: mapDamageModule.AmbushDamageView,
         MainMapDamageConverter: mapDamageModule.MainMapDamageConverter,
         MainMapDamageReducer: mapDamageModule.MainMapDamageReducer,
-        MapDamageType: typesModule.MapDamageType,
+        MapDamageType: {
+            Unknown: typesModule.MapDamageType.Unknown,
+            Zone: typesModule.MapDamageType.Zone,
+            Layer: typesModule.MapDamageType.Layer,
+            Repulse: typesModule.MapDamageType.Repulse,
+            Between: typesModule.MapDamageType.Between
+        },
         ManhattanRange: motaModule.ManhattanRange,
         RectRange: motaModule.RectRange,
-        FaceGroup: commonModule.FaceGroup
+        FaceGroup: {
+            Dir4: commonModule.FaceGroup.Dir4,
+            Dir8: commonModule.FaceGroup.Dir8
+        }
     };
 });
 
@@ -144,7 +151,8 @@ function createContext(
 ): IEnemyContext<IEnemyAttr, IHeroAttr> {
     const width = options.width ?? 6;
     const height = options.height ?? 6;
-    const enemies = options.enemies ?? new Map<string, IEnemyView<IEnemyAttr>>();
+    const enemies =
+        options.enemies ?? new Map<string, IEnemyView<IEnemyAttr>>();
     return {
         width,
         height,
@@ -177,9 +185,9 @@ function createView(
  * 创建一个按固定方向表返回移动描述的假朝向处理器
  * @param dirs 朝向与坐标增量对
  */
-function createFace(
-    dirs: Array<[number, { x: number; y: number }]>
-): { mapMovement: () => Array<[number, { x: number; y: number }]> } {
+function createFace(dirs: Array<[number, { x: number; y: number }]>): {
+    mapMovement: () => Array<[number, { x: number; y: number }]>;
+} {
     return { mapMovement: () => dirs };
 }
 
@@ -212,11 +220,15 @@ describe('ZoneDamageView', () => {
             zoneSquare: false,
             range: 1
         });
-        const view = new modules.ZoneDamageView(createContext(), { x: 2, y: 3 }, special);
+        const view = new modules.ZoneDamageView(
+            createContext(),
+            { x: 2, y: 3 },
+            special
+        );
 
         expect(view.getRange()).toBeInstanceOf(modules.ManhattanRange);
         expect(view.getRangeParam()).toEqual({ cx: 2, cy: 3, radius: 1 });
-        expect(view.getDamageWithoutCheck({ x: 0, y: 0 })).toEqual(
+        expect(view.getDamageWithoutCheck()).toEqual(
             createInfo(7, modules.MapDamageType.Zone)
         );
     });
@@ -228,11 +240,15 @@ describe('ZoneDamageView', () => {
             zoneSquare: true,
             range: 2
         });
-        const view = new modules.ZoneDamageView(createContext(), { x: 2, y: 3 }, special);
+        const view = new modules.ZoneDamageView(
+            createContext(),
+            { x: 2, y: 3 },
+            special
+        );
 
         expect(view.getRange()).toBeInstanceOf(modules.RectRange);
         expect(view.getRangeParam()).toEqual({ x: 0, y: 1, w: 5, h: 5 });
-        expect(view.getDamageWithoutCheck({ x: 0, y: 0 })).toEqual(
+        expect(view.getDamageWithoutCheck()).toEqual(
             createInfo(4, modules.MapDamageType.Zone)
         );
     });
@@ -244,7 +260,11 @@ describe('ZoneDamageView', () => {
             zoneSquare: false,
             range: 1
         });
-        const view = new modules.ZoneDamageView(createContext(), { x: 2, y: 3 }, special);
+        const view = new modules.ZoneDamageView(
+            createContext(),
+            { x: 2, y: 3 },
+            special
+        );
 
         expect(view.getDamageAt({ x: 2, y: 4 })).toEqual(
             createInfo(7, modules.MapDamageType.Zone)
@@ -258,7 +278,11 @@ describe('RepulseDamageView', () => {
     it('uses a radius one range and returns null at the source', () => {
         const special = createSpecial(18, 4);
         const source: ITileLocator = { x: 2, y: 3 };
-        const view = new modules.RepulseDamageView(createContext(), source, special);
+        const view = new modules.RepulseDamageView(
+            createContext(),
+            source,
+            special
+        );
 
         expect(view.getRangeParam()).toEqual({ cx: 2, cy: 3, radius: 1 });
         expect(view.getDamageWithoutCheck(source)).toBeNull();
@@ -268,7 +292,11 @@ describe('RepulseDamageView', () => {
     it('returns repulse damage carrying the source locator', () => {
         const special = createSpecial(18, 4);
         const source: ITileLocator = { x: 2, y: 3 };
-        const view = new modules.RepulseDamageView(createContext(), source, special);
+        const view = new modules.RepulseDamageView(
+            createContext(),
+            source,
+            special
+        );
 
         const info = view.getDamageWithoutCheck({ x: 3, y: 3 });
 
@@ -308,9 +336,12 @@ describe('LaserDamageView', () => {
         expect(view.getRangeParam()).toEqual({
             cx: 2,
             cy: 3,
-            dir: [{ x: 0, y: 0 }, { x: 1, y: 0 }]
+            dir: [
+                { x: 0, y: 0 },
+                { x: 1, y: 0 }
+            ]
         });
-        expect(view.getDamageWithoutCheck({ x: 5, y: 3 })).toEqual(
+        expect(view.getDamageWithoutCheck()).toEqual(
             createInfo(9, modules.MapDamageType.Layer)
         );
     });
@@ -462,7 +493,7 @@ describe('AmbushDamageView', () => {
         const locator: ITileLocator = { x: 2, y: 3 };
         const view = new modules.AmbushDamageView(createContext(), locator);
 
-        const info = view.getDamageWithoutCheck(locator);
+        const info = view.getDamageWithoutCheck();
 
         expect(info?.damage).toBe(0);
         expect(info?.type).toBe(modules.MapDamageType.Unknown);
@@ -531,18 +562,15 @@ describe('MainMapDamageReducer', () => {
         const caught: ITileLocator = { x: 0, y: 1 };
         const reducer = new modules.MainMapDamageReducer();
 
-        const info = reducer.reduce(
-            [
-                createInfo(3, modules.MapDamageType.Zone),
-                createInfo(5, modules.MapDamageType.Repulse, {
-                    repulse: new Set([repulse])
-                }),
-                createInfo(5, modules.MapDamageType.Between, {
-                    catch: new Set([caught])
-                })
-            ],
-            { x: 0, y: 0 }
-        );
+        const info = reducer.reduce([
+            createInfo(3, modules.MapDamageType.Zone),
+            createInfo(5, modules.MapDamageType.Repulse, {
+                repulse: new Set([repulse])
+            }),
+            createInfo(5, modules.MapDamageType.Between, {
+                catch: new Set([caught])
+            })
+        ]);
 
         expect(info.damage).toBe(13);
         expect(info.type).toBe(modules.MapDamageType.Repulse);
@@ -554,7 +582,7 @@ describe('MainMapDamageReducer', () => {
     it('returns zero unknown damage for an empty input', () => {
         const reducer = new modules.MainMapDamageReducer();
 
-        const info = reducer.reduce([], { x: 0, y: 0 });
+        const info = reducer.reduce([]);
 
         expect(info.damage).toBe(0);
         expect(info.type).toBe(modules.MapDamageType.Unknown);

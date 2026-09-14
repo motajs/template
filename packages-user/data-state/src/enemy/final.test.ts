@@ -2,10 +2,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { type IEnemyAttr, type IHeroAttr } from '@user/data-common';
 import { type IEnemyHandler } from '@user/data-system';
-import {
-    type IEnemy,
-    type IReadonlyHeroAttribute
-} from '@user/data-base';
+import { type IEnemy, type IReadonlyHeroAttribute } from '@user/data-base';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -86,13 +83,17 @@ function createEnemy(
         addSpecial: () => {},
         deleteSpecial: () => {},
         setAttribute: (key: string, value: unknown) => {
-            (values as never)[key] = value;
+            // 假怪物按动态字符串键读写属性，固定形状的 IEnemyAttr 无法表达字符串索引
+            (values as unknown as Record<string, unknown>)[key] = value;
         },
         addAttribute: (key: string, value: number) => {
-            (values as never)[key] += value;
+            (values as unknown as Record<string, number>)[key] += value;
         },
         copyFrom: () => {},
-        saveState: () => ({ attrs: structuredClone(values), specials: new Map() }),
+        saveState: () => ({
+            attrs: structuredClone(values),
+            specials: new Map()
+        }),
         loadState: () => {}
     } as never;
     return { enemy, attrs: values };

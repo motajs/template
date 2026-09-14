@@ -4,19 +4,20 @@ import { type IRange } from '@motajs/common';
 import {
     type IEnemy,
     type IReadonlyEnemy,
+    type IReadonlyHeroAttribute,
     type IStateBase,
     type ISpecial
 } from '@user/data-base';
 import {
     type IAuraConverter,
     type IAuraView,
+    type IEnemyAuraView,
     type IEnemyCommonQueryEffect,
     type IEnemyFinalEffect,
     type IEnemyHandler,
     type IEnemySpecialModifier,
     type IEnemySpecialQueryEffect,
-    type IEnemyView,
-    type IReadonlyHeroAttribute
+    type IEnemyView
 } from './types';
 
 vi.hoisted(() => {
@@ -127,11 +128,17 @@ function createEnemy(
     });
 }
 
+type TestEnemyContext = import('./context').EnemyContext<
+    TestEnemyAttr,
+    TestHeroAttr
+>;
+type TestHeroAttribute = import('@user/data-base').HeroAttribute<TestHeroAttr>;
+
 interface ContextFixture {
     /** 被测怪物上下文 */
-    context: InstanceType<TestModules['EnemyContext']>;
+    context: TestEnemyContext;
     /** 可修改勇士属性 */
-    hero: InstanceType<TestModules['HeroAttribute']>;
+    hero: TestHeroAttribute;
     /** 数据层状态假对象 */
     state: IStateBase;
 }
@@ -146,7 +153,9 @@ function createContextFixture(
     height: number = 3
 ): ContextFixture {
     const state = {} as IStateBase;
-    const context = new modules.EnemyContext<TestEnemyAttr, TestHeroAttr>(state);
+    const context = new modules.EnemyContext<TestEnemyAttr, TestHeroAttr>(
+        state
+    );
     context.resize(width, height);
     const hero = new modules.HeroAttribute<TestHeroAttr>({
         hp: 100,
@@ -255,9 +264,18 @@ class FakeConverter implements IAuraConverter<TestEnemyAttr, TestHeroAttr> {
         return this.codes.includes(special.code);
     }
 
-    convert(special: ISpecial<any>): IAuraView<TestEnemyAttr> | null {
+    convert(special: ISpecial<any>): IEnemyAuraView<TestEnemyAttr, any, any> {
         this.convertCalls.push(special.code);
-        return this.factory ? this.factory(special.code) : null;
+        if (!this.factory) {
+            // 接口约定 convert 必返回光环视图，但测试需覆盖“无工厂则跳过转换”的 null 分支
+            return null as unknown as IEnemyAuraView<TestEnemyAttr, any, any>;
+        }
+        // FakeAura 为最小测试替身，不携带 enemy/special/locator，无法完整满足 IEnemyAuraView
+        return this.factory(special.code) as unknown as IEnemyAuraView<
+            TestEnemyAttr,
+            any,
+            any
+        >;
     }
 }
 
@@ -353,9 +371,9 @@ describe('EnemyContext registry and lookups', () => {
             y: 0
         });
         expect(fixture.context.getEnemyLocator(enemy)).toEqual({ x: 1, y: 0 });
-        expect(fixture.context.getViewByComputed(view!.getComputedEnemy())).toBe(
-            view
-        );
+        expect(
+            fixture.context.getViewByComputed(view!.getComputedEnemy())
+        ).toBe(view);
     });
 
     // 验证未知定位符、未知坐标与未知怪物对象均返回 null
@@ -691,7 +709,10 @@ describe('EnemyContext single aura ranges', () => {
         fixture.context.buildup();
 
         expect(
-            fixture.context.getEnemyByLoc(0, 0)!.getComputedEnemy().hasSpecial(30)
+            fixture.context
+                .getEnemyByLoc(0, 0)!
+                .getComputedEnemy()
+                .hasSpecial(30)
         ).toBe(true);
     });
 });
@@ -902,7 +923,9 @@ describe('EnemyContext aura pipeline', () => {
 
         fixture.context.buildup();
 
-        const computed = fixture.context.getEnemyByLoc(0, 0)!.getComputedEnemy();
+        const computed = fixture.context
+            .getEnemyByLoc(0, 0)!
+            .getComputedEnemy();
         expect(converter.convertCalls).toContain(21);
         expect(computed.hasSpecial(21)).toBe(true);
         expect(computed.getAttribute('atk')).toBe(9);
@@ -957,12 +980,16 @@ describe('EnemyContext aura pipeline', () => {
         enemy.addSpecial(createSpecial(20) as never);
         fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
         fixture.context.registerAuraConverter(
-            new FakeConverter([20], () => new FakeAura({
-                priority: 10,
-                range: new modules.FullRange(),
-                param: undefined,
-                couldApplyBase: false
-            }))
+            new FakeConverter(
+                [20],
+                () =>
+                    new FakeAura({
+                        priority: 10,
+                        range: new modules.FullRange(),
+                        param: undefined,
+                        couldApplyBase: false
+                    })
+            )
         );
         fixture.context.registerSpecialQueryEffect({
             priority: 10,
@@ -987,12 +1014,16 @@ describe('EnemyContext aura pipeline', () => {
         enemy.addSpecial(createSpecial(20) as never);
         fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
         fixture.context.registerAuraConverter(
-            new FakeConverter([20], () => new FakeAura({
-                priority: 10,
-                range: new modules.FullRange(),
-                param: undefined,
-                couldApplyBase: false
-            }))
+            new FakeConverter(
+                [20],
+                () =>
+                    new FakeAura({
+                        priority: 10,
+                        range: new modules.FullRange(),
+                        param: undefined,
+                        couldApplyBase: false
+                    })
+            )
         );
         fixture.context.registerSpecialQueryEffect({
             priority: 10,
@@ -1019,7 +1050,13 @@ describe('EnemyContext effect stage ordering', () => {
         enemy.addSpecial(createSpecial(20) as never);
         fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
         const order: string[] = [];
-        const seen = { queryAtk: -1, queryDef: -1, queryHp: -1, finalAtk: -1, finalDef: -1 };
+        const seen = {
+            queryAtk: -1,
+            queryDef: -1,
+            queryHp: -1,
+            finalAtk: -1,
+            finalDef: -1
+        };
         const aura = new FakeAura({
             priority: 1,
             range: new modules.FullRange(),
@@ -1034,7 +1071,9 @@ describe('EnemyContext effect stage ordering', () => {
                 return { add: () => [], delete: () => [], modify: () => false };
             }
         });
-        fixture.context.registerAuraConverter(new FakeConverter([20], () => aura));
+        fixture.context.registerAuraConverter(
+            new FakeConverter([20], () => aura)
+        );
         fixture.context.registerCommonQueryEffect(20, {
             priority: 1,
             apply: handler => {
@@ -1196,8 +1235,12 @@ describe('EnemyContext refresh paths and DEV warnings', () => {
                 param: undefined,
                 onApply: handler => handler.enemy.addAttribute('atk', 50)
             });
-        fixture.context.registerAuraConverter(new FakeConverter([20], createAura));
-        fixture.context.registerAuraConverter(new FakeConverter([20], createAura));
+        fixture.context.registerAuraConverter(
+            new FakeConverter([20], createAura)
+        );
+        fixture.context.registerAuraConverter(
+            new FakeConverter([20], createAura)
+        );
 
         const result = modules.logger.catch(() => fixture.context.buildup());
 
@@ -1246,11 +1289,15 @@ describe('EnemyContext refresh paths and DEV warnings', () => {
         fixture.context.bindHero(fixture.hero);
         fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('e1'));
         fixture.context.registerAuraConverter(
-            new FakeConverter([40], () => new FakeAura({
-                priority: 1,
-                range: new modules.FullRange(),
-                param: undefined
-            }))
+            new FakeConverter(
+                [40],
+                () =>
+                    new FakeAura({
+                        priority: 1,
+                        range: new modules.FullRange(),
+                        param: undefined
+                    })
+            )
         );
         fixture.context.registerSpecialQueryEffect({
             priority: 1,
@@ -1278,11 +1325,15 @@ describe('EnemyContext refresh paths and DEV warnings', () => {
         fixture.context.bindHero(fixture.hero);
         fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('e1'));
         fixture.context.registerAuraConverter(
-            new FakeConverter([40], () => new FakeAura({
-                priority: 50,
-                range: new modules.FullRange(),
-                param: undefined
-            }))
+            new FakeConverter(
+                [40],
+                () =>
+                    new FakeAura({
+                        priority: 50,
+                        range: new modules.FullRange(),
+                        param: undefined
+                    })
+            )
         );
         fixture.context.registerSpecialQueryEffect({
             priority: 1,

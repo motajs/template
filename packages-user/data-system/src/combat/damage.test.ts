@@ -1,14 +1,17 @@
 // 测试战斗伤害上下文与伤害系统：结果展开、handler 身份、告警码 106/107、缓存与 with、临界生成、属性到伤害联动（D-26）
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { type ITileLocator } from '@motajs/common';
-import { type IEnemy, type IStateBase } from '@user/data-base';
+import {
+    type IEnemy,
+    type IReadonlyEnemy,
+    type IStateBase
+} from '@user/data-base';
 import {
     type CriticalableHeroStatus,
     type IDamageCalculator,
     type IEnemyContext,
     type IEnemyDamageInfoBase,
     type IEnemyView,
-    type IReadonlyEnemy,
     type IReadonlyEnemyHandler
 } from './types';
 
@@ -92,9 +95,7 @@ beforeAll(async () => {
 /**
  * 固定伤害计算器：每点攻击减免固定伤害，用于验证结果展开与临界生成
  */
-class FakeCalculator
-    implements IDamageCalculator<TestEnemyAttr, TestHeroAttr>
-{
+class FakeCalculator implements IDamageCalculator<TestEnemyAttr, TestHeroAttr> {
     /** 每点攻击减免的伤害值 */
     readonly damagePerAtk: number;
     /** calculate 调用次数 */
@@ -123,13 +124,19 @@ class FakeCalculator
     }
 }
 
+type TestHeroAttribute = import('@user/data-base').HeroAttribute<TestHeroAttr>;
+type TestEnemyContext = import('./context').EnemyContext<
+    TestEnemyAttr,
+    TestHeroAttr
+>;
+
 interface DamageFixture {
     /** 怪物上下文假对象 */
     context: IEnemyContext<TestEnemyAttr, TestHeroAttr>;
     /** 固定伤害计算器 */
     calculator: FakeCalculator;
     /** 可修改勇士属性 */
-    hero: InstanceType<TestModules['HeroAttribute']>;
+    hero: TestHeroAttribute;
     /** 怪物视图假对象 */
     view: IEnemyView<TestEnemyAttr>;
     /** 计算后怪物 */
@@ -234,9 +241,10 @@ function createSpecial(code: number): never {
 /**
  * 创建一个按怪物攻击力线性换算伤害的计算器，用于验证属性到伤害的联动
  */
-class EnemyAttributeCalculator
-    implements IDamageCalculator<TestEnemyAttr, TestHeroAttr>
-{
+class EnemyAttributeCalculator implements IDamageCalculator<
+    TestEnemyAttr,
+    TestHeroAttr
+> {
     /** calculate 调用次数 */
     calls: number = 0;
     /** 每点怪物攻击力换算的伤害 */
@@ -289,9 +297,7 @@ interface FakeConverterShape {
  * 创建一个可驱动光环流水线的真实怪物上下文
  * @param converter 赋予上下文的测试用光环转换器
  */
-function createEnemyContext(
-    converter: FakeConverterShape
-): InstanceType<TestModules['EnemyContext']> {
+function createEnemyContext(converter: FakeConverterShape): TestEnemyContext {
     const context = new modules.EnemyContext<TestEnemyAttr, TestHeroAttr>(
         {} as IStateBase
     );
@@ -507,8 +513,9 @@ describe('DamageContext critical generation', () => {
             fixture.hero
         );
 
-        const first = context.calculateCritical(fixture.view, 'atk').next()
-            .value!;
+        const first = context
+            .calculateCritical(fixture.view, 'atk')
+            .next().value!;
 
         expect(first.baseValue).toBe(0);
         expect(first.nextValue).toBe(1);
@@ -577,8 +584,9 @@ describe('DamageContext critical generation', () => {
             fixture.hero
         );
 
-        const first = context.calculateCritical(fixture.view, 'atk').next()
-            .value!;
+        const first = context
+            .calculateCritical(fixture.view, 'atk')
+            .next().value!;
 
         expect(first.nextValue).toBe(1);
         expect(first.info.damage).toBe(90);
@@ -705,10 +713,7 @@ describe('DamageSystem attribute linkage', () => {
         context.buildup();
 
         expect(
-            context
-                .getEnemyByLoc(0, 0)!
-                .getComputedEnemy()
-                .getAttribute('atk')
+            context.getEnemyByLoc(0, 0)!.getComputedEnemy().getAttribute('atk')
         ).toBe(17);
     });
 });

@@ -103,13 +103,17 @@ function createEnemy(attrs: Partial<IEnemyAttr> = {}): FakeEnemy {
         addSpecial: () => {},
         deleteSpecial: () => {},
         setAttribute: (key: string, value: unknown) => {
-            (values as never)[key] = value;
+            // 假怪物按动态字符串键读写属性，固定形状的 IEnemyAttr 无法表达字符串索引
+            (values as unknown as Record<string, unknown>)[key] = value;
         },
         addAttribute: (key: string, value: number) => {
-            (values as never)[key] += value;
+            (values as unknown as Record<string, number>)[key] += value;
         },
         copyFrom: () => {},
-        saveState: () => ({ attrs: structuredClone(values), specials: new Map() }),
+        saveState: () => ({
+            attrs: structuredClone(values),
+            specials: new Map()
+        }),
         loadState: () => {}
     } as never;
     return { enemy, attrs: values };
@@ -129,7 +133,9 @@ function createSpecial<T>(code: number, value: T): ISpecial<T> {
  * @param resolve 根据计算后怪物对象查找视图的回调
  */
 function createContext(
-    resolve?: (enemy: IReadonlyEnemy<IEnemyAttr>) => IEnemyView<IEnemyAttr> | null
+    resolve?: (
+        enemy: IReadonlyEnemy<IEnemyAttr>
+    ) => IEnemyView<IEnemyAttr> | null
 ): IEnemyContext<IEnemyAttr, IHeroAttr> {
     return {
         width: 8,
@@ -192,8 +198,8 @@ describe('CommonAuraConverter', () => {
         const halo = createSpecial(25, createHalo());
         const guard = createSpecial(26, undefined);
 
-        expect(converter.shouldConvert(halo, {} as never)).toBe(true);
-        expect(converter.shouldConvert(guard, {} as never)).toBe(false);
+        expect(converter.shouldConvert(halo)).toBe(true);
+        expect(converter.shouldConvert(guard)).toBe(false);
     });
 
     // 验证转换结果为携带怪物、特殊属性与定位符的光环视图
@@ -234,10 +240,7 @@ describe('CommonAura range', () => {
         const { enemy } = createEnemy();
         const aura = new modules.CommonAura(
             enemy,
-            createSpecial(
-                25,
-                createHalo({ haloRange: 2, haloSquare: true })
-            ),
+            createSpecial(25, createHalo({ haloRange: 2, haloSquare: true })),
             { x: 3, y: 4 }
         );
 
@@ -250,10 +253,7 @@ describe('CommonAura range', () => {
         const { enemy } = createEnemy();
         const aura = new modules.CommonAura(
             enemy,
-            createSpecial(
-                25,
-                createHalo({ haloRange: 2, haloSquare: false })
-            ),
+            createSpecial(25, createHalo({ haloRange: 2, haloSquare: false })),
             { x: 3, y: 4 }
         );
 
@@ -276,7 +276,10 @@ describe('CommonAura apply', () => {
             { x: 0, y: 0 }
         );
 
-        aura.apply(createWritableHandler(target.enemy, { x: 1, y: 0 }), base.enemy);
+        aura.apply(
+            createWritableHandler(target.enemy, { x: 1, y: 0 }),
+            base.enemy
+        );
 
         expect(target.attrs.hp).toBe(30);
         expect(target.attrs.atk).toBe(33);
@@ -293,7 +296,10 @@ describe('CommonAura apply', () => {
             { x: 0, y: 0 }
         );
 
-        aura.apply(createWritableHandler(target.enemy, { x: 1, y: 0 }), base.enemy);
+        aura.apply(
+            createWritableHandler(target.enemy, { x: 1, y: 0 }),
+            base.enemy
+        );
 
         expect(target.attrs).toMatchObject({ hp: 20, atk: 8, def: 5 });
     });
@@ -319,12 +325,12 @@ describe('GuardAuraConverter', () => {
     it('converts only special code 26', () => {
         const converter = new modules.GuardAuraConverter();
 
-        expect(
-            converter.shouldConvert(createSpecial(26, undefined), {} as never)
-        ).toBe(true);
-        expect(
-            converter.shouldConvert(createSpecial(25, undefined), {} as never)
-        ).toBe(false);
+        expect(converter.shouldConvert(createSpecial(26, undefined))).toBe(
+            true
+        );
+        expect(converter.shouldConvert(createSpecial(25, undefined))).toBe(
+            false
+        );
     });
 
     // 验证转换结果为携带上下文、怪物、特殊属性与定位符的支援光环视图
@@ -376,9 +382,9 @@ describe('GuardAura', () => {
 
         aura.apply(createWritableHandler(target.enemy, { x: 2, y: 1 }));
 
-        expect((target.attrs.guard as Set<ITileLocator>).has(sourceLocator)).toBe(
-            true
-        );
+        expect(
+            (target.attrs.guard as Set<ITileLocator>).has(sourceLocator)
+        ).toBe(true);
     });
 
     // 验证支援光环不会把来源定位符添加到自身

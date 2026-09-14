@@ -165,9 +165,10 @@ class FakeView implements IMapDamageView<number> {
 /**
  * 固定输出伤害视图列表的测试转换器
  */
-class FakeConverter
-    implements IMapDamageConverter<TestEnemyAttr, TestHeroAttr>
-{
+class FakeConverter implements IMapDamageConverter<
+    TestEnemyAttr,
+    TestHeroAttr
+> {
     /** 转换输出的伤害视图 */
     readonly views: IMapDamageView<number>[];
     /** convert 调用次数 */
@@ -190,9 +191,7 @@ class FakeReducer implements IMapDamageReducer {
     /** reduce 调用次数 */
     calls: number = 0;
 
-    reduce(
-        info: Iterable<Readonly<IMapDamageInfo>>
-    ): Readonly<IMapDamageInfo> {
+    reduce(info: Iterable<Readonly<IMapDamageInfo>>): Readonly<IMapDamageInfo> {
         this.calls++;
         let damage = 0;
         for (const item of info) {
@@ -249,10 +248,9 @@ function createFixture(): MapDamageFixture {
         markDirty: () => {}
     };
     enemies.set(view, locator);
-    const damageView = new FakeView(
-        7,
-        [indexer.locToIndex(locator.x, locator.y)]
-    );
+    const damageView = new FakeView(7, [
+        indexer.locToIndex(locator.x, locator.y)
+    ]);
     const context = {
         state,
         indexer,
@@ -264,17 +262,13 @@ function createFixture(): MapDamageFixture {
         getEnemyLocator: (target: IEnemy<TestEnemyAttr>) =>
             target === origin ? locator : null,
         getViewByComputed: () => view,
-        *iterateEnemy(): Iterable<
-            [ITileLocator, IEnemyView<TestEnemyAttr>]
-        > {
+        *iterateEnemy(): Iterable<[ITileLocator, IEnemyView<TestEnemyAttr>]> {
             for (const [target, targetLocator] of enemies) {
                 yield [targetLocator, target];
             }
         }
     } as never;
-    const damage = new modules.MapDamage<TestEnemyAttr, TestHeroAttr>(
-        context
-    );
+    const damage = new modules.MapDamage<TestEnemyAttr, TestHeroAttr>(context);
     return {
         damage,
         context,
@@ -290,7 +284,9 @@ function createFixture(): MapDamageFixture {
 /**
  * 创建一个未注册到夹具中的怪物视图，用于验证未知定位符路径
  */
-function createUnknownView(fixture: MapDamageFixture): IEnemyView<TestEnemyAttr> {
+function createUnknownView(
+    fixture: MapDamageFixture
+): IEnemyView<TestEnemyAttr> {
     return {
         context: {} as never,
         reset: () => {},
@@ -309,14 +305,14 @@ describe('MapDamage sourceless damage', () => {
         const info = createInfo(5);
 
         fixture.damage.addMapDamage({ x: 0, y: 0 }, info);
-        expect(
-            [...fixture.damage.getSeparatedDamage({ x: 0, y: 0 })]
-        ).toContain(info);
+        expect([
+            ...fixture.damage.getSeparatedDamage({ x: 0, y: 0 })
+        ]).toContain(info);
 
         fixture.damage.deleteMapDamage({ x: 0, y: 0 }, info);
-        expect(
-            [...fixture.damage.getSeparatedDamage({ x: 0, y: 0 })]
-        ).toHaveLength(0);
+        expect([
+            ...fixture.damage.getSeparatedDamage({ x: 0, y: 0 })
+        ]).toHaveLength(0);
     });
 
     // 验证删除不存在的无来源伤害是安全操作
@@ -326,9 +322,9 @@ describe('MapDamage sourceless damage', () => {
 
         fixture.damage.deleteMapDamage({ x: 3, y: 2 }, createInfo(5));
 
-        expect(
-            [...fixture.damage.getSeparatedDamage({ x: 3, y: 2 })]
-        ).toHaveLength(0);
+        expect([
+            ...fixture.damage.getSeparatedDamage({ x: 3, y: 2 })
+        ]).toHaveLength(0);
     });
 });
 
@@ -357,9 +353,9 @@ describe('MapDamage sourced conversion and reduction', () => {
         fixture.damage.useConverter(fixture.converter);
         fixture.damage.addMapDamage(fixture.locator, createInfo(3));
 
-        expect(
-            [...fixture.damage.getSeparatedDamage(fixture.locator)]
-        ).toHaveLength(2);
+        expect([
+            ...fixture.damage.getSeparatedDamage(fixture.locator)
+        ]).toHaveLength(2);
 
         const reduced = fixture.damage.getReducedDamage(fixture.locator);
         expect(reduced?.damage).toBe(10);
@@ -445,15 +441,14 @@ describe('MapDamage sourced conversion and reduction', () => {
         const fixture = createFixture();
         fixture.damage.useReducer(fixture.reducer);
         fixture.damage.useConverter(fixture.converter);
-        const before = [
-            ...fixture.damage.getSeparatedDamage(fixture.locator)
-        ].length;
+        const before = [...fixture.damage.getSeparatedDamage(fixture.locator)]
+            .length;
 
         fixture.damage.deleteEnemy(createUnknownView(fixture));
 
-        expect(
-            [...fixture.damage.getSeparatedDamage(fixture.locator)]
-        ).toHaveLength(before);
+        expect([
+            ...fixture.damage.getSeparatedDamage(fixture.locator)
+        ]).toHaveLength(before);
     });
 
     // 疑似 bug：deleteEnemy 应移除该怪物带来的有来源地图伤害，详见 06-TEST-FINDINGS.md #06-01-2，修复后取消 skip
@@ -461,14 +456,14 @@ describe('MapDamage sourced conversion and reduction', () => {
         const fixture = createFixture();
         fixture.damage.useReducer(fixture.reducer);
         fixture.damage.useConverter(fixture.converter);
-        expect(
-            [...fixture.damage.getSeparatedDamage(fixture.locator)]
-        ).toHaveLength(1);
+        expect([
+            ...fixture.damage.getSeparatedDamage(fixture.locator)
+        ]).toHaveLength(1);
 
         fixture.damage.deleteEnemy(fixture.view);
 
-        expect(
-            [...fixture.damage.getSeparatedDamage(fixture.locator)]
-        ).toHaveLength(0);
+        expect([
+            ...fixture.damage.getSeparatedDamage(fixture.locator)
+        ]).toHaveLength(0);
     });
 });

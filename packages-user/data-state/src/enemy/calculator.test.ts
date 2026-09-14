@@ -97,7 +97,7 @@ function createEnemy(options: FakeEnemyOptions = {}): FakeEnemy {
                       code,
                       value: specials.get(code),
                       deepEqualsTo: () => false
-                  } as ISpecial<any>)
+                  } as unknown as ISpecial<any>)
                 : null,
         hasSpecial: (code: number) => specials.has(code),
         iterateSpecials: () => [],
@@ -107,10 +107,11 @@ function createEnemy(options: FakeEnemyOptions = {}): FakeEnemy {
         addSpecial: () => {},
         deleteSpecial: () => {},
         setAttribute: (key: string, value: unknown) => {
-            (attrs as never)[key] = value;
+            // 假怪物按动态字符串键读写属性，固定形状的 IEnemyAttr 无法表达字符串索引
+            (attrs as unknown as Record<string, unknown>)[key] = value;
         },
         addAttribute: (key: string, value: number) => {
-            (attrs as never)[key] += value;
+            (attrs as unknown as Record<string, number>)[key] += value;
         },
         copyFrom: () => {},
         saveState: () => ({
@@ -145,7 +146,7 @@ function createHero(
     return {
         getBaseAttribute: (name: string) => (values as never)[name],
         getFinalAttribute: (name: string) => (values as never)[name]
-    } as IReadonlyHeroAttribute<IHeroAttr>;
+    } as unknown as IReadonlyHeroAttribute<IHeroAttr>;
 }
 
 interface FakeStateOptions {
@@ -196,12 +197,10 @@ function createContext(
  * 将一个计算后怪物对象包装为只提供该对象读取的假视图
  * @param computed 计算后怪物对象
  */
-function createView(
-    computed: IEnemy<IEnemyAttr>
-): IEnemyView<IEnemyAttr> {
+function createView(computed: IEnemy<IEnemyAttr>): IEnemyView<IEnemyAttr> {
     return {
         getComputedEnemy: () => computed
-    } as IEnemyView<IEnemyAttr>;
+    } as unknown as IEnemyView<IEnemyAttr>;
 }
 
 interface HandlerOptions {
@@ -244,9 +243,7 @@ function specialsOf(entries: Array<[number, unknown]>): Map<number, unknown> {
 /**
  * 创建一个计算器实例
  */
-function createCalculator(): InstanceType<
-    TestModules['MainDamageCalculator']
-> {
+function createCalculator(): InstanceType<TestModules['MainDamageCalculator']> {
     return new modules.MainDamageCalculator();
 }
 
@@ -273,7 +270,9 @@ describe('MainDamageCalculator base and defeat branches', () => {
 
     // 验证无敌怪物在没有十字架时不可战胜，持有十字架后恢复正常计算
     it('blocks 无敌 without a cross and allows it with one', () => {
-        const { enemy } = createEnemy({ specials: specialsOf([[20, undefined]]) });
+        const { enemy } = createEnemy({
+            specials: specialsOf([[20, undefined]])
+        });
         const calculator = createCalculator();
 
         const blocked = calculator.calculate(createHandler({ enemy }));
@@ -287,7 +286,9 @@ describe('MainDamageCalculator base and defeat branches', () => {
 
     // 验证魔攻怪物的每轮伤害不减免勇士防御
     it('ignores hero defense for 魔攻', () => {
-        const { enemy } = createEnemy({ specials: specialsOf([[2, undefined]]) });
+        const { enemy } = createEnemy({
+            specials: specialsOf([[2, undefined]])
+        });
         const calculator = createCalculator();
 
         const info = calculator.calculate(createHandler({ enemy }));
@@ -301,12 +302,12 @@ describe('MainDamageCalculator base and defeat branches', () => {
         const double = createEnemy({ specials: specialsOf([[4, undefined]]) });
         const triple = createEnemy({ specials: specialsOf([[5, undefined]]) });
 
-        expect(calculator.calculate(createHandler({ enemy: double.enemy }))).toEqual(
-            { damage: 6, turn: 2 }
-        );
-        expect(calculator.calculate(createHandler({ enemy: triple.enemy }))).toEqual(
-            { damage: 9, turn: 2 }
-        );
+        expect(
+            calculator.calculate(createHandler({ enemy: double.enemy }))
+        ).toEqual({ damage: 6, turn: 2 });
+        expect(
+            calculator.calculate(createHandler({ enemy: triple.enemy }))
+        ).toEqual({ damage: 9, turn: 2 });
     });
 
     // 验证多段伤害按特殊属性数值倍乘每轮伤害
@@ -334,9 +335,7 @@ describe('MainDamageCalculator support and additive branches', () => {
         });
         const calculator = createCalculator();
 
-        const info = calculator.calculate(
-            createHandler({ enemy, context })
-        );
+        const info = calculator.calculate(createHandler({ enemy, context }));
 
         expect(info).toEqual({ damage: 12, turn: 4 });
         expect(calls).toEqual(['1,0']);
@@ -378,7 +377,9 @@ describe('MainDamageCalculator support and additive branches', () => {
 
     // 验证先攻会额外附加一次每轮伤害
     it('adds one enemy hit for 先攻', () => {
-        const { enemy } = createEnemy({ specials: specialsOf([[1, undefined]]) });
+        const { enemy } = createEnemy({
+            specials: specialsOf([[1, undefined]])
+        });
         const calculator = createCalculator();
 
         const info = calculator.calculate(createHandler({ enemy }));
@@ -500,7 +501,9 @@ describe('MainDamageCalculator vampire and bypass branches', () => {
 
     // 验证仇恨按 flag 字段值附加伤害且不受魔防影响
     it('adds the hatred flag value for 仇恨', () => {
-        const { enemy } = createEnemy({ specials: specialsOf([[17, undefined]]) });
+        const { enemy } = createEnemy({
+            specials: specialsOf([[17, undefined]])
+        });
         const calculator = createCalculator();
 
         const info = calculator.calculate(
