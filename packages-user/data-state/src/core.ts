@@ -238,6 +238,7 @@ export class CoreState implements ICoreState {
         this.addSaveableContent('@system/flags', this.flags);
         this.addSaveableContent('@system/maps', this.maps);
         this.addSaveableContent('@system/enemy', this.enemyManager);
+        this.addSaveableContent('@system/replay', this.replaySystem);
         // 初始化存档数据库，不要动
         loading.once('coreInit', () => {
             this.saveSystem.init(`@game/${core.firstData.name}`);

@@ -1,4 +1,5 @@
 import { IHookable, IHookBase } from '@motajs/common';
+import { ISaveableContent } from '../save';
 
 /** 录像指令码，数值属于录像格式的一部分 */
 export const enum ReplayCommandCode {
@@ -339,7 +340,19 @@ export interface IReplaySandboxConfig {
     save?: Map<string, unknown>;
 }
 
-export interface IReplaySystem extends IHookable<IReplaySystemHooks> {
+export interface IReplaySystemSave {
+    /** 录像长度 */
+    readonly length: number;
+    /** 指令位宽 */
+    readonly commandWidth: number;
+    /** 指令数组 */
+    readonly commandArray: ArrayBuffer;
+    /** 参数数组 */
+    readonly paramArray: ArrayBuffer;
+}
+
+export interface IReplaySystem
+    extends IHookable<IReplaySystemHooks>, ISaveableContent<IReplaySystemSave> {
     /** 当前是否处在录像播放状态 */
     readonly replaying: boolean;
     /** 当前正在播放的录像沙箱实例 */

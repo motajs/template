@@ -11,6 +11,7 @@ import {
     IReplaySandboxConfig,
     IReplaySystem,
     IReplaySystemHooks,
+    IReplaySystemSave,
     ReplayCommandWidth,
     ReplayParamValue
 } from './types';
@@ -23,7 +24,7 @@ export class ReplaySystem
 {
     replaying: boolean = false;
     sandbox: IReplaySandbox | null = null;
-    route: IReplayArray;
+    readonly route: IReplayArray;
 
     /** 所有注册的指令 */
     private readonly commands: Map<number, IReplayCommand> = new Map();
@@ -83,5 +84,23 @@ export class ReplaySystem
     releaseSandbox(): void {
         this.sandbox?.stop();
         this.sandbox = null;
+    }
+
+    saveState(): IReplaySystemSave {
+        return {
+            length: this.route.length,
+            commandWidth: this.route.commandWidth,
+            commandArray: this.route.getCommandArray(),
+            paramArray: this.route.getParamArray()
+        };
+    }
+
+    loadState(state: IReplaySystemSave): void {
+        this.route.setReplayArray(
+            state.commandWidth,
+            state.commandArray,
+            state.paramArray,
+            state.length
+        );
     }
 }
