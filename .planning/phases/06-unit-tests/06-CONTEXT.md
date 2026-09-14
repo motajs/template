@@ -69,6 +69,36 @@
 - **D-26:** 「属性流水线结果 → 伤害系统」联动：`final-effect` / 光环改完属性后，验证 `DamageContext` 缓存与脏标记随之更新，`getDamageInfo` / `markDirty` / `deleteEnemy` / `with(hero)` 行为正确（注入 fake `IDamageCalculator`）。
 - **D-27:** `EnemyContext` 覆盖判据：**每个公开方法至少一个正常用例**；边界按需覆盖**警告码、未知/空输入（返回 null 或 no-op）、`resize`/`clear`/`destroy` 生命周期清空与附件解绑**；**`buildup`（全量）与 `requestRefresh`（局部）两条刷新路径都要覆盖**；上述「全接口覆盖」写入 `must_haves.truths` 作为阶段完成判据。
 
+### 阶段级覆盖规则与计划重构（2026-09-14 第二轮补充讨论）
+> 由用户对全部计划的逐条补充得出。**这些规则对 06-03..06-09 全部生效，并回溯要求 06-01/06-02 返工。**
+
+- **D-28（计划重排）：** 重排编号为：
+  - 06-01 战斗系统（系统层，`data-system/src/combat`，见 D-21..D-27）
+  - 06-02 enemy 顶层实现（`data-state/src/enemy`，只做基本功能）
+  - 06-03 enemy 数据模型（`data-base/src/enemy`）
+  - 06-04 录像（`data-common/src/replay`，**不含存读档**）
+  - 06-05 勇士全部（原 06-05 + 06-06 合并，含 `rendering`、`mover` 异步）
+  - 06-06 地图全部（原 06-07）
+  - 06-07 顶层集成（伤害组合 + 录像完整播放 + 二次录制比对）
+  - 06-08 flag + common
+  - 06-09 存档（独立系统，所有 saveState/loadState + CoreState 顶层验证）
+  原 06-06 合并进 06-05；原 06-08 的 saveables 往返部分移到 06-09。
+- **D-29（返工）：** 已执行的 06-01、06-02 标记为 **superseded**（SUMMARY 改名保留），重规划后按同号重跑，确保「接口 + warn/error code 全覆盖」落到原计划。
+- **D-30（接口全覆盖）：** 除名称含 legacy 的接口/方法（`fromLegacy`、`*LegacyBridge`、`*LegacyConverter` 等）外，**每个公开方法至少一条正常用例**。
+- **D-31（warn/error 全覆盖）：** 以 `packages/common/src/logger.json` 为权威码表；范围 = 本计划模块**可达**的 code（排除其他层如渲染/音频，及 legacy 路径）；每个 code 至少一条触发断言（经 `logger.catch`）；产出**阶段级 `06-COVERAGE-MAP.md`**（code → 模块 → 用例）映射表。
+- **D-32（存读档集中）：** 所有 `saveState`/`loadState` 测试从各计划移出，集中到 06-09。唯一例外：06-07 的录像播放所需状态重置可**最小使用**存档数据，但不测存读档本身。
+- **D-33（执行节奏）：** **每个计划执行前先向用户确认**；执行完暂停，用中文**分条简要汇报**本计划验证结果；详细结果写入共用的 `06-TEST-FINDINGS.md`。
+
+### 各计划边界
+- **D-35:** 06-02 只测顶层实现**基本功能**（单分支、按预期输出）；属性/加成**组合**后移至 06-07。范围：`MainDamageCalculator` / `MainEnemyFinalEffect` / `MainEnemyComparer` / `CommonAura(+Converter)` / `GuardAura(+Converter)` / `registerSpecials` / mapDamage 五视图 + converter + reducer。
+- **D-36:** 06-03 除 legacy 外**全部公开接口**：`Enemy` 全量 / `CommonSerializableSpecial` / `NonePropertySpecial` / `EnemyManager`（注册表、prefab、reuse、modify、comparer dirty）。排除 `IEnemyLegacyBridge`/`fromLegacyEnemy`。可达 code 含 53/96/117/118/119/120。
+- **D-37:** 06-04 重点**录像数组**：`ReplayArray` 全部公开操作（`add/insert/delete/set/setCommandWidth/get/createReadStream/rebuildIndexArray/setReplayArray/getCommandArray/getParamArray`，**不含 save/load**）；编解码覆盖 **boolean / 整数（各位宽）/ bigint / string / 数组参数**；`ReplaySystem` 注册/record；`ReplaySandbox` 播放器（`step/play/pause/resume/stop/finalizeLast` + safety 装饰器）。**完整录像播放 → 06-07**。
+- **D-38:** 06-05 验证**每个勇士相关文件**：attribute / modifier / location / state / equipment / equipStore / items / follower / mover（异步，真实计时器）/ **rendering**。save/load 移出至 06-09。
+- **D-39:** 06-06 **全地图接口**（mapState / gameMap / mapLayer / tile / staticTile / dynamicTile / eventView / mover），**重点**：静态图块、动态图块转换、静态数组设置。save/load 移出至 06-09。
+- **D-40:** 06-07 **顶层集成**：① 伤害系统的**属性组合/加成组合**（顶层多特殊属性组合 + 系统层光环/各效果组合，见 D-25/D-26）；② 用**真实 API 构造小地图场景**（合成数据，延续 D-02）+ 一段录像步，验证录像正常播放；③ **二次录制验证**：首次播放完毕后录像系统记录一遍录像步，判定二次录像与原录像**逐条完全相等**（步数与每步 code + 各 param 的 type/value），并再次播放检验。`error 2001–2008`（Replay 执行错误）归属本计划。**执行前必须先向用户确认**（依赖用户先接通录像记录）。
+- **D-41:** 06-08 **flag 全接口** + **common 工具**（`utils` / `indexer` / `faceManager` + `face` / `mover`）。save/load 移出至 06-09。
+- **D-42:** 06-09 **存档（独立系统）**：所有含 `saveState`/`loadState` 的类逐类往返（同实例）**+ CoreState 顶层完整验证**；仅断言**关键状态字段**，排除存档无关/元数据字段（如最后存档时间、dirty、缓存）——由实现推导**排除清单**并写入计划；压缩档全覆盖。**执行前必须先向用户确认**（依赖用户调整 CoreState 可存档内容并新增公开 save/load 入口，例如录像存档目前未计入但应计入）。
+
 ### the agent's Discretion
 - 各系统内部具体测哪些函数/边界用例、用例命名与文件切分，由实现者在上述约束下决定；发现接口/设计疑问时按 D-07 立即提问，不自行假设。
 
@@ -103,6 +133,11 @@
 - `.planning/phases/03-data-completion/03-REPLAY-DIAGNOSTICS.md` — 首分歧诊断契约
 - `.planning/phases/03-data-completion/03-EVENT-CONTRACT.md` — 事件内建契约（七个内建）
 - `packages-user/data-state/test/fixtures/closed-loop.ts` — 现有闭环回放 fixture（按需复用）
+
+### 覆盖与码表锚点（2026-09-14 补充）
+- `packages/common/src/logger.json` — warn/error code 权威码表（warn 1–175 + 1001；error 1–65 + 2001–2008）；「code 全覆盖」据此判定
+- `.planning/phases/06-unit-tests/06-COVERAGE-MAP.md` — 阶段级 `code → 模块 → 用例` 映射表（规划/执行产出）
+- `.planning/phases/06-unit-tests/06-TEST-FINDINGS.md` — 全部计划共用的验证结果与疑似缺陷记录
 
 </canonical_refs>
 
