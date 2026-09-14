@@ -88,6 +88,7 @@
 - **D-31:** warn/error 全覆盖 —— 以 `packages/common/src/logger.json` 为权威码表；范围 = 本计划模块**可达**的 code（排除其他层如渲染/音频，及 legacy 路径）；每个 code 至少一条触发断言（经 `logger.catch`）；产出**阶段级 `06-COVERAGE-MAP.md`**（code → 模块 → 用例）映射表。
 - **D-32:** 存读档集中 —— 所有 `saveState`/`loadState` 测试从各计划移出，集中到 06-09。唯一例外：06-07 的录像播放所需状态重置可**最小使用**存档数据，但不测存读档本身。
 - **D-33:** 执行节奏 —— **每个计划执行前先向用户确认**；执行完暂停，用中文**分条简要汇报**本计划验证结果；详细结果写入共用的 `06-TEST-FINDINGS.md`。
+- **D-43:** 阶段化测试（**应用于全部 06-01..06-09**）—— 先做**构件级**测试（单个类/函数/单个光环/单个 effect 等最小单元），再做**组合/流水线**测试，最后做**完整/集成**测试。**取消 tracer-first**；每阶段跑绿后再进入下一阶段。某阶段发现**阻断性 bug**（导致后续阶段无法运行）时，**暂停并向用户汇报、等确认**（D-05/D-07），不得跳过或弱化为通过。原因：这些系统在本次之前从未被测过，直接端到端很可能整链失败且无法定位，必须先分阶段定位。
 
 ### 各计划边界
 - **D-35:** 06-02 只测顶层实现**基本功能**（单分支、按预期输出）；属性/加成**组合**后移至 06-07。范围：`MainDamageCalculator` / `MainEnemyFinalEffect` / `MainEnemyComparer` / `CommonAura(+Converter)` / `GuardAura(+Converter)` / `registerSpecials` / mapDamage 五视图 + converter + reducer。
