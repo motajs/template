@@ -314,7 +314,7 @@ describe('CommonAura apply', () => {
     });
 });
 
-describe('GuardAura', () => {
+describe('GuardAuraConverter', () => {
     // 验证只有代码 26 的特殊属性会被支援光环转换器接管
     it('converts only special code 26', () => {
         const converter = new modules.GuardAuraConverter();
@@ -327,6 +327,27 @@ describe('GuardAura', () => {
         ).toBe(false);
     });
 
+    // 验证转换结果为携带上下文、怪物、特殊属性与定位符的支援光环视图
+    it('converts a code 26 special into a guard aura', () => {
+        const converter = new modules.GuardAuraConverter();
+        const { enemy } = createEnemy();
+        const locator: ITileLocator = { x: 3, y: 4 };
+        const special = createSpecial(26, undefined);
+
+        const aura = converter.convert(
+            special,
+            createReadonlyHandler(enemy, locator),
+            createContext(() => createView())
+        );
+
+        expect(aura).toBeInstanceOf(modules.GuardAura);
+        expect(aura.enemy).toBe(enemy);
+        expect(aura.locator).toBe(locator);
+        expect(aura.special).toBe(special);
+    });
+});
+
+describe('GuardAura', () => {
     // 验证支援光环的范围参数为以定位符为中心的 3x3 矩形
     it('uses a 3x3 rect centered on the locator', () => {
         const { enemy } = createEnemy();
@@ -390,5 +411,22 @@ describe('GuardAura', () => {
         aura.apply(createWritableHandler(target.enemy, { x: 2, y: 1 }));
 
         expect(target.attrs.guard.size).toBe(0);
+    });
+
+    // 验证支援光环的优先级与修饰能力声明，且不产生特殊属性修饰器
+    it('reports its priority, capabilities and no special modifier', () => {
+        const { enemy } = createEnemy();
+        const aura = new modules.GuardAura(
+            createContext(() => createView()),
+            enemy,
+            createSpecial(26, undefined),
+            { x: 1, y: 1 }
+        );
+
+        expect(aura.priority).toBe(26);
+        expect(aura.couldApplyBase).toBe(true);
+        expect(aura.couldApplySpecial).toBe(false);
+        expect(aura.range).toBeInstanceOf(modules.RectRange);
+        expect(aura.applySpecial()).toBeNull();
     });
 });
