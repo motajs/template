@@ -110,3 +110,42 @@ flag 的存读档往返归 06-09。D-30：排除名称含 legacy 的接口/方�
 | 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `mover.ts` `ObjectMover.backward`（`Special` 步的移动方向推导） | 连续后退多个步骤时方向来回摆动，净位移为零且朝向被翻转 | 朝向 `Down` 的 mover 调用 `backward(2)` → `start()` → `await controller.onEnd`，最终坐标为 `(0, 0)` 而非 `(0, -2)`，`faceDirection` 变为 `Up` | `prepareStep` 的后退分支把 `moveDirection` 设为 `opposite(dir)`，而 `getCurrentDirection` 又优先读取非 `Unknown` 的 `moveDirection`；下一步据此再次取反，形成交替 | 多步后退（`backward(count>1)`）无法沿同一轴连续移动，并把 `faceDirection` 翻转；单步后退正常 | 后退步的基准方向应取当前朝向 `faceDirection` 而非被翻转后的 `moveDirection`，或在 `getCurrentDirection` 中区分「停顿时的移动方向」与「本步刚设置的临时移动方向」 | `mover.test.ts` `keeps retreating along the same axis across multiple backward steps`（#06-08-1） | 低 |
+
+## #06-09 存档（独立系统）
+
+本计划按 D-43 三阶段（构件 → 组合/流水线 → 完整/集成）执行，6 个测试文件全部跑绿
+（阶段 1：enemy 7 通过；hero 16 通过 / 3 跳过；阶段 2：map 9 通过 / 1 跳过、replay 4 通过 / 1 跳过、
+flag 3 通过；阶段 3：CoreState 顶层 7 通过 / 1 跳过）。
+D-45：公开 `CoreState.saveState(compression)` / `loadState(state, compression)` 对 5 个 saveable
+（`@system/hero`/`flags`/`maps`/`enemy`/`replay`）× 3 档压缩整体往返通过；D-10 未触碰 IndexedDB。
+本计划可达码 55/58/59/112/113/119/120/122/124/177/178 均已有触发断言（见 `06-COVERAGE-MAP.md` 06-09 小节）。
+发现 5 处疑似缺陷（`#06-09-1..5`），按 D-05 以正确预期的 `it.skip` 用例登记（6 条 skip，
+经临时取消 skip 验证确为真实失败），详细如下。
+
+| 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `hero/equipStore.ts` `EquipmentState.loadState` | 数值加成读档丢失；`NoCompression` 下百分比表被误写入数值表 | 装备定义 `value={atk:5}`；`saveState(NoCompression)` → 修改修饰器 → `loadState` → `getModifiers()` 中再无该数值修饰器；`LowCompression` 往返后未修改的基础加成也丢失 | `loadNoCompression` 两次遍历 `state.percentage`（第一处应为 `state.value`）；`loadDiff` 先 `clear()` 且仅用存档差异重建，未回退到 `item.equip` 原始定义 | 装备数值加成无法经存档恢复；Low/High 下所有未修改的装备加成丢失，读档后属性偏低 | `loadNoCompression` 第一循环改遍历 `state.value`；`loadDiff` 以 `item.equip.value/percentage` 为基准再叠加 `state.value` 差异 | `hero/saveLoad.test.ts` `restores a value modifier on the same instance`、`keeps unchanged value modifiers for compressed snapshots` | 高 |
+| `hero/equipment.ts` `HeroEquipment.saveState` | 存档未深拷贝，`equipped`/`slots` 直接暴露内部引用；随后修改活对象会污染已取出的存档 | `equip(uid,0)` → `saved=equipment.saveState()` → `equipment.unequip(0)` → `equipment.loadState(saved)`：`getEquipped(0)` 为 undefined、`slots` 变为空 | `saveState()` 返回 `{ equipped: this.equips, slots: this.slots }` 未拷贝；`loadState` 又 `this.slots.length=0` 后从同一数组读回 | 内存中直接持有 saveState 结果再继续操作装备的调用方（自动存档栈）会拿到被污染的存档 | `saveState` 返回 `new Map(this.equips)` 与 `[...this.slots]` | `hero/saveLoad.test.ts` `returns an equipment snapshot independent from the live state` | 中 |
+| `map/dynamicTile.ts` `DynamicTile.loadState` | 读档不恢复存档中的图块数字，仅恢复事件 | `tile=layer.createDynamic(1,1,0)` → `saved=tile.saveState()` → `tile.set(2)` → `tile.loadState(saved)`：`tile.num()` 仍为 2 | `loadState` 只 `restoreDefaultEvents()` 并覆盖事件，未处理 `save.num` | 同实例读档时图块数字不回到存档点；`MapLayer.loadDynamics` 因先 `createDynamic(block.num)` 掩盖该问题 | `loadState` 按 `save.num` 调用 `set()`（或写入 `tileNum` 并同步 raw） | `map/saveLoad.test.ts` `restores the tile num on the same instance` | 中 |
+| `replay/array.ts` `ReplayArray.saveState` / `loadState` | `loadState` 不恢复录像长度与索引，往返后 `length` 仍为修改后的值 | `array.add(1,[10])` → `saved=array.saveState()` → `array.add(2,[20])` → `array.loadState(saved)`：`array.length` 为 2（正确 1） | `loadState` 只替换命令/参数缓冲区与位宽，未设置 `length`/`paramUsed`、未 `rebuildIndexArray`；`IReplayArraySave` 本身不含 length | 直接用 `ReplayArray` 存读档的调用方读档后仍看到修改后的录像；`ReplaySystem.loadState` 走 `setReplayArray` 不受影响 | 存档补上 `length`（或由缓冲区推导），`loadState` 设置 `length` 并 `rebuildIndexArray` | `replay/saveLoad.test.ts` `restores the recorded length on the same instance` | 中 |
+| `data-state/src/core.ts` `CoreState.loadState` 码 178 | 码 178 判定与文案相反：缺失 saveable key 同时触发 177/178，存档含「多出的 key」时不告警 | `snapshot.set('@system/extra', null)` → `loadState` 无码 178；`snapshot.delete('@system/flags')` → 同时观测到 177 与 178 | `remain = total.difference(loaded)` 取的是「saveables 中缺失于存档」的键（=177 语义），而非「存档中出现但未加载」的键 | 178 失去独立诊断意义，冗余并可能掩盖真正的版本不一致问题 | 改为 `new Set(state.keys()).difference(new Set(this.saveables.keys()))`，或修正文案 | `data-state/test/saveablesRoundTrip.test.ts` `warns code 178 when the save data has keys that are not loaded` | 低 |
+
+### 阻断项（非 06-09 可达码，超出本计划范围）
+
+**现象**：`pnpm test:ci` 存在**先于本计划、与存读档无关**的既有失败：6 个测试文件失败 / 15 个用例失败
+（`data-base/src/hero/equipment.test.ts`、`follower.test.ts`、`items.test.ts`、`mover.test.ts`，
+以及因未处理 rejection 计为文件失败的 `data-state/test/dataClosure.test.ts`、`nodeTracer.test.ts`）。
+
+**根因**：用户提交 `cee8439`（feat: 录像记录 & CoreState 存储接口）在
+`data-base/src/hero/equipment.ts`、`items.ts`、`mover.ts` 中接入了
+`this.state.replaySystem.route.add(...)` 录像记录，但这些既有测试的假 `IDataCommon`
+不含 `replaySystem`，导致 `Cannot read properties of undefined (reading 'route')`。
+该提交同步更新了 `data-state` 的两个测试文件，但未更新上述 `data-base` 测试。
+
+**影响**：D-44(c)「`pnpm test:ci` 全绿」在 06-09 执行时无法达成；本计划在**不改动这些越界文件**
+（硬约束：仅允许新增 6 个 `*.test.ts` 与规划产物）的前提下即**无法修复**。经复核：本计划新增的
+6 个文件 41 通过 / 6 跳过，**未新增任何失败**，失败集合与改动前完全一致。
+
+**建议修复方向**：由用户在该提交归属的计划中补齐上述 4 个 `data-base` 测试的假 `replaySystem`
+（或为生产侧 `this.state.replaySystem` 增加空值守卫），随后重跑 `pnpm test:ci` 应可全绿。
+**严重度**：高（阻塞 06-09 的 D-44(c) 提交门禁与后续完整里程碑验证）。

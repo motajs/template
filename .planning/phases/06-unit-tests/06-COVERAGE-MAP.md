@@ -82,9 +82,9 @@
 | 119 | enemy/saveLoad.test.ts | `warns code 119 when the prefab is missing during loadState` | 06-09 |
 | 120 | enemy/saveLoad.test.ts | `warns code 120 when a special is missing during loadState` | 06-09 |
 | 122 | map/saveLoad.test.ts | `warns code 122 when a floor is missing during loadState` | 06-09 |
-| 124 | map/saveLoad.test.ts | `warns code 124 when a floor or its layers are missing in the reference` | 06-09 |
+| 124 | map/saveLoad.test.ts | `warns code 124 when the compression reference is missing` | 06-09 |
 | 177 | data-state/test/saveablesRoundTrip.test.ts | `warns code 177 when the save data misses a saveable key` | 06-09 |
-| 178 | data-state/test/saveablesRoundTrip.test.ts | `warns code 178 when the save data has keys that are not loaded` | 06-09 |
+| 178 | data-state/test/saveablesRoundTrip.test.ts | `warns code 178 when the save data misses a saveable key`（文案相反的正确预期见 `it.skip`，`#06-09-5`） | 06-09 |
 
 ## 06-01 战斗系统（packages-user/data-system/src/combat）
 
@@ -234,3 +234,7 @@ D-30：排除名称含 legacy 的接口/方法。
 D-32：全部 `saveState`/`loadState` 测试集中本计划，其它计划不测（06-07 播放所需状态重置除外）。
 D-45：`@system/replay` 须已注册（执行前 Task 1 门禁确认）；未注册即阻断。录像新码 176 归 06-07。
 排除清单（存档无关/元数据字段）见 `06-SAVE-EXCLUSIONS.md`。
+
+执行结果：6 个测试文件 41 通过 / 6 跳过（skip 均为 `#06-09-1..5` 的正确预期疑似缺陷，经临时取消
+skip 验证确为真实失败）；本计划可达码 55/58/59/112/113/119/120/122/124/177/178 全部有触发断言。
+`pnpm test:ci` 存在**先于本计划**的既有失败（`#06-09` 阻断项），本计划未新增失败。
