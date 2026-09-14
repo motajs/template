@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-08-PLAN.md
-last_updated: "2026-09-14T09:03:12.315Z"
+stopped_at: Completed 06-09-PLAN.md
+last_updated: "2026-09-14T10:59:52.055Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 06 execution started
-state_head: 6699df9eeed82f39879d68aa58ee1f978b442ab0
+state_head: 502d87ba260989fe2018a5139c5f9729d82a2275
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 46
-  completed_plans: 44
+  completed_plans: 45
 milestone_name: milestone
 ---
 
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 9 of 9
-Status: Ready to execute
-Last activity: 2026-09-14 — Phase 06 execution started
+Plan: 9 of 9 (06-09 complete; 06-07 outstanding — no SUMMARY)
+Status: 06-09 save/load tests complete; D-44(c) blocked by pre-existing test:ci regression
+Last activity: 2026-09-14 — Completed 06-09-PLAN.md
 
 Progress: [█████░░░░░] 50%
 
@@ -85,6 +85,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P05 | 22min | 3 tasks | 10 files |
 | Phase 06 P06 | 24min | 3 tasks | 8 files |
 | Phase 06 P08 | 21min | 3 tasks | 6 files |
+| Phase 06 P09 | 42min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -170,6 +171,8 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-08：flag + common 按 D-43 三阶段（构件→组合/流水线→完整/集成）以 6 个行为单测覆盖，每阶段聚焦跑绿并过 D-44 门禁后提交
 - [Phase 06]: 06-08：FlagSystem 全公开表面（码 111）、FaceManager + Dir4/Dir8 handler、RoleFaceBinder（码 43/44）、utils 朝向纯函数、MapLocIndexer、ObjectMover 全公开方法均覆盖；D-32 不测 saveState/loadState（flag 往返归 06-09）
 - [Phase 06]: 06-08：疑似缺陷 #06-08-1（ObjectMover.backward(count>1) 因 Special 步翻转 moveDirection 而方向摆动、净位移为零），按 D-05 以正确预期 it.skip 登记，不修改核心代码
+- [Phase 06]: 06-09：存读档独立系统按 D-43 三阶段执行，6 个测试文件 41 通过 / 6 跳过；11 个可达码 55/58/59/112/113/119/120/122/124/177/178 全部触发；CoreState 顶层经公开 saveState/loadState 对 5 saveable × 3 压缩档整体往返
+- [Phase 06]: 06-09：按 D-05 登记 5 处疑似缺陷 #06-09-1..5（EquipmentState 数值表读档错误 / HeroEquipment 存档未深拷贝 / DynamicTile 不恢复 num / ReplayArray 不恢复 length / 码 178 语义与文案相反），并以正确预期 it.skip 记录；另记录既有 test:ci 回归阻断项（commit cee8439）
 
 ### Pending Todos
 
@@ -182,6 +185,7 @@ None yet.
 - eventStore circular paths are explicitly preserved as the Phase 01 baseline; the revised 01-08 regression does not require those paths to disappear.
 - Plan 01-12 leaves the repository-wide type gate blocked only by pre-existing diagnostics outside the plan-owned files; these are recorded in the phase deferred-items ledger.
 - Plan 01-13 records the same repository-wide type gate diagnostics outside its implementation and test files in the phase deferred-items ledger.
+- 06-09 阻断项：`pnpm test:ci` 存在先于本计划的既有回归（commit `cee8439` 将录像记录接入 `data-base/src/hero/{equipment,items,mover}.ts`，4 个既有 data-base 测试与 2 个 data-state 文件共 6 文件 / 15 用例失败）。本计划硬约束禁止修改这些越界文件，故 D-44(c) 无法全绿；本计划未新增失败（新增 41 通过 / 6 跳过）。详见 `06-TEST-FINDINGS.md` `#06-09` 阻断项。
 
 ### Quick Tasks Completed
 
@@ -198,6 +202,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-14T09:03:12.081Z
-Stopped at: Completed 06-08-PLAN.md
+Last session: 2026-09-14T10:59:39.690Z
+Stopped at: Completed 06-09-PLAN.md
 Resume file: None

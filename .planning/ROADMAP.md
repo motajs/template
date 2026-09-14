@@ -210,7 +210,7 @@ Plans:
   3. 测试在本地可运行且全部通过
    4. 测试由 AI 编写并运行，通过验证后可提交
 
-**Plans**: 7/9 plans executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后)
+**Plans**: 8/9 plans executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后)
 
 Plans:
 
@@ -222,7 +222,7 @@ Plans:
 - [x] 06-06-PLAN.md — Map ALL interfaces, emphasis static/dynamic tiles + static arrays (data-base/src/map；无 save/load)
 - [ ] 06-07-PLAN.md — Top-level integration: damage combos + map+replay play + second-play re-record equality; error 2001–2008 (BLOCKED: pre-execution user confirmation)
 - [x] 06-08-PLAN.md — Flag full surface + common (utils/indexer/faceManager+face/mover) (无 save/load)
-- [ ] 06-09-PLAN.md — Save/load independent system: every saveState/loadState class + CoreState top-level (BLOCKED: pre-execution user confirmation)
+- [x] 06-09-PLAN.md — Save/load independent system: every saveState/loadState class + CoreState top-level (BLOCKED: pre-execution user confirmation)
 
 **Wave 1** *(independent test-writing plans; no shared production edits)*
 
@@ -232,7 +232,7 @@ Plans:
 - [x] 06-04-PLAN.md
 - [x] 06-05-PLAN.md
 - [x] 06-06-PLAN.md
-- [ ] 06-08-PLAN.md
+- [x] 06-08-PLAN.md
 
 **Wave 2** *(blocked on Wave 1 + user confirmation)*
 
@@ -251,4 +251,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 7/9 | In Progress|  |
+| 6. 单元测试 | 8/9 | In Progress|  |
