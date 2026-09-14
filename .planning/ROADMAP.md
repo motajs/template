@@ -210,7 +210,30 @@ Plans:
   3. 测试在本地可运行且全部通过
    4. 测试由 AI 编写并运行，通过验证后可提交
 
-**Plans**: TBD
+**Plans**: 9 plans (data-layer slice; non-data render/legacy coverage deferred)
+
+Plans:
+- [ ] 06-01-PLAN.md — Combat L2 (data-system/src/combat) behavior tests + phase tracer
+- [ ] 06-02-PLAN.md — Combat L3 (data-state/src/enemy) calculator/aura/special/mapDamage tests
+- [ ] 06-03-PLAN.md — Enemy data model (data-base/src/enemy) tests
+- [ ] 06-04-PLAN.md — Replay (data-common/src/replay) tests + replay integration
+- [ ] 06-05-PLAN.md — Hero core (attribute/modifier/location/state) tests
+- [ ] 06-06-PLAN.md — Hero storage (equipment/equipStore/items/follower/mover) tests
+- [ ] 06-07-PLAN.md — Map (gameMap/mapState/mapLayer/tile) expanded tests
+- [ ] 06-08-PLAN.md — Combat closure + saveables round-trip integration tests
+- [ ] 06-09-PLAN.md — Flag + common auxiliary tests
+
+**Wave 1** *(all plans; independent new test files, no shared production edits)*
+
+- [ ] 06-01-PLAN.md
+- [ ] 06-02-PLAN.md
+- [ ] 06-03-PLAN.md
+- [ ] 06-04-PLAN.md
+- [ ] 06-05-PLAN.md
+- [ ] 06-06-PLAN.md
+- [ ] 06-07-PLAN.md
+- [ ] 06-08-PLAN.md
+- [ ] 06-09-PLAN.md
 
 ## Progress
 
@@ -224,4 +247,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 0/TBD | Not started | - |
+| 6. 单元测试 | 0/9 | Planned | - |
