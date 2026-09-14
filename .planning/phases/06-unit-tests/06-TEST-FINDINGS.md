@@ -149,3 +149,21 @@ D-45：公开 `CoreState.saveState(compression)` / `loadState(state, compression
 **建议修复方向**：由用户在该提交归属的计划中补齐上述 4 个 `data-base` 测试的假 `replaySystem`
 （或为生产侧 `this.state.replaySystem` 增加空值守卫），随后重跑 `pnpm test:ci` 应可全绿。
 **严重度**：高（阻塞 06-09 的 D-44(c) 提交门禁与后续完整里程碑验证）。
+
+## #06-07 顶层集成（伤害组合 + 录像完整播放 + 二次录制比对）
+
+本计划按 D-43 三阶段（构件 → 组合/流水线 → 完整/集成）执行：阶段 1 真实 API 单特殊属性/单光环
+基线；阶段 2 顶层多特殊属性伤害组合 + 系统层光环/效果组合（含 final-effect 阶段顺序、同/跨优先级
+顺序与属性→伤害联动）；阶段 3 真实小地图录像播放 + 二次录制逐条比对 + 176 + 2001–2008。
+2 个测试文件共 **24 通过 / 1 跳过**（skip 为本计划新增 `#06-07-1`），`pnpm test:ci` 全绿
+（66 文件 / 629 通过 / 20 跳过）。此前 `#06-09` 记录的既有 test:ci 回归已由后续提交
+（`2ff422a` / `c08f3f8`）修复，D-44(c) 现可全绿。
+发现 1 处疑似缺陷（`#06-07-1`），按 D-05 以正确预期的 `it.skip` 用例登记。
+
+| 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `data-system/src/path/system.ts` `PathfindingSystem` / `PathfindingFinder` | 顶层 `CoreState` 上 `pathfinding.teleportTo` 恒返回 `null` 并告警 173，录像瞬移指令因此必发错误 2005 | `createCoreState()` → 构造小地图场景（不手工注入 finder）→ `state.pathfinding.teleportTo({ x: 1, y: 0 })` 返回 `null`；`logger` 先观测到 173，随后 `ReplayTeleportCommand` 发 2005，二次录像中的瞬移步无法播放 | `CoreState` 构造 `new PathfindingSystem(this)` 后仅调用 `useMover`，从未向 `finder` 注入 `useMapState`/`useMapLayer`/`usePassPredicate`；`PathfindingFinder.find` 在 `maps` 或 `layer` 为 `null` 时告警 173 并返回空数组 | 顶层录像中的瞬移指令无法播放（必失败）；未手工注入 finder 时真实寻路入口不可用 | 在地图/事件层可用后（如 `initMapState` 或 `loaded` 钩子）为 `pathfinding.finder` 注入 `maps`、`eventLayer` 与 `DefaultPassPredicateImpl`；若设计上由客户端层注入，则应在契约中明确，避免录像瞬移静默失败 | `replayPlayback.test.ts` `plays a teleport step without manual finder wiring`（`it.skip`，修复后取消 skip） | 中 |
+
+> 说明：本计划的录像播放用例为覆盖「真实寻路瞬移播放」路径，在**测试内**通过公开的
+> `state.pathfinding.finder.useMapState/useMapLayer/usePassPredicate` 完成注入；生产 `CoreState`
+> 目前不做该注入，故另立 `#06-07-1` 记录该接线缺口。

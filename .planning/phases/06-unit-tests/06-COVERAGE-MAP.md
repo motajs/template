@@ -85,6 +85,15 @@
 | 124 | map/saveLoad.test.ts | `warns code 124 when the compression reference is missing` | 06-09 |
 | 177 | data-state/test/saveablesRoundTrip.test.ts | `warns code 177 when the save data misses a saveable key` | 06-09 |
 | 178 | data-state/test/saveablesRoundTrip.test.ts | `warns code 178 when the save data misses a saveable key`（文案相反的正确预期见 `it.skip`，`#06-09-5`） | 06-09 |
+| 176 | hero/mover.ts | `warns 176 when the hero move direction is not orthogonal` | 06-07 |
+| 2001 | data-state/src/replay/commands.ts | `warns 2001 and 2002 for parameter count and type mismatches` | 06-07 |
+| 2002 | data-state/src/replay/commands.ts | `warns 2001 and 2002 for parameter count and type mismatches` | 06-07 |
+| 2003 | data-state/src/replay/commands.ts | `warns 2003 and 2004 for a moving hero and a missing controller` | 06-07 |
+| 2004 | data-state/src/replay/commands.ts | `warns 2003 and 2004 for a moving hero and a missing controller` | 06-07 |
+| 2005 | data-state/src/replay/commands.ts | `warns 2005 when teleport finds no path` | 06-07 |
+| 2006 | data-state/src/replay/commands.ts | `warns 2006 when using an item fails` | 06-07 |
+| 2007 | data-state/src/replay/commands.ts | `warns 2007 when equip fails to occupy the slot` | 06-07 |
+| 2008 | data-state/src/replay/commands.ts | `warns 2008 when unequip leaves the slot occupied` | 06-07 |
 
 ## 06-01 战斗系统（packages-user/data-system/src/combat）
 
@@ -238,3 +247,24 @@ D-45：`@system/replay` 须已注册（执行前 Task 1 门禁确认）；未注
 执行结果：6 个测试文件 41 通过 / 6 跳过（skip 均为 `#06-09-1..5` 的正确预期疑似缺陷，经临时取消
 skip 验证确为真实失败）；本计划可达码 55/58/59/112/113/119/120/122/124/177/178 全部有触发断言。
 `pnpm test:ci` 存在**先于本计划**的既有失败（`#06-09` 阻断项），本计划未新增失败。
+
+## 06-07 顶层集成（伤害组合 + 录像完整播放 + 二次录制比对）
+
+模块归属：176 → `data-base/src/hero/mover.ts`（`HeroMover.onStepStart` 方向步记录时非
+上/右/下/左 的 `default` 分支）；2001–2008 → `data-state/src/replay/commands.ts`
+（`BaseReplayCommand.assertParameter` 参数数量/类型校验、`ReplayMoveCommand`、`ReplayTeleportCommand`、
+`ReplayUseItemCommand`、`ReplayEquipCommand`、`ReplayUnequipCommand` 的失败分支）。
+
+阶段 1（构件级）完成真实 API 下的单特殊属性伤害基线与单光环（`CommonAura`/`GuardAura`）基线；
+阶段 2（组合/流水线）完成顶层多特殊属性伤害组合、系统层光环基础/特殊效果与常规/特殊查询组合、
+final-effect 阶段顺序、同/跨优先级顺序（D-25），以及属性流水线结果经缓存伤害系统的
+`markDirty`/`deleteEnemy`/`with(hero)` 联动（D-26）；
+阶段 3（完整/集成）完成真实小地图场景的录像录制与完整播放、重置录像后的**二次录制逐条比对**
+（步数 + 每步 code + 各 param 的 type/value），并观测 176 与 2001–2008。
+
+D-32：仅用 `ReplaySystem.saveState()`/`loadState()`（`IReplaySystemSave`）做录像重置的最小使用，
+不测存读档本身；`ReplayArray` 不可存档（无 `saveState`/`loadState`），已由用例断言。
+D-40：真实英雄操作经 `replay.route.add(...)`（mover 方向步）录制；播放期间经
+`replaySystem.disable()`/`revert()` 抑制录制；准备步骤同样以 disable/revert 包裹。
+一条疑似缺陷 `#06-07-1`（`CoreState` 未向寻路 `finder` 注入地图状态/事件层/通行谓词，
+顶层录像瞬移恒返回 2005）按 D-05 以 `it.skip` 的正确预期用例登记，详见 `06-TEST-FINDINGS.md`。
