@@ -210,10 +210,11 @@ Plans:
   3. 测试在本地可运行且全部通过
    4. 测试由 AI 编写并运行，通过验证后可提交
 
-**Plans**: 9 plans (data-layer slice; non-data render/legacy coverage deferred)
+**Plans**: 1/9 plans executed (data-layer slice; non-data render/legacy coverage deferred)
 
 Plans:
-- [ ] 06-01-PLAN.md — Combat L2 (data-system/src/combat) behavior tests + phase tracer
+
+- [x] 06-01-PLAN.md — Combat L2 (data-system/src/combat) behavior tests + phase tracer
 - [ ] 06-02-PLAN.md — Combat L3 (data-state/src/enemy) calculator/aura/special/mapDamage tests
 - [ ] 06-03-PLAN.md — Enemy data model (data-base/src/enemy) tests
 - [ ] 06-04-PLAN.md — Replay (data-common/src/replay) tests + replay integration
@@ -247,4 +248,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 0/9 | Planned | - |
+| 6. 单元测试 | 1/9 | In Progress|  |

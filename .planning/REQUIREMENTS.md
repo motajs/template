@@ -34,7 +34,7 @@ Requirements for the engine's completion. Each maps to roadmap phases.
 
 ### 测试（Testing）
 
-- [ ] **TEST-01**: 为核心系统（数据层等）补齐单元测试
+- [x] **TEST-01**: 为核心系统（数据层等）补齐单元测试
 
 ## Out of Scope
 
@@ -62,7 +62,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REND-02 | Phase 4 | Pending |
 | LEGACY-01 | Phase 5 | Pending |
 | LEGACY-02 | Phase 5 | Pending |
-| TEST-01 | Phase 6 | Pending |
+| TEST-01 | Phase 6 | Complete |
 
 **Coverage:**
 

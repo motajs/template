@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Phase 6 context gathered
-last_updated: "2026-09-14T00:30:13.250Z"
-last_activity: 2026-09-13
-last_activity_desc: Completed quick task 260913-qtq (event built-ins refactor + anon-tokyo import rename)
-state_head: e1a16eae8b10c3aa44a9ca5908871d431fa396a2
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-09-14T00:53:17.655Z"
+last_activity: 2026-09-14
+last_activity_desc: Phase 06 execution started
+state_head: 6c8f85a2be68d9696844ee863a8bb6787b6fde45
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 0
   total_plans: 46
-  completed_plans: 37
+  completed_plans: 38
 milestone_name: milestone
 ---
 
@@ -24,14 +24,14 @@ milestone_name: milestone
 See: .planning/PROJECT.md (updated 2026-09-10)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 03 — data-completion
+**Current focus:** Phase 06 — unit-tests
 
 ## Current Position
 
-Phase: 06 (unit-tests) — READY TO EXECUTE
-Plan: Not started
+Phase: 06 (unit-tests) — EXECUTING
+Plan: 2 of 9
 Status: Ready to execute
-Last activity: 2026-09-12 — Phase 03 complete, transitioned to Phase 4
+Last activity: 2026-09-14 — Phase 06 execution started
 
 Progress: [█████░░░░░] 50%
 
@@ -76,6 +76,7 @@ Progress: [█████░░░░░] 50%
 | Phase 02 P05 | 5min | 2 tasks | 2 files |
 | Phase 03 P18 | 14min | 3 tasks | 8 files |
 | Phase 03 P19 | 8min | 2 tasks | 6 files |
+| Phase 06 P01 | 9min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -137,6 +138,8 @@ Recent decisions affecting current work:
 - [quick 260913-qtq]: 内建函数名改用短名（setBlock/moveBlock/... ），删除 EventBuiltinName 枚举；类内使用字面量名称。
 - [quick 260913-qtq]: anon-tokyo 以内嵌 workspace 包 @motajs/anon-tokyo 为唯一来源，全仓统一引用并声明 workspace 依赖。
 - [quick 260913-qtq]: 事件注册收口为单一 createEventRegistrations()，不做分类包装；共享工具放 event/utils.ts 且不经 index 导出。
+- [Phase 06]: 06-01：combat Layer-2 以行为单测覆盖（DamageContext/DamageSystem/MapDamage/EnemyContext/CombatFlow），三处疑似 bug 只记录不修复，按 D-05 写成 it.skip 正确预期用例并登记 06-TEST-FINDINGS.md #06-01-1..3
+- [Phase 06]: 06-01：Node 测试须同时 polyfill Map.getOrInsert 与 getOrInsertComputed（EnemyContext 使用前者）
 
 ### Pending Todos
 
@@ -165,6 +168,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-13T23:35:55.993Z
-Stopped at: Phase 6 context gathered
-Resume file: E:/github/template/.planning/phases/06-unit-tests/06-CONTEXT.md
+Last session: 2026-09-14T00:53:17.425Z
+Stopped at: Completed 06-01-PLAN.md
+Resume file: None

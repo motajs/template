@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 10
+open_count: 13
 waived_count: 0
 fixed_count: 8
-total_count: 18
-last_updated: 2026-09-11T06:27:22.412Z
+total_count: 21
+last_updated: 2026-09-14T00:54:04.044Z
 ---
 
 # Broken Windows Ledger
@@ -33,6 +33,9 @@ last_updated: 2026-09-11T06:27:22.412Z
 | 16 | 03 | deviation | packages-user/data-state/test/replayVerifier.ts |  | Added a package-local verifier harness shared by Vitest and the Node runner to avoid composite-script import resolution. | open |  | 2026-09-10T09:18:58.946Z |  |
 | 17 | 03 | deviation | packages-user/data-state/test/fixtures/closed-loop.ts |  | Applied repository Prettier/CRLF formatting to the fixed replay fixture and runner files. | open |  | 2026-09-10T09:18:59.589Z |  |
 | 18 | 03 | deviation | script/check-data-circular.ts |  | Plan 03-15 scoped circular gate reports seven pre-existing legacy/render boundary cycles through data-state/src/legacy/move.ts; replay command class changes do not touch those imports. | open |  | 2026-09-11T06:27:22.412Z |  |
+| 19 | 06 | skipped-test | packages-user/data-system/src/combat/damage.test.ts |  | 06-01-1 suspected bug: calculateCritical yields info not matching nextValue (Finding #06-01-1) | open |  | 2026-09-14T00:54:02.628Z |  |
+| 20 | 06 | skipped-test | packages-user/data-system/src/combat/mapDamage.test.ts |  | 06-01-2 suspected bug: MapDamage.deleteEnemy leaves enemy-sourced damage (Finding #06-01-2) | open |  | 2026-09-14T00:54:03.338Z |  |
+| 21 | 06 | skipped-test | packages-user/data-system/src/combat/combat.test.ts |  | 06-01-3 suspected bug: CombatFlow.before truthy/falsy semantics inverted vs interface doc (Finding #06-01-3) | open |  | 2026-09-14T00:54:04.044Z |  |
 
 ````json
 [
@@ -250,6 +253,42 @@ last_updated: 2026-09-11T06:27:22.412Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-09-11T06:27:22.412Z",
+    "resolved_at": null
+  },
+  {
+    "id": 19,
+    "kind": "skipped-test",
+    "phase": "06",
+    "file": "packages-user/data-system/src/combat/damage.test.ts",
+    "line": null,
+    "description": "06-01-1 suspected bug: calculateCritical yields info not matching nextValue (Finding #06-01-1)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-14T00:54:02.628Z",
+    "resolved_at": null
+  },
+  {
+    "id": 20,
+    "kind": "skipped-test",
+    "phase": "06",
+    "file": "packages-user/data-system/src/combat/mapDamage.test.ts",
+    "line": null,
+    "description": "06-01-2 suspected bug: MapDamage.deleteEnemy leaves enemy-sourced damage (Finding #06-01-2)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-14T00:54:03.338Z",
+    "resolved_at": null
+  },
+  {
+    "id": 21,
+    "kind": "skipped-test",
+    "phase": "06",
+    "file": "packages-user/data-system/src/combat/combat.test.ts",
+    "line": null,
+    "description": "06-01-3 suspected bug: CombatFlow.before truthy/falsy semantics inverted vs interface doc (Finding #06-01-3)",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-14T00:54:04.044Z",
     "resolved_at": null
   }
 ]
