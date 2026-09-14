@@ -1,4 +1,4 @@
-// 测试地图伤害：无来源伤害增删、有来源转换与合并、告警码 102/103/104、分离伤害合并与 deleteEnemy
+// 测试地图伤害：无来源伤害增删、有来源转换与合并、告警码 102/103/104、分离伤害合并、deleteEnemy 与 markEnemyDirty
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     type IRange,
@@ -170,12 +170,15 @@ class FakeConverter
 {
     /** 转换输出的伤害视图 */
     readonly views: IMapDamageView<number>[];
+    /** convert 调用次数 */
+    calls: number = 0;
 
     constructor(views: IMapDamageView<number>[]) {
         this.views = views;
     }
 
     convert(): IMapDamageView<number>[] {
+        this.calls++;
         return this.views;
     }
 }
@@ -420,6 +423,37 @@ describe('MapDamage sourced conversion and reduction', () => {
         );
 
         expect(result.info.map(v => v.code)).toContain(104);
+    });
+
+    // 验证已注册怪物的 markEnemyDirty 会按其视图重新转换有来源伤害
+    it('refreshes sourced damage when a registered enemy is marked dirty', () => {
+        const fixture = createFixture();
+        fixture.damage.useReducer(fixture.reducer);
+        fixture.damage.useConverter(fixture.converter);
+        expect(fixture.converter.calls).toBe(1);
+
+        fixture.damage.markEnemyDirty(fixture.view);
+
+        expect(fixture.converter.calls).toBe(2);
+        expect(
+            [...fixture.damage.getSeparatedDamage(fixture.locator)][0].damage
+        ).toBe(7);
+    });
+
+    // 验证删除未注册怪物不产生任何有来源伤害变化
+    it('ignores deleting an enemy without sourced damage', () => {
+        const fixture = createFixture();
+        fixture.damage.useReducer(fixture.reducer);
+        fixture.damage.useConverter(fixture.converter);
+        const before = [
+            ...fixture.damage.getSeparatedDamage(fixture.locator)
+        ].length;
+
+        fixture.damage.deleteEnemy(createUnknownView(fixture));
+
+        expect(
+            [...fixture.damage.getSeparatedDamage(fixture.locator)]
+        ).toHaveLength(before);
     });
 
     // 疑似 bug：deleteEnemy 应移除该怪物带来的有来源地图伤害，详见 06-TEST-FINDINGS.md #06-01-2，修复后取消 skip

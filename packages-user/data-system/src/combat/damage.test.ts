@@ -1,4 +1,4 @@
-// 测试战斗伤害上下文与伤害系统：结果展开、handler 身份、告警码 106/107、缓存与 with、临界生成
+// 测试战斗伤害上下文与伤害系统：结果展开、handler 身份、告警码 106/107、缓存与 with、临界生成、属性到伤害联动（D-26）
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { type ITileLocator } from '@motajs/common';
 import { type IEnemy, type IStateBase } from '@user/data-base';
@@ -59,9 +59,11 @@ interface TestHeroAttr {
 interface TestModules {
     DamageContext: typeof import('./damage').DamageContext;
     DamageSystem: typeof import('./damage').DamageSystem;
+    EnemyContext: typeof import('./context').EnemyContext;
     HeroAttribute: typeof import('@user/data-base').HeroAttribute;
     Enemy: typeof import('@user/data-base').Enemy;
     MapLocIndexer: typeof import('@user/data-common').MapLocIndexer;
+    FullRange: typeof import('@motajs/common').FullRange;
     logger: typeof import('@motajs/common').logger;
 }
 
@@ -71,15 +73,18 @@ beforeAll(async () => {
     vi.stubGlobal('main', { replayChecking: true });
     vi.stubGlobal('location', { origin: 'http://localhost' });
     const damageModule = await import('./damage');
+    const contextModule = await import('./context');
     const baseModule = await import('@user/data-base');
     const commonModule = await import('@user/data-common');
     const motaModule = await import('@motajs/common');
     modules = {
         DamageContext: damageModule.DamageContext,
         DamageSystem: damageModule.DamageSystem,
+        EnemyContext: contextModule.EnemyContext,
         HeroAttribute: baseModule.HeroAttribute,
         Enemy: baseModule.Enemy,
         MapLocIndexer: commonModule.MapLocIndexer,
+        FullRange: motaModule.FullRange,
         logger: motaModule.logger
     };
 });
@@ -216,6 +221,83 @@ function createHandler(
         hero: fixture.hero,
         state: fixture.context.state
     };
+}
+
+/**
+ * 创建一个最小特殊属性对象，用于驱动真实怪物上下文的光环转换
+ * @param code 特殊属性代码
+ */
+function createSpecial(code: number): never {
+    return { code, clone: () => createSpecial(code) } as never;
+}
+
+/**
+ * 创建一个按怪物攻击力线性换算伤害的计算器，用于验证属性到伤害的联动
+ */
+class EnemyAttributeCalculator
+    implements IDamageCalculator<TestEnemyAttr, TestHeroAttr>
+{
+    /** calculate 调用次数 */
+    calls: number = 0;
+    /** 每点怪物攻击力换算的伤害 */
+    readonly damagePerAtk: number;
+
+    /**
+     * @param damagePerAtk 每点怪物攻击力换算的伤害
+     */
+    constructor(damagePerAtk: number = 2) {
+        this.damagePerAtk = damagePerAtk;
+    }
+
+    calculate(
+        handler: IReadonlyEnemyHandler<TestEnemyAttr, TestHeroAttr>
+    ): IEnemyDamageInfoBase {
+        this.calls++;
+        return {
+            damage: handler.enemy.getAttribute('atk') * this.damagePerAtk,
+            turn: 1
+        };
+    }
+
+    getCriticalLimit(): number {
+        return 100;
+    }
+}
+
+/**
+ * 创建一个按怪物攻击力换算伤害的测试计算器
+ * @param damagePerAtk 每点怪物攻击力换算的伤害
+ */
+function createCalculator(damagePerAtk: number = 2): EnemyAttributeCalculator {
+    return new EnemyAttributeCalculator(damagePerAtk);
+}
+
+interface FakeConverterShape {
+    /**
+     * 判断特殊属性是否应被转换
+     * @param special 特殊属性
+     */
+    shouldConvert(special: { code: number }): boolean;
+
+    /**
+     * 将特殊属性转换为光环视图
+     */
+    convert(): unknown;
+}
+
+/**
+ * 创建一个可驱动光环流水线的真实怪物上下文
+ * @param converter 赋予上下文的测试用光环转换器
+ */
+function createEnemyContext(
+    converter: FakeConverterShape
+): InstanceType<TestModules['EnemyContext']> {
+    const context = new modules.EnemyContext<TestEnemyAttr, TestHeroAttr>(
+        {} as IStateBase
+    );
+    context.resize(3, 3);
+    context.registerAuraConverter(converter as never);
+    return context;
 }
 
 describe('DamageContext behaviour', () => {
@@ -501,5 +583,132 @@ describe('DamageContext critical generation', () => {
         expect(first.nextValue).toBe(1);
         expect(first.info.damage).toBe(90);
         expect(first.damageDiff).toBe(-10);
+    });
+});
+
+describe('DamageSystem attribute linkage', () => {
+    // 验证 getCalculator 在未设置时返回 null，设置后返回同一计算器
+    it('exposes the current calculator through getCalculator', () => {
+        const fixture = createFixture();
+        const system = new modules.DamageSystem(fixture.context);
+
+        expect(system.getCalculator()).toBeNull();
+
+        const calculator = createCalculator(3);
+        system.useCalculator(calculator);
+
+        expect(system.getCalculator()).toBe(calculator);
+    });
+
+    // 验证光环改属性后伤害系统按新属性重算，且全量构建会失效缓存（D-26）
+    it('reflects aura-modified attributes and invalidates the cache on buildup', () => {
+        const context = createEnemyContext({
+            shouldConvert: special => special.code === 20,
+            convert: () => ({
+                priority: 1,
+                range: new modules.FullRange(),
+                couldApplyBase: true,
+                couldApplySpecial: false,
+                getRangeParam: () => undefined,
+                apply: (handler: { enemy: IEnemy<TestEnemyAttr> }) =>
+                    handler.enemy.addAttribute('atk', 5),
+                applySpecial: () => null
+            })
+        });
+        const hero = new modules.HeroAttribute<TestHeroAttr>({
+            hp: 100,
+            atk: 0,
+            def: 0
+        });
+        context.bindHero(hero);
+        const enemy = new modules.Enemy<TestEnemyAttr>('e1', 1, {
+            hp: 10,
+            atk: 2,
+            def: 0
+        });
+        enemy.addSpecial(createSpecial(20));
+        context.setEnemyAt({ x: 0, y: 0 }, enemy);
+        const calculator = createCalculator(2);
+        const system = new modules.DamageSystem(context);
+        system.useCalculator(calculator);
+        context.attachDamageSystem(system);
+
+        context.buildup();
+
+        const view = context.getEnemyByLoc(0, 0)!;
+        const first = system.getDamageInfo(view);
+
+        expect(first?.damage).toBe(14);
+        expect(calculator.calls).toBe(1);
+
+        expect(system.getDamageInfo(view)).toBe(first);
+        expect(calculator.calls).toBe(1);
+
+        // setEnemyAt 换入更高攻击的怪物并重新构建，伤害随新属性重算
+        const stronger = new modules.Enemy<TestEnemyAttr>('e2', 1, {
+            hp: 10,
+            atk: 20,
+            def: 0
+        });
+        stronger.addSpecial(createSpecial(20));
+        context.setEnemyAt({ x: 0, y: 0 }, stronger);
+        context.buildup();
+        const newView = context.getEnemyByLoc(0, 0)!;
+        const second = system.getDamageInfo(newView);
+
+        expect(second).not.toBe(first);
+        expect(second?.damage).toBe(50);
+        expect(calculator.calls).toBe(2);
+
+        // clear 会清空伤害缓存，因此再次取用不再命中旧缓存而返回 null
+        context.clear();
+        expect(system.getDamageInfo(newView)).toBeNull();
+    });
+
+    // 疑似 bug：重复全量构建应从原始怪物重算而非在原计算值上累加，详见 06-TEST-FINDINGS.md #06-01-4，修复后取消 skip
+    it.skip('recomputes a repeat buildup from the base enemy without compounding', () => {
+        const context = createEnemyContext({
+            shouldConvert: special => special.code === 20,
+            convert: () => ({
+                priority: 1,
+                range: new modules.FullRange(),
+                couldApplyBase: true,
+                couldApplySpecial: false,
+                getRangeParam: () => undefined,
+                apply: (handler: { enemy: IEnemy<TestEnemyAttr> }) =>
+                    handler.enemy.addAttribute('atk', 5),
+                applySpecial: () => null
+            })
+        });
+        context.bindHero(
+            new modules.HeroAttribute<TestHeroAttr>({ hp: 100, atk: 0, def: 0 })
+        );
+        const enemy = new modules.Enemy<TestEnemyAttr>('e1', 1, {
+            hp: 10,
+            atk: 2,
+            def: 0
+        });
+        enemy.addSpecial(createSpecial(20));
+        context.setEnemyAt({ x: 0, y: 0 }, enemy);
+        context.buildup();
+        context.addAura({
+            priority: 2,
+            range: new modules.FullRange(),
+            couldApplyBase: true,
+            couldApplySpecial: false,
+            getRangeParam: () => undefined,
+            apply: (handler: { enemy: IEnemy<TestEnemyAttr> }) =>
+                handler.enemy.addAttribute('atk', 10),
+            applySpecial: () => null
+        } as never);
+
+        context.buildup();
+
+        expect(
+            context
+                .getEnemyByLoc(0, 0)!
+                .getComputedEnemy()
+                .getAttribute('atk')
+        ).toBe(17);
     });
 });

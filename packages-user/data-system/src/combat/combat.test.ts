@@ -1,4 +1,4 @@
-// 测试战斗流程：同源绑定与外来绑定、脚本优先级与去重、缺参告警 139/141、真实计时器下的 await 顺序
+// 测试战斗流程：同源绑定与外来绑定、脚本优先级与去重、缺参告警 139/141、非地图与独立怪物流程、真实计时器下的 await 顺序
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { type ITileLocator } from '@motajs/common';
 import {
@@ -355,6 +355,61 @@ describe('CombatFlow scripts and guards', () => {
         bindAll(fixture);
 
         const info = await fixture.flow.battleComputed(fixture.computed);
+
+        expect(info).toBe(fixture.info);
+    });
+
+    // 验证怪物无法解析出地图位置时战斗信息对象标记为非地图状态
+    it('marks the combat handler as off-map when no locator can be resolved', async () => {
+        const fixture = createFixture();
+        const context = {
+            state: fixture.state,
+            getEnemyLocatorByView: () => null,
+            getEnemyLocator: () => null,
+            getViewByComputed: () => null,
+            getEnemyByLocator: () => null,
+            getEnemyByLoc: () => null
+        } as never;
+        fixture.flow.bindContext(context);
+        fixture.flow.bindHero(fixture.hero);
+        fixture.flow.bindDamage(fixture.damage);
+        let onMap: boolean | null = null;
+        fixture.flow.addCombatScript({
+            priority: 1,
+            before: async (_info, handler) => {
+                onMap = handler.onMap;
+                return false;
+            },
+            after: async () => {}
+        });
+
+        const info = await fixture.flow.battle(fixture.view);
+
+        expect(info).toBe(fixture.info);
+        expect(onMap).toBe(false);
+    });
+
+    // 验证未登记的怪物对象会走独立战斗流程并返回伤害信息
+    it('battles an unregistered computed enemy through the standalone path', async () => {
+        const fixture = createFixture();
+        const context = {
+            state: fixture.state,
+            getEnemyLocatorByView: () => null,
+            getEnemyLocator: () => null,
+            getViewByComputed: () => null,
+            getEnemyByLocator: () => null,
+            getEnemyByLoc: () => null
+        } as never;
+        fixture.flow.bindContext(context);
+        fixture.flow.bindHero(fixture.hero);
+        fixture.flow.bindDamage(fixture.damage);
+        const foreign = new modules.Enemy<TestEnemyAttr>('foreign', 2, {
+            hp: 5,
+            atk: 1,
+            def: 0
+        });
+
+        const info = await fixture.flow.battleComputed(foreign.clone());
 
         expect(info).toBe(fixture.info);
     });
