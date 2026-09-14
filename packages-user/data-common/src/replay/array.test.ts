@@ -277,3 +277,200 @@ describe('ReplayArray param codec', () => {
         expect(info.map(v => v.code)).toContain(153);
     });
 });
+
+describe('ReplayArray stream and buffer combination', () => {
+    // 验证 createReadStream 从起始索引顺序读回多步并在末尾返回 null
+    it('reads a sequence of steps through a read stream', () => {
+        const array = createArray();
+        array.add(1, [10]);
+        array.add(2, [20]);
+        array.add(3, [30]);
+
+        const stream = array.createReadStream(0);
+        expect(stream.index).toBe(0);
+        expect(stream.length).toBe(3);
+        expect(stream.read()).toEqual({ command: 1, params: [10], index: 1 });
+        expect(stream.read()).toEqual({ command: 2, params: [20], index: 2 });
+        expect(stream.read()).toEqual({ command: 3, params: [30], index: 3 });
+        expect(stream.read()).toBeNull();
+    });
+
+    // 验证 createReadStream 可从指定起始索引开始读取
+    it('starts a read stream at the given index', () => {
+        const array = createArray();
+        array.add(1, []);
+        array.add(2, []);
+        array.add(3, []);
+
+        const stream = array.createReadStream(2);
+        expect(stream.read()).toEqual({ command: 3, params: [], index: 3 });
+        expect(stream.read()).toBeNull();
+    });
+
+    // 疑似 bug：insert 的参数缓冲区位移方向相反，已有参数时后续步骤读到错误参数，详见 06-TEST-FINDINGS.md #06-04-4，修复后取消 skip
+    it.skip('reads the new order after inserting a step', () => {
+        const array = createArray();
+        array.add(1, [10]);
+        array.add(3, [30]);
+        array.insert(1, 2, [20]);
+
+        const stream = array.createReadStream(0);
+        expect(stream.read()).toEqual({ command: 1, params: [10], index: 1 });
+        expect(stream.read()).toEqual({ command: 2, params: [20], index: 2 });
+        expect(stream.read()).toEqual({ command: 3, params: [30], index: 3 });
+    });
+
+    // 验证 getCommandArray 与 getParamArray 暴露内部缓冲区的直接内容
+    it('exposes the underlying command and param buffers', () => {
+        const array = createArray();
+        array.add(3, [1]);
+
+        const commands = new Uint8Array(array.getCommandArray());
+        const params = new Uint8Array(array.getParamArray());
+        expect(array.getCommandArray()).toBeInstanceOf(ArrayBuffer);
+        expect(commands[0]).toBe(1);
+        expect(commands[1]).toBe(3);
+        expect(params[0]).toBe(1);
+        expect(params[1]).toBe(1);
+    });
+
+    // 验证 setReplayArray 装载原始缓冲区并重建索引后可读回步骤
+    it('loads raw buffers through setReplayArray and reads them back', () => {
+        const source = createArray();
+        source.add(1, [10]);
+        source.add(2, [20]);
+
+        const loaded = createArray();
+        loaded.setReplayArray(
+            ReplayCommandWidth.Uint8,
+            source.getCommandArray().slice(0, 4),
+            source.getParamArray().slice(0, 4),
+            2
+        );
+
+        expect(loaded.length).toBe(2);
+        expect(loaded.get(0)).toEqual({ command: 1, params: [10], index: 0 });
+        expect(loaded.get(1)).toEqual({ command: 2, params: [20], index: 1 });
+    });
+
+    // 验证 rebuildIndexArray 幂等，重复重建后读回结果不变
+    it('rebuilds the index array idempotently', () => {
+        const array = createArray();
+        array.add(5, ['a', 7]);
+        array.add(6, []);
+        const before = array.get(1);
+
+        array.rebuildIndexArray();
+
+        expect(array.get(1)).toEqual(before);
+        expect(array.get(0)).toEqual({
+            command: 5,
+            params: ['a', 7],
+            index: 0
+        });
+    });
+
+    // 验证 setCommandWidth 加宽到 uint16 后指令与参数仍能读回
+    it('re-encodes commands when widening to uint16', () => {
+        const array = createArray();
+        array.add(1, [10]);
+        array.add(200, ['x']);
+        array.setCommandWidth(ReplayCommandWidth.Uint16);
+
+        expect(array.commandWidth).toBe(ReplayCommandWidth.Uint16);
+        expect(array.get(0)).toEqual({ command: 1, params: [10], index: 0 });
+        expect(array.get(1)).toEqual({ command: 200, params: ['x'], index: 1 });
+    });
+
+    // 验证 setCommandWidth 可从 uint16 缩回 uint8 且不影响合法指令
+    it('narrows commands back to uint8', () => {
+        const array = createArray({
+            commandWidth: ReplayCommandWidth.Uint16
+        });
+        array.add(200, [7]);
+        array.setCommandWidth(ReplayCommandWidth.Uint8);
+
+        expect(array.commandWidth).toBe(ReplayCommandWidth.Uint8);
+        expect(array.get(0)).toEqual({ command: 200, params: [7], index: 0 });
+    });
+});
+
+describe('ReplayArray expand and width warnings', () => {
+    // 验证扩容乘数小于 1 时触发告警码 149 并回退为默认倍率
+    it('warns code 149 for an illegal expand multiplier', () => {
+        const { info } = logger.catch(() =>
+            createArray({
+                commandExpandMultiplier: 0,
+                paramExpandMultiplier: 0
+            })
+        );
+
+        expect(info.map(v => v.code)).toEqual([149, 149]);
+    });
+
+    // 验证指令数组达到上限后触发告警码 150
+    it('warns code 150 when the command array is full', () => {
+        const array = createArray({
+            initCommandLength: 10,
+            commandMaxLength: 10
+        });
+
+        const { info } = logger.catch(() => {
+            array.add(1, []);
+            array.add(2, []);
+            array.add(3, []);
+        });
+
+        expect(info.map(v => v.code)).toContain(150);
+    });
+
+    // 验证从 uint16 缩回 uint8 时超出 255 的指令触发告警码 154
+    it('warns code 154 when narrowing a command above 255', () => {
+        const array = createArray({
+            commandWidth: ReplayCommandWidth.Uint16
+        });
+        array.add(300, []);
+
+        const { info } = logger.catch(() =>
+            array.setCommandWidth(ReplayCommandWidth.Uint8)
+        );
+
+        expect(info.map(v => v.code)).toContain(154);
+        expect(array.commandWidth).toBe(ReplayCommandWidth.Uint8);
+    });
+
+    // 验证录像被修改后读取流过期并触发告警码 155
+    it('warns code 155 when reading an expired stream', () => {
+        const array = createArray();
+        array.add(1, []);
+        const stream = array.createReadStream(0);
+        array.add(2, []);
+
+        const { info } = logger.catch(() => stream.read());
+
+        expect(stream.expired).toBe(true);
+        expect(info.map(v => v.code)).toContain(155);
+    });
+
+    // 验证初始容量不足时自动扩容且扩容后仍能顺序读回每一步
+    it('expands buffers and still reads every step back', () => {
+        const array = createArray({
+            initCommandLength: 2,
+            initParamLength: 8
+        });
+        for (let i = 0; i < 15; i++) {
+            array.add(i, [i]);
+        }
+
+        expect(array.length).toBe(15);
+        const stream = array.createReadStream(0);
+        for (let i = 0; i < 15; i++) {
+            expect(stream.read()).toEqual({
+                command: i,
+                params: [i],
+                index: i + 1
+            });
+        }
+        expect(stream.read()).toBeNull();
+    });
+});
