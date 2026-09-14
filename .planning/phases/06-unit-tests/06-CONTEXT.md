@@ -90,6 +90,7 @@
 - **D-33:** 执行节奏 —— **每个计划执行前先向用户确认**；执行完暂停，用中文**分条简要汇报**本计划验证结果；详细结果写入共用的 `06-TEST-FINDINGS.md`。
 - **D-43:** 阶段化测试（**应用于全部 06-01..06-09**）—— 先做**构件级**测试（单个类/函数/单个光环/单个 effect 等最小单元），再做**组合/流水线**测试，最后做**完整/集成**测试。**取消 tracer-first**；每阶段跑绿后再进入下一阶段。某阶段发现**阻断性 bug**（导致后续阶段无法运行）时，**暂停并向用户汇报、等确认**（D-05/D-07），不得跳过或弱化为通过。原因：这些系统在本次之前从未被测过，直接端到端很可能整链失败且无法定位，必须先分阶段定位。
 - **D-44:** 质量门禁（lint + 类型，**文件级**，应用于全部计划）—— 每个计划执行后、提交前必须：(a) 对改动文件运行 `eslint --fix`，并确保 `eslint <改动文件>` **0 错误**；(b) 对**本计划改动的测试文件**运行 `pnpm exec vue-tsc --noEmit`，并确保其输出中**这些文件路径下 0 类型错误**（按输出文件路径过滤判定；因全局 `pnpm check:type` 已有既有无关错误，故按文件级判定）；(c) `pnpm test:ci` 全绿。任一不通过则**不得提交**。既有无关错误（`client-modules`/`legacy-plugin-data` 等，属 Phase 4/legacy）不在本门禁范围。原因：vitest 用 esbuild 剥类型，类型/格式错误不会让测试失败，故必须显式门禁。
+- **D-45:** CoreState 顶层存档入口（D-42 落地，2026-09-14）—— `ICoreState extends IStateSystem, ISaveableContent<ReadonlyMap<string, unknown>>`，`CoreState.saveState(compression)` / `loadState(state, compression)` 为**公开入口**；06-09 顶层验证经此入口进行（`getSaveableContent(id)` 作为辅助逐 id 校验）。saveables **预期 5 个**：`@system/hero` / `@system/flags` / `@system/maps` / `@system/enemy` + **`@system/replay`**（录像存档由用户补注册；执行前 Task 1 门禁确认）。`CoreState.loadState` 新增可达码 **177**（存档缺 saveable key）与 **178**（存档含未加载的 key），纳入 06-09 码覆盖。录像相关新码 **176**（只能加 up/right/down/left 移动步）归 06-07。
 
 ### 各计划边界
 - **D-35:** 06-02 只测顶层实现**基本功能**（单分支、按预期输出）；属性/加成**组合**后移至 06-07。范围：`MainDamageCalculator` / `MainEnemyFinalEffect` / `MainEnemyComparer` / `CommonAura(+Converter)` / `GuardAura(+Converter)` / `registerSpecials` / mapDamage 五视图 + converter + reducer。

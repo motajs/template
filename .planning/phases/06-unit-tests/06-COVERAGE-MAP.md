@@ -74,6 +74,17 @@
 | 43 | common/face.ts | `warns code 43 for an unknown main block` | 06-08 |
 | 44 | common/face.ts | `warns code 44 when binding the main direction` | 06-08 |
 | 111 | flag/field.ts | `warns code 111 when adding to a non-numeric field` | 06-08 |
+| 55 | map/saveLoad.test.ts | `warns code 55 when loading a compressed MapState without a reference` | 06-09 |
+| 58 | hero/saveLoad.test.ts | `warns code 58 when the max equipment uid cannot be found` | 06-09 |
+| 59 | hero/saveLoad.test.ts | `warns code 59 when the item raw data is missing` | 06-09 |
+| 112 | data-state/test/saveablesRoundTrip.test.ts | `warns code 112 when adding a duplicate saveable id` | 06-09 |
+| 113 | data-state/test/saveablesRoundTrip.test.ts | `warns code 113 when binding an executor to an unadded saveable` | 06-09 |
+| 119 | enemy/saveLoad.test.ts | `warns code 119 when the prefab is missing during loadState` | 06-09 |
+| 120 | enemy/saveLoad.test.ts | `warns code 120 when a special is missing during loadState` | 06-09 |
+| 122 | map/saveLoad.test.ts | `warns code 122 when a floor is missing during loadState` | 06-09 |
+| 124 | map/saveLoad.test.ts | `warns code 124 when a floor or its layers are missing in the reference` | 06-09 |
+| 177 | data-state/test/saveablesRoundTrip.test.ts | `warns code 177 when the save data misses a saveable key` | 06-09 |
+| 178 | data-state/test/saveablesRoundTrip.test.ts | `warns code 178 when the save data has keys that are not loaded` | 06-09 |
 
 ## 06-01 战斗系统（packages-user/data-system/src/combat）
 
@@ -201,3 +212,25 @@ D-32：不测任何 `saveState`/`loadState`，flag 存读档往返归 06-09。
 D-30：排除名称含 legacy 的接口/方法。
 一条疑似缺陷 `#06-08-1`（`backward(count>1)` 因 `Special` 步翻转 `moveDirection` 而方向摆动、
 净位移为零）按 D-05 以 `it.skip` 的正确预期用例登记，详见 `06-TEST-FINDINGS.md`。
+
+## 06-09 存档（独立系统）
+
+模块归属：119 / 120 → `data-base/src/enemy/saveLoad.test.ts`（`EnemyManager.loadState` 缺 prefab /
+`Enemy.loadState` 缺 special）；
+58 / 59 → `data-base/src/hero/saveLoad.test.ts`（`HeroEquipsStore.loadState` 缺 maxUid / 缺 item raw data）；
+55 / 122 / 124 → `data-base/src/map/saveLoad.test.ts`（`MapState.loadState` 缺 reference / 缺楼层 /
+`MapLayer.loadState` 引用缺失）；
+112 / 113 / 177 / 178 → `data-state/test/saveablesRoundTrip.test.ts`（`CoreState.addSaveableContent` 重复 id /
+`bindSaveableExecuter` 未添加目标 / 公开 `CoreState.loadState` 存档缺 saveable key / 存档含未加载的 key）。
+其余码（warn 114/115 等）不属本计划可达范围，排除。
+
+阶段 1（构件级）完成 `Enemy`/special/`EnemyManager` 与 hero 各子系统同实例往返，观测 119/120/58/59；
+阶段 2（组合/流水线）完成 `MapState`/`GameMap`/`MapLayer`/tile、`ReplayArray`、`FlagSystem` 同实例往返，
+观测 55/122/124；
+阶段 3（完整/集成）经**公开入口** `CoreState.saveState(compression)` / `loadState(state, compression)`（D-45）
+对 5 个 saveable（`@system/hero`/`flags`/`maps`/`enemy`/`replay`）× 3 档压缩做整体往返，
+并以 `getSaveableContent(id)` 辅助逐 id 校验，观测 112/113/177/178。
+
+D-32：全部 `saveState`/`loadState` 测试集中本计划，其它计划不测（06-07 播放所需状态重置除外）。
+D-45：`@system/replay` 须已注册（执行前 Task 1 门禁确认）；未注册即阻断。录像新码 176 归 06-07。
+排除清单（存档无关/元数据字段）见 `06-SAVE-EXCLUSIONS.md`。
