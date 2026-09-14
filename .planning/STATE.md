@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-06-PLAN.md
-last_updated: "2026-09-14T08:32:08.508Z"
+stopped_at: Completed 06-08-PLAN.md
+last_updated: "2026-09-14T09:03:12.315Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 06 execution started
-state_head: 235eb1a5c9e17c985a28cc582248664e56385762
+state_head: 6699df9eeed82f39879d68aa58ee1f978b442ab0
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 46
-  completed_plans: 43
+  completed_plans: 44
 milestone_name: milestone
 ---
 
@@ -84,6 +84,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P04 | 26min | 3 tasks | 6 files |
 | Phase 06 P05 | 22min | 3 tasks | 10 files |
 | Phase 06 P06 | 24min | 3 tasks | 8 files |
+| Phase 06 P08 | 21min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -166,6 +167,9 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-06：transferToDynamic 越图实际发码 131（setEventLayer 专属）而 transferToStatic 发 128，按 D-05 以正确预期 it.skip 登记 #06-06-1 待用户确认；131 正常覆盖由 gameMap.setEventLayer 越权路径承担
 - [Phase 06]: 06-06：IMapState 并无 canPass/shouldHit（实现在 data-state/src/hero/predicate.ts），mapState.test 只覆盖谓词侧依赖的「活跃楼层 → 事件层」数据供给；计划中的 createLayerState 码 121 实为 MapState.createMap 重复注册告警
 - [Phase 06]: 06-06：D-32 不测任何 saveState/loadState（55/122/124 归 06-09）；MapTileBase 抽象类经 StaticTile/DynamicTile 具体子类覆盖，mover protected 回调为 no-op 故经公开钩子观测生命周期
+- [Phase 06]: 06-08：flag + common 按 D-43 三阶段（构件→组合/流水线→完整/集成）以 6 个行为单测覆盖，每阶段聚焦跑绿并过 D-44 门禁后提交
+- [Phase 06]: 06-08：FlagSystem 全公开表面（码 111）、FaceManager + Dir4/Dir8 handler、RoleFaceBinder（码 43/44）、utils 朝向纯函数、MapLocIndexer、ObjectMover 全公开方法均覆盖；D-32 不测 saveState/loadState（flag 往返归 06-09）
+- [Phase 06]: 06-08：疑似缺陷 #06-08-1（ObjectMover.backward(count>1) 因 Special 步翻转 moveDirection 而方向摆动、净位移为零），按 D-05 以正确预期 it.skip 登记，不修改核心代码
 
 ### Pending Todos
 
@@ -194,6 +198,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-14T08:32:08.256Z
-Stopped at: Completed 06-06-PLAN.md
+Last session: 2026-09-14T09:03:12.081Z
+Stopped at: Completed 06-08-PLAN.md
 Resume file: None

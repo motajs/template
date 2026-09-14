@@ -98,3 +98,15 @@ D-30：排除名称含 legacy 的接口/方法；两处**计划措辞与实现�
 | 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `mapLayer.ts` `MapLayer.transferToDynamic`（越图分支） | 越图转换发出的诊断码与语义不符：发的是 setEventLayer 专属码 131，且返回 null | 2x2 图层上调用 `layer.transferToDynamic(9, 9)`；`logger.catch` 捕获到码 131（`Cannot set event layer since target map layer does not belongs to current GameMap instance.`），返回 null | `if (!this.inMap(x, y))` 分支写成 `logger.warn(131, x, y)`；对照同文件 `transferToStatic`/`transferToStaticIfSafe` 的越界分支发码 128（`Cannot transfer ... out of bounds.`），此处应为 128 | 越界转换的诊断码错误，人工/回放诊断可能误判为事件层绑定问题；行为（返回 null、不产生动态图块）本身正确 | 将该分支改发 128，与 `transferToStatic` 的越界语义保持一致 | `mapLayer.test.ts` `warns code 128 for an out-of-map transferToDynamic`（#06-06-1） | 低 |
+
+## #06-08 flag + common（packages-user/data-base/src/flag、packages-user/data-common/src/common）
+
+本计划按 D-43 三阶段（构件 → 组合/流水线 → 完整/集成）执行，6 个测试文件（`utils` / `indexer`
+/ `faceManager` / `face` / `flag/system` / `mover`）全部跑绿；`pnpm test:ci` 全绿
+（58 文件 / 563 通过 / 14 跳过，其中 1 条为本计划新增 skip）。D-32：不测任何 `saveState`/`loadState`，
+flag 的存读档往返归 06-09。D-30：排除名称含 legacy 的接口/方法。
+发现 1 处疑似缺陷（`#06-08-1`），按 D-05 以正确预期的 `it.skip` 用例登记。
+
+| 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `mover.ts` `ObjectMover.backward`（`Special` 步的移动方向推导） | 连续后退多个步骤时方向来回摆动，净位移为零且朝向被翻转 | 朝向 `Down` 的 mover 调用 `backward(2)` → `start()` → `await controller.onEnd`，最终坐标为 `(0, 0)` 而非 `(0, -2)`，`faceDirection` 变为 `Up` | `prepareStep` 的后退分支把 `moveDirection` 设为 `opposite(dir)`，而 `getCurrentDirection` 又优先读取非 `Unknown` 的 `moveDirection`；下一步据此再次取反，形成交替 | 多步后退（`backward(count>1)`）无法沿同一轴连续移动，并把 `faceDirection` 翻转；单步后退正常 | 后退步的基准方向应取当前朝向 `faceDirection` 而非被翻转后的 `moveDirection`，或在 `getCurrentDirection` 中区分「停顿时的移动方向」与「本步刚设置的临时移动方向」 | `mover.test.ts` `keeps retreating along the same axis across multiple backward steps`（#06-08-1） | 低 |

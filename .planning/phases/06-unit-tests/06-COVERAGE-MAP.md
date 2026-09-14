@@ -71,6 +71,9 @@
 | 131 | map/gameMap.ts | `accepts own layers, warns 131 for a foreign layer and clears on null` | 06-06 |
 | 136 | map/eventView.ts | `warns code 136 when the same priority is set twice` | 06-06 |
 | 143 | map/dynamicTile.ts | `warns code 143 when the raw tile data is missing`、`reflects num and raw and warns 143 on an unknown set` | 06-06 |
+| 43 | common/face.ts | `warns code 43 for an unknown main block` | 06-08 |
+| 44 | common/face.ts | `warns code 44 when binding the main direction` | 06-08 |
+| 111 | flag/field.ts | `warns code 111 when adding to a non-numeric field` | 06-08 |
 
 ## 06-01 战斗系统（packages-user/data-system/src/combat）
 
@@ -178,3 +181,23 @@ D-18/D-39 计划措辞与实现的两处偏差（非代码缺陷，不登记为 
 一条疑似缺陷 `#06-06-1`（`transferToDynamic` 越图误发 131 而非 128）按 D-05 以 `it.skip` 的
 正确预期用例登记，详见 `06-TEST-FINDINGS.md`；码 131 的触发则由 `gameMap.test.ts` 的
 `setEventLayer` 越权路径正常覆盖。
+
+## 06-08 flag + common（packages-user/data-base/src/flag、packages-user/data-common/src/common）
+
+模块归属：43 / 44 → `common/face.ts`（`RoleFaceBinder.bind` 未知主图块 / 主朝向覆盖）；
+111 → `flag/field.ts`（`FlagCommonField.add` 对非数值字段告警，经 `FlagSystem.addFieldValue` 触发）。
+
+阶段 1（构件级）完成朝向工具纯函数（`getFaceMovement`/`degradeFace`/`nextFaceDirection`/
+`fromDirectionString`）与 `MapLocIndexer` 的索引互转及宽度切换。
+阶段 2（组合/流水线）完成 `FlagSystem` 容器全公开表面（`occupied`/`insertField`/`getField`/
+`getOrInsert`/`getOrInsertComputed`/`deleteField`/`setFieldValue`/`addFieldValue`/`getFieldValue`/
+`getFieldValueDefaults`，观测 111）、`FaceManager` 注册表与 `Dir4FaceHandler`/`Dir8FaceHandler`
+全方法、`RoleFaceBinder`（`malloc`/`bind`/`getFaceOf`/`getFaceDirection`/`getMainFace`，观测 43/44）。
+阶段 3（完整/集成）完成 `ObjectMover` 全部公开移动方法（`setPos`/`setFaceDir`/`setMoveDir`/
+`tp`/`jump`/`step`/`stepFace`/`forward`/`backward`/`speed`/`face`/`animDir`/`push`/`clear`/`start`）
+与控制器 `stop` 契约；异步路径用真实计时器 + `await controller.onEnd`。
+
+D-32：不测任何 `saveState`/`loadState`，flag 存读档往返归 06-09。
+D-30：排除名称含 legacy 的接口/方法。
+一条疑似缺陷 `#06-08-1`（`backward(count>1)` 因 `Special` 步翻转 `moveDirection` 而方向摆动、
+净位移为零）按 D-05 以 `it.skip` 的正确预期用例登记，详见 `06-TEST-FINDINGS.md`。

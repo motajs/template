@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 13
+open_count: 14
 waived_count: 0
 fixed_count: 8
-total_count: 21
-last_updated: 2026-09-14T00:54:04.044Z
+total_count: 22
+last_updated: 2026-09-14T09:03:38.649Z
 ---
 
 # Broken Windows Ledger
@@ -36,6 +36,7 @@ last_updated: 2026-09-14T00:54:04.044Z
 | 19 | 06 | skipped-test | packages-user/data-system/src/combat/damage.test.ts |  | 06-01-1 suspected bug: calculateCritical yields info not matching nextValue (Finding #06-01-1) | open |  | 2026-09-14T00:54:02.628Z |  |
 | 20 | 06 | skipped-test | packages-user/data-system/src/combat/mapDamage.test.ts |  | 06-01-2 suspected bug: MapDamage.deleteEnemy leaves enemy-sourced damage (Finding #06-01-2) | open |  | 2026-09-14T00:54:03.338Z |  |
 | 21 | 06 | skipped-test | packages-user/data-system/src/combat/combat.test.ts |  | 06-01-3 suspected bug: CombatFlow.before truthy/falsy semantics inverted vs interface doc (Finding #06-01-3) | open |  | 2026-09-14T00:54:04.044Z |  |
+| 22 | 06 | skipped-test | packages-user/data-common/src/common/mover.test.ts |  | backward(count>1) 方向摆动、净位移为零（#06-08-1），已 it.skip 待用户确认 | open |  | 2026-09-14T09:03:38.649Z |  |
 
 ````json
 [
@@ -289,6 +290,18 @@ last_updated: 2026-09-14T00:54:04.044Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-09-14T00:54:04.044Z",
+    "resolved_at": null
+  },
+  {
+    "id": 22,
+    "kind": "skipped-test",
+    "phase": "06",
+    "file": "packages-user/data-common/src/common/mover.test.ts",
+    "line": null,
+    "description": "backward(count>1) 方向摆动、净位移为零（#06-08-1），已 it.skip 待用户确认",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-14T09:03:38.649Z",
     "resolved_at": null
   }
 ]
