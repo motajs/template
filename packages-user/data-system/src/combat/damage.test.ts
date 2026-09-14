@@ -26,6 +26,16 @@ vi.hoisted(() => {
         this.set(key, value);
         return value;
     };
+    Map.prototype.getOrInsert ??= function <K, V>(
+        this: Map<K, V>,
+        key: K,
+        defaultValue: V
+    ): V {
+        const existing = this.get(key);
+        if (existing !== undefined) return existing;
+        this.set(key, defaultValue);
+        return defaultValue;
+    };
 });
 
 interface TestEnemyAttr {
