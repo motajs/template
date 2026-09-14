@@ -43,6 +43,13 @@
 | 162 | replay/func.ts | `warns code 162 when the detail code is unknown` | 06-04 |
 | 163 | replay/system.ts | `warns code 163 on a duplicate registration and keeps the original` | 06-04 |
 | 175 | replay/sandbox.ts | `warns code 175 when notExecuted fails` | 06-04 |
+| 108 | hero/attribute.ts | `warns code 108 and ignores a modifier that already has an owner` | 06-05 |
+| 109 | hero/attribute.ts | `warns code 109 when an object modifier returns the same reference` | 06-05 |
+| 116 | hero/state.ts | `creates registered modifiers and warns code 116 for unknown types` | 06-05 |
+| 142 | hero/follower.ts | `warns code 142 for an unknown string follower id` | 06-05 |
+| 144 | hero/mover.ts | `warns code 144 and stops without a top implementation` | 06-05 |
+| 146 | hero/equipment.ts | `warns code 146 when the equipped instance is missing`、`warns code 146 when comparing an unknown uid` | 06-05 |
+| 147 | hero/equipment.ts | `warns code 147 when no equipment slot is available`（`it.skip`，当前不可达，见 `#06-05-3`） | 06-05 |
 
 ## 06-01 战斗系统（packages-user/data-system/src/combat）
 
@@ -101,3 +108,28 @@ D-40：不做完整录像播放与二次录制比对，`error 2001–2008` 归 0
 四条编解码/编辑缺陷 `#06-04-1`（int64 解码乘数）、`#06-04-2`（多字节 bigint 编码）、
 `#06-04-3`（delete 索引回退）、`#06-04-4`（insert 参数位移方向）按 D-05 以 `it.skip`
 的正确预期用例登记，详见 `06-TEST-FINDINGS.md`。
+
+## 06-05 勇士全部（packages-user/data-base/src/hero）
+
+模块归属：108 / 109 → `hero/attribute.ts`（`HeroAttribute.addModifier` 重复归属 / 对象修饰器同引用）；
+116 → `hero/state.ts`（`HeroState.createModifier` 未注册类型）；
+142 → `hero/follower.ts`（`HeroFollower` 未知字符串 id）；
+144 → `hero/mover.ts`（`HeroMover.onMoveStart` 缺顶层实现）；
+146 / 147 → `hero/equipment.ts`（`HeroEquipment` 装备实例缺失 / 无可用槽位）。
+
+阶段 1（构件级）完成 `HeroAttribute` 基础/最终属性、优先级排序、增删、存盘开关、克隆与
+`catchCalculateProgress`，观测 108/109；完成 `ValueModifier`/`PercentageModifier` 公式与默认优先级。
+阶段 2（组合/流水线）完成 `HeroLocation` 定位/楼层钩子、`HeroState` 装配与属性视图/修饰器注册
+（观测 116）、`changeFloor` 钩子顺序；完成 `HeroEquipment` 槽位判定/装备替换/卸下/`compareEquip`
+（观测 146）、`HeroEquipsStore` 实例排序、`HeroItems` 增删路由与 `useItem`；
+完成 `HeroFollowersController` 增删/链接/同步与异步 gather（观测 142）。
+阶段 3（完整/集成）完成 `HeroMover` 配置往返、`Step`/`CannotMove`/`Hit`、越界、地形忽略、
+`enter`/`leave` 顺序（观测 144）与 `HeroRendering` alpha + 钩子。
+
+D-32：不测任何 `saveState`/`loadState`；equipStore 专属码 58/59 与全部存读档往返归 06-09。
+D-30：排除名称含 legacy 的接口/方法；`HeroMover` 顶层实现用内联 fake 注入。
+三条疑似缺陷 `#06-05-1`（无修饰器时 final 属性不随基础属性更新）、`#06-05-2`（字符串槽位空槽
+判断写反导致总是替换首个匹配槽位）、`#06-05-3`（码 147 不可达）按 D-05 以 `it.skip` 的正确预期
+用例登记，详见 `06-TEST-FINDINGS.md`；其中 147 无法触发，故本表该行标注为跳过用例。
+`HeroMover` 测试复用真实 `HeroLocation` 作为移动宿主（非自定义 `TestTile`），以零断言代价
+覆盖真实 tile 写回路径。

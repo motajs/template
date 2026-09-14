@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-04-PLAN.md
-last_updated: "2026-09-14T07:24:50.253Z"
+stopped_at: Completed 06-05-PLAN.md
+last_updated: "2026-09-14T07:59:26.958Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 06 execution started
-state_head: cb9c90abc1864345d88578194da3c727166d456a
+state_head: 351111487a69afd5a8b921c99996ac5c98bd7872
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 46
-  completed_plans: 41
+  completed_plans: 42
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 7 of 9
+Plan: 8 of 9
 Status: Ready to execute
 Last activity: 2026-09-14 — Phase 06 execution started
 
@@ -82,6 +82,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P02 | 8min | 3 tasks | 6 files |
 | Phase 06 P03 | 13min | 3 tasks | 5 files |
 | Phase 06 P04 | 26min | 3 tasks | 6 files |
+| Phase 06 P05 | 22min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -157,6 +158,9 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-04：录像系统按 D-43 三阶段（构件→组合/流水线→完整/集成）执行，array/func/system/sandbox 四文件共 56 passed / 4 skipped，覆盖 code 148–163、175
 - [Phase 06]: 06-04：发现 4 处核心编解码/编辑缺陷（#06-04-1 int64 解码乘数、#06-04-2 多字节 bigint 编码、#06-04-3 delete 索引回退、#06-04-4 insert 参数位移方向），按 D-05 写正确预期 it.skip 只记录不修复
 - [Phase 06]: 06-04：D-32 不测 ReplayArray.saveState/loadState（归 06-09）；D-40 不做完整播放/二次录制，error 2001–2008 归 06-07
+- [Phase 06]: 06-05：勇士全部子系统按 D-43 三阶段（构件→组合/流水线→完整/集成）以 10 个同目录测试覆盖，每阶段聚焦跑绿并过 D-44 门禁后提交
+- [Phase 06]: 06-05：HeroAttribute 无修饰器时 final 属性陈旧（#06-05-1）、HeroEquipment 字符串槽位空槽判断写反（#06-05-2）与码 147 不可达（#06-05-3），按 D-05 写正确预期 it.skip 只记录不修复
+- [Phase 06]: 06-05：D-32 不测任何 saveState/loadState，equipStore 专属码 58/59 归 06-09；mover 异步用真实计时器 + await controller.onEnd
 
 ### Pending Todos
 
@@ -185,6 +189,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-14T07:24:49.974Z
-Stopped at: Completed 06-04-PLAN.md
+Last session: 2026-09-14T07:59:26.677Z
+Stopped at: Completed 06-05-PLAN.md
 Resume file: None
