@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-09-14T06:43:21.137Z"
+stopped_at: Completed 06-04-PLAN.md
+last_updated: "2026-09-14T07:24:50.253Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 06 execution started
-state_head: 7012aa49fce154f2fc48c1da3b1719229c0fd709
+state_head: cb9c90abc1864345d88578194da3c727166d456a
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 46
-  completed_plans: 40
+  completed_plans: 41
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 6 of 9
+Plan: 7 of 9
 Status: Ready to execute
 Last activity: 2026-09-14 — Phase 06 execution started
 
@@ -81,6 +81,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P01 | 13min | 3 tasks | 6 files |
 | Phase 06 P02 | 8min | 3 tasks | 6 files |
 | Phase 06 P03 | 13min | 3 tasks | 5 files |
+| Phase 06 P04 | 26min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -153,6 +154,9 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-03：manager 脏集合用 Reflect.get(manager, 'dirtySet') 观测，不调用 saveState/loadState，严格遵守 D-32
 - [Phase 06]: 06-03：registerSpecial 覆盖语义只能经被排除的 legacy 转换路径观测，故只覆盖注册/重复注册不报错的最小正常用例（D-30 优先）
 - [Phase 06]: 06-03：createEnemy/createEnemyById 未走复用映射，按 D-05 写 it.skip 正确预期并登记 #06-03-1，不修改核心代码
+- [Phase 06]: 06-04：录像系统按 D-43 三阶段（构件→组合/流水线→完整/集成）执行，array/func/system/sandbox 四文件共 56 passed / 4 skipped，覆盖 code 148–163、175
+- [Phase 06]: 06-04：发现 4 处核心编解码/编辑缺陷（#06-04-1 int64 解码乘数、#06-04-2 多字节 bigint 编码、#06-04-3 delete 索引回退、#06-04-4 insert 参数位移方向），按 D-05 写正确预期 it.skip 只记录不修复
+- [Phase 06]: 06-04：D-32 不测 ReplayArray.saveState/loadState（归 06-09）；D-40 不做完整播放/二次录制，error 2001–2008 归 06-07
 
 ### Pending Todos
 
@@ -181,6 +185,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-14T06:43:20.891Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-09-14T07:24:49.974Z
+Stopped at: Completed 06-04-PLAN.md
 Resume file: None
