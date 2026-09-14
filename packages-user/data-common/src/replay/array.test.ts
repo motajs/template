@@ -474,3 +474,20 @@ describe('ReplayArray expand and width warnings', () => {
         expect(stream.read()).toBeNull();
     });
 });
+
+describe('ReplayArray disable and revert', () => {
+    // 验证禁用后录像操作被忽略，恢复后录像继续记录
+    it('ignores recording while disabled and resumes after revert', () => {
+        const array = createArray();
+        array.add(1, [10]);
+
+        array.disable();
+        array.add(2, [20]);
+        expect(array.length).toBe(1);
+
+        array.revert();
+        array.add(3, [30]);
+        expect(array.length).toBe(2);
+        expect(array.get(1)).toEqual({ command: 3, params: [30], index: 1 });
+    });
+});

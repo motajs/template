@@ -390,7 +390,7 @@ export class ReplayArray implements IReplayArray {
     }
 
     add(command: number, params: ReplayParamValue[]): void {
-        if (this.disabled >= 0) return;
+        if (this.disabled > 0) return;
         const normalized = this.normalizeParamList(params);
         const length = this.calculateParamsLength(normalized);
         this.checkBufferExpand(length);
@@ -410,7 +410,7 @@ export class ReplayArray implements IReplayArray {
     }
 
     insert(index: number, command: number, params: ReplayParamValue[]): void {
-        if (this.disabled >= 0) return;
+        if (this.disabled > 0) return;
         const normalized = this.normalizeParamList(params);
         const length = this.calculateParamsLength(normalized);
         this.checkBufferExpand(length);
@@ -440,7 +440,7 @@ export class ReplayArray implements IReplayArray {
     }
 
     delete(index: number): void {
-        if (this.disabled >= 0) return;
+        if (this.disabled > 0) return;
         const commandSize = this.getCommandSize();
         const commandStart = index * commandSize;
         const paramStart = this.indexArray[index];
@@ -474,7 +474,7 @@ export class ReplayArray implements IReplayArray {
     }
 
     set(index: number, command: number, params: ReplayParamValue[]): void {
-        if (this.disabled >= 0) return;
+        if (this.disabled > 0) return;
         const normalized = this.normalizeParamList(params);
         const length = this.calculateParamsLength(normalized);
         const paramStart = this.indexArray[index];

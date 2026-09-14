@@ -76,7 +76,11 @@ function createState(): IDataCommon {
     const tileStore = new TileStore();
     const itemStore = new ItemStore<IHeroAttr, unknown>();
     const route = { add: vi.fn() };
-    return { tileStore, itemStore, replaySystem: { route } } as never;
+    return {
+        tileStore,
+        itemStore,
+        replaySystem: { route, disable: vi.fn(), revert: vi.fn() }
+    } as never;
 }
 
 /** 构造一份合成的勇士基础属性 */

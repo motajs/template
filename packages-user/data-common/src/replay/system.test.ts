@@ -158,3 +158,24 @@ describe('ReplaySystem sandbox lifecycle', () => {
         expect(system.sandbox).toBeNull();
     });
 });
+
+describe('ReplaySystem disable and revert', () => {
+    // 验证禁用后 record 被忽略，恢复后继续记录并委托给 route
+    it('delegates disable and revert to the route', () => {
+        const system = new ReplaySystem();
+        const disable = vi.spyOn(system.route, 'disable');
+        const revert = vi.spyOn(system.route, 'revert');
+        system.record(1);
+
+        system.disable();
+        system.record(2);
+        expect(disable).toHaveBeenCalledTimes(1);
+        expect(system.route.length).toBe(1);
+
+        system.revert();
+        system.record(3);
+        expect(revert).toHaveBeenCalledTimes(1);
+        expect(system.route.length).toBe(2);
+        expect(system.route.get(1).command).toBe(3);
+    });
+});

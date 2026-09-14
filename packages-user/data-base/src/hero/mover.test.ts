@@ -118,16 +118,16 @@ describe('HeroMover configuration', () => {
         const mover = createMover();
 
         expect(mover.getConfig()).toEqual({
-            noRoute: false,
             ignoreTerrain: false,
             autoSave: false,
             allowOutBound: false
         });
 
-        expect(mover.config({ noRoute: true, autoSave: true })).toBe(mover);
+        expect(mover.config({ ignoreTerrain: true, autoSave: true })).toBe(
+            mover
+        );
         expect(mover.getConfig()).toEqual({
-            noRoute: true,
-            ignoreTerrain: false,
+            ignoreTerrain: true,
             autoSave: true,
             allowOutBound: false
         });
