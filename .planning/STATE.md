@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-09-PLAN.md
-last_updated: "2026-09-14T10:59:52.055Z"
+stopped_at: Completed 06-07-PLAN.md
+last_updated: "2026-09-14T13:09:31.918Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 06 execution started
-state_head: 502d87ba260989fe2018a5139c5f9729d82a2275
+state_head: 9f9dd112234e814ea97b31fab87f395fa1308d9a
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 46
-  completed_plans: 45
+  completed_plans: 46
 milestone_name: milestone
 ---
 
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 9 of 9 (06-09 complete; 06-07 outstanding — no SUMMARY)
-Status: 06-09 save/load tests complete; D-44(c) blocked by pre-existing test:ci regression
-Last activity: 2026-09-14 — Completed 06-09-PLAN.md
+Plan: 9 of 9 (06-07 complete; all Phase 06 plans have SUMMARY)
+Status: Phase 06 data-end unit tests complete; #06-09 test:ci regression resolved by later commits, D-44(c) green
+Last activity: 2026-09-14 — Completed 06-07-PLAN.md
 
 Progress: [█████░░░░░] 50%
 
@@ -86,6 +86,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P06 | 24min | 3 tasks | 8 files |
 | Phase 06 P08 | 21min | 3 tasks | 6 files |
 | Phase 06 P09 | 42min | 3 tasks | 9 files |
+| Phase 06 P07 | 40min | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -173,6 +174,9 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-08：疑似缺陷 #06-08-1（ObjectMover.backward(count>1) 因 Special 步翻转 moveDirection 而方向摆动、净位移为零），按 D-05 以正确预期 it.skip 登记，不修改核心代码
 - [Phase 06]: 06-09：存读档独立系统按 D-43 三阶段执行，6 个测试文件 41 通过 / 6 跳过；11 个可达码 55/58/59/112/113/119/120/122/124/177/178 全部触发；CoreState 顶层经公开 saveState/loadState 对 5 saveable × 3 压缩档整体往返
 - [Phase 06]: 06-09：按 D-05 登记 5 处疑似缺陷 #06-09-1..5（EquipmentState 数值表读档错误 / HeroEquipment 存档未深拷贝 / DynamicTile 不恢复 num / ReplayArray 不恢复 length / 码 178 语义与文案相反），并以正确预期 it.skip 记录；另记录既有 test:ci 回归阻断项（commit cee8439）
+- [Phase 06]: 06-07：顶层集成按 D-43 三阶段执行，2 个测试文件 24 通过 / 1 跳过；伤害/光环组合用真实 Enemy/EnemyContext/CommonAura/GuardAura/final effect 驱动，hero 属性用内联合成对象
+- [Phase 06]: 06-07：录像播放期间用 replaySystem.disable()/revert() 抑制录制，二次录制经 ReplaySystem.saveState()/loadState()（IReplaySystemSave）最小重置；ReplayArray 不可存档已由用例断言
+- [Phase 06]: 06-07：真实 code 覆盖 176 + 2001–2008；发现 #06-07-1（CoreState 未向寻路 finder 注入 maps/layer/predicate，顶层录像瞬移恒返回 2005），按 D-05 以 it.skip 正确预期用例登记
 
 ### Pending Todos
 
@@ -202,6 +206,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-14T10:59:39.690Z
-Stopped at: Completed 06-09-PLAN.md
+Last session: 2026-09-14T13:09:31.695Z
+Stopped at: Completed 06-07-PLAN.md
 Resume file: None
