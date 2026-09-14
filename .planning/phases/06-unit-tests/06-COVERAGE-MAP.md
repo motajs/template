@@ -21,6 +21,7 @@
 | 139 | combat/combat.ts | `warns 139 when a required collaborator is missing` | 06-01 |
 | 140 | combat/combat.ts | `sorts scripts by descending priority and rejects duplicates` | 06-01 |
 | 141 | combat/combat.ts | `warns 141 when the damage context cannot produce damage info` | 06-01 |
+| 137 | enemy/calculator.ts | `warns 137 when a guard locator has no enemy` | 06-02 |
 
 ## 06-01 战斗系统（packages-user/data-system/src/combat）
 
@@ -32,3 +33,13 @@
 阶段 1（构件级）不产生 warn/error 码断言。阶段 2（组合/流水线）已完成 97/98/99/100/101/110；
 阶段 3（完整/集成）已完成 106/107/102/103/104/138/139/140/141。105 在当前实现不可达，排除。
 `#06-01-1..4` 为疑似缺陷的 `it.skip` 正确预期用例，详见 `06-TEST-FINDINGS.md`。
+
+## 06-02 顶层战斗实现（packages-user/data-state/src/enemy）
+
+模块归属：137 → `enemy/calculator.ts`（`MainDamageCalculator.calculate` 的支援怪缺失守卫路径）。
+
+阶段 1（构件级）完成 `calculator` / `final` / `comparer` 单分支单元；
+阶段 2（组合/流水线）完成 `CommonAura`/`GuardAura` 转换器 → 施加流水线与 `registerSpecials` 注册；
+阶段 3（完整/集成）完成 mapDamage 五视图 + `MainMapDamageConverter` + `MainMapDamageReducer`。
+本计划只覆盖顶层实现**基本功能**（D-35），跨特殊属性/光环的组合语义见 06-07；
+无 `it.skip`/`it.todo`，`06-TEST-FINDINGS.md` 无 `#06-02-N` 条目。

@@ -4,11 +4,11 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-01-PLAN.md (combat unit tests, 3 stages green)
-last_updated: "2026-09-14T05:01:37.712Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-09-14T05:36:57.734Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 06 execution started
-state_head: a9b6e7290c969f13265a62a3fcdbc456816f10d3
+state_head: e72231d9fab00224a566c1a235de058396d7ebc3
 progress:
   total_phases: 6
   completed_phases: 0
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 4 of 9
+Plan: 5 of 9
 Status: Ready to execute
 Last activity: 2026-09-14 — Phase 06 execution started
 
@@ -79,6 +79,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P01 | 9min | 3 tasks | 6 files |
 | Phase 06 P02 | 9min | 3 tasks | 6 files |
 | Phase 06 P01 | 13min | 3 tasks | 6 files |
+| Phase 06 P02 | 8min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -146,6 +147,7 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-02：未发现疑似 bug，06-TEST-FINDINGS.md 无新增 #06-02-N；BetweenDamageView 方向去重语义与 plan 措辞不符但实现正确，仅记录澄清
 - [Phase 06]: 06-01：战斗系统 Layer-2 按 D-43 三阶段重跑（构件→流水线→集成），EnemyContext 全公开方法 + 三范围光环 + 四阶段顺序 + 两条刷新路径 + 15 个可达 code 全覆盖；D-26 属性→伤害联动经真实 EnemyContext + fake calculator 验证。
 - [Phase 06]: 06-01：新增疑似缺陷 #06-01-4（重复 buildup 未重置计算后怪物导致属性累加），按 D-05 写成正确预期 it.skip 并登记 06-TEST-FINDINGS.md；连同既有 #06-01-1..3 共 4 条只记录不修复。
+- [Phase 06]: 06-02（重跑）：按 D-43 三阶段复核，补齐 GuardAuraConverter.convert 与 GuardAura 能力/applySpecial 正常用例以满足 D-30 公开方法全覆盖；三阶段聚焦运行与 pnpm test:ci 全绿（257 passed / 4 skipped）
 
 ### Pending Todos
 
@@ -174,6 +176,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-14T05:01:24.558Z
-Stopped at: Completed 06-01-PLAN.md (combat unit tests, 3 stages green)
+Last session: 2026-09-14T05:36:57.495Z
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None
