@@ -12,12 +12,12 @@ export class EventMoveHero implements BuiltInFunction<
         const mover = env.state.hero.location.mover;
         if (mover.moving) return;
 
-        mover.config({ noRoute: true });
+        env.state.replaySystem.disable();
         mover.push([...param.steps]);
         const controller = mover.start();
         if (!controller) return;
         await controller.onEnd;
-        mover.config({ noRoute: false });
+        env.state.replaySystem.revert();
     }
 }
 
@@ -31,11 +31,11 @@ export class EventStepHero implements BuiltInFunction<
         const mover = env.state.hero.location.mover;
         if (mover.moving) return;
 
-        mover.config({ noRoute: true });
+        env.state.replaySystem.disable();
         mover.forward(1);
         const controller = mover.start();
         if (!controller) return;
         await controller.onEnd;
-        mover.config({ noRoute: false });
+        env.state.replaySystem.revert();
     }
 }
