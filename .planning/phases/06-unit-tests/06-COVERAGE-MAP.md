@@ -50,6 +50,27 @@
 | 144 | hero/mover.ts | `warns code 144 and stops without a top implementation` | 06-05 |
 | 146 | hero/equipment.ts | `warns code 146 when the equipped instance is missing`、`warns code 146 when comparing an unknown uid` | 06-05 |
 | 147 | hero/equipment.ts | `warns code 147 when no equipment slot is available`（`it.skip`，当前不可达，见 `#06-05-3`） | 06-05 |
+| 8 | map/mapLayer.ts | `warns code 8 for incomplete data and code 9 for an out-of-range area` | 06-06 |
+| 9 | map/mapLayer.ts | `warns code 8 for incomplete data and code 9 for an out-of-range area` | 06-06 |
+| 46 | map/mapLayer.ts | `closes a door on empty cells and warns 46 on occupied cells` | 06-06 |
+| 60 | map/mapState.ts | `unequal layer lengths is rejected with code 60` | 06-06 |
+| 61 | map/mapState.ts | `area not divisible by width is rejected with code 61` | 06-06 |
+| 62 | map/mapState.ts | `non-numeric map layer key is rejected with code 62`、`non-numeric event priority is rejected with code 62` | 06-06 |
+| 63 | map/mapState.ts | `missing map container is rejected with code 63`、`missing events container is rejected with code 63`、`missing alias container is rejected with code 63` | 06-06 |
+| 64 | map/mapState.ts | `invalid width is rejected with code 64`、`non-integer map value is rejected with code 64`、`non-string layer alias is rejected with code 64`、`out of range event position is rejected with code 64`、`non-string event id is rejected with code 64`、`event layer without map layer is rejected with code 64` | 06-06 |
+| 80 | map/mapLayer.ts | `warns code 80 for an illegal argument count` | 06-06 |
+| 81 | map/mapLayer.ts | `warns code 81 for an out-of-range region` | 06-06 |
+| 84 | map/gameMap.ts | `binds aliases and warns 84 on a duplicate alias` | 06-06 |
+| 121 | map/mapState.ts | `registers floors and warns 121 when the floor already exists` | 06-06 |
+| 123 | map/mapLayer.ts | `warns code 123 on a length mismatch and replaces the reference otherwise` | 06-06 |
+| 126 | map/mover.ts | `warns code 126 for an unexpected move code and keeps the position` | 06-06 |
+| 127 | map/mapLayer.ts | `warns code 127 when transferring an empty block` | 06-06 |
+| 128 | map/mapLayer.ts | `warns code 128 when transferToStatic is out of bounds`（`transferToDynamic` 越图当前误发 131，另见 `#06-06-1` 的 `it.skip` 正确预期用例） | 06-06 |
+| 129 | map/mapLayer.ts | `warns code 129 when transferToStatic overwrites a static block` | 06-06 |
+| 130 | map/mapLayer.ts | `warns code 130 for a tile not managed by the layer` | 06-06 |
+| 131 | map/gameMap.ts | `accepts own layers, warns 131 for a foreign layer and clears on null` | 06-06 |
+| 136 | map/eventView.ts | `warns code 136 when the same priority is set twice` | 06-06 |
+| 143 | map/dynamicTile.ts | `warns code 143 when the raw tile data is missing`、`reflects num and raw and warns 143 on an unknown set` | 06-06 |
 
 ## 06-01 战斗系统（packages-user/data-system/src/combat）
 
@@ -133,3 +154,27 @@ D-30：排除名称含 legacy 的接口/方法；`HeroMover` 顶层实现用内�
 用例登记，详见 `06-TEST-FINDINGS.md`；其中 147 无法触发，故本表该行标注为跳过用例。
 `HeroMover` 测试复用真实 `HeroLocation` 作为移动宿主（非自定义 `TestTile`），以零断言代价
 覆盖真实 tile 写回路径。
+
+## 06-06 地图全部（packages-user/data-base/src/map）
+
+模块归属：60 / 61 / 62 / 63 / 64 / 121 → `map/mapState.ts`（`validateRaw` / `createMap`）；
+84 / 131 → `map/gameMap.ts`（`setLayerAlias` / `setEventLayer`）；
+8 / 9 / 46 / 80 / 81 / 123 / 127 / 128 / 129 / 130 → `map/mapLayer.ts`
+（`putMapData` / `closeDoor` / `getMapData` / `setMapRef` / 动态转换）；
+126 → `map/mover.ts`（`DynamicTileMover.onStepEnd` 非法移动码）；
+136 → `map/eventView.ts`（重复优先级）；143 → `map/dynamicTile.ts`（缺图块原始数据）。
+
+阶段 1（构件级）完成 `tile` / `staticTile` / `dynamicTile` / `eventView` 单元，观测 136/143；
+阶段 2（组合/流水线）完成 `MapState` 注册/校验/激活/分区与 `GameMap` 图层、`MapLayer` 矩阵/
+静态数组/动态转换/点位/脏/异步门，观测 8/9/46/60/61/62/63/64/80/81/84/121/123/127/129/130/131；
+阶段 3（完整/集成）完成 `DynamicTileMover` 异步移动生命周期，观测 126。
+
+D-32：不测任何 `saveState`/`loadState`，其专属码 55/122/124 与存读档往返归 06-09。
+D-30：排除名称含 legacy 的接口/方法；`MapTileBase` 为抽象类，经 `StaticTile`/`DynamicTile` 具体子类覆盖。
+D-18/D-39 计划措辞与实现的两处偏差（非代码缺陷，不登记为 bug）：
+其一，`IMapState` 并无 `canPass`/`shouldHit`，通行谓词实现在 `data-state/src/hero/predicate.ts`，
+故 `mapState.test.ts` 只覆盖谓词侧依赖的「活跃楼层 → 事件层」数据供给；
+其二，计划中的 `createLayerState` 码 121 实为 `MapState.createMap` 的重复注册告警（码表文案沿用旧名）。
+一条疑似缺陷 `#06-06-1`（`transferToDynamic` 越图误发 131 而非 128）按 D-05 以 `it.skip` 的
+正确预期用例登记，详见 `06-TEST-FINDINGS.md`；码 131 的触发则由 `gameMap.test.ts` 的
+`setEventLayer` 越权路径正常覆盖。

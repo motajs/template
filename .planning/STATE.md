@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-05-PLAN.md
-last_updated: "2026-09-14T07:59:26.958Z"
+stopped_at: Completed 06-06-PLAN.md
+last_updated: "2026-09-14T08:32:08.508Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 06 execution started
-state_head: 351111487a69afd5a8b921c99996ac5c98bd7872
+state_head: 235eb1a5c9e17c985a28cc582248664e56385762
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 46
-  completed_plans: 42
+  completed_plans: 43
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 8 of 9
+Plan: 9 of 9
 Status: Ready to execute
 Last activity: 2026-09-14 — Phase 06 execution started
 
@@ -83,6 +83,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P03 | 13min | 3 tasks | 5 files |
 | Phase 06 P04 | 26min | 3 tasks | 6 files |
 | Phase 06 P05 | 22min | 3 tasks | 10 files |
+| Phase 06 P06 | 24min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -161,6 +162,10 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-05：勇士全部子系统按 D-43 三阶段（构件→组合/流水线→完整/集成）以 10 个同目录测试覆盖，每阶段聚焦跑绿并过 D-44 门禁后提交
 - [Phase 06]: 06-05：HeroAttribute 无修饰器时 final 属性陈旧（#06-05-1）、HeroEquipment 字符串槽位空槽判断写反（#06-05-2）与码 147 不可达（#06-05-3），按 D-05 写正确预期 it.skip 只记录不修复
 - [Phase 06]: 06-05：D-32 不测任何 saveState/loadState，equipStore 专属码 58/59 归 06-09；mover 异步用真实计时器 + await controller.onEnd
+- [Phase 06]: 06-06：地图全部按 D-43 三阶段（构件 → 组合/流水线 → 完整/集成）以 8 个同目录测试覆盖，每阶段聚焦跑绿并过 D-44 门禁后提交
+- [Phase 06]: 06-06：transferToDynamic 越图实际发码 131（setEventLayer 专属）而 transferToStatic 发 128，按 D-05 以正确预期 it.skip 登记 #06-06-1 待用户确认；131 正常覆盖由 gameMap.setEventLayer 越权路径承担
+- [Phase 06]: 06-06：IMapState 并无 canPass/shouldHit（实现在 data-state/src/hero/predicate.ts），mapState.test 只覆盖谓词侧依赖的「活跃楼层 → 事件层」数据供给；计划中的 createLayerState 码 121 实为 MapState.createMap 重复注册告警
+- [Phase 06]: 06-06：D-32 不测任何 saveState/loadState（55/122/124 归 06-09）；MapTileBase 抽象类经 StaticTile/DynamicTile 具体子类覆盖，mover protected 回调为 no-op 故经公开钩子观测生命周期
 
 ### Pending Todos
 
@@ -189,6 +194,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-14T07:59:26.677Z
-Stopped at: Completed 06-05-PLAN.md
+Last session: 2026-09-14T08:32:08.256Z
+Stopped at: Completed 06-06-PLAN.md
 Resume file: None

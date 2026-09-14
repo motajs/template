@@ -78,3 +78,23 @@ equipStore 专属码 58/59 归 06-09。D-30：排除名称含 legacy 的接口/�
 | `attribute.ts` `HeroAttribute.recalculateAttribute` | 属性没有任何修饰器时，基础属性变化不会反映到最终属性 | `new HeroAttribute({ hp: 100 })` → `set('hp', 40)` → `add('hp', 5)`；`getBaseAttribute('hp')` 为 45，但 `getFinalAttribute('hp')` 仍为构造时的 100 | `recalculateAttribute` 在 `const modifierList = this.modifier.get(name); if (!modifierList) return;` 处提前返回，未在该分支把基础值写回 `finalAttribute` | 所有尚无修饰器的属性（基础数值、升级/金币/经验等）在 `set`/`add`/`mul`/`div` 后读取最终属性会得到旧值；只有挂上修饰器后才会刷新 | 在无 `modifierList` 时同样执行 `this.finalAttribute[name] = baseValue`（或初始化时同步），保证 final 与 base 在没有加成时一致 | `attribute.test.ts` `reflects base-only changes without any modifier`（#06-05-1） | 中 |
 | `equipment.ts` `HeroEquipment.equip`（字符串槽位分支） | 存在空的同名装备槽时仍替换第一个匹配槽位，而不是占用空槽 | `slots = ['weapon', 'weapon']`；先将 A 装备到 `'weapon'`，再装备 B 到 `'weapon'`；实际 B 替换了 slot 0 的 A，slot 1 仍为空（正确预期 A 在 slot 0、B 在 slot 1） | 空槽判断条件写反：`if (empty !== -1 && !this.equips.has(index))` 应为 `empty === -1`；因 `empty` 初值即 -1，条件恒假，`empty` 永远保持 -1，`empty !== -1` 的「占用空槽」分支成为死代码 | 多同名槽位（如双武器槽）时装错位置，可能覆盖已装备道具；同时 `equip` 的空槽直装分支永不执行 | 将条件改为 `empty === -1 && !this.equips.has(index)`，恢复「优先占用空槽、无空槽才替换」的语义 | `equipment.test.ts` `uses the first empty named slot instead of replacing an occupant`（#06-05-2） | 中 |
 | `equipment.ts` `HeroEquipment.equip` 码 147 | 无可用装备槽告警（147）在当前实现下不可达 | `slots = []`、装备支持名称槽 `'weapon'` 时调用 `equip(uid, 'weapon')`：`canEquipTo` 因 `hasSlot === false` 先返回 `CannotEquip`，`equip` 提前返回，永远不会进入 `first === -1` 的 147 分支 | `canEquipTo` 的名称槽校验（`hasSlot`）与 `equip` 的 `first === -1` 判定使用同一条件，前者已拦截所有会使后者成立的情形；叠加 `#06-05-2` 的 `empty` 死值，空槽分支同样不可达 | 码 147 属死码，D-31 的 code 全覆盖无法通过触发断言满足；非法名称槽只能得到静默 `undefined` 而无诊断 | 明确 147 的触发语义：或在 `canEquipTo` 放行后由 `equip` 补齐诊断，或在码表中标注该码保留未用并移除死分支 | `equipment.test.ts` `warns code 147 when no equipment slot is available`（#06-05-3） | 低 |
+
+## #06-06 地图全部（packages-user/data-base/src/map）
+
+本计划按 D-43 三阶段（构件 → 组合/流水线 → 完整/集成）执行，8 个测试文件全部跑绿
+（阶段 1：26 通过；阶段 2：63 通过 / 1 跳过；阶段 3：6 通过）；`pnpm test:ci` 全绿
+（53 文件 / 505 通过 / 13 跳过，其中 1 条为本计划新增 skip）。
+D-32：不测任何 `saveState`/`loadState`，55/122/124 与存读档往返归 06-09。
+D-30：排除名称含 legacy 的接口/方法；两处**计划措辞与实现不符**（非代码缺陷，不登记为 bug）：
+
+- `IMapState` 并没有 `canPass`/`shouldHit`；通行谓词实现在 `data-state/src/hero/predicate.ts`
+  （`DefaultPassPredicateImpl`，消费 `IMapState` 的活跃/普通楼层与事件层）。故 `mapState.test.ts`
+  只覆盖谓词所依赖的「活跃楼层 → 事件层」数据供给，不测试并不存在的 MapState 谓词方法。
+- 计划中的「`createLayerState` 告警 121」实为 `MapState.createMap` 的重复楼层注册告警
+  （码 121 的文案沿用了旧名 `MapStore.createLayerState`），测试按真实接口 `createMap` 覆盖。
+
+发现 1 处疑似缺陷（`#06-06-1`），按 D-05 以正确预期的 `it.skip` 用例登记。
+
+| 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `mapLayer.ts` `MapLayer.transferToDynamic`（越图分支） | 越图转换发出的诊断码与语义不符：发的是 setEventLayer 专属码 131，且返回 null | 2x2 图层上调用 `layer.transferToDynamic(9, 9)`；`logger.catch` 捕获到码 131（`Cannot set event layer since target map layer does not belongs to current GameMap instance.`），返回 null | `if (!this.inMap(x, y))` 分支写成 `logger.warn(131, x, y)`；对照同文件 `transferToStatic`/`transferToStaticIfSafe` 的越界分支发码 128（`Cannot transfer ... out of bounds.`），此处应为 128 | 越界转换的诊断码错误，人工/回放诊断可能误判为事件层绑定问题；行为（返回 null、不产生动态图块）本身正确 | 将该分支改发 128，与 `transferToStatic` 的越界语义保持一致 | `mapLayer.test.ts` `warns code 128 for an out-of-map transferToDynamic`（#06-06-1） | 低 |
