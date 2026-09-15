@@ -136,7 +136,7 @@ function createComplexArray(): ReplayArray {
     return array;
 }
 
-// 逐条比较读流与按索引读回：两者的 index 语义不同（读流为位置 + 1、get 从 0 起），故只比较指令与参数
+// 逐条比较读流与按索引读回：读流索引为位置 + 1、get 从 0 起，故只按指令与参数对应并对每参数断言类型
 function expectHeterogeneousRead(
     array: ReplayArray,
     expectedSteps: ReadonlyArray<readonly [number, ReplayParamValue[]]>
@@ -144,9 +144,13 @@ function expectHeterogeneousRead(
     const stream = array.createReadStream(0);
     expect(stream.length).toBe(array.length);
     expectedSteps.forEach(([command, params], i) => {
-        expect(stream.read()).toMatchObject({ command, params });
-        expect(array.get(i)).toMatchObject({ command, params });
+        expectStepTyped(stream.read()!, command, params, i + 1);
+        const step = array.get(i);
+        expect(step.command).toBe(command);
+        params.forEach((param, j) => expectParamTyped(step.params[j], param));
+        expect(step.index).toBe(i);
     });
+    expect(stream.index).toBe(expectedSteps.length);
     expect(stream.read()).toBeNull();
 }
 
@@ -373,7 +377,7 @@ describe('ReplayArray param codec', () => {
 });
 
 describe('ReplayArray stream and buffer combination', () => {
-    // 验证 createReadStream 从起始索引顺序读回多步并在末尾返回 null
+    // 验证 createReadStream 从起始索引顺序读回多步，每参数为 number 且流索引逐次递进，末尾返回 null
     it('reads a sequence of steps through a read stream', () => {
         const array = createArray();
         array.add(1, [10]);
@@ -383,9 +387,17 @@ describe('ReplayArray stream and buffer combination', () => {
         const stream = array.createReadStream(0);
         expect(stream.index).toBe(0);
         expect(stream.length).toBe(3);
-        expect(stream.read()).toEqual({ command: 1, params: [10], index: 1 });
-        expect(stream.read()).toEqual({ command: 2, params: [20], index: 2 });
-        expect(stream.read()).toEqual({ command: 3, params: [30], index: 3 });
+        for (let i = 0; i < 3; i++) {
+            const step = stream.read()!;
+            expect(step).toEqual({
+                command: i + 1,
+                params: [(i + 1) * 10],
+                index: i + 1
+            });
+            expect(typeof step.params[0]).toBe('number');
+            expect(step.params[0]).toBe((i + 1) * 10);
+            expect(stream.index).toBe(i + 1);
+        }
         expect(stream.read()).toBeNull();
     });
 
@@ -614,7 +626,31 @@ describe('ReplayArray expand and width warnings', () => {
         expect(info.map(v => v.code)).toContain(155);
     });
 
-    // 验证初始容量不足时自动扩容且扩容后仍能顺序读回每一步
+    // 验证复杂序列 add 变更后既有读流过期并告警 155，新建读流按新次序逐条类型化读回 7 步
+    it('expires a read stream after the heterogeneous route is mutated', () => {
+        const array = createHeterogeneousArray();
+        const stream = array.createReadStream(0);
+        expectStepTyped(stream.read()!, 1, [10], 1);
+        expectStepTyped(stream.read()!, 2, [true, 'x'], 2);
+
+        array.add(7, ['z']);
+
+        expect(stream.expired).toBe(true);
+        const { info } = logger.catch(() => stream.read());
+        expect(info.map(v => v.code)).toContain(155);
+
+        const expectedSteps: ReadonlyArray<
+            readonly [number, ReplayParamValue[]]
+        > = [...heterogeneousSteps, [7, ['z']]];
+        const fresh = array.createReadStream(0);
+        expectedSteps.forEach(([command, params], i) => {
+            expectStepTyped(fresh.read()!, command, params, i + 1);
+        });
+        expect(fresh.read()).toBeNull();
+        expect(fresh.index).toBe(7);
+    });
+
+    // 验证初始容量不足时自动扩容，扩容后仍能顺序读回每一步且流索引逐次递进
     it('expands buffers and still reads every step back', () => {
         const array = createArray({
             initCommandLength: 2,
@@ -627,11 +663,15 @@ describe('ReplayArray expand and width warnings', () => {
         expect(array.length).toBe(15);
         const stream = array.createReadStream(0);
         for (let i = 0; i < 15; i++) {
-            expect(stream.read()).toEqual({
+            const step = stream.read()!;
+            expect(step).toEqual({
                 command: i,
                 params: [i],
                 index: i + 1
             });
+            expect(typeof step.params[0]).toBe('number');
+            expect(step.params[0]).toBe(i);
+            expect(stream.index).toBe(i + 1);
         }
         expect(stream.read()).toBeNull();
     });
