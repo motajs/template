@@ -83,10 +83,7 @@ function createManager(): FakeEnemyManager {
  * @param manager 假怪物管理器
  * @param code 特殊属性代码
  */
-function createSpecial(
-    manager: FakeEnemyManager,
-    code: number
-): ISpecial<any> {
+function createSpecial(manager: FakeEnemyManager, code: number): ISpecial<any> {
     const creation = manager.specials.get(code);
     if (!creation) throw new Error(`special ${code} was not registered`);
     return creation(undefined);
