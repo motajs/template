@@ -328,8 +328,8 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
 
     saveState(): IHeroEquipmentSave {
         return {
-            equipped: this.equips,
-            slots: this.slots
+            equipped: new Map(this.equips),
+            slots: [...this.slots]
         };
     }
 

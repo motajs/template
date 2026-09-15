@@ -308,8 +308,8 @@ describe('HeroEquipment save and load round trips', () => {
         expect(env.equipment.slots).toEqual(['weapon']);
     });
 
-    // 疑似 bug�E�saveState 直接返回冁E�� equipped/slots 引用而非深拷贝，详见E06-TEST-FINDINGS.md #06-09-2
-    it.skip('returns an equipment snapshot independent from the live state', () => {
+    // 验证 saveState 返回与活对象解耦的深拷贝快照（#06-09-2）
+    it('returns an equipment snapshot independent from the live state', () => {
         const env = createEquipEnv();
         registerItem(env, createEquipItem(10, 'sword', [0], [['atk', 5]]));
         env.equipment.setSlots(['weapon']);
@@ -585,8 +585,8 @@ describe('HeroState container save and load coverage for sub systems', () => {
         }
     });
 
-    // 疑似 bug�E�HeroEquipment.saveState 未深拷贁Eequipped/slots�E�经容器三档往返均丢失已裁E��E��封E��详见E06-TEST-FINDINGS.md #06-09-2
-    it.skip('restores the equipped mapping through the container across all compressions', () => {
+    // 验证经容器三档往返均恢复已装备映射与槽位（#06-09-2）
+    it('restores the equipped mapping through the container across all compressions', () => {
         for (const compression of SAVE_COMPRESSIONS) {
             const env = createEquipEnv();
             registerItem(env, createEquipItem(10, 'sword', [0], [['atk', 5]]));
