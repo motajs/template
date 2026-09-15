@@ -201,6 +201,83 @@ class FakeReducer implements IMapDamageReducer {
     }
 }
 
+/**
+ * 构造一条带伤害类型与额外标记的地图伤害信息
+ * @param damage 伤害值
+ * @param type 伤害类型
+ * @param catchLocs 捕捉标记集合
+ * @param repulseLocs 阻击标记集合
+ */
+function createTypedInfo(
+    damage: number,
+    type: number,
+    catchLocs: ITileLocator[] = [],
+    repulseLocs: ITileLocator[] = []
+): IMapDamageInfo {
+    return {
+        damage,
+        type,
+        extra: {
+            catch: new Set(catchLocs),
+            repulse: new Set(repulseLocs)
+        }
+    };
+}
+
+/**
+ * 按「伤害求和、类型取最大、额外标记并集」语义合并的测试合并器
+ */
+class SemanticReducer implements IMapDamageReducer {
+    /** reduce 调用次数 */
+    calls: number = 0;
+
+    reduce(info: Iterable<Readonly<IMapDamageInfo>>): Readonly<IMapDamageInfo> {
+        this.calls++;
+        let damage = 0;
+        let type = 0;
+        const catchLocs: ITileLocator[] = [];
+        const repulseLocs: ITileLocator[] = [];
+        for (const item of info) {
+            damage += item.damage;
+            if (item.type > type) type = item.type;
+            item.extra.catch.forEach(loc => catchLocs.push(loc));
+            item.extra.repulse.forEach(loc => repulseLocs.push(loc));
+        }
+        return createTypedInfo(damage, type, catchLocs, repulseLocs);
+    }
+}
+
+/**
+ * 固定返回一条带类型与额外标记地图伤害的测试视图
+ */
+class FakeTypedView implements IMapDamageView<number> {
+    /** 该视图产生的伤害信息 */
+    readonly info: IMapDamageInfo;
+    /** 该视图影响的范围 */
+    readonly range: FakeRange;
+
+    constructor(info: IMapDamageInfo, indexes: number[]) {
+        this.info = info;
+        this.range = new FakeRange(indexes);
+    }
+
+    getRange(): IRange<number> {
+        return this.range as never;
+    }
+
+    getRangeParam(): number {
+        return 0;
+    }
+
+    getDamageAt(): Readonly<IMapDamageInfo> {
+        return this.info;
+    }
+
+    getDamageWithoutCheck(): Readonly<IMapDamageInfo> {
+        return this.info;
+    }
+}
+
 interface MapDamageFixture {
     /** 被测地图伤害对象 */
     damage: InstanceType<TestModules['MapDamage']>;
@@ -465,5 +542,91 @@ describe('MapDamage sourced conversion and reduction', () => {
         expect([
             ...fixture.damage.getSeparatedDamage(fixture.locator)
         ]).toHaveLength(0);
+    });
+});
+
+describe('MapDamage multi-source stacking', () => {
+    // 验证同一点上两条有来源伤害会分别保留并求和合并
+    it('stacks two sourced damages at the same point', () => {
+        const fixture = createFixture();
+        const index = fixture.context.indexer.locToIndex(
+            fixture.locator.x,
+            fixture.locator.y
+        );
+        fixture.damage.useReducer(new SemanticReducer());
+        fixture.damage.useConverter(
+            new FakeConverter([
+                new FakeView(7, [index]),
+                new FakeView(4, [index])
+            ])
+        );
+
+        const separated = [
+            ...fixture.damage.getSeparatedDamage(fixture.locator)
+        ];
+        const reduced = fixture.damage.getReducedDamage(fixture.locator);
+
+        expect(separated).toHaveLength(2);
+        expect(reduced!.damage).toBe(11);
+        expect(reduced!.type).toBe(0);
+    });
+
+    // 验证同一点上两条无来源伤害会分别保留并求和合并
+    it('stacks two sourceless damages at the same point', () => {
+        const fixture = createFixture();
+        fixture.damage.useReducer(new SemanticReducer());
+        fixture.damage.useConverter(new FakeConverter([]));
+        fixture.damage.addMapDamage(fixture.locator, createTypedInfo(3, 1));
+        fixture.damage.addMapDamage(fixture.locator, createTypedInfo(5, 2));
+
+        const separated = [
+            ...fixture.damage.getSeparatedDamage(fixture.locator)
+        ];
+        const reduced = fixture.damage.getReducedDamage(fixture.locator);
+
+        expect(separated).toHaveLength(2);
+        expect(reduced!.damage).toBe(8);
+        expect(reduced!.type).toBe(2);
+    });
+
+    // 验证多来源（有来源与无来源混合）叠加后伤害求和、类型取最大、额外标记取并集
+    it('merges mixed sourced and sourceless damages into one reduced result', () => {
+        const fixture = createFixture();
+        const index = fixture.context.indexer.locToIndex(
+            fixture.locator.x,
+            fixture.locator.y
+        );
+        const catchA: ITileLocator = { x: 0, y: 1 };
+        const repulseB: ITileLocator = { x: 0, y: 2 };
+        const catchC: ITileLocator = { x: 0, y: 3 };
+        const repulseD: ITileLocator = { x: 0, y: 4 };
+        fixture.damage.useReducer(new SemanticReducer());
+        fixture.damage.useConverter(
+            new FakeConverter([
+                new FakeTypedView(createTypedInfo(7, 0, [catchA]), [index]),
+                new FakeTypedView(createTypedInfo(4, 2, [], [repulseB]), [
+                    index
+                ])
+            ])
+        );
+        fixture.damage.addMapDamage(
+            fixture.locator,
+            createTypedInfo(3, 1, [catchC])
+        );
+        fixture.damage.addMapDamage(
+            fixture.locator,
+            createTypedInfo(2, 1, [], [repulseD])
+        );
+
+        const separated = [
+            ...fixture.damage.getSeparatedDamage(fixture.locator)
+        ];
+        const reduced = fixture.damage.getReducedDamage(fixture.locator);
+
+        expect(separated).toHaveLength(4);
+        expect(reduced!.damage).toBe(16);
+        expect(reduced!.type).toBe(2);
+        expect([...reduced!.extra.catch]).toEqual([catchA, catchC]);
+        expect([...reduced!.extra.repulse]).toEqual([repulseB, repulseD]);
     });
 });
