@@ -79,7 +79,11 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
      */
     private recalculateAttribute<K extends keyof THero>(name: K): void {
         const modifierList = this.modifier.get(name);
-        if (!modifierList) return;
+        if (!modifierList) {
+            // 无修饰器时 final 与 base 保持同值
+            this.finalAttribute[name] = this.attribute[name];
+            return;
+        }
 
         const baseValue = this.attribute[name];
         let value = baseValue;

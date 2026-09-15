@@ -111,8 +111,8 @@ describe('HeroAttribute base and final values', () => {
         expect(attribute.getFinalAttribute('atk')).toBe(15);
     });
 
-    // 疑似 bug：无修饰器时 recalculateAttribute 提前返回，基础属性变化不反映到最终属性，详见 06-TEST-FINDINGS.md #06-05-1
-    it.skip('reflects base-only changes without any modifier', () => {
+    // 验证无修饰器时基础属性变化同步反映到最终属性（#06-05-1）
+    it('reflects base-only changes without any modifier', () => {
         const attribute = createAttribute();
         attribute.set('hp', 40);
         attribute.add('hp', 5);
