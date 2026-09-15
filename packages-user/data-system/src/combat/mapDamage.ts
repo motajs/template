@@ -256,6 +256,35 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     }
 
     /**
+     * 登记有来源伤害的反向索引，供删除与局部刷新时按来源清理
+     * @param point 坐标点伤害信息
+     * @param viewItem 产生伤害的视图
+     * @param sourceEnemy 该视图所属的怪物视图
+     * @param index 坐标索引
+     * @param damage 该点上的伤害信息
+     */
+    private registerSourcedDamage(
+        point: IPointInfo,
+        viewItem: IMapDamageView<any>,
+        sourceEnemy: IEnemyView<TEnemy>,
+        index: number,
+        damage: Readonly<IMapDamageInfo>
+    ): void {
+        point.affectedBy.add(viewItem);
+        point.damages.add(damage);
+        this.damageStore.set(damage, {
+            sourceView: viewItem,
+            sourceEnemy,
+            index
+        });
+        const viewStore = this.viewStore.getOrInsertComputed(viewItem, () => ({
+            damages: new Map(),
+            enemy: sourceEnemy
+        }));
+        viewStore.damages.set(index, damage);
+    }
+
+    /**
      * 刷新指定位置的怪物地图伤害，并执行刷新缓存的操作
      */
     private refreshEnemyAndClearCache(
@@ -286,8 +315,13 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
                 );
                 const damage = viewItem.getDamageWithoutCheck(loc);
                 if (damage) {
-                    point.affectedBy.add(viewItem);
-                    point.damages.add(damage);
+                    this.registerSourcedDamage(
+                        point,
+                        viewItem,
+                        view,
+                        index,
+                        damage
+                    );
                     collection.add(index);
                 }
             }
@@ -325,8 +359,13 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
                 );
                 const damage = viewItem.getDamageWithoutCheck(loc);
                 if (damage) {
-                    point.affectedBy.add(viewItem);
-                    point.damages.add(damage);
+                    this.registerSourcedDamage(
+                        point,
+                        viewItem,
+                        view,
+                        index,
+                        damage
+                    );
                 }
             }
         });
@@ -373,7 +412,17 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
 
         point.affectedBy.forEach(view => {
             const damage = view.getDamageWithoutCheck(locator);
-            if (damage) point.damages.add(damage);
+            if (!damage) return;
+            // 视图已被删除时不再重建其伤害，避免删除怪物后残留来源伤害
+            const viewStore = this.viewStore.get(view);
+            if (!viewStore) return;
+            this.registerSourcedDamage(
+                point,
+                view,
+                viewStore.enemy,
+                index,
+                damage
+            );
         });
     }
 }

@@ -528,8 +528,8 @@ describe('MapDamage sourced conversion and reduction', () => {
         ]).toHaveLength(before);
     });
 
-    // 疑似 bug：deleteEnemy 应移除该怪物带来的有来源地图伤害，详见 06-TEST-FINDINGS.md #06-01-2，修复后取消 skip
-    it.skip('removes enemy-sourced damage when the enemy is deleted', () => {
+    // 验证 deleteEnemy 会移除该怪物带来的有来源地图伤害
+    it('removes enemy-sourced damage when the enemy is deleted', () => {
         const fixture = createFixture();
         fixture.damage.useReducer(fixture.reducer);
         fixture.damage.useConverter(fixture.converter);
