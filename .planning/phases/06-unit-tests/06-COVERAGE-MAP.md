@@ -299,3 +299,19 @@ D-40：真实英雄操作经 `replay.route.add(...)`（mover 方向步）录制�
 本计划**无新增码**，复用既有可达码（84/121/127/128/129/131 等的既有覆盖保持不变），
 不削弱也不删除任何既有用例或跳过；无 `it.skip`/`it.todo` 新增，
 `06-TEST-FINDINGS.md` 无 `#06-11-N` 条目。
+
+## 06-12 录像与 enemy 模型缺口补测（D-46）
+
+本计划为**覆盖缺口补测**（G-06-04-B、G-06-04-A、G-06-03-A），**不引入新码**，复用既有可达码
+（148/152/155/163 等既有覆盖保持不变）；阶段结构为 构件（异质多命令序列读回）→
+组合（多字节 bigint/int64 混合正确预期 skip）→ 完整（四朝向复用同一 prefab 生成独立怪物的正确预期 skip）。
+
+| 缺口 | 用例 | 文件 | 计划 |
+| --- | --- | --- | --- |
+| G-06-04-B | `reads back a heterogeneous command sequence through both the stream and get`、`reads back the heterogeneous sequence after widening to uint16`、`reads back a heterogeneous sequence after deleting its first step` | `data-common/src/replay/array.test.ts` | 06-12 |
+| G-06-04-A | `round-trips a heterogeneous step mixing a multi-byte bigint and an int64 value`（`it.skip`，受 `#06-04-1`/`#06-04-2` 阻塞） | `data-common/src/replay/array.test.ts` | 06-12 |
+| G-06-03-A | `creates four independent enemies from one prefab reused by four facing codes`（`it.skip`，受 `#06-03-1` 阻塞） | `data-base/src/enemy/manager.test.ts` | 06-12 |
+
+本计划**无新增码**，复用既有可达码；两条为受阻塞的正确预期 `it.skip`（锚定既有
+`#06-04-1`/`#06-04-2`/`#06-03-1`，不新建 finding 条目），G-06-04-B 为可跑绿；
+不削弱也不删除任何既有用例或跳过，`06-TEST-FINDINGS.md` 无新增 `#06-12-N` 缺陷条目。

@@ -277,6 +277,70 @@ describe('EnemyManager reuse mapping', () => {
         expect(manager.createEnemy(100)!.id).toBe('slime');
         expect(manager.createEnemyById('slime-reuse')!.id).toBe('slime');
     });
+
+    // 疑似 bug：复用映射未接入 createEnemy/createEnemyById，四朝向复用同一模板各自生成独立怪物的链路不可用，详见 06-TEST-FINDINGS.md #06-03-1，修复后取消 skip
+    it.skip('creates four independent enemies from one prefab reused by four facing codes', () => {
+        const manager = createManager();
+        manager.addPrefab(createPrefab(1, 'slime'));
+        manager.reusePrefab(1, 100, 'slime-up');
+        manager.reusePrefab(1, 101, 'slime-right');
+        manager.reusePrefab(1, 102, 'slime-down');
+        manager.reusePrefab(1, 103, 'slime-left');
+
+        const source = manager.getPrefab(1);
+
+        for (const code of [100, 101, 102, 103]) {
+            expect(manager.getPrefab(code)).toBe(source);
+        }
+        for (const id of [
+            'slime-up',
+            'slime-right',
+            'slime-down',
+            'slime-left'
+        ]) {
+            expect(manager.getPrefabById(id)).toBe(
+                manager.getPrefabById('slime')
+            );
+        }
+
+        const created = [100, 101, 102, 103].map(code =>
+            manager.createEnemy(code)
+        );
+
+        expect(created.every(enemy => enemy !== null)).toBe(true);
+        expect(created.map(enemy => enemy!.id)).toEqual([
+            'slime',
+            'slime',
+            'slime',
+            'slime'
+        ]);
+        expect(new Set(created).size).toBe(4);
+        expect(created.every(enemy => enemy !== source)).toBe(true);
+
+        created[0]!.setAttribute('hp', 99);
+
+        expect(
+            created.slice(1).map(enemy => enemy!.getAttribute('hp'))
+        ).toEqual([20, 20, 20]);
+        expect(manager.getPrefab(1)!.getAttribute('hp')).toBe(20);
+
+        const createdById = [
+            'slime-up',
+            'slime-right',
+            'slime-down',
+            'slime-left'
+        ].map(id => manager.createEnemyById(id));
+
+        expect(createdById.every(enemy => enemy !== null)).toBe(true);
+        expect(createdById.every(enemy => enemy!.id === 'slime')).toBe(true);
+        expect(new Set(createdById).size).toBe(4);
+
+        createdById[0]!.setAttribute('hp', 77);
+
+        expect(
+            createdById.slice(1).map(enemy => enemy!.getAttribute('hp'))
+        ).toEqual([20, 20, 20]);
+    });
 });
 
 describe('EnemyManager modifyPrefabAttribute', () => {
