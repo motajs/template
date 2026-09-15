@@ -10,7 +10,7 @@ last_activity: 2026-09-15
 last_activity_desc: Phase 06 gap-fill 06-15 complete — #06-15-1 correct-expectation skip awaiting user decision
 state_head: d3eb4d2a0044930c559a373bd1e181f44f9cc2e6
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 0
   total_plans: 51
   completed_plans: 51
@@ -202,6 +202,10 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-15：G-06-01-D（`EnemyContext.deleteAura`）补测首次实测即为红灯——`addAura` 生效（atk 2→5）断言通过，但 `deleteAura`（同一 `FakeAura` 实例）+ 再次 `buildup` 后 atk 仍为 5（期望回到基础值 2），故按 D-05 保留正确预期并标记 `it.skip`，不弱化断言也不改写为可跑绿假象
 - [Phase 06]: 06-15：#06-15-1 与既有 #06-01-4 同根因（`buildup()` 只清空光环拓扑、未像 `refreshEnemy()` 那样先 `view.reset()`），findings 中交叉引用 #06-01-4 而非另立独立缺陷编号；修复 #06-01-4 后本用例可直接取消 skip
 - [Phase 06]: 06-15：删除全局光环判定必须传同一光环实例（`globalAuraList` 为 Set 身份比较）且必须注册 `FakeConverter([])` 打开光环流水线（否则 `buildupBase()` 不执行导致假绿）；本计划无新增码、无新增依赖、不测 saveState/loadState、不改动任何生产/核心源码
+
+### Roadmap Evolution
+
+- Phase 7 added: 数据端缺陷修复（仅数据端；修复 Phase 6 单元测试暴露的疑似缺陷，使正确预期用例转绿，不含渲染端）
 
 ### Pending Todos
 

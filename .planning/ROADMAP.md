@@ -254,10 +254,24 @@ Plans:
 
 - [x] 06-15-PLAN.md — combat interface gap: G-06-01-D (`EnemyContext.deleteAura` normal case — `addAura` applies `atk 2→5` → `deleteAura` same instance → `buildup` expects `2`); blocked `#06-15-1` (same root cause as `#06-01-4`) as correct-expectation `it.skip`, pending user decision
 
+### Phase 7: 数据端缺陷修复
+
+**Goal**: 修复 Phase 6 单元测试暴露的数据端疑似缺陷，使正确预期用例转绿，且仅限数据端、不涉及渲染端
+**Depends on**: Phase 6
+**Requirements**: FIX-01
+**Success Criteria** (what must be TRUE):
+
+  1. 06-TEST-FINDINGS.md 登记的数据端疑似缺陷全部处置完毕（修复或经用户裁定改契约/不修复）：#06-01-1..4、#06-03-1、#06-04-1..4、#06-05-1..3、#06-06-1、#06-07-1、#06-08-1、#06-09-1/2/3/5，以及同根因的 #06-15-1（#06-09-4 已作废）
+  2. 对应的正确预期 it.skip 用例在修复后取消 skip 并通过；无法修复的缺陷经用户确认后同步修正接口文档/契约
+  3. pnpm test:ci 全绿且不新增跳过用例，数据范围 check:type / check:circular 门禁通过
+  4. 改动仅限数据端（packages 与 packages-user/data-*），不改动渲染端 @user/client-* 与 legacy 渲染接线，双端分离约束保持
+
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -267,3 +281,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 15/15 | In Progress|  |
+| 7. 数据端缺陷修复 | 0/TBD | Not started | - |

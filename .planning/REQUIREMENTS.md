@@ -36,6 +36,10 @@ Requirements for the engine's completion. Each maps to roadmap phases.
 
 - [ ] **TEST-01**: 为核心系统（数据层等）补齐单元测试
 
+### 数据端缺陷修复（Fix）
+
+- [ ] **FIX-01**: 修复数据端单元测试暴露的缺陷（仅数据端，不含渲染端），使正确预期用例转绿
+
 ## Out of Scope
 
 Explicitly excluded. Documented to prevent scope creep.
@@ -63,13 +67,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEGACY-01 | Phase 5 | Pending |
 | LEGACY-02 | Phase 5 | Pending |
 | TEST-01 | Phase 6 | In Progress |
+| FIX-01 | Phase 7 | Pending |
 
 **Coverage:**
 
-- v1 requirements: 11 total
-- Mapped to phases: 11
+- v1 requirements: 12 total
+- Mapped to phases: 12
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-07*
-*Last updated: 2026-09-14: corrected TEST-01 from Complete to In Progress (Phase 6 data-layer slice done; rendering-side unit tests outstanding)*
+*Last updated: 2026-09-15: added FIX-01 (Phase 7 数据端缺陷修复); TEST-01 remains In Progress.*
+*2026-09-14: corrected TEST-01 from Complete to In Progress (Phase 6 data-layer slice done; rendering-side unit tests outstanding)*

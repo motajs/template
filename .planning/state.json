@@ -32,12 +32,17 @@
       "number": "6",
       "name": "单元测试",
       "status": "in_progress"
+    },
+    {
+      "number": "7",
+      "name": "数据端缺陷修复",
+      "status": "pending"
     }
   ],
   "next": {
     "command": "/gsd:progress --next",
     "label": "Advance to the next step",
-    "reason": "Phase 06 of 6 · executing"
+    "reason": "Phase 06 of 7 · executing"
   },
-  "updated_at": "2026-09-15T03:51:56.265Z"
+  "updated_at": "2026-09-15T05:32:59.441Z"
 }
