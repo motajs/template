@@ -931,6 +931,56 @@ describe('EnemyContext aura pipeline', () => {
         expect(computed.getAttribute('atk')).toBe(9);
     });
 
+    // 验证多怪跨施加的嵌套光环：m1 产生 A1 只命中 m2，m2 生成 A2 反向影响全部怪的最终属性
+    it('propagates a cross-enemy nested aura with observable range boundaries', () => {
+        const fixture = createContextFixture(5, 3);
+        fixture.context.bindHero(fixture.hero);
+        const m1 = createEnemy('m1');
+        m1.addSpecial(createSpecial(20) as never);
+        const m2 = createEnemy('m2', { atk: 4 });
+        const m3 = createEnemy('m3', { atk: 6 });
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, m1);
+        fixture.context.setEnemyAt({ x: 1, y: 0 }, m2);
+        fixture.context.setEnemyAt({ x: 4, y: 0 }, m3);
+        const a1 = new FakeAura({
+            priority: 10,
+            range: new modules.RectRange(),
+            param: { x: 1, y: 0, w: 1, h: 1 },
+            couldApplyBase: true,
+            couldApplySpecial: true,
+            onApply: handler => handler.enemy.addAttribute('atk', 100),
+            onApplySpecial: () => ({
+                add: () => [createSpecial(21) as never],
+                delete: () => [],
+                modify: () => false
+            })
+        });
+        const a2 = new FakeAura({
+            priority: 5,
+            range: new modules.FullRange(),
+            param: undefined,
+            onApply: handler => handler.enemy.addAttribute('atk', 3)
+        });
+        const converter = new FakeConverter([20, 21], code =>
+            code === 20 ? a1 : a2
+        );
+        fixture.context.registerAuraConverter(converter);
+
+        fixture.context.buildup();
+
+        expect(converter.convertCalls).toContain(20);
+        expect(converter.convertCalls).toContain(21);
+        const v1 = fixture.context.getEnemyByLoc(0, 0)!.getComputedEnemy();
+        const v2 = fixture.context.getEnemyByLoc(1, 0)!.getComputedEnemy();
+        const v3 = fixture.context.getEnemyByLoc(4, 0)!.getComputedEnemy();
+        expect(v2.hasSpecial(21)).toBe(true);
+        expect(v1.hasSpecial(21)).toBe(false);
+        expect(v3.hasSpecial(21)).toBe(false);
+        expect(v1.getAttribute('atk')).toBe(5);
+        expect(v2.getAttribute('atk')).toBe(107);
+        expect(v3.getAttribute('atk')).toBe(9);
+    });
+
     // 验证新增光环优先级高于当前阶段时告警 99 且不参与后续效果
     it('warns 99 and skips a higher-priority nested aura', () => {
         const fixture = createContextFixture();
@@ -1102,6 +1152,78 @@ describe('EnemyContext effect stage ordering', () => {
         expect(seen.queryHp).toBe(10);
         expect(seen.finalAtk).toBe(7);
         expect(seen.finalDef).toBe(1);
+    });
+
+    // 验证四类效果（光环基础 + 常规查询 + 特殊查询 + final）同时生效，四阶段顺序与最终属性均被断言
+    it('applies all four effect kinds together and asserts the final attributes', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        const enemy = createEnemy('e1');
+        enemy.addSpecial(createSpecial(20) as never);
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, enemy);
+        const order: string[] = [];
+        const aura = new FakeAura({
+            priority: 1,
+            range: new modules.FullRange(),
+            param: undefined,
+            couldApplyBase: true,
+            couldApplySpecial: true,
+            onApply: handler => {
+                order.push('base');
+                handler.enemy.addAttribute('atk', 5);
+            },
+            onApplySpecial: () => {
+                order.push('special');
+                return {
+                    add: () => [createSpecial(21) as never],
+                    delete: () => [],
+                    modify: () => false
+                };
+            }
+        });
+        fixture.context.registerAuraConverter(
+            new FakeConverter([20], () => aura)
+        );
+        fixture.context.registerCommonQueryEffect(20, {
+            priority: 1,
+            apply: handler => {
+                order.push('query');
+                handler.enemy.addAttribute('def', 2);
+            }
+        });
+        fixture.context.registerSpecialQueryEffect({
+            priority: 1,
+            for: () => ({
+                shouldQuery: handler => handler.enemy.hasSpecial(21),
+                add: () => [],
+                delete: () => [],
+                modify: () => {
+                    order.push('special-query');
+                    return true;
+                }
+            })
+        });
+        fixture.context.registerFinalEffect({
+            priority: 1,
+            apply: handler => {
+                order.push('final');
+                handler.enemy.addAttribute('hp', 4);
+            }
+        });
+
+        fixture.context.buildup();
+
+        const computed = fixture.context
+            .getEnemyByLoc(0, 0)!
+            .getComputedEnemy();
+        expect(order[0]).toBe('special');
+        expect(order.indexOf('special')).toBeLessThan(order.indexOf('base'));
+        expect(order.indexOf('base')).toBeLessThan(order.indexOf('query'));
+        expect(order.indexOf('query')).toBeLessThan(order.indexOf('final'));
+        expect(computed.getAttribute('atk')).toBe(7);
+        expect(computed.getAttribute('def')).toBe(2);
+        expect(computed.getAttribute('hp')).toBe(14);
+        expect(computed.hasSpecial(21)).toBe(true);
     });
 
     // 验证更高优先级的光环与最终效果会更先执行
