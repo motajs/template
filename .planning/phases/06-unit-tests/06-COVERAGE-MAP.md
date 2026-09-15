@@ -268,3 +268,17 @@ D-40：真实英雄操作经 `replay.route.add(...)`（mover 方向步）录制�
 `replaySystem.disable()`/`revert()` 抑制录制；准备步骤同样以 disable/revert 包裹。
 一条疑似缺陷 `#06-07-1`（`CoreState` 未向寻路 `finder` 注入地图状态/事件层/通行谓词，
 顶层录像瞬移恒返回 2005）按 D-05 以 `it.skip` 的正确预期用例登记，详见 `06-TEST-FINDINGS.md`。
+
+## 06-10 战斗系统 / 顶层组合缺口补测（D-46）
+
+本计划为**覆盖缺口补测**（G-06-01-A/B/C、G-06-07-A），**不引入任何新码**，复用既有可达码；
+阶段结构为 构件（地图伤害叠加）→ 组合/流水线（四类效果 + 跨怪嵌套光环）→ 完整/集成（最大流水线单怪）。
+
+| 缺口 | 用例 | 文件 | 计划 |
+| --- | --- | --- | --- |
+| G-06-01-A | `applies all four effect kinds together and asserts the final attributes` | `data-system/src/combat/context.test.ts` | 06-10 |
+| G-06-01-B | `propagates a cross-enemy nested aura with observable range boundaries` | `data-system/src/combat/context.test.ts` | 06-10 |
+| G-06-01-C | `stacks two sourced damages at the same point`、`stacks two sourceless damages at the same point`、`merges mixed sourced and sourceless damages into one reduced result` | `data-system/src/combat/mapDamage.test.ts` | 06-10 |
+| G-06-07-A | `computes one exact damage and turn for the maximum pipeline monster`、`produces a different result once the support pipeline is removed` | `data-state/test/enemyCombination.test.ts` | 06-10 |
+
+本计划无 `it.skip`/`it.todo`（预期无需新增），`06-TEST-FINDINGS.md` 无 `#06-10-N` 条目。

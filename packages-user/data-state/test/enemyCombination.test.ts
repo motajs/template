@@ -178,6 +178,32 @@ function createContext(
     return context;
 }
 
+/**
+ * 创建一个尽可能多流水线同时生效的目标怪全部顶层特殊属性
+ * @param haloAtkBuff 光环提供的攻击加成百分比
+ */
+function createPipelineSpecials(haloAtkBuff: number): ISpecial<any>[] {
+    return [
+        createSpecial<void>(1, undefined),
+        createSpecial<void>(2, undefined),
+        createSpecial<void>(3, undefined),
+        createSpecial<void>(4, undefined),
+        createSpecial<number>(6, 2),
+        createSpecial<number>(7, 100),
+        createSpecial<number>(8, 50),
+        createSpecial<IVampireValue>(11, { vampire: 10, add: true }),
+        createSpecial<void>(17, undefined),
+        createSpecial<number>(22, 7),
+        createSpecial<IHaloValue>(25, {
+            haloRange: 0,
+            haloSquare: false,
+            hpBuff: 0,
+            atkBuff: haloAtkBuff,
+            defBuff: 0
+        })
+    ];
+}
+
 describe('enemy combination stage 1 - component baselines', () => {
     // 验证单个魔攻特殊属性经真实模板与伤害计算器得到确定的伤害与回合数
     it('computes a single magic-attack special through the real prefab', () => {
@@ -593,5 +619,129 @@ describe('enemy combination stage 2 - multi-special and system pipelines', () =>
         );
         expect(info?.damage).toBe(3);
         expect(info?.turn).toBe(2);
+    });
+});
+
+describe('enemy combination stage 3 - maximum pipeline', () => {
+    // 验证尽可能多流水线同时生效的单怪经真实伤害计算器得到唯一精确的 {damage,turn}
+    it('computes one exact damage and turn for the maximum pipeline monster', () => {
+        const state = createCoreState();
+        const hero = createHero({ atk: 20, def: 5, hp: 100 });
+        const context = createContext(state, hero);
+        const target = createEnemy({
+            id: 'pipeline-target',
+            code: 1,
+            specials: createPipelineSpecials(50)
+        });
+        const guardSource = createEnemy({
+            id: 'pipeline-guard',
+            code: 26,
+            specials: [createSpecial<void>(26, undefined)]
+        });
+        // 常规查询效果：25 光环持有者额外获得 5 点生命
+        context.registerCommonQueryEffect(25, {
+            priority: 5,
+            apply: handler => handler.enemy.addAttribute('hp', 5)
+        });
+        // 特殊查询效果：25 光环持有者获得惰性特殊属性 99，证明特殊查询阶段参与组合
+        context.registerSpecialQueryEffect({
+            priority: 20,
+            for: () => ({
+                shouldQuery: handler => handler.enemy.hasSpecial(25),
+                add: () => [createSpecial<void>(99, undefined)],
+                delete: () => [],
+                modify: () => false
+            })
+        });
+        // 自定义最终效果：25 光环持有者额外获得 6 点攻击
+        context.registerFinalEffect({
+            priority: 5,
+            apply: handler => handler.enemy.addAttribute('atk', 6)
+        });
+        context.setEnemyAt({ x: 0, y: 0 }, target);
+        context.setEnemyAt({ x: 1, y: 0 }, guardSource);
+
+        context.buildup();
+
+        const targetView = context.getEnemyByLocator({ x: 0, y: 0 })!;
+        const computed = targetView.getComputedEnemy();
+        // 流水线后属性：光环 atk +floor(8*50%)=+4 → 12；常规查询 hp +5 → 25；
+        // 自定义 final atk +6 → 18；真实 final 坚固 def = max(5, 20-1) → 19；支援 guard = {1,0}
+        expect(computed.getAttribute('atk')).toBe(18);
+        expect(computed.getAttribute('def')).toBe(19);
+        expect(computed.getAttribute('hp')).toBe(25);
+        expect(computed.getAttribute('guard').size).toBe(1);
+        expect(computed.hasSpecial(99)).toBe(true);
+
+        // 伤害逐项推导（hero hp 100 / atk 20 / def 5 / mdef 0）：
+        // 吸血 11：10% * 100 = 10 伤害，add 使怪物 hp 25+10=35
+        // 魔攻 2：enemyPerDamage = atk 18；2连击 4 *2；多段 6 value 2 *2 → 72
+        // 回合：ceil(35 / heroPerDamage 1) = 35
+        // 支援递归（相邻支援怪同样吃到光环 atk +4 与自定义 final atk +6 → atk 18 / def 5 / hp 20）：
+        //   turn ceil(20/15)=2、damage (2-1)*(18-5)=13 → turn 35+2=37、damage 10+13=23
+        // 先攻 1：damage += 72 → 95；破甲 7 100% * hero def 5 = 5 → 100
+        // 反击 8 50% * hero atk 20 = 10 → enemyPerDamage 82
+        // 回合伤害：(37-1)*82 = 2952 → damage 3052；固伤 22 +7 → 3059；仇恨 17 +0
+        const info = new MainDamageCalculator().calculate(
+            createContextHandler(
+                context,
+                computed as IEnemy<IEnemyAttr>,
+                hero,
+                { x: 0, y: 0 }
+            )
+        );
+
+        expect(info).toEqual({ damage: 3059, turn: 37 });
+        expect(Object.keys(info).sort()).toEqual(['damage', 'turn']);
+    });
+
+    // 验证移除支援怪后同一组合得到不同的 {damage,turn}，证明支援流水线确实同时生效
+    it('produces a different result once the support pipeline is removed', () => {
+        const state = createCoreState();
+        const hero = createHero({ atk: 20, def: 5, hp: 100 });
+        const context = createContext(state, hero);
+        const target = createEnemy({
+            id: 'pipeline-target',
+            code: 1,
+            specials: createPipelineSpecials(50)
+        });
+        context.registerCommonQueryEffect(25, {
+            priority: 5,
+            apply: handler => handler.enemy.addAttribute('hp', 5)
+        });
+        context.registerSpecialQueryEffect({
+            priority: 20,
+            for: () => ({
+                shouldQuery: handler => handler.enemy.hasSpecial(25),
+                add: () => [createSpecial<void>(99, undefined)],
+                delete: () => [],
+                modify: () => false
+            })
+        });
+        context.registerFinalEffect({
+            priority: 5,
+            apply: handler => handler.enemy.addAttribute('atk', 6)
+        });
+        context.setEnemyAt({ x: 0, y: 0 }, target);
+
+        context.buildup();
+
+        const targetView = context.getEnemyByLocator({ x: 0, y: 0 })!;
+        const computed = targetView.getComputedEnemy();
+        expect(computed.getAttribute('guard').size).toBe(0);
+
+        // 无支援递归时：回合 ceil(35/1)=35，回合伤害 (35-1)*82=2788，
+        // damage 10+72+5+2788+7=2882，故结果与最大组合不同
+        const info = new MainDamageCalculator().calculate(
+            createContextHandler(
+                context,
+                computed as IEnemy<IEnemyAttr>,
+                hero,
+                { x: 0, y: 0 }
+            )
+        );
+
+        expect(info).toEqual({ damage: 2882, turn: 35 });
+        expect(info).not.toEqual({ damage: 3059, turn: 37 });
     });
 });
