@@ -5,10 +5,10 @@ current_phase: 7
 current_phase_name: 数据端缺陷修复
 status: executing
 stopped_at: Phase 7 context gathered
-last_updated: "2026-09-15T08:21:56.180Z"
+last_updated: "2026-09-15T08:32:23.746Z"
 last_activity: 2026-09-15
-last_activity_desc: Phase 06 gap-fill 06-15 complete —
-state_head: 8d66bc4ae26b59c21d9cc6ceaf0c32780ac10f77
+last_activity_desc: Phase 7 execution started
+state_head: 7ae08c6920b02b2d3f181e145e4a81bc33fc5cc5
 progress:
   total_phases: 7
   completed_phases: 0
@@ -24,14 +24,14 @@ milestone_name: milestone
 See: .planning/PROJECT.md (updated 2026-09-10)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 06 — unit-tests
+**Current focus:** Phase 7 — 数据端缺陷修复
 
 ## Current Position
 
-Phase: 7 (数据端缺陷修复) — READY TO EXECUTE
-Plan: 15 of 15 (all gap-fill plans 06-10..06-15 complete)
-Status: Phase 06 gap-fill batch (D-46) complete — 06-15 (G-06-01-D deleteAura) complete with one correct-expectation `it.skip` (#06-15-1, same root cause as #06-01-4) awaiting user decision; pnpm test:ci green (66 files / 649 passed / 28 skipped)
-Last activity: 2026-09-15 — Completed 06-15-PLAN.md (combat interface coverage gap-fill, G-06-01-D)
+Phase: 7 (数据端缺陷修复) — EXECUTING
+Plan: 1 of 8
+Status: Executing Phase 7
+Last activity: 2026-09-15 — Phase 7 execution started
 
 Progress: [█████░░░░░] 50%
 

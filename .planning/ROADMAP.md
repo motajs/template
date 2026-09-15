@@ -266,11 +266,11 @@ Plans:
   3. pnpm test:ci 全绿且不新增跳过用例，数据范围 check:type / check:circular 门禁通过
   4. 改动仅限数据端（packages 与 packages-user/data-*），不改动渲染端 @user/client-* 与 legacy 渲染接线，双端分离约束保持
 
-**Plans**: 8 plans（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`）
+**Plans**: 1/8 plans executed（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`）
 
 Plans:
 
-- [ ] 07-01-PLAN.md — combat：`#06-01-1` / `#06-01-2` / `#06-01-3` / `#06-01-4`（含 `#06-15-1`）
+- [x] 07-01-PLAN.md — combat：`#06-01-1` / `#06-01-2` / `#06-01-3` / `#06-01-4`（含 `#06-15-1`）
 - [ ] 07-02-PLAN.md — enemy：`#06-03-1` 创建入口接入复用映射
 - [ ] 07-03-PLAN.md — replay：`#06-04-1` / `#06-04-2` / `#06-04-3` / `#06-04-4`
 - [ ] 07-04-PLAN.md — hero：`#06-09-1`（高）/ `#06-09-2` / `#06-05-1` / `#06-05-2` / `#06-05-3`（D-06 保留）
@@ -311,7 +311,6 @@ Plans:
 
 - [ ] 07-08-PLAN.md — path 顶层录像瞬移验证（用户负责接线，AI 仅取消 skip）
 
-
 ## Progress
 
 **Execution Order:**
@@ -325,4 +324,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 15/15 | In Progress|  |
-| 7. 数据端缺陷修复 | 0/8 | Not started | - |
+| 7. 数据端缺陷修复 | 1/8 | In Progress|  |
