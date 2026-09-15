@@ -34,7 +34,7 @@ Requirements for the engine's completion. Each maps to roadmap phases.
 
 ### 测试（Testing）
 
-- [x] **TEST-01**: 为核心系统（数据层等）补齐单元测试
+- [ ] **TEST-01**: 为核心系统（数据层等）补齐单元测试
 
 ## Out of Scope
 
@@ -62,7 +62,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REND-02 | Phase 4 | Pending |
 | LEGACY-01 | Phase 5 | Pending |
 | LEGACY-02 | Phase 5 | Pending |
-| TEST-01 | Phase 6 | Complete |
+| TEST-01 | Phase 6 | In Progress |
 
 **Coverage:**
 
@@ -72,4 +72,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-09-07*
-*Last updated: 2026-09-07 after initial definition*
+*Last updated: 2026-09-14: corrected TEST-01 from Complete to In Progress (Phase 6 data-layer slice done; rendering-side unit tests outstanding)*

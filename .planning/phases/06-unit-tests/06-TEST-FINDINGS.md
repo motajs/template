@@ -130,6 +130,8 @@ D-45：公开 `CoreState.saveState(compression)` / `loadState(state, compression
 | `replay/array.ts` `ReplayArray.saveState` / `loadState` | `loadState` 不恢复录像长度与索引，往返后 `length` 仍为修改后的值 | `array.add(1,[10])` → `saved=array.saveState()` → `array.add(2,[20])` → `array.loadState(saved)`：`array.length` 为 2（正确 1） | `loadState` 只替换命令/参数缓冲区与位宽，未设置 `length`/`paramUsed`、未 `rebuildIndexArray`；`IReplayArraySave` 本身不含 length | 直接用 `ReplayArray` 存读档的调用方读档后仍看到修改后的录像；`ReplaySystem.loadState` 走 `setReplayArray` 不受影响 | 存档补上 `length`（或由缓冲区推导），`loadState` 设置 `length` 并 `rebuildIndexArray` | `replay/saveLoad.test.ts` `restores the recorded length on the same instance` | 中 |
 | `data-state/src/core.ts` `CoreState.loadState` 码 178 | 码 178 判定与文案相反：缺失 saveable key 同时触发 177/178，存档含「多出的 key」时不告警 | `snapshot.set('@system/extra', null)` → `loadState` 无码 178；`snapshot.delete('@system/flags')` → 同时观测到 177 与 178 | `remain = total.difference(loaded)` 取的是「saveables 中缺失于存档」的键（=177 语义），而非「存档中出现但未加载」的键 | 178 失去独立诊断意义，冗余并可能掩盖真正的版本不一致问题 | 改为 `new Set(state.keys()).difference(new Set(this.saveables.keys()))`，或修正文案 | `data-state/test/saveablesRoundTrip.test.ts` `warns code 178 when the save data has keys that are not loaded` | 低 |
 
+> **`#06-09-4` 状态：已作废** — 因 c08f3f8 重构，ReplayArray 不再可存档（saveState/loadState 移除），对应 skip 用例已删除；新存档归属为 ReplaySystem。
+
 ### 阻断项（非 06-09 可达码，超出本计划范围）
 
 **现象**：`pnpm test:ci` 存在**先于本计划、与存读档无关**的既有失败：6 个测试文件失败 / 15 个用例失败
