@@ -207,8 +207,8 @@ describe('ReplayArray single operations', () => {
         expect(array.get(1)).toEqual({ command: 3, params: [30], index: 1 });
     });
 
-    // 疑似 bug：delete 中间步骤后索引数组未按删除位置回退，导致后续步骤读到错误参数，详见 06-TEST-FINDINGS.md #06-04-3，修复后取消 skip
-    it.skip('deletes a middle step and shifts later param indexes', () => {
+    // 验证 delete 中间步骤后索引数组按删除位置回退，后续步骤仍读到正确参数
+    it('deletes a middle step and shifts later param indexes', () => {
         const array = createArray();
         array.add(1, [10]);
         array.add(2, [20]);
@@ -567,8 +567,8 @@ describe('ReplayArray stream and buffer combination', () => {
         expect(stream.read()).toEqual({ command: 3, params: [30], index: 3 });
     });
 
-    // 疑似 bug：delete 中间步后索引数组未按删除位置回退，异质序列后续步骤读到错误参数，详见 06-TEST-FINDINGS.md #06-04-3，修复后取消 skip
-    it.skip('reads the new order after deleting a middle step from a heterogeneous route', () => {
+    // 验证异质序列删除中间步后索引按删除位置回退，读流按新次序精确读回
+    it('reads the new order after deleting a middle step from a heterogeneous route', () => {
         const array = createHeterogeneousArray();
         array.delete(1);
 

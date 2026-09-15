@@ -46,6 +46,13 @@ interface IDecodedCommand {
     readonly paramCount: number;
 }
 
+interface IParamRange {
+    /** 命令参数在参数缓冲区中的起始字节 */
+    readonly start: number;
+    /** 命令参数在参数缓冲区中的结束字节，不包含该字节 */
+    readonly end: number;
+}
+
 export class ReplayArray implements IReplayArray {
     length: number = 0;
     commandWidth: ReplayCommandWidth = ReplayCommandWidth.Uint8;
@@ -393,6 +400,20 @@ export class ReplayArray implements IReplayArray {
         });
     }
 
+    /**
+     * 获取指定命令在参数缓冲区中的字节区间
+     * @param index 命令索引
+     */
+    private getParamRange(index: number): IParamRange {
+        const start = this.indexArray[index];
+        const end =
+            index + 1 < this.length
+                ? this.indexArray[index + 1]
+                : this.paramUsed;
+
+        return { start, end };
+    }
+
     add(command: number, params: ReplayParamValue[]): void {
         if (this.disabled > 0) return;
         const normalized = this.normalizeParamList(params);
@@ -447,8 +468,9 @@ export class ReplayArray implements IReplayArray {
         if (this.disabled > 0) return;
         const commandSize = this.getCommandSize();
         const commandStart = index * commandSize;
-        const paramStart = this.indexArray[index];
-        const nextParam = this.indexArray[index + 1];
+        const range = this.getParamRange(index);
+        const paramStart = range.start;
+        const nextParam = range.end;
         const paramLength = nextParam - paramStart;
 
         // 直接进行位移
@@ -470,7 +492,7 @@ export class ReplayArray implements IReplayArray {
         }
 
         // 最后把后面的索引减少 paramLength
-        for (let i = paramStart; i < this.length; i++) {
+        for (let i = index; i < this.length; i++) {
             this.indexArray[i] -= paramLength;
         }
 
