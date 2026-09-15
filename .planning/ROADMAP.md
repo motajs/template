@@ -266,7 +266,7 @@ Plans:
   3. pnpm test:ci 全绿且不新增跳过用例，数据范围 check:type / check:circular 门禁通过
   4. 改动仅限数据端（packages 与 packages-user/data-*），不改动渲染端 @user/client-* 与 legacy 渲染接线，双端分离约束保持
 
-**Plans**: 5/8 plans executed（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`）
+**Plans**: 6/8 plans executed（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`）
 
 Plans:
 
@@ -275,7 +275,7 @@ Plans:
 - [x] 07-03-PLAN.md — replay：`#06-04-1` / `#06-04-2` / `#06-04-3` / `#06-04-4`
 - [x] 07-04-PLAN.md — hero：`#06-09-1`（高）/ `#06-09-2` / `#06-05-1` / `#06-05-2` / `#06-05-3`（D-06 保留）
 - [x] 07-05-PLAN.md — map：`#06-06-1`（D-04 改发 128）/ `#06-09-3`
-- [ ] 07-06-PLAN.md — flag+common：`#06-08-1` 后退基准修正
+- [x] 07-06-PLAN.md — flag+common：`#06-08-1` 后退基准修正
 - [ ] 07-07-PLAN.md — save：`#06-09-5`（D-05 差集方向取反 + 既有用例纠偏）
 - [ ] 07-08-PLAN.md — path：`#06-07-1`（D-07 用户接线后取消 skip 验证）
 
@@ -297,7 +297,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4)*
 
-- [ ] 07-05-PLAN.md — map 诊断码与动态图块读档
+- [x] 07-05-PLAN.md — map 诊断码与动态图块读档
 
 **Wave 6** *(blocked on Wave 5)*
 
@@ -324,4 +324,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 15/15 | In Progress|  |
-| 7. 数据端缺陷修复 | 5/8 | In Progress|  |
+| 7. 数据端缺陷修复 | 6/8 | In Progress|  |
