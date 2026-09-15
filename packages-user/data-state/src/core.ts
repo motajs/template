@@ -81,7 +81,7 @@ import {
     TileLegacyBridge
 } from './legacy';
 import { isNil } from 'lodash-es';
-import { DefaultHeroMoveTopImpl } from './hero';
+import { DefaultHeroMoveTopImpl, DefaultPassPredicateImpl } from './hero';
 import { createEventRegistrations } from './event/registrations';
 import {
     ReplayEquipCommand,
@@ -229,6 +229,17 @@ export class CoreState implements ICoreState {
         // 录像系统
         this.replaySystem = new ReplaySystem();
 
+        // 寻路系统
+        const pathfinding = new PathfindingSystem(this);
+        this.pathfinding = pathfinding;
+        pathfinding.useMover(this.hero.location.mover);
+        pathfinding.finder.useMapState(this.maps);
+        // 初始状态下勇士不在任何楼层，切换楼层后再具体设置
+        pathfinding.finder.useMapLayer(null);
+        pathfinding.finder.usePassPredicate(
+            new DefaultPassPredicateImpl(this.maps)
+        );
+
         //#endregion
 
         //#region L3 初始化
@@ -258,10 +269,6 @@ export class CoreState implements ICoreState {
         // 勇士顶层初始化
         const heroMoveTopImpl = new DefaultHeroMoveTopImpl(this);
         this.hero.location.mover.useTopImplementation(heroMoveTopImpl);
-
-        const pathfinding = new PathfindingSystem(this);
-        pathfinding.useMover(this.hero.location.mover);
-        this.pathfinding = pathfinding;
 
         // 录像系统初始化注册
         this.registerReplayCommands();
