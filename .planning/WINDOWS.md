@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 14
+open_count: 13
 waived_count: 0
-fixed_count: 13
+fixed_count: 14
 total_count: 27
-last_updated: 2026-09-15T09:17:32.073Z
+last_updated: 2026-09-15T10:51:28.234Z
 ---
 
 # Broken Windows Ledger
@@ -37,7 +37,7 @@ last_updated: 2026-09-15T09:17:32.073Z
 | 20 | 06 | skipped-test | packages-user/data-system/src/combat/mapDamage.test.ts |  | 06-01-2 suspected bug: MapDamage.deleteEnemy leaves enemy-sourced damage (Finding #06-01-2) | fixed |  | 2026-09-14T00:54:03.338Z | 2026-09-15T09:05:02.090Z |
 | 21 | 06 | skipped-test | packages-user/data-system/src/combat/combat.test.ts |  | 06-01-3 suspected bug: CombatFlow.before truthy/falsy semantics inverted vs interface doc (Finding #06-01-3) | fixed |  | 2026-09-14T00:54:04.044Z | 2026-09-15T09:05:02.930Z |
 | 22 | 06 | skipped-test | packages-user/data-common/src/common/mover.test.ts |  | backward(count>1) 方向摆动、净位移为零（#06-08-1），已 it.skip 待用户确认 | open |  | 2026-09-14T09:03:38.649Z |  |
-| 23 | 06 | skipped-test | packages-user/data-common/src/replay/array.test.ts |  | 受阻塞缺口 G-06-04-A：多字节 bigint / 超 int32 int64 编解码缺陷 #06-04-1/#06-04-2 未修复，正确预期用例保持 it.skip | open |  | 2026-09-15T02:46:32.026Z |  |
+| 23 | 06 | skipped-test | packages-user/data-common/src/replay/array.test.ts |  | 受阻塞缺口 G-06-04-A：多字节 bigint / 超 int32 int64 编解码缺陷 #06-04-1/#06-04-2 未修复，正确预期用例保持 it.skip | fixed |  | 2026-09-15T02:46:32.026Z | 2026-09-15T10:51:28.234Z |
 | 24 | 06 | skipped-test | packages-user/data-base/src/enemy/manager.test.ts |  | 受阻塞缺口 G-06-03-A：复用映射未接入 createEnemy/createEnemyById（#06-03-1），四朝向复用生成独立怪物的正确预期用例保持 it.skip | fixed |  | 2026-09-15T02:46:32.772Z | 2026-09-15T09:17:32.073Z |
 | 25 | 06 | skipped-test | packages-user/data-base/src/hero/saveLoad.test.ts |  | 受阻塞缺口 G-06-09-B：压缩档 loadDiff 未回退装备原始定义（#06-09-1），EquipmentState 百分比加成 Low/High 档正确预期用例保持 it.skip | open |  | 2026-09-15T03:31:00.000Z |  |
 | 26 | 06 | skipped-test | packages-user/data-base/src/hero/saveLoad.test.ts |  | 受阻塞缺口 G-06-09-B：HeroEquipment.saveState 未深拷贝 equipped/slots（#06-09-2），经 HeroState 容器三档恢复装备映射的正确预期用例保持 it.skip | open |  | 2026-09-15T03:31:01.000Z |  |
@@ -316,10 +316,10 @@ last_updated: 2026-09-15T09:17:32.073Z
     "file": "packages-user/data-common/src/replay/array.test.ts",
     "line": null,
     "description": "受阻塞缺口 G-06-04-A：多字节 bigint / 超 int32 int64 编解码缺陷 #06-04-1/#06-04-2 未修复，正确预期用例保持 it.skip",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-15T02:46:32.026Z",
-    "resolved_at": null
+    "resolved_at": "2026-09-15T10:51:28.234Z"
   },
   {
     "id": 24,
