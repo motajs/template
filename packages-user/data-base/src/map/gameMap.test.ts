@@ -251,4 +251,48 @@ describe('GameMap dirty state and resizing', () => {
         compared.compareWith(new Map([[0, new Uint32Array(4)]]));
         expect(comparedLayer.dirty()).toBe(false);
     });
+
+    // 验证多个不同 zIndex 图层并存、各自块数据独立并按 zIndex 参考比较分别判定
+    it('keeps layers of different z-index coexisting with independent data', () => {
+        const { map } = createFixture();
+        const low = map.addLayer();
+        const mid = map.addLayer();
+        const high = map.addLayer();
+        map.setLayerAlias(low, 'low');
+        map.setLayerAlias(mid, 'mid');
+        map.setLayerAlias(high, 'high');
+        low.setZIndex(1);
+        mid.setZIndex(5);
+        high.setZIndex(9);
+        low.setBlock(3, 0, 0);
+        mid.setBlock(4, 1, 0);
+        high.setBlock(5, 0, 1);
+
+        expect(map.getLayerByAlias('low')).toBe(low);
+        expect(map.getLayerByAlias('mid')).toBe(mid);
+        expect(map.getLayerByAlias('high')).toBe(high);
+        expect(low.zIndex).toBe(1);
+        expect(mid.zIndex).toBe(5);
+        expect(high.zIndex).toBe(9);
+        expect(low.getBlock(0, 0)).toBe(3);
+        expect(low.getBlock(1, 0)).toBe(0);
+        expect(low.getBlock(0, 1)).toBe(0);
+        expect(mid.getBlock(1, 0)).toBe(4);
+        expect(mid.getBlock(0, 0)).toBe(0);
+        expect(high.getBlock(0, 1)).toBe(5);
+        expect(high.getBlock(0, 0)).toBe(0);
+        expect(high.getBlock(1, 0)).toBe(0);
+        expect(map.dirty()).toBe(true);
+
+        map.compareWith(
+            new Map([
+                [1, new Uint32Array([3, 0, 0, 0])],
+                [5, new Uint32Array([0, 4, 0, 0])]
+            ])
+        );
+
+        expect(low.dirty()).toBe(false);
+        expect(mid.dirty()).toBe(false);
+        expect(high.dirty()).toBe(true);
+    });
 });
