@@ -554,8 +554,8 @@ describe('ReplayArray stream and buffer combination', () => {
         expectHeterogeneousRead(array, heterogeneousSteps.slice(1));
     });
 
-    // 疑似 bug：insert 的参数缓冲区位移方向相反，已有参数时后续步骤读到错误参数，详见 06-TEST-FINDINGS.md #06-04-4，修复后取消 skip
-    it.skip('reads the new order after inserting a step', () => {
+    // 验证 insert 后参数缓冲区后移，读流按新次序精确读回
+    it('reads the new order after inserting a step', () => {
         const array = createArray();
         array.add(1, [10]);
         array.add(3, [30]);
@@ -579,8 +579,8 @@ describe('ReplayArray stream and buffer combination', () => {
         expectRouteStream(array, remaining);
     });
 
-    // 疑似 bug：insert 的参数缓冲区位移方向相反，异质序列新次序读流会读到错误参数，详见 06-TEST-FINDINGS.md #06-04-4，修复后取消 skip
-    it.skip('reads the new order after inserting a step into a heterogeneous route', () => {
+    // 验证 insert 的参数与索引位移方向一致，异质序列插入后按新次序精确读回
+    it('reads the new order after inserting a step into a heterogeneous route', () => {
         const array = createHeterogeneousArray();
         array.insert(2, 9, [true, 5]);
 

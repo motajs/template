@@ -446,8 +446,8 @@ export class ReplayArray implements IReplayArray {
         const commandStart = index * commandSize;
         const paramStart = this.indexArray[index];
         this.commandArray.copyWithin(commandStart + commandSize, commandStart);
-        this.paramArray.copyWithin(paramStart, paramStart + length);
-        this.indexArray.copyWithin(index, index + 1);
+        this.paramArray.copyWithin(paramStart + length, paramStart);
+        this.indexArray.copyWithin(index + 1, index);
 
         // 然后进行赋值操作，索引数组因为这一个指令的起始索引其实没变，所以不需要赋值
         this.setCommandArray(commandStart, params.length, command);
