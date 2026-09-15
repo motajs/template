@@ -210,7 +210,7 @@ Plans:
   3. 测试在本地可运行且全部通过
    4. 测试由 AI 编写并运行，通过验证后可提交
 
-**Plans**: 9/9 原计划 executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后) + gap-fill 06-10..06-14 (D-46；人工评审缺口补测，只补测试不改生产代码；10/14 executed)
+**Plans**: 9/9 原计划 executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后) + gap-fill 06-10..06-15 (D-46；人工评审缺口补测，只补测试不改生产代码；15/15 executed)
 
 Plans:
 
@@ -250,6 +250,10 @@ Plans:
 
 - [x] 06-14-PLAN.md — replay read-stream gaps: G-06-04-C/A (stream-only complex route + middle start index) + G-06-04-C/B (per-param typed assertions, index progression, expired-after-mutation); blocked `#06-04-3`/`#06-04-4` as correct-expectation `it.skip`
 
+**Wave 5** *(G-06-01-D interface-coverage gap-fill, D-46; serialized after 06-14)*
+
+- [x] 06-15-PLAN.md — combat interface gap: G-06-01-D (`EnemyContext.deleteAura` normal case — `addAura` applies `atk 2→5` → `deleteAura` same instance → `buildup` expects `2`); blocked `#06-15-1` (same root cause as `#06-01-4`) as correct-expectation `it.skip`, pending user decision
+
 ## Progress
 
 **Execution Order:**
@@ -262,4 +266,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 14/14 | In Progress|  |
+| 6. 单元测试 | 15/15 | In Progress|  |

@@ -4,11 +4,11 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-14-PLAN.md (replay read-stream gap-fill, G-06-04-C)
-last_updated: "2026-09-15T03:52:41.349Z"
+stopped_at: Completed 06-15-PLAN.md (combat interface coverage gap-fill, G-06-01-D)
+last_updated: "2026-09-15T05:19:06.000Z"
 last_activity: 2026-09-15
-last_activity_desc: Phase 06 execution started
-state_head: 83dc4fdaf6a54cfcc344b6a4765581348682ec00
+last_activity_desc: Phase 06 gap-fill 06-15 complete — #06-15-1 correct-expectation skip awaiting user decision
+state_head: d3eb4d2a0044930c559a373bd1e181f44f9cc2e6
 progress:
   total_phases: 6
   completed_phases: 0
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 14 of 14 (all gap-fill plans 06-10..06-14 complete)
-Status: Phase 06 gap-fill batch (D-46) complete — 06-14 (G-06-04-C read-stream) complete; pnpm test:ci green (66 files / 649 passed / 27 skipped)
-Last activity: 2026-09-15 — Completed 06-14-PLAN.md (replay read-stream gap-fill)
+Plan: 15 of 15 (all gap-fill plans 06-10..06-15 complete)
+Status: Phase 06 gap-fill batch (D-46) complete — 06-15 (G-06-01-D deleteAura) complete with one correct-expectation `it.skip` (#06-15-1, same root cause as #06-01-4) awaiting user decision; pnpm test:ci green (66 files / 649 passed / 28 skipped)
+Last activity: 2026-09-15 — Completed 06-15-PLAN.md (combat interface coverage gap-fill, G-06-01-D)
 
 Progress: [█████░░░░░] 50%
 
@@ -92,6 +92,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P12 | 13min | 3 tasks | 3 files |
 | Phase 06 P13 | 14min | 3 tasks | 4 files |
 | Phase 06 P14 | 12min | 3 tasks | 2 files |
+| Phase 06 P15 | 12min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -198,6 +199,9 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-14：G-06-04-C/A 新增仅经 createReadStream 的 7 命令复杂序列验证（用例体内无 array.get），逐参数 typeof+值、流索引 1..7 递进、末尾 null，并覆盖中间起始索引 createReadStream(3)/(6)
 - [Phase 06]: 06-14：G-06-04-C/B 强化既有 expectHeterogeneousRead（使 3 条复用用例受益）+ 两条既有流用例补每参数 typeof 与 stream.index 递进，并新增 add 变更后 expired===true + 告警 155 + 新建流按新次序类型化读回
 - [Phase 06]: 06-14：受阻塞增删次序复用既有 #06-04-3/#06-04-4 锚点写正确预期 it.skip（5→7 条），不新建 #06-14-N 条目；可跑绿参数限定单字节 bigint 0..127 与 int32 整数
+- [Phase 06]: 06-15：G-06-01-D（`EnemyContext.deleteAura`）补测首次实测即为红灯——`addAura` 生效（atk 2→5）断言通过，但 `deleteAura`（同一 `FakeAura` 实例）+ 再次 `buildup` 后 atk 仍为 5（期望回到基础值 2），故按 D-05 保留正确预期并标记 `it.skip`，不弱化断言也不改写为可跑绿假象
+- [Phase 06]: 06-15：#06-15-1 与既有 #06-01-4 同根因（`buildup()` 只清空光环拓扑、未像 `refreshEnemy()` 那样先 `view.reset()`），findings 中交叉引用 #06-01-4 而非另立独立缺陷编号；修复 #06-01-4 后本用例可直接取消 skip
+- [Phase 06]: 06-15：删除全局光环判定必须传同一光环实例（`globalAuraList` 为 Set 身份比较）且必须注册 `FakeConverter([])` 打开光环流水线（否则 `buildupBase()` 不执行导致假绿）；本计划无新增码、无新增依赖、不测 saveState/loadState、不改动任何生产/核心源码
 
 ### Pending Todos
 
@@ -211,6 +215,8 @@ None yet.
 - Plan 01-12 leaves the repository-wide type gate blocked only by pre-existing diagnostics outside the plan-owned files; these are recorded in the phase deferred-items ledger.
 - Plan 01-13 records the same repository-wide type gate diagnostics outside its implementation and test files in the phase deferred-items ledger.
 - 06-09 阻断项：`pnpm test:ci` 存在先于本计划的既有回归（commit `cee8439` 将录像记录接入 `data-base/src/hero/{equipment,items,mover}.ts`，4 个既有 data-base 测试与 2 个 data-state 文件共 6 文件 / 15 用例失败）。本计划硬约束禁止修改这些越界文件，故 D-44(c) 无法全绿；本计划未新增失败（新增 41 通过 / 6 跳过）。详见 `06-TEST-FINDINGS.md` `#06-09` 阻断项。
+
+- 06-15 待用户裁决：G-06-01-D 用例无法跑绿（`deleteAura` 后再次 `buildup` 不回到基础值），与既有 #06-01-4 同根因（`buildup()` 未在重建前 `reset()` 各视图），已按 D-05 写正确预期 `it.skip` 并登记 `#06-15-1`。D-27/D-30「每公开方法 ≥1 正常用例」判据仍差 `deleteAura` 一条可跑绿用例（现为受阻塞正确预期 skip）。处置需用户确认：① 后续修复批次修复 `buildup` 视图重置（同时解 #06-01-4 与 #06-15-1）；② 经确认把 `deleteAura` 从 D-30 判据排除。详见 `06-TEST-FINDINGS.md` `#06-15-1` 与 `06-15-SUMMARY.md`。
 
 ### Quick Tasks Completed
 
@@ -227,6 +233,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-15T03:52:41.072Z
-Stopped at: Completed 06-14-PLAN.md (replay read-stream gap-fill, G-06-04-C)
+Last session: 2026-09-15T05:19:06.000Z
+Stopped at: Completed 06-15-PLAN.md (combat interface coverage gap-fill, G-06-01-D)
 Resume file: None
