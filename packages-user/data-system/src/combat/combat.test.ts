@@ -111,7 +111,7 @@ class FakeScript implements ICombatScript<TestEnemyAttr, TestHeroAttr> {
     readonly label: string;
     /** 共享的调用顺序记录 */
     readonly calls: string[];
-    /** before 的返回值，真值表示短路 */
+    /** before 的返回值，假值表示放弃战斗 */
     beforeResult: boolean;
     /** before 需要等待的异步闸门 */
     gate: Deferred | null = null;
@@ -289,9 +289,9 @@ describe('CombatFlow scripts and guards', () => {
     it('sorts scripts by descending priority and rejects duplicates', async () => {
         const fixture = createFixture();
         bindAll(fixture);
-        const low = new FakeScript(1, 'low', fixture.calls);
-        const high = new FakeScript(2, 'high', fixture.calls);
-        const duplicate = new FakeScript(1, 'duplicate', fixture.calls);
+        const low = new FakeScript(1, 'low', fixture.calls, true);
+        const high = new FakeScript(2, 'high', fixture.calls, true);
+        const duplicate = new FakeScript(1, 'duplicate', fixture.calls, true);
         fixture.flow.addCombatScript(low);
         fixture.flow.addCombatScript(high);
 
@@ -427,7 +427,7 @@ describe('CombatFlow async ordering', () => {
         const fixture = createFixture();
         bindAll(fixture);
         const gate = createDeferred();
-        const script = new FakeScript(1, 'script', fixture.calls);
+        const script = new FakeScript(1, 'script', fixture.calls, true);
         script.gate = gate;
         fixture.flow.addCombatScript(script);
         fixture.flow
@@ -456,8 +456,8 @@ describe('CombatFlow async ordering', () => {
         ]);
     });
 
-    // 验证战前脚本返回真值时短路，不再执行钩子与战后脚本
-    it('short-circuits hooks and after scripts when before returns truthy', async () => {
+    // 验证战前脚本返回真值时仍会执行战前钩子、战后脚本与战后钩子
+    it('runs hooks and after scripts when before returns truthy', async () => {
         const fixture = createFixture();
         bindAll(fixture);
         const script = new FakeScript(1, 'script', fixture.calls, true);
@@ -476,11 +476,16 @@ describe('CombatFlow async ordering', () => {
         const info = await fixture.flow.battle(fixture.view);
 
         expect(info).toBe(fixture.info);
-        expect(fixture.calls).toEqual(['script.before']);
+        expect(fixture.calls).toEqual([
+            'script.before',
+            'hooks.onBeforeCombat',
+            'script.after',
+            'hooks.onAfterCombat'
+        ]);
     });
 
-    // 疑似 bug：接口约定战前脚本返回 false 应放弃战斗，详见 06-TEST-FINDINGS.md #06-01-3，修复后取消 skip
-    it.skip('abandons the battle when the before script returns false', async () => {
+    // 验证战前脚本返回 false 时会放弃战斗，不再执行钩子与战后脚本
+    it('abandons the battle when the before script returns false', async () => {
         const fixture = createFixture();
         bindAll(fixture);
         const script = new FakeScript(1, 'script', fixture.calls, false);

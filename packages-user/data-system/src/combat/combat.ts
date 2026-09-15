@@ -176,8 +176,8 @@ export class CombatFlow<TEnemy, THero>
         }
 
         for (const script of this.scriptList) {
-            const skip = await script.before(damage, handler);
-            if (skip) return damage;
+            const proceed = await script.before(damage, handler);
+            if (!proceed) return damage;
         }
         await Promise.all(
             this.forEachHook(hook => hook.onBeforeCombat?.(damage))
