@@ -69,6 +69,40 @@ const paramCases: ReadonlyArray<readonly [ReplayParamValue, number]> = [
     [-1.5, 5]
 ];
 
+// 异质命令序列：参数个数与类型各不相同（含 boolean、多位宽整数、float、string、bigint）
+const heterogeneousSteps: ReadonlyArray<readonly [number, ReplayParamValue[]]> =
+    [
+        [1, [10]],
+        [2, [true, 'x']],
+        [3, []],
+        [4, [100n]],
+        [5, [1, -32769, 3]],
+        [6, ['a'.repeat(300), 1.5]]
+    ];
+
+// 用异质命令序列填充一个全新录像数组，供多条用例复用同一份期望
+function createHeterogeneousArray(): ReplayArray {
+    const array = createArray();
+    for (const [command, params] of heterogeneousSteps) {
+        array.add(command, params);
+    }
+    return array;
+}
+
+// 逐条比较读流与按索引读回：两者的 index 语义不同（读流为位置 + 1、get 从 0 起），故只比较指令与参数
+function expectHeterogeneousRead(
+    array: ReplayArray,
+    expectedSteps: ReadonlyArray<readonly [number, ReplayParamValue[]]>
+): void {
+    const stream = array.createReadStream(0);
+    expect(stream.length).toBe(array.length);
+    expectedSteps.forEach(([command, params], i) => {
+        expect(stream.read()).toMatchObject({ command, params });
+        expect(array.get(i)).toMatchObject({ command, params });
+    });
+    expect(stream.read()).toBeNull();
+}
+
 describe('ReplayArray single operations', () => {
     // 验证 add 追加一条录像步并在原索引读回指令与参数
     it('appends one step and reads it back at the original index', () => {
@@ -305,6 +339,39 @@ describe('ReplayArray stream and buffer combination', () => {
         const stream = array.createReadStream(2);
         expect(stream.read()).toEqual({ command: 3, params: [], index: 3 });
         expect(stream.read()).toBeNull();
+    });
+
+    // 验证 6 条参数个数与类型各异的命令经读流与按索引读回均逐条一致
+    it('reads back a heterogeneous command sequence through both the stream and get', () => {
+        const array = createHeterogeneousArray();
+
+        expect(array.length).toBe(6);
+        expectHeterogeneousRead(array, heterogeneousSteps);
+        expect(array.createReadStream(0).read()!.index).toBe(1);
+        expect(array.get(0).index).toBe(0);
+    });
+
+    // 验证加宽到 uint16 后 6 条异质命令仍可逐条读回一致
+    it('reads back the heterogeneous sequence after widening to uint16', () => {
+        const array = createHeterogeneousArray();
+        array.setCommandWidth(ReplayCommandWidth.Uint16);
+
+        expect(array.commandWidth).toBe(ReplayCommandWidth.Uint16);
+        expectHeterogeneousRead(array, heterogeneousSteps);
+    });
+
+    // 验证异质序列删除首步后剩余步骤经按索引与读流读回均一致
+    it('reads back a heterogeneous sequence after deleting its first step', () => {
+        const array = createHeterogeneousArray();
+        array.delete(0);
+
+        expect(array.length).toBe(5);
+        expect(array.get(0)).toEqual({
+            command: 2,
+            params: [true, 'x'],
+            index: 0
+        });
+        expectHeterogeneousRead(array, heterogeneousSteps.slice(1));
     });
 
     // 疑似 bug：insert 的参数缓冲区位移方向相反，已有参数时后续步骤读到错误参数，详见 06-TEST-FINDINGS.md #06-04-4，修复后取消 skip
