@@ -4,10 +4,12 @@ import { logger } from '@motajs/common';
 import {
     type IEnemyAttr,
     type IHeroAttr,
+    FaceDirection,
     SaveCompression
 } from '@user/data-common';
 import {
     Enemy,
+    ValueModifier,
     type IGameMap,
     type IHeroStateSave,
     type IMapLayer,
@@ -75,10 +77,57 @@ interface SeededState {
     layer: IMapLayer;
 }
 
-/** 为 5 个 saveable 写入已知关键状态 */
+interface ExpectedReplayStep {
+    command: number;
+    params: readonly (number | string | boolean)[];
+}
+
+/** 顶层录像写入的 10 步多样化命令序列，命令与参数类型均不全相同 */
+const REPLAY_STEPS: readonly ExpectedReplayStep[] = [
+    { command: 0, params: [] },
+    { command: 1, params: [] },
+    { command: 2, params: [] },
+    { command: 3, params: [] },
+    { command: 4, params: [2, 3] },
+    { command: 5, params: [12] },
+    { command: 6, params: [3, 0, true] },
+    { command: 7, params: [0] },
+    { command: 1, params: [] },
+    { command: 5, params: ['potion'] }
+];
+
+/** 向顶层录像写入 10 步混合命令，覆盖移动/瞬移/用道具/装备/卸下 */
+function seedReplay(state: CoreState): void {
+    state.replaySystem.record(0);
+    state.replaySystem.record(1);
+    state.replaySystem.record(2);
+    state.replaySystem.record(3);
+    state.replaySystem.record(4, 2, 3);
+    state.replaySystem.record(5, 12);
+    state.replaySystem.record(6, 3, 0, true);
+    state.replaySystem.record(7, 0);
+    state.replaySystem.record(1);
+    state.replaySystem.record(5, 'potion');
+}
+
+/** 为 5 个 saveable 写入已知的全部关键状态 */
 function seedState(state: CoreState): SeededState {
-    state.hero.getModifiableAttribute().set('hp', 88);
+    state.hero.registerModifier('@system/value', () => new ValueModifier(5));
+    state.hero.createAndInsertModifier('@system/value', 'atk');
+    const attribute = state.hero.getModifiableAttribute();
+    attribute.set('hp', 88);
+    attribute.set('atk', 10);
+    attribute.set('def', 6);
+    attribute.set('money', 20);
+    attribute.set('exp', 30);
+    state.hero.location.setPos(3, 4);
+    state.hero.location.setFloor('F1');
+    state.hero.location.mover.setFaceDir(FaceDirection.Up);
+
     state.flags.setFieldValue('score', 7);
+    state.flags.setFieldValue('coins', 12);
+    state.flags.addFieldValue('stage', 2);
+
     const map = state.maps.createMap('F1', 2, 2);
     const layer = map.addLayer();
     layer.setZIndex(0);
@@ -87,39 +136,84 @@ function seedState(state: CoreState): SeededState {
         new Map([['F1', new Map([[0, new Uint32Array(4)]])]])
     );
     layer.setBlock(5, 0, 0);
+    layer.setBlock(7, 1, 1);
+
     state.enemyManager.addPrefab(createEnemy());
     state.enemyManager.compareWith(new Map([[1, createEnemy()]]));
     state.enemyManager.modifyPrefabAttribute(1, prefab => {
         prefab.setAttribute('hp', 30);
+        prefab.setAttribute('atk', 9);
         return prefab;
     });
-    state.replaySystem.record(2, 7);
+
+    seedReplay(state);
     return { map, layer };
 }
 
-/** 保存后修改每个 saveable 的关键状态，用于验证读档恢复 */
+/** 保存后修改每个 saveable 的全部关键状态，用于验证读档恢复 */
 function mutateState(state: CoreState, seeded: SeededState): void {
-    state.hero.getModifiableAttribute().set('hp', 1);
+    const attribute = state.hero.getModifiableAttribute();
+    attribute.set('hp', 1);
+    attribute.set('atk', 1);
+    attribute.set('def', 0);
+    attribute.set('money', 0);
+    attribute.set('exp', 0);
+    state.hero.location.setPos(9, 9);
+    state.hero.location.setFloor('F9');
+    state.hero.location.mover.setFaceDir(FaceDirection.Down);
+
     state.flags.setFieldValue('score', 0);
+    state.flags.setFieldValue('coins', 0);
+    state.flags.setFieldValue('stage', 0);
+
     seeded.layer.setBlock(0, 0, 0);
+    seeded.layer.setBlock(0, 1, 1);
+    seeded.map.setActiveStatus(false);
+
     state.enemyManager.modifyPrefabAttribute(1, prefab => {
         prefab.setAttribute('hp', 99);
+        prefab.setAttribute('atk', 1);
         return prefab;
     });
+
     state.replaySystem.record(9, 1);
 }
 
-/** 逐 saveable 断言关键字段回到存档点 */
+/** 逐 saveable 严格断言全部关键字段回到存档点 */
 function assertRestored(state: CoreState, seeded: SeededState): void {
-    expect(state.hero.getModifiableAttribute().getBaseAttribute('hp')).toBe(88);
+    const attribute = state.hero.getModifiableAttribute();
+    expect(attribute.getBaseAttribute('hp')).toBe(88);
+    expect(attribute.getBaseAttribute('atk')).toBe(10);
+    expect(attribute.getBaseAttribute('def')).toBe(6);
+    expect(attribute.getBaseAttribute('money')).toBe(20);
+    expect(attribute.getBaseAttribute('exp')).toBe(30);
+    expect(attribute.getFinalAttribute('atk')).toBe(15);
+    expect(state.hero.getLocation()).toEqual({
+        x: 3,
+        y: 4,
+        direction: FaceDirection.Up
+    });
+    expect(state.hero.location.floorId).toBe('F1');
+
     expect(state.flags.getFieldValue<number>('score')).toBe(7);
+    expect(state.flags.getFieldValue<number>('coins')).toBe(12);
+    expect(state.flags.getFieldValue<number>('stage')).toBe(2);
+
+    expect(state.maps.isMapActive('F1')).toBe(true);
     expect(seeded.layer.getBlock(0, 0)).toBe(5);
+    expect(seeded.layer.getBlock(1, 1)).toBe(7);
+
     expect(state.enemyManager.getPrefab(1)!.getAttribute('hp')).toBe(30);
-    expect(state.replaySystem.route.length).toBe(1);
-    expect(state.replaySystem.route.get(0)).toEqual({
-        command: 2,
-        params: [7],
-        index: 0
+    expect(state.enemyManager.getPrefab(1)!.getAttribute('atk')).toBe(9);
+
+    const route = state.replaySystem.route;
+    expect(route.length).toBe(REPLAY_STEPS.length);
+    REPLAY_STEPS.forEach((step, index) => {
+        expect(route.get(index)).toEqual({
+            command: step.command,
+            params: step.params,
+            index
+        });
     });
 }
 
@@ -252,5 +346,39 @@ describe('CoreState save and load guards', () => {
         );
 
         expect(result.info.map(info => info.code)).toContain(178);
+    });
+});
+
+describe('CoreState container coverage for compression-less saveables', () => {
+    // 验证不接受压缩参数的 flags 与 replay 经容器三档往返均恢复到存档点
+    it('restores flags and replay through the container across all compressions', () => {
+        for (const compression of COMPRESSIONS) {
+            const state = createCoreState();
+            state.flags.setFieldValue('score', 5);
+            state.flags.addFieldValue('stage', 3);
+            state.replaySystem.record(1);
+            state.replaySystem.record(2, 7);
+
+            const snapshot = state.saveState(compression);
+            state.flags.setFieldValue('score', 0);
+            state.flags.setFieldValue('stage', 0);
+            state.replaySystem.record(9, 1);
+
+            state.loadState(snapshot, compression);
+
+            expect(state.flags.getFieldValue<number>('score')).toBe(5);
+            expect(state.flags.getFieldValue<number>('stage')).toBe(3);
+            expect(state.replaySystem.route.length).toBe(2);
+            expect(state.replaySystem.route.get(0)).toEqual({
+                command: 1,
+                params: [],
+                index: 0
+            });
+            expect(state.replaySystem.route.get(1)).toEqual({
+                command: 2,
+                params: [7],
+                index: 1
+            });
+        }
     });
 });

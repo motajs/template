@@ -315,3 +315,24 @@ D-40：真实英雄操作经 `replay.route.add(...)`（mover 方向步）录制�
 本计划**无新增码**，复用既有可达码；两条为受阻塞的正确预期 `it.skip`（锚定既有
 `#06-04-1`/`#06-04-2`/`#06-03-1`，不新建 finding 条目），G-06-04-B 为可跑绿；
 不削弱也不删除任何既有用例或跳过，`06-TEST-FINDINGS.md` 无新增 `#06-12-N` 缺陷条目。
+
+## 06-13 存档缺口补测（D-46）
+
+本计划为**覆盖缺口补测**（G-06-09-A、G-06-09-B），**不引入新码**，复用 06-09 既有可达码
+（55/58/59/112/113/119/120/122/124/177/178 的既有覆盖保持不变）；阶段结构为
+构件（hero 单档类三档化 + 经容器覆盖无参类）→ 组合（map tile 三档化）→
+完整/集成（CoreState 顶层全关键状态 + 录像 ≥10 步多样化 + flags/replay 容器三档）。
+
+| 缺口 | 用例 | 文件 | 计划 |
+| --- | --- | --- | --- |
+| G-06-09-B | `restores a percentage modifier on the same instance in NoCompression`、`restores constant and consumable item tables across all compressions`、`restores attributes, modifiers and location across all compressions`、`restores location and rendering through the container across all compressions` | `data-base/src/hero/saveLoad.test.ts` | 06-13 |
+| G-06-09-B | `restores covered events across all compressions`（`StaticTile` 与 `DynamicTile` 各一条同名用例） | `data-base/src/map/saveLoad.test.ts` | 06-13 |
+| G-06-09-A | `round-trips every registered saveable across all compressions`（每类 saveable 全部关键状态逐一严格断言 + 录像 10 步多样化逐条 exact） | `data-state/test/saveablesRoundTrip.test.ts` | 06-13 |
+| G-06-09-B | `restores flags and replay through the container across all compressions` | `data-state/test/saveablesRoundTrip.test.ts` | 06-13 |
+
+受既有缺陷阻塞的档位按 D-05 以正确预期 `it.skip` 登记，复用既有锚点、不新建 finding：
+`restores a percentage modifier on the same instance in LowCompression`、
+`restores a percentage modifier on the same instance in HighCompression`（锚定 `#06-09-1`）、
+`restores the equipped mapping through the container across all compressions`（锚定 `#06-09-2`）；
+既有 `#06-09-1..5` 的 skip 全部保持原样。
+本计划**无新增码**；`06-TEST-FINDINGS.md` 无新增 `#06-13-N` 缺陷条目。
