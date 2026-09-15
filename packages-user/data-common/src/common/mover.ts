@@ -307,7 +307,9 @@ export interface IObjectMover<T extends IObjectMovable> extends IHookable<
     forward(count?: number): this;
 
     /**
-     * 追加若干个后退步，沿当前移动方向的反方向移动
+     * 追加若干个后退步，沿当前朝向的反方向后退
+     *
+     * 每一步都以当前朝向为基准，因此连续后退保持在同一轴线上，朝向不变
      * @param count 追加次数，默认 1
      */
     backward(count?: number): this;
@@ -462,7 +464,10 @@ export abstract class ObjectMover<T extends IObjectMovable>
     }
 
     /**
-     * 获取当前应当作为相对移动基准的方向
+     * 获取相对移动（如前进）所使用的基准方向
+     *
+     * 优先取本步之前已确定的移动方向，使多步前进保持同轴；否则回退到当前朝向。
+     * 后退不使用此基准，一律以当前朝向为准
      */
     private getCurrentDirection(): FaceDirection {
         if (this.moveDirection !== FaceDirection.Unknown) {
@@ -474,6 +479,9 @@ export abstract class ObjectMover<T extends IObjectMovable>
 
     /**
      * 根据步骤内容预先同步移动器内部状态
+     *
+     * 前进以已确定的移动方向为基准；后退固定以当前朝向为基准，
+     * 从而不会因本步写入的反方向而让基准在多步之间摆动
      * @param step 当前步骤
      */
     private prepareStep(step: Readonly<ObjectMoveStep>): void {
@@ -490,12 +498,13 @@ export abstract class ObjectMover<T extends IObjectMovable>
                 this.faceDirection = step.value;
                 break;
             case ObjectMoveType.Special: {
-                const dir = this.getCurrentDirection();
                 if (step.direction === ObjectSpecialStep.Backward) {
-                    const opposite = this.faceHandler.opposite(dir);
-                    this.moveDirection = opposite;
+                    // 后退基准固定为当前朝向，避免被本步写入的反方向改写后摆动
+                    const dir = this.faceDirection;
+                    this.moveDirection = this.faceHandler.opposite(dir);
                     this.faceDirection = dir;
                 } else {
+                    const dir = this.getCurrentDirection();
                     this.moveDirection = dir;
                     this.faceDirection = dir;
                 }

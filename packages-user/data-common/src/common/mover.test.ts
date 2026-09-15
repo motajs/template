@@ -303,8 +303,8 @@ describe('object mover public surface', () => {
         expect(mover.moveDirection).toBe(FaceDirection.Up);
     });
 
-    // 疑似 bug：连续后退时上一步会把移动方向翻转为反方向，导致方向来回摆动，详见 06-TEST-FINDINGS.md #06-08-1，修复后取消 skip
-    it.skip('keeps retreating along the same axis across multiple backward steps', async () => {
+    // 验证连续后退每一步都以当前朝向为基准，保持同轴后退且朝向不变（#06-08-1）
+    it('keeps retreating along the same axis across multiple backward steps', async () => {
         const tile = new TestTile();
         const mover = createMover(tile);
 
