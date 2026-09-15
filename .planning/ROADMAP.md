@@ -266,7 +266,51 @@ Plans:
   3. pnpm test:ci 全绿且不新增跳过用例，数据范围 check:type / check:circular 门禁通过
   4. 改动仅限数据端（packages 与 packages-user/data-*），不改动渲染端 @user/client-* 与 legacy 渲染接线，双端分离约束保持
 
-**Plans**: TBD
+**Plans**: 8 plans（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`）
+
+Plans:
+
+- [ ] 07-01-PLAN.md — combat：`#06-01-1` / `#06-01-2` / `#06-01-3` / `#06-01-4`（含 `#06-15-1`）
+- [ ] 07-02-PLAN.md — enemy：`#06-03-1` 创建入口接入复用映射
+- [ ] 07-03-PLAN.md — replay：`#06-04-1` / `#06-04-2` / `#06-04-3` / `#06-04-4`
+- [ ] 07-04-PLAN.md — hero：`#06-09-1`（高）/ `#06-09-2` / `#06-05-1` / `#06-05-2` / `#06-05-3`（D-06 保留）
+- [ ] 07-05-PLAN.md — map：`#06-06-1`（D-04 改发 128）/ `#06-09-3`
+- [ ] 07-06-PLAN.md — flag+common：`#06-08-1` 后退基准修正
+- [ ] 07-07-PLAN.md — save：`#06-09-5`（D-05 差集方向取反 + 既有用例纠偏）
+- [ ] 07-08-PLAN.md — path：`#06-07-1`（D-07 用户接线后取消 skip 验证）
+
+**Wave 1**
+
+- [ ] 07-01-PLAN.md — combat 四条根因（含既有 3 条绿用例纠偏）
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 07-02-PLAN.md — enemy 复用映射
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 07-03-PLAN.md — replay 编解码与索引编辑
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 07-04-PLAN.md — hero 存读档与属性/槽位
+
+**Wave 5** *(blocked on Wave 4)*
+
+- [ ] 07-05-PLAN.md — map 诊断码与动态图块读档
+
+**Wave 6** *(blocked on Wave 5)*
+
+- [ ] 07-06-PLAN.md — flag+common 后退基准与契约注释
+
+**Wave 7** *(blocked on Wave 6)*
+
+- [ ] 07-07-PLAN.md — save 码 178 语义与既有用例纠偏
+
+**Wave 8** *(blocked on Wave 7 + 用户完成 D-07 接线)*
+
+- [ ] 07-08-PLAN.md — path 顶层录像瞬移验证（用户负责接线，AI 仅取消 skip）
+
 
 ## Progress
 
@@ -281,4 +325,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 15/15 | In Progress|  |
-| 7. 数据端缺陷修复 | 0/TBD | Not started | - |
+| 7. 数据端缺陷修复 | 0/8 | Not started | - |
