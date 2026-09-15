@@ -302,7 +302,7 @@ describe('HeroEquipment equip and unequip', () => {
         expect(env.equipment.getEquipped(1)).toBe(axe);
     });
 
-    // 疑似 bug：码 147 因 canEquipTo 先返回 CannotEquip 而不可达，详见 06-TEST-FINDINGS.md #06-05-3
+    // 静态见证：147 为保留错误码，当前不可达，设计如此，生产代码不修改（#06-05-3）
     it.skip('warns code 147 when no equipment slot is available', () => {
         const env = createEnv();
         registerItem(env, createItem(10, 'sword', ['weapon'], [['atk', 5]]));
