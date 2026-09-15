@@ -210,7 +210,7 @@ Plans:
   3. 测试在本地可运行且全部通过
    4. 测试由 AI 编写并运行，通过验证后可提交
 
-**Plans**: 9/9 原计划 executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后) + gap-fill 06-10..06-13 (D-46；人工评审缺口补测，只补测试不改生产代码；10/13 executed)
+**Plans**: 9/9 原计划 executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后) + gap-fill 06-10..06-14 (D-46；人工评审缺口补测，只补测试不改生产代码；10/14 executed)
 
 Plans:
 
@@ -245,6 +245,10 @@ Plans:
 - [x] 06-11-PLAN.md — hero/map gaps: G-06-05-A + G-06-06-A/B/C
 - [x] 06-12-PLAN.md — replay/enemy gaps: G-06-04-B (runnable) + G-06-04-A/G-06-03-A (correct-expectation skip)
 - [ ] 06-13-PLAN.md — save/load gaps: G-06-09-A/B (only plan testing saveState/loadState, D-32)
+
+**Wave 4** *(G-06-04-C follow-up gap-fill, D-46; serialized after 06-12 because it shares `array.test.ts`)*
+
+- [ ] 06-14-PLAN.md — replay read-stream gaps: G-06-04-C/A (stream-only complex route + middle start index) + G-06-04-C/B (per-param typed assertions, index progression, expired-after-mutation); blocked `#06-04-3`/`#06-04-4` as correct-expectation `it.skip`
 
 ## Progress
 
