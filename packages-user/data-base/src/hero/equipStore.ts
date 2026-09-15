@@ -116,7 +116,7 @@ export class EquipmentState<THero> implements IEquipmentState<THero> {
     private loadNoCompression(state: IEquipmentStateSave<THero>): void {
         this.value.clear();
         this.percentage.clear();
-        for (const [name, value] of state.percentage) {
+        for (const [name, value] of state.value) {
             this.value.set(name, value);
         }
         for (const [name, value] of state.percentage) {
@@ -132,10 +132,12 @@ export class EquipmentState<THero> implements IEquipmentState<THero> {
     private loadDiff(state: IEquipmentStateSave<THero>): void {
         this.value.clear();
         this.percentage.clear();
-        for (const [name, value] of state.percentage) {
+
+        // 基准为装备原始定义，再叠加存档中的差异条目
+        for (const [name, value] of this.item.equip.value) {
             this.value.set(name, value);
         }
-        for (const [name, value] of state.percentage) {
+        for (const [name, value] of this.item.equip.percentage) {
             this.percentage.set(name, value);
         }
 

@@ -333,22 +333,22 @@ describe('EquipmentState save and load round trips', () => {
         );
     });
 
-    // 疑似 bug�E�Low 压缩档读档未回退到裁E��E��始定义，未修改皁E��刁E��加成丢失�E�详见E06-TEST-FINDINGS.md #06-09-1
-    it.skip('restores a percentage modifier on the same instance in LowCompression', () => {
+    // 验证 Low 压缩档读档以装备原始定义为回退基准，未修改的百分比加成不丢失（#06-09-1）
+    it('restores a percentage modifier on the same instance in LowCompression', () => {
         expect(
             roundTripPercentageModifier(SaveCompression.LowCompression)
         ).toBe(0.5);
     });
 
-    // 疑似 bug�E�High 压缩档读档未回退到裁E��E��始定义，未修改皁E��刁E��加成丢失�E�详见E06-TEST-FINDINGS.md #06-09-1
-    it.skip('restores a percentage modifier on the same instance in HighCompression', () => {
+    // 验证 High 压缩档读档以装备原始定义为回退基准，未修改的百分比加成不丢失（#06-09-1）
+    it('restores a percentage modifier on the same instance in HighCompression', () => {
         expect(
             roundTripPercentageModifier(SaveCompression.HighCompression)
         ).toBe(0.5);
     });
 
-    // 疑似 bug�E�loadNoCompression 误从存档百刁E��表读取数值表�E�详见E06-TEST-FINDINGS.md #06-09-1
-    it.skip('restores a value modifier on the same instance', () => {
+    // 验证 NoCompression 读档按 value/percentage 分表恢复数值修饰器（#06-09-1）
+    it('restores a value modifier on the same instance', () => {
         const env = createEquipEnv();
         const item = createEquipItem(10, 'sword', [0], [['atk', 5]]);
         registerItem(env, item);
@@ -365,8 +365,8 @@ describe('EquipmentState save and load round trips', () => {
         expect(restored?.[1].getValue()).toBe(5);
     });
 
-    // 疑似 bug�E�loadDiff 渁E��后未回退到裁E��E��始定义，未修改皁E��成丢失�E�详见E06-TEST-FINDINGS.md #06-09-1
-    it.skip('keeps unchanged value modifiers for compressed snapshots', () => {
+    // 验证压缩档读档回退原始定义后未修改的数值修饰器仍保留（#06-09-1）
+    it('keeps unchanged value modifiers for compressed snapshots', () => {
         const env = createEquipEnv();
         const item = createEquipItem(10, 'sword', [0], [['atk', 5]]);
         registerItem(env, item);
