@@ -259,23 +259,20 @@ export class ReplayArray implements IReplayArray {
                 byteLength: byte
             };
         } else if (typeof param === 'bigint') {
-            // 7 - bigint
+            // 7 - 非负 bigint / 8 - 负 bigint，均以幅值按字节写入
             const wall = 2n ** 2047n;
             if (param > wall - 1n || param < -wall) {
                 logger.warn(152);
             }
-            const bit = param.toString(2);
+            const magnitude = param < 0n ? -param : param;
+            const bit = magnitude.toString(2);
             const length = Math.ceil(bit.length / 8);
             const arr = new Uint8Array(length);
-            let total = 0n;
             for (let i = 0; i < length; i++) {
-                const base = param - total;
-                const remain = base % 256n;
-                total += remain << (BigInt(i) * 8n);
-                arr[i] = Number(remain);
+                arr[i] = Number((magnitude >> (8n * BigInt(i))) & 0xffn);
             }
             return {
-                paramType: 7,
+                paramType: param < 0n ? 8 : 7,
                 paramValue: arr,
                 byteLength: arr.length + 2
             };
@@ -380,8 +377,8 @@ export class ReplayArray implements IReplayArray {
             } else if (param.paramType === 6) {
                 // 6 - float
                 this.paramView.setFloat64(index + 1, num);
-            } else if (param.paramType === 7) {
-                // 7 - bigint
+            } else if (param.paramType === 7 || param.paramType === 8) {
+                // 7 - 非负 bigint / 8 - 负 bigint，写入幅值字节
                 this.paramArray[index + 1] = arr.length;
                 this.paramArray.set(arr, index + 2);
             } else if (param.paramType === 9) {
@@ -636,16 +633,16 @@ export class ReplayArray implements IReplayArray {
             // 6 - float
             byte = 9;
             value = this.paramView.getFloat64(startIndex + 1);
-        } else if (type === 7) {
-            // 7 - bigint
-            const length = this.paramView.getInt8(startIndex + 1);
+        } else if (type === 7 || type === 8) {
+            // 7 - 非负 bigint / 8 - 负 bigint，读回幅值后按类型码还原符号
+            const length = this.paramView.getUint8(startIndex + 1);
             let base = 0n;
             for (let i = 0; i < length; i++) {
-                const num = this.paramView.getInt8(startIndex + 2 + i);
+                const num = this.paramView.getUint8(startIndex + 2 + i);
                 base += BigInt(num) << (8n * BigInt(i));
             }
             byte = length + 2;
-            value = base;
+            value = type === 8 ? -base : base;
         } else if (type === 9) {
             // 9 - string
             const length = this.paramView.getInt32(startIndex + 1);

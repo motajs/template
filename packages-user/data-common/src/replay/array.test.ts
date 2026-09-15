@@ -274,13 +274,43 @@ describe('ReplayArray param codec', () => {
         expect(firstParamToken(array)).toBe(7);
     });
 
-    // 疑似 bug：bigint 编码循环缺少按字节右移，多字节 bigint 只能还原最低字节，详见 06-TEST-FINDINGS.md #06-04-2，修复后取消 skip
-    it.skip('round-trips a multi-byte bigint', () => {
+    // 验证多字节 bigint 各幅值字节经 type 7 完整读回
+    it('round-trips a multi-byte bigint', () => {
         const array = createArray();
         const value = 0x0102030405060708n;
         array.add(0, [value]);
 
         expect(array.get(0).params).toEqual([value]);
+    });
+
+    // 负 bigint 使用独立类型码 8，载荷为幅值 |n|，解码后取负（A9）
+    it('round-trips negative bigint values through the dedicated type', () => {
+        const negativeCases: readonly bigint[] = [
+            -1n,
+            -128n,
+            -129n,
+            -256n,
+            -65537n
+        ];
+
+        for (const value of negativeCases) {
+            const array = createArray();
+            array.add(0, [value]);
+            expectParamTyped(array.get(0).params[0], value);
+            expect(firstParamToken(array)).toBe(8);
+        }
+    });
+
+    // 非负 bigint 仍为 type 7，单字节与多字节幅值逐字节不变
+    it('round-trips non-negative bigint values through type 7', () => {
+        const nonNegativeCases: readonly bigint[] = [100n, 0x0102030405060708n];
+
+        for (const value of nonNegativeCases) {
+            const array = createArray();
+            array.add(0, [value]);
+            expectParamTyped(array.get(0).params[0], value);
+            expect(firstParamToken(array)).toBe(7);
+        }
     });
 
     // 验证超过 int32 范围的非负 int64 参数经 type 4 精确读回
@@ -320,8 +350,8 @@ describe('ReplayArray param codec', () => {
         }
     });
 
-    // 疑似 bug：多字节 bigint 与超 int32 的 int64 混在同一步时同样失真，详见 06-TEST-FINDINGS.md #06-04-1/#06-04-2，修复两个编码与解码缺陷后取消 skip
-    it.skip('round-trips a heterogeneous step mixing a multi-byte bigint and an int64 value', () => {
+    // 验证多字节 bigint 与超 int32 的 int64 混在同一步时逐参数精确读回
+    it('round-trips a heterogeneous step mixing a multi-byte bigint and an int64 value', () => {
         const array = createArray();
         array.add(0, [true, 0x0102030405060708n, 2147483648, 'x']);
 
