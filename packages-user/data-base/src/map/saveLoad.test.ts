@@ -160,8 +160,8 @@ describe('DynamicTile save and load round trips', () => {
         }
     });
 
-    // 疑似 bug：loadState 不恢复存档中的图块数字，详见 06-TEST-FINDINGS.md #06-09-3
-    it.skip('restores the tile num on the same instance', () => {
+    // 验证 loadState 恢复存档中的图块数字（#06-09-3 已修复）
+    it('restores the tile num on the same instance', () => {
         const { layer } = createMapFixture();
         const tile = layer.createDynamic(1, 1, 0);
 

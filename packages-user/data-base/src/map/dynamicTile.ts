@@ -115,8 +115,12 @@ export class DynamicTile
         return save;
     }
 
+    /**
+     * 从存档恢复动态图块：先经 `set` 还原图块数字（同时重取原始图块并重建默认事件），
+     * 再按存档逐条覆盖事件；`num` 与 `events` 即 `IDynamicBlockSave` 的全部字段。
+     */
     loadState(save: Readonly<IDynamicBlockSave>): void {
-        this.restoreDefaultEvents();
+        this.set(save.num);
         if (save.events) {
             const eventView = this.tileEvent();
             eventView.clear();
