@@ -575,8 +575,8 @@ describe('DamageContext critical generation', () => {
         expect(locatorResult.info).toHaveLength(0);
     });
 
-    // 疑似 bug：产出的 info 应与 nextValue 对应，详见 06-TEST-FINDINGS.md #06-01-1，修复后取消 skip
-    it.skip('reports the damage info matching the yielded critical value', () => {
+    // 验证产出的 info 与 nextValue 同源，即临界点伤害信息对应该属性值
+    it('reports the damage info matching the yielded critical value', () => {
         const fixture = createFixture();
         const context = new modules.DamageContext(
             fixture.context,

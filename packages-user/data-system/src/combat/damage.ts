@@ -228,9 +228,9 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
 
             if (middleInfo.damage < referenceDamage) {
                 right = middle;
+                targetInfo = middleInfo;
             } else {
                 left = middle;
-                targetInfo = middleInfo;
             }
             if (right - left <= 1) break;
         }
