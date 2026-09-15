@@ -226,6 +226,19 @@ describe('ReplayArray param codec', () => {
         expect(array.get(0).params).toEqual([2147483648]);
     });
 
+    // 疑似 bug：多字节 bigint 与超 int32 的 int64 混在同一步时同样失真，详见 06-TEST-FINDINGS.md #06-04-1/#06-04-2，修复两个编码与解码缺陷后取消 skip
+    it.skip('round-trips a heterogeneous step mixing a multi-byte bigint and an int64 value', () => {
+        const array = createArray();
+        array.add(0, [true, 0x0102030405060708n, 2147483648, 'x']);
+
+        expect(array.get(0).params).toEqual([
+            true,
+            0x0102030405060708n,
+            2147483648,
+            'x'
+        ]);
+    });
+
     // 验证短字符串参数使用内联类型 token 并读回一致
     it('round-trips a short string with an inline type token', () => {
         const array = createArray();
