@@ -53,6 +53,32 @@ function firstParamToken(array: ReplayArray): number {
     return new Uint8Array(array.getParamArray())[0];
 }
 
+// 逐参数断言 JS 类型与值：先比 typeof 再比严格相等，避免 bigint、boolean 与 number 被宽松比较混淆
+function expectParamTyped(
+    actual: ReplayParamValue,
+    expected: ReplayParamValue
+): void {
+    expect(typeof actual).toBe(typeof expected);
+    expect(actual).toBe(expected);
+}
+
+// 断言单步的指令、逐参数类型与值以及索引：读流索引为位置 + 1，与 get 的从 0 起语义不同
+function expectStepTyped(
+    step: {
+        command: number;
+        params: readonly ReplayParamValue[];
+        index: number;
+    },
+    command: number,
+    params: readonly ReplayParamValue[],
+    index: number
+): void {
+    expect(step.command).toBe(command);
+    expect(step.params.length).toBe(params.length);
+    params.forEach((param, i) => expectParamTyped(step.params[i], param));
+    expect(step.index).toBe(index);
+}
+
 // 整数与浮点参数用例：值 → 期望参数类型 token（int64 见 #06-04-1 跳过）
 const paramCases: ReadonlyArray<readonly [ReplayParamValue, number]> = [
     [-128, 1],
@@ -84,6 +110,27 @@ const heterogeneousSteps: ReadonlyArray<readonly [number, ReplayParamValue[]]> =
 function createHeterogeneousArray(): ReplayArray {
     const array = createArray();
     for (const [command, params] of heterogeneousSteps) {
+        array.add(command, params);
+    }
+    return array;
+}
+
+// 仅经读取流验证的复杂序列：7 条命令、参数个数 1/2/0/1/4/2/3，覆盖各可正确编解码的类型与边界
+const complexRouteSteps: ReadonlyArray<readonly [number, ReplayParamValue[]]> =
+    [
+        [1, [10]],
+        [2, [true, 'x']],
+        [3, []],
+        [4, [100n]],
+        [5, [1, -32769, 3, 1.5]],
+        [6, ['a'.repeat(300), false]],
+        [7, ['', -1, 127]]
+    ];
+
+// 用复杂序列填充一个全新录像数组（含中间起始索引读取的用例共用同一份期望）
+function createComplexArray(): ReplayArray {
+    const array = createArray();
+    for (const [command, params] of complexRouteSteps) {
         array.add(command, params);
     }
     return array;
@@ -352,6 +399,41 @@ describe('ReplayArray stream and buffer combination', () => {
         const stream = array.createReadStream(2);
         expect(stream.read()).toEqual({ command: 3, params: [], index: 3 });
         expect(stream.read()).toBeNull();
+    });
+
+    // 验证复杂序列仅经读取流逐条读回：每参数类型与值严格一致、索引 1..7 递进、末尾为 null
+    it('reads a heterogeneous route exclusively through a read stream', () => {
+        const array = createComplexArray();
+        const stream = array.createReadStream(0);
+
+        expect(stream.length).toBe(7);
+        expect(stream.index).toBe(0);
+        complexRouteSteps.forEach(([command, params], position) => {
+            const step = stream.read()!;
+            expectStepTyped(step, command, params, position + 1);
+            expect(stream.index).toBe(position + 1);
+        });
+        expect(stream.read()).toBeNull();
+        expect(stream.index).toBe(7);
+    });
+
+    // 验证复杂序列可从中间起始索引仅经读取流读回原第 4..7 步，索引为 4..7 且末尾为 null
+    it('starts a complex route read stream at a middle index', () => {
+        const array = createComplexArray();
+        const stream = array.createReadStream(3);
+
+        expect(stream.index).toBe(3);
+        complexRouteSteps.slice(3).forEach(([command, params], offset) => {
+            const step = stream.read()!;
+            expectStepTyped(step, command, params, offset + 4);
+            expect(stream.index).toBe(offset + 4);
+        });
+        expect(stream.read()).toBeNull();
+        expect(stream.index).toBe(7);
+
+        const tail = array.createReadStream(6);
+        expectStepTyped(tail.read()!, 7, complexRouteSteps[6][1], 7);
+        expect(tail.read()).toBeNull();
     });
 
     // 验证 6 条参数个数与类型各异的命令经读流与按索引读回均逐条一致
