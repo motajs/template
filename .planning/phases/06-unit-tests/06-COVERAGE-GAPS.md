@@ -27,6 +27,10 @@
   3. 多来源（>2 条）叠加后的 **damage 求和 / type 取最大 / extra 并集**（真实 `MainMapDamageReducer` 在 06-02 单测过，但未与系统层多条真实来源组合）。
 - **期望**：同点构造多来源组合，断言 `getReducedDamage` 的 damage/type/extra 与 `getSeparatedDamage` 条数符合预期。
 
+### G-06-01-D：`EnemyContext.deleteAura` 无测试覆盖（D-30 接口覆盖缺口，严重度 低-中）
+- **现状**：`deleteAura` 是 `IEnemyContext` 的**公开方法**（接口声明 `packages-user/data-system/src/combat/types.ts:689`，实现 `packages-user/data-system/src/combat/context.ts:347`），且被 `06-01-PLAN.md` 的 `must_haves.truths` **逐字点名**（「`addAura`/`deleteAura`」）。全仓库检索 `deleteAura` 仅命中上述两个生产文件，**测试 0 引用**；同一接口清单中的 `addAura` 已被 `context.test.ts` 覆盖 8 处，而 `deleteAura` 未覆盖。
+- **期望**：补一条**可跑绿**用例（`06-15-PLAN.md`）：`addAura` 注册一个全局光环 → `buildup` 生效（目标怪属性被加成）→ `deleteAura` 移除同一光环 → 再次 `buildup` → 该光环不再生效（目标怪属性回到基础值）。沿用 `context.test.ts` 文件内既有 `FakeAura`/`FakeConverter`/`createContextFixture`，名称含 legacy 的接口/方法排除（D-30）。
+
 ---
 
 ## 06-03 enemy 数据模型（`data-base/src/enemy`）
