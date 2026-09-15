@@ -621,8 +621,8 @@ describe('EnemyContext single aura ranges', () => {
         ).toBe(5);
     });
 
-    // 疑似 bug：deleteAura 后再次全量构建应回到基础 atk，详见 06-TEST-FINDINGS.md #06-15-1，修复后取消 skip
-    it.skip('applies a global aura after addAura and stops applying it after deleteAura', () => {
+    // 验证 deleteAura 后再次全量构建会回到基础 atk
+    it('applies a global aura after addAura and stops applying it after deleteAura', () => {
         const fixture = createContextFixture();
         fixture.context.bindHero(fixture.hero);
         fixture.context.registerAuraConverter(new FakeConverter([]));

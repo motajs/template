@@ -693,6 +693,10 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
         this.dirtyEnemy.clear();
         this.needTotallyRefresh.clear();
         this.requestedCommonContext.clear();
+        // 全量重建前必须先把各视图退回原始怪物，否则重复构建会在上一轮数值上继续累加
+        for (const view of this.enemyViewMap.values()) {
+            view.reset();
+        }
         const hasAura = this.auraConverter.size > 0;
         const hasSpecialQuery = this.specialQueryEffects.size > 0;
         if (hasAura || hasSpecialQuery) {

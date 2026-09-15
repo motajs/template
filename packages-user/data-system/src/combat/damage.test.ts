@@ -673,8 +673,8 @@ describe('DamageSystem attribute linkage', () => {
         expect(system.getDamageInfo(newView)).toBeNull();
     });
 
-    // 疑似 bug：重复全量构建应从原始怪物重算而非在原计算值上累加，详见 06-TEST-FINDINGS.md #06-01-4，修复后取消 skip
-    it.skip('recomputes a repeat buildup from the base enemy without compounding', () => {
+    // 验证重复全量构建从原始怪物重算而非在原计算值上累加
+    it('recomputes a repeat buildup from the base enemy without compounding', () => {
         const context = createEnemyContext({
             shouldConvert: special => special.code === 20,
             convert: () => ({
