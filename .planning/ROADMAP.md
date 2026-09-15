@@ -210,7 +210,7 @@ Plans:
   3. 测试在本地可运行且全部通过
    4. 测试由 AI 编写并运行，通过验证后可提交
 
-**Plans**: 9/9 plans executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后)
+**Plans**: 9/9 原计划 executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后) + gap-fill 06-10..06-13 (D-46；人工评审缺口补测，只补测试不改生产代码；10/13 executed)
 
 Plans:
 
@@ -239,6 +239,13 @@ Plans:
 - [x] 06-07-PLAN.md — depends on 06-02/06-04/06-06; replay recording wired by user (17d7c8f), SUMMARY complete
 - [x] 06-09-PLAN.md — depends on 06-03/06-05/06-06/06-08; requires user to adjust CoreState saveables + add public save/load entry
 
+**Wave 3** *(gap-fill batch, D-46; extends existing `*.test.ts`, no production edits)*
+
+- [x] 06-10-PLAN.md — combat/enemy combination gaps: G-06-01-A/B/C + G-06-07-A
+- [ ] 06-11-PLAN.md — hero/map gaps: G-06-05-A + G-06-06-A/B/C
+- [ ] 06-12-PLAN.md — replay/enemy gaps: G-06-04-B (runnable) + G-06-04-A/G-06-03-A (correct-expectation skip)
+- [ ] 06-13-PLAN.md — save/load gaps: G-06-09-A/B (only plan testing saveState/loadState, D-32)
+
 ## Progress
 
 **Execution Order:**
@@ -251,4 +258,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 9/9 | In Progress|  |
+| 6. 单元测试 | 10/13 | In Progress|  |

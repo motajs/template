@@ -4,9 +4,9 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-07-PLAN.md
-last_updated: "2026-09-14T13:09:31.918Z"
-last_activity: 2026-09-14
+stopped_at: Completed 06-10-PLAN.md
+last_updated: "2026-09-15T02:13:48.439Z"
+last_activity: 2026-09-15
 last_activity_desc: Phase 06 execution started
 state_head: 9f9dd112234e814ea97b31fab87f395fa1308d9a
 progress:
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 9 of 9 (06-07 complete; all Phase 06 plans have SUMMARY)
-Status: Phase 06 data-end unit tests complete; #06-09 test:ci regression resolved by later commits, D-44(c) green
-Last activity: 2026-09-14 — Completed 06-07-PLAN.md
+Plan: 10 of 13 (06-10 gap-fill complete; 06-11..06-13 pending)
+Status: Phase 06 gap-fill batch (D-46) in progress — 06-10 (G-06-01-A/B/C, G-06-07-A) complete; pnpm test:ci green (66 files / 636 passed / 20 skipped)
+Last activity: 2026-09-15 — Completed 06-10-PLAN.md
 
 Progress: [█████░░░░░] 50%
 
@@ -87,6 +87,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P08 | 21min | 3 tasks | 6 files |
 | Phase 06 P09 | 42min | 3 tasks | 9 files |
 | Phase 06 P07 | 40min | 4 tasks | 4 files |
+| Phase 06 P10 | 15min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -177,6 +178,10 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-07：顶层集成按 D-43 三阶段执行，2 个测试文件 24 通过 / 1 跳过；伤害/光环组合用真实 Enemy/EnemyContext/CommonAura/GuardAura/final effect 驱动，hero 属性用内联合成对象
 - [Phase 06]: 06-07：录像播放期间用 replaySystem.disable()/revert() 抑制录制，二次录制经 ReplaySystem.saveState()/loadState()（IReplaySystemSave）最小重置；ReplayArray 不可存档已由用例断言
 - [Phase 06]: 06-07：真实 code 覆盖 176 + 2001–2008；发现 #06-07-1（CoreState 未向寻路 finder 注入 maps/layer/predicate，顶层录像瞬移恒返回 2005），按 D-05 以 it.skip 正确预期用例登记
+- [Phase 06]: 06-10：缺口补测按 D-43 三阶段（构件→组合/流水线→完整/集成）执行，只扩展 mapDamage.test.ts/context.test.ts/enemyCombination.test.ts，未改动任何生产代码
+- [Phase 06]: 06-10：G-06-01-C 用文件内联语义 reducer（伤害求和/类型取最大/额外标记并集）断言，不导入顶层 MainMapDamageReducer；G-06-01-A/B 用内联 FakeAura/FakeConverter 驱动（D-21）
+- [Phase 06]: 06-10：G-06-07-A 最大组合经真实 CoreState + MainDamageCalculator 得唯一精确 {3059,37}，去支援对照 {2882,35}；推导确认光环 25 为全局范围会同时加成相邻支援怪
+- [Phase 06]: 06-10：本计划无新增码、无疑似 bug、无 it.skip；06-COVERAGE-MAP.md 追加 06-10 小节（create-or-append）
 
 ### Pending Todos
 
@@ -206,6 +211,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-14T13:09:31.695Z
-Stopped at: Completed 06-07-PLAN.md
+Last session: 2026-09-15T02:13:48.439Z
+Stopped at: Completed 06-10-PLAN.md
 Resume file: None

@@ -167,3 +167,22 @@ D-45：公开 `CoreState.saveState(compression)` / `loadState(state, compression
 > 说明：本计划的录像播放用例为覆盖「真实寻路瞬移播放」路径，在**测试内**通过公开的
 > `state.pathfinding.finder.useMapState/useMapLayer/usePassPredicate` 完成注入；生产 `CoreState`
 > 目前不做该注入，故另立 `#06-07-1` 记录该接线缺口。
+
+## #06-10 战斗系统 / 顶层组合缺口补测（D-46）
+
+本计划按 D-43 三阶段（构件 → 组合/流水线 → 完整/集成）补齐 G-06-01-A/B/C、G-06-07-A，
+只新增/扩展 `*.test.ts`，未改动任何生产/核心源码；三个测试文件聚焦运行通过，
+`pnpm test:ci` 全绿（66 文件 / **636 通过** / 20 跳过）。
+
+- 阶段 1 构件级（`mapDamage.test.ts`）：G-06-01-C 同点多来源叠加 —— 有来源+有来源、
+  无来源+无来源、混合多来源；断言 `getSeparatedDamage` 条数与 `getReducedDamage` 的
+  damage/type/extra。
+- 阶段 2 组合/流水线（`context.test.ts`）：G-06-01-A 四类效果同时生效（四阶段顺序 + 最终
+  atk/def/hp/special）；G-06-01-B 多怪跨施加嵌套光环（三只怪最终 atk + A1 范围边界）。
+- 阶段 3 完整/集成（`enemyCombination.test.ts`）：G-06-07-A 最大流水线组合单怪的唯一精确
+  `{damage: 3059, turn: 37}` + 去支援对照 `{2882, 35}`。
+
+**本计划未发现疑似 bug**，无 `it.skip` / `it.todo`，无 `#06-10-N` 条目。
+
+非缺陷说明：阶段 1 计划措辞「type 取最大」与顶层 `MainMapDamageReducer`「取最大伤害项的
+type」语义不同；本计划按 plan 措辞以文件内联语义 reducer 断言，未改动生产代码。
