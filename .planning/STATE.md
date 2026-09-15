@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.0
-current_phase: 06
-current_phase_name: unit-tests
+current_phase: 7
+current_phase_name: 数据端缺陷修复
 status: executing
 stopped_at: Phase 7 context gathered
-last_updated: "2026-09-15T06:00:01.631Z"
+last_updated: "2026-09-15T08:21:56.180Z"
 last_activity: 2026-09-15
 last_activity_desc: Phase 06 gap-fill 06-15 complete —
-state_head: 4ede7fcd96963865182013c517d5521a7a233d86
+state_head: 8d66bc4ae26b59c21d9cc6ceaf0c32780ac10f77
 progress:
   total_phases: 7
   completed_phases: 0
-  total_plans: 52
+  total_plans: 60
   completed_plans: 52
 milestone_name: milestone
 ---
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 
 ## Current Position
 
-Phase: 06 (unit-tests) — EXECUTING
+Phase: 7 (数据端缺陷修复) — READY TO EXECUTE
 Plan: 15 of 15 (all gap-fill plans 06-10..06-15 complete)
 Status: Phase 06 gap-fill batch (D-46) complete — 06-15 (G-06-01-D deleteAura) complete with one correct-expectation `it.skip` (#06-15-1, same root cause as #06-01-4) awaiting user decision; pnpm test:ci green (66 files / 649 passed / 28 skipped)
 Last activity: 2026-09-15 — Completed 06-15-PLAN.md (combat interface coverage gap-fill, G-06-01-D)
