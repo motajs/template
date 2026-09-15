@@ -112,48 +112,52 @@ function setLayerReference(layer: IResizableMapLayer): void {
 }
 
 describe('StaticTile save and load round trips', () => {
-    // 验证静态图块覆盖事件在同实例上恢复且保存返回分离的事件映射
-    it('restores covered events on the same instance', () => {
-        const { layer } = createMapFixture();
-        const tile = layer.getTile(0, 0)!;
-        tile.tileEvent().set(30, 'override-event');
+    // 验证静态图块覆盖事件在三个压缩档下同实例恢复且保存返回分离的事件映射
+    it('restores covered events across all compressions', () => {
+        for (const compression of SAVE_COMPRESSIONS) {
+            const { layer } = createMapFixture();
+            const tile = layer.getTile(0, 0)!;
+            tile.tileEvent().set(30, 'override-event');
 
-        const saved = tile.saveState(SaveCompression.NoCompression);
-        const snapshot = new Map(saved.events!);
-        tile.tileEvent().set(30, 'changed-after-save');
+            const saved = tile.saveState(compression);
+            const snapshot = new Map(saved.events!);
+            tile.tileEvent().set(30, 'changed-after-save');
 
-        expect(saved.events).toEqual(snapshot);
+            expect(saved.events).toEqual(snapshot);
 
-        tile.loadState(saved, SaveCompression.NoCompression);
+            tile.loadState(saved, compression);
 
-        expect(tile.tileEvent().get()).toEqual(
-            new Map([
-                [10, 'base-event'],
-                [30, 'override-event']
-            ])
-        );
+            expect(tile.tileEvent().get()).toEqual(
+                new Map([
+                    [10, 'base-event'],
+                    [30, 'override-event']
+                ])
+            );
+        }
     });
 });
 
 describe('DynamicTile save and load round trips', () => {
-    // 验证动态图块覆盖事件在同实例上恢复，存档记录当前图块数字
-    it('restores covered events on the same instance', () => {
-        const { layer } = createMapFixture();
-        const tile = layer.createDynamic(1, 1, 0);
-        tile.tileEvent().set(30, 'override-event');
+    // 验证动态图块覆盖事件在三个压缩档下同实例恢复，存档记录当前图块数字
+    it('restores covered events across all compressions', () => {
+        for (const compression of SAVE_COMPRESSIONS) {
+            const { layer } = createMapFixture();
+            const tile = layer.createDynamic(1, 1, 0);
+            tile.tileEvent().set(30, 'override-event');
 
-        const saved = tile.saveState(SaveCompression.NoCompression);
-        tile.tileEvent().set(30, 'changed-after-save');
-        tile.loadState(saved, SaveCompression.NoCompression);
+            const saved = tile.saveState(compression);
+            tile.tileEvent().set(30, 'changed-after-save');
+            tile.loadState(saved, compression);
 
-        expect(saved.num).toBe(1);
-        expect(tile.num()).toBe(1);
-        expect(tile.tileEvent().get()).toEqual(
-            new Map([
-                [10, 'base-event'],
-                [30, 'override-event']
-            ])
-        );
+            expect(saved.num).toBe(1);
+            expect(tile.num()).toBe(1);
+            expect(tile.tileEvent().get()).toEqual(
+                new Map([
+                    [10, 'base-event'],
+                    [30, 'override-event']
+                ])
+            );
+        }
     });
 
     // 疑似 bug：loadState 不恢复存档中的图块数字，详见 06-TEST-FINDINGS.md #06-09-3
