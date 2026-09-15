@@ -318,8 +318,8 @@ describe('CoreState save and load guards', () => {
         expect(result.info.map(info => info.code)).toContain(177);
     });
 
-    // 验证存档缺失 saveable key 时同时观测到警告码 178（当前实现的实际触发路径）
-    it('warns code 178 when the save data misses a saveable key', () => {
+    // 验证存档缺失 saveable key 时只触发警告码 177，不再误报 178（177/178 语义互斥）
+    it('warns code 177 but not 178 when the save data misses a saveable key', () => {
         const state = createCoreState();
         const snapshot = new Map(
             state.saveState(SaveCompression.NoCompression)
@@ -330,11 +330,13 @@ describe('CoreState save and load guards', () => {
             state.loadState(snapshot, SaveCompression.NoCompression)
         );
 
-        expect(result.info.map(info => info.code)).toContain(178);
+        const codes = result.info.map(info => info.code);
+        expect(codes).toContain(177);
+        expect(codes).not.toContain(178);
     });
 
-    // 疑似 bug：码 178 的判定与文案相反，对「存档多出的 key」不告警，详见 06-TEST-FINDINGS.md #06-09-5
-    it.skip('warns code 178 when the save data has keys that are not loaded', () => {
+    // 验证存档含未注册（未加载）key 时经 logger.catch 观测到警告码 178（#06-09-5）
+    it('warns code 178 when the save data has keys that are not loaded', () => {
         const state = createCoreState();
         const snapshot = new Map(
             state.saveState(SaveCompression.NoCompression)

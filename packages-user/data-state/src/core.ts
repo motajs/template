@@ -530,7 +530,7 @@ export class CoreState implements ICoreState {
         }
         const loaded = new Set<string>(state.keys());
         const total = new Set(this.saveables.keys());
-        const remain = total.difference(loaded);
+        const remain = loaded.difference(total);
         if (remain.size > 0) {
             const ids = [...remain].join(' | ');
             logger.warn(178, ids);
