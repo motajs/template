@@ -16,11 +16,13 @@ interface INormalizedParam {
      * - 1: int8
      * - 2: int16
      * - 3: int32
-     * - 4: int64
-     * - 5: float
-     * - 6: bigint
-     * - 7: string
-     * - 8 ~ 255: n - 7 长度的字符串
+     * - 4: 非负 int64，载荷为幅值
+     * - 5: 负 int64，载荷为幅值
+     * - 6: float
+     * - 7: 非负 bigint，载荷为幅值
+     * - 8: 负 bigint，载荷为幅值
+     * - 9: string，带 int32 长度前缀
+     * - 10 ~ 255: n - 9 长度的字符串
      */
     readonly paramType: number;
 
@@ -237,14 +239,18 @@ export class ReplayArray implements IReplayArray {
                     // 3 - int32
                     type = 3;
                     byte = 5;
-                } else {
-                    // 4 - int64
+                } else if (param >= 2147483648) {
+                    // 4 - 非负 int64
                     type = 4;
+                    byte = 9;
+                } else {
+                    // 5 - 负 int64，载荷为幅值
+                    type = 5;
                     byte = 9;
                 }
             } else {
-                // 5 - float
-                type = 5;
+                // 6 - float
+                type = 6;
                 byte = 9;
             }
             return {
@@ -253,7 +259,7 @@ export class ReplayArray implements IReplayArray {
                 byteLength: byte
             };
         } else if (typeof param === 'bigint') {
-            // 6 - bigint
+            // 7 - bigint
             const wall = 2n ** 2047n;
             if (param > wall - 1n || param < -wall) {
                 logger.warn(152);
@@ -269,23 +275,23 @@ export class ReplayArray implements IReplayArray {
                 arr[i] = Number(remain);
             }
             return {
-                paramType: 6,
+                paramType: 7,
                 paramValue: arr,
                 byteLength: arr.length + 2
             };
         } else if (typeof param === 'string') {
             const arr = this.textEncoder.encode(param);
-            if (arr.length > 0 && arr.length <= 248) {
-                // 8 ~ 255 - string
+            if (arr.length > 0 && arr.length <= 246) {
+                // 10 ~ 255 - string
                 return {
-                    paramType: arr.length + 7,
+                    paramType: arr.length + 9,
                     paramValue: arr,
                     byteLength: arr.length + 1
                 };
             } else {
-                // 7 - string
+                // 9 - string
                 return {
-                    paramType: 7,
+                    paramType: 9,
                     paramValue: arr,
                     byteLength: arr.length + 5
                 };
@@ -364,25 +370,26 @@ export class ReplayArray implements IReplayArray {
             } else if (param.paramType === 3) {
                 // 3 - int32
                 this.paramView.setInt32(index + 1, num);
-            } else if (param.paramType === 4) {
-                // 4 - int64
-                const high = Math.floor(num / 2147483648);
-                const low = num % 2147483648;
+            } else if (param.paramType === 4 || param.paramType === 5) {
+                // 4 - 非负 int64 / 5 - 负 int64，均以幅值拆分高低 32 位
+                const magnitude = num < 0 ? -num : num;
+                const high = Math.floor(magnitude / 2147483648);
+                const low = magnitude - high * 2147483648;
                 this.paramView.setInt32(index + 1, low);
                 this.paramView.setInt32(index + 5, high);
-            } else if (param.paramType === 5) {
-                // 5 - float
-                this.paramView.setFloat64(index + 1, num);
             } else if (param.paramType === 6) {
-                // 6 - bigint
+                // 6 - float
+                this.paramView.setFloat64(index + 1, num);
+            } else if (param.paramType === 7) {
+                // 7 - bigint
                 this.paramArray[index + 1] = arr.length;
                 this.paramArray.set(arr, index + 2);
-            } else if (param.paramType === 7) {
-                // 7 - string
+            } else if (param.paramType === 9) {
+                // 9 - string
                 this.paramView.setInt32(index + 1, arr.length);
                 this.paramArray.set(arr, index + 5);
             } else {
-                // 8 ~ 256 - string
+                // 10 ~ 255 - string
                 this.paramArray.set(arr, index + 1);
             }
             index += param.byteLength;
@@ -614,17 +621,23 @@ export class ReplayArray implements IReplayArray {
             byte = 5;
             value = this.paramView.getInt32(startIndex + 1);
         } else if (type === 4) {
-            // 4 - int64
+            // 4 - 非负 int64
             const low = this.paramView.getInt32(startIndex + 1);
             const high = this.paramView.getInt32(startIndex + 5);
             byte = 9;
-            value = low + high * 2147483647;
+            value = low + high * 2147483648;
         } else if (type === 5) {
-            // 5 - float
+            // 5 - 负 int64，读回幅值后取负
+            const low = this.paramView.getInt32(startIndex + 1);
+            const high = this.paramView.getInt32(startIndex + 5);
+            byte = 9;
+            value = -(low + high * 2147483648);
+        } else if (type === 6) {
+            // 6 - float
             byte = 9;
             value = this.paramView.getFloat64(startIndex + 1);
-        } else if (type === 6) {
-            // 6 - bigint
+        } else if (type === 7) {
+            // 7 - bigint
             const length = this.paramView.getInt8(startIndex + 1);
             let base = 0n;
             for (let i = 0; i < length; i++) {
@@ -633,16 +646,16 @@ export class ReplayArray implements IReplayArray {
             }
             byte = length + 2;
             value = base;
-        } else if (type === 7) {
-            // 7 - string
+        } else if (type === 9) {
+            // 9 - string
             const length = this.paramView.getInt32(startIndex + 1);
             const endIndex = startIndex + 5 + length;
             const arr = this.paramArray.slice(startIndex + 5, endIndex);
             byte = length + 5;
             value = this.textDecoder.decode(arr);
         } else {
-            // 8 ~ 255 - string
-            const length = type - 7;
+            // 10 ~ 255 - string
+            const length = type - 9;
             const endIndex = startIndex + 1 + length;
             const arr = this.paramArray.slice(startIndex + 1, endIndex);
             byte = length + 1;

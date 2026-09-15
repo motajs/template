@@ -79,7 +79,7 @@ function expectStepTyped(
     expect(step.index).toBe(index);
 }
 
-// 整数与浮点参数用例：值 → 期望参数类型 token（int64 见 #06-04-1 跳过）
+// 整数与浮点参数用例：值 → 期望参数类型 token（int64 见下方专门用例）
 const paramCases: ReadonlyArray<readonly [ReplayParamValue, number]> = [
     [-128, 1],
     [127, 1],
@@ -91,8 +91,8 @@ const paramCases: ReadonlyArray<readonly [ReplayParamValue, number]> = [
     [-32769, 3],
     [-2147483648, 3],
     [2147483647, 3],
-    [1.5, 5],
-    [-1.5, 5]
+    [1.5, 6],
+    [-1.5, 6]
 ];
 
 // 异质命令序列：参数个数与类型各不相同（含 boolean、多位宽整数、float、string、bigint）
@@ -271,7 +271,7 @@ describe('ReplayArray param codec', () => {
         array.add(0, [100n]);
 
         expect(array.get(0).params).toEqual([100n]);
-        expect(firstParamToken(array)).toBe(6);
+        expect(firstParamToken(array)).toBe(7);
     });
 
     // 疑似 bug：bigint 编码循环缺少按字节右移，多字节 bigint 只能还原最低字节，详见 06-TEST-FINDINGS.md #06-04-2，修复后取消 skip
@@ -283,11 +283,41 @@ describe('ReplayArray param codec', () => {
         expect(array.get(0).params).toEqual([value]);
     });
 
-    // 疑似 bug：int64 解码乘数误用 2147483647，导致 int64 参数无法按写入值读回，详见 06-TEST-FINDINGS.md #06-04-1，修复后取消 skip
-    it.skip('round-trips int64 values above the int32 range', () => {
+    // 验证超过 int32 范围的非负 int64 参数经 type 4 精确读回
+    it('round-trips int64 values above the int32 range', () => {
         const array = createArray();
         array.add(0, [2147483648]);
         expect(array.get(0).params).toEqual([2147483648]);
+    });
+
+    // 负 int64 使用独立类型码 5，载荷为幅值 |n|，解码后取负（A8）；小负值仍走更窄的位宽类型
+    it('round-trips negative int64 values through the dedicated type', () => {
+        const negativeCases: ReadonlyArray<readonly [number, number]> = [
+            [-1, 1],
+            [-2147483649, 5],
+            [-4294967297, 5]
+        ];
+
+        for (const [value, token] of negativeCases) {
+            const array = createArray();
+            array.add(0, [value]);
+            expectParamTyped(array.get(0).params[0], value);
+            expect(firstParamToken(array)).toBe(token);
+        }
+    });
+
+    // 非负 int64 仍为 type 4，上界 2^53 - 1 精确读回，幅值编码逐位不变
+    it('round-trips non-negative int64 values through type 4', () => {
+        const nonNegativeCases: readonly number[] = [
+            2147483648, 9007199254740991
+        ];
+
+        for (const value of nonNegativeCases) {
+            const array = createArray();
+            array.add(0, [value]);
+            expectParamTyped(array.get(0).params[0], value);
+            expect(firstParamToken(array)).toBe(4);
+        }
     });
 
     // 疑似 bug：多字节 bigint 与超 int32 的 int64 混在同一步时同样失真，详见 06-TEST-FINDINGS.md #06-04-1/#06-04-2，修复两个编码与解码缺陷后取消 skip
@@ -303,32 +333,32 @@ describe('ReplayArray param codec', () => {
         ]);
     });
 
-    // 验证短字符串参数使用内联类型 token 并读回一致
+    // 验证短字符串参数使用内联类型 token（长度 + 9）并读回一致
     it('round-trips a short string with an inline type token', () => {
         const array = createArray();
         array.add(0, ['hi']);
 
         expect(array.get(0).params).toEqual(['hi']);
-        expect(firstParamToken(array)).toBe(9);
+        expect(firstParamToken(array)).toBe(11);
     });
 
-    // 验证超过内联长度的字符串参数使用 type 7 并读回一致
+    // 验证超过内联长度的字符串参数使用 type 9 并读回一致
     it('round-trips a long string through the length-prefixed type', () => {
         const array = createArray();
         const value = 'a'.repeat(300);
         array.add(0, [value]);
 
         expect(array.get(0).params).toEqual([value]);
-        expect(firstParamToken(array)).toBe(7);
+        expect(firstParamToken(array)).toBe(9);
     });
 
-    // 验证空字符串参数回退到 type 7 并读回为空串
+    // 验证空字符串参数回退到 type 9 并读回为空串
     it('round-trips an empty string', () => {
         const array = createArray();
         array.add(0, ['']);
 
         expect(array.get(0).params).toEqual(['']);
-        expect(firstParamToken(array)).toBe(7);
+        expect(firstParamToken(array)).toBe(9);
     });
 
     // 验证单条录像步的多个不同类型参数按顺序完整读回
