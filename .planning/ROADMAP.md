@@ -248,7 +248,7 @@ Plans:
 
 **Wave 4** *(G-06-04-C follow-up gap-fill, D-46; serialized after 06-12 because it shares `array.test.ts`)*
 
-- [ ] 06-14-PLAN.md — replay read-stream gaps: G-06-04-C/A (stream-only complex route + middle start index) + G-06-04-C/B (per-param typed assertions, index progression, expired-after-mutation); blocked `#06-04-3`/`#06-04-4` as correct-expectation `it.skip`
+- [x] 06-14-PLAN.md — replay read-stream gaps: G-06-04-C/A (stream-only complex route + middle start index) + G-06-04-C/B (per-param typed assertions, index progression, expired-after-mutation); blocked `#06-04-3`/`#06-04-4` as correct-expectation `it.skip`
 
 ## Progress
 
@@ -262,4 +262,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 13/14 | In Progress|  |
+| 6. 单元测试 | 14/14 | In Progress|  |

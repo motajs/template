@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-13-PLAN.md (save/load coverage gap-fill)
-last_updated: "2026-09-15T03:30:34.572Z"
+stopped_at: Completed 06-14-PLAN.md (replay read-stream gap-fill, G-06-04-C)
+last_updated: "2026-09-15T03:52:41.349Z"
 last_activity: 2026-09-15
 last_activity_desc: Phase 06 execution started
-state_head: 992ca9d585ab012267d030ef94daba00f5e80623
+state_head: 83dc4fdaf6a54cfcc344b6a4765581348682ec00
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 51
-  completed_plans: 50
+  completed_plans: 51
 milestone_name: milestone
 ---
 
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 13 of 14 (06-13 gap-fill complete; 06-14 pending)
-Status: Phase 06 gap-fill batch (D-46) in progress — 06-13 (G-06-09-A/B) complete; pnpm test:ci green (66 files / 646 passed / 25 skipped)
-Last activity: 2026-09-15 — Completed 06-13-PLAN.md
+Plan: 14 of 14 (all gap-fill plans 06-10..06-14 complete)
+Status: Phase 06 gap-fill batch (D-46) complete — 06-14 (G-06-04-C read-stream) complete; pnpm test:ci green (66 files / 649 passed / 27 skipped)
+Last activity: 2026-09-15 — Completed 06-14-PLAN.md (replay read-stream gap-fill)
 
 Progress: [█████░░░░░] 50%
 
@@ -91,6 +91,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P11 | 10min | 3 tasks | 5 files |
 | Phase 06 P12 | 13min | 3 tasks | 3 files |
 | Phase 06 P13 | 14min | 3 tasks | 4 files |
+| Phase 06 P14 | 12min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -193,6 +194,10 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-13：G-06-09-A 顶层全关键状态严格一致 + 录像 10 步多样化（8 类命令 + number/boolean/string 参数）逐条 exact；G-06-09-B 接受 compression 的类三档循环、无参类经 HeroState/CoreState 容器三档确认
 - [Phase 06]: 06-13：EquipmentState 百分比 Low/High 命中既有 #06-09-1、HeroEquipment 经容器三档命中既有 #06-09-2，按 D-05 拆成正确预期 it.skip（经临时取消 skip 验证真实失败），既有 #06-09-1..5 skip 保持原样
 - [Phase 06]: 06-13：flags/replay 的 saveState 不接受 compression 参数，按 plan 经 CoreState.saveState(compression)/loadState(snapshot, compression) 容器三档确认；本计划无新增码、无新增 finding 条目
+- [Phase 06]: 06-14：读流与 get 的索引语义严格区分（read() 的 index = position + 1、get(i) 的 index = i），两者只按 command/params 对应，不对整体对象做相等比较
+- [Phase 06]: 06-14：G-06-04-C/A 新增仅经 createReadStream 的 7 命令复杂序列验证（用例体内无 array.get），逐参数 typeof+值、流索引 1..7 递进、末尾 null，并覆盖中间起始索引 createReadStream(3)/(6)
+- [Phase 06]: 06-14：G-06-04-C/B 强化既有 expectHeterogeneousRead（使 3 条复用用例受益）+ 两条既有流用例补每参数 typeof 与 stream.index 递进，并新增 add 变更后 expired===true + 告警 155 + 新建流按新次序类型化读回
+- [Phase 06]: 06-14：受阻塞增删次序复用既有 #06-04-3/#06-04-4 锚点写正确预期 it.skip（5→7 条），不新建 #06-14-N 条目；可跑绿参数限定单字节 bigint 0..127 与 int32 整数
 
 ### Pending Todos
 
@@ -222,6 +227,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-15T03:30:34.572Z
-Stopped at: Completed 06-13-PLAN.md (save/load coverage gap-fill)
+Last session: 2026-09-15T03:52:41.072Z
+Stopped at: Completed 06-14-PLAN.md (replay read-stream gap-fill, G-06-04-C)
 Resume file: None
