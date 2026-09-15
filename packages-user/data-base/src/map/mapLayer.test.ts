@@ -414,9 +414,8 @@ describe('MapLayer dynamic conversion', () => {
         expect([...layer.iterateDynamicTiles()]).toEqual([]);
     });
 
-    // 疑似缺陷 #06-06-1：transferToDynamic 越图当前复用码 131（setEventLayer 专属码），
-    // 正确预期应为与 transferToStatic 一致的越界码 128，待用户确认后取消 skip
-    it.skip('warns code 128 for an out-of-map transferToDynamic', () => {
+    // 验证越图的 transferToDynamic 发越界码 128 且不产生图块（#06-06-1 已修复）
+    it('warns code 128 for an out-of-map transferToDynamic', () => {
         const { layer } = createFixture();
 
         const result = logger.catch(() => layer.transferToDynamic(9, 9));

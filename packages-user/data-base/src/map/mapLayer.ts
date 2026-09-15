@@ -438,7 +438,7 @@ export class MapLayer
         keepEvent: boolean = true
     ): IDynamicTile | null {
         if (!this.inMap(x, y)) {
-            logger.warn(131, x.toString(), y.toString());
+            logger.warn(128, x.toString(), y.toString());
             return null;
         }
         const num = this.getBlock(x, y);
