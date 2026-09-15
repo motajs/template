@@ -114,6 +114,26 @@ describe('MapState floor registration', () => {
         expect(mapState.maps).toEqual(['F1']);
     });
 
+    // 验证 createMap 创建的地图可直接写入并读取图层、块、点事件与事件层绑定
+    it('generates and reads content on a map created by createMap', () => {
+        const mapState = createFixture();
+        const map = mapState.createMap('F1', 2, 2);
+        const layer = map.addLayer();
+        map.setLayerAlias(layer, 'event');
+        map.setEventLayer(layer);
+        layer.setBlock(5, 0, 0);
+        layer.setZIndex(0);
+        layer.event(1, 0)!.set(9, 'gen-event');
+
+        expect(mapState.getMap('F1')).toBe(map);
+        expect(map.getLayerByAlias('event')).toBe(layer);
+        expect(map.eventLayer).toBe(layer);
+        expect(layer.getBlock(0, 0)).toBe(5);
+        expect(layer.getBlock(1, 0)).toBe(0);
+        expect(layer.event(1, 0)!.get()).toEqual(new Map([[9, 'gen-event']]));
+        expect(map.dirty()).toBe(true);
+    });
+
     // 验证 setMapList 去重并保持传入顺序
     it('stores a de-duplicated ordered floor list', () => {
         const mapState = createFixture();

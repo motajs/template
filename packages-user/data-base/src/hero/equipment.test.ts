@@ -248,6 +248,29 @@ describe('HeroEquipment equip and unequip', () => {
         expect(env.equipment.unequip(0)).toBeUndefined();
     });
 
+    // 验证两个不同槽位同时装备后合并最终属性，卸下其中一件后另一槽修饰器保留
+    it('merges the final attributes of two equipped slots', () => {
+        const env = createEnv();
+        registerItem(env, createItem(10, 'sword', [0], [['atk', 5]]));
+        registerItem(env, createItem(11, 'shield', [1], [['def', 3]]));
+        env.equipment.setSlots(['weapon', 'armor']);
+        const sword = env.store.add(10);
+        const shield = env.store.add(11);
+
+        expect(env.equipment.equip(sword, 0)).toBeUndefined();
+        expect(env.equipment.equip(shield, 1)).toBeUndefined();
+        expect(env.equipment.getEquipped(0)).toBe(sword);
+        expect(env.equipment.getEquipped(1)).toBe(shield);
+        expect(env.equipment.equipped(sword)).toBe(true);
+        expect(env.equipment.equipped(shield)).toBe(true);
+        expect(env.attribute.getFinalAttribute('atk')).toBe(15);
+        expect(env.attribute.getFinalAttribute('def')).toBe(8);
+
+        expect(env.equipment.unequip(0)).toBe(sword);
+        expect(env.attribute.getFinalAttribute('atk')).toBe(10);
+        expect(env.attribute.getFinalAttribute('def')).toBe(8);
+    });
+
     // 验证 getEquips 按槽位顺序输出装备状态或空位
     it('lists slots in order with their equipment states', () => {
         const env = createEnv();
