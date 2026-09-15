@@ -154,6 +154,19 @@ function expectHeterogeneousRead(
     expect(stream.read()).toBeNull();
 }
 
+// 仅经读取流逐条验证异质序列：每参数类型与值、流索引 1..N 递进，末尾断言 null 与索引等于步数
+function expectRouteStream(
+    array: ReplayArray,
+    expectedSteps: ReadonlyArray<readonly [number, ReplayParamValue[]]>
+): void {
+    const stream = array.createReadStream(0);
+    expectedSteps.forEach(([command, params], i) => {
+        expectStepTyped(stream.read()!, command, params, i + 1);
+    });
+    expect(stream.read()).toBeNull();
+    expect(stream.index).toBe(expectedSteps.length);
+}
+
 describe('ReplayArray single operations', () => {
     // 验证 add 追加一条录像步并在原索引读回指令与参数
     it('appends one step and reads it back at the original index', () => {
@@ -492,6 +505,37 @@ describe('ReplayArray stream and buffer combination', () => {
         expect(stream.read()).toEqual({ command: 1, params: [10], index: 1 });
         expect(stream.read()).toEqual({ command: 2, params: [20], index: 2 });
         expect(stream.read()).toEqual({ command: 3, params: [30], index: 3 });
+    });
+
+    // 疑似 bug：delete 中间步后索引数组未按删除位置回退，异质序列后续步骤读到错误参数，详见 06-TEST-FINDINGS.md #06-04-3，修复后取消 skip
+    it.skip('reads the new order after deleting a middle step from a heterogeneous route', () => {
+        const array = createHeterogeneousArray();
+        array.delete(1);
+
+        expect(array.length).toBe(5);
+        const remaining = heterogeneousSteps.filter(
+            (_, stepIndex) => stepIndex !== 1
+        );
+        expectRouteStream(array, remaining);
+    });
+
+    // 疑似 bug：insert 的参数缓冲区位移方向相反，异质序列新次序读流会读到错误参数，详见 06-TEST-FINDINGS.md #06-04-4，修复后取消 skip
+    it.skip('reads the new order after inserting a step into a heterogeneous route', () => {
+        const array = createHeterogeneousArray();
+        array.insert(2, 9, [true, 5]);
+
+        expect(array.length).toBe(7);
+        const reordered: ReadonlyArray<readonly [number, ReplayParamValue[]]> =
+            [
+                heterogeneousSteps[0],
+                heterogeneousSteps[1],
+                [9, [true, 5]],
+                heterogeneousSteps[2],
+                heterogeneousSteps[3],
+                heterogeneousSteps[4],
+                heterogeneousSteps[5]
+            ];
+        expectRouteStream(array, reordered);
     });
 
     // 验证 getCommandArray 与 getParamArray 暴露内部缓冲区的直接内容

@@ -336,3 +336,19 @@ D-40：真实英雄操作经 `replay.route.add(...)`（mover 方向步）录制�
 `restores the equipped mapping through the container across all compressions`（锚定 `#06-09-2`）；
 既有 `#06-09-1..5` 的 skip 全部保持原样。
 本计划**无新增码**；`06-TEST-FINDINGS.md` 无新增 `#06-13-N` 缺陷条目。
+
+## 06-14 录像读取流专项验证补齐（D-46）
+
+本计划为 **G-06-04-C（A + B）** 的补测，**不引入新码**（复用既有可达码 148–155，其中 155 为
+「变更后读过期流」的告警断言）；阶段结构为 构件（仅流读复杂序列）→ 组合（既有流断言强化 +
+变更后 `expired`）→ 完整（增删后流读次序正确预期 skip）。
+
+| 缺口 | 用例 | 文件 | 计划 |
+| --- | --- | --- | --- |
+| G-06-04-C/A | `reads a heterogeneous route exclusively through a read stream`、`starts a complex route read stream at a middle index` | `data-common/src/replay/array.test.ts` | 06-14 |
+| G-06-04-C/B | `expectHeterogeneousRead`（helper 强化，服务 3 条既有用例）、`reads a sequence of steps through a read stream`、`expands buffers and still reads every step back`、`expires a read stream after the heterogeneous route is mutated` | `data-common/src/replay/array.test.ts` | 06-14 |
+| G-06-04-C（附带） | `reads the new order after deleting a middle step from a heterogeneous route`（`it.skip`，`#06-04-3`）、`reads the new order after inserting a step into a heterogeneous route`（`it.skip`，`#06-04-4`） | `data-common/src/replay/array.test.ts` | 06-14 |
+
+本计划**无新增码**；两条为受阻塞的正确预期 `it.skip`（锚定既有 `#06-04-3`/`#06-04-4`，
+并确认既有 `#06-04-1`/`#06-04-2` 两条 skip 不变）；不削弱也不删除任何既有用例或跳过。
+`06-TEST-FINDINGS.md` 无新增 `#06-14-N` 缺陷条目（受阻塞项复用既有锚点）。
