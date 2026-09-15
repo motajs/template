@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 19
+open_count: 15
 waived_count: 0
-fixed_count: 8
+fixed_count: 12
 total_count: 27
-last_updated: 2026-09-15T05:23:29.159Z
+last_updated: 2026-09-15T09:05:03.731Z
 ---
 
 # Broken Windows Ledger
@@ -33,15 +33,15 @@ last_updated: 2026-09-15T05:23:29.159Z
 | 16 | 03 | deviation | packages-user/data-state/test/replayVerifier.ts |  | Added a package-local verifier harness shared by Vitest and the Node runner to avoid composite-script import resolution. | open |  | 2026-09-10T09:18:58.946Z |  |
 | 17 | 03 | deviation | packages-user/data-state/test/fixtures/closed-loop.ts |  | Applied repository Prettier/CRLF formatting to the fixed replay fixture and runner files. | open |  | 2026-09-10T09:18:59.589Z |  |
 | 18 | 03 | deviation | script/check-data-circular.ts |  | Plan 03-15 scoped circular gate reports seven pre-existing legacy/render boundary cycles through data-state/src/legacy/move.ts; replay command class changes do not touch those imports. | open |  | 2026-09-11T06:27:22.412Z |  |
-| 19 | 06 | skipped-test | packages-user/data-system/src/combat/damage.test.ts |  | 06-01-1 suspected bug: calculateCritical yields info not matching nextValue (Finding #06-01-1) | open |  | 2026-09-14T00:54:02.628Z |  |
-| 20 | 06 | skipped-test | packages-user/data-system/src/combat/mapDamage.test.ts |  | 06-01-2 suspected bug: MapDamage.deleteEnemy leaves enemy-sourced damage (Finding #06-01-2) | open |  | 2026-09-14T00:54:03.338Z |  |
-| 21 | 06 | skipped-test | packages-user/data-system/src/combat/combat.test.ts |  | 06-01-3 suspected bug: CombatFlow.before truthy/falsy semantics inverted vs interface doc (Finding #06-01-3) | open |  | 2026-09-14T00:54:04.044Z |  |
+| 19 | 06 | skipped-test | packages-user/data-system/src/combat/damage.test.ts |  | 06-01-1 suspected bug: calculateCritical yields info not matching nextValue (Finding #06-01-1) | fixed |  | 2026-09-14T00:54:02.628Z | 2026-09-15T09:05:01.001Z |
+| 20 | 06 | skipped-test | packages-user/data-system/src/combat/mapDamage.test.ts |  | 06-01-2 suspected bug: MapDamage.deleteEnemy leaves enemy-sourced damage (Finding #06-01-2) | fixed |  | 2026-09-14T00:54:03.338Z | 2026-09-15T09:05:02.090Z |
+| 21 | 06 | skipped-test | packages-user/data-system/src/combat/combat.test.ts |  | 06-01-3 suspected bug: CombatFlow.before truthy/falsy semantics inverted vs interface doc (Finding #06-01-3) | fixed |  | 2026-09-14T00:54:04.044Z | 2026-09-15T09:05:02.930Z |
 | 22 | 06 | skipped-test | packages-user/data-common/src/common/mover.test.ts |  | backward(count>1) 方向摆动、净位移为零（#06-08-1），已 it.skip 待用户确认 | open |  | 2026-09-14T09:03:38.649Z |  |
 | 23 | 06 | skipped-test | packages-user/data-common/src/replay/array.test.ts |  | 受阻塞缺口 G-06-04-A：多字节 bigint / 超 int32 int64 编解码缺陷 #06-04-1/#06-04-2 未修复，正确预期用例保持 it.skip | open |  | 2026-09-15T02:46:32.026Z |  |
 | 24 | 06 | skipped-test | packages-user/data-base/src/enemy/manager.test.ts |  | 受阻塞缺口 G-06-03-A：复用映射未接入 createEnemy/createEnemyById（#06-03-1），四朝向复用生成独立怪物的正确预期用例保持 it.skip | open |  | 2026-09-15T02:46:32.772Z |  |
 | 25 | 06 | skipped-test | packages-user/data-base/src/hero/saveLoad.test.ts |  | 受阻塞缺口 G-06-09-B：压缩档 loadDiff 未回退装备原始定义（#06-09-1），EquipmentState 百分比加成 Low/High 档正确预期用例保持 it.skip | open |  | 2026-09-15T03:31:00.000Z |  |
 | 26 | 06 | skipped-test | packages-user/data-base/src/hero/saveLoad.test.ts |  | 受阻塞缺口 G-06-09-B：HeroEquipment.saveState 未深拷贝 equipped/slots（#06-09-2），经 HeroState 容器三档恢复装备映射的正确预期用例保持 it.skip | open |  | 2026-09-15T03:31:01.000Z |  |
-| 27 | 06 | skipped-test | packages-user/data-system/src/combat/context.test.ts | 625 | 受阻塞缺口 G-06-01-D：deleteAura 后再次 buildup 不回到基础值（#06-15-1，与 #06-01-4 同根因），正确预期用例保持 it.skip 待用户确认 | open |  | 2026-09-15T05:23:29.159Z |  |
+| 27 | 06 | skipped-test | packages-user/data-system/src/combat/context.test.ts | 625 | 受阻塞缺口 G-06-01-D：deleteAura 后再次 buildup 不回到基础值（#06-15-1，与 #06-01-4 同根因），正确预期用例保持 it.skip 待用户确认 | fixed |  | 2026-09-15T05:23:29.159Z | 2026-09-15T09:05:03.731Z |
 
 ````json
 [
@@ -268,10 +268,10 @@ last_updated: 2026-09-15T05:23:29.159Z
     "file": "packages-user/data-system/src/combat/damage.test.ts",
     "line": null,
     "description": "06-01-1 suspected bug: calculateCritical yields info not matching nextValue (Finding #06-01-1)",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-14T00:54:02.628Z",
-    "resolved_at": null
+    "resolved_at": "2026-09-15T09:05:01.001Z"
   },
   {
     "id": 20,
@@ -280,10 +280,10 @@ last_updated: 2026-09-15T05:23:29.159Z
     "file": "packages-user/data-system/src/combat/mapDamage.test.ts",
     "line": null,
     "description": "06-01-2 suspected bug: MapDamage.deleteEnemy leaves enemy-sourced damage (Finding #06-01-2)",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-14T00:54:03.338Z",
-    "resolved_at": null
+    "resolved_at": "2026-09-15T09:05:02.090Z"
   },
   {
     "id": 21,
@@ -292,10 +292,10 @@ last_updated: 2026-09-15T05:23:29.159Z
     "file": "packages-user/data-system/src/combat/combat.test.ts",
     "line": null,
     "description": "06-01-3 suspected bug: CombatFlow.before truthy/falsy semantics inverted vs interface doc (Finding #06-01-3)",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-14T00:54:04.044Z",
-    "resolved_at": null
+    "resolved_at": "2026-09-15T09:05:02.930Z"
   },
   {
     "id": 22,
@@ -364,10 +364,10 @@ last_updated: 2026-09-15T05:23:29.159Z
     "file": "packages-user/data-system/src/combat/context.test.ts",
     "line": 625,
     "description": "受阻塞缺口 G-06-01-D：deleteAura 后再次 buildup 不回到基础值（#06-15-1，与 #06-01-4 同根因），正确预期用例保持 it.skip 待用户确认",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-15T05:23:29.159Z",
-    "resolved_at": null
+    "resolved_at": "2026-09-15T09:05:03.731Z"
   }
 ]
 ````
