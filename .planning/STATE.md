@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-10-PLAN.md
-last_updated: "2026-09-15T02:13:48.439Z"
+stopped_at: Completed 06-11-PLAN.md (hero + map gap-fill)
+last_updated: "2026-09-15T02:30:10.403Z"
 last_activity: 2026-09-15
 last_activity_desc: Phase 06 execution started
-state_head: 9f9dd112234e814ea97b31fab87f395fa1308d9a
+state_head: 309f1b185024a6744c92706aef407d90dabe6106
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 46
-  completed_plans: 46
+  total_plans: 50
+  completed_plans: 48
 milestone_name: milestone
 ---
 
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 10 of 13 (06-10 gap-fill complete; 06-11..06-13 pending)
-Status: Phase 06 gap-fill batch (D-46) in progress — 06-10 (G-06-01-A/B/C, G-06-07-A) complete; pnpm test:ci green (66 files / 636 passed / 20 skipped)
-Last activity: 2026-09-15 — Completed 06-10-PLAN.md
+Plan: 11 of 13 (06-11 gap-fill complete; 06-12..06-13 pending)
+Status: Phase 06 gap-fill batch (D-46) in progress — 06-11 (G-06-05-A, G-06-06-A/B/C) complete; pnpm test:ci green (66 files / 641 passed / 20 skipped)
+Last activity: 2026-09-15 — Completed 06-11-PLAN.md
 
 Progress: [█████░░░░░] 50%
 
@@ -88,6 +88,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P09 | 42min | 3 tasks | 9 files |
 | Phase 06 P07 | 40min | 4 tasks | 4 files |
 | Phase 06 P10 | 15min | 3 tasks | 4 files |
+| Phase 06 P11 | 10min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -182,6 +183,9 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-10：G-06-01-C 用文件内联语义 reducer（伤害求和/类型取最大/额外标记并集）断言，不导入顶层 MainMapDamageReducer；G-06-01-A/B 用内联 FakeAura/FakeConverter 驱动（D-21）
 - [Phase 06]: 06-10：G-06-07-A 最大组合经真实 CoreState + MainDamageCalculator 得唯一精确 {3059,37}，去支援对照 {2882,35}；推导确认光环 25 为全局范围会同时加成相邻支援怪
 - [Phase 06]: 06-10：本计划无新增码、无疑似 bug、无 it.skip；06-COVERAGE-MAP.md 追加 06-10 小节（create-or-append）
+- [Phase 06]: 06-11：G-06-06-A 的 keepEvent=false 按写回块 num 重推默认事件（[[10,'base-event']]，非目标格原块 2 的 [[20,'alternate-event']]），两分支仅以 30:'moved-event' 是否保留区分
+- [Phase 06]: 06-11：G-06-06-A 共同前置须在 transferToDynamic 前 layer.getTile(0,0) 物化源格静态图块，否则归零后惰性构造的 StaticTile 读不到默认事件
+- [Phase 06]: 06-11：G-06-06-C 的 compareWith 参考数组必须等于各图层当前内容（含非零格），全零参考会把 low/mid 判脏；缺口补测按 D-43 三阶段执行，无新增码、无疑似 bug、无 it.skip
 
 ### Pending Todos
 
@@ -211,6 +215,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-15T02:13:48.439Z
-Stopped at: Completed 06-10-PLAN.md
+Last session: 2026-09-15T02:29:56.059Z
+Stopped at: Completed 06-11-PLAN.md (hero + map gap-fill)
 Resume file: None
