@@ -282,3 +282,20 @@ D-40：真实英雄操作经 `replay.route.add(...)`（mover 方向步）录制�
 | G-06-07-A | `computes one exact damage and turn for the maximum pipeline monster`、`produces a different result once the support pipeline is removed` | `data-state/test/enemyCombination.test.ts` | 06-10 |
 
 本计划无 `it.skip`/`it.todo`（预期无需新增），`06-TEST-FINDINGS.md` 无 `#06-10-N` 条目。
+
+## 06-11 勇士与地图缺口补测（D-46）
+
+本计划为**覆盖缺口补测**（G-06-05-A、G-06-06-A/B/C），**不引入任何新码**，复用既有可达码；
+阶段结构为 构件（多槽装备合并 + createMap 内容生成）→ 组合（多 zIndex 图层并存）→
+完整/集成（静态→动态→移动→静态 全链路，keepEvent 两分支）。
+
+| 缺口 | 用例 | 文件 | 计划 |
+| --- | --- | --- | --- |
+| G-06-05-A | `merges the final attributes of two equipped slots` | `data-base/src/hero/equipment.test.ts` | 06-11 |
+| G-06-06-B | `generates and reads content on a map created by createMap` | `data-base/src/map/mapState.test.ts` | 06-11 |
+| G-06-06-C | `keeps layers of different z-index coexisting with independent data` | `data-base/src/map/gameMap.test.ts` | 06-11 |
+| G-06-06-A | `keeps the moved dynamic events across a full static round trip`、`drops the moved dynamic events across a full static round trip` | `data-base/src/map/mapLayer.test.ts` | 06-11 |
+
+本计划**无新增码**，复用既有可达码（84/121/127/128/129/131 等的既有覆盖保持不变），
+不削弱也不删除任何既有用例或跳过；无 `it.skip`/`it.todo` 新增，
+`06-TEST-FINDINGS.md` 无 `#06-11-N` 条目。

@@ -459,6 +459,73 @@ describe('MapLayer dynamic conversion', () => {
         expect(restored.tileEvent().dirty()).toBe(false);
     });
 
+    // 验证静态→动态→移动→静态全链路的 keepEvent=true 分支保留移动后的动态专属事件
+    it('keeps the moved dynamic events across a full static round trip', async () => {
+        const { layer } = createFixture([1, 2, 1, 2]);
+        layer.getTile(0, 0);
+        const tile = layer.transferToDynamic(0, 0)!;
+        const controller = tile.step(FaceDirection.Right);
+
+        expect(controller).not.toBeNull();
+        expect(tile.mover.moving).toBe(true);
+
+        await controller!.onEnd;
+
+        expect(tile.x).toBe(1);
+        expect(tile.y).toBe(0);
+        expect([...layer.getDynamicTilesAt(1, 0)]).toContain(tile);
+        expect([...layer.getDynamicTilesAt(0, 0)]).toEqual([]);
+        expect(layer.getBlock(1, 0)).toBe(2);
+
+        tile.tileEvent().set(30, 'moved-event');
+        const result = logger.catch(() => layer.transferToStatic(tile, true)!);
+        const restored = result.ret;
+
+        expect(restored.num()).toBe(1);
+        expect(layer.getBlock(1, 0)).toBe(1);
+        expect(layer.getBlock(0, 0)).toBe(0);
+        expect(restored.tileEvent().get()).toEqual(
+            new Map([
+                [10, 'base-event'],
+                [30, 'moved-event']
+            ])
+        );
+        expect(restored.tileEvent().dirty()).toBe(true);
+        expect([...layer.getDynamicTilesAt(1, 0)]).toEqual([]);
+    });
+
+    // 验证移动后转静态的 keepEvent=false 分支丢弃动态专属事件并按写回块 num 重推默认事件
+    it('drops the moved dynamic events across a full static round trip', async () => {
+        const { layer } = createFixture([1, 2, 1, 2]);
+        layer.getTile(0, 0);
+        const tile = layer.transferToDynamic(0, 0)!;
+        const controller = tile.step(FaceDirection.Right);
+
+        expect(controller).not.toBeNull();
+
+        await controller!.onEnd;
+
+        expect(tile.x).toBe(1);
+        expect(tile.y).toBe(0);
+        expect([...layer.getDynamicTilesAt(1, 0)]).toContain(tile);
+        expect([...layer.getDynamicTilesAt(0, 0)]).toEqual([]);
+        expect(layer.getBlock(1, 0)).toBe(2);
+
+        tile.tileEvent().set(30, 'moved-event');
+        const result = logger.catch(() => layer.transferToStatic(tile, false)!);
+        const restored = result.ret;
+
+        expect(restored.num()).toBe(1);
+        expect(layer.getBlock(1, 0)).toBe(1);
+        expect(layer.getBlock(0, 0)).toBe(0);
+        expect(restored.tileEvent().get()).toEqual(
+            new Map([[10, 'base-event']])
+        );
+        expect(restored.tileEvent().get().has(30)).toBe(false);
+        expect(restored.tileEvent().dirty()).toBe(false);
+        expect([...layer.getDynamicTilesAt(1, 0)]).toEqual([]);
+    });
+
     // 验证 transferToStatic 对越界坐标告警 128 并拒绝转换
     it('warns code 128 when transferToStatic is out of bounds', () => {
         const { layer } = createFixture();
