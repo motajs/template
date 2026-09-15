@@ -238,3 +238,35 @@ type」语义不同；本计划按 plan 措辞以文件内联语义 reducer 断�
 （`#06-09-1` 两条百分比加成压缩档、`#06-09-2` 一条 HeroEquipment 容器三档），
 并已逐条临时取消 skip 验证确为真实失败（断言分别得到 `undefined` 修饰器值与 `undefined` 已装备 uid）。
 既有 `#06-09-1..5` 的 skip 全部保持不变，未取消、未改写、未弱化。
+
+## #06-15 战斗系统接口覆盖补齐（D-46 / G-06-01-D）
+
+本计划按 D-43 两阶段（构件 → 收口）补齐 **G-06-01-D**（`EnemyContext.deleteAura` 是
+D-27/D-30 要求「每个公开方法至少一条正常用例」的公开接口方法，06-01 must_haves 逐字点名，
+但此前全仓库 0 测试引用），只扩展 `*.test.ts` 与 `06-COVERAGE-MAP.md`，
+未改动任何生产/核心源码。
+
+- 阶段 1 构件级（`data-system/src/combat/context.test.ts`）：新增一条正确预期 `it.skip`
+  `applies a global aura after addAura and stops applying it after deleteAura`——注册
+  `FakeConverter([])` 打开光环流水线 → `addAura` 传入 `FakeAura` 实例 → `buildup` 断言
+  目标怪 `atk` 由基础 `2` 变为 `5` → `deleteAura` 传入**同一实例** → 再次 `buildup` →
+  期望回到 `2`；复用文件内既有 `createContextFixture`/`createEnemy`/`FakeAura`/`FakeConverter`。
+- 阶段 2 收口（`06-COVERAGE-MAP.md`）：追加 06-15 小节登记 G-06-01-D 的
+  缺口 → 用例 → 文件 → 计划 映射。
+
+实测（临时取消 skip 验证）：`addAura` 生效的前两条断言通过（`atk = 5`），
+`deleteAura` 后的回退断言失败（实际仍为 `5`，`AssertionError: expected 5 to be 2`），
+故按 D-05 保留正确预期并标记 `it.skip`，登记 `#06-15-1`。本计划**无新增码**。
+
+### #06-15-1 与既有 #06-01-4 的关系
+
+`#06-15-1` 与既有 `#06-01-4` **根因相同**：`buildup()` 只清空光环拓扑
+（`sortedAura` / `convertedAura` 等），不像局部刷新 `refreshEnemy` 那样先对每个视图
+`reset()` 把计算后怪物恢复至原始怪物。删除光环后再次全量构建时，该光环确实不再被施加，
+但此前已叠加到计算后怪物上的加成不会被撤销，因此属性停留在 `5` 而非回到基础值 `2`。
+本条为同一根因在 `deleteAura` 路径上的第二次观测；修复 `#06-01-4` 后本用例应可直接取消 skip，
+故不另立独立缺陷编号。
+
+| 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `context.ts` `EnemyContext.deleteAura` + `buildup` | 删除全局光环后再次全量构建，此前已施加的光环加成仍留在计算后怪物上 | `bindHero` → `registerAuraConverter(new FakeConverter([]))` → `setEnemyAt({x:0,y:0}, createEnemy('target'))`（基础 `atk = 2`）→ `addAura(new FakeAura({ priority: 1, range: new FullRange(), onApply: h => h.enemy.addAttribute('atk', 3) }))` → `buildup()`（`atk = 5`）→ `deleteAura(同一实例)` → `buildup()`；正确应为 `2`，实际为 `5` | 与 `#06-01-4` 同根因：`buildup()` 未在重建前对每个视图调用 `reset()`，只在原计算值上继续施加（本次无新光环可施加，故停留在旧值） | 运行中删除全局光环（`deleteAura`）后，怪物属性不会回退到基础值，直到该视图被局部刷新（`markDirty` + `requestRefresh`，其内部会 `reset()`）或重建 | 同 `#06-01-4`：在 `buildup` 进入各效果阶段前对每个视图调用 `reset()`，或在重建开始时重建全部计算后怪物 | `context.test.ts` `applies a global aura after addAura and stops applying it after deleteAura`（`#06-15-1`） | 中 |

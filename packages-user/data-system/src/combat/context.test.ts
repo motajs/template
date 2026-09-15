@@ -621,6 +621,47 @@ describe('EnemyContext single aura ranges', () => {
         ).toBe(5);
     });
 
+    // 疑似 bug：deleteAura 后再次全量构建应回到基础 atk，详见 06-TEST-FINDINGS.md #06-15-1，修复后取消 skip
+    it.skip('applies a global aura after addAura and stops applying it after deleteAura', () => {
+        const fixture = createContextFixture();
+        fixture.context.bindHero(fixture.hero);
+        fixture.context.registerAuraConverter(new FakeConverter([]));
+        fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('target'));
+        const aura = new FakeAura({
+            priority: 1,
+            range: new modules.FullRange(),
+            param: undefined,
+            onApply: handler => handler.enemy.addAttribute('atk', 3)
+        });
+
+        expect(
+            fixture.context
+                .getEnemyByLoc(0, 0)!
+                .getComputedEnemy()
+                .getAttribute('atk')
+        ).toBe(2);
+
+        fixture.context.addAura(aura);
+        fixture.context.buildup();
+
+        expect(
+            fixture.context
+                .getEnemyByLoc(0, 0)!
+                .getComputedEnemy()
+                .getAttribute('atk')
+        ).toBe(5);
+
+        fixture.context.deleteAura(aura);
+        fixture.context.buildup();
+
+        expect(
+            fixture.context
+                .getEnemyByLoc(0, 0)!
+                .getComputedEnemy()
+                .getAttribute('atk')
+        ).toBe(2);
+    });
+
     // 验证 Rect 范围的光环只加成矩形内怪物，范围外怪物属性不变
     it('applies a rect-range aura inside the rectangle only', () => {
         const fixture = createContextFixture();
