@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 06
 current_phase_name: unit-tests
 status: executing
-stopped_at: Completed 06-11-PLAN.md (hero + map gap-fill)
-last_updated: "2026-09-15T02:30:10.403Z"
+stopped_at: Completed 06-12-PLAN.md (replay + enemy-model gap-fill)
+last_updated: "2026-09-15T02:45:50.273Z"
 last_activity: 2026-09-15
 last_activity_desc: Phase 06 execution started
-state_head: 309f1b185024a6744c92706aef407d90dabe6106
+state_head: e2c163899d24c0e327af9631215802cc468feb51
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 50
-  completed_plans: 48
+  completed_plans: 49
 milestone_name: milestone
 ---
 
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 ## Current Position
 
 Phase: 06 (unit-tests) — EXECUTING
-Plan: 11 of 13 (06-11 gap-fill complete; 06-12..06-13 pending)
-Status: Phase 06 gap-fill batch (D-46) in progress — 06-11 (G-06-05-A, G-06-06-A/B/C) complete; pnpm test:ci green (66 files / 641 passed / 20 skipped)
-Last activity: 2026-09-15 — Completed 06-11-PLAN.md
+Plan: 12 of 13 (06-12 gap-fill complete; 06-13 pending)
+Status: Phase 06 gap-fill batch (D-46) in progress — 06-12 (G-06-04-A/B, G-06-03-A) complete; pnpm test:ci green (66 files / 644 passed / 22 skipped)
+Last activity: 2026-09-15 — Completed 06-12-PLAN.md
 
 Progress: [█████░░░░░] 50%
 
@@ -89,6 +89,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P07 | 40min | 4 tasks | 4 files |
 | Phase 06 P10 | 15min | 3 tasks | 4 files |
 | Phase 06 P11 | 10min | 3 tasks | 5 files |
+| Phase 06 P12 | 13min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -186,6 +187,8 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-11：G-06-06-A 的 keepEvent=false 按写回块 num 重推默认事件（[[10,'base-event']]，非目标格原块 2 的 [[20,'alternate-event']]），两分支仅以 30:'moved-event' 是否保留区分
 - [Phase 06]: 06-11：G-06-06-A 共同前置须在 transferToDynamic 前 layer.getTile(0,0) 物化源格静态图块，否则归零后惰性构造的 StaticTile 读不到默认事件
 - [Phase 06]: 06-11：G-06-06-C 的 compareWith 参考数组必须等于各图层当前内容（含非零格），全零参考会把 low/mid 判脏；缺口补测按 D-43 三阶段执行，无新增码、无疑似 bug、无 it.skip
+- [Phase 06]: 06-12：G-06-04-B 异质多命令序列读回只比较 command/params（读流 index = position + 1、get index = i），不整体 toEqual
+- [Phase 06]: 06-12：G-06-04-A/G-06-03-A 复用既有 #06-04-1/#06-04-2/#06-03-1 锚点，按 D-05 写正确预期 it.skip，不新建 #06-12-N 条目（无新疑似 bug）
 
 ### Pending Todos
 
@@ -215,6 +218,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-15T02:29:56.059Z
-Stopped at: Completed 06-11-PLAN.md (hero + map gap-fill)
+Last session: 2026-09-15T02:45:50.033Z
+Stopped at: Completed 06-12-PLAN.md (replay + enemy-model gap-fill)
 Resume file: None

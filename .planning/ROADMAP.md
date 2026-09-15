@@ -243,7 +243,7 @@ Plans:
 
 - [x] 06-10-PLAN.md — combat/enemy combination gaps: G-06-01-A/B/C + G-06-07-A
 - [x] 06-11-PLAN.md — hero/map gaps: G-06-05-A + G-06-06-A/B/C
-- [ ] 06-12-PLAN.md — replay/enemy gaps: G-06-04-B (runnable) + G-06-04-A/G-06-03-A (correct-expectation skip)
+- [x] 06-12-PLAN.md — replay/enemy gaps: G-06-04-B (runnable) + G-06-04-A/G-06-03-A (correct-expectation skip)
 - [ ] 06-13-PLAN.md — save/load gaps: G-06-09-A/B (only plan testing saveState/loadState, D-32)
 
 ## Progress
@@ -258,4 +258,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 11/13 | In Progress|  |
+| 6. 单元测试 | 12/13 | In Progress|  |

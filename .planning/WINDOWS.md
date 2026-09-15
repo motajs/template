@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 14
+open_count: 16
 waived_count: 0
 fixed_count: 8
-total_count: 22
-last_updated: 2026-09-14T09:03:38.649Z
+total_count: 24
+last_updated: 2026-09-15T02:46:32.772Z
 ---
 
 # Broken Windows Ledger
@@ -37,6 +37,8 @@ last_updated: 2026-09-14T09:03:38.649Z
 | 20 | 06 | skipped-test | packages-user/data-system/src/combat/mapDamage.test.ts |  | 06-01-2 suspected bug: MapDamage.deleteEnemy leaves enemy-sourced damage (Finding #06-01-2) | open |  | 2026-09-14T00:54:03.338Z |  |
 | 21 | 06 | skipped-test | packages-user/data-system/src/combat/combat.test.ts |  | 06-01-3 suspected bug: CombatFlow.before truthy/falsy semantics inverted vs interface doc (Finding #06-01-3) | open |  | 2026-09-14T00:54:04.044Z |  |
 | 22 | 06 | skipped-test | packages-user/data-common/src/common/mover.test.ts |  | backward(count>1) 方向摆动、净位移为零（#06-08-1），已 it.skip 待用户确认 | open |  | 2026-09-14T09:03:38.649Z |  |
+| 23 | 06 | skipped-test | packages-user/data-common/src/replay/array.test.ts |  | 受阻塞缺口 G-06-04-A：多字节 bigint / 超 int32 int64 编解码缺陷 #06-04-1/#06-04-2 未修复，正确预期用例保持 it.skip | open |  | 2026-09-15T02:46:32.026Z |  |
+| 24 | 06 | skipped-test | packages-user/data-base/src/enemy/manager.test.ts |  | 受阻塞缺口 G-06-03-A：复用映射未接入 createEnemy/createEnemyById（#06-03-1），四朝向复用生成独立怪物的正确预期用例保持 it.skip | open |  | 2026-09-15T02:46:32.772Z |  |
 
 ````json
 [
@@ -302,6 +304,30 @@ last_updated: 2026-09-14T09:03:38.649Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-09-14T09:03:38.649Z",
+    "resolved_at": null
+  },
+  {
+    "id": 23,
+    "kind": "skipped-test",
+    "phase": "06",
+    "file": "packages-user/data-common/src/replay/array.test.ts",
+    "line": null,
+    "description": "受阻塞缺口 G-06-04-A：多字节 bigint / 超 int32 int64 编解码缺陷 #06-04-1/#06-04-2 未修复，正确预期用例保持 it.skip",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-15T02:46:32.026Z",
+    "resolved_at": null
+  },
+  {
+    "id": 24,
+    "kind": "skipped-test",
+    "phase": "06",
+    "file": "packages-user/data-base/src/enemy/manager.test.ts",
+    "line": null,
+    "description": "受阻塞缺口 G-06-03-A：复用映射未接入 createEnemy/createEnemyById（#06-03-1），四朝向复用生成独立怪物的正确预期用例保持 it.skip",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-15T02:46:32.772Z",
     "resolved_at": null
   }
 ]

@@ -186,3 +186,24 @@ D-45：公开 `CoreState.saveState(compression)` / `loadState(state, compression
 
 非缺陷说明：阶段 1 计划措辞「type 取最大」与顶层 `MainMapDamageReducer`「取最大伤害项的
 type」语义不同；本计划按 plan 措辞以文件内联语义 reducer 断言，未改动生产代码。
+
+## #06-12 录像与 enemy 模型缺口补测（D-46）
+
+本计划按 D-43 三阶段（构件 → 组合 → 完整）补齐 G-06-04-B、G-06-04-A、G-06-03-A，
+只新增/扩展 `*.test.ts`，未改动任何生产/核心源码；两个测试文件聚焦运行通过，
+`pnpm test:ci` 全绿（66 文件 / **644 通过** / **21 跳过**）。
+
+- 阶段 1 构件级（`replay/array.test.ts`）：G-06-04-B 可跑绿——6 条参数个数与类型各异的命令
+  （单 int、boolean + 短 string、空参数、单字节 bigint、多 int、长 string + float）经
+  `createReadStream` 与 `get` 逐条读回一致（读流 `index = position + 1`、`get` 的 `index = i`，
+  故只比较 `command`/`params`），并覆盖加宽到 uint16 后的读回与**删除首步**后的读回。
+- 阶段 2 组合（`replay/array.test.ts`）：G-06-04-A——新增一条正确预期 `it.skip`
+  `round-trips a heterogeneous step mixing a multi-byte bigint and an int64 value`，
+  锚定既有 `#06-04-1`/`#06-04-2`；既有两条同锚点 skip 保持不变，未取消 skip。
+- 阶段 3 完整（`enemy/manager.test.ts`）：G-06-03-A——新增一条正确预期 `it.skip`
+  `creates four independent enemies from one prefab reused by four facing codes`，
+  覆盖「4 个朝向 code/id 复用同一 prefab → 分别 `createEnemy`/`createEnemyById` 得到 4 个
+  互相独立且与模板独立的怪」的完整链路，锚定既有 `#06-03-1`；既有同锚点 skip 不变。
+
+**本计划未发现新疑似 bug**，无新增 `#06-12-N` 条目；受阻塞缺口复用既有
+`#06-04-1`/`#06-04-2`/`#06-03-1` 锚点（详见上文 `## #06-04` 与 `## #06-03` 小节）。
