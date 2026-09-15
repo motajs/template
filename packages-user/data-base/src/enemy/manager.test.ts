@@ -268,8 +268,8 @@ describe('EnemyManager reuse mapping', () => {
         expect(manager.getPrefabById('missing-reuse')).toBeNull();
     });
 
-    // 疑似 bug：createEnemy/createEnemyById 未走复用映射，详见 06-TEST-FINDINGS.md #06-03-1，修复后取消 skip
-    it.skip('creates enemies for reused codes and ids through the reuse mapping', () => {
+    // 验证 createEnemy 按复用 code 解析到来源模板并生成独立怪物
+    it('creates enemies for reused codes and ids through the reuse mapping', () => {
         const manager = createManager();
         manager.addPrefab(createPrefab(1, 'slime'));
         manager.reusePrefab(1, 100, 'slime-reuse');
@@ -278,8 +278,8 @@ describe('EnemyManager reuse mapping', () => {
         expect(manager.createEnemyById('slime-reuse')!.id).toBe('slime');
     });
 
-    // 疑似 bug：复用映射未接入 createEnemy/createEnemyById，四朝向复用同一模板各自生成独立怪物的链路不可用，详见 06-TEST-FINDINGS.md #06-03-1，修复后取消 skip
-    it.skip('creates four independent enemies from one prefab reused by four facing codes', () => {
+    // 验证同一模板经四个朝向 code 复用后，创建的怪物互相独立且不影响来源模板
+    it('creates four independent enemies from one prefab reused by four facing codes', () => {
         const manager = createManager();
         manager.addPrefab(createPrefab(1, 'slime'));
         manager.reusePrefab(1, 100, 'slime-up');

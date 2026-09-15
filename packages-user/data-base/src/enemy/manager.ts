@@ -117,13 +117,15 @@ export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
     }
 
     createEnemy(code: number): IEnemy<TEnemy> | null {
-        const prefab = this.prefabByCode.get(code);
+        const prefab = this.internalGetPrefab(code);
         if (!prefab) return null;
         return prefab.clone();
     }
 
+    // 不变式：所有按 code/id 取模板的公开入口都必须经 internalGetPrefab 解析复用映射，
+    // 复用映射把同一模板的多个朝向 code 别名到来源模板，绕过解析会让这些 code 取不到模板
     createEnemyById(id: string): IEnemy<TEnemy> | null {
-        const prefab = this.prefabById.get(id);
+        const prefab = this.internalGetPrefab(id);
         if (!prefab) return null;
         return prefab.clone();
     }
