@@ -207,3 +207,32 @@ type」语义不同；本计划按 plan 措辞以文件内联语义 reducer 断�
 
 **本计划未发现新疑似 bug**，无新增 `#06-12-N` 条目；受阻塞缺口复用既有
 `#06-04-1`/`#06-04-2`/`#06-03-1` 锚点（详见上文 `## #06-04` 与 `## #06-03` 小节）。
+
+## #06-13 存档缺口补测（D-46）
+
+本计划按 D-43 三阶段（构件 → 组合 → 完整/集成）补齐 G-06-09-A、G-06-09-B，
+只扩展 `*.test.ts` 与 `06-COVERAGE-MAP.md`，未改动任何生产/核心源码；三个测试文件聚焦运行通过，
+`pnpm test:ci` 全绿（66 文件 / **646 通过** / **25 跳过**）。
+
+- 阶段 1 构件级（`data-base/src/hero/saveLoad.test.ts`）：G-06-09-B ——
+  `EquipmentState` 百分比加成按档拆分（NoCompression 跑绿；Low/High 命中既有 `#06-09-1`
+  缺陷，按 D-05 写正确预期 `it.skip`）；`HeroItems` 永久/消耗分表与 `HeroState`
+  属性/修饰器/位置均在 `NoCompression`/`LowCompression`/`HighCompression` 三档循环并跑绿；
+  新增「经 `HeroState` 容器三档」用例覆盖无 compression 参数的 `HeroLocation`/`HeroRendering`，
+  `HeroEquipment` 经容器的正确预期因既有 `#06-09-2`（存档未深拷贝）以 `it.skip` 登记。
+- 阶段 2 组合（`data-base/src/map/saveLoad.test.ts`）：G-06-09-B —— `StaticTile` 与
+  `DynamicTile` 的覆盖事件往返均改为三档循环并跑绿；既有 `#06-09-3` skip 保持原样。
+- 阶段 3 完整/集成（`data-state/test/saveablesRoundTrip.test.ts`）：G-06-09-A ——
+  `seedState`/`mutateState`/`assertRestored` 覆盖每类 saveable 的全部关键状态并逐一严格断言
+  （勇士 base hp/atk/def/money/exp + 修饰器最终 atk + 位置/楼层/朝向；flags score/coins/stage；
+  地图两块 + 激活状态；enemy hp/atk；录像 10 步），录像构造 **10 步多样化命令**
+  （0/1/2/3 移动、4 Teleport、5 UseItem（数字与字符串参数各一）、6 Equip、7 Unequip，
+  参数类型含 number/boolean/string），读档后逐条 exact 断言 `command`/`params`/`index`。
+  G-06-09-B（flags/replay 容器三档）：新增用例经 `CoreState.saveState(compression)`/
+  `loadState(snapshot, compression)` 三档往返并断言 flags 字段与录像步数/逐条命令。
+  既有 `#06-09-5` skip 保持原样。
+
+**本计划未发现新疑似 bug**，无新增 `#06-13-N` 条目。新增的 3 条 `it.skip` 均复用既有锚点
+（`#06-09-1` 两条百分比加成压缩档、`#06-09-2` 一条 HeroEquipment 容器三档），
+并已逐条临时取消 skip 验证确为真实失败（断言分别得到 `undefined` 修饰器值与 `undefined` 已装备 uid）。
+既有 `#06-09-1..5` 的 skip 全部保持不变，未取消、未改写、未弱化。
