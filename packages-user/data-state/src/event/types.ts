@@ -1,0 +1,66 @@
+import { ObjectMoveStep } from '@user/data-common';
+import { Statement } from '@motajs/anon-tokyo';
+
+//#region 地图控制
+
+/** 事件：设置图块 */
+export interface ISetBlockEventParam {
+    /** 横坐标 */
+    readonly x: number;
+    /** 纵坐标 */
+    readonly y: number;
+    /** 要设置为的图块 */
+    readonly tile: number | string;
+}
+
+/** 事件：移动图块 */
+export interface IMoveBlockEventParam {
+    /** 起始横坐标 */
+    readonly x: number;
+    /** 起始纵坐标 */
+    readonly y: number;
+    /** 移动步骤 */
+    readonly steps: readonly ObjectMoveStep[];
+    /** 是否保留图块的图块事件 */
+    readonly keepEvent?: boolean;
+    /** 是否仅在目标位置安全时转回静态图块 */
+    readonly safe?: boolean;
+}
+
+/** 事件：删除图块 */
+export interface IRemoveBlockEventParam {
+    /** 横坐标 */
+    readonly x: number;
+    /** 纵坐标 */
+    readonly y: number;
+    /** 是否一并删除动态图块 */
+    readonly dynamic?: boolean;
+}
+
+//#endregion
+
+//#region 玩家控制
+
+/** 事件：按步骤移动勇士 */
+export interface IMoveHeroEventParam {
+    /** 移动步骤 */
+    readonly steps: readonly ObjectMoveStep[];
+}
+
+/** 事件：向前移动一步 */
+export interface IStepHeroEventParam {}
+
+//#endregion
+
+//#region 事件控制
+
+/** 事件：临时插入多个事件 */
+export interface IInsertEventsEventParam {
+    /** 事件 id 顺序 */
+    readonly ids: readonly string[];
+}
+
+/** 事件：临时执行一段事件语句 */
+export type IInsertEventEventParam = Statement[];
+
+//#endregion

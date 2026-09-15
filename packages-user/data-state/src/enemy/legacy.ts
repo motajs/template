@@ -1,5 +1,5 @@
 import { IEnemyLegacyBridge } from '@user/data-base';
-import { IEnemyAttr } from './types';
+import { IEnemyAttr } from '@user/data-common';
 
 export class EnemyLegacyBridge implements IEnemyLegacyBridge<IEnemyAttr> {
     fromLegacyEnemy(

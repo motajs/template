@@ -21,8 +21,13 @@ interface LoggerCatchReturns<T> {
     info: LoggerCatchInfo[];
 }
 
-let logTip: HTMLSpanElement;
-if (!main.replayChecking) {
+let logTip: HTMLSpanElement | undefined;
+const hasBrowserHost =
+    typeof document !== 'undefined' && typeof main !== 'undefined';
+const isReplayChecking = () =>
+    typeof main !== 'undefined' && main.replayChecking;
+
+if (hasBrowserHost && !isReplayChecking()) {
     const tip = document.createElement('span');
     logTip = tip;
     tip.style.position = 'fixed';
@@ -40,7 +45,7 @@ if (!main.replayChecking) {
 }
 
 const hideTipText = debounce(() => {
-    if (main.replayChecking) return;
+    if (isReplayChecking() || !logTip) return;
     logTip.style.display = 'none';
 }, 5000);
 
@@ -125,14 +130,16 @@ export class Logger {
             });
         }
         if (this.level <= LogLevel.ERROR && this.enabled) {
-            if (!main.replayChecking) {
+            if (!isReplayChecking() && logTip) {
                 logTip.style.color = 'lightcoral';
                 logTip.style.display = 'block';
                 logTip.textContent = `Error thrown, please check in console.`;
                 hideTipText();
             }
             const n = Math.floor(code / 50) + 1;
-            const url = `${location.origin}/_docs/logger/error/error${n}.html#error-code-${code}`;
+            const origin =
+                typeof location === 'undefined' ? '' : location.origin;
+            const url = `${origin}/_docs/logger/error/error${n}.html#error-code-${code}`;
             console.error(`[ERROR Code ${code}] ${text} See ${url}`);
         }
     }
@@ -158,14 +165,16 @@ export class Logger {
             });
         }
         if (this.level <= LogLevel.WARNING && this.enabled) {
-            if (!main.replayChecking) {
+            if (!isReplayChecking() && logTip) {
                 logTip.style.color = 'gold';
                 logTip.style.display = 'block';
                 logTip.textContent = `Warning thrown, please check in console.`;
                 hideTipText();
             }
             const n = Math.floor(code / 50) + 1;
-            const url = `${location.origin}/_docs/logger/warn/warn${n}.html#warn-code-${code}`;
+            const origin =
+                typeof location === 'undefined' ? '' : location.origin;
+            const url = `${origin}/_docs/logger/warn/warn${n}.html#warn-code-${code}`;
             console.warn(`[WARNING Code ${code}] ${text} See ${url}`);
         }
     }

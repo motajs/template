@@ -4,7 +4,7 @@ import {
     IEnemyManager
 } from '@user/data-base';
 import { getHeroStatusOn } from '../legacy/hero';
-import { IEnemyAttr } from './types';
+import { IEnemyAttr } from '@user/data-common';
 
 //#region 复合属性值类型
 

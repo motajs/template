@@ -1,12 +1,14 @@
 packages:
-  - packages/*
-  - packages-user/*
-  - src/
+    - packages/*
+    - packages-user/*
+    - src/
 ignore:
-  - packages/**/dist
-  - packages/**/node_modules
+    - packages/**/dist
+    - packages/**/node_modules
+    - packages-user/**/dist
+    - packages-user/**/node_modules
 onlyBuiltDependencies:
-  - core-js
-  - esbuild
-  - ttf2woff2
-  - vue-demi
+    - core-js
+    - esbuild
+    - ttf2woff2
+    - vue-demi

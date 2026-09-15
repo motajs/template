@@ -1,6 +1,5 @@
-import { IEnemyFinalEffect, IEnemyHandler } from '@user/data-base';
-import { IEnemyAttr } from './types';
-import { IHeroAttr } from '../hero';
+import { IEnemyFinalEffect, IEnemyHandler } from '@user/data-system';
+import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 
 export class MainEnemyFinalEffect implements IEnemyFinalEffect<
     IEnemyAttr,

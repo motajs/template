@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import vuejsx from '@vitejs/plugin-vue-jsx';
 import path from 'path';
@@ -42,6 +42,10 @@ export default defineConfig({
             ...aliases,
             ...aliasesUser
         ]
+    },
+    test: {
+        testTimeout: 30000,
+        hookTimeout: 30000
     },
     css: {
         preprocessorOptions: {

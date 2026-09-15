@@ -3,7 +3,9 @@
     "dependencies": {
         "@motajs/types": "workspace:*",
         "@motajs/common": "workspace:*",
+        "@motajs/anon-tokyo": "workspace:*",
+        "@user/data-common": "workspace:*",
         "@user/data-base": "workspace:*",
-        "@user/data-utils": "workspace:*"
+        "@user/data-system": "workspace:*"
     }
 }

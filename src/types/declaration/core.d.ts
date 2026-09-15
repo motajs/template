@@ -1282,6 +1282,7 @@ interface MapDataOf<T extends keyof NumberToId> {
      */
     cls: ClsOf<NumberToId[T]>;
 
+    noPass?: boolean;
     bigImage?: ImageIds;
     faceIds?: Record<Dir, AllIds>;
     animate?: number;

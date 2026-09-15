@@ -11,7 +11,7 @@ export function patchHero(state: ICoreState) {
                 logger.warn(56, 'core.status.hero', 'state.hero');
                 target[p] = newValue;
                 // @ts-expect-error 旧样板无法处理此类型
-                attr.setBaseAttribute(p, newValue);
+                attr.set(p, newValue);
                 return true;
             },
             get(_, p) {

@@ -1,11 +1,6 @@
 import { logger } from '@motajs/common';
-import {
-    IEnemy,
-    IEnemyContext,
-    IReadonlyEnemy,
-    ISpecial,
-    IEnemyView
-} from './types';
+import { SaveCompression } from '@user/data-common';
+import { IEnemy, IEnemySaveState, IReadonlyEnemy, ISpecial } from './types';
 
 export class Enemy<TAttr> implements IEnemy<TAttr> {
     /** 怪物身上的特殊属性列表 */
@@ -87,44 +82,27 @@ export class Enemy<TAttr> implements IEnemy<TAttr> {
             this.addSpecial(special.clone());
         }
     }
-}
 
-export class EnemyView<TAttr> implements IEnemyView<TAttr> {
-    /** 计算后怪物 */
-    private readonly computedEnemy: IEnemy<TAttr>;
-
-    constructor(
-        readonly baseEnemy: IEnemy<TAttr>,
-        readonly context: IEnemyContext<TAttr, unknown>
-    ) {
-        this.computedEnemy = baseEnemy.clone();
+    saveState(_compression: SaveCompression): IEnemySaveState<TAttr> {
+        const specials: Map<number, unknown> = new Map();
+        for (const special of this.specials) {
+            specials.set(special.code, special.saveState(_compression));
+        }
+        return { attrs: structuredClone(this.attributes), specials };
     }
 
-    reset(): void {
-        this.computedEnemy.copyFrom(this.baseEnemy);
-    }
-
-    getBaseEnemy(): IReadonlyEnemy<TAttr> {
-        return this.baseEnemy;
-    }
-
-    getComputedEnemy(): IReadonlyEnemy<TAttr> {
-        this.context.requestRefresh(this);
-        return this.computedEnemy;
-    }
-
-    /**
-     * 获取计算中怪物对象，这个接口不对外暴露，仅在系统内部的 EnemyContext 中使用。
-     */
-    getComputingEnemy(): IEnemy<TAttr> {
-        return this.computedEnemy;
-    }
-
-    getModifiableEnemy(): IEnemy<TAttr> {
-        return this.baseEnemy;
-    }
-
-    markDirty(): void {
-        this.context.markDirty(this);
+    loadState(
+        state: IEnemySaveState<TAttr>,
+        compression: SaveCompression
+    ): void {
+        this.attributes = structuredClone(state.attrs);
+        for (const special of this.specials) {
+            const saved = state.specials.get(special.code);
+            if (saved === undefined) {
+                logger.warn(120, special.code.toString(), this.id);
+                continue;
+            }
+            special.loadState(saved, compression);
+        }
     }
 }

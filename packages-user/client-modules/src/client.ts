@@ -114,7 +114,7 @@ export class ClientCore implements IClientCore {
             // 使用分频器，用户可以在设置中调整，如果设备性能较差调高分频有助于提高性能表现
             excitaion: excitationDivider
         });
-        this.mainMapRenderer = new MapRenderer(this.materials, data.layer);
+        this.mainMapRenderer = new MapRenderer(this.materials, data.maps);
         this.mainMapExtension = new MapExtensionManager(this.mainMapRenderer);
 
         // 兼容层
@@ -133,7 +133,7 @@ export class ClientCore implements IClientCore {
         await this.materials.trackedAsset.then();
 
         this.mainMapRenderer.useAsset(this.materials.trackedAsset);
-        const layer = this.data.layer.getLayerByAlias('event');
+        const layer = this.data.maps.getLayerByAlias('event');
         if (layer) {
             this.mainMapExtension.addHero(this.data.hero.mover, layer);
             this.mainMapExtension.addDoor(layer);
