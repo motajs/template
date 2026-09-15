@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 15
+open_count: 14
 waived_count: 0
-fixed_count: 12
+fixed_count: 13
 total_count: 27
-last_updated: 2026-09-15T09:05:03.731Z
+last_updated: 2026-09-15T09:17:32.073Z
 ---
 
 # Broken Windows Ledger
@@ -38,7 +38,7 @@ last_updated: 2026-09-15T09:05:03.731Z
 | 21 | 06 | skipped-test | packages-user/data-system/src/combat/combat.test.ts |  | 06-01-3 suspected bug: CombatFlow.before truthy/falsy semantics inverted vs interface doc (Finding #06-01-3) | fixed |  | 2026-09-14T00:54:04.044Z | 2026-09-15T09:05:02.930Z |
 | 22 | 06 | skipped-test | packages-user/data-common/src/common/mover.test.ts |  | backward(count>1) 方向摆动、净位移为零（#06-08-1），已 it.skip 待用户确认 | open |  | 2026-09-14T09:03:38.649Z |  |
 | 23 | 06 | skipped-test | packages-user/data-common/src/replay/array.test.ts |  | 受阻塞缺口 G-06-04-A：多字节 bigint / 超 int32 int64 编解码缺陷 #06-04-1/#06-04-2 未修复，正确预期用例保持 it.skip | open |  | 2026-09-15T02:46:32.026Z |  |
-| 24 | 06 | skipped-test | packages-user/data-base/src/enemy/manager.test.ts |  | 受阻塞缺口 G-06-03-A：复用映射未接入 createEnemy/createEnemyById（#06-03-1），四朝向复用生成独立怪物的正确预期用例保持 it.skip | open |  | 2026-09-15T02:46:32.772Z |  |
+| 24 | 06 | skipped-test | packages-user/data-base/src/enemy/manager.test.ts |  | 受阻塞缺口 G-06-03-A：复用映射未接入 createEnemy/createEnemyById（#06-03-1），四朝向复用生成独立怪物的正确预期用例保持 it.skip | fixed |  | 2026-09-15T02:46:32.772Z | 2026-09-15T09:17:32.073Z |
 | 25 | 06 | skipped-test | packages-user/data-base/src/hero/saveLoad.test.ts |  | 受阻塞缺口 G-06-09-B：压缩档 loadDiff 未回退装备原始定义（#06-09-1），EquipmentState 百分比加成 Low/High 档正确预期用例保持 it.skip | open |  | 2026-09-15T03:31:00.000Z |  |
 | 26 | 06 | skipped-test | packages-user/data-base/src/hero/saveLoad.test.ts |  | 受阻塞缺口 G-06-09-B：HeroEquipment.saveState 未深拷贝 equipped/slots（#06-09-2），经 HeroState 容器三档恢复装备映射的正确预期用例保持 it.skip | open |  | 2026-09-15T03:31:01.000Z |  |
 | 27 | 06 | skipped-test | packages-user/data-system/src/combat/context.test.ts | 625 | 受阻塞缺口 G-06-01-D：deleteAura 后再次 buildup 不回到基础值（#06-15-1，与 #06-01-4 同根因），正确预期用例保持 it.skip 待用户确认 | fixed |  | 2026-09-15T05:23:29.159Z | 2026-09-15T09:05:03.731Z |
@@ -328,10 +328,10 @@ last_updated: 2026-09-15T09:05:03.731Z
     "file": "packages-user/data-base/src/enemy/manager.test.ts",
     "line": null,
     "description": "受阻塞缺口 G-06-03-A：复用映射未接入 createEnemy/createEnemyById（#06-03-1），四朝向复用生成独立怪物的正确预期用例保持 it.skip",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-09-15T02:46:32.772Z",
-    "resolved_at": null
+    "resolved_at": "2026-09-15T09:17:32.073Z"
   },
   {
     "id": 25,
