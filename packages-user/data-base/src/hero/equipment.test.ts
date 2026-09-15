@@ -286,8 +286,8 @@ describe('HeroEquipment equip and unequip', () => {
         expect(equips[1]).toBeNull();
     });
 
-    // 疑似 bug：字符串槽位空槽判断条件写反导致总是替换首个匹配槽位，详见 06-TEST-FINDINGS.md #06-05-2
-    it.skip('uses the first empty named slot instead of replacing an occupant', () => {
+    // 验证字符串槽位优先占用首个空槽而非替换占用者（#06-05-2）
+    it('uses the first empty named slot instead of replacing an occupant', () => {
         const env = createEnv();
         registerItem(env, createItem(10, 'sword', ['weapon'], [['atk', 5]]));
         registerItem(env, createItem(11, 'axe', ['weapon'], [['atk', 12]]));

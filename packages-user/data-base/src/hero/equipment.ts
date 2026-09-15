@@ -138,7 +138,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         this.slots.forEach((name, index) => {
             if (name !== slot) return;
             if (first === -1) first = index;
-            if (empty !== -1 && !this.equips.has(index)) {
+            if (empty === -1 && !this.equips.has(index)) {
                 empty = index;
             }
         });
