@@ -281,3 +281,18 @@ D-27/D-30 要求「每个公开方法至少一条正常用例」的公开接口�
 | 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `hero/state.ts` `HeroState.loadState` 与 `hero/equipment.ts` `HeroEquipment` 持有的 attribute 引用 | 读档后装备带来的属性加成从最终属性中消失：`HeroState.loadState` 新建并替换 `this.attribute`，而 `this.equip` 仍指向构造时传入的旧属性对象，装备修饰器被挂到被替换掉的旧对象上 | `const state = createCoreState()` → 注册 1 件装备定义（`equip.value` 为 `[['atk', 5]]`，`slots: [0]`）→ `const uid = state.hero.items.equipment.add(num)` → `state.hero.equip.equip(uid, 0)` → `state.hero.getModifiableAttribute().getFinalAttribute('atk')` 为 `5` → `const saved = state.hero.saveState(compression)` → `state.hero.loadState(saved, compression)` → 再读 `getFinalAttribute('atk')`：三个压缩档均实测为 `0`（期望仍为 `5`），同一次探针中 `getModifiableAttribute() === 旧 attribute` 为 `false`（属性对象确实被替换） | `hero/state.ts:71` 构造 `HeroEquipment(this.items.equipment, this.attribute)` 时保存了 attribute 引用，而 `HeroEquipment` 中该成员为 `private readonly`（`equipment.ts:21-26`）无法被重新指向；`HeroState.loadState`（`state.ts:177-189`）替换 `this.attribute` 后没有同步给 `equipment`，随后 `equipment.loadState` → `equip()` → `loadEquipEffect`（`equipment.ts:80-85`）把新修饰器加到了旧对象上 | 任何经 `hero.loadState` 的路径（读档、自动存档回滚、回放重置）都会丢失全部装备加成，直到属性对象被重新赋值且装备被重新挂载；此后 `HeroEquipment.equip` / `compareEquip` 也继续作用于旧属性；旧属性对象被 `HeroEquipment` 长期引用，重复读档会在其上继续累积未被卸载的装备修饰器（`equips.clear()` 不触发 `unloadEquipEffect`） | 让 `HeroEquipment` 持有 `IHeroState`/取值函数而非 attribute 实例，或在 `HeroState.loadState` 中按 `attachAttribute` 语义把新属性同步给 `equipment`（并在替换前先卸载旧属性上的装备修饰器）；修复前补一条「读档后最终属性仍含装备加成」的回归用例 | 无（既有 `hero/saveLoad.test.ts` 只断言装备映射与槽位，未断言读档后的装备加成；本计划为零断言 perf 测量，探针仅临时使用后删除） | 高 |
+
+## #06-17 补充：读档同引用审计（种子之外）
+
+`#06-17-1` 之外，对数据端做了「loadState 替换实例 / 旧引用未重绑」全量只读审计，完整报告见
+`.planning/phases/07-data-fixes/07-LOADSTATE-AUDIT.md`。同模式另有：
+
+- `#06-17-2`（高，B）：`HeroState.loadState` 替换 attribute 后，`EnemyContext.bindedHero`（`data-system/combat/context.ts:87`，`core.ts:219` 接线、从不重绑）仍指向旧属性 → 战斗使用读档前勇士属性。
+- `#06-17-3`（中，H）：`ReplayArray.setReplayArray`（`data-common/src/replay/array.ts:801-826`）漏 `expireStreams()`，活跃 `ReplaySandbox` 读流跨读档按陈旧偏移解码。
+- `#06-17-4`（中/低，D）：`equipStore.ts:271/:278` 清空并重建 `EquipmentState`，外部持有的实例脱钩。
+- `#06-17-5`（中/低，E）：`flag/system.ts:66/:68` 清空并重建 `FlagCommonField`，外部持有的字段引用脱钩。
+- `#06-17-6`（中/低，F）：`hero/state.ts:190/:192` 重建 followers，缓存的 `IHeroFollower` 脱钩。
+- `#06-17-7`（低-中，C）：`data-fallback/src/hero.ts:8-23` 的 `core.status.hero` Proxy 闭包持有旧属性（取决于仓外 `resetHero` 是否重发）。
+- `#06-17-8`（低，G）：`mapLayer.ts:371-391` `setMapRef` 换缓冲；旧动态块未清理（`mapData.expired` 契约）。
+
+处置：A/B 由 Phase 7 `07-09` 修复（同引用原则，`HeroAttribute` 自身实现 `ISaveableContent`）；C–H 仅登记，待用户决定。
