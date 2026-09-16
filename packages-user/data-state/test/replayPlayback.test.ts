@@ -78,7 +78,7 @@ function withReplayDisabled<T>(state: CoreState, action: () => T): T {
 }
 
 /**
- * 用真实地图与勇士接口构造一个 3x3 小地图场景
+ * 用真实地图与勇士接口构造一个 3x3 小地图场景，并返回创建出的地图
  * @param state 顶层状态对象
  * @param wireFinder 是否向寻路 finder 手动注入地图状态、事件层与通行谓词
  */
@@ -113,6 +113,7 @@ function createSmallMapScene(state: CoreState, wireFinder: boolean = true) {
         );
     }
     resetHero(state);
+    return map;
 }
 
 /**
@@ -357,18 +358,21 @@ describe('small-map replay playback and second recording', () => {
         expect(state.hero.location.y).toBe(0);
     });
 
-    // 疑似缺陷 #06-07-1：CoreState 未向寻路 finder 注入地图状态/事件层/通行谓词，
-    // 顶层录像瞬移恒返回 2005；本用例按正确预期编写，修复后取消 skip
-    it.skip('plays a teleport step without manual finder wiring', async () => {
+    // 顶层装配已提供 maps 与通行谓词，但事件层在切层后才设置，
+    // 本用例在楼层激活后由测试侧绑定事件层，验证顶层录像瞬移仍可解析出路径并到达目标
+    it('plays a teleport step after the event layer is bound on floor activation', async () => {
         const state = createCoreState();
         const replay = state.replaySystem;
-        withReplayDisabled(state, () => createSmallMapScene(state, false));
+        const map = withReplayDisabled(state, () =>
+            createSmallMapScene(state, false)
+        );
+        state.pathfinding.finder.useMapLayer(map.eventLayer);
         await runHeroStep(state, FaceDirection.Right);
-        replay.record(ReplayCommandCode.Teleport, 1, 0);
+        replay.record(ReplayCommandCode.Teleport, 2, 0);
 
         await playRoute(state);
 
-        expect(state.hero.location.x).toBe(1);
+        expect(state.hero.location.x).toBe(2);
         expect(state.hero.location.y).toBe(0);
     });
 });
