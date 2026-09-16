@@ -256,7 +256,7 @@ Plans:
 
 **Wave 6** *(performance-test supplement, user-authorized; appended after 06-15; isolated `test:perf` lane + new `*.perf.ts` files, no production edits, no new dependencies)*
 
-- [ ] 06-16-PLAN.md — perf supplement: `vitest.perf.config.ts` + `test:perf` script (isolated from `pnpm test:ci`); 18 cases = ② critical calc (`1000/10000/50000`) + ① enemy-context `buildup` (N = `50/200/1000`) + ③ hero attribute recalc (M = `10/100/1000`) + ④ CoreState save/load round trip (`10/100/1000` items × `NoCompression`/`LowCompression`/`HighCompression`); warmup 3 + 20 samples → median/min/p95 via `console.table`, **zero assertions**, results recorded in `06-16-SUMMARY.md`
+- [x] 06-16-PLAN.md — perf supplement: `vitest.perf.config.ts` + `test:perf` script (isolated from `pnpm test:ci`); 18 cases = ② critical calc (`1000/10000/50000`) + ① enemy-context `buildup` (N = `50/200/1000`) + ③ hero attribute recalc (M = `10/100/1000`) + ④ CoreState save/load round trip (`10/100/1000` items × `NoCompression`/`LowCompression`/`HighCompression`); warmup 3 + 20 samples → median/min/p95 via `console.table`, **zero assertions**, results recorded in `06-16-SUMMARY.md`
 
 ### Phase 7: 数据端缺陷修复
 
@@ -327,5 +327,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 15/15 | In Progress|  |
+| 6. 单元测试 | 16/16 | In Progress|  |
 | 7. 数据端缺陷修复 | 8/8 | Complete    | 2026-09-16 |
