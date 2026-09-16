@@ -87,9 +87,11 @@ interface CompressionCase {
     readonly value: SaveCompression;
 }
 
-/** 存读档覆盖的压缩档，阶段 3 扩为 No / Low / High 三档 */
+/** 存读档覆盖的三档压缩，顺序固定 */
 const COMPRESSIONS: readonly CompressionCase[] = [
-    { label: 'NoCompression', value: SaveCompression.NoCompression }
+    { label: 'NoCompression', value: SaveCompression.NoCompression },
+    { label: 'LowCompression', value: SaveCompression.LowCompression },
+    { label: 'HighCompression', value: SaveCompression.HighCompression }
 ];
 
 /** 数据集条目中本文件需要的字段 */
