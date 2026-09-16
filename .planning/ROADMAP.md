@@ -264,7 +264,7 @@ Plans:
 
 **Wave 8** *(realistic large-map combat scenario perf supplement + lane-wide timing-method upgrade, user-authorized; appended after 06-17; reuses the same isolated `test:perf` lane; timing helper switch in 5 existing files + one new `*.perf.ts`, no production edits, no new dependencies)*
 
-- [ ] 06-18-PLAN.md — timing method upgrade + realistic large-map combat scenario perf: switch the inlined `measureCase` in **all** `*.perf.ts` from `globalThis.performance.now()` to `performance.mark` + `performance.measure` (unique per-case tags, per-sample `clearMarks`/`clearMeasures`; same `case`/`scale`/`median ms`/`min ms`/`p95 ms` columns, warmup 3 + 20 samples, record-only); new `packages-user/data-state/test/mapScenario.perf.ts` merging the 13 real 13×13 maps into ONE grid-tiled map (`ceil(sqrt(n))` columns, placed at `(col*13, row*13)`) for scale `1/5/13` → `13×13`/`39×26`/`52×52` with 11/79/204 monster tiles, 12 real `Enemy` prefabs (4 carrying real auras: `CommonAura` Full/Manhattan/Rect + `GuardAura`), `mulberry32`-seeded assignment, `createCoreState()` real wiring + `resize` + `addPrefab` + `fromRaw` + per-tile `setEnemyAt`; measures ① `enemyContext.buildup()` ② `mapDamage.refreshAll()` + per-monster `getSeparatedDamage`/`getReducedDamage` ③ one real `calculateCritical(view, 'atk')` per monster (plus a second table reporting `monsters`/`total ms`/`avg ms`); results recorded in `06-18-SUMMARY.md`
+- [x] 06-18-PLAN.md — timing method upgrade + realistic large-map combat scenario perf: switch the inlined `measureCase` in **all** `*.perf.ts` from `globalThis.performance.now()` to `performance.mark` + `performance.measure` (unique per-case tags, per-sample `clearMarks`/`clearMeasures`; same `case`/`scale`/`median ms`/`min ms`/`p95 ms` columns, warmup 3 + 20 samples, record-only); new `packages-user/data-state/test/mapScenario.perf.ts` merging the 13 real 13×13 maps into ONE grid-tiled map (`ceil(sqrt(n))` columns, placed at `(col*13, row*13)`) for scale `1/5/13` → `13×13`/`39×26`/`52×52` with 11/79/204 monster tiles, 12 real `Enemy` prefabs (4 carrying real auras: `CommonAura` Full/Manhattan/Rect + `GuardAura`), `mulberry32`-seeded assignment, `createCoreState()` real wiring + `resize` + `addPrefab` + `fromRaw` + per-tile `setEnemyAt`; measures ① `enemyContext.buildup()` ② `mapDamage.refreshAll()` + per-monster `getSeparatedDamage`/`getReducedDamage` ③ one real `calculateCritical(view, 'atk')` per monster (plus a second table reporting `monsters`/`total ms`/`avg ms`); results recorded in `06-18-SUMMARY.md`
 
 ### Phase 7: 数据端缺陷修复
 
@@ -342,5 +342,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 17/17 | In Progress|  |
+| 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 9/9 | In Progress|  |
