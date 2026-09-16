@@ -2,9 +2,9 @@
 phase: "7"
 slug: "data-fixes"
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-09-15"
 ---
 
@@ -87,11 +87,23 @@ Existing infrastructure covers all phase requirements.
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (none — existing infra)
+- [x] No watch-mode flags (`pnpm test:ci` is one-shot)
+- [x] Feedback latency < 30s (focused files 1–2s)
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** validated 2026-09-16
+
+---
+
+## Validation Audit 2026-09-16
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+所有 20 条 finding（FIX-01）均由通过的自动化用例确定性覆盖：`pnpm test:ci` = 66 files / 680 passed / 1 skipped（唯一 skip 为 D-06 保留的 `#06-05-3` 码 147，属设计如此）。`#06-07-1` 的验证由测试侧绑定事件层承担（`replayPlayback.test.ts`）。代码评审发现的 `ReplayArray.set`（CR-01，已登记只登记不修）与 `MapDamage` 缩小幽灵伤害（CR-02，未登记边界）不在 FIX-01 登记范围内，不构成本阶段验证缺口。
