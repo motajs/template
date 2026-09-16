@@ -309,7 +309,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 + 用户完成 D-07 接线)*
 
-- [ ] 07-08-PLAN.md — path 顶层录像瞬移验证（用户负责接线，AI 仅取消 skip）
+- [x] 07-08-PLAN.md — path 顶层录像瞬移验证（用户负责接线，AI 仅取消 skip）
 
 ## Progress
 
@@ -324,4 +324,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 15/15 | In Progress|  |
-| 7. 数据端缺陷修复 | 8/8 | In Progress|  |
+| 7. 数据端缺陷修复 | 8/8 | Complete    | 2026-09-16 |
