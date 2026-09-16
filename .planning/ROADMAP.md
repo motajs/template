@@ -260,7 +260,7 @@ Plans:
 
 **Wave 7** *(realistic map save/load perf supplement, user-authorized; appended after 06-16; reuses the same isolated `test:perf` lane; one fixture move + one new `*.perf.ts`, no production edits, no new dependencies)*
 
-- [ ] 06-17-PLAN.md — realistic map save/load perf: move the root `floors.json` (13 real 13×13 maps) into `packages-user/data-state/test/fixtures/`; new `packages-user/data-state/test/saveablesReal.perf.ts` measuring `存档`/`读档`/`往返` (save-only / load-only / round trip) for map scale `1/5/13` × `NoCompression`/`LowCompression`/`HighCompression` (27 rows) with a fixed realistic side load (50 flags, 20 hero modifiers incl. 4 from equipped items, 4 equipped instances, 20 item kinds, 1000 replay steps); cleared live map (`2/3/4/6` → `0`) vs original `compareWith` reference so `HighCompression` stores changed rows; warmup 3 + 20 samples → median/min/p95 via `console.table`, **zero assertions**, results recorded in `06-17-SUMMARY.md`
+- [x] 06-17-PLAN.md — realistic map save/load perf: move the root `floors.json` (13 real 13×13 maps) into `packages-user/data-state/test/fixtures/`; new `packages-user/data-state/test/saveablesReal.perf.ts` measuring `存档`/`读档`/`往返` (save-only / load-only / round trip) for map scale `1/5/13` × `NoCompression`/`LowCompression`/`HighCompression` (27 rows) with a fixed realistic side load (50 flags, 20 hero modifiers incl. 4 from equipped items, 4 equipped instances, 20 item kinds, 1000 replay steps); cleared live map (`2/3/4/6` → `0`) vs original `compareWith` reference so `HighCompression` stores changed rows; warmup 3 + 20 samples → median/min/p95 via `console.table`, **zero assertions**, results recorded in `06-17-SUMMARY.md`
 
 ### Phase 7: 数据端缺陷修复
 
@@ -331,5 +331,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 16/16 | In Progress|  |
+| 6. 单元测试 | 17/17 | In Progress|  |
 | 7. 数据端缺陷修复 | 8/8 | Complete    | 2026-09-16 |
