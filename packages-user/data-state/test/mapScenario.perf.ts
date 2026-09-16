@@ -12,7 +12,7 @@ import {
     type IReadonlyHeroAttribute,
     type ISpecial
 } from '@user/data-base';
-import { type IMapDamage } from '@user/data-system';
+import { type IDamageSystem, type IMapDamage } from '@user/data-system';
 import { CoreState, createCoreState } from '../src/core';
 import { type IHaloValue, type IZoneValue } from '../src/enemy/special';
 import floorDataset from './fixtures/floors.json';
@@ -292,12 +292,31 @@ interface PerfRecord {
 /** 本次运行累积的性能记录，由 afterAll 统一打印 */
 const records: PerfRecord[] = [];
 
+/** 全图临界计算的汇总记录，总量与单怪均值分开成列 */
+interface CriticalRecord {
+    /** 测量项名称 */
+    readonly case: string;
+    /** 规模档位 */
+    readonly scale: string;
+    /** 该规模的全图怪物数量 */
+    readonly monsters: number;
+    /** 全图扫一遍的采样中位耗时，单位毫秒 */
+    readonly 'total ms': number;
+    /** 单怪平均耗时，等于总量除以怪物数，单位毫秒 */
+    readonly 'avg ms': number;
+}
+
+/** 全图临界计算的汇总记录，由 afterAll 在第二张表打印 */
+const criticalRecords: CriticalRecord[] = [];
+
 /** 一次测量所需的完整场景，管理器在工厂里解析一次以免样本内做属性查找 */
 interface IScenarioFixture {
     /** 顶层数据端状态 */
     readonly state: CoreState;
     /** 当前绑定的地图伤害管理器 */
     readonly mapDamage: IMapDamage<IEnemyAttr, IHeroAttr>;
+    /** 当前绑定的伤害系统 */
+    readonly damageSystem: IDamageSystem<IEnemyAttr, IHeroAttr>;
     /** 合并地图宽度 */
     readonly width: number;
     /** 合并地图高度 */
@@ -593,11 +612,21 @@ function createScenarioFixture(mapCount: number): IScenarioFixture {
     state.enemyContext.buildup();
     const hero = state.enemyContext.getBindedHero()!;
     const mapDamage = state.enemyContext.getMapDamage()!;
-    return { state, mapDamage, width, height, monsterCount, hero };
+    const damageSystem = state.enemyContext.getDamageSystem()!;
+    return {
+        state,
+        mapDamage,
+        damageSystem,
+        width,
+        height,
+        monsterCount,
+        hero
+    };
 }
 
 afterAll(() => {
     console.table(records);
+    console.table(criticalRecords);
 });
 
 describe('真实大地图战斗场景性能', () => {
@@ -626,6 +655,34 @@ describe('真实大地图战斗场景性能', () => {
                     fixture.mapDamage.getSeparatedDamage(entry[0]);
                     fixture.mapDamage.getReducedDamage(entry[0]);
                 }
+            });
+        });
+
+        // 覆盖前 N 张真实地图合并后，对全图每只怪各一次完整临界计算
+        it(`measures critical over ${mapCount} merged maps`, () => {
+            const fixture = createScenarioFixture(mapCount);
+            const label = String(mapCount) + '/' + String(fixture.monsterCount);
+            const record = measureCase('全图怪物单次临界计算', label, () => {
+                for (const entry of fixture.state.enemyContext.iterateEnemy()) {
+                    const view = entry[1];
+                    for (const _critical of fixture.damageSystem.calculateCritical(
+                        view,
+                        'atk'
+                    )) {
+                        // 必须完整消费生成器，否则测不到临界二分枚举的真实开销
+                    }
+                }
+            });
+
+            // 同规模内怪物数是常量，故「中位总量 / 怪物数」即单怪平均耗时的中位数
+            criticalRecords.push({
+                case: '全图怪物单次临界计算',
+                scale: label,
+                monsters: fixture.monsterCount,
+                'total ms': record['median ms'],
+                'avg ms': Number(
+                    (record['median ms'] / fixture.monsterCount).toFixed(3)
+                )
             });
         });
     }
