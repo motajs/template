@@ -1,19 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createCoreState } from '../src/core';
 import { createClosedLoopFixture } from './fixtures/closed-loop';
 
 describe('Node replay tracer', () => {
-    // 验证 Node 宿主无需浏览器全局即可创建相互独立的现有存档状态
-    it('creates independent Node-safe CoreState instances', () => {
-        const first = createCoreState();
-        const second = createCoreState();
-
-        expect(first).not.toBe(second);
-        expect(first.saveSystem).not.toBe(second.saveSystem);
-        expect(first.saveSystem.constructor.name).toBe('SaveSystem');
-        expect(second.saveSystem.constructor.name).toBe('SaveSystem');
-    });
-
     // 验证 replay 等待真实移动与事件完成后才结束并改变事件层矩阵
     it('replays movement, awaits event mutation, and ends normally', async () => {
         const fixture = createClosedLoopFixture();

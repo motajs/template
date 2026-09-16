@@ -12,7 +12,6 @@ describe('Node CoreState factory', () => {
         expect(first.hero).not.toBe(second.hero);
         expect(first.hero.attribute).not.toBe(second.hero.attribute);
         expect(first.eventStore).not.toBe(second.eventStore);
-        expect(first.saveSystem).not.toBe(second.saveSystem);
 
         first.hero.getModifiableAttribute().set('hp', 99);
         expect(second.hero.attribute.getFinalAttribute('hp')).not.toBe(99);
@@ -30,15 +29,5 @@ describe('Node CoreState factory', () => {
             throw new Error('missing isolated map snapshot');
         savedLayer.fullMap[0] = 99;
         expect(layer.getBlock(0, 0)).toBe(7);
-    });
-
-    // 验证 Node 工厂路径不读取浏览器宿主并使用现有独立存档实现
-    it('constructs through the Node-safe path without browser globals', () => {
-        expect(() => createCoreState()).not.toThrow();
-        const state = createCoreState();
-
-        expect(state.saveSystem.constructor.name).toBe('SaveSystem');
-        expect(state.maps).toBeDefined();
-        expect(state.eventStore).toBeDefined();
     });
 });

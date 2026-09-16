@@ -15,8 +15,6 @@ import {
     FaceDirection,
     IHeroAttr,
     IEnemyAttr,
-    ISaveSystem,
-    SaveSystem,
     GameEventStore,
     IGameEventStore,
     IItemStore,
@@ -93,7 +91,6 @@ import {
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
-    readonly saveSystem: ISaveSystem;
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
     readonly tileStore: ITileStore<LegacyTileData>;
@@ -130,17 +127,6 @@ export class CoreState implements ICoreState {
 
     constructor() {
         //#region L0 初始化
-
-        // 存档系统
-        this.saveSystem = new SaveSystem();
-        // 配置存档系统，一般情况下不建议动，除非你知道你在干什么
-        this.saveSystem.config({
-            autosaveLevel: SaveCompression.LowCompression,
-            commonSaveLevel: SaveCompression.HighCompression,
-            autosaveTimeTolerance: 50,
-            saveTimeTolerance: 100,
-            autosaveStackSize: 20
-        });
 
         // 朝向
         this.roleFace = new RoleFaceBinder();
@@ -250,10 +236,6 @@ export class CoreState implements ICoreState {
         this.addSaveableContent('@system/maps', this.maps);
         this.addSaveableContent('@system/enemy', this.enemyManager);
         this.addSaveableContent('@system/replay', this.replaySystem);
-        // 初始化存档数据库，不要动
-        loading.once('coreInit', () => {
-            this.saveSystem.init(`@game/${core.firstData.name}`);
-        });
 
         // 加载初始化，先使用兼容层实现
         loading.once('loaded', () => {

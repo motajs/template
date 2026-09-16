@@ -1,7 +1,6 @@
 import { IDirectionMapper, ITileLocator } from '@motajs/common';
 import { IFaceManager, IRoleFaceBinder } from './common';
 import { IGameEventStore, IItemStore, IMapStore, ITileStore } from './store';
-import { ISaveSystem } from './save';
 import { IReplaySystem } from './replay';
 
 export interface IEnemyAttr {
@@ -59,8 +58,6 @@ export interface IDataCommon {
     readonly faceManager: IFaceManager;
     /** 方向组映射器 */
     readonly directionMapper: IDirectionMapper;
-    /** 存档系统 */
-    readonly saveSystem: ISaveSystem;
     /** 录像系统 */
     readonly replaySystem: IReplaySystem;
 }
