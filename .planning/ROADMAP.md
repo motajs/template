@@ -210,7 +210,7 @@ Plans:
   3. 测试在本地可运行且全部通过
    4. 测试由 AI 编写并运行，通过验证后可提交
 
-**Plans**: 9/9 原计划 executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后) + gap-fill 06-10..06-15 (D-46；人工评审缺口补测，只补测试不改生产代码；15/15 executed)
+**Plans**: 9/9 原计划 executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后) + gap-fill 06-10..06-15 (D-46；人工评审缺口补测，只补测试不改生产代码；15/15 executed) + perf 06-16 (性能测试补充；只加测试与配置，不改生产代码)
 
 Plans:
 
@@ -253,6 +253,10 @@ Plans:
 **Wave 5** *(G-06-01-D interface-coverage gap-fill, D-46; serialized after 06-14)*
 
 - [x] 06-15-PLAN.md — combat interface gap: G-06-01-D (`EnemyContext.deleteAura` normal case — `addAura` applies `atk 2→5` → `deleteAura` same instance → `buildup` expects `2`); blocked `#06-15-1` (same root cause as `#06-01-4`) as correct-expectation `it.skip`, pending user decision
+
+**Wave 6** *(performance-test supplement, user-authorized; appended after 06-15; isolated `test:perf` lane + new `*.perf.ts` files, no production edits, no new dependencies)*
+
+- [ ] 06-16-PLAN.md — perf supplement: `vitest.perf.config.ts` + `test:perf` script (isolated from `pnpm test:ci`); 18 cases = ② critical calc (`1000/10000/50000`) + ① enemy-context `buildup` (N = `50/200/1000`) + ③ hero attribute recalc (M = `10/100/1000`) + ④ CoreState save/load round trip (`10/100/1000` items × `NoCompression`/`LowCompression`/`HighCompression`); warmup 3 + 20 samples → median/min/p95 via `console.table`, **zero assertions**, results recorded in `06-16-SUMMARY.md`
 
 ### Phase 7: 数据端缺陷修复
 
