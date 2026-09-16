@@ -210,7 +210,7 @@ Plans:
   3. 测试在本地可运行且全部通过
    4. 测试由 AI 编写并运行，通过验证后可提交
 
-**Plans**: 9/9 原计划 executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后) + gap-fill 06-10..06-15 (D-46；人工评审缺口补测，只补测试不改生产代码；15/15 executed) + perf 06-16 (性能测试补充；只加测试与配置，不改生产代码)
+**Plans**: 9/9 原计划 executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后) + gap-fill 06-10..06-15 (D-46；人工评审缺口补测，只补测试不改生产代码；15/15 executed) + perf 06-16 (性能测试补充；只加测试与配置，不改生产代码) + perf 06-17 (真实地图存读档性能补充；移入 13 张真实地图夹具，只加测试与夹具)
 
 Plans:
 
@@ -257,6 +257,10 @@ Plans:
 **Wave 6** *(performance-test supplement, user-authorized; appended after 06-15; isolated `test:perf` lane + new `*.perf.ts` files, no production edits, no new dependencies)*
 
 - [x] 06-16-PLAN.md — perf supplement: `vitest.perf.config.ts` + `test:perf` script (isolated from `pnpm test:ci`); 18 cases = ② critical calc (`1000/10000/50000`) + ① enemy-context `buildup` (N = `50/200/1000`) + ③ hero attribute recalc (M = `10/100/1000`) + ④ CoreState save/load round trip (`10/100/1000` items × `NoCompression`/`LowCompression`/`HighCompression`); warmup 3 + 20 samples → median/min/p95 via `console.table`, **zero assertions**, results recorded in `06-16-SUMMARY.md`
+
+**Wave 7** *(realistic map save/load perf supplement, user-authorized; appended after 06-16; reuses the same isolated `test:perf` lane; one fixture move + one new `*.perf.ts`, no production edits, no new dependencies)*
+
+- [ ] 06-17-PLAN.md — realistic map save/load perf: move the root `floors.json` (13 real 13×13 maps) into `packages-user/data-state/test/fixtures/`; new `packages-user/data-state/test/saveablesReal.perf.ts` measuring `存档`/`读档`/`往返` (save-only / load-only / round trip) for map scale `1/5/13` × `NoCompression`/`LowCompression`/`HighCompression` (27 rows) with a fixed realistic side load (50 flags, 20 hero modifiers incl. 4 from equipped items, 4 equipped instances, 20 item kinds, 1000 replay steps); cleared live map (`2/3/4/6` → `0`) vs original `compareWith` reference so `HighCompression` stores changed rows; warmup 3 + 20 samples → median/min/p95 via `console.table`, **zero assertions**, results recorded in `06-17-SUMMARY.md`
 
 ### Phase 7: 数据端缺陷修复
 
