@@ -114,17 +114,6 @@ describe('HeroState assembly', () => {
         isolated.set('hp', 1);
         expect(attribute.getBaseAttribute('hp')).toBe(100);
     });
-
-    // 验证 attachAttribute 替换绑定的属性对象
-    it('replaces the bound attribute through attachAttribute', () => {
-        const hero = createHeroState();
-        const replacement = new HeroAttribute<IHeroAttr>(createBaseAttr());
-
-        hero.attachAttribute(replacement);
-
-        expect(hero.getModifiableAttribute()).toBe(replacement);
-        expect(hero.getAttribute()).toBe(replacement);
-    });
 });
 
 describe('HeroState modifier registry', () => {

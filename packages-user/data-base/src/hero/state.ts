@@ -1,4 +1,3 @@
-import { HeroAttribute } from './attribute';
 import { HeroEquipment } from './equipment';
 import { HeroFollowersController } from './follower';
 import { HeroItems } from './items';
@@ -14,7 +13,6 @@ import {
     IHeroRendering,
     IHeroState,
     IHeroStateSave,
-    IModifierStateSave,
     IReadonlyHeroAttribute,
     IHeroChangeFloorInfo,
     IHeroStateHooks
@@ -26,23 +24,12 @@ import {
     IFacedTileLocator,
     SaveCompression
 } from '@user/data-common';
-import {
-    Hookable,
-    HookController,
-    IHookController,
-    logger
-} from '@motajs/common';
+import { Hookable, HookController, IHookController } from '@motajs/common';
 
 export class HeroState<THero>
     extends Hookable<IHeroStateHooks>
     implements IHeroState<THero>
 {
-    /** 修饰器工厂函数注册表 */
-    private readonly registry: Map<
-        string,
-        <K extends keyof THero>() => IHeroModifier<THero[K]>
-    > = new Map();
-
     readonly location: IHeroLocation;
     readonly rendering: IHeroRendering;
     readonly followers: IHeroFollowersController;
@@ -52,7 +39,7 @@ export class HeroState<THero>
     constructor(
         state: IDataCommon,
         faceHandler: IFaceHandler<FaceDirection>,
-        public attribute: IHeroAttribute<THero>
+        public readonly attribute: IHeroAttribute<THero>
     ) {
         super();
         this.rendering = new HeroRendering(state);
@@ -87,10 +74,6 @@ export class HeroState<THero>
 
     //#region 属性相关
 
-    attachAttribute(attribute: IHeroAttribute<THero>): void {
-        this.attribute = attribute;
-    }
-
     getModifiableAttribute(): IHeroAttribute<THero> {
         return this.attribute;
     }
@@ -107,26 +90,18 @@ export class HeroState<THero>
         type: string,
         cons: <K extends keyof THero>() => IHeroModifier<THero[K]>
     ): void {
-        this.registry.set(type, cons);
+        this.attribute.registerModifier(type, cons);
     }
 
     createModifier<T, V>(type: string): IHeroModifier<T, V> | null {
-        const cons = this.registry.get(type);
-        if (!cons) {
-            logger.warn(116, type);
-            return null;
-        }
-        return cons() as IHeroModifier<T, V>;
+        return this.attribute.createModifier<T, V>(type);
     }
 
     createAndInsertModifier<K extends keyof THero, V>(
         type: string,
         name: K
     ): IHeroModifier<THero[K], V> | null {
-        const modifier = this.createModifier<THero[K], V>(type);
-        if (!modifier) return null;
-        this.attribute.addModifier(name, modifier);
-        return modifier;
+        return this.attribute.createAndInsertModifier<K, V>(type, name);
     }
 
     //#endregion
@@ -146,25 +121,15 @@ export class HeroState<THero>
     }
 
     saveState(compression: SaveCompression): IHeroStateSave<THero> {
-        const modifiers: IModifierStateSave<THero>[] = [];
-        for (const [name, modifier] of this.attribute.iterateModifiers()) {
-            if (!this.attribute.getModifierSaveEnabled(modifier)) continue;
-            modifiers.push({
-                name: name as keyof THero,
-                type: modifier.type,
-                state: modifier.saveState(compression)
-            });
-        }
         const followerSaves = this.followers
             .getAllFollowers()
             .map(v => v.saveState(compression));
 
         return {
-            attribute: this.attribute.toStructured(),
+            attribute: this.attribute.saveState(compression),
             location: this.location.saveState(compression),
             rendering: this.rendering.saveState(compression),
             followers: followerSaves,
-            modifiers,
             items: this.items.saveState(compression),
             equip: this.equip.saveState(compression)
         };
@@ -174,15 +139,8 @@ export class HeroState<THero>
         state: IHeroStateSave<THero>,
         compression: SaveCompression
     ): void {
-        const newAttribute = new HeroAttribute<THero>(state.attribute);
-        for (const save of state.modifiers) {
-            const cons = this.registry.get(save.type);
-            if (!cons) continue;
-            const modifier = cons();
-            modifier.loadState(save.state, compression);
-            newAttribute.addModifier(save.name, modifier);
-        }
-        this.attribute = newAttribute;
+        // 属性原地读档：不替换实例，使装备与战斗侧持有的引用跨读档始终有效
+        this.attribute.loadState(state.attribute, compression);
         this.location.loadState(state.location, compression);
         this.rendering.loadState(state.rendering, compression);
         this.items.loadState(state.items, compression);

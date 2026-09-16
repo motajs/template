@@ -78,9 +78,10 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
      * @param state 装备状态实例
      */
     private loadEquipEffect(state: IEquipmentState<THero>) {
+        // 装备修饰器由 HeroEquipment.loadState 的重新装备恢复，故不进入属性存档，避免与属性读档的重建重复计入
         for (const [name, modifier] of state.getModifiers()) {
             // @ts-expect-error 泛型无法推导
-            this.attribute.addModifier(name, modifier, true);
+            this.attribute.addModifier(name, modifier, false);
         }
     }
 

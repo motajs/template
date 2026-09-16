@@ -204,6 +204,19 @@ function createHeroState(): IHeroState<IHeroAttr> {
     );
 }
 
+/** 构造一个已注册装备定义并设置好装备槽的勇士状态对象（基础 atk 为 10） */
+function createEquipHero(): IHeroState<IHeroAttr> {
+    const env = createEquipEnv();
+    registerItem(env, createEquipItem(10, 'sword', [0], [['atk', 5]]));
+    const hero = new HeroState<IHeroAttr>(
+        env.state,
+        new Dir8FaceHandler(),
+        new HeroAttribute<IHeroAttr>(createBaseAttr())
+    );
+    hero.equip.setSlots(['weapon']);
+    return hero;
+}
+
 /** 在持E��压缩档下对裁E��E��刁E��加成做一次同实例往返，返回读档后的修饰器值 */
 function roundTripPercentageModifier(compression: SaveCompression): unknown {
     const env = createEquipEnv();
@@ -546,7 +559,7 @@ describe('HeroState save and load round trips', () => {
         hero.getModifiableAttribute().setModifierSaveEnabled(disabled, false);
 
         const saved = hero.saveState(SaveCompression.NoCompression);
-        expect(saved.modifiers).toHaveLength(1);
+        expect(saved.attribute.modifiers).toHaveLength(1);
 
         hero.loadState(saved, SaveCompression.NoCompression);
 
@@ -605,6 +618,75 @@ describe('HeroState container save and load coverage for sub systems', () => {
 
             expect(hero.equip.getEquipped(0)).toBe(uid);
             expect(hero.equip.slots).toEqual(['weapon']);
+        }
+    });
+});
+
+describe('HeroState same-reference attribute load (#06-17-1)', () => {
+    // 验证三档压缩读档后装备加成仍在且属性对象为同一实例
+    it('keeps equipment bonuses and the attribute instance across all compressions', () => {
+        for (const compression of SAVE_COMPRESSIONS) {
+            const hero = createEquipHero();
+            const uid = hero.items.equipment.add(10);
+            hero.equip.equip(uid, 0);
+            const attrBefore = hero.getModifiableAttribute();
+            expect(attrBefore.getFinalAttribute('atk')).toBe(15);
+
+            const saved = hero.saveState(compression);
+            hero.equip.unequip(0);
+            hero.getModifiableAttribute().set('atk', 1);
+
+            hero.loadState(saved, compression);
+
+            expect(hero.getModifiableAttribute()).toBe(attrBefore);
+            expect(attrBefore.getFinalAttribute('atk')).toBe(15);
+            expect(attrBefore.getBaseAttribute('atk')).toBe(10);
+            expect(hero.equip.getEquipped(0)).toBe(uid);
+        }
+    });
+
+    // 验证读档后装备增删仍作用于活属性实例
+    it('applies equipment changes to the live attribute after load', () => {
+        const hero = createEquipHero();
+        const uid = hero.items.equipment.add(10);
+        hero.equip.equip(uid, 0);
+        const attrBefore = hero.getModifiableAttribute();
+
+        const saved = hero.saveState(SaveCompression.NoCompression);
+        hero.equip.unequip(0);
+        hero.loadState(saved, SaveCompression.NoCompression);
+        expect(attrBefore.getFinalAttribute('atk')).toBe(15);
+
+        hero.equip.unequip(0);
+        expect(attrBefore.getFinalAttribute('atk')).toBe(10);
+
+        hero.equip.equip(uid, 0);
+        expect(attrBefore.getFinalAttribute('atk')).toBe(15);
+    });
+
+    // 验证修饰器类型命中注册表时装备加成不翻倍（英雄 5 + 装备 5 → 20 而非 25）
+    it('does not double-count equipment bonuses when the type is registered', () => {
+        for (const compression of SAVE_COMPRESSIONS) {
+            const hero = createEquipHero();
+            hero.registerModifier('@system/value', () => new ValueModifier(5));
+            hero.createAndInsertModifier('@system/value', 'atk');
+            const uid = hero.items.equipment.add(10);
+            hero.equip.equip(uid, 0);
+            expect(hero.getModifiableAttribute().getFinalAttribute('atk')).toBe(
+                20
+            );
+
+            const saved = hero.saveState(compression);
+            hero.equip.unequip(0);
+            hero.getModifiableAttribute().set('atk', 1);
+            hero.loadState(saved, compression);
+
+            expect(hero.getModifiableAttribute().getFinalAttribute('atk')).toBe(
+                20
+            );
+            expect([
+                ...hero.getModifiableAttribute().getModifiers('atk')
+            ]).toHaveLength(2);
         }
     });
 });

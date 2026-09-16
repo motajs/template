@@ -828,16 +828,14 @@ export interface IHeroStateHooks extends IHookBase {
 }
 
 export interface IHeroStateSave<THero> {
-    /** 勇士属性状态 */
-    readonly attribute: THero;
+    /** 勇士属性状态，含基础属性值与保存启用的修饰器 */
+    readonly attribute: IHeroAttributeSave<THero>;
     /** 勇士当前位置 */
     readonly location: IHeroLocationSave;
     /** 勇士渲染状态 */
     readonly rendering: IHeroRenderingSave;
     /** 勇士当前的跟随者 */
     readonly followers: readonly IHeroFollowerSave[];
-    /** 勇士属性修饰器状态 */
-    readonly modifiers: readonly IModifierStateSave<THero>[];
     /** 勇士道具背包状态 */
     readonly items: IHeroItemsSave<THero>;
     /** 勇士装备状态 */
@@ -865,12 +863,6 @@ export interface IHeroState<THero>
      * 获取勇士当前的位置
      */
     getLocation(): IFacedTileLocator;
-
-    /**
-     * 绑定勇士属性对象
-     * @param attribute 勇士属性对象
-     */
-    attachAttribute(attribute: IHeroAttribute<THero>): void;
 
     /**
      * 获取可修改勇士对象
