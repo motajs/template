@@ -174,7 +174,9 @@ function clearCodes(flat: readonly number[]): number[] {
 }
 
 /**
- * 测量一次用例：先预热若干次，再采样后取中位数、最小值与 p95
+ * 测量一次用例：先预热若干次，再采样后取中位数、最小值与 p95，
+ * 计时经 performance.mark / performance.measure 成对标记完成，
+ * 采样后按名清理标记与测量
  * @param caseName 测量项名称
  * @param scale 规模档位
  * @param run 单次被测量的操作
@@ -188,11 +190,25 @@ function measureCase(
         run();
     }
 
+    // 必须先打标记再测量：对不存在的标记做 measure 会抛错；
+    // 标记还必须逐样本清理，否则同名标记会被解析成首次位置而得到累计耗时
+    const startTag = 'perf:' + caseName + ':' + scale + ':start';
+    const endTag = 'perf:' + caseName + ':' + scale + ':end';
+    const measureName = 'perf:' + caseName + ':' + scale;
     const samples: number[] = [];
     for (let i = 0; i < SAMPLE_RUNS; i++) {
-        const start = globalThis.performance.now();
+        globalThis.performance.mark(startTag);
         run();
-        samples.push(globalThis.performance.now() - start);
+        globalThis.performance.mark(endTag);
+        const measure = globalThis.performance.measure(
+            measureName,
+            startTag,
+            endTag
+        );
+        samples.push(measure.duration);
+        globalThis.performance.clearMarks(startTag);
+        globalThis.performance.clearMarks(endTag);
+        globalThis.performance.clearMeasures(measureName);
     }
 
     samples.sort((left, right) => left - right);
