@@ -249,11 +249,13 @@ export interface IReplayArray {
      * - 1: int8
      * - 2: int16
      * - 3: int32
-     * - 4: int64
-     * - 5: float
-     * - 6: bigint
-     * - 7: string
-     * - 8 ~ 255: n - 7 长度的字符串
+     * - 4: 非负 int64
+     * - 5: 负 int64
+     * - 6: float
+     * - 7: 非负 bigint
+     * - 8: 负 bigint
+     * - 9: string
+     * - 10 ~ 255: n - 9 长度的字符串
      */
     getParamArray(): ArrayBuffer;
 
@@ -334,15 +336,17 @@ export interface IReplaySystemSave {
      * 参数数组，由参数类型和参数值组成。参数类型占据一个字节，参数值根据类型不同占据不同的字节。
      * 参数类型列表（包含参数类型字节）：
      *
-     * - 0: boolean --- 2 Byte
-     * - 1: int8    --- 2 Byte
-     * - 2: int16   --- 3 Byte
-     * - 3: int32   --- 5 Byte
-     * - 4: int64   --- 9 Byte
-     * - 5: float   --- 9 Byte
-     * - 6: bigint  --- n + 1 Byte, 其中 n 是 bigint 的字节数
-     * - 7: string  --- n + 1 Byte, 其中 n 是字符串编码后的字节数
-     * - 8 ~ 255: n - 7 长度的字符串  --- n + 1 Byte, 其中 n 是字符串编码后的字节数
+     * - 0: boolean   --- 2 Byte
+     * - 1: int8      --- 2 Byte
+     * - 2: int16     --- 3 Byte
+     * - 3: int32     --- 5 Byte
+     * - 4: int64     --- 9 Byte
+     * - 5: 负 int64  --- 9 Byte
+     * - 6: float     --- 9 Byte
+     * - 7: bigint    --- n + 2 Byte, 其中 n 是 bigint 的字节数
+     * - 8: 负 bigint --- n + 2 Byte, 其中 n 是 bigint 的字节数
+     * - 9: string    --- n + 5 Byte, 其中 n 是字符串编码后的字节数
+     * - 10 ~ 255: n - 9 长度的字符串 --- n + 1 Byte, 其中 n 是字符串编码后的字节数
      */
     readonly paramArray: ArrayBuffer;
 }
