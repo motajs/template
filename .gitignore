@@ -55,3 +55,4 @@ docs/.vitepress/apiSidebar.ts
 _docs
 template
 graphify-out
+.gsd/
