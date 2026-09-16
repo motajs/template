@@ -274,13 +274,13 @@ Plans:
   3. pnpm test:ci 全绿且不新增跳过用例，数据范围 check:type / check:circular 门禁通过
   4. 改动仅限数据端（packages 与 packages-user/data-*），不改动渲染端 @user/client-* 与 legacy 渲染接线，双端分离约束保持
 
-**Plans**: 8/9 plans executed（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`；07-09 为阶段标记 Complete 后追加的重开计划，尚未执行）
+**Plans**: 9/9 plans executed（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`；07-09 为阶段标记 Complete 后追加的重开计划，尚未执行）
 
 > **阶段重开（2026-09-16）**：`07-LOADSTATE-AUDIT.md` 登记的同引用审计条目 `#06-17-1`（A）与 `#06-17-2`（B）在本阶段收口后追加为计划 `07-09`，Phase 7 因此由 `Complete` 回到未完成；执行 07-09 后 `07-VERIFICATION.md`（2026-09-16 结论仅覆盖 8/8 计划的工作树）**失效，必须重跑 `/gsd-verify-work`** 重新出具验证结论。
 
 Plans:
 
-- [ ] 07-09-PLAN.md — hero：`#06-17-1` / `#06-17-2` 同引用修复（`HeroAttribute` 自身实现 `ISaveableContent`，属性存读档在自身实例上原地完成；`IHeroStateSave` 形状变更 + 装备修饰器不入属性存档）
+- [x] 07-09-PLAN.md — hero：`#06-17-1` / `#06-17-2` 同引用修复（`HeroAttribute` 自身实现 `ISaveableContent`，属性存读档在自身实例上原地完成；`IHeroStateSave` 形状变更 + 装备修饰器不入属性存档）
 - [x] 07-01-PLAN.md — combat：`#06-01-1` / `#06-01-2` / `#06-01-3` / `#06-01-4`（含 `#06-15-1`）
 - [x] 07-02-PLAN.md — enemy：`#06-03-1` 创建入口接入复用映射
 - [x] 07-03-PLAN.md — replay：`#06-04-1` / `#06-04-2` / `#06-04-3` / `#06-04-4`
@@ -339,4 +339,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 17/17 | In Progress|  |
-| 7. 数据端缺陷修复 | 8/9 | In Progress|  |
+| 7. 数据端缺陷修复 | 9/9 | In Progress|  |
