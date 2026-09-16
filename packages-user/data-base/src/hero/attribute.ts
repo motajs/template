@@ -66,7 +66,9 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
     /**
      * @param attribute 当前勇士的基础属性
      */
-    constructor(private readonly attribute: THero) {
+    constructor(private attribute: THero) {
+        // 克隆入参，避免调用方传入的共享基础属性对象被本实例改写
+        this.attribute = structuredClone(attribute);
         this.finalAttribute = structuredClone(attribute);
     }
 
@@ -337,17 +339,8 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         state: IHeroAttributeSave<THero>,
         compression: SaveCompression
     ): void {
-        // 原地修改基础属性以保持同引用，使装备与战斗侧持有的属性引用跨读档始终有效
-        for (const key in this.attribute) {
-            if (Object.prototype.hasOwnProperty.call(state.values, key)) {
-                continue;
-            }
-            delete this.attribute[key as keyof THero];
-        }
-        const values = structuredClone(state.values);
-        for (const key in values) {
-            this.attribute[key as keyof THero] = values[key as keyof THero];
-        }
+        // attribute 是内部对象，不必保证同引用，只要内部不会出现引用问题即可
+        this.attribute = structuredClone(state.values);
 
         this.modifier.clear();
         this.modifierName.clear();
@@ -363,7 +356,7 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         }
 
         // 逐键重算 final，清掉被移除修饰器留下的陈旧值
-        for (const key in this.attribute) {
+        for (const key of Object.keys(this.attribute as object)) {
             this.recalculateAttribute(key as keyof THero);
         }
     }

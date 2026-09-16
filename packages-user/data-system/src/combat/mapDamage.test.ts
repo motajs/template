@@ -7,6 +7,7 @@ import {
 } from '@motajs/common';
 import { type IEnemy, type IStateBase } from '@user/data-base';
 import {
+    IMapDamage,
     type IEnemyContext,
     type IEnemyView,
     type IMapDamageConverter,
@@ -280,7 +281,7 @@ class FakeTypedView implements IMapDamageView<number> {
 
 interface MapDamageFixture {
     /** 被测地图伤害对象 */
-    damage: InstanceType<TestModules['MapDamage']>;
+    damage: IMapDamage<TestEnemyAttr, TestHeroAttr>;
     /** 怪物上下文假对象 */
     context: IEnemyContext<TestEnemyAttr, TestHeroAttr>;
     /** 测试转换器 */

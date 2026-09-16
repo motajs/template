@@ -42,7 +42,7 @@ export interface IReadonlyEnemyHandler<
 
 export interface IEnemyView<TEnemy> {
     /** 怪物视图所属的上下文 */
-    readonly context: IEnemyContext<TEnemy, unknown>;
+    readonly context: IEnemyContext<TEnemy, any>;
 
     /**
      * 重置此怪物视图的状态，将计算后怪物对象恢复至初始状态
@@ -80,13 +80,13 @@ export interface IEnemySpecialModifier<TEnemy> {
      * 获取要添加到指定怪物身上的特殊属性
      * @param handler 信息对象
      */
-    add(handler: IReadonlyEnemyHandler<TEnemy, unknown>): ISpecial<any>[];
+    add(handler: IReadonlyEnemyHandler<TEnemy, any>): ISpecial<any>[];
 
     /**
      * 获取制定怪物身上要删除的特殊属性
      * @param handler 信息对象
      */
-    delete(handler: IReadonlyEnemyHandler<TEnemy, unknown>): ISpecial<any>[];
+    delete(handler: IReadonlyEnemyHandler<TEnemy, any>): ISpecial<any>[];
 
     /**
      * 修改一个怪物的特殊属性，如果真正进行了修改则返回 true，否则返回 false
@@ -94,7 +94,7 @@ export interface IEnemySpecialModifier<TEnemy> {
      * @param special 要修改的怪物特殊属性
      */
     modify(
-        handler: IEnemyHandler<TEnemy, unknown>,
+        handler: IEnemyHandler<TEnemy, any>,
         special: ISpecial<any>
     ): boolean;
 }
@@ -121,7 +121,7 @@ export interface IAuraView<TEnemy, TRange = any> {
      * @param baseEnemy 原始怪物对象，即未进行任何修改的怪物对象
      */
     apply(
-        handler: IEnemyHandler<TEnemy, unknown>,
+        handler: IEnemyHandler<TEnemy, any>,
         baseEnemy: IReadonlyEnemy<TEnemy>
     ): void;
 
@@ -131,7 +131,7 @@ export interface IAuraView<TEnemy, TRange = any> {
      * @param baseEnemy 原始怪物对象，即未进行任何修改的怪物对象
      */
     applySpecial(
-        handler: IEnemyHandler<TEnemy, unknown>,
+        handler: IEnemyHandler<TEnemy, any>,
         baseEnemy: IReadonlyEnemy<TEnemy>
     ): IEnemySpecialModifier<TEnemy> | null;
 }

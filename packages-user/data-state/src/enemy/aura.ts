@@ -91,7 +91,7 @@ export class CommonAura implements IEnemyAuraView<
     }
 
     apply(
-        handler: IEnemyHandler<IEnemyAttr, unknown>,
+        handler: IEnemyHandler<IEnemyAttr, any>,
         baseEnemy: IReadonlyEnemy<IEnemyAttr>
     ): void {
         const { enemy } = handler;
