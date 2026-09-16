@@ -8,30 +8,30 @@ import {
     endReplaySafetyCollection,
     logReplaySafetyDetail,
     shouldReplay,
-    ReplayCommandCode
+    ReplayCode
 } from '@user/data-common';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { createCoreState } from '../core';
 import { ReplaySystem } from '../../../data-common/src/replay/system';
 import {
-    ReplayEquipCommand,
-    ReplayMoveCommand,
-    ReplayTeleportCommand,
-    ReplayUnequipCommand,
-    ReplayUseItemCommand
+    ReplayEquip,
+    ReplayMove,
+    ReplayTeleport,
+    ReplayUnequip,
+    ReplayUseItem
 } from './commands';
 
 /** 供测试读取的稳定指令码顺序 */
-export const REPLAY_COMMAND_ORDER: readonly ReplayCommandCode[] = [
-    ReplayCommandCode.Up,
-    ReplayCommandCode.Right,
-    ReplayCommandCode.Down,
-    ReplayCommandCode.Left,
-    ReplayCommandCode.Teleport,
-    ReplayCommandCode.UseItem,
-    ReplayCommandCode.Equip,
-    ReplayCommandCode.Unequip
+export const REPLAY_COMMAND_ORDER: readonly ReplayCode[] = [
+    ReplayCode.Up,
+    ReplayCode.Right,
+    ReplayCode.Down,
+    ReplayCode.Left,
+    ReplayCode.Teleport,
+    ReplayCode.UseItem,
+    ReplayCode.Equip,
+    ReplayCode.Unequip
 ];
 
 function step(
@@ -61,14 +61,14 @@ describe('replay commands', () => {
     it('registers the eight stable commands in order on every CoreState', () => {
         const state = createCoreState();
         expect(REPLAY_COMMAND_ORDER).toEqual([
-            ReplayCommandCode.Up,
-            ReplayCommandCode.Right,
-            ReplayCommandCode.Down,
-            ReplayCommandCode.Left,
-            ReplayCommandCode.Teleport,
-            ReplayCommandCode.UseItem,
-            ReplayCommandCode.Equip,
-            ReplayCommandCode.Unequip
+            ReplayCode.Up,
+            ReplayCode.Right,
+            ReplayCode.Down,
+            ReplayCode.Left,
+            ReplayCode.Teleport,
+            ReplayCode.UseItem,
+            ReplayCode.Equip,
+            ReplayCode.Unequip
         ]);
         expect(
             REPLAY_COMMAND_ORDER.every(code =>
@@ -113,11 +113,11 @@ describe('replay commands', () => {
         const start = vi
             .spyOn(mover, 'start')
             .mockReturnValueOnce(controller(first.promise));
-        const command = new ReplayMoveCommand(state, FaceDirection.Right);
+        const command = new ReplayMove(state, FaceDirection.Right);
 
-        await expect(
-            command.execute(step(ReplayCommandCode.Right, []))
-        ).resolves.toBe(true);
+        await expect(command.execute(step(ReplayCode.Right, []))).resolves.toBe(
+            true
+        );
         expect(move).toHaveBeenCalledWith(FaceDirection.Right);
         expect(start).not.toHaveBeenCalled();
 
@@ -139,10 +139,10 @@ describe('replay commands', () => {
         const error = vi.spyOn(logger, 'error');
         const mover = state.hero.location.mover;
         (mover as unknown as { moving: boolean }).moving = true;
-        const command = new ReplayMoveCommand(state, FaceDirection.Up);
-        await expect(
-            command.execute(step(ReplayCommandCode.Up, []))
-        ).resolves.toBe(false);
+        const command = new ReplayMove(state, FaceDirection.Up);
+        await expect(command.execute(step(ReplayCode.Up, []))).resolves.toBe(
+            false
+        );
         expect(error).toHaveBeenCalledWith(2003);
 
         (mover as unknown as { moving: boolean }).moving = false;
@@ -162,11 +162,11 @@ describe('replay commands', () => {
                 controller: controller(first.promise),
                 path: []
             });
-        const command = new ReplayTeleportCommand(state);
+        const command = new ReplayTeleport(state);
 
         let result: boolean | undefined;
         const pending = command
-            .execute(step(ReplayCommandCode.Teleport, [2, 3]))
+            .execute(step(ReplayCode.Teleport, [2, 3]))
             .then(value => {
                 result = value;
             });
@@ -180,7 +180,7 @@ describe('replay commands', () => {
         const error = vi.spyOn(logger, 'error');
         teleport.mockReturnValueOnce(null);
         await expect(
-            command.execute(step(ReplayCommandCode.Teleport, [4, 5]))
+            command.execute(step(ReplayCode.Teleport, [4, 5]))
         ).resolves.toBe(false);
         expect(error).toHaveBeenCalledWith(2005, '4', '5');
         error.mockRestore();
@@ -194,13 +194,13 @@ describe('replay commands', () => {
             .spyOn(state.hero.items, 'useItem')
             .mockReturnValueOnce(true)
             .mockReturnValueOnce(false);
-        const command = new ReplayUseItemCommand(state);
+        const command = new ReplayUseItem(state);
 
         await expect(
-            command.execute(step(ReplayCommandCode.UseItem, [12]))
+            command.execute(step(ReplayCode.UseItem, [12]))
         ).resolves.toBe(true);
         await expect(
-            command.execute(step(ReplayCommandCode.UseItem, [34]))
+            command.execute(step(ReplayCode.UseItem, [34]))
         ).resolves.toBe(false);
         expect(useItem).toHaveBeenNthCalledWith(1, 12);
         expect(error).toHaveBeenCalledWith(2006, '34');
@@ -217,19 +217,19 @@ describe('replay commands', () => {
         const equip = vi
             .spyOn(equipment, 'equip')
             .mockImplementation(() => undefined);
-        const command = new ReplayEquipCommand(state);
+        const command = new ReplayEquip(state);
 
         // 装备后槽位为指定 uid
         getEquipped.mockReturnValueOnce(99);
         await expect(
-            command.execute(step(ReplayCommandCode.Equip, [99, 0, true]))
+            command.execute(step(ReplayCode.Equip, [99, 0, true]))
         ).resolves.toBe(true);
         expect(equip).toHaveBeenCalledWith(99, 0, true);
 
         // 装备后槽位未变为指定 uid
         getEquipped.mockReturnValueOnce(undefined);
         await expect(
-            command.execute(step(ReplayCommandCode.Equip, [99, 1, false]))
+            command.execute(step(ReplayCode.Equip, [99, 1, false]))
         ).resolves.toBe(false);
         expect(error).toHaveBeenCalledWith(2007, '99', '1');
 
@@ -245,19 +245,19 @@ describe('replay commands', () => {
         const unequip = vi
             .spyOn(equipment, 'unequip')
             .mockImplementation(() => undefined);
-        const command = new ReplayUnequipCommand(state);
+        const command = new ReplayUnequip(state);
 
         // 卸下后槽位为空
         getEquipped.mockReturnValueOnce(undefined);
         await expect(
-            command.execute(step(ReplayCommandCode.Unequip, [0]))
+            command.execute(step(ReplayCode.Unequip, [0]))
         ).resolves.toBe(true);
         expect(unequip).toHaveBeenCalledWith(0);
 
         // 卸下后槽位仍有装备
         getEquipped.mockReturnValueOnce(88);
         await expect(
-            command.execute(step(ReplayCommandCode.Unequip, [1]))
+            command.execute(step(ReplayCode.Unequip, [1]))
         ).resolves.toBe(false);
         expect(error).toHaveBeenCalledWith(2008, '1');
 
@@ -277,8 +277,8 @@ describe('replay commands', () => {
             .spyOn(state.hero.items, 'useItem')
             .mockReturnValueOnce(true);
         const replay = state.replaySystem;
-        replay.record(ReplayCommandCode.Right);
-        replay.record(ReplayCommandCode.UseItem, 5);
+        replay.record(ReplayCode.Right);
+        replay.record(ReplayCode.UseItem, 5);
         const sandbox = replay.createReplaySandbox({
             route: replay.route,
             reseter: { reset: () => {} }
@@ -302,20 +302,20 @@ describe('replay commands', () => {
     // 验证参数数量或类型不符的指令以 false 结束
     it('returns false for invalid command parameters', async () => {
         const state = createCoreState();
-        const move = new ReplayMoveCommand(state, FaceDirection.Up);
-        const teleport = new ReplayTeleportCommand(state);
-        const useItem = new ReplayUseItemCommand(state);
-        const equip = new ReplayEquipCommand(state);
-        const unequip = new ReplayUnequipCommand(state);
+        const move = new ReplayMove(state, FaceDirection.Up);
+        const teleport = new ReplayTeleport(state);
+        const useItem = new ReplayUseItem(state);
+        const equip = new ReplayEquip(state);
+        const unequip = new ReplayUnequip(state);
         const invalid = [
-            move.execute(step(ReplayCommandCode.Up, [1])),
-            teleport.execute(step(ReplayCommandCode.Teleport, ['x', 1])),
-            teleport.execute(step(ReplayCommandCode.Teleport, [1])),
-            useItem.execute(step(ReplayCommandCode.UseItem, [])),
-            useItem.execute(step(ReplayCommandCode.UseItem, ['id'])),
-            equip.execute(step(ReplayCommandCode.Equip, [1, 0])),
-            equip.execute(step(ReplayCommandCode.Equip, [1, 0, 'x'])),
-            unequip.execute(step(ReplayCommandCode.Unequip, ['slot']))
+            move.execute(step(ReplayCode.Up, [1])),
+            teleport.execute(step(ReplayCode.Teleport, ['x', 1])),
+            teleport.execute(step(ReplayCode.Teleport, [1])),
+            useItem.execute(step(ReplayCode.UseItem, [])),
+            useItem.execute(step(ReplayCode.UseItem, ['id'])),
+            equip.execute(step(ReplayCode.Equip, [1, 0])),
+            equip.execute(step(ReplayCode.Equip, [1, 0, 'x'])),
+            unequip.execute(step(ReplayCode.Unequip, ['slot']))
         ];
         await expect(Promise.all(invalid)).resolves.toEqual([
             false,

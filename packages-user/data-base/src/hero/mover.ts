@@ -7,7 +7,7 @@ import {
     ObjectMover,
     ObjectMoveType,
     IDataCommon,
-    ReplayCommandCode
+    ReplayCode
 } from '@user/data-common';
 import {
     HeroMoveCode,
@@ -176,16 +176,16 @@ export class HeroMover<T extends IHeroLocation>
             const replay = this.state.replaySystem;
             switch (handler.direction) {
                 case FaceDirection.Up:
-                    replay.route.add(ReplayCommandCode.Up, []);
+                    replay.route.add(ReplayCode.Up, []);
                     break;
                 case FaceDirection.Right:
-                    replay.route.add(ReplayCommandCode.Right, []);
+                    replay.route.add(ReplayCode.Right, []);
                     break;
                 case FaceDirection.Left:
-                    replay.route.add(ReplayCommandCode.Left, []);
+                    replay.route.add(ReplayCode.Left, []);
                     break;
                 case FaceDirection.Down:
-                    replay.route.add(ReplayCommandCode.Down, []);
+                    replay.route.add(ReplayCode.Down, []);
                     break;
                 default:
                     logger.warn(176);

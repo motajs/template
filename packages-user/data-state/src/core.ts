@@ -25,7 +25,7 @@ import {
     MapStore,
     IReplaySystem,
     ReplaySystem,
-    ReplayCommandCode
+    ReplayCode
 } from '@user/data-common';
 import {
     EnemyManager,
@@ -84,11 +84,11 @@ import { isNil } from 'lodash-es';
 import { DefaultHeroMoveTopImpl, DefaultPassPredicateImpl } from './hero';
 import { createEventRegistrations } from './event/registrations';
 import {
-    ReplayEquipCommand,
-    ReplayMoveCommand,
-    ReplayTeleportCommand,
-    ReplayUnequipCommand,
-    ReplayUseItemCommand
+    ReplayEquip,
+    ReplayMove,
+    ReplayTeleport,
+    ReplayUnequip,
+    ReplayUseItem
 } from './replay';
 
 export class CoreState implements ICoreState {
@@ -282,38 +282,25 @@ export class CoreState implements ICoreState {
      * 注册全部录像指令
      */
     private registerReplayCommands() {
-        this.replaySystem.registerCommand(
-            ReplayCommandCode.Up,
-            new ReplayMoveCommand(this, FaceDirection.Up)
-        );
-        this.replaySystem.registerCommand(
-            ReplayCommandCode.Right,
-            new ReplayMoveCommand(this, FaceDirection.Right)
-        );
-        this.replaySystem.registerCommand(
-            ReplayCommandCode.Down,
-            new ReplayMoveCommand(this, FaceDirection.Down)
-        );
-        this.replaySystem.registerCommand(
-            ReplayCommandCode.Left,
-            new ReplayMoveCommand(this, FaceDirection.Left)
-        );
-        this.replaySystem.registerCommand(
-            ReplayCommandCode.Teleport,
-            new ReplayTeleportCommand(this)
-        );
-        this.replaySystem.registerCommand(
-            ReplayCommandCode.UseItem,
-            new ReplayUseItemCommand(this)
-        );
-        this.replaySystem.registerCommand(
-            ReplayCommandCode.Equip,
-            new ReplayEquipCommand(this)
-        );
-        this.replaySystem.registerCommand(
-            ReplayCommandCode.Unequip,
-            new ReplayUnequipCommand(this)
-        );
+        const replay = this.replaySystem;
+
+        const up = new ReplayMove(this, FaceDirection.Up);
+        const right = new ReplayMove(this, FaceDirection.Right);
+        const down = new ReplayMove(this, FaceDirection.Down);
+        const left = new ReplayMove(this, FaceDirection.Left);
+        const teleport = new ReplayTeleport(this);
+        const useItem = new ReplayUseItem(this);
+        const equip = new ReplayEquip(this);
+        const unequip = new ReplayUnequip(this);
+
+        replay.registerCommand(ReplayCode.Up, up);
+        replay.registerCommand(ReplayCode.Right, right);
+        replay.registerCommand(ReplayCode.Down, down);
+        replay.registerCommand(ReplayCode.Left, left);
+        replay.registerCommand(ReplayCode.Teleport, teleport);
+        replay.registerCommand(ReplayCode.UseItem, useItem);
+        replay.registerCommand(ReplayCode.Equip, equip);
+        replay.registerCommand(ReplayCode.Unequip, unequip);
     }
 
     /**

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { logger } from '@motajs/common';
 import {
     FaceDirection,
-    ReplayCommandCode,
+    ReplayCode,
     SaveCompression,
     TileType,
     type IReplayArray,
@@ -14,11 +14,11 @@ import {
 import { type CoreState, createCoreState } from '../src/core';
 import { DefaultPassPredicateImpl } from '../src/hero/predicate';
 import {
-    ReplayEquipCommand,
-    ReplayMoveCommand,
-    ReplayTeleportCommand,
-    ReplayUnequipCommand,
-    ReplayUseItemCommand
+    ReplayEquip,
+    ReplayMove,
+    ReplayTeleport,
+    ReplayUnequip,
+    ReplayUseItem
 } from '../src/replay/commands';
 
 vi.hoisted(() => {
@@ -235,16 +235,16 @@ describe('replay recording and route read-back', () => {
         const replay = state.replaySystem;
 
         replay.disable();
-        replay.record(ReplayCommandCode.Right);
+        replay.record(ReplayCode.Right);
         expect(replay.route.length).toBe(0);
 
         replay.disable();
         replay.revert();
-        replay.record(ReplayCommandCode.Right);
+        replay.record(ReplayCode.Right);
         expect(replay.route.length).toBe(0);
 
         replay.revert();
-        replay.record(ReplayCommandCode.Right);
+        replay.record(ReplayCode.Right);
         expect(replay.route.length).toBe(1);
     });
 
@@ -252,31 +252,31 @@ describe('replay recording and route read-back', () => {
     it('reads back every stable command code and its params', () => {
         const state = createCoreState();
         const replay = state.replaySystem;
-        replay.record(ReplayCommandCode.Up);
-        replay.record(ReplayCommandCode.Teleport, 3, 4);
-        replay.record(ReplayCommandCode.UseItem, 12);
-        replay.record(ReplayCommandCode.Equip, 99, 1, true);
-        replay.record(ReplayCommandCode.Unequip, 1);
+        replay.record(ReplayCode.Up);
+        replay.record(ReplayCode.Teleport, 3, 4);
+        replay.record(ReplayCode.UseItem, 12);
+        replay.record(ReplayCode.Equip, 99, 1, true);
+        replay.record(ReplayCode.Unequip, 1);
 
         expect(replay.route.length).toBe(5);
         expect(replay.route.get(0)).toMatchObject({
-            command: ReplayCommandCode.Up,
+            command: ReplayCode.Up,
             params: []
         });
         expect(replay.route.get(1)).toMatchObject({
-            command: ReplayCommandCode.Teleport,
+            command: ReplayCode.Teleport,
             params: [3, 4]
         });
         expect(replay.route.get(2)).toMatchObject({
-            command: ReplayCommandCode.UseItem,
+            command: ReplayCode.UseItem,
             params: [12]
         });
         expect(replay.route.get(3)).toMatchObject({
-            command: ReplayCommandCode.Equip,
+            command: ReplayCode.Equip,
             params: [99, 1, true]
         });
         expect(replay.route.get(4)).toMatchObject({
-            command: ReplayCommandCode.Unequip,
+            command: ReplayCode.Unequip,
             params: [1]
         });
     });
@@ -292,7 +292,7 @@ describe('replay recording and route read-back', () => {
 
         expect(state.replaySystem.route.length).toBe(1);
         expect(state.replaySystem.route.get(0)).toMatchObject({
-            command: ReplayCommandCode.Right,
+            command: ReplayCode.Right,
             params: []
         });
     });
@@ -322,18 +322,18 @@ describe('small-map replay playback and second recording', () => {
 
         await runHeroStep(state, FaceDirection.Right);
         await runHeroStep(state, FaceDirection.Right);
-        replay.record(ReplayCommandCode.Teleport, 1, 0);
-        replay.record(ReplayCommandCode.Up);
+        replay.record(ReplayCode.Teleport, 1, 0);
+        replay.record(ReplayCode.Up);
 
         const firstSteps = snapshotRoute(replay.route);
         expect(firstSteps.map(item => item.code)).toEqual([
-            ReplayCommandCode.Right,
-            ReplayCommandCode.Right,
-            ReplayCommandCode.Teleport,
-            ReplayCommandCode.Up
+            ReplayCode.Right,
+            ReplayCode.Right,
+            ReplayCode.Teleport,
+            ReplayCode.Up
         ]);
         expect(replay.route.get(2)).toMatchObject({
-            command: ReplayCommandCode.Teleport,
+            command: ReplayCode.Teleport,
             params: [1, 0]
         });
 
@@ -347,8 +347,8 @@ describe('small-map replay playback and second recording', () => {
 
         await runHeroStep(state, FaceDirection.Right);
         await runHeroStep(state, FaceDirection.Right);
-        replay.record(ReplayCommandCode.Teleport, 1, 0);
-        replay.record(ReplayCommandCode.Up);
+        replay.record(ReplayCode.Teleport, 1, 0);
+        replay.record(ReplayCode.Up);
 
         const secondSteps = snapshotRoute(replay.route);
         expectReplayEqual(secondSteps, firstSteps);
@@ -368,7 +368,7 @@ describe('small-map replay playback and second recording', () => {
         );
         state.pathfinding.finder.useMapLayer(map.eventLayer);
         await runHeroStep(state, FaceDirection.Right);
-        replay.record(ReplayCommandCode.Teleport, 2, 0);
+        replay.record(ReplayCode.Teleport, 2, 0);
 
         await playRoute(state);
 
@@ -382,16 +382,16 @@ describe('replay playback error codes 2001-2008', () => {
     it('warns 2001 and 2002 for parameter count and type mismatches', async () => {
         const state = createCoreState();
         const error = vi.spyOn(logger, 'error');
-        const move = new ReplayMoveCommand(state, FaceDirection.Up);
-        const teleport = new ReplayTeleportCommand(state);
+        const move = new ReplayMove(state, FaceDirection.Up);
+        const teleport = new ReplayTeleport(state);
 
-        await expect(
-            move.execute(step(ReplayCommandCode.Up, [1]))
-        ).resolves.toBe(false);
+        await expect(move.execute(step(ReplayCode.Up, [1]))).resolves.toBe(
+            false
+        );
         expect(error).toHaveBeenCalledWith(2001, 'move', '0', '1');
 
         await expect(
-            teleport.execute(step(ReplayCommandCode.Teleport, ['x', 1]))
+            teleport.execute(step(ReplayCode.Teleport, ['x', 1]))
         ).resolves.toBe(false);
         expect(error).toHaveBeenCalledWith(
             2002,
@@ -407,12 +407,12 @@ describe('replay playback error codes 2001-2008', () => {
         const state = createCoreState();
         const error = vi.spyOn(logger, 'error');
         const mover = state.hero.location.mover;
-        const move = new ReplayMoveCommand(state, FaceDirection.Up);
+        const move = new ReplayMove(state, FaceDirection.Up);
         (mover as unknown as { moving: boolean }).moving = true;
 
-        await expect(
-            move.execute(step(ReplayCommandCode.Up, []))
-        ).resolves.toBe(false);
+        await expect(move.execute(step(ReplayCode.Up, []))).resolves.toBe(
+            false
+        );
         expect(error).toHaveBeenCalledWith(2003);
 
         (mover as unknown as { moving: boolean }).moving = false;
@@ -426,10 +426,10 @@ describe('replay playback error codes 2001-2008', () => {
         const state = createCoreState();
         const error = vi.spyOn(logger, 'error');
         vi.spyOn(state.pathfinding, 'teleportTo').mockReturnValueOnce(null);
-        const teleport = new ReplayTeleportCommand(state);
+        const teleport = new ReplayTeleport(state);
 
         await expect(
-            teleport.execute(step(ReplayCommandCode.Teleport, [4, 5]))
+            teleport.execute(step(ReplayCode.Teleport, [4, 5]))
         ).resolves.toBe(false);
         expect(error).toHaveBeenCalledWith(2005, '4', '5');
     });
@@ -439,10 +439,10 @@ describe('replay playback error codes 2001-2008', () => {
         const state = createCoreState();
         const error = vi.spyOn(logger, 'error');
         vi.spyOn(state.hero.items, 'useItem').mockReturnValueOnce(false);
-        const useItem = new ReplayUseItemCommand(state);
+        const useItem = new ReplayUseItem(state);
 
         await expect(
-            useItem.execute(step(ReplayCommandCode.UseItem, [34]))
+            useItem.execute(step(ReplayCode.UseItem, [34]))
         ).resolves.toBe(false);
         expect(error).toHaveBeenCalledWith(2006, '34');
     });
@@ -454,10 +454,10 @@ describe('replay playback error codes 2001-2008', () => {
         const equipment = state.hero.equip;
         vi.spyOn(equipment, 'equip').mockImplementation(() => undefined);
         vi.spyOn(equipment, 'getEquipped').mockReturnValueOnce(undefined);
-        const equip = new ReplayEquipCommand(state);
+        const equip = new ReplayEquip(state);
 
         await expect(
-            equip.execute(step(ReplayCommandCode.Equip, [99, 1, false]))
+            equip.execute(step(ReplayCode.Equip, [99, 1, false]))
         ).resolves.toBe(false);
         expect(error).toHaveBeenCalledWith(2007, '99', '1');
     });
@@ -469,10 +469,10 @@ describe('replay playback error codes 2001-2008', () => {
         const equipment = state.hero.equip;
         vi.spyOn(equipment, 'unequip').mockImplementation(() => undefined);
         vi.spyOn(equipment, 'getEquipped').mockReturnValueOnce(88);
-        const unequip = new ReplayUnequipCommand(state);
+        const unequip = new ReplayUnequip(state);
 
         await expect(
-            unequip.execute(step(ReplayCommandCode.Unequip, [1]))
+            unequip.execute(step(ReplayCode.Unequip, [1]))
         ).resolves.toBe(false);
         expect(error).toHaveBeenCalledWith(2008, '1');
     });

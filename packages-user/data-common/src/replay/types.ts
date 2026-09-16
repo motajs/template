@@ -2,7 +2,7 @@ import { IHookable, IHookBase } from '@motajs/common';
 import { ISaveableContent } from '../save';
 
 /** 录像指令码，数值属于录像格式的一部分 */
-export const enum ReplayCommandCode {
+export const enum ReplayCode {
     /** 向上移动一步 */
     Up,
     /** 向右移动一步 */

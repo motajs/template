@@ -8,7 +8,7 @@ import {
     IReplayArray,
     IEnemyAttr,
     IHeroAttr,
-    ReplayCommandCode,
+    ReplayCode,
     SaveCompression,
     TileType
 } from '@user/data-common';
@@ -168,7 +168,7 @@ export function createClosedLoopFixture(): IClosedLoopFixture {
     state.hero.location.mover.setFaceDir(FaceDirection.Right);
 
     const replay = state.replaySystem;
-    replay.record(ReplayCommandCode.Right);
+    replay.record(ReplayCode.Right);
     const route = replay.route;
 
     const initialState: IClosedLoopInitialState = {

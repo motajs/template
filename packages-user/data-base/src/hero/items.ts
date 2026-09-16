@@ -2,7 +2,7 @@ import { isNil } from 'lodash-es';
 import {
     IDataCommon,
     ItemCategory,
-    ReplayCommandCode,
+    ReplayCode,
     SaveCompression
 } from '@user/data-common';
 import { HeroEquipsStore } from './equipStore';
@@ -127,7 +127,7 @@ export class HeroItems<THero> implements IHeroItems<THero> {
         if (!raw.effect.canUse(raw)) return false;
 
         const replay = this.state.replaySystem;
-        replay.route.add(ReplayCommandCode.UseItem, [raw.num]);
+        replay.route.add(ReplayCode.UseItem, [raw.num]);
 
         raw.effect.useEffect(raw);
 

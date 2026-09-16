@@ -7,7 +7,7 @@ import {
     ItemCategory,
     ReplaySystem,
     SaveCompression,
-    ReplayCommandCode,
+    ReplayCode,
     TileType
 } from '@user/data-common';
 import { IEnemy, IReadonlyHeroAttribute } from '@user/data-base';
@@ -17,15 +17,15 @@ import { MainDamageCalculator } from '../src/enemy/calculator';
 import { createClosedLoopFixture } from './fixtures/closed-loop';
 
 /** 供测试读取的稳定指令码顺序 */
-export const REPLAY_COMMAND_ORDER: readonly ReplayCommandCode[] = [
-    ReplayCommandCode.Up,
-    ReplayCommandCode.Right,
-    ReplayCommandCode.Down,
-    ReplayCommandCode.Left,
-    ReplayCommandCode.Teleport,
-    ReplayCommandCode.UseItem,
-    ReplayCommandCode.Equip,
-    ReplayCommandCode.Unequip
+export const REPLAY_COMMAND_ORDER: readonly ReplayCode[] = [
+    ReplayCode.Up,
+    ReplayCode.Right,
+    ReplayCode.Down,
+    ReplayCode.Left,
+    ReplayCode.Teleport,
+    ReplayCode.UseItem,
+    ReplayCode.Equip,
+    ReplayCode.Unequip
 ];
 
 vi.hoisted(() => {
@@ -258,19 +258,19 @@ describe('DATA-01 closure', () => {
             )
         ).toBe(true);
         expect(REPLAY_COMMAND_ORDER).toEqual([
-            ReplayCommandCode.Up,
-            ReplayCommandCode.Right,
-            ReplayCommandCode.Down,
-            ReplayCommandCode.Left,
-            ReplayCommandCode.Teleport,
-            ReplayCommandCode.UseItem,
-            ReplayCommandCode.Equip,
-            ReplayCommandCode.Unequip
+            ReplayCode.Up,
+            ReplayCode.Right,
+            ReplayCode.Down,
+            ReplayCode.Left,
+            ReplayCode.Teleport,
+            ReplayCode.UseItem,
+            ReplayCode.Equip,
+            ReplayCode.Unequip
         ]);
 
-        state.replaySystem.record(ReplayCommandCode.Right, 4, 'route');
+        state.replaySystem.record(ReplayCode.Right, 4, 'route');
         expect(state.replaySystem.route.get(0)).toMatchObject({
-            command: ReplayCommandCode.Right,
+            command: ReplayCode.Right,
             params: [4, 'route']
         });
 

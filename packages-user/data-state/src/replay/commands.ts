@@ -70,10 +70,7 @@ export abstract class BaseReplayCommand implements IReplayCommand {
 
 //#region 移动指令
 
-export class ReplayMoveCommand
-    extends BaseReplayCommand
-    implements IReplayCommand
-{
+export class ReplayMove extends BaseReplayCommand implements IReplayCommand {
     protected readonly name: string = 'move';
     protected readonly paramTypes: readonly string[] = [];
 
@@ -112,7 +109,7 @@ export class ReplayMoveCommand
 
 //#region 瞬移指令
 
-export class ReplayTeleportCommand
+export class ReplayTeleport
     extends BaseReplayCommand
     implements IReplayCommand
 {
@@ -136,10 +133,7 @@ export class ReplayTeleportCommand
 
 //#region 使用物品指令
 
-export class ReplayUseItemCommand
-    extends BaseReplayCommand
-    implements IReplayCommand
-{
+export class ReplayUseItem extends BaseReplayCommand implements IReplayCommand {
     protected readonly name: string = 'use-item';
     protected readonly paramTypes: readonly string[] = ['number'];
 
@@ -158,10 +152,7 @@ export class ReplayUseItemCommand
 
 //#region 装备指令
 
-export class ReplayEquipCommand
-    extends BaseReplayCommand
-    implements IReplayCommand
-{
+export class ReplayEquip extends BaseReplayCommand implements IReplayCommand {
     protected readonly name: string = 'equip';
     protected readonly paramTypes: readonly string[] = [
         'number',
@@ -190,10 +181,7 @@ export class ReplayEquipCommand
 
 //#region 卸下装备指令
 
-export class ReplayUnequipCommand
-    extends BaseReplayCommand
-    implements IReplayCommand
-{
+export class ReplayUnequip extends BaseReplayCommand implements IReplayCommand {
     protected readonly name: string = 'unequip';
     protected readonly paramTypes: readonly string[] = ['number'];
 

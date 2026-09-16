@@ -1,5 +1,5 @@
 import { isNil } from 'lodash-es';
-import { IDataCommon, ReplayCommandCode } from '@user/data-common';
+import { IDataCommon, ReplayCode } from '@user/data-common';
 import {
     EquipStatus,
     IEquipmentState,
@@ -192,7 +192,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
 
         // 最后恢复录像记录并记录录像
         replay.revert();
-        replay.route.add(ReplayCommandCode.Equip, [uid]);
+        replay.route.add(ReplayCode.Equip, [uid]);
 
         return curr;
     }
@@ -209,7 +209,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
 
         // 记录录像
         const replay = this.state.replaySystem;
-        replay.route.add(ReplayCommandCode.Unequip, [slot]);
+        replay.route.add(ReplayCode.Unequip, [slot]);
 
         this.unloadEquipEffect(state);
         this.equips.delete(slot);
