@@ -1,6 +1,7 @@
 // 性能测量：真实 13×13 魔塔地图下 CoreState 存读档耗时，只记录不断言
 import { afterAll, describe, it, vi } from 'vitest';
 import {
+    type IEnemyAttr,
     type IHeroAttr,
     type IItemRawData,
     type IMapRawData,
@@ -8,6 +9,7 @@ import {
     SaveCompression,
     TileType
 } from '@user/data-common';
+import { Enemy, ValueModifier } from '@user/data-base';
 import { CoreState, createCoreState } from '../src/core';
 import floorDataset from './fixtures/floors.json';
 
@@ -41,10 +43,41 @@ vi.hoisted(() => {
 const WARMUP_RUNS = 3;
 /** 采样次数，取排序后的下中位数 */
 const SAMPLE_RUNS = 20;
-/** 存读档覆盖的地图数量，阶段 2 扩为 1 / 5 / 13 */
-const MAP_SCALES = [1] as const;
+/** 存读档覆盖的地图数量，确定性取数据集的前 1 / 5 / 13 张 */
+const MAP_SCALES = [1, 5, 13] as const;
 /** 清除规则命中的图块编号：普通门 / 资源 / 怪物 / 机关门 */
 const CLEAR_CODES: readonly number[] = [2, 3, 4, 6];
+/** 固定侧负载：flag 条目数量 */
+const FLAG_COUNT = 50;
+/** 固定侧负载：装备道具编号，共 3 种 */
+const EQUIP_ITEM_NUMS: readonly number[] = [3000, 3001, 3002];
+/** 固定侧负载：装备实例编号，共 4 件，其中 3000 出现两次 */
+const EQUIP_INSTANCE_NUMS: readonly number[] = [3000, 3001, 3002, 3000];
+/** 固定侧负载：4 件装备占用的数字槽位，互不重复才能同时装备 */
+const EQUIPPED_SLOTS: readonly number[] = [0, 1, 2, 3];
+/** 固定侧负载：消耗品编号起点 */
+const OTHER_ITEM_BASE = 3020;
+/** 固定侧负载：消耗品种类数，编号 3020..3036，与 3 种装备合共 20 种道具 */
+const OTHER_ITEM_KINDS = 17;
+/** 固定侧负载：手写修饰器数量，加上 4 件装备各贡献 1 个即 20 个修饰器 */
+const MANUAL_MODIFIER_COUNT = 16;
+/** 固定侧负载：录像步数，按命令码 0..7 混合循环 */
+const REPLAY_STEPS = 1000;
+/** 手写修饰器轮转分布的勇士数值属性 */
+const HERO_ATTR_NAMES: readonly (keyof IHeroAttr)[] = [
+    'hp',
+    'hpmax',
+    'atk',
+    'def',
+    'mdef',
+    'mana',
+    'manamax',
+    'money',
+    'exp'
+];
+
+/** 勇士数值属性的键类型，用于装备 value/percentage 的构造 */
+type HeroKey = SelectKey<IHeroAttr, number>;
 
 /** 一档压缩档位的枚举值与表格展示名 */
 interface CompressionCase {
@@ -191,15 +224,19 @@ function registerTiles(state: CoreState): void {
 }
 
 /**
- * 构造一个完整的合成道具定义，构件阶段只用到装备分类
+ * 构造一个完整的合成道具定义，装备与消耗品共用
+ * value 必须走 [HeroKey, number][] 再 new Map，
+ * 直接写 new Map([['atk', 1]]) 会被推断成 Map<string, number>
  * @param num 道具编号
  * @param id 道具 id
  * @param category 道具分类
+ * @param value 装备数值加成条目
  */
 function createItemRaw(
     num: number,
     id: string,
-    category: ItemCategory
+    category: ItemCategory,
+    value: [HeroKey, number][] = []
 ): IItemRawData<IHeroAttr> {
     return {
         num,
@@ -210,9 +247,9 @@ function createItemRaw(
         hideInToolbox: false,
         effect: { useEvent: null, useEffect: () => {}, canUse: () => false },
         equip: {
-            slots: [0],
+            slots: [...EQUIPPED_SLOTS],
             animate: 'sword',
-            value: new Map(),
+            value: new Map(value),
             percentage: new Map(),
             loadEvent: null,
             unloadEvent: null
@@ -238,21 +275,115 @@ function registerItem(state: CoreState, item: IItemRawData<IHeroAttr>): void {
     state.itemStore.addItem(item);
 }
 
+/** 构造一个带合成属性的怪物模板对象 */
+function createEnemy(hp: number = 20): Enemy<IEnemyAttr> {
+    return new Enemy<IEnemyAttr>('perf-enemy', 1, {
+        hp,
+        atk: 8,
+        def: 5,
+        money: 2,
+        exp: 3,
+        point: 1,
+        guard: new Set()
+    });
+}
+
+/**
+ * 写入一步混合录像，参数与命令语义匹配，
+ * record 只写录像数组、不校验命令是否注册
+ * @param state 顶层数据端状态
+ * @param step 步序号，按 0..7 轮转命令码
+ */
+function recordReplayStep(state: CoreState, step: number): void {
+    const code = step % 8;
+    if (code < 4) {
+        state.replaySystem.record(code);
+    } else if (code === 4) {
+        state.replaySystem.record(code, 2, 3);
+    } else if (code === 5) {
+        state.replaySystem.record(code, 3000 + (step % 20));
+    } else if (code === 6) {
+        state.replaySystem.record(code, 0, 0, true);
+    } else {
+        state.replaySystem.record(code, 0);
+    }
+}
+
+/**
+ * 写入每个 case 逐字相同的固定真实侧负载：
+ * 50 个 flag、20 种道具、4 件已装备实例、20 个修饰器、
+ * 1000 步混合录像，以及只与参考一致的怪物基线
+ * @param state 顶层数据端状态
+ */
+function seedSideLoad(state: CoreState): void {
+    for (let i = 0; i < FLAG_COUNT; i++) {
+        state.flags.setFieldValue('perf-flag-' + i.toString(), i);
+    }
+
+    // 每种装备恰好 1 个 value 条目，故每件实例只贡献 1 个修饰器
+    for (const num of EQUIP_ITEM_NUMS) {
+        registerItem(
+            state,
+            createItemRaw(
+                num,
+                'perf-equip-' + num.toString(),
+                ItemCategory.Equipment,
+                [['atk', 1]]
+            )
+        );
+    }
+    for (let i = 0; i < OTHER_ITEM_KINDS; i++) {
+        const num = OTHER_ITEM_BASE + i;
+        registerItem(
+            state,
+            createItemRaw(
+                num,
+                'perf-item-' + num.toString(),
+                ItemCategory.Consumable
+            )
+        );
+    }
+
+    // 槽位互不重复才能同时装备 4 件，同一槽位的旧装备会被自动卸下
+    for (let i = 0; i < EQUIP_INSTANCE_NUMS.length; i++) {
+        const uid = state.hero.items.equipment.add(EQUIP_INSTANCE_NUMS[i]);
+        state.hero.equip.equip(uid, EQUIPPED_SLOTS[i]);
+    }
+
+    // 消耗品件数各不相同，模拟真实背包
+    for (let i = 0; i < OTHER_ITEM_KINDS; i++) {
+        state.hero.items.addItem(OTHER_ITEM_BASE + i, 1 + (i % 5));
+    }
+
+    // 每次都用新实例注册，避免同一修饰器被重复挂载
+    state.hero.registerModifier('@system/value', () => new ValueModifier(5));
+    for (let i = 0; i < MANUAL_MODIFIER_COUNT; i++) {
+        state.hero.createAndInsertModifier(
+            '@system/value',
+            HERO_ATTR_NAMES[i % HERO_ATTR_NAMES.length]
+        );
+    }
+
+    // 最后写入录像，避免 equip 内部的 record 混进这 1000 步
+    for (let i = 0; i < REPLAY_STEPS; i++) {
+        recordReplayStep(state, i);
+    }
+
+    // 与参考一致的怪物模板不会进入 dirtySet，故存档里没有怪物条目
+    state.enemyManager.addPrefab(createEnemy());
+    state.enemyManager.compareWith(new Map([[1, createEnemy()]]));
+}
+
 /**
  * 构造存读档夹具：注册图块后注入前若干张真实地图，
  * 再一次性建立参考基线。实时内容为清除后的矩阵，参考为原始矩阵
- * 装备列表为空时 HeroEquipsStore.loadState 会报 error 58，
- * 故构件阶段也必须至少注册并添加 1 件装备实例
+ * 侧负载与地图注入次序无关，但每个 case 都必须逐字相同地执行一遍
  * @param mapCount 注入的真实地图数量
  */
 function createRealMapFixture(mapCount: number): CoreState {
     const state = createCoreState();
     registerTiles(state);
-    registerItem(
-        state,
-        createItemRaw(3000, 'perf-equip-3000', ItemCategory.Equipment)
-    );
-    state.hero.items.equipment.add(3000);
+    seedSideLoad(state);
 
     const reference = new Map<string, Map<number, Uint32Array>>();
     for (let i = 0; i < mapCount; i++) {
