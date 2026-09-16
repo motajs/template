@@ -270,3 +270,14 @@ D-27/D-30 要求「每个公开方法至少一条正常用例」的公开接口�
 | 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `context.ts` `EnemyContext.deleteAura` + `buildup` | 删除全局光环后再次全量构建，此前已施加的光环加成仍留在计算后怪物上 | `bindHero` → `registerAuraConverter(new FakeConverter([]))` → `setEnemyAt({x:0,y:0}, createEnemy('target'))`（基础 `atk = 2`）→ `addAura(new FakeAura({ priority: 1, range: new FullRange(), onApply: h => h.enemy.addAttribute('atk', 3) }))` → `buildup()`（`atk = 5`）→ `deleteAura(同一实例)` → `buildup()`；正确应为 `2`，实际为 `5` | 与 `#06-01-4` 同根因：`buildup()` 未在重建前对每个视图调用 `reset()`，只在原计算值上继续施加（本次无新光环可施加，故停留在旧值） | 运行中删除全局光环（`deleteAura`）后，怪物属性不会回退到基础值，直到该视图被局部刷新（`markDirty` + `requestRefresh`，其内部会 `reset()`）或重建 | 同 `#06-01-4`：在 `buildup` 进入各效果阶段前对每个视图调用 `reset()`，或在重建开始时重建全部计算后怪物 | `context.test.ts` `applies a global aura after addAura and stops applying it after deleteAura`（`#06-15-1`） | 中 |
+
+## #06-17 真实地图存读档性能补充（data-state/test）
+
+本计划为纯新增 perf 测量（零断言），运行期**未出现任何** `[WARNING Code` / `[ERROR Code`，
+`pnpm test:perf` 收集 5 文件 / 45 行、`pnpm test:ci` 保持 66 文件 / 680 passed / 1 skipped。
+以下条目不是由运行期告警触发的，而是按 06-17-PLAN 的「实现风险」条目在执行期用一次性临时探针
+（已删除，未进仓库）实测确认后按 D-06 登记：
+
+| 模块/接口 | 现象 | 最小复现 | 疑似原因 | 影响面 | 建议修复方向 | 关联 skip 用例 | 严重度 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `hero/state.ts` `HeroState.loadState` 与 `hero/equipment.ts` `HeroEquipment` 持有的 attribute 引用 | 读档后装备带来的属性加成从最终属性中消失：`HeroState.loadState` 新建并替换 `this.attribute`，而 `this.equip` 仍指向构造时传入的旧属性对象，装备修饰器被挂到被替换掉的旧对象上 | `const state = createCoreState()` → 注册 1 件装备定义（`equip.value` 为 `[['atk', 5]]`，`slots: [0]`）→ `const uid = state.hero.items.equipment.add(num)` → `state.hero.equip.equip(uid, 0)` → `state.hero.getModifiableAttribute().getFinalAttribute('atk')` 为 `5` → `const saved = state.hero.saveState(compression)` → `state.hero.loadState(saved, compression)` → 再读 `getFinalAttribute('atk')`：三个压缩档均实测为 `0`（期望仍为 `5`），同一次探针中 `getModifiableAttribute() === 旧 attribute` 为 `false`（属性对象确实被替换） | `hero/state.ts:71` 构造 `HeroEquipment(this.items.equipment, this.attribute)` 时保存了 attribute 引用，而 `HeroEquipment` 中该成员为 `private readonly`（`equipment.ts:21-26`）无法被重新指向；`HeroState.loadState`（`state.ts:177-189`）替换 `this.attribute` 后没有同步给 `equipment`，随后 `equipment.loadState` → `equip()` → `loadEquipEffect`（`equipment.ts:80-85`）把新修饰器加到了旧对象上 | 任何经 `hero.loadState` 的路径（读档、自动存档回滚、回放重置）都会丢失全部装备加成，直到属性对象被重新赋值且装备被重新挂载；此后 `HeroEquipment.equip` / `compareEquip` 也继续作用于旧属性；旧属性对象被 `HeroEquipment` 长期引用，重复读档会在其上继续累积未被卸载的装备修饰器（`equips.clear()` 不触发 `unloadEquipEffect`） | 让 `HeroEquipment` 持有 `IHeroState`/取值函数而非 attribute 实例，或在 `HeroState.loadState` 中按 `attachAttribute` 语义把新属性同步给 `equipment`（并在替换前先卸载旧属性上的装备修饰器）；修复前补一条「读档后最终属性仍含装备加成」的回归用例 | 无（既有 `hero/saveLoad.test.ts` 只断言装备映射与槽位，未断言读档后的装备加成；本计划为零断言 perf 测量，探针仅临时使用后删除） | 高 |

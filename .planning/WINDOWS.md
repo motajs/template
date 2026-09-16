@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 10
+open_count: 11
 waived_count: 0
 fixed_count: 17
-total_count: 27
-last_updated: 2026-09-15T12:58:50.953Z
+total_count: 28
+last_updated: 2026-09-16T08:20:22.513Z
 ---
 
 # Broken Windows Ledger
@@ -42,6 +42,7 @@ last_updated: 2026-09-15T12:58:50.953Z
 | 25 | 06 | skipped-test | packages-user/data-base/src/hero/saveLoad.test.ts |  | 受阻塞缺口 G-06-09-B：压缩档 loadDiff 未回退装备原始定义（#06-09-1），EquipmentState 百分比加成 Low/High 档正确预期用例保持 it.skip | fixed |  | 2026-09-15T03:31:00.000Z | 2026-09-15T12:33:32.230Z |
 | 26 | 06 | skipped-test | packages-user/data-base/src/hero/saveLoad.test.ts |  | 受阻塞缺口 G-06-09-B：HeroEquipment.saveState 未深拷贝 equipped/slots（#06-09-2），经 HeroState 容器三档恢复装备映射的正确预期用例保持 it.skip | fixed |  | 2026-09-15T03:31:01.000Z | 2026-09-15T12:33:33.035Z |
 | 27 | 06 | skipped-test | packages-user/data-system/src/combat/context.test.ts | 625 | 受阻塞缺口 G-06-01-D：deleteAura 后再次 buildup 不回到基础值（#06-15-1，与 #06-01-4 同根因），正确预期用例保持 it.skip 待用户确认 | fixed |  | 2026-09-15T05:23:29.159Z | 2026-09-15T09:05:03.731Z |
+| 28 | 06 | deviation | packages-user/data-state/test/saveablesReal.perf.ts |  | stage-1 fixture seeds the minimum 1 equipment instance (plan said no side load) because HeroEquipsStore.loadState raises error 58 with an empty equipment list | open |  | 2026-09-16T08:20:22.513Z |  |
 
 ````json
 [
@@ -368,6 +369,18 @@ last_updated: 2026-09-15T12:58:50.953Z
     "reason": "",
     "recorded_at": "2026-09-15T05:23:29.159Z",
     "resolved_at": "2026-09-15T09:05:03.731Z"
+  },
+  {
+    "id": 28,
+    "kind": "deviation",
+    "phase": "06",
+    "file": "packages-user/data-state/test/saveablesReal.perf.ts",
+    "line": null,
+    "description": "stage-1 fixture seeds the minimum 1 equipment instance (plan said no side load) because HeroEquipsStore.loadState raises error 58 with an empty equipment list",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-09-16T08:20:22.513Z",
+    "resolved_at": null
   }
 ]
 ````
