@@ -13,6 +13,14 @@ import { IPassPredicate } from '../map';
 
 //#region 勇士属性
 
+export interface IHeroModifierOwner {
+    /**
+     * 将指定属性修饰器标记为脏
+     * @param modifier 属性修饰器
+     */
+    markModifierDirty(modifier: IHeroModifier): void;
+}
+
 export interface IHeroModifier<
     H = unknown, // 属性值类型
     V = unknown, // 修饰器参数类型
@@ -25,7 +33,7 @@ export interface IHeroModifier<
     /** 修饰器参数值 */
     readonly value: V;
     /** 当前修饰器所属的勇士属性对象 */
-    readonly owner: IHeroAttribute<unknown> | null;
+    readonly owner: IHeroModifierOwner | null;
 
     /**
      * 设置修饰器参数值
@@ -42,7 +50,7 @@ export interface IHeroModifier<
      * 绑定勇士属性对象
      * @param attribute 勇士属性对象
      */
-    bindAttribute(attribute: IHeroAttribute<unknown> | null): void;
+    bindAttribute(attribute: IHeroModifierOwner | null): void;
 
     /**
      * 对指定属性值进行修改
@@ -65,6 +73,13 @@ export interface IModifierStateSave<THero> {
     readonly type: string;
     /** 修饰器存档数据 */
     readonly state: unknown;
+}
+
+export interface IHeroAttributeSave<THero> {
+    /** 勇士的基础属性值，即未经过任何 Buff 或装备加成的属性 */
+    readonly values: THero;
+    /** 保存启用的属性修饰器状态 */
+    readonly modifiers: readonly IModifierStateSave<THero>[];
 }
 
 export interface IHeroAttributeCloneOption {
@@ -148,7 +163,10 @@ export interface IReadonlyHeroAttribute<THero> {
     getModifierSaveEnabled(modifier: IHeroModifier): boolean;
 }
 
-export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
+export interface IHeroAttribute<THero>
+    extends
+        IReadonlyHeroAttribute<THero>,
+        ISaveableContent<IHeroAttributeSave<THero>> {
     /**
      * 设置勇士的基础属性
      * @param name 属性名称
@@ -218,6 +236,32 @@ export interface IHeroAttribute<THero> extends IReadonlyHeroAttribute<THero> {
     catchCalculateProgress<K extends keyof THero>(
         name: K
     ): Iterable<[IHeroModifier<THero[K]>, THero[K]]>;
+
+    /**
+     * 注册一个修饰器工厂函数
+     * @param type 修饰器类型
+     * @param cons 工厂函数
+     */
+    registerModifier(
+        type: string,
+        cons: <K extends keyof THero>() => IHeroModifier<THero[K]>
+    ): void;
+
+    /**
+     * 创建指定类型的修饰器实例
+     * @param type 修饰器类型
+     */
+    createModifier<T, V>(type: string): IHeroModifier<T, V> | null;
+
+    /**
+     * 创建指定类型的修饰器实例并插入至本属性，默认进入存档
+     * @param type 修饰器类型
+     * @param name 属性名称
+     */
+    createAndInsertModifier<K extends keyof THero, V>(
+        type: string,
+        name: K
+    ): IHeroModifier<THero[K], V> | null;
 }
 
 //#endregion

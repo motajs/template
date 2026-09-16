@@ -3,7 +3,10 @@ import { SaveCompression } from '@user/data-common';
 import {
     IHeroAttribute,
     IHeroAttributeCloneOption,
-    IHeroModifier
+    IHeroAttributeSave,
+    IHeroModifier,
+    IHeroModifierOwner,
+    IModifierStateSave
 } from './types';
 import { isNil } from 'lodash-es';
 
@@ -11,7 +14,7 @@ export abstract class BaseHeroModifier<T, V> implements IHeroModifier<T, V, V> {
     abstract readonly type: string;
     abstract readonly priority: number;
 
-    owner: IHeroAttribute<unknown> | null = null;
+    owner: IHeroModifierOwner | null = null;
 
     constructor(private currentValue: V) {}
 
@@ -28,7 +31,7 @@ export abstract class BaseHeroModifier<T, V> implements IHeroModifier<T, V, V> {
         return this.currentValue;
     }
 
-    bindAttribute(attribute: IHeroAttribute<unknown> | null): void {
+    bindAttribute(attribute: IHeroModifierOwner | null): void {
         this.owner = attribute;
     }
 
@@ -52,6 +55,11 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
     private readonly modifierName: Map<IHeroModifier, keyof THero> = new Map();
     /** 当前标记为不存档的修饰器集合 */
     private readonly modifierNosave: Set<IHeroModifier> = new Set();
+    /** 修饰器工厂函数注册表 */
+    private readonly registry: Map<
+        string,
+        <K extends keyof THero>() => IHeroModifier<THero[K]>
+    > = new Map();
     /** 当前勇士最终属性 */
     private readonly finalAttribute: THero;
 
@@ -250,6 +258,32 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         return !this.modifierNosave.has(modifier);
     }
 
+    registerModifier(
+        type: string,
+        cons: <K extends keyof THero>() => IHeroModifier<THero[K]>
+    ): void {
+        this.registry.set(type, cons);
+    }
+
+    createModifier<T, V>(type: string): IHeroModifier<T, V> | null {
+        const cons = this.registry.get(type);
+        if (!cons) {
+            logger.warn(116, type);
+            return null;
+        }
+        return cons() as IHeroModifier<T, V>;
+    }
+
+    createAndInsertModifier<K extends keyof THero, V>(
+        type: string,
+        name: K
+    ): IHeroModifier<THero[K], V> | null {
+        const modifier = this.createModifier<THero[K], V>(type);
+        if (!modifier) return null;
+        this.addModifier(name, modifier);
+        return modifier;
+    }
+
     //#endregion
 
     //#region 属性克隆
@@ -261,6 +295,10 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         const cloned = new HeroAttribute<THero>(
             structuredClone(this.attribute)
         );
+        // 注册表条目随克隆体复制，使克隆属性可独立重建修饰器
+        for (const [type, cons] of this.registry) {
+            cloned.registry.set(type, cons);
+        }
         if (!cloneModifier) return cloned;
         for (const [name, modifiers] of this.modifier) {
             const arr: IHeroModifier[] = modifiers.map(v => v.clone());
@@ -276,6 +314,58 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
 
     toStructured(): THero {
         return structuredClone(this.attribute);
+    }
+
+    //#endregion
+
+    //#region 属性存读档
+
+    saveState(compression: SaveCompression): IHeroAttributeSave<THero> {
+        const modifiers: IModifierStateSave<THero>[] = [];
+        for (const [name, modifier] of this.iterateModifiers()) {
+            if (!this.getModifierSaveEnabled(modifier)) continue;
+            modifiers.push({
+                name: name as keyof THero,
+                type: modifier.type,
+                state: modifier.saveState(compression)
+            });
+        }
+        return { values: this.toStructured(), modifiers };
+    }
+
+    loadState(
+        state: IHeroAttributeSave<THero>,
+        compression: SaveCompression
+    ): void {
+        // 原地修改基础属性以保持同引用，使装备与战斗侧持有的属性引用跨读档始终有效
+        for (const key in this.attribute) {
+            if (Object.prototype.hasOwnProperty.call(state.values, key)) {
+                continue;
+            }
+            delete this.attribute[key as keyof THero];
+        }
+        const values = structuredClone(state.values);
+        for (const key in values) {
+            this.attribute[key as keyof THero] = values[key as keyof THero];
+        }
+
+        this.modifier.clear();
+        this.modifierName.clear();
+        this.modifierNosave.clear();
+
+        for (const save of state.modifiers) {
+            const cons = this.registry.get(save.type);
+            // 未注册的修饰器类型沿用既有静默跳过语义，不新增告警
+            if (!cons) continue;
+            const modifier = cons();
+            modifier.loadState(save.state, compression);
+            this.addModifier(save.name, modifier);
+        }
+
+        // 逐键重算 final，清掉被移除修饰器留下的陈旧值
+        for (const key in this.attribute) {
+            this.recalculateAttribute(key as keyof THero);
+        }
     }
 
     //#endregion

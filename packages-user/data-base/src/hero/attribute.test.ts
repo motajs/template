@@ -1,8 +1,16 @@
-// 测试 HeroAttribute 构件：基础/最终属性、修饰器增删排序、存盘开关、克隆与告警码 108/109
+// 测试 HeroAttribute 构件：基础/最终属性、修饰器增删排序、存盘开关、克隆、自身存读档与告警码 108/109
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { BaseHeroModifier, HeroAttribute } from './attribute';
 import { logger } from '@motajs/common';
+import { SaveCompression } from '@user/data-common';
 import { type IHeroModifier } from './types';
+
+/** 存读档测试覆盖的三档压缩级别 */
+const SAVE_COMPRESSIONS = [
+    SaveCompression.NoCompression,
+    SaveCompression.LowCompression,
+    SaveCompression.HighCompression
+] as const;
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -89,6 +97,16 @@ function createAttribute(): HeroAttribute<TestHero> {
         atk: 10,
         tag: { id: 'base' }
     });
+}
+
+interface TestNumericHero {
+    hp: number;
+    atk: number;
+}
+
+/** 构造一个仅含数值属性的勇士属性对象，使注册表工厂的具体修饰器可满足泛型签名 */
+function createNumericAttribute(): HeroAttribute<TestNumericHero> {
+    return new HeroAttribute<TestNumericHero>({ hp: 100, atk: 10 });
 }
 
 describe('HeroAttribute base and final values', () => {
@@ -267,5 +285,94 @@ describe('HeroAttribute cloning and progress', () => {
 
         expect(result.info.map(info => info.code)).toContain(109);
         expect(attribute.getFinalAttribute('tag')).toEqual({ id: 'base' });
+    });
+});
+
+describe('HeroAttribute same-reference save and load', () => {
+    // 验证三档压缩下基础值与已注册修饰器均在自身实例上原地恢复
+    it('restores base values and modifiers in place across all compressions', () => {
+        for (const compression of SAVE_COMPRESSIONS) {
+            const attribute = createNumericAttribute();
+            attribute.registerModifier(
+                '@test/value',
+                () => new TestModifier(5)
+            );
+            const modifier = attribute.createAndInsertModifier(
+                '@test/value',
+                'atk'
+            )!;
+            attribute.set('hp', 88);
+            const holder = attribute;
+
+            const saved = attribute.saveState(compression);
+            attribute.set('hp', 1);
+            attribute.set('atk', 1);
+            attribute.deleteModifier('atk', modifier);
+
+            attribute.loadState(saved, compression);
+
+            expect(attribute).toBe(holder);
+            expect(holder.getBaseAttribute('hp')).toBe(88);
+            expect(holder.getBaseAttribute('atk')).toBe(10);
+            expect(holder.getFinalAttribute('atk')).toBe(15);
+            expect([...holder.getModifiers('atk')]).toHaveLength(1);
+        }
+    });
+
+    // 验证读档后基础属性对象仍与存档快照分离（原地重置而非换引用）
+    it('keeps the restored base values independent from the snapshot', () => {
+        const attribute = createAttribute();
+        attribute.set('hp', 88);
+
+        const saved = attribute.saveState(SaveCompression.NoCompression);
+        attribute.loadState(saved, SaveCompression.NoCompression);
+
+        expect(attribute.toStructured()).toEqual(saved.values);
+        expect(attribute.toStructured()).not.toBe(saved.values);
+    });
+
+    // 验证存档禁用的修饰器不进入属性存档，读档后不复存在
+    it('excludes save-disabled modifiers from the attribute snapshot', () => {
+        const attribute = createAttribute();
+        const disabled = new TestModifier(1);
+        attribute.addModifier('hp', disabled);
+        attribute.setModifierSaveEnabled(disabled, false);
+
+        const saved = attribute.saveState(SaveCompression.NoCompression);
+        expect(saved.modifiers).toHaveLength(0);
+
+        attribute.loadState(saved, SaveCompression.NoCompression);
+
+        expect([...attribute.getModifiers('hp')]).toEqual([]);
+        expect(attribute.getFinalAttribute('hp')).toBe(100);
+    });
+
+    // 验证存档基础值是与活属性分离的深拷贝快照
+    it('keeps the saved base values independent from the live attribute', () => {
+        const attribute = createAttribute();
+        attribute.set('hp', 88);
+
+        const saved = attribute.saveState(SaveCompression.NoCompression);
+        attribute.set('hp', 1);
+
+        expect(saved.values.hp).toBe(88);
+        expect(attribute.getBaseAttribute('hp')).toBe(1);
+    });
+
+    // 验证克隆体复制注册表条目后可独立创建并重建修饰器
+    it('carries the modifier registry into cloned attributes', () => {
+        const attribute = createNumericAttribute();
+        attribute.registerModifier('@test/value', () => new TestModifier(5));
+
+        const clone = attribute.clone({ cloneModifier: false });
+        expect(
+            clone.createAndInsertModifier('@test/value', 'atk')
+        ).not.toBeNull();
+
+        const saved = clone.saveState(SaveCompression.NoCompression);
+        expect(saved.modifiers).toHaveLength(1);
+        clone.loadState(saved, SaveCompression.NoCompression);
+
+        expect(clone.getFinalAttribute('atk')).toBe(15);
     });
 });
