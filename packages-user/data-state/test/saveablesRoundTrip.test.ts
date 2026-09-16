@@ -251,7 +251,7 @@ describe('CoreState top-level save and load round trips', () => {
             '@system/hero'
         ) as IHeroStateSave<IHeroAttr>;
         const mapSave = snapshot.get('@system/maps') as IMapStoreSave;
-        expect(heroSave.attribute.hp).toBe(88);
+        expect(heroSave.attribute.values.hp).toBe(88);
         expect(mapSave.floors.get('F1')!.layers.get(0)!.fullMap![0]).toBe(5);
     });
 

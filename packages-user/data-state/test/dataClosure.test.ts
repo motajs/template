@@ -3,9 +3,12 @@ import {
     IEnemyAttr,
     IReplaySandbox,
     IHeroAttr,
+    IItemRawData,
+    ItemCategory,
     ReplaySystem,
     SaveCompression,
-    ReplayCommandCode
+    ReplayCommandCode,
+    TileType
 } from '@user/data-common';
 import { IEnemy, IReadonlyHeroAttribute } from '@user/data-base';
 import { IReadonlyEnemyHandler } from '@user/data-system';
@@ -112,6 +115,48 @@ async function waitForEnded(sandbox: IReplaySandbox): Promise<void> {
     }
     if (!sandbox.ended) throw new Error('closure replay did not end');
 }
+
+/** 向顶层状态注册一件 atk+5 的装备并装备至 0 号槽，返回装备实例 uid */
+function equipAtkItem(state: CoreState): number {
+    state.tileStore.addTile({
+        num: 9001,
+        id: 'closure-sword',
+        events: {},
+        type: TileType.Item,
+        pass: { onlyEvents: false, inPass: 15, outPass: 15 },
+        eventPass: true
+    });
+    const value: [SelectKey<IHeroAttr, number>, number][] = [['atk', 5]];
+    const item: IItemRawData<IHeroAttr> = {
+        num: 9001,
+        id: 'closure-sword',
+        category: ItemCategory.Equipment,
+        name: 'closure-sword',
+        text: 'closure-sword',
+        hideInToolbox: false,
+        effect: { useEvent: null, useEffect: () => {}, canUse: () => false },
+        equip: {
+            slots: [0],
+            animate: 'sword',
+            value: new Map(value),
+            percentage: new Map(),
+            loadEvent: null,
+            unloadEvent: null
+        }
+    };
+    state.itemStore.addItem(item);
+    state.hero.equip.setSlots(['weapon']);
+    const uid = state.hero.items.equipment.add(9001);
+    state.hero.equip.equip(uid, 0);
+    return uid;
+}
+
+/** 存读档测试覆盖的三档压缩级别 */
+const SAVE_COMPRESSIONS = [
+    SaveCompression.NoCompression,
+    SaveCompression.LowCompression,
+    SaveCompression.HighCompression
+] as const;
 
 describe('DATA-01 closure', () => {
     // 验证敌人管理器能够创建敌人、修改属性并完成独立存档恢复
@@ -255,5 +300,59 @@ describe('DATA-01 closure', () => {
         await expect(sandbox.step()).resolves.toBe(false);
         expect(sandbox.getReplayed()).toBe(1);
         expect(laterExecuted).toBe(false);
+    });
+});
+
+describe('CoreState hero attribute same-reference load (#06-17-2)', () => {
+    // 验证读档前战斗侧绑定与活属性为同一实例且反映装备加成
+    it('binds the combat context to the live hero attribute before load', () => {
+        const state = createCoreState();
+        equipAtkItem(state);
+
+        const bound = state.enemyContext.getBindedHero();
+        const attribute = state.hero.getModifiableAttribute();
+
+        expect(bound).toBe(attribute);
+        expect(attribute.getFinalAttribute('atk')).toBe(5);
+    });
+
+    // 验证读档后战斗侧无需重绑即读到同一活属性（#06-17-2）
+    it('reads the live attribute after load without rebinding', () => {
+        const state = createCoreState();
+        const uid = equipAtkItem(state);
+
+        const saved = state.hero.saveState(SaveCompression.NoCompression);
+        state.hero.equip.unequip(0);
+        state.hero.getModifiableAttribute().set('atk', 1);
+        state.hero.loadState(saved, SaveCompression.NoCompression);
+
+        expect(state.enemyContext.getBindedHero()).toBe(
+            state.hero.getModifiableAttribute()
+        );
+        expect(
+            state.enemyContext.getBindedHero()!.getFinalAttribute('atk')
+        ).toBe(5);
+        expect(state.hero.equip.getEquipped(0)).toBe(uid);
+    });
+
+    // 验证三档压缩下战斗侧始终读到同一活属性并反映读档值
+    it('reads the same live attribute across all compressions', () => {
+        for (const compression of SAVE_COMPRESSIONS) {
+            const state = createCoreState();
+            const uid = equipAtkItem(state);
+
+            const saved = state.hero.saveState(compression);
+            state.hero.equip.unequip(0);
+            state.hero.getModifiableAttribute().set('atk', 1);
+            state.hero.loadState(saved, compression);
+
+            expect(state.enemyContext.getBindedHero()).toBe(
+                state.hero.getModifiableAttribute()
+            );
+            expect(
+                state.enemyContext.getBindedHero()!.getFinalAttribute('atk')
+            ).toBe(5);
+            expect(state.hero.equip.getEquipped(0)).toBe(uid);
+        }
     });
 });
