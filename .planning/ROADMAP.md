@@ -210,7 +210,7 @@ Plans:
   3. 测试在本地可运行且全部通过
    4. 测试由 AI 编写并运行，通过验证后可提交
 
-**Plans**: 9/9 原计划 executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后) + gap-fill 06-10..06-15 (D-46；人工评审缺口补测，只补测试不改生产代码；15/15 executed) + perf 06-16 (性能测试补充；只加测试与配置，不改生产代码) + perf 06-17 (真实地图存读档性能补充；移入 13 张真实地图夹具，只加测试与夹具)
+**Plans**: 9/9 原计划 executed replanned (D-28；旧 06-01/06-02 执行结果标记 superseded，按同号重跑；数据端切片，非数据 render/legacy 覆盖延后) + gap-fill 06-10..06-15 (D-46；人工评审缺口补测，只补测试不改生产代码；15/15 executed) + perf 06-16 (性能测试补充；只加测试与配置，不改生产代码) + perf 06-17 (真实地图存读档性能补充；移入 13 张真实地图夹具，只加测试与夹具) + perf 06-18 (真实大地图场景性能补充；整条 lane 计时改为 `performance.mark`/`measure` + 新增 `mapScenario.perf.ts`，只加测试不改生产代码)
 
 Plans:
 
@@ -261,6 +261,10 @@ Plans:
 **Wave 7** *(realistic map save/load perf supplement, user-authorized; appended after 06-16; reuses the same isolated `test:perf` lane; one fixture move + one new `*.perf.ts`, no production edits, no new dependencies)*
 
 - [x] 06-17-PLAN.md — realistic map save/load perf: move the root `floors.json` (13 real 13×13 maps) into `packages-user/data-state/test/fixtures/`; new `packages-user/data-state/test/saveablesReal.perf.ts` measuring `存档`/`读档`/`往返` (save-only / load-only / round trip) for map scale `1/5/13` × `NoCompression`/`LowCompression`/`HighCompression` (27 rows) with a fixed realistic side load (50 flags, 20 hero modifiers incl. 4 from equipped items, 4 equipped instances, 20 item kinds, 1000 replay steps); cleared live map (`2/3/4/6` → `0`) vs original `compareWith` reference so `HighCompression` stores changed rows; warmup 3 + 20 samples → median/min/p95 via `console.table`, **zero assertions**, results recorded in `06-17-SUMMARY.md`
+
+**Wave 8** *(realistic large-map combat scenario perf supplement + lane-wide timing-method upgrade, user-authorized; appended after 06-17; reuses the same isolated `test:perf` lane; timing helper switch in 5 existing files + one new `*.perf.ts`, no production edits, no new dependencies)*
+
+- [ ] 06-18-PLAN.md — timing method upgrade + realistic large-map combat scenario perf: switch the inlined `measureCase` in **all** `*.perf.ts` from `globalThis.performance.now()` to `performance.mark` + `performance.measure` (unique per-case tags, per-sample `clearMarks`/`clearMeasures`; same `case`/`scale`/`median ms`/`min ms`/`p95 ms` columns, warmup 3 + 20 samples, record-only); new `packages-user/data-state/test/mapScenario.perf.ts` merging the 13 real 13×13 maps into ONE grid-tiled map (`ceil(sqrt(n))` columns, placed at `(col*13, row*13)`) for scale `1/5/13` → `13×13`/`39×26`/`52×52` with 11/79/204 monster tiles, 12 real `Enemy` prefabs (4 carrying real auras: `CommonAura` Full/Manhattan/Rect + `GuardAura`), `mulberry32`-seeded assignment, `createCoreState()` real wiring + `resize` + `addPrefab` + `fromRaw` + per-tile `setEnemyAt`; measures ① `enemyContext.buildup()` ② `mapDamage.refreshAll()` + per-monster `getSeparatedDamage`/`getReducedDamage` ③ one real `calculateCritical(view, 'atk')` per monster (plus a second table reporting `monsters`/`total ms`/`avg ms`); results recorded in `06-18-SUMMARY.md`
 
 ### Phase 7: 数据端缺陷修复
 
