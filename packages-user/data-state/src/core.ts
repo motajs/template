@@ -534,6 +534,10 @@ export class CoreState implements ICoreState {
             }
             const data = state.get(key);
             value.loadState(data, compression);
+            const executor = this.executors.get(value);
+            if (executor) {
+                executor.afterLoad(value, this);
+            }
         }
         const loaded = new Set<string>(state.keys());
         const total = new Set(this.saveables.keys());
