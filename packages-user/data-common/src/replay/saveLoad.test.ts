@@ -1,4 +1,5 @@
-// 测试录像存读档：ReplaySystem 同实例往返与多类型参数读回
+// 测试录像存读档：ReplaySystem 同实例往返、多类型参数读回与活跃读流跨读档过期
+import { logger } from '@motajs/common';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { ReplaySystem } from './system';
 
@@ -62,5 +63,25 @@ describe('ReplaySystem save and load round trips', () => {
         expect(system.route.getCommandArray()).toBe(snapshot.commandArray);
         expect(system.route.getParamArray()).toBe(snapshot.paramArray);
         expect(system.route.get(0).command).toBe(2);
+    });
+
+    // 验证读档整体替换缓冲区后，此前创建的活跃沙箱读流被标记过期并触发告警码 156（#06-17-3）
+    it('expires an active sandbox read stream when a snapshot is loaded', () => {
+        const system = createSystem();
+        system.registerCommand(1, { execute: async () => true });
+        system.record(1, 7);
+
+        const snapshot = system.saveState();
+        system.record(1, 9);
+
+        const sandbox = system.createReplaySandbox({
+            route: system.route,
+            reseter: { reset: () => {} }
+        });
+        system.loadState(snapshot);
+
+        const { info } = logger.catch(() => sandbox.play());
+
+        expect(info.map(v => v.code)).toContain(156);
     });
 });

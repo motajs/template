@@ -253,6 +253,7 @@
         "176": "Cannot add move step to replay system since only 'up,right,down,left' directions are acceptable.",
         "177": "Save data for saveable content $1 is needed, but there's no data in save data. Maybe a version issue for it? System will try to load other contents to make game run normally.",
         "178": "Save data with keys of '$1' are saved but not be loaded, is there some issue for it?",
+        "179": "Replay $1 received an out-of-range index $2, the current replay length is $3. The operation will be ignored.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }

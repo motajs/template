@@ -167,6 +167,25 @@ function expectRouteStream(
     expect(stream.index).toBe(expectedSteps.length);
 }
 
+// 执行越界编辑并对比前后全部可观测状态：长度、两个缓冲区字节与每一步解码结果，返回本次告警码
+function expectArrayUnchanged(array: ReplayArray, run: () => void): number[] {
+    const length = array.length;
+    const commands = new Uint8Array(array.getCommandArray()).slice();
+    const params = new Uint8Array(array.getParamArray()).slice();
+    const steps = Array.from({ length }, (_, i) => array.get(i));
+
+    const { info } = logger.catch(run);
+
+    expect(array.length).toBe(length);
+    expect(new Uint8Array(array.getCommandArray())).toEqual(commands);
+    expect(new Uint8Array(array.getParamArray())).toEqual(params);
+    expect(
+        Array.from({ length: array.length }, (_, i) => array.get(i))
+    ).toEqual(steps);
+
+    return info.map(v => v.code!);
+}
+
 describe('ReplayArray single operations', () => {
     // 验证 add 追加一条录像步并在原索引读回指令与参数
     it('appends one step and reads it back at the original index', () => {
@@ -354,6 +373,76 @@ describe('ReplayArray set index maintenance', () => {
         expectStepTyped(stream.read()!, 5, [true, true, true, true, true], 2);
         expect(stream.read()).toBeNull();
         expect(stream.index).toBe(2);
+    });
+});
+
+describe('ReplayArray index bounds', () => {
+    // 验证 insert 传入当前总步数时按末尾追加处理，追加后按索引与读流读回结果一致
+    it('appends when the insert index equals the current length', () => {
+        const array = createArray();
+        array.add(1, [10]);
+        array.add(2, [20]);
+
+        array.insert(array.length, 3, [30]);
+
+        expect(array.length).toBe(3);
+        expect(array.get(2)).toEqual({ command: 3, params: [30], index: 2 });
+        const stream = array.createReadStream(0);
+        expectStepTyped(stream.read()!, 1, [10], 1);
+        expectStepTyped(stream.read()!, 2, [20], 2);
+        expectStepTyped(stream.read()!, 3, [30], 3);
+        expect(stream.read()).toBeNull();
+    });
+
+    // 验证 insert 负索引与超出总步数的索引触发告警码 179 且不修改任何缓冲区内容
+    it('warns code 179 and keeps the buffers unchanged for an out-of-range insert', () => {
+        const array = createHeterogeneousArray();
+
+        for (const index of [-1, array.length + 1]) {
+            const codes = expectArrayUnchanged(array, () =>
+                array.insert(index, 9, [true, 5])
+            );
+            expect(codes).toContain(179);
+        }
+    });
+
+    // 验证 delete 负索引与等于总步数的索引触发告警码 179 且不修改任何缓冲区内容
+    it('warns code 179 and keeps the buffers unchanged for an out-of-range delete', () => {
+        const array = createHeterogeneousArray();
+
+        for (const index of [-1, array.length]) {
+            const codes = expectArrayUnchanged(array, () =>
+                array.delete(index)
+            );
+            expect(codes).toContain(179);
+        }
+    });
+
+    // 验证 set 负索引与等于总步数的索引触发告警码 179 且不修改任何缓冲区内容
+    it('warns code 179 and keeps the buffers unchanged for an out-of-range set', () => {
+        const array = createHeterogeneousArray();
+
+        for (const index of [-1, array.length]) {
+            const codes = expectArrayUnchanged(array, () =>
+                array.set(index, 9, [true, 5])
+            );
+            expect(codes).toContain(179);
+        }
+    });
+
+    // 验证空录像上的 delete 与 set 一律按越界处理，既不告警 179 之外的内容也不产生录像步
+    it('treats every index as out of range on an empty route', () => {
+        const array = createArray();
+
+        for (const index of [0, -1]) {
+            expect(
+                expectArrayUnchanged(array, () => array.delete(index))
+            ).toContain(179);
+        }
+        expect(
+            expectArrayUnchanged(array, () => array.set(0, 1, [10]))
+        ).toContain(179);
+        expect(array.length).toBe(0);
     });
 });
 

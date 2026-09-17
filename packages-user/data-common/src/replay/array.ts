@@ -436,14 +436,36 @@ export class ReplayArray implements IReplayArray {
 
     insert(index: number, command: number, params: ReplayParamValue[]): void {
         if (this.disabled > 0) return;
+        if (index < 0 || index > this.length) {
+            logger.warn(
+                179,
+                'insert',
+                index.toString(),
+                this.length.toString()
+            );
+            return;
+        }
         const normalized = this.normalizeParamList(params);
         const length = this.calculateParamsLength(normalized);
         this.checkBufferExpand(length);
 
         const commandSize = this.getCommandSize();
+        const commandStart = index * commandSize;
+
+        // 插入到末尾等同于追加，此时无需任何位移
+        if (index === this.length) {
+            this.setCommandArray(commandStart, params.length, command);
+            this.setParamArray(this.paramUsed, normalized);
+            this.indexArray[this.length] = this.paramUsed;
+
+            this.length++;
+            this.paramUsed += length;
+
+            this.expireStreams();
+            return;
+        }
 
         // 先进行位移
-        const commandStart = index * commandSize;
         const paramStart = this.indexArray[index];
         this.commandArray.copyWithin(commandStart + commandSize, commandStart);
         this.paramArray.copyWithin(paramStart + length, paramStart);
@@ -466,6 +488,15 @@ export class ReplayArray implements IReplayArray {
 
     delete(index: number): void {
         if (this.disabled > 0) return;
+        if (index < 0 || index >= this.length) {
+            logger.warn(
+                179,
+                'delete',
+                index.toString(),
+                this.length.toString()
+            );
+            return;
+        }
         const commandSize = this.getCommandSize();
         const commandStart = index * commandSize;
         const range = this.getParamRange(index);
@@ -501,6 +532,10 @@ export class ReplayArray implements IReplayArray {
 
     set(index: number, command: number, params: ReplayParamValue[]): void {
         if (this.disabled > 0) return;
+        if (index < 0 || index >= this.length) {
+            logger.warn(179, 'set', index.toString(), this.length.toString());
+            return;
+        }
         const normalized = this.normalizeParamList(params);
         const length = this.calculateParamsLength(normalized);
         // 末步的参数终点取 paramUsed，与 delete 同口径，避免读到未初始化的 indexArray[index + 1]
@@ -825,6 +860,9 @@ export class ReplayArray implements IReplayArray {
         this.length = length;
 
         this.rebuildIndexArray();
+
+        // 缓冲区被整体替换后，此前创建的读流偏移已失效，需要与其它写路径一样标记过期
+        this.expireStreams();
     }
 
     //#endregion
