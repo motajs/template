@@ -278,7 +278,7 @@ Plans:
   3. pnpm test:ci 全绿且不新增跳过用例，数据范围 check:type / check:circular 门禁通过
   4. 改动仅限数据端（packages 与 packages-user/data-*），不改动渲染端 @user/client-* 与 legacy 渲染接线，双端分离约束保持
 
-**Plans**: 12/14 plans executed — 07-01..07-09 已执行（07-09 为阶段标记 Complete 后追加的重开计划，已执行并有 SUMMARY）；07-10..07-14 为第二轮追加（把 C–H 与 CR-01/CR-02 由「只登记」转为「修复」，**尚未执行**）（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`）
+**Plans**: 13/14 plans executed — 07-01..07-09 已执行（07-09 为阶段标记 Complete 后追加的重开计划，已执行并有 SUMMARY）；07-10..07-14 为第二轮追加（把 C–H 与 CR-01/CR-02 由「只登记」转为「修复」，**尚未执行**）（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`）
 
 > **阶段重开（2026-09-16）**：`07-LOADSTATE-AUDIT.md` 登记的同引用审计条目 `#06-17-1`（A）与 `#06-17-2`（B）在本阶段收口后追加为计划 `07-09`，Phase 7 因此由 `Complete` 回到未完成；执行 07-09 后 `07-VERIFICATION.md`（2026-09-16 结论仅覆盖 8/8 计划的工作树）**失效，必须重跑 `/gsd-verify-work`** 重新出具验证结论。
 
@@ -290,7 +290,7 @@ Plans:
 - [x] 07-10-PLAN.md — replay：CR-01（`set()` 索引数组损坏，与 `delete()` 对齐）/ 审计 H `#06-17-3`（`setReplayArray` 漏 `expireStreams`）/ WR-01（bigint 长度字节溢出）/ WR-02（参数计数用未截断长度）/ WR-03（编解码格式版本）/ WR-07（`insert`/`delete`/`set` 越界校验）
 - [x] 07-11-PLAN.md — 容器同引用：`#06-17-4`（`equipStore` 重建实例脱钩）/ `#06-17-5`（`flag/system` 字段脱钩）/ `#06-17-6`（followers 重建脱钩）
 - [x] 07-12-PLAN.md — 装备/属性存档正确性：WR-04（装备修饰器活值未持久化）/ WR-05（`deleteModifierByIndex` 簿记残留）/ WR-06（`HeroEquipment.loadState` 读档写录像）
-- [ ] 07-13-PLAN.md — 地图：CR-02（`MapDamage` 幽灵伤害：来源消失/范围收缩后缓存残留）/ `#06-17-8`（`MapLayer.setMapRef` 失效契约 + 读档旧动态块累积）
+- [x] 07-13-PLAN.md — 地图：CR-02（`MapDamage` 幽灵伤害：来源消失/范围收缩后缓存残留）/ `#06-17-8`（`MapLayer.setMapRef` 失效契约 + 读档旧动态块累积）
 - [ ] 07-14-PLAN.md — legacy：`#06-17-7`（`data-fallback` `core.status.hero` 代理闭包持有读档前属性）
 - [x] 07-09-PLAN.md — hero：`#06-17-1` / `#06-17-2` 同引用修复（`HeroAttribute` 自身实现 `ISaveableContent`，属性存读档在自身实例上原地完成；`IHeroStateSave` 形状变更 + 装备修饰器不入属性存档）
 - [x] 07-01-PLAN.md — combat：`#06-01-1` / `#06-01-2` / `#06-01-3` / `#06-01-4`（含 `#06-15-1`）
@@ -348,11 +348,11 @@ Plans:
 
 **Wave 12** *(blocked on Wave 11)*
 
-- [ ] 07-12-PLAN.md — 装备/属性存档正确性（WR-04 / WR-05 / WR-06）
+- [x] 07-12-PLAN.md — 装备/属性存档正确性（WR-04 / WR-05 / WR-06）
 
 **Wave 13** *(blocked on Wave 12)*
 
-- [ ] 07-13-PLAN.md — 地图失效边界与动态块（CR-02 / `#06-17-8`）
+- [x] 07-13-PLAN.md — 地图失效边界与动态块（CR-02 / `#06-17-8`）
 
 **Wave 14** *(blocked on Wave 13)*
 
@@ -371,4 +371,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
-| 7. 数据端缺陷修复 | 12/14 | In Progress|  |
+| 7. 数据端缺陷修复 | 13/14 | In Progress|  |

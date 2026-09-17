@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.0
-current_phase: 1
-current_phase_name: 事件系统
-status: planning
-stopped_at: Phase 7 complete, ready to plan Phase 1
-last_updated: "2026-09-16T05:22:43.856Z"
-last_activity: 2026-09-16
-last_activity_desc: Phase 7 complete, transitioned to Phase 1
-state_head: 35f6fed9b4780fc7fdf7e024be3d588ed4f6b88c
+current_phase: 07
+current_phase_name: 数据端缺陷修复
+status: executing
+stopped_at: "Executed 07-13 (CR-02 / IN-01 / #06-17-8); 07-14 remains"
+last_updated: "2026-09-17T09:34:52.902Z"
+last_activity: 2026-09-17
+last_activity_desc: 07-13 executed (CR-02 / IN-01 / #06-17-8); 07-14 remains
+state_head: 13234b762aa7bb1efb45d97720414af7d46267b7
 progress:
   total_phases: 7
-  completed_phases: 1
-  total_plans: 60
-  completed_plans: 60
+  completed_phases: 0
+  total_plans: 69
+  completed_plans: 68
 milestone_name: milestone
 ---
 
@@ -24,14 +24,14 @@ milestone_name: milestone
 See: .planning/PROJECT.md (updated 2026-09-10)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 7 — 数据端缺陷修复
+**Current focus:** Phase 07 — 数据端缺陷修复
 
 ## Current Position
 
-Phase: 1 — 事件系统
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-09-16 — Phase 7 complete, transitioned to Phase 1
+Phase: 07 (数据端缺陷修复) — EXECUTING
+Plan: 13 of 14
+Status: Ready to execute
+Last activity: 2026-09-17 — 07-13 executed (CR-02 / IN-01 / `#06-17-8`); 07-14 remains
 
 Progress: [█████░░░░░] 50%
 
@@ -94,6 +94,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P13 | 14min | 3 tasks | 4 files |
 | Phase 06 P14 | 12min | 3 tasks | 2 files |
 | Phase 06 P15 | 12min | 2 tasks | 3 files |
+| Phase 07-data-fixes P13 | 56min | 5 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -203,6 +204,10 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-15：G-06-01-D（`EnemyContext.deleteAura`）补测首次实测即为红灯——`addAura` 生效（atk 2→5）断言通过，但 `deleteAura`（同一 `FakeAura` 实例）+ 再次 `buildup` 后 atk 仍为 5（期望回到基础值 2），故按 D-05 保留正确预期并标记 `it.skip`，不弱化断言也不改写为可跑绿假象
 - [Phase 06]: 06-15：#06-15-1 与既有 #06-01-4 同根因（`buildup()` 只清空光环拓扑、未像 `refreshEnemy()` 那样先 `view.reset()`），findings 中交叉引用 #06-01-4 而非另立独立缺陷编号；修复 #06-01-4 后本用例可直接取消 skip
 - [Phase 06]: 06-15：删除全局光环判定必须传同一光环实例（`globalAuraList` 为 Set 身份比较）且必须注册 `FakeConverter([])` 打开光环流水线（否则 `buildupBase()` 不执行导致假绿）；本计划无新增码、无新增依赖、不测 saveState/loadState、不改动任何生产/核心源码
+- [Phase 07]: [Phase 07] 07-13 Q1=A：MapDamage 移除端逐个 markDirtyIndex + 空视图集 enemyStore.set（空 Set 为真值，不新增分支，A5）
+- [Phase 07]: [Phase 07] 07-13 Q2=A：setMapRef/getMapRef 保留「标旧对象 expired + 整对象替换」现契约，零代码、零 jsDoc 改动（契约文本落在 <record> 与 07-13-SUMMARY）
+- [Phase 07]: [Phase 07] 07-13 Q3=A1：MapLayer.loadState 入口 clearDynamics 全清既有动态块（复用 deleteDynamic 语义、触发 onDeleteDynamic、不等待，A6）
+- [Phase 07]: [Phase 07] 07-13 Q4=A：IN-01 两处清理（deleteEnemy 剪除 affectedBy/damages；deleteMapDamage 空点移除为无公开可观测差异的簿记修复，A7；sourcedDamage 空点不删）
 
 ### Roadmap Evolution
 
@@ -238,6 +243,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-15T06:00:01.304Z
-Stopped at: Phase 7 complete, ready to plan Phase 1
-Resume file: .planning/phases/07-data-fixes/07-CONTEXT.md
+Last session: 2026-09-17T09:34:35.942Z
+Stopped at: Executed 07-13 (CR-02 / IN-01 / #06-17-8); 07-14 remains
+Resume file: None
