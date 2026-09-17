@@ -317,6 +317,10 @@ describe('ReplayArray set index maintenance', () => {
 
         array.add(3, [30]);
         expect(array.get(2)).toEqual({ command: 3, params: [30], index: 2 });
+        // 末步 set 后 paramUsed 等于实际使用字节数（2 + 6），追加命令的参数紧接其后从第 8 字节起写入
+        const params = new Uint8Array(array.getParamArray());
+        expect(params[8]).toBe(1);
+        expect(params[9]).toBe(30);
     });
 
     // 验证末步 set 缩短参数后 paramUsed 相应减少，后续追加的参数落在正确偏移上
@@ -332,6 +336,10 @@ describe('ReplayArray set index maintenance', () => {
 
         array.add(3, [30]);
         expect(array.get(2)).toEqual({ command: 3, params: [30], index: 2 });
+        // 末步 set 后 paramUsed 回落到 2 + 2，追加命令的参数紧接其后从第 4 字节起写入
+        const params = new Uint8Array(array.getParamArray());
+        expect(params[4]).toBe(1);
+        expect(params[5]).toBe(30);
     });
 
     // 验证中间步 set 增长参数后，读取流逐条读回与按索引读回结果一致
