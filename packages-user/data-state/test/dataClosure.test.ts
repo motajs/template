@@ -269,7 +269,7 @@ describe('DATA-01 closure', () => {
         ]);
 
         state.replaySystem.record(ReplayCode.Right, 4, 'route');
-        expect(state.replaySystem.route.get(0)).toMatchObject({
+        expect(state.replaySystem.array.get(0)).toMatchObject({
             command: ReplayCode.Right,
             params: [4, 'route']
         });
@@ -291,7 +291,7 @@ describe('DATA-01 closure', () => {
         replay.record(0);
         replay.record(1);
         const sandbox = replay.createReplaySandbox({
-            route: replay.route,
+            route: replay.array,
             reseter: { reset: () => {} }
         }) as IManualReplaySandbox;
         sandbox.pausing = false;

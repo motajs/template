@@ -292,9 +292,16 @@ export interface IReplayArray {
     disable(): void;
 
     /**
-     * 将录像记录功能从禁用状态恢复为启用状态
+     * 将录像记录功能从禁用状态恢复为上一个禁用状态。
+     * 具体来说，每次调用 `disable` 时都会使得录像禁用层数加一，此方法可以使其减一，直到减为 0。
+     * 这么做的目的是为了防止嵌套禁用调用时出现下层启用后上层意外记录录像的问题。
      */
     revert(): void;
+
+    /**
+     * 清空录像记录的 `disable` 记录，直接跳出所有的 `disable` 层
+     */
+    clearDisableFlag(): void;
 }
 
 export interface IReplaySystemHooks extends IHookBase {
@@ -369,7 +376,7 @@ export interface IReplaySystem
     /** 当前正在播放的录像沙箱实例 */
     readonly sandbox: IReplaySandbox | null;
     /** 当前的录像操作器，用于直接操作或读取录像数据 */
-    readonly route: IReplayArray;
+    readonly array: IReplayArray;
 
     /**
      * 注册一个录像命令

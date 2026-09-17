@@ -118,12 +118,12 @@ function createHarness(options: ITestHarnessOptions): ITestHarness {
     const sandbox = { ended: false };
     let cursor = 0;
     const runtime: IReplayVerifierRuntime = {
-        route: replay.route,
+        route: replay.array,
         expected: createSnapshot(),
         sandbox,
         getCommand: code => replay.getCommand(code),
         step: async () => {
-            const step = replay.route.get(cursor++);
+            const step = replay.array.get(cursor++);
             const command = replay.getCommand(step.command);
             if (!command) return false;
             return command.execute(step);

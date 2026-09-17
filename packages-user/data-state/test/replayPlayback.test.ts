@@ -159,7 +159,7 @@ async function waitForEnded(sandbox: IReplaySandbox): Promise<void> {
 async function playRoute(state: CoreState): Promise<void> {
     const replay = state.replaySystem;
     const sandbox = replay.createReplaySandbox({
-        route: replay.route,
+        route: replay.array,
         reseter: { reset: () => resetHero(state) }
     });
     replay.disable();
@@ -236,16 +236,16 @@ describe('replay recording and route read-back', () => {
 
         replay.disable();
         replay.record(ReplayCode.Right);
-        expect(replay.route.length).toBe(0);
+        expect(replay.array.length).toBe(0);
 
         replay.disable();
         replay.revert();
         replay.record(ReplayCode.Right);
-        expect(replay.route.length).toBe(0);
+        expect(replay.array.length).toBe(0);
 
         replay.revert();
         replay.record(ReplayCode.Right);
-        expect(replay.route.length).toBe(1);
+        expect(replay.array.length).toBe(1);
     });
 
     // 验证八个稳定指令码及其参数都能经录像数组逐条读回
@@ -258,24 +258,24 @@ describe('replay recording and route read-back', () => {
         replay.record(ReplayCode.Equip, 99, 1, true);
         replay.record(ReplayCode.Unequip, 1);
 
-        expect(replay.route.length).toBe(5);
-        expect(replay.route.get(0)).toMatchObject({
+        expect(replay.array.length).toBe(5);
+        expect(replay.array.get(0)).toMatchObject({
             command: ReplayCode.Up,
             params: []
         });
-        expect(replay.route.get(1)).toMatchObject({
+        expect(replay.array.get(1)).toMatchObject({
             command: ReplayCode.Teleport,
             params: [3, 4]
         });
-        expect(replay.route.get(2)).toMatchObject({
+        expect(replay.array.get(2)).toMatchObject({
             command: ReplayCode.UseItem,
             params: [12]
         });
-        expect(replay.route.get(3)).toMatchObject({
+        expect(replay.array.get(3)).toMatchObject({
             command: ReplayCode.Equip,
             params: [99, 1, true]
         });
-        expect(replay.route.get(4)).toMatchObject({
+        expect(replay.array.get(4)).toMatchObject({
             command: ReplayCode.Unequip,
             params: [1]
         });
@@ -286,12 +286,12 @@ describe('replay recording and route read-back', () => {
         const state = createCoreState();
 
         withReplayDisabled(state, () => createSmallMapScene(state));
-        expect(state.replaySystem.route.length).toBe(0);
+        expect(state.replaySystem.array.length).toBe(0);
 
         await runHeroStep(state, FaceDirection.Right);
 
-        expect(state.replaySystem.route.length).toBe(1);
-        expect(state.replaySystem.route.get(0)).toMatchObject({
+        expect(state.replaySystem.array.length).toBe(1);
+        expect(state.replaySystem.array.get(0)).toMatchObject({
             command: ReplayCode.Right,
             params: []
         });
@@ -325,14 +325,14 @@ describe('small-map replay playback and second recording', () => {
         replay.record(ReplayCode.Teleport, 1, 0);
         replay.record(ReplayCode.Up);
 
-        const firstSteps = snapshotRoute(replay.route);
+        const firstSteps = snapshotRoute(replay.array);
         expect(firstSteps.map(item => item.code)).toEqual([
             ReplayCode.Right,
             ReplayCode.Right,
             ReplayCode.Teleport,
             ReplayCode.Up
         ]);
-        expect(replay.route.get(2)).toMatchObject({
+        expect(replay.array.get(2)).toMatchObject({
             command: ReplayCode.Teleport,
             params: [1, 0]
         });
@@ -342,7 +342,7 @@ describe('small-map replay playback and second recording', () => {
         expect(state.hero.location.y).toBe(0);
 
         replay.loadState(emptyReplay, SaveCompression.NoCompression);
-        expect(replay.route.length).toBe(0);
+        expect(replay.array.length).toBe(0);
         withReplayDisabled(state, () => resetHero(state));
 
         await runHeroStep(state, FaceDirection.Right);
@@ -350,7 +350,7 @@ describe('small-map replay playback and second recording', () => {
         replay.record(ReplayCode.Teleport, 1, 0);
         replay.record(ReplayCode.Up);
 
-        const secondSteps = snapshotRoute(replay.route);
+        const secondSteps = snapshotRoute(replay.array);
         expectReplayEqual(secondSteps, firstSteps);
 
         await playRoute(state);
@@ -480,7 +480,7 @@ describe('replay playback error codes 2001-2008', () => {
     // 验证录像不可存档属主为 ReplaySystem，ReplayArray 不再提供 saveState/loadState
     it('keeps the saveable owner on ReplaySystem instead of ReplayArray', () => {
         const state = createCoreState();
-        const route = state.replaySystem.route;
+        const route = state.replaySystem.array;
         const save = state.replaySystem.saveState(
             SaveCompression.NoCompression
         );

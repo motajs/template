@@ -240,7 +240,7 @@ function assertRestored(state: CoreState, seeded: SeededState): void {
     expect(state.enemyManager.getPrefab(1)!.getAttribute('hp')).toBe(30);
     expect(state.enemyManager.getPrefab(1)!.getAttribute('atk')).toBe(9);
 
-    const route = state.replaySystem.route;
+    const route = state.replaySystem.array;
     expect(route.length).toBe(REPLAY_STEPS.length);
     REPLAY_STEPS.forEach((step, index) => {
         expect(route.get(index)).toEqual({
@@ -454,13 +454,13 @@ describe('CoreState container coverage for compression-less saveables', () => {
 
             expect(state.flags.getFieldValue<number>('score')).toBe(5);
             expect(state.flags.getFieldValue<number>('stage')).toBe(3);
-            expect(state.replaySystem.route.length).toBe(2);
-            expect(state.replaySystem.route.get(0)).toEqual({
+            expect(state.replaySystem.array.length).toBe(2);
+            expect(state.replaySystem.array.get(0)).toEqual({
                 command: 1,
                 params: [],
                 index: 0
             });
-            expect(state.replaySystem.route.get(1)).toEqual({
+            expect(state.replaySystem.array.get(1)).toEqual({
                 command: 2,
                 params: [7],
                 index: 1

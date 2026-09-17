@@ -127,7 +127,7 @@ export class HeroItems<THero> implements IHeroItems<THero> {
         if (!raw.effect.canUse(raw)) return false;
 
         const replay = this.state.replaySystem;
-        replay.route.add(ReplayCode.UseItem, [raw.num]);
+        replay.array.add(ReplayCode.UseItem, [raw.num]);
 
         raw.effect.useEffect(raw);
 

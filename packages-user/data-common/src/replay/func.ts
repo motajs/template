@@ -66,7 +66,7 @@ export function beginReplaySafetyCollection(system: IReplaySystem): void {
     }
     replaySystem = system;
     collecting = true;
-    beforeLength = system.route.length;
+    beforeLength = system.array.length;
     shouldIgnore = false;
     collection.messages.length = 0;
     currentCollection = collection;
@@ -82,7 +82,7 @@ export function endReplaySafetyCollection(): void {
     }
     try {
         if (shouldIgnore) return;
-        if (replaySystem.route.length > beforeLength) return;
+        if (replaySystem.array.length > beforeLength) return;
         if (collection.messages.length === 0) return;
 
         // 需要把收集内容输出，这里只输出一层，完整输出需要在控制台手动调用

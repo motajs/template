@@ -33,7 +33,7 @@ function createCommand(
 // 用录像系统构造一个可手动驱动的录像沙箱
 function createSandbox(system: ReplaySystem): IManualReplaySandbox {
     return system.createReplaySandbox({
-        route: system.route,
+        route: system.array,
         reseter: { reset: () => {} }
     }) as IManualReplaySandbox;
 }
@@ -204,7 +204,7 @@ describe('ReplaySandbox stepping', () => {
         system.record(1);
         const sandbox = createSandbox(system);
         start(sandbox);
-        system.route.add(1, []);
+        system.array.add(1, []);
 
         await expect(sandbox.step()).resolves.toBe(false);
 
@@ -226,7 +226,7 @@ describe('ReplaySandbox stepping', () => {
         system.record(1);
         system.record(1);
         const sandbox = system.createReplaySandbox({
-            route: system.route,
+            route: system.array,
             reseter: { reset: () => {} },
             startIndex: 2
         }) as IManualReplaySandbox;
@@ -386,7 +386,7 @@ describe('ReplaySandbox playback control', () => {
         );
         system.record(1);
         const sandbox = createSandbox(system);
-        system.route.add(1, []);
+        system.array.add(1, []);
 
         sandbox.play();
         await new Promise<void>(resolve => setTimeout(resolve, 0));

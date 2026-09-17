@@ -176,16 +176,16 @@ export class HeroMover<T extends IHeroLocation>
             const replay = this.state.replaySystem;
             switch (handler.direction) {
                 case FaceDirection.Up:
-                    replay.route.add(ReplayCode.Up, []);
+                    replay.array.add(ReplayCode.Up, []);
                     break;
                 case FaceDirection.Right:
-                    replay.route.add(ReplayCode.Right, []);
+                    replay.array.add(ReplayCode.Right, []);
                     break;
                 case FaceDirection.Left:
-                    replay.route.add(ReplayCode.Left, []);
+                    replay.array.add(ReplayCode.Left, []);
                     break;
                 case FaceDirection.Down:
-                    replay.route.add(ReplayCode.Down, []);
+                    replay.array.add(ReplayCode.Down, []);
                     break;
                 default:
                     logger.warn(176);

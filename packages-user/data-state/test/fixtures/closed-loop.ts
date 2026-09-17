@@ -169,7 +169,7 @@ export function createClosedLoopFixture(): IClosedLoopFixture {
 
     const replay = state.replaySystem;
     replay.record(ReplayCode.Right);
-    const route = replay.route;
+    const route = replay.array;
 
     const initialState: IClosedLoopInitialState = {
         hero: state.hero.saveState(SaveCompression.NoCompression),
@@ -245,7 +245,7 @@ export function createClosedLoopFixture(): IClosedLoopFixture {
         );
     };
     const sandbox = replay.createReplaySandbox({
-        route: replay.route,
+        route: replay.array,
         reseter: { reset }
     });
 

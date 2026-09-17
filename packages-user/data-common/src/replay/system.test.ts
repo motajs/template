@@ -41,8 +41,8 @@ describe('ReplaySystem registration and recording', () => {
     it('builds an empty uint8 route', () => {
         const system = new ReplaySystem();
 
-        expect(system.route.commandWidth).toBe(ReplayCommandWidth.Uint8);
-        expect(system.route.length).toBe(0);
+        expect(system.array.commandWidth).toBe(ReplayCommandWidth.Uint8);
+        expect(system.array.length).toBe(0);
     });
 
     // 验证注册后可取回命令且未知码返回 null
@@ -85,8 +85,8 @@ describe('ReplaySystem registration and recording', () => {
 
         system.record(5, 1, true);
 
-        expect(system.route.length).toBe(1);
-        expect(system.route.get(0)).toEqual({
+        expect(system.array.length).toBe(1);
+        expect(system.array.get(0)).toEqual({
             command: 5,
             params: [1, true],
             index: 0
@@ -102,8 +102,8 @@ describe('ReplaySystem registration and recording', () => {
         first.record(1);
 
         expect(second.getCommand(1)).toBeNull();
-        expect(second.route.length).toBe(0);
-        expect(first.route.length).toBe(1);
+        expect(second.array.length).toBe(0);
+        expect(first.array.length).toBe(1);
     });
 });
 
@@ -123,7 +123,7 @@ describe('ReplaySystem sandbox lifecycle', () => {
         const save = new Map<string, unknown>([['hp', 10]]);
 
         const sandbox = system.createReplaySandbox({
-            route: system.route,
+            route: system.array,
             reseter,
             save
         });
@@ -138,7 +138,7 @@ describe('ReplaySystem sandbox lifecycle', () => {
         const system = new ReplaySystem();
         const { reseter } = createReseter();
         const sandbox = system.createReplaySandbox({
-            route: system.route,
+            route: system.array,
             reseter
         });
         const stop = vi.spyOn(sandbox, 'stop').mockResolvedValue(undefined);
@@ -163,19 +163,19 @@ describe('ReplaySystem disable and revert', () => {
     // 验证禁用后 record 被忽略，恢复后继续记录并委托给 route
     it('delegates disable and revert to the route', () => {
         const system = new ReplaySystem();
-        const disable = vi.spyOn(system.route, 'disable');
-        const revert = vi.spyOn(system.route, 'revert');
+        const disable = vi.spyOn(system.array, 'disable');
+        const revert = vi.spyOn(system.array, 'revert');
         system.record(1);
 
         system.disable();
         system.record(2);
         expect(disable).toHaveBeenCalledTimes(1);
-        expect(system.route.length).toBe(1);
+        expect(system.array.length).toBe(1);
 
         system.revert();
         system.record(3);
         expect(revert).toHaveBeenCalledTimes(1);
-        expect(system.route.length).toBe(2);
-        expect(system.route.get(1).command).toBe(3);
+        expect(system.array.length).toBe(2);
+        expect(system.array.get(1).command).toBe(3);
     });
 });

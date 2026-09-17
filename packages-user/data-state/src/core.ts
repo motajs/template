@@ -495,6 +495,8 @@ export class CoreState implements ICoreState {
         state: ReadonlyMap<string, unknown>,
         compression: SaveCompression
     ): void {
+        // 需要先清空录像的禁用标记
+        this.replaySystem.array.clearDisableFlag();
         for (const [key, value] of this.saveables) {
             // 使用 has 判断是否在映射中，而非值的非空判断，因为空值也有可能是存档的一部分
             if (!state.has(key)) {
@@ -502,7 +504,11 @@ export class CoreState implements ICoreState {
                 continue;
             }
             const data = state.get(key);
+            // 使用禁用录像包裹所有的读档行为，避免产生意外记录
+            this.replaySystem.disable();
             value.loadState(data, compression);
+            this.replaySystem.revert();
+            // 但 Executor 不包裹，因为它确实可能产生需要记录的行为
             const executor = this.executors.get(value);
             if (executor) {
                 executor.afterLoad(value, this);

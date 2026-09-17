@@ -24,14 +24,14 @@ export class ReplaySystem
 {
     replaying: boolean = false;
     sandbox: IReplaySandbox | null = null;
-    readonly route: IReplayArray;
+    readonly array: IReplayArray;
 
     /** 所有注册的指令 */
     private readonly commands: Map<number, IReplayCommand> = new Map();
 
     constructor() {
         super();
-        this.route = new ReplayArray({
+        this.array = new ReplayArray({
             initCommandLength: 1000,
             initParamLength: 10000,
             commandExpandMultiplier: 1.2,
@@ -61,9 +61,9 @@ export class ReplaySystem
     }
 
     record(code: number, ...params: ReplayParamValue[]): void {
-        this.route.add(code, params);
+        this.array.add(code, params);
         this.forEachHook(hook =>
-            hook.onRecordCommand?.(code, this.route.length - 1, params)
+            hook.onRecordCommand?.(code, this.array.length - 1, params)
         );
     }
 
@@ -87,24 +87,24 @@ export class ReplaySystem
     }
 
     disable(): void {
-        this.route.disable();
+        this.array.disable();
     }
 
     revert(): void {
-        this.route.revert();
+        this.array.revert();
     }
 
     saveState(): IReplaySystemSave {
         return {
-            length: this.route.length,
-            commandWidth: this.route.commandWidth,
-            commandArray: this.route.getCommandArray(),
-            paramArray: this.route.getParamArray()
+            length: this.array.length,
+            commandWidth: this.array.commandWidth,
+            commandArray: this.array.getCommandArray(),
+            paramArray: this.array.getParamArray()
         };
     }
 
     loadState(state: IReplaySystemSave): void {
-        this.route.setReplayArray(
+        this.array.setReplayArray(
             state.commandWidth,
             state.commandArray,
             state.paramArray,

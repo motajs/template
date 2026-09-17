@@ -280,7 +280,7 @@ describe('replay commands', () => {
         replay.record(ReplayCode.Right);
         replay.record(ReplayCode.UseItem, 5);
         const sandbox = replay.createReplaySandbox({
-            route: replay.route,
+            route: replay.array,
             reseter: { reset: () => {} }
         }) as IManualReplaySandbox;
         sandbox.playing = true;

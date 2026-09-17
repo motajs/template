@@ -99,7 +99,7 @@ export class PathfindingSystem implements IPathfindingSystem {
             // TODO：后续需要调整设计方式，最好不用 instanceof
             if (this.mover instanceof HeroMover) {
                 const replay = this.state.replaySystem;
-                replay.route.add(ReplayCode.Teleport, [target.x, target.y]);
+                replay.array.add(ReplayCode.Teleport, [target.x, target.y]);
             }
             return this.startMove(path, true);
         }

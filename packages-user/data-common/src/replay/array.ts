@@ -853,7 +853,6 @@ export class ReplayArray implements IReplayArray {
         paramBuffer: ArrayBuffer,
         length: number
     ): void {
-        this.disabled = 0;
         this.commandWidth = commandWidth;
         this.commandBuffer = commandBuffer;
         this.commandArray = new Uint8Array(commandBuffer);
@@ -895,5 +894,9 @@ export class ReplayArray implements IReplayArray {
         if (this.disabled > 0) {
             this.disabled--;
         }
+    }
+
+    clearDisableFlag(): void {
+        this.disabled = 0;
     }
 }

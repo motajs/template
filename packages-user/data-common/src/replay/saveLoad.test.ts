@@ -40,9 +40,9 @@ describe('ReplaySystem save and load round trips', () => {
         system.replaying = true;
         system.loadState(snapshot);
 
-        expect(system.route.length).toBe(1);
-        expect(system.route.commandWidth).toBe(snapshot.commandWidth);
-        expect(system.route.get(0)).toEqual({
+        expect(system.array.length).toBe(1);
+        expect(system.array.commandWidth).toBe(snapshot.commandWidth);
+        expect(system.array.get(0)).toEqual({
             command: 3,
             params: [1, true, 'param'],
             index: 0
@@ -60,9 +60,9 @@ describe('ReplaySystem save and load round trips', () => {
         system.record(5, 9);
         system.loadState(snapshot);
 
-        expect(system.route.getCommandArray()).toBe(snapshot.commandArray);
-        expect(system.route.getParamArray()).toBe(snapshot.paramArray);
-        expect(system.route.get(0).command).toBe(2);
+        expect(system.array.getCommandArray()).toBe(snapshot.commandArray);
+        expect(system.array.getParamArray()).toBe(snapshot.paramArray);
+        expect(system.array.get(0).command).toBe(2);
     });
 
     // 验证读档整体替换缓冲区后，此前创建的活跃沙箱读流被标记过期并触发告警码 156（#06-17-3）
@@ -75,7 +75,7 @@ describe('ReplaySystem save and load round trips', () => {
         system.record(1, 9);
 
         const sandbox = system.createReplaySandbox({
-            route: system.route,
+            route: system.array,
             reseter: { reset: () => {} }
         });
         system.loadState(snapshot);
