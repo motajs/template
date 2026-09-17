@@ -1,7 +1,0 @@
-{
-    "name": "@motajs/legacy-client",
-    "dependencies": {
-        "@motajs/legacy-system": "workspace:*",
-        "@motajs/legacy-ui": "workspace:*"
-    }
-}

@@ -411,15 +411,6 @@ importers:
 
   packages/common: {}
 
-  packages/legacy-client:
-    dependencies:
-      '@motajs/legacy-system':
-        specifier: workspace:*
-        version: link:../legacy-system
-      '@motajs/legacy-ui':
-        specifier: workspace:*
-        version: link:../legacy-ui
-
   packages/legacy-common:
     dependencies:
       '@motajs/common':
