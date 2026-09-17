@@ -36,13 +36,13 @@
     {
       "number": "7",
       "name": "数据端缺陷修复",
-      "status": "complete"
+      "status": "in_progress"
     }
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step (plan phase 1)",
-    "reason": "Phase 1 of 7 — needs a plan"
+    "label": "Advance to the next step",
+    "reason": "Phase 07 of 7 · executing"
   },
-  "updated_at": "2026-09-16T05:22:43.973Z"
+  "updated_at": "2026-09-17T09:33:54.500Z"
 }
