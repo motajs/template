@@ -93,14 +93,14 @@ describe('replay commands', () => {
             expect(firstCommands[index]).not.toBe(secondCommands[index]);
         }
         expect(firstCommands.map(command => command.constructor.name)).toEqual([
-            'ReplayMoveCommand',
-            'ReplayMoveCommand',
-            'ReplayMoveCommand',
-            'ReplayMoveCommand',
-            'ReplayTeleportCommand',
-            'ReplayUseItemCommand',
-            'ReplayEquipCommand',
-            'ReplayUnequipCommand'
+            'ReplayMove',
+            'ReplayMove',
+            'ReplayMove',
+            'ReplayMove',
+            'ReplayTeleport',
+            'ReplayUseItem',
+            'ReplayEquip',
+            'ReplayUnequip'
         ]);
     });
 
@@ -349,13 +349,11 @@ describe('replay commands', () => {
         expect(core).not.toContain('createReplayCommandItems');
         expect(core).not.toContain('registerReplayCommandItems');
         expect(core).toContain('private registerReplayCommands()');
-        expect((core.match(/new ReplayMoveCommand\(this,/g) ?? []).length).toBe(
-            4
-        );
-        expect(core).toContain('new ReplayTeleportCommand(this)');
-        expect(core).toContain('new ReplayUseItemCommand(this)');
-        expect(core).toContain('new ReplayEquipCommand(this)');
-        expect(core).toContain('new ReplayUnequipCommand(this)');
+        expect((core.match(/new ReplayMove\(this,/g) ?? []).length).toBe(4);
+        expect(core).toContain('new ReplayTeleport(this)');
+        expect(core).toContain('new ReplayUseItem(this)');
+        expect(core).toContain('new ReplayEquip(this)');
+        expect(core).toContain('new ReplayUnequip(this)');
     });
 });
 
