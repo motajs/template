@@ -215,6 +215,24 @@ describe('MapLayer save and load round trips', () => {
         expect(lowResult.info.map(info => info.code)).toContain(124);
         expect(highResult.info.map(info => info.code)).toContain(124);
     });
+
+    // 验证动态块多于存档时读档后等于存档，且重复读档不累积（#06-17-8）
+    it('does not accumulate dynamic tiles when loading fewer than present', () => {
+        for (const compression of SAVE_COMPRESSIONS) {
+            const { layer } = createMapFixture();
+            setLayerReference(layer);
+            layer.createDynamic(1, 0, 0);
+            const saved = layer.saveState(compression);
+            layer.createDynamic(1, 1, 0);
+            layer.createDynamic(1, 1, 0);
+
+            layer.loadState(saved, compression);
+            expect([...layer.iterateDynamicTiles()]).toHaveLength(1);
+
+            layer.loadState(saved, compression);
+            expect([...layer.iterateDynamicTiles()]).toHaveLength(1);
+        }
+    });
 });
 
 describe('GameMap save and load round trips', () => {

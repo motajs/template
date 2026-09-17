@@ -849,6 +849,19 @@ export class MapLayer
     }
 
     /**
+     * 清空本图层全部既有动态图块，使读档后的动态块与存档点一致
+     * 逐块复用删除语义，会触发 `onDeleteDynamic` 钩子，但读档为同步流程，不等待钩子完成
+     */
+    private clearDynamics(): void {
+        const tiles = [...this.iterateDynamicTiles()];
+        for (const tile of tiles) {
+            this.syncStaticEvent(tile, false);
+            this.removeTile(tile);
+            this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
+        }
+    }
+
+    /**
      * 以无压缩方式读取当前图层
      * @param save 图层存档
      */
@@ -920,6 +933,7 @@ export class MapLayer
     }
 
     loadState(save: IMapLayerSave, compression: SaveCompression): void {
+        this.clearDynamics();
         if (compression === SaveCompression.HighCompression) {
             this.loadHighCompression(save);
         } else if (compression === SaveCompression.LowCompression) {

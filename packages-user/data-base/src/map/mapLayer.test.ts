@@ -9,6 +9,7 @@ import {
     FaceGroup,
     FaceManager,
     RoleFaceBinder,
+    SaveCompression,
     TileStore,
     TileType
 } from '@user/data-common';
@@ -589,6 +590,30 @@ describe('MapLayer dynamic conversion', () => {
 
         expect(result.info.map(info => info.code)).toContain(130);
         await result.ret;
+    });
+
+    // 验证 loadState 先清空既有动态块并触发删除钩子（#06-17-8 读档不累积）
+    it('clears existing dynamic tiles before loading', () => {
+        const { layer } = createFixture([0, 0, 0, 0]);
+        const deleted: IDynamicTile[] = [];
+        layer
+            .addHook({
+                onDeleteDynamic: async tile => {
+                    deleted.push(tile);
+                }
+            })
+            .load();
+        const first = layer.createDynamic(1, 0, 0);
+        const second = layer.createDynamic(1, 1, 0);
+        const saved = layer.saveState(SaveCompression.NoCompression);
+        const extra = layer.createDynamic(1, 0, 1);
+
+        layer.loadState(saved, SaveCompression.NoCompression);
+
+        expect([...layer.iterateDynamicTiles()]).toHaveLength(2);
+        expect([...layer.getDynamicTilesAt(0, 1)]).toHaveLength(0);
+        expect(deleted).toEqual([first, second, extra]);
+        expect([...layer.iterateDynamicTiles()]).not.toContain(first);
     });
 });
 
