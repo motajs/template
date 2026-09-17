@@ -362,7 +362,43 @@ Source: `07-REVIEW-recheck.md` — the incremental code review run after the pha
    - Fix: route cloned modifiers through the same bookkeeping `addModifier` establishes.
    - Evidence: `07-REVIEW-recheck.md:159-183`.
 
+### Post-Refactor Test Breakage (recorded 2026-09-17, user-requested repair)
+
+Source: the user's own in-flight refactors — the pathfinding-system refactor plus the earlier `ReplaySystem.route` → `.array` rename (`a2a8e6e`) and the `onRecordCommand` index fix (`34ba9e8`). These are NOT review findings; they are test files that no longer match the shipped interfaces/behaviour. The user asked for one Phase 7 plan to repair them (2026-09-17).
+
+Measured at `19ad1ea`+ (first full run after plan 07-15): **17 failed test files / 73 failed tests / 667 passed / 1 skipped**.
+
+| # | Test file | Failed | First observed error | Category |
+|---|-----------|--------|----------------------|----------|
+| 1 | `packages-user/data-system/src/path/graph.test.ts` | 12 | `TypeError: builder.useMapState is not a function` | interface change (pathfinding refactor) |
+| 2 | `packages-user/data-system/src/path/system.test.ts` | 13 | `TypeError: system.finder.useMapState is not a function` | interface change (pathfinding refactor) |
+| 3 | `packages-user/data-system/src/path/performance.test.ts` | 3 | `TypeError: system.finder.useMapState is not a function` | interface change (pathfinding refactor) |
+| 4 | `packages-user/data-state/test/replayPlayback.test.ts` | 4 | `TypeError: state.pathfinding.finder.useMapState is not a function` | interface change (pathfinding refactor) |
+| 5 | `packages-user/data-base/src/hero/equipment.test.ts` | 14 | `TypeError: Cannot read properties of undefined (reading 'add')` | replay stub still exposes `route`, production renamed to `array` (`a2a8e6e` missed this file) |
+| 6 | `packages-user/data-base/src/hero/saveLoad.test.ts` | 10 | mix: `reading 'add'` (replay stub) + `expected undefined to be 'F2'` | replay stub + floor/location save-shape |
+| 7 | `packages-user/data-base/src/hero/items.test.ts` | 1 | `TypeError: Cannot read properties of undefined (reading 'add')` | replay stub |
+| 8 | `packages-user/data-common/src/replay/system.test.ts` | 1 | `expected [[5, +0, [1, true]]] to deeply equal [[5, 1, [1, true]]]` | test still asserts the old 1-based `onRecordCommand` index (`34ba9e8` changed it to `length - 1`) |
+| 9 | `packages-user/data-base/src/hero/location.test.ts` | 1 | `AssertionError: expected undefined to be 'F2'` | floor/location save-shape |
+| 10 | `packages-user/data-base/src/hero/state.test.ts` | 1 | `AssertionError: expected undefined to be 'F2'` | floor/location save-shape |
+| 11 | `packages-user/data-state/test/saveablesRoundTrip.test.ts` | 1 | `AssertionError: expected undefined to be 'F1'` | floor/location save-shape |
+| 12 | `packages-user/data-state/src/coreEventLayer.test.ts` | 1 | `TypeError: initializer.initMapState is not a function` | interface change (map/state initializer) |
+| 13 | `packages-user/data-base/src/hero/mover.test.ts` | 6 | `Error: Test timed out in 30000ms` | behaviour/timeout — needs adjudication |
+| 14 | `packages-user/data-base/src/hero/follower.test.ts` | 1 | `Error: Test timed out in 30000ms` | behaviour/timeout — needs adjudication |
+| 15 | `packages-user/data-state/src/event/event.test.ts` | 1 | `AssertionError: expected +0 to be 1` | assertion drift — needs adjudication |
+| 16 | `packages-user/data-state/test/dataClosure.test.ts` | 2 | `AssertionError: expected false to be true` | assertion drift — needs adjudication |
+| 17 | `packages-user/data-state/test/nodeTracer.test.ts` | 1 | `AssertionError: expected +0 to be 1` | assertion drift — needs adjudication |
+
+**User's framing (2026-09-17):** "应该主要都是接口变动，测试内容基本不变" — rows 1–12 match that framing; rows 13–17 may carry real behavioural change and must be adjudicated by the user at the plan's Task 0 gate before any test is rewritten. A test must never be aligned to a behaviour the user has not confirmed as intended.
+
+**Also note:** plan 07-15's CR-01 witness stays red solely because of row 5 — its production fix is committed (`53f067a`) and was independently evidenced by temporarily aliasing the stub (uncommitted). Aligning the stub is the one-line remedy.
+
 ## Recommended Fix Plans
+
+### 07-16-PLAN.md: Post-refactor test alignment (pathfinding + replay + floor/state interfaces)
+
+**Objective:** Bring the 17 test files back in line with the shipped interfaces/behaviour so `pnpm test:ci` is green again, without changing production behaviour and without weakening assertions. Interface-alignment rows (1–12) are mechanical; behavioural rows (13–17) require explicit user adjudication at the plan's Task 0 gate.
+
+**Estimated scope:** Medium–Large (17 files, test-only)
 
 ### 07-15-PLAN.md: Review-recheck defect batch (CR-01 / WR-01 / WR-02 / WR-03)
 
