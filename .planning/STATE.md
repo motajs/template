@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 07
 current_phase_name: 数据端缺陷修复
 status: executing
-stopped_at: "Executed 07-13 (CR-02 / IN-01 / #06-17-8); 07-14 remains"
-last_updated: "2026-09-17T09:34:52.902Z"
+stopped_at: Completed 07-14-PLAN.md (wontfix)
+last_updated: "2026-09-17T10:03:56.090Z"
 last_activity: 2026-09-17
-last_activity_desc: 07-13 executed (CR-02 / IN-01 / #06-17-8); 07-14 remains
-state_head: 13234b762aa7bb1efb45d97720414af7d46267b7
+last_activity_desc: "07-14 completed as user-adjudicated WONTFIX (#06-17-7); Phase 7 plans 14/14"
+state_head: 66972142c5fe60a6d342564364bfd06adaa82958
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 69
-  completed_plans: 68
+  completed_plans: 69
 milestone_name: milestone
 ---
 
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-09-10)
 
 ## Current Position
 
-Phase: 07 (数据端缺陷修复) — EXECUTING
-Plan: 13 of 14
-Status: Ready to execute
-Last activity: 2026-09-17 — 07-13 executed (CR-02 / IN-01 / `#06-17-8`); 07-14 remains
+Phase: 07 (数据端缺陷修复) — EXECUTING (plans 14/14 complete; phase verification stale)
+Plan: 14 of 14 (07-14 closed as user-adjudicated WONTFIX)
+Status: Plans complete — re-run /gsd-verify-work 7 to re-issue the phase verification
+Last activity: 2026-09-17 — 07-14 completed as user-adjudicated WONTFIX (`#06-17-7`); Phase 7 plans 14/14
 
 Progress: [█████░░░░░] 50%
 
@@ -95,6 +95,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P14 | 12min | 3 tasks | 2 files |
 | Phase 06 P15 | 12min | 2 tasks | 3 files |
 | Phase 07-data-fixes P13 | 56min | 5 tasks | 5 files |
+| Phase 07 P14 | 3min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -208,6 +209,9 @@ Recent decisions affecting current work:
 - [Phase 07]: [Phase 07] 07-13 Q2=A：setMapRef/getMapRef 保留「标旧对象 expired + 整对象替换」现契约，零代码、零 jsDoc 改动（契约文本落在 <record> 与 07-13-SUMMARY）
 - [Phase 07]: [Phase 07] 07-13 Q3=A1：MapLayer.loadState 入口 clearDynamics 全清既有动态块（复用 deleteDynamic 语义、触发 onDeleteDynamic、不等待，A6）
 - [Phase 07]: [Phase 07] 07-13 Q4=A：IN-01 两处清理（deleteEnemy 剪除 affectedBy/damages；deleteMapDamage 空点移除为无公开可观测差异的簿记修复，A7；sourcedDamage 空点不删）
+- [Phase 07]: [Phase 07] 07-14 Q1..Q4 = 不改动（用户，2026-09-17，原话「关于旧引擎的兼容部分不动，很快就要删除了，没必要改。」）：`packages-user/data-fallback` 旧引擎兼容层即将删除，代理不修、`get` 口径不变、不建 `hero.test.ts`、`patchFlags` 不处理
+- [Phase 07]: [Phase 07] 07-14 `#06-17-7`（审计 C）判为 WONTFIX／经用户裁定不修复，属本阶段成功标准第 1 条「修复或经用户裁定改契约/不修复」的合法闭合；该计划零代码、零测试、零依赖，`WINDOWS.md` 不新建条目（D-14）
+- [Phase 07]: [Phase 07] 07-14 收口基线维持 66 文件 / 737 通过 / 0 失败 / 1 跳过（无新增测试文件，计划原预期的 66→67 被裁决取代）；`07-VERIFICATION.md` 已失效，需重跑 `/gsd-verify-work 7`
 
 ### Roadmap Evolution
 
@@ -243,6 +247,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-17T09:34:35.942Z
-Stopped at: Executed 07-13 (CR-02 / IN-01 / #06-17-8); 07-14 remains
+Last session: 2026-09-17T10:03:55.811Z
+Stopped at: Completed 07-14-PLAN.md (wontfix)
 Resume file: None
