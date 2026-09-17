@@ -372,9 +372,6 @@ importers:
       '@user/client-modules':
         specifier: workspace:*
         version: link:../client-modules
-      '@user/legacy-plugin-client':
-        specifier: workspace:*
-        version: link:../legacy-plugin-client
 
   packages-user/entry-data:
     dependencies:
@@ -393,15 +390,6 @@ importers:
       '@user/data-system':
         specifier: workspace:*
         version: link:../data-system
-
-  packages-user/legacy-plugin-client:
-    dependencies:
-      '@user/client-modules':
-        specifier: workspace:*
-        version: link:../client-modules
-      '@user/data-state':
-        specifier: workspace:*
-        version: link:../data-state
 
   packages/animate: {}
 

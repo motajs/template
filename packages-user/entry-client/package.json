@@ -12,7 +12,6 @@
         "@motajs/legacy-ui": "workspace:*",
         "@motajs/legacy-system": "workspace:*",
         "@user/client-base": "workspace:*",
-        "@user/client-modules": "workspace:*",
-        "@user/legacy-plugin-client": "workspace:*"
+        "@user/client-modules": "workspace:*"
     }
 }
