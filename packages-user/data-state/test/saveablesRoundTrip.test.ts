@@ -4,8 +4,11 @@ import { logger } from '@motajs/common';
 import {
     type IEnemyAttr,
     type IHeroAttr,
+    type IItemRawData,
     FaceDirection,
-    SaveCompression
+    ItemCategory,
+    SaveCompression,
+    TileType
 } from '@user/data-common';
 import {
     Enemy,
@@ -179,6 +182,37 @@ function mutateState(state: CoreState, seeded: SeededState): void {
     state.replaySystem.record(9, 1);
 }
 
+/** 向顶层状态注册同引用集成用例使用的 atk+5 装备道具定义 */
+function registerIdentityEquipment(state: CoreState): void {
+    state.tileStore.addTile({
+        num: 9001,
+        id: 'identity-sword',
+        events: {},
+        type: TileType.Item,
+        pass: { onlyEvents: false, inPass: 15, outPass: 15 },
+        eventPass: true
+    });
+    const value: [SelectKey<IHeroAttr, number>, number][] = [['atk', 5]];
+    const item: IItemRawData<IHeroAttr> = {
+        num: 9001,
+        id: 'identity-sword',
+        category: ItemCategory.Equipment,
+        name: 'identity-sword',
+        text: 'identity-sword',
+        hideInToolbox: false,
+        effect: { useEvent: null, useEffect: () => {}, canUse: () => false },
+        equip: {
+            slots: [0],
+            animate: 'sword',
+            value: new Map(value),
+            percentage: new Map(),
+            loadEvent: null,
+            unloadEvent: null
+        }
+    };
+    state.itemStore.addItem(item);
+}
+
 /** 逐 saveable 严格断言全部关键字段回到存档点 */
 function assertRestored(state: CoreState, seeded: SeededState): void {
     const attribute = state.hero.getModifiableAttribute();
@@ -272,6 +306,56 @@ describe('CoreState top-level save and load round trips', () => {
             state.replaySystem
         );
         expect(state.getSaveableContent('@missing')).toBeNull();
+    });
+});
+
+describe('CoreState container same-reference load (#06-17-4/5/6)', () => {
+    // 验证经顶层 CoreState 三档往返后装备实例、flag 字段与 follower 实例均为同一实例，
+    // 且其数值与位置回到存档点
+    it('keeps container instances across save and load in every compression', () => {
+        for (const compression of COMPRESSIONS) {
+            const state = createCoreState();
+            registerIdentityEquipment(state);
+
+            const uid = state.hero.items.equipment.add(9001);
+            state.hero.equip.setSlots(['weapon']);
+            state.hero.equip.equip(uid, 0);
+            const equipmentBefore = state.hero.items.equipment.get(uid)!;
+
+            const fieldBefore = state.flags.getOrInsert('identity', 7);
+
+            state.hero.followers.addFollower(9102);
+            const followerBefore = state.hero.followers.getFollower(0)!;
+
+            const snapshot = state.saveState(compression);
+
+            // 装备数值只能经读档改变，flag 与 follower 位置则在存档后继续改动
+            equipmentBefore.loadState(
+                {
+                    uid,
+                    num: 9001,
+                    value: new Map<SelectKey<IHeroAttr, number>, number>([
+                        ['atk', 9]
+                    ]),
+                    percentage: new Map<SelectKey<IHeroAttr, number>, number>()
+                },
+                SaveCompression.NoCompression
+            );
+            state.flags.setFieldValue('identity', 99);
+            followerBefore.location.setPos(9, 9);
+
+            state.loadState(snapshot, compression);
+
+            expect(state.hero.items.equipment.get(uid)).toBe(equipmentBefore);
+            expect([...equipmentBefore.getModifiers()][0][1].getValue()).toBe(
+                5
+            );
+            expect(state.flags.getField('identity')).toBe(fieldBefore);
+            expect(fieldBefore.get()).toBe(7);
+            expect(state.hero.followers.getFollower(0)).toBe(followerBefore);
+            expect(followerBefore.location.x).toBe(0);
+            expect(followerBefore.location.y).toBe(0);
+        }
     });
 });
 
