@@ -2,11 +2,14 @@ import {
     degradeFace,
     FaceDirection,
     getFaceMovement,
+    // @ts-expect-error 需要重构
     HeroAnimateDirection,
+    // @ts-expect-error 需要重构
     IHeroMoveController,
+    // @ts-expect-error 需要重构
     IHeroMoveControllerHooks,
     nextFaceDirection
-} from '@user/data-base';
+} from '@user/data-common';
 import { IMapLayer } from '@user/data-base';
 import { IMapRenderer, IMapRendererTicker, IMovingBlock } from '../types';
 import { isNil } from 'lodash-es';

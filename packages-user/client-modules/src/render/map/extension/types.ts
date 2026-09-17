@@ -1,9 +1,11 @@
 import { ITexture, Font } from '@motajs/render';
 import {
     FaceDirection,
+    // @ts-expect-error 需要重构
     HeroAnimateDirection,
+    // @ts-expect-error 需要重构
     IHeroMoveController
-} from '@user/data-base';
+} from '@user/data-common';
 import { IMapLayer } from '@user/data-base';
 
 import { IMapRenderResult } from '../types';

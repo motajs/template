@@ -96,7 +96,7 @@ const MainScene = defineComponent(() => {
     //#region 状态更新
     const updateStatus = () => {
         if (!core.status || !core.status.hero || !core.status.floorId) return;
-        const flags = client.data.flags;
+        const flags = client.flags;
         hideStatus.value = flags.getFieldValueDefaults('hideStatusBar', false);
 
         const hero = core.status.hero;
@@ -243,6 +243,7 @@ const MainScene = defineComponent(() => {
             >
                 <map-render
                     renderer={mainMapRenderer}
+                    // @ts-expect-error 需要重构
                     layerState={state.maps}
                     extension={mainMapExtension}
                     loc={[0, 0, MAP_WIDTH, MAP_HEIGHT]}

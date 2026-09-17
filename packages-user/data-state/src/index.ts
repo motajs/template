@@ -1,6 +1,7 @@
 export * from './enemy';
 export * from './event';
 export * from './hero';
+export * from './legacy';
 export * from './replay';
 
 export * from './core';

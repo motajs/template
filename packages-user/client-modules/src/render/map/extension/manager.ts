@@ -1,3 +1,4 @@
+// @ts-expect-error 需要重构
 import { IHeroMoveController } from '@user/data-base';
 import { IMapLayer } from '@user/data-base';
 import {

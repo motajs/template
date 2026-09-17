@@ -10,6 +10,7 @@
         "@motajs/legacy-ui": "workspace:*",
         "@motajs/types": "workspace:*",
         "@motajs/system": "workspace:*",
+        "@user/data-common": "workspace:*",
         "@user/data-base": "workspace:*",
         "@user/data-state": "workspace:*"
     }
