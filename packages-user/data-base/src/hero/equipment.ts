@@ -294,22 +294,27 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         const attrB: Partial<THero> = {};
         const keys = new Set<SelectKey<THero, number>>();
 
-        for (const [name, modifier] of stateA.getModifiers()) {
+        const modifiersA = [...stateA.getModifiers()];
+        const addedA: typeof modifiersA = [];
+        for (const [name, modifier] of modifiersA) {
+            const copy = modifier.clone();
             // @ts-expect-error 泛型无法推导
-            clone.addModifier(name, modifier);
+            clone.addModifier(name, copy);
+            addedA.push([name, copy]);
         }
         for (const [name] of stateA.getModifiers()) {
             attrA[name] = clone.getFinalAttribute(name);
             keys.add(name);
         }
-        for (const [name, modifier] of stateA.getModifiers()) {
+        for (const [name, copy] of addedA) {
             // @ts-expect-error 泛型无法推导
-            clone.deleteModifier(name, modifier);
+            clone.deleteModifier(name, copy);
         }
 
         for (const [name, modifier] of stateB.getModifiers()) {
+            const copy = modifier.clone();
             // @ts-expect-error 泛型无法推导
-            clone.addModifier(name, modifier);
+            clone.addModifier(name, copy);
         }
         for (const [name] of stateB.getModifiers()) {
             attrB[name] = clone.getFinalAttribute(name);

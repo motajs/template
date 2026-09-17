@@ -1,4 +1,4 @@
-// 测试 HeroEquipment 组合行为：槽位判定、装备/替换/卸下、属性修饰器联动、compareEquip 与码 146/147
+// 测试 HeroEquipment 组合行为：槽位判定、装备/替换/卸下、属性修饰器联动、compareEquip 与码 146/147、现役装备参与比较
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import {
     type IDataCommon,
@@ -429,6 +429,34 @@ describe('HeroEquipment compare and guards', () => {
         expect(Object.keys(diff).sort()).toEqual(['atk', 'def']);
         expect(diff.atk).toBe(5);
         expect(diff.def).toBe(-3);
+    });
+
+    // 验证被比较的两件装备中有一件是现役装备时，双向差值仍符合契约且活属性簿记零扰动
+    it('diffs the final attributes when one compared item is currently equipped', () => {
+        const env = createEnv();
+        registerItem(env, createItem(10, 'sword', [0], [['atk', 5]]));
+        registerItem(env, createItem(11, 'axe', [0], [['atk', 12]]));
+        env.equipment.setSlots(['weapon']);
+        const sword = env.store.add(10);
+        env.attribute.addModifier('atk', new ValueModifier(7, -1));
+        env.equipment.equip(sword, 0);
+        expect(env.attribute.getFinalAttribute('atk')).toBe(22);
+        const axe = env.store.add(11);
+
+        const swordModifier = [...env.store.get(sword)!.getModifiers()][0][1];
+        const { ret, info } = logger.catch(() => [
+            env.equipment.compareEquip(sword, axe, 0),
+            env.equipment.compareEquip(axe, sword, 0)
+        ]);
+
+        expect(ret[0].atk).toBe(-7);
+        expect(ret[1].atk).toBe(7);
+        expect(Object.keys(ret[0])).toEqual(['atk']);
+        expect(info.map(v => v.code)).not.toContain(108);
+        expect(
+            env.attribute.getModifierIndex(swordModifier)
+        ).toBeGreaterThanOrEqual(0);
+        expect(env.attribute.getFinalAttribute('atk')).toBe(22);
     });
 
     // 验证装备实例经 rebuildModifiers 重建后原属性已不含其修饰器，克隆上不会误删同名旁的修饰器
