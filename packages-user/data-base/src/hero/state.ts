@@ -145,10 +145,7 @@ export class HeroState<THero>
         this.rendering.loadState(state.rendering, compression);
         this.items.loadState(state.items, compression);
         this.equip.loadState(state.equip, compression);
-        void this.followers.removeAllFollowers();
-        for (const save of state.followers) {
-            const follower = this.followers.addFollower(save.num);
-            follower.loadState(save, compression);
-        }
+        // 跟随者保留式恢复：同索引同图块数字的实例原地读档，其余按存档替换或删除
+        this.followers.restoreFollowers(state.followers, compression);
     }
 }

@@ -204,6 +204,15 @@ function createHeroState(): IHeroState<IHeroAttr> {
     );
 }
 
+/** 构造一个已注册跟随者图块、可直接添加跟随者的勇士状态对象 */
+function createFollowerHero(): IHeroState<IHeroAttr> {
+    return new HeroState<IHeroAttr>(
+        createFollowerState(),
+        new Dir8FaceHandler(),
+        new HeroAttribute<IHeroAttr>(createBaseAttr())
+    );
+}
+
 /** 构造一个已注册装备定义并设置好装备槽的勇士状态对象（基础 atk 为 10） */
 function createEquipHero(): IHeroState<IHeroAttr> {
     const env = createEquipEnv();
@@ -739,5 +748,45 @@ describe('HeroState same-reference equipment load (#06-17-4)', () => {
 
         expect(hero.items.equipment.get(kept)).toBe(before);
         expect(hero.items.equipment.get(extra)).toBeNull();
+    });
+});
+
+describe('HeroState same-reference follower load (#06-17-6)', () => {
+    // 验证经勇士容器三档往返后同索引同图块数字的跟随者为同一实例，位置与渲染恢复到存档点
+    it('keeps the follower instance and restores its state across all compressions', () => {
+        for (const compression of SAVE_COMPRESSIONS) {
+            const hero = createFollowerHero();
+            const follower = hero.followers.addFollower(100);
+            follower.location.setPos(2, 3);
+            follower.location.mover.setFaceDir(FaceDirection.Up);
+            follower.rendering.setAlpha(0.5);
+
+            const saved = hero.saveState(compression);
+            follower.location.setPos(9, 9);
+            follower.location.mover.setFaceDir(FaceDirection.Down);
+            follower.rendering.setAlpha(1);
+
+            hero.loadState(saved, compression);
+
+            expect(hero.followers.getFollower(0)).toBe(follower);
+            expect(follower.location.x).toBe(2);
+            expect(follower.location.y).toBe(3);
+            expect(follower.rendering.alpha).toBe(0.5);
+        }
+    });
+
+    // 验证跟随者数量以存档为准：存档中不存在的跟随者读档后被删除
+    it('deletes followers absent from the save', () => {
+        const hero = createFollowerHero();
+        const kept = hero.followers.addFollower(100);
+
+        const saved = hero.saveState(SaveCompression.NoCompression);
+        hero.followers.addFollower(100);
+
+        hero.loadState(saved, SaveCompression.NoCompression);
+
+        const all = hero.followers.getAllFollowers();
+        expect(all).toHaveLength(1);
+        expect(all[0]).toBe(kept);
     });
 });

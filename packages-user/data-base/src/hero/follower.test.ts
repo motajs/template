@@ -5,6 +5,7 @@ import {
     Dir8FaceHandler,
     FaceDirection,
     ItemStore,
+    SaveCompression,
     TileStore,
     TileType
 } from '@user/data-common';
@@ -264,5 +265,105 @@ describe('HeroFollowersController gathering', () => {
 
         expect(result.info.map(info => info.code)).toContain(142);
         expect(result.ret.num).toBe(0);
+    });
+});
+
+describe('HeroFollowersController same-reference restore (#06-17-6)', () => {
+    // 验证同索引同图块数字的跟随者在原地读档，且不触发增删钩子
+    it('keeps the follower instance when the index and number match', () => {
+        const env = createController();
+        const added: number[] = [];
+        const removed: number[] = [];
+        env.controller
+            .addHook({
+                onAddFollower: (_follower, index) => added.push(index),
+                onRemoveFollower: (_follower, index) => removed.push(index)
+            })
+            .load();
+        const follower = env.controller.addFollower(100);
+        follower.location.setPos(2, 3);
+        follower.rendering.setAlpha(0.5);
+
+        const saved = [follower.saveState(SaveCompression.NoCompression)];
+        follower.location.setPos(9, 9);
+        follower.rendering.setAlpha(1);
+
+        env.controller.restoreFollowers(saved, SaveCompression.NoCompression);
+
+        expect(env.controller.getFollower(0)).toBe(follower);
+        expect(follower.location.x).toBe(2);
+        expect(follower.location.y).toBe(3);
+        expect(follower.rendering.alpha).toBe(0.5);
+        expect(added).toEqual([0]);
+        expect(removed).toEqual([]);
+    });
+
+    // 验证同索引但图块数字不同的槽位替换实例并通知移除与新增钩子
+    it('replaces a slot with a different number and notifies both hooks', () => {
+        const env = createController();
+        const added: number[] = [];
+        const removed: number[] = [];
+        env.controller
+            .addHook({
+                onAddFollower: (_follower, index) => added.push(index),
+                onRemoveFollower: (_follower, index) => removed.push(index)
+            })
+            .load();
+        const follower = env.controller.addFollower(100);
+        const save = follower.saveState(SaveCompression.NoCompression);
+
+        env.controller.restoreFollowers(
+            [{ ...save, num: 101 }],
+            SaveCompression.NoCompression
+        );
+
+        expect(env.controller.getFollower(0)).not.toBe(follower);
+        expect(env.controller.getFollower(0)!.num).toBe(101);
+        expect(added).toEqual([0, 0]);
+        expect(removed).toEqual([0]);
+    });
+
+    // 验证存档短于现有列表时末尾跟随者被删除并通知移除钩子
+    it('deletes trailing followers absent from the save', () => {
+        const env = createController();
+        const removed: number[] = [];
+        env.controller
+            .addHook({
+                onRemoveFollower: (_follower, index) => removed.push(index)
+            })
+            .load();
+        const first = env.controller.addFollower(100);
+        env.controller.addFollower(100);
+
+        env.controller.restoreFollowers(
+            [first.saveState(SaveCompression.NoCompression)],
+            SaveCompression.NoCompression
+        );
+
+        expect(env.controller.getAllFollowers()).toEqual([first]);
+        expect(removed).toEqual([1]);
+    });
+
+    // 验证存档长于现有列表时按索引补齐新跟随者并通知新增钩子
+    it('appends followers missing from the live list', () => {
+        const env = createController();
+        const added: number[] = [];
+        env.controller
+            .addHook({
+                onAddFollower: (_follower, index) => added.push(index)
+            })
+            .load();
+        const first = env.controller.addFollower(100);
+        const save = first.saveState(SaveCompression.NoCompression);
+
+        env.controller.restoreFollowers(
+            [save, { ...save }],
+            SaveCompression.NoCompression
+        );
+
+        const all = env.controller.getAllFollowers();
+        expect(all[0]).toBe(first);
+        expect(all.length).toBe(2);
+        expect(added).toEqual([0, 1]);
     });
 });

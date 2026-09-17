@@ -507,6 +507,19 @@ export interface IHeroFollowersController
     addFollower(num: number | string): IHeroFollower;
 
     /**
+     * 按存档恢复跟随者列表：索引相同且图块数字相同的跟随者在其原实例上原地读档，
+     * 索引相同但图块数字不同的槽位替换为新实例，存档中不存在的末尾跟随者按存档为准删除。
+     * 仅发生替换或删除时触发 `onRemoveFollower`，仅新建实例时触发 `onAddFollower`，
+     * 原地读档的跟随者不触发增删钩子。
+     * @param saves 跟随者存档列表
+     * @param compression 存档压缩级别
+     */
+    restoreFollowers(
+        saves: readonly IHeroFollowerSave[],
+        compression: SaveCompression
+    ): void;
+
+    /**
      * 根据跟随者的索引数字获取跟随者对象
      * @param index 跟随者的索引数字
      */

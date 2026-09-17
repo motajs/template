@@ -113,19 +113,62 @@ export class HeroFollowersController
         return new HookController(this, hook);
     }
 
-    addFollower(num: number | string): IHeroFollower {
+    /**
+     * 在勇士当前位置创建一个跟随者对象，此时不加入跟随者列表
+     * @param num 跟随者的图块数字或图块 id
+     */
+    private createFollower(num: number | string): HeroFollower {
         const loc: IFacedTileLocator = {
             x: this.heroLocation.x,
             y: this.heroLocation.y,
             direction: this.heroLocation.mover.faceDirection
         };
-        const follower = new HeroFollower(num, loc, this.faceHandler, this);
+        return new HeroFollower(num, loc, this.faceHandler, this);
+    }
+
+    addFollower(num: number | string): IHeroFollower {
+        const follower = this.createFollower(num);
         this.followers.push(follower);
         const index = this.followers.length - 1;
         this.forEachHook(hook => {
             hook.onAddFollower?.(follower, index);
         });
         return follower;
+    }
+
+    restoreFollowers(
+        saves: readonly IHeroFollowerSave[],
+        compression: SaveCompression
+    ): void {
+        // 以存档为准：先删除末尾多出的跟随者，并按原索引通知移除
+        const extra = this.followers.splice(saves.length);
+        for (let i = 0; i < extra.length; i++) {
+            const index = saves.length + i;
+            this.forEachHook(hook => {
+                hook.onRemoveFollower?.(extra[i], index);
+            });
+        }
+        for (let i = 0; i < saves.length; i++) {
+            const save = saves[i];
+            const current = this.followers[i];
+            // 索引相同且图块数字相同：在保留的实例上原地读档，此时不触发增删钩子
+            if (current && current.num === save.num) {
+                current.loadState(save, compression);
+                continue;
+            }
+            // 索引不同或图块数字不同：该槽位替换为新实例，并按既有钩子语义通知增删
+            if (current) {
+                this.forEachHook(hook => {
+                    hook.onRemoveFollower?.(current, i);
+                });
+            }
+            const follower = this.createFollower(save.num);
+            follower.loadState(save, compression);
+            this.followers[i] = follower;
+            this.forEachHook(hook => {
+                hook.onAddFollower?.(follower, i);
+            });
+        }
     }
 
     getFollower(index: number): IHeroFollower | null {
