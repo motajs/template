@@ -2299,52 +2299,52 @@ control.prototype.getNextLvUpNeed = function () {
 
 ////// 设置某个自定义变量或flag //////
 control.prototype.setFlag = function (name, value) {
-    // Deprecated. See packages-user/data-fallback/src/flag.ts
+    // Deprecated.
 };
 
 ////// 增加某个flag数值 //////
 control.prototype.addFlag = function (name, value) {
-    // Deprecated. See packages-user/data-fallback/src/flag.ts
+    // Deprecated.
 };
 
 ////// 获得某个自定义变量或flag //////
 control.prototype.getFlag = function (name, defaultValue) {
-    // Deprecated. See packages-user/data-fallback/src/flag.ts
+    // Deprecated.
 };
 
 ////// 是否存在某个自定义变量或flag，且值为true //////
 control.prototype.hasFlag = function (name) {
-    // Deprecated. See packages-user/data-fallback/src/flag.ts
+    // Deprecated.
 };
 
 ////// 删除某个自定义变量或flag //////
 control.prototype.removeFlag = function (name) {
-    // Deprecated. See packages-user/data-fallback/src/flag.ts
+    // Deprecated.
 };
 
 ////// 获得某个点的独立开关 //////
 control.prototype.getSwitch = function (x, y, floorId, name, defaultValue) {
-    // Deprecated. See packages-user/data-fallback/src/flag.ts
+    // Deprecated.
 };
 
 ////// 设置某个点的独立开关 //////
 control.prototype.setSwitch = function (x, y, floorId, name, value) {
-    // Deprecated. See packages-user/data-fallback/src/flag.ts
+    // Deprecated.
 };
 
 ////// 增加某个点的独立开关 //////
 control.prototype.addSwitch = function (x, y, floorId, name, value) {
-    // Deprecated. See packages-user/data-fallback/src/flag.ts
+    // Deprecated.
 };
 
 ////// 判定某个点的独立开关 //////
 control.prototype.hasSwitch = function (x, y, floorId, name) {
-    // Deprecated. See packages-user/data-fallback/src/flag.ts
+    // Deprecated.
 };
 
 ////// 删除某个点的独立开关 //////
 control.prototype.removeSwitch = function (x, y, floorId, name) {
-    // Deprecated. See packages-user/data-fallback/src/flag.ts
+    // Deprecated.
 };
 
 ////// 锁定状态栏，常常用于事件处理 //////

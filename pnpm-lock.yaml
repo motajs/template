@@ -301,18 +301,6 @@ importers:
         specifier: workspace:*
         version: link:../../packages/common
 
-  packages-user/data-fallback:
-    dependencies:
-      '@motajs/legacy-common':
-        specifier: workspace:*
-        version: link:../../packages/legacy-common
-      '@user/data-base':
-        specifier: workspace:*
-        version: link:../data-base
-      '@user/data-state':
-        specifier: workspace:*
-        version: link:../data-state
-
   packages-user/data-state:
     dependencies:
       '@motajs/anon-tokyo':
@@ -399,9 +387,6 @@ importers:
       '@user/data-common':
         specifier: workspace:*
         version: link:../data-common
-      '@user/data-fallback':
-        specifier: workspace:*
-        version: link:../data-fallback
       '@user/data-state':
         specifier: workspace:*
         version: link:../data-state
