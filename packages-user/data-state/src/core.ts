@@ -192,15 +192,12 @@ export class CoreState implements ICoreState {
         this.replaySystem = new ReplaySystem();
 
         // 寻路系统
-        const pathfinding = new PathfindingSystem(this);
-        this.pathfinding = pathfinding;
-        pathfinding.useMover(this.hero.location.mover);
-        pathfinding.finder.useMapState(this.maps);
+        this.pathfinding = new PathfindingSystem(this);
+        this.pathfinding.useMover(this.hero.location.mover);
         // 初始状态下勇士不在任何楼层，切换楼层后再具体设置
-        pathfinding.finder.useMapLayer(null);
-        pathfinding.finder.usePassPredicate(
-            new DefaultPassPredicateImpl(this.maps)
-        );
+        this.pathfinding.finder.useMapLayer(null);
+        const predicate = new DefaultPassPredicateImpl(this);
+        this.pathfinding.finder.usePassPredicate(predicate);
 
         //#endregion
 

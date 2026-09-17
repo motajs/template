@@ -855,13 +855,13 @@ export interface IPassCheckHandler extends IDataCommonExtended {
     readonly nextLoc: ITileLocator;
     /** 移动方向 */
     readonly direction: FaceDirection;
-    /** 当前楼层 id */
-    readonly floorId: string | undefined;
+    /** 地图对象 */
+    readonly map: IGameMap | null;
 }
 
 export interface IPassPredicate {
     /**
-     * 检查在指定楼层中，能否从某一个移动入某一格
+     * 检查在指定楼层中，能否从某一个移动入某一格，若会产生撞击，则此项应返回 `false`
      * @param handler 通行性检查信息对象
      */
     canPass(handler: IPassCheckHandler): boolean;

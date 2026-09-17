@@ -1,55 +1,49 @@
 import { ITileLocator, logger } from '@motajs/common';
-import { IObjectMovable, IObjectMover, ReplayCode } from '@user/data-common';
-import { HeroMover, IStateBase } from '@user/data-base';
-import { isNil } from 'lodash-es';
-import { PathfindingFinder } from './finder';
+import { IObjectMovable, IObjectMover } from '@user/data-common';
+import { IStateBase } from '@user/data-base';
+import { PathFinder } from './finder';
 import {
-    IPathfinder,
+    IPathFinder,
     IPathfindingController,
-    IPathfindingStep,
+    IPathfindingResult,
     IPathfindingSystem,
-    PathFallbackPolicy
+    PathFallbackPolicy,
+    PathfindingStatus
 } from './types';
 
 export class PathfindingSystem implements IPathfindingSystem {
     /** 寻路求解器 */
-    readonly finder: IPathfinder;
+    readonly finder: IPathFinder;
 
-    /** 绑定的移动器对象 */
+    /** 当前绑定的移动器 */
     private mover: IObjectMover<IObjectMovable> | null = null;
-    /** 绑定的移动对象，用于保留用户契约的对象绑定入口 */
-    private movable: IObjectMovable | null = null;
     /** 注入的瞬移回退策略，未注入时必定回退为逐步寻路 */
     private policy: PathFallbackPolicy | null = null;
     /** 最近一次寻路移动的控制器包装 */
     private current: IPathfindingController | null = null;
 
     constructor(readonly state: IStateBase) {
-        this.finder = new PathfindingFinder(state);
-    }
-
-    useMovable(movable: IObjectMovable | null): void {
-        this.movable = movable;
+        this.finder = new PathFinder(state);
     }
 
     useMover(mover: IObjectMover<IObjectMovable> | null): void {
         this.mover = mover;
-        this.movable = mover ? mover.tile : null;
     }
 
     useFallbackPolicy(policy: PathFallbackPolicy | null): void {
         this.policy = policy;
     }
 
-    getPath(target: ITileLocator): IPathfindingStep[] {
+    getPath(target: ITileLocator): IPathfindingResult {
         const mover = this.mover;
-        const movable = this.movable;
-        if (isNil(mover) && isNil(movable)) {
+        if (!mover) {
             logger.warn(173);
-            return [];
+            return {
+                status: PathfindingStatus.InvalidInput,
+                path: []
+            };
         }
-        const tile = mover ? mover.tile : movable;
-        if (!tile) return [];
+        const tile = mover.tile;
         return this.finder.find({ x: tile.x, y: tile.y }, target);
     }
 
@@ -59,7 +53,7 @@ export class PathfindingSystem implements IPathfindingSystem {
      * @param teleport 是否瞬移
      */
     private startMove(
-        path: readonly IPathfindingStep[],
+        path: IPathfindingResult,
         teleport: boolean
     ): IPathfindingController | null {
         const mover = this.mover;
@@ -67,11 +61,13 @@ export class PathfindingSystem implements IPathfindingSystem {
         const current = this.current;
         if (current && !current.controller.done) return null;
 
+        const array = path.path;
+
         if (teleport) {
-            const last = path.at(-1)!;
+            const last = array.at(-1)!;
             mover.tp(last.to.x, last.to.y);
         } else {
-            for (const step of path) {
+            for (const step of array) {
                 mover.step(step.dir);
             }
         }
@@ -85,22 +81,16 @@ export class PathfindingSystem implements IPathfindingSystem {
 
     moveTo(target: ITileLocator): IPathfindingController | null {
         const path = this.getPath(target);
-        if (path.length === 0) return null;
+        if (path.status !== PathfindingStatus.Success) return null;
         return this.startMove(path, false);
     }
 
     teleportTo(target: ITileLocator): IPathfindingController | null {
         const path = this.getPath(target);
-        if (path.length === 0) return null;
-        if (!this.policy || this.policy(path)) {
+        if (path.status !== PathfindingStatus.Success) return null;
+        if (!this.policy || this.policy(path.path)) {
             return this.startMove(path, false);
         } else {
-            // 录像记录
-            // TODO：后续需要调整设计方式，最好不用 instanceof
-            if (this.mover instanceof HeroMover) {
-                const replay = this.state.replaySystem;
-                replay.array.add(ReplayCode.Teleport, [target.x, target.y]);
-            }
             return this.startMove(path, true);
         }
     }

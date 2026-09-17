@@ -1,18 +1,17 @@
-import { InternalDirectionGroup, ITileLocator, logger } from '@motajs/common';
-import {
-    IMapLayer,
-    IMapState,
-    IPassPredicate,
-    IStateBase
-} from '@user/data-base';
+import { ITileLocator, logger } from '@motajs/common';
+import { IMapLayer, IPassPredicate, IStateBase } from '@user/data-base';
 import { isNil } from 'lodash-es';
-import { PathfindingGraphBuilder } from './graph';
+import { MapGraphBuilder } from './graph';
 import {
-    IPathfinder,
+    IPathFinder,
     IPathfindingStep,
-    IPathGraph,
-    PathCostFunction
+    IMapGraph,
+    PathCostFunction,
+    IMapGraphBuilder,
+    IPathfindingResult,
+    PathfindingStatus
 } from './types';
+import { IFaceHandler } from '@user/data-common';
 
 interface IDistanceHeapEntry {
     /** 条目的键值，堆中键值最小的条目最先取出 */
@@ -95,43 +94,37 @@ class DistanceHeap {
     }
 }
 
-export class PathfindingFinder implements IPathfinder {
+export class PathFinder implements IPathFinder {
     /** 当前对象对应的数据层对象 */
     readonly state: IStateBase;
 
-    /** 绑定的地图状态对象，用于解析楼层 id */
-    private maps: IMapState | null = null;
-    /** 绑定的地图图层，图节点来源 */
-    private layer: IMapLayer | null = null;
-    /** 注入的通行性谓词，用于判定边可行性与终端节点 */
-    private predicate: IPassPredicate | null = null;
-    /** 注入的损失函数，未注入时每格损失 1 */
-    private cost: PathCostFunction | null = null;
-    /** 邻域方向组别，默认四正交方向 */
-    private group: number = InternalDirectionGroup.Dir4;
+    /** 当前寻路对象使用的图构建器 */
+    private readonly graph: IMapGraphBuilder = new MapGraphBuilder();
 
     constructor(state: IStateBase) {
         this.state = state;
     }
 
-    useMapState(maps: IMapState | null): void {
-        this.maps = maps;
-    }
-
     useMapLayer(layer: IMapLayer | null): void {
-        this.layer = layer;
+        if (layer) {
+            if (layer.state !== this.state) {
+                logger.warn(182, 'IMapLayer', 'IPathFinder');
+                return;
+            }
+        }
+        this.graph.useMapLayer(layer);
     }
 
     useCostFunction(cost: PathCostFunction | null): void {
-        this.cost = cost;
+        this.graph.useCostFunction(cost);
     }
 
     usePassPredicate(predicate: IPassPredicate | null): void {
-        this.predicate = predicate;
+        this.graph.usePassPredicate(predicate);
     }
 
-    useDirGroup(group: number): void {
-        this.group = group;
+    useFaceHandler(handler: IFaceHandler<number>): void {
+        this.graph.useFaceHandler(handler);
     }
 
     /**
@@ -141,22 +134,24 @@ export class PathfindingFinder implements IPathfinder {
      * @param target 寻路目标位置
      */
     private search(
-        graph: IPathGraph,
+        graph: IMapGraph,
         start: ITileLocator,
         target: ITileLocator
     ): IPathfindingStep[] {
-        const startIndex = start.y * graph.width + start.x;
-        const targetIndex = target.y * graph.width + target.x;
+        const indexer = this.graph.indexer;
+        const startIndex = indexer.locaterToIndex(start);
+        const targetIndex = indexer.locaterToIndex(target);
         if (startIndex === targetIndex) return [];
         if (!graph.nodes.has(startIndex) || !graph.nodes.has(targetIndex)) {
             return [];
         }
 
+        const heap = new DistanceHeap();
         const dist: Map<number, number> = new Map();
         const prev: Map<number, IPathfindingStep> = new Map();
         const visited: Set<number> = new Set();
+
         dist.set(startIndex, 0);
-        const heap: DistanceHeap = new DistanceHeap();
         heap.push(0, startIndex);
 
         while (true) {
@@ -196,39 +191,25 @@ export class PathfindingFinder implements IPathfinder {
             const step = prev.get(curr);
             if (!step) return [];
             steps.push(step);
-            curr = step.from.y * graph.width + step.from.x;
+            curr = indexer.locaterToIndex(step.from);
         }
         steps.reverse();
         return steps;
     }
 
-    /**
-     * 地图状态或图层未绑定、坐标越界等非法输入下告警并返回空数组，
-     * 目标不可达时同样返回空数组
-     */
-    find(start: ITileLocator, target: ITileLocator): IPathfindingStep[] {
-        const maps = this.maps;
-        const layer = this.layer;
-        if (isNil(maps) || isNil(layer)) {
-            logger.warn(173);
-            return [];
+    find(start: ITileLocator, target: ITileLocator): IPathfindingResult {
+        if (start.x === target.x && start.y === target.y) {
+            return { status: PathfindingStatus.TargetUnder, path: [] };
         }
-        if (
-            !layer.inMap(start.x, start.y) ||
-            !layer.inMap(target.x, target.y)
-        ) {
-            logger.warn(173);
-            return [];
+        const graph = this.graph.build(start);
+        if (!graph) {
+            return { status: PathfindingStatus.InvalidInput, path: [] };
         }
-
-        // 数据端状态可变，每次寻路动态构建图，不做缓存
-        const builder = new PathfindingGraphBuilder();
-        builder.useMapState(maps);
-        builder.useMapLayer(layer);
-        builder.useCostFunction(this.cost);
-        builder.usePassPredicate(this.predicate);
-        builder.useDirGroup(this.group);
-        const graph = builder.build(start);
-        return this.search(graph, start, target);
+        const path = this.search(graph, start, target);
+        if (path.length === 0) {
+            return { status: PathfindingStatus.NoPath, path };
+        } else {
+            return { status: PathfindingStatus.Success, path };
+        }
     }
 }

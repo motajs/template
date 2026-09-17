@@ -10,7 +10,7 @@ import {
     ISaveableContent,
     SaveCompression
 } from '@user/data-common';
-import { IPassPredicate } from '../map';
+import { IGameMap, IPassPredicate } from '../map';
 
 //#region 勇士属性
 
@@ -280,9 +280,9 @@ export interface IHeroLocationHooks extends IHookBase {
 
     /**
      * 当设置勇士所处楼层时触发
-     * @param floorId 设置为的楼层 id，undefined 表示尚不处于任何楼层
+     * @param map 设置为的楼层对象，`null` 表示不处于任何楼层
      */
-    onSetFloor?(floorId: string | undefined): void;
+    onSetFloor?(map: IGameMap | null): void;
 }
 
 export interface IHeroLocationSave {
@@ -302,16 +302,18 @@ export interface IHeroLocation
         IObjectMovable,
         IHookable<IHeroLocationHooks>,
         IDataCommonExtended {
-    /** 当前所在楼层 id，undefined 表示尚不处于任何楼层 */
+    /** 勇士所处楼层的楼层 id，若为 `undefined` 则表示不在任何楼层 */
     readonly floorId: string | undefined;
+    /** 勇士所处地图，若为 `null` 则表示不在任何楼层 */
+    readonly map: IGameMap | null;
     /** 勇士的移动对象 */
     readonly mover: IHeroMover<this>;
 
     /**
-     * 设置勇士所在的楼层 id，注意此方法会引起数据变化，但是不会产生楼层切换动画
-     * @param floorId 目标楼层 id
+     * 设置勇士所在的楼层，注意此方法会引起数据变化，但是不会产生楼层切换动画
+     * @param map 目标楼层对象
      */
-    setFloor(floorId: string | undefined): void;
+    setFloor(map: IGameMap | null): void;
 }
 
 //#endregion
@@ -840,7 +842,7 @@ export interface IHeroEquipment<THero>
 
 export interface IHeroChangeFloorInfo {
     /** 要切换至的目标楼层 */
-    readonly target: string;
+    readonly target: IGameMap;
     /** 要切换至的目标位置横坐标 */
     readonly x: number;
     /** 要切换至的目标位置纵坐标 */

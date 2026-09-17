@@ -20,7 +20,7 @@ export class DefaultHeroMoveTopImpl implements IHeroMoveTopImpl {
     constructor(private readonly state: IStateSystem) {
         this.maps = state.maps;
         this.executor = state.eventSystem.executor;
-        this.passPredicate = new DefaultPassPredicateImpl(this.maps);
+        this.passPredicate = new DefaultPassPredicateImpl(this.state);
     }
 
     //#region 通行性判断

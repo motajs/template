@@ -1,61 +1,45 @@
+import { ITileLocator, logger } from '@motajs/common';
 import {
-    IDirectionDescriptor,
-    InternalDirectionGroup,
-    ITileLocator,
-    logger
-} from '@motajs/common';
-import { FaceDirection } from '@user/data-common';
+    IFaceHandler,
+    ILocationIndexer,
+    MapLocIndexer
+} from '@user/data-common';
 import {
     ILayerLocation,
     IMapLayer,
-    IMapState,
     IPassCheckHandler,
     IPassPredicate
 } from '@user/data-base';
-import { isNil } from 'lodash-es';
 import {
-    IPathGraph,
+    IMapGraph,
     IPathGraphEdge,
     IPathGraphNode,
-    IPathfindingGraphBuilder,
+    IMapGraphBuilder,
     PathCostFunction
 } from './types';
 
-/**
- * 将方向描述器的坐标增量解析为对应的朝向
- * @param x 横坐标增量
- * @param y 纵坐标增量
- */
-function directionOf(x: number, y: number): FaceDirection {
-    if (x === 0 && y === -1) return FaceDirection.Up;
-    if (x === 0 && y === 1) return FaceDirection.Down;
-    if (x === -1 && y === 0) return FaceDirection.Left;
-    if (x === 1 && y === 0) return FaceDirection.Right;
-    if (x === -1 && y === -1) return FaceDirection.LeftUp;
-    if (x === 1 && y === -1) return FaceDirection.RightUp;
-    if (x === -1 && y === 1) return FaceDirection.LeftDown;
-    if (x === 1 && y === 1) return FaceDirection.RightDown;
-    return FaceDirection.Unknown;
-}
-
-export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
-    /** 绑定的地图状态对象，用于解析图层所属楼层 id */
-    private maps: IMapState | null = null;
+export class MapGraphBuilder implements IMapGraphBuilder {
     /** 绑定的地图图层，图节点来源 */
     private layer: IMapLayer | null = null;
     /** 注入的损失函数，未注入时每格损失 1 */
     private cost: PathCostFunction | null = null;
     /** 注入的通行性谓词，用于判定边的可行性与终端节点 */
     private predicate: IPassPredicate | null = null;
-    /** 邻域方向组别，默认四正交方向 */
-    private group: number = InternalDirectionGroup.Dir4;
+    /** 邻域方向组别 */
+    private face: IFaceHandler<number> | null = null;
 
-    useMapState(maps: IMapState | null): void {
-        this.maps = maps;
+    /** 坐标索引器 */
+    indexer: ILocationIndexer;
+
+    constructor() {
+        this.indexer = new MapLocIndexer();
     }
 
     useMapLayer(layer: IMapLayer | null): void {
         this.layer = layer;
+        if (layer) {
+            this.indexer.setWidth(layer.width);
+        }
     }
 
     useCostFunction(cost: PathCostFunction | null): void {
@@ -66,108 +50,97 @@ export class PathfindingGraphBuilder implements IPathfindingGraphBuilder {
         this.predicate = predicate;
     }
 
-    useDirGroup(group: number): void {
-        this.group = group;
+    useFaceHandler(face: IFaceHandler<number> | null): void {
+        this.face = face;
     }
 
     /**
-     * 解析绑定图层所属的楼层 id
-     * @returns 楼层 id，无法解析时为 `undefined`
-     */
-    private resolveFloorId(): string | undefined {
-        const maps = this.maps;
-        const layer = this.layer;
-        if (!maps || !layer) return undefined;
-        for (const [floorId, map] of maps.iterateAllMaps()) {
-            if (map === layer.map) return floorId;
-        }
-        return undefined;
-    }
-
-    /**
-     * 获取进入指定位置节点的损失，损失值为 NaN 或负数时告警并按损失 1 处理，
-     * Infinity 为合法损失值
+     * 获取进入指定位置节点的损失
      * @param block 位置信息
      */
     private resolveCost(block: ILayerLocation): number {
-        if (!this.cost) return 1;
-        const value = this.cost(block);
-        if (Number.isNaN(value) || value < 0) {
-            logger.warn(174);
+        if (this.cost) {
+            return this.cost(block);
+        } else {
             return 1;
         }
-        return value;
     }
 
-    build(start: ITileLocator): IPathGraph {
+    build(start: ITileLocator): IMapGraph | null {
         const layer = this.layer;
-        if (isNil(layer) || !layer.inMap(start.x, start.y)) {
-            logger.warn(173);
-            return { width: 0, height: 0, nodes: new Map() };
+        const face = this.face;
+        const predicate = this.predicate;
+        if (!layer) {
+            logger.warn(173, 'IMapLayer');
+            return null;
+        }
+        if (!predicate) {
+            logger.warn(173, 'IPassPredicate');
+            return null;
+        }
+        if (!face) {
+            logger.warn(173, 'IFaceHandler');
+            return null;
+        }
+        if (!layer.inMap(start.x, start.y)) {
+            logger.warn(183);
+            return null;
         }
 
-        const width = layer.width;
-        const height = layer.height;
-        const floorId = this.resolveFloorId();
-        const state = layer.state;
-        const dirs: IDirectionDescriptor[] = [
-            ...layer.state.directionMapper.map(this.group)
-        ];
+        const indexer = this.indexer;
+        const { width, height, state } = layer;
 
         const terminals: Set<number> = new Set();
         const adjacency: Map<number, IPathGraphEdge[]> = new Map();
-        const blocks: Map<number, ILayerLocation> = new Map();
-        const startIndex = start.y * width + start.x;
-        blocks.set(startIndex, layer.getLocationData(start.x, start.y)!);
+        const mapped: Set<number> = new Set();
+        const startIndex = indexer.locaterToIndex(start);
         adjacency.set(startIndex, []);
 
         // 以起始位置为中心 BFS，仅沿可通行有向边扩展，不可达区域不入图
-        const queue: number[] = [startIndex];
+        const queue: ITileLocator[] = [start];
         let head = 0;
         while (head < queue.length) {
-            const index = queue[head++]!;
-            const block = blocks.get(index)!;
-            const x = index % width;
-            const y = Math.floor(index / width);
+            const { x, y } = queue[head++]!;
+            const index = indexer.locToIndex(x, y);
             const edges: IPathGraphEdge[] = [];
-            for (const desc of dirs) {
-                const dir = directionOf(desc.x, desc.y);
-                if (dir === FaceDirection.Unknown) continue;
+            for (const [dir, desc] of face.mapMovement()) {
+                // 如果连接原地，那么应该忽略，避免陷入死循环
+                if (desc.x === 0 && desc.y === 0) continue;
                 const nx = x + desc.x;
                 const ny = y + desc.y;
                 if (!layer.inMap(nx, ny)) continue;
-                const next = layer.getLocationData(nx, ny)!;
+
+                const nextIndex = indexer.locToIndex(nx, ny);
+                const next: ITileLocator = { x: nx, y: ny };
                 const handler: IPassCheckHandler = {
-                    currLoc: block.locator,
-                    nextLoc: next.locator,
+                    currLoc: { x, y },
+                    nextLoc: next,
                     direction: dir,
-                    floorId,
+                    map: layer.map,
                     state
                 };
-                if (isNil(this.predicate) || !this.predicate.canPass(handler)) {
-                    continue;
-                }
-                const nextIndex = ny * width + nx;
-                if (this.predicate.shouldHit(handler)) {
+
+                if (!predicate.canPass(handler)) continue;
+                if (predicate.shouldHit(handler)) {
                     terminals.add(nextIndex);
                 }
+
                 edges.push({ dir, to: nextIndex });
-                if (!blocks.has(nextIndex)) {
-                    blocks.set(nextIndex, next);
-                    adjacency.set(nextIndex, []);
-                    queue.push(nextIndex);
+                if (!mapped.has(nextIndex)) {
+                    mapped.add(nextIndex);
+                    queue.push(next);
                 }
             }
             adjacency.set(index, edges);
         }
 
         const nodes: Map<number, IPathGraphNode> = new Map();
-        for (const [index, block] of blocks) {
+        for (const index of mapped) {
+            const { x, y } = indexer.indexToLocator(index);
+            const block = layer.getLocationData(x, y)!;
             nodes.set(index, {
-                index,
-                x: index % width,
-                y: Math.floor(index / width),
-                block,
+                x,
+                y,
                 cost: this.resolveCost(block),
                 terminal: terminals.has(index),
                 edges: adjacency.get(index) ?? []

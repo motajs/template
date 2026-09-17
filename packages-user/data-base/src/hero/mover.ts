@@ -18,6 +18,7 @@ import {
     IHeroMoveTopImpl
 } from './types';
 import { isNil } from 'lodash-es';
+import { IPassCheckHandler } from '../map';
 
 export class HeroMover<T extends IHeroLocation>
     extends ObjectMover<T>
@@ -196,11 +197,11 @@ export class HeroMover<T extends IHeroLocation>
             if (this.ignoreTerrain) {
                 return HeroMoveCode.Step;
             } else {
-                const passHandler = {
+                const passHandler: IPassCheckHandler = {
                     currLoc: handler.currLoc,
                     nextLoc: handler.nextLoc,
                     direction: handler.direction,
-                    floorId: handler.floorId,
+                    map: this.tile.map,
                     state: handler.state
                 };
                 const predicate = this.topImpl.predicate();
@@ -213,6 +214,12 @@ export class HeroMover<T extends IHeroLocation>
                     return HeroMoveCode.CannotMove;
                 }
             }
+        }
+
+        // 瞬移录像记录
+        if (type === ObjectMoveType.Teleport) {
+            const replay = this.state.replaySystem;
+            replay.array.add(ReplayCode.Teleport, [step.x, step.y]);
         }
 
         // 跳跃和瞬移

@@ -14,7 +14,7 @@ import {
     type IPassCheckHandler,
     type IPassPredicate
 } from '@user/data-base';
-import { PathfindingGraphBuilder } from './graph';
+import { MapGraphBuilder } from './graph';
 import { type PathfindingSystem } from './system';
 
 vi.hoisted(() => {
@@ -363,8 +363,8 @@ function createPerformanceSystem(
     system.finder.usePassPredicate(predicate);
     return {
         system,
-        buildGraph: (): ReturnType<PathfindingGraphBuilder['build']> => {
-            const builder = new PathfindingGraphBuilder();
+        buildGraph: (): ReturnType<MapGraphBuilder['build']> => {
+            const builder = new MapGraphBuilder();
             builder.useMapState(maps);
             builder.useMapLayer(layer);
             builder.usePassPredicate(predicate);

@@ -12,6 +12,7 @@ import {
     IHeroLocationSave,
     IHeroMover
 } from './types';
+import { IGameMap } from '../map';
 
 export class HeroLocation
     extends Hookable<IHeroLocationHooks>
@@ -20,6 +21,7 @@ export class HeroLocation
     x: number;
     y: number;
     floorId: string | undefined = undefined;
+    map: IGameMap | null = null;
 
     readonly state: IDataCommon;
     readonly mover: IHeroMover<this>;
@@ -44,9 +46,10 @@ export class HeroLocation
         return new HookController(this, hook);
     }
 
-    setFloor(floorId: string | undefined): void {
-        this.floorId = floorId;
-        this.forEachHook(hook => hook.onSetFloor?.(floorId));
+    setFloor(map: IGameMap): void {
+        this.floorId = map.floorId;
+        this.map = map;
+        this.forEachHook(hook => hook.onSetFloor?.(map));
     }
 
     setPos(x: number, y: number): void {

@@ -1,4 +1,4 @@
-import { IDirectionMapper, ITileLocator } from '@motajs/common';
+import { ITileLocator } from '@motajs/common';
 import { IFaceManager, IRoleFaceBinder } from './common';
 import { IGameEventStore, IItemStore, IMapStore, ITileStore } from './store';
 import { IReplaySystem } from './replay';
@@ -56,8 +56,6 @@ export interface IDataCommon {
     readonly roleFace: IRoleFaceBinder;
     /** 朝向管理 */
     readonly faceManager: IFaceManager;
-    /** 方向组映射器 */
-    readonly directionMapper: IDirectionMapper;
     /** 录像系统 */
     readonly replaySystem: IReplaySystem;
 }

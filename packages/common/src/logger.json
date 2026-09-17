@@ -247,13 +247,17 @@
         "170": "Game event id '$1' has already been used, old event will be overridden.",
         "171": "Event id '$1' not found in event store, event will be skipped.",
         "172": "Event returned non-boolean value '$1' during reduction. JavaScript short-circuit semantics will be used.",
-        "173": "Pathfinding input is invalid or a required binding (map state, map layer) is missing. An empty result will be returned.",
+        "173": "A '$1' binding is missing for map graph building. An empty result will be returned.",
         "174": "Pathfinding cost function returned a negative or NaN value. Default cost 1 will be used instead.",
         "175": "Replay error: Replay not executed execution failed. Command code: $1.",
         "176": "Cannot add move step to replay system since only 'up,right,down,left' directions are acceptable.",
         "177": "Save data for saveable content $1 is needed, but there's no data in save data. Maybe a version issue for it? System will try to load other contents to make game run normally.",
         "178": "Save data with keys of '$1' are saved but not be loaded, is there some issue for it?",
         "179": "Replay $1 received an out-of-range index $2, the current replay length is $3. The operation will be ignored.",
+        "180": "Specified face group does not exist, face group setting failed.",
+        "181": "",
+        "182": "Cannot bind '$1' instance to '$2' since they belong to different CoreState instance.",
+        "183": "An in-map location is expected to begin map graph building, but got outside.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }

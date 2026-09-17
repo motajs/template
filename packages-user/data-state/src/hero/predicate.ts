@@ -1,11 +1,11 @@
-import { IMapState, IPassCheckHandler, IPassPredicate } from '@user/data-base';
-import { FaceDirection, PassBit } from '@user/data-common';
-import { isNil } from 'lodash-es';
+import { IPassCheckHandler, IPassPredicate } from '@user/data-base';
+import { FaceDirection, FaceGroup, PassBit } from '@user/data-common';
+import { IStateSystem } from '@user/data-system';
 
 export interface DefaultPassPredicate extends IPassPredicate {}
 
 export class DefaultPassPredicateImpl implements DefaultPassPredicate {
-    constructor(private readonly maps: IMapState) {}
+    constructor(readonly state: IStateSystem) {}
 
     private directionToPassBit(dir: FaceDirection): number {
         switch (dir) {
@@ -22,43 +22,14 @@ export class DefaultPassPredicateImpl implements DefaultPassPredicate {
         }
     }
 
-    private oppositeDirection(dir: FaceDirection): FaceDirection {
-        switch (dir) {
-            case FaceDirection.Up:
-                return FaceDirection.Down;
-            case FaceDirection.Right:
-                return FaceDirection.Left;
-            case FaceDirection.Down:
-                return FaceDirection.Up;
-            case FaceDirection.Left:
-                return FaceDirection.Right;
-            case FaceDirection.LeftUp:
-                return FaceDirection.RightDown;
-            case FaceDirection.RightUp:
-                return FaceDirection.LeftDown;
-            case FaceDirection.LeftDown:
-                return FaceDirection.RightUp;
-            case FaceDirection.RightDown:
-                return FaceDirection.LeftUp;
-            default:
-                return FaceDirection.Unknown;
-        }
-    }
-
     canPass(handler: IPassCheckHandler): boolean {
-        const { currLoc, nextLoc, direction, floorId } = handler;
-        if (isNil(floorId)) return false;
+        const { currLoc, nextLoc, direction, map } = handler;
+        const face = this.state.faceManager.get(FaceGroup.Dir4);
+        if (!face) return false;
 
-        if (
-            direction === FaceDirection.LeftDown ||
-            direction === FaceDirection.LeftUp ||
-            direction === FaceDirection.RightDown ||
-            direction === FaceDirection.RightUp
-        ) {
-            return true;
-        }
+        const degraded = face.degrade(direction);
+        if (degraded === FaceDirection.Unknown) return false;
 
-        const map = this.maps.getMap(floorId);
         if (!map) return false;
         const event = map.eventLayer;
         if (!event) return false;
@@ -66,9 +37,7 @@ export class DefaultPassPredicateImpl implements DefaultPassPredicate {
         const { x, y } = currLoc;
         const { x: nx, y: ny } = nextLoc;
         const leaveMask = this.directionToPassBit(direction);
-        const enterMask = this.directionToPassBit(
-            this.oppositeDirection(direction)
-        );
+        const enterMask = this.directionToPassBit(face.opposite(direction));
         let canLeave = true;
         let canEnter = true;
 
@@ -101,13 +70,11 @@ export class DefaultPassPredicateImpl implements DefaultPassPredicate {
     }
 
     shouldHit(handler: IPassCheckHandler): boolean {
-        const { nextLoc, floorId } = handler;
-        if (isNil(floorId)) return false;
-        const map = this.maps.getMap(floorId);
+        const { nextLoc, map } = handler;
         if (!map) return false;
-        const eventLayer = map.eventLayer;
-        if (!eventLayer) return false;
-        const next = eventLayer.getLocationData(nextLoc.x, nextLoc.y);
+        const event = map.eventLayer;
+        if (!event) return false;
+        const next = event.getLocationData(nextLoc.x, nextLoc.y);
         const nextRaw = next?.static?.raw();
         return !!nextRaw && !nextRaw.eventPass;
     }

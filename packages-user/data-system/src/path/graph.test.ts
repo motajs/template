@@ -30,7 +30,7 @@ vi.hoisted(() => {
 });
 
 interface TestModules {
-    PathfindingGraphBuilder: typeof import('./graph').PathfindingGraphBuilder;
+    PathfindingGraphBuilder: typeof import('./graph').MapGraphBuilder;
     MapState: typeof import('@user/data-base').MapState;
     TileStore: typeof import('@user/data-common').TileStore;
     FaceManager: typeof import('@user/data-common').FaceManager;
@@ -50,7 +50,7 @@ beforeAll(async () => {
     const commonModule = await import('@user/data-common');
     const motaModule = await import('@motajs/common');
     modules = {
-        PathfindingGraphBuilder: graphModule.PathfindingGraphBuilder,
+        PathfindingGraphBuilder: graphModule.MapGraphBuilder,
         MapState: baseModule.MapState,
         TileStore: commonModule.TileStore,
         FaceManager: commonModule.FaceManager,
@@ -343,7 +343,7 @@ describe('pathfinding graph building', () => {
             new modules.Dir8FaceHandler()
         );
         builder.usePassPredicate(predicate);
-        builder.useDirGroup(InternalDirectionGroup.Dir8);
+        builder.useFaceHandler(InternalDirectionGroup.Dir8);
         const graph = builder.build({ x: 1, y: 1 });
 
         const center = graph.nodes.get(1 * 3 + 1)!;
