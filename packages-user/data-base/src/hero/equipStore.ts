@@ -297,11 +297,15 @@ export class HeroEquipsStore<THero> implements IHeroEquipsStore<THero> {
                 this.instanceMap.delete(uid);
             }
         }
-        const maxUid = maxBy(state.equipments, 'uid');
-        if (!maxUid) {
-            logger.error(58);
-            return;
+        if (state.equipments.length === 0) {
+            this.nextUid = 0;
+        } else {
+            const maxUid = maxBy(state.equipments, 'uid');
+            if (!maxUid) {
+                logger.error(58);
+                return;
+            }
+            this.nextUid = maxUid.uid + 1;
         }
-        this.nextUid = maxUid.uid + 1;
     }
 }
