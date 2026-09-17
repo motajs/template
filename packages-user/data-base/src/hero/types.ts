@@ -633,6 +633,12 @@ export interface IHeroItems<THero>
 
 //#region 勇士装备
 
+/**
+ * 装备实例的存档。装备自身的数值与百分比加成是加成的唯一事实源，
+ * 存档持久化的正是这两个表：无压缩档全量存储、压缩档只存与原始定义的差异；
+ * 读档也由它们重建装备修饰器。故运行时要改变装备加成，必须改装备自身属性，
+ * 而不是修改它的修饰器
+ */
 export interface IEquipmentStateSave<THero> {
     /** 装备实例 uid */
     readonly uid: number;
@@ -649,6 +655,10 @@ export interface IHeroEquipsStoreSave<THero> {
     readonly equipments: readonly IEquipmentStateSave<THero>[];
 }
 
+/**
+ * 装备实例。其修饰器由装备自身加成重建而来，是派生视图：
+ * 跨读档不保留旧的修饰器对象引用属预期行为，读档后它们会被重新创建
+ */
 export interface IEquipmentState<THero> extends ISaveableContent<
     IEquipmentStateSave<THero>
 > {
