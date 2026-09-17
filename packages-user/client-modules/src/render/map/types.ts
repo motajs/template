@@ -339,7 +339,7 @@ export interface IMapRenderer {
     /** 顶点数组生成器 */
     readonly vertex: IMapVertexGenerator;
     /** 使用的地图状态对象 */
-    readonly layerState: IGameMap;
+    readonly map: IGameMap | null;
 
     /** 地图宽度 */
     readonly mapWidth: number;

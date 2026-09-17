@@ -4,11 +4,10 @@ import {
     IGlobalTrasaction,
     ISaveRead,
     ISaveSystem,
-    ISaveSystemConfig,
-    ISaveableContent,
-    SaveCompression
+    ISaveSystemConfig
 } from './types';
 import { isNil } from 'lodash-es';
+import { SaveCompression, ISaveableContent } from '@user/data-common';
 
 interface ISaveRecord {
     /** 存档 id */

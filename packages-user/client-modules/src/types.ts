@@ -1,18 +1,16 @@
 import { IRenderTreeRoot } from '@motajs/render';
-import { ICoreState } from '@user/data-state';
 import { IMapExtensionManager, IMapRenderer } from './render/map';
 import { IBGMPlayer, IMotaAudioContext, ISoundPlayer } from '@motajs/audio';
 import {
     IAutotileProcessor,
     IMaterialManager,
-    IMotaAssetsLoader
+    IMotaAssetsLoader,
+    IClientBase
 } from '@user/client-base';
 import { IExcitation, IExcitationDivider } from '@motajs/animate';
 
-export interface IClientCore {
-    /** 数据端状态对象 */
-    readonly data: ICoreState;
-
+export interface IClientCore extends IClientBase {
+    /** 渲染端加载对象 */
     readonly loader: IMotaAssetsLoader;
 
     /** 素材管理器 */
@@ -39,15 +37,4 @@ export interface IClientCore {
     readonly soundPlayer: ISoundPlayer<SoundIds>;
     /** BGM 播放器 */
     readonly bgmPlayer: IBGMPlayer<BgmIds>;
-
-    /**
-     * 绑定数据端状态
-     * @param state 数据端状态
-     */
-    bindDataState(state: ICoreState): void;
-
-    /**
-     * 获取当前绑定的数据端状态对象
-     */
-    getDataState(): ICoreState;
 }
