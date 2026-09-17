@@ -1,7 +1,6 @@
 import type * as Client from '@motajs/client';
 import type * as ClientBase from '@motajs/client-base';
 import type * as Common from '@motajs/common';
-import type * as LegacyClient from '@motajs/legacy-client';
 import type * as LegacyCommon from '@motajs/legacy-common';
 import type * as LegacySystem from '@motajs/legacy-system';
 import type * as LegacyUI from '@motajs/legacy-ui';
@@ -23,7 +22,6 @@ interface ModuleInterface {
     '@motajs/client': typeof Client;
     '@motajs/client-base': typeof ClientBase;
     '@motajs/common': typeof Common;
-    '@motajs/legacy-client': typeof LegacyClient;
     '@motajs/legacy-common': typeof LegacyCommon;
     '@motajs/legacy-system': typeof LegacySystem;
     '@motajs/legacy-ui': typeof LegacyUI;

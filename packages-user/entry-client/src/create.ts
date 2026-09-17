@@ -1,7 +1,6 @@
 import { Mota } from '@user/entry-data';
 import * as Client from '@motajs/client';
 import * as ClientBase from '@motajs/client-base';
-import * as LegacyClient from '@motajs/legacy-client';
 import * as LegacySystem from '@motajs/legacy-system';
 import * as LegacyUI from '@motajs/legacy-ui';
 import * as Render from '@motajs/render';
@@ -19,7 +18,6 @@ export function create() {
 
     Mota.register('@motajs/client', Client);
     Mota.register('@motajs/client-base', ClientBase);
-    Mota.register('@motajs/legacy-client', LegacyClient);
     Mota.register('@motajs/legacy-system', LegacySystem);
     Mota.register('@motajs/legacy-ui', LegacyUI);
     Mota.register('@motajs/render', Render);

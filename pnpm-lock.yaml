@@ -345,9 +345,6 @@ importers:
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
-      '@motajs/legacy-client':
-        specifier: workspace:*
-        version: link:../../packages/legacy-client
       '@motajs/legacy-common':
         specifier: workspace:*
         version: link:../../packages/legacy-common
