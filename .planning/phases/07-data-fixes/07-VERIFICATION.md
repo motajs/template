@@ -1,8 +1,11 @@
 ---
 phase: 07-data-fixes
 verified: 2026-09-17T10:42:49Z
-status: passed
+status: gaps_found
 score: 24/24 must-haves verified
+gaps: 4
+gaps_recorded: 2026-09-17
+gap_source: .planning/phases/07-data-fixes/07-REVIEW-recheck.md
 covered_files:
   - .planning/REQUIREMENTS.md
   - .planning/ROADMAP.md
@@ -328,6 +331,51 @@ None. This is a headless data-layer phase (D-12): no UI, CLI output or real-time
 ## Gaps Summary
 
 **No phase-goal gap.** All registered data-side defects are disposed of exactly as the user adjudicated; all target correct-expectation cases are active and green; `pnpm test:ci` is 737 passed / 1 skipped / 0 failed; the data-range lint/type gates are clean; the renderer/legacy boundary is untouched; and requirement `FIX-01` is fully claimed and satisfied. The only non-green signal (`script/check-data-circular.ts`) is a pre-existing phase-03 legacy↔client-modules boundary that Success Criterion 4 forbids this phase from touching. The remaining items are the out-of-scope advisories recorded above — none contradicts a must-have and none carries deterministic (failing-test) evidence.
+
+### Review-Recheck Gaps (recorded 2026-09-17, user-confirmed for repair)
+
+Source: `07-REVIEW-recheck.md` — the incremental code review run after the phase first closed (committed `cd8a4c4`). Of its 8 findings, the 4 Info items (IN-01..IN-04) were fixed by the user directly (`34ba9e8`, `219ac49`, `3a3a6ac`, `a2a8e6e`); the 4 below are recorded here as Phase 7 gap-closure work by user decision (2026-09-17). Common root cause: the second fix batch was executed to make the target test green, without aligning each change's contract, bookkeeping and boundary conditions with the design language already documented in the same files.
+
+#### Critical Gaps (Block Progress)
+
+1. **CR-01 — `HeroEquipment.compareEquip()` returns a wrong diff whenever a compared item is currently equipped**
+   - Missing: `compareEquip` (`equipment.ts:255-331`) re-adds a compared item's modifiers to a comparison clone via `clone.addModifier(name, modifier)`, but those very objects are already bound to the live attribute by `loadEquipEffect` (`equipment.ts:80-86` → `attribute.addModifier(name, modifier, false)`), so `HeroAttribute.addModifier` rejects them with warning 108 (`attribute.ts:195-199`) and that item contributes nothing.
+   - Impact: wrong attribute diff for the equipped item (traced: returns `-12` where the `types.ts:824-834` contract requires `-7`). It is a public API of `IHeroEquipment`; no production caller today, so the impact is latent.
+   - Fix: clone each compared modifier before adding it to the comparison clone, and delete the same clone objects afterwards.
+   - Evidence: `07-REVIEW-recheck.md:74-121`.
+
+2. **WR-01 — `normalizeParam()` reports `byteLength: 0` for unsupported param types while `setParamArray()` writes 2 bytes**
+   - Missing: the fallback branch (`array.ts:310-315`) returns a type-0 record with `byteLength: 0` instead of `null`, contradicting the method's own jsDoc ("return `null`") and `normalizeParamList`'s documented "discard" semantics (`array.ts:318-335`).
+   - Impact: the param is kept and counted in the command's param count, but the cursor advances 0 while 2 bytes are written (`indexArray` points at the wrong byte for every later command). Repro: `add(1, [undefined])` then `add(2, [20])` overwrites the first step's bytes.
+   - Fix: make the fallback consistent with the documented contract (return `null`), or report the bytes actually written and align the docs.
+   - Evidence: `07-REVIEW-recheck.md:125-144`.
+
+3. **WR-02 — `checkBufferExpand()` recurses forever when an expand multiplier is exactly `1`**
+   - Missing: the constructor accepts multipliers `>= 1` (`array.ts:113-127` rejects only `< 1`, while warning 149's own text says they must be greater than 1). With `1`, `Math.ceil(size * 1) === size`, so a same-size buffer is allocated and the recursion at `array.ts:207-210` repeats with identical arguments.
+   - Impact: infinite recursion / stack overflow the first time the buffer needs to grow under such a config. Defaults (1.2) and tests (2) mask it.
+   - Fix: reject `<= 1`, or clamp the computed next size to be strictly larger than the current one.
+   - Evidence: `07-REVIEW-recheck.md:146-157`.
+
+4. **WR-03 — `HeroAttribute.clone()` bypasses `modifierName`/binding, so a cloned attribute silently loses its modifiers on `saveState()`/`iterateModifiers()`**
+   - Missing: `clone()` (`attribute.ts:296-314`) inserts cloned modifiers directly into `cloned.modifier` without populating `cloned.modifierName`, without `bindAttribute`, and without mirroring `modifierNosave`.
+   - Impact: `cloned.iterateModifiers()` yields nothing → `cloned.saveState()` serializes `modifiers: []`, dropping every cloned modifier; `getModifierIndex(m)` returns `-1`; `m.setValue(...)` on a cloned modifier cannot notify the clone, so `getFinalAttribute(name)` goes stale. Reachable through the public `HeroState.getIsolatedAttribute()`.
+   - Fix: route cloned modifiers through the same bookkeeping `addModifier` establishes.
+   - Evidence: `07-REVIEW-recheck.md:159-183`.
+
+## Recommended Fix Plans
+
+### 07-15-PLAN.md: Review-recheck defect batch (CR-01 / WR-01 / WR-02 / WR-03)
+
+**Objective:** Close the 4 review-recheck defects by aligning each one with its documented contract and sibling paths, each with a correct-expectation regression case (no assertion weakening, no new `it.skip`).
+
+**Tasks:**
+1. CR-01 — clone modifiers before adding them in `compareEquip`
+2. WR-01 — make the unencodable-param fallback consistent with the documented discard semantics
+3. WR-02 — make `checkBufferExpand` terminate for every accepted multiplier
+4. WR-03 — restore `modifierName` / binding / `nosave` / `recalculateAttribute` bookkeeping in `clone()`
+5. D-12/D-44 gates + `pnpm test:ci` + SUMMARY
+
+**Estimated scope:** Medium
 
 ---
 
