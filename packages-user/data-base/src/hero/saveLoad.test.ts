@@ -443,9 +443,10 @@ describe('HeroEquipsStore save and load round trips', () => {
         expect(result.info.map(info => info.code)).toContain(59);
     });
 
-    // 验证存档不含任何裁E��E��例时绁Elogger.catch 观测到错误码E58
-    it('warns code 58 when the max equipment uid cannot be found', () => {
+    // 验证空存档读档把 uid 计数器重置为 0（由随后的 add 发号 0 观测）且不产生码 58
+    it('resets the uid counter when the save has no equipment', () => {
         const env = createEquipEnv();
+        registerItem(env, createEquipItem(10, 'sword', [0], [['atk', 5]]));
 
         const result = logger.catch(() =>
             env.store.loadState(
@@ -454,7 +455,10 @@ describe('HeroEquipsStore save and load round trips', () => {
             )
         );
 
-        expect(result.info.map(info => info.code)).toContain(58);
+        // 码 58 分支现在只剩「非空数组但 maxBy 返回 undefined（畸形条目）」的防御
+        // 路径可达，空存档不再触发；该分支属 equipStore 的现有实现，保持原样
+        expect(env.store.add(10)).toBe(0);
+        expect(result.info.map(info => info.code)).not.toContain(58);
     });
 });
 
