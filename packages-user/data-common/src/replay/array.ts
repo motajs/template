@@ -110,7 +110,7 @@ export class ReplayArray implements IReplayArray {
         this.commandMax = config.commandMaxLength;
         this.paramMax = config.paramMaxLength;
 
-        if (config.commandExpandMultiplier < 1) {
+        if (config.commandExpandMultiplier <= 1) {
             const str = config.commandExpandMultiplier.toString();
             logger.warn(149, 'command', str);
             this.commandExpand = 2;
@@ -118,7 +118,7 @@ export class ReplayArray implements IReplayArray {
             this.commandExpand = config.commandExpandMultiplier;
         }
 
-        if (config.paramExpandMultiplier < 1) {
+        if (config.paramExpandMultiplier <= 1) {
             const str = config.paramExpandMultiplier.toString();
             logger.warn(149, 'param', str);
             this.paramExpand = 2;

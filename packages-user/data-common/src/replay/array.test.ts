@@ -1,4 +1,4 @@
-// 测试 ReplayArray 构件级行为：单类型参数编解码与单数组操作单次读回、不可编码参数丢弃后的计数与偏移对齐
+// 测试 ReplayArray 构件级行为：单类型参数编解码与单数组操作单次读回、不可编码参数丢弃后的计数与偏移对齐、乘数恰为 1 的边界
 import { logger } from '@motajs/common';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { ReplayArray } from './array';
@@ -1054,6 +1054,33 @@ describe('ReplayArray expand and width warnings', () => {
         );
 
         expect(info.map(v => v.code)).toEqual([149, 149]);
+    });
+
+    // 验证扩容乘数恰为 1 时按码 149 拒绝两个乘数并回退倍率，扩容仍能终止且全部步骤读回
+    it('warns code 149 and still expands when an expand multiplier is exactly 1', () => {
+        const { ret, info } = logger.catch(() =>
+            createArray({
+                initCommandLength: 2,
+                initParamLength: 8,
+                commandExpandMultiplier: 1,
+                paramExpandMultiplier: 1
+            })
+        );
+        const array = ret;
+
+        expect(info.map(v => v.code)).toEqual([149, 149]);
+
+        for (let i = 0; i < 15; i++) {
+            array.add(i, [i]);
+        }
+
+        expect(array.length).toBe(15);
+        const stream = array.createReadStream(0);
+        for (let i = 0; i < 15; i++) {
+            expectStepTyped(stream.read()!, i, [i], i + 1);
+        }
+        expect(stream.read()).toBeNull();
+        expect(stream.index).toBe(15);
     });
 
     // 验证指令数组达到上限后触发告警码 150
