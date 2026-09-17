@@ -1,4 +1,4 @@
-// 测试 ReplayArray 构件级行为：单类型参数编解码与单数组操作单次读回
+// 测试 ReplayArray 构件级行为：单类型参数编解码与单数组操作单次读回、不可编码参数丢弃后的计数与偏移对齐
 import { logger } from '@motajs/common';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { ReplayArray } from './array';
@@ -695,6 +695,24 @@ describe('ReplayArray param codec', () => {
 
         const stream = array.createReadStream(0);
         expectStepTyped(stream.read()!, 1, [7], 1);
+        expectStepTyped(stream.read()!, 2, [20], 2);
+        expect(stream.read()).toBeNull();
+        expect(stream.index).toBe(2);
+    });
+
+    // 验证不可编码的参数被丢弃后命令参数计数为 0，且后续命令的字节与读流偏移不错位
+    it('drops the unencodable param and keeps the later commands aligned', () => {
+        const array = createArray();
+        const { info } = logger.catch(() => array.add(1, [undefined!]));
+        array.add(2, [20]);
+
+        expect(info.map(v => v.code)).toContain(148);
+        expect(new Uint8Array(array.getCommandArray())[0]).toBe(0);
+        expect(array.get(0)).toEqual({ command: 1, params: [], index: 0 });
+        expect(array.get(1)).toEqual({ command: 2, params: [20], index: 1 });
+
+        const stream = array.createReadStream(0);
+        expectStepTyped(stream.read()!, 1, [], 1);
         expectStepTyped(stream.read()!, 2, [20], 2);
         expect(stream.read()).toBeNull();
         expect(stream.index).toBe(2);

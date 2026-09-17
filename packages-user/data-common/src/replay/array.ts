@@ -308,11 +308,7 @@ export class ReplayArray implements IReplayArray {
             }
         }
         logger.warn(148, typeof param, String(param));
-        return {
-            paramType: 0,
-            paramValue: 0,
-            byteLength: 0
-        };
+        return null;
     }
 
     /**
