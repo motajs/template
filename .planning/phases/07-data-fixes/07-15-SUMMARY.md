@@ -105,7 +105,7 @@ coverage:
         status: pass
     human_judgment: false
 
-duration: ~29min
+duration: ~32min
 completed: 2026-09-17
 status: complete
 ---
@@ -135,7 +135,7 @@ status: complete
 
 ## Task Commits
 
-`actuals.commits = 4`（`plan_head_before = 19ad1ea91ab7a69b0b65020d49bbe65ab30ec301`；`git rev-list --count 19ad1ea..HEAD` 实测 = 4；**本 SUMMARY 的提交本身不在此计数内**，orchestrator 的跟踪同步提交亦然）。四条均为**普通提交、钩子生效**，未使用 `--no-verify`、未 amend 任何提交：
+`actuals.commits = 4`（`plan_head_before = 19ad1ea91ab7a69b0b65020d49bbe65ab30ec301`；`git rev-list --count 19ad1ea..HEAD` 在写本 SUMMARY 时实测 = 4；**本 SUMMARY 的提交（`3976240`）与 orchestrator 的跟踪同步提交均不在此计数内**）。四条均为**普通提交、钩子生效**，未使用 `--no-verify`、未 amend 任何提交：
 
 1. **Task 1（CR-01）** — `53f067a` (fix) — `fix(07-15): compare equipment without rebinding the equipped modifiers`（`equipment.ts` +10/−5，`equipment.test.ts` +29/−1；无删除文件）
 2. **Task 2（WR-01）** — `a7c9f97` (fix) — `fix(07-15): drop unencodable replay params instead of a zero-length record`（`array.ts` +6/−7，`array.test.ts` +20/−1）
