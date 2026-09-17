@@ -690,3 +690,54 @@ describe('HeroState same-reference attribute load (#06-17-1)', () => {
         }
     });
 });
+
+describe('HeroState same-reference equipment load (#06-17-4)', () => {
+    // 验证经勇士容器三档往返后装备实例为同一实例，且数值恢复到存档点
+    it('keeps the equipment instance and restores values across all compressions', () => {
+        for (const compression of SAVE_COMPRESSIONS) {
+            const hero = createEquipHero();
+            const uid = hero.items.equipment.add(10);
+            const before = hero.items.equipment.get(uid)!;
+            // 装备数值只能经读档改变，先用一份自定义存档把活实例改到 9 作为存档点
+            before.loadState(
+                {
+                    uid,
+                    num: 10,
+                    value: new Map<HeroKey, number>([['atk', 9]]),
+                    percentage: new Map<HeroKey, number>()
+                },
+                SaveCompression.NoCompression
+            );
+            const saved = hero.saveState(compression);
+            before.loadState(
+                {
+                    uid,
+                    num: 10,
+                    value: new Map<HeroKey, number>([['atk', 1]]),
+                    percentage: new Map<HeroKey, number>()
+                },
+                SaveCompression.NoCompression
+            );
+
+            hero.loadState(saved, compression);
+
+            expect(hero.items.equipment.get(uid)).toBe(before);
+            expect([...before.getModifiers()][0][1].getValue()).toBe(9);
+        }
+    });
+
+    // 验证存档中不存在的装备实例在读档后被删除（以存档为准）
+    it('deletes equipment instances absent from the save', () => {
+        const hero = createEquipHero();
+        const kept = hero.items.equipment.add(10);
+        const before = hero.items.equipment.get(kept)!;
+
+        const saved = hero.saveState(SaveCompression.NoCompression);
+        const extra = hero.items.equipment.add(10);
+
+        hero.loadState(saved, SaveCompression.NoCompression);
+
+        expect(hero.items.equipment.get(kept)).toBe(before);
+        expect(hero.items.equipment.get(extra)).toBeNull();
+    });
+});

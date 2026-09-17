@@ -7,7 +7,8 @@ import {
     IItemRawData,
     IObjectMovable,
     IObjectMover,
-    ISaveableContent
+    ISaveableContent,
+    SaveCompression
 } from '@user/data-common';
 import { IPassPredicate } from '../map';
 
@@ -710,6 +711,19 @@ export interface IHeroEquipsStore<THero>
      * @param item 道具图块数字或字符串 id
      */
     count(item: number | string): number;
+
+    /**
+     * 读取装备实例仓库存档。存档中已存在的 uid 会复用原实例并在其实例上原地读档，
+     * 因此外部通过 {@link get} / {@link instancesOf} / {@link instances} 持有的实例跨读档仍然有效；
+     * 仅当 uid 相同但装备图块数字不同的存档无法复用实例时，才替换该实例。
+     * 存档中不存在的实例一律删除，即读档结果以存档为准。
+     * @param state 装备实例仓库存档
+     * @param compression 压缩级别
+     */
+    loadState(
+        state: IHeroEquipsStoreSave<THero>,
+        compression: SaveCompression
+    ): void;
 }
 
 export interface IHeroEquipmentSave {

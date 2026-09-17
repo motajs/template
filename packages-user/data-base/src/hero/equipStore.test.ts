@@ -6,12 +6,17 @@ import {
     type IItemRawData,
     ItemCategory,
     ItemStore,
+    SaveCompression,
     TileStore,
     TileType
 } from '@user/data-common';
 import { HeroEquipsStore } from './equipStore';
 import { PercentageModifier, ValueModifier } from './modifier';
-import { type IEquipmentSortHandler, type IEquipmentSorter } from './types';
+import {
+    type IEquipmentSortHandler,
+    type IEquipmentSorter,
+    type IEquipmentStateSave
+} from './types';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -44,6 +49,13 @@ afterAll(() => {
 });
 
 type HeroKey = SelectKey<IHeroAttr, number>;
+
+/** 存读档测试覆盖的三档压缩级别 */
+const SAVE_COMPRESSIONS = [
+    SaveCompression.NoCompression,
+    SaveCompression.LowCompression,
+    SaveCompression.HighCompression
+] as const;
 
 interface TestEnv {
     state: IDataCommon;
@@ -214,6 +226,82 @@ describe('HeroEquipsStore instances', () => {
             second,
             third
         ]);
+    });
+});
+
+/** 构造一份仅指定数值加成的无压缩装备存档，用于把活实例改到指定存档点 */
+function createValueSave(
+    uid: number,
+    atk: number
+): IEquipmentStateSave<IHeroAttr> {
+    return {
+        uid,
+        num: 10,
+        value: new Map<HeroKey, number>([['atk', atk]]),
+        percentage: new Map<HeroKey, number>()
+    };
+}
+
+describe('HeroEquipsStore same-reference load (#06-17-4)', () => {
+    // 验证同 uid 装备实例在三档压缩读档前后为同一实例，且数值恢复到存档点
+    it('keeps the same instance and restores values across all compressions', () => {
+        for (const compression of SAVE_COMPRESSIONS) {
+            const env = createEnv();
+            registerItem(env, createItem(10, 'sword', [['atk', 5]]));
+            const uid = env.store.add(10);
+            const before = env.store.get(uid)!;
+            // 装备数值只能经读档改变，先用一份自定义存档把活实例改到 9 作为存档点
+            before.loadState(
+                createValueSave(uid, 9),
+                SaveCompression.NoCompression
+            );
+            const saved = env.store.saveState(compression);
+            before.loadState(
+                createValueSave(uid, 1),
+                SaveCompression.NoCompression
+            );
+
+            env.store.loadState(saved, compression);
+
+            expect(env.store.get(uid)).toBe(before);
+            expect([...before.getModifiers()][0][1].getValue()).toBe(9);
+        }
+    });
+
+    // 验证存档中不存在的装备实例在读档后被删除（以存档为准）
+    it('deletes instances absent from the save', () => {
+        const env = createEnv();
+        registerItem(env, createItem(10, 'sword'));
+        const kept = env.store.add(10);
+        const before = env.store.get(kept)!;
+
+        const saved = env.store.saveState(SaveCompression.NoCompression);
+        const extra = env.store.add(10);
+
+        env.store.loadState(saved, SaveCompression.NoCompression);
+
+        expect(env.store.get(kept)).toBe(before);
+        expect(env.store.get(extra)).toBeNull();
+        expect(env.store.count(10)).toBe(1);
+    });
+
+    // 验证同 uid 但装备图块数字不同的存档无法复用实例，改为替换该实例
+    it('replaces the instance when the saved item number differs', () => {
+        const env = createEnv();
+        registerItem(env, createItem(10, 'sword', [['atk', 5]]));
+        registerItem(env, createItem(11, 'axe', [['atk', 3]]));
+        const uid = env.store.add(10);
+        const before = env.store.get(uid)!;
+
+        const saved = env.store.saveState(SaveCompression.NoCompression);
+        const swapped = {
+            equipments: saved.equipments.map(v => ({ ...v, num: 11 }))
+        };
+
+        env.store.loadState(swapped, SaveCompression.NoCompression);
+
+        expect(env.store.get(uid)).not.toBe(before);
+        expect(env.store.get(uid)?.item.num).toBe(11);
     });
 });
 

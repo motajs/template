@@ -268,16 +268,34 @@ export class HeroEquipsStore<THero> implements IHeroEquipsStore<THero> {
         state: IHeroEquipsStoreSave<THero>,
         compression: SaveCompression
     ): void {
-        this.instanceMap.clear();
+        // 按 uid 复用现有实例原地读档，使外部持有的引用跨读档仍然有效；
+        // 仅当 uid 相同但装备图块数字不同时才替换实例
+        const savedUids = new Set<number>();
         for (const save of state.equipments) {
             const raw = this.state.itemStore.getData(save.num);
             if (!raw) {
                 logger.error(59, save.num.toString());
                 continue;
             }
-            const instance = new EquipmentState<THero>(save.uid, raw, false);
-            instance.loadState(save, compression);
-            this.instanceMap.set(save.uid, instance);
+            savedUids.add(save.uid);
+            const existing = this.instanceMap.get(save.uid);
+            if (existing && existing.item.num === save.num) {
+                existing.loadState(save, compression);
+            } else {
+                const instance = new EquipmentState<THero>(
+                    save.uid,
+                    raw,
+                    false
+                );
+                instance.loadState(save, compression);
+                this.instanceMap.set(save.uid, instance);
+            }
+        }
+        // 以存档为准：存档中不存在的装备实例一律删除
+        for (const uid of this.instanceMap.keys()) {
+            if (!savedUids.has(uid)) {
+                this.instanceMap.delete(uid);
+            }
         }
         const maxUid = maxBy(state.equipments, 'uid');
         if (!maxUid) {
