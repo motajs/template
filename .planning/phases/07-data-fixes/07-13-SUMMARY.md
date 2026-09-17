@@ -22,7 +22,7 @@ affects: [07-data-fixes, data-system-combat, data-base-map, render-side-holders,
 actuals:
   tokens: 3502
   tasks: 5
-  commits: 6
+  commits: 8
   plan_head_before: b37c218f2d4c4ac2158d478795e2738d4edfbd69
 
 tech-stack:
@@ -123,12 +123,14 @@ status: complete
 
 ## Task Commits
 
-`git rev-list --count b37c218..HEAD` = **6**（Task 1/2/3 三条任务提交 + 本 SUMMARY 的元数据提交 + 2 条非本计划产出的提交：合并提交 `3da7863` 及其带入的 `954c3fc`）；`plan_head_before` = `b37c218f2d4c4ac2158d478795e2738d4edfbd69`。全部为**普通提交、钩子生效**，未使用 `--no-verify`、未 amend 任何已推送提交：
+`git rev-list --count b37c218..HEAD` = **8**（Task 1/2/3 三条任务提交 + 3 条元数据提交〔本 SUMMARY、`state.json` 同步、本行计数更正〕 + 2 条非本计划产出的提交：合并提交 `3da7863` 及其带入的 `954c3fc`）；`plan_head_before` = `b37c218f2d4c4ac2158d478795e2738d4edfbd69`。全部为**普通提交、钩子生效**，未使用 `--no-verify`、未 amend 任何已推送提交：
 
 1. **Task 1: CR-02（Q1=A）移除端标脏 + 空视图集登记** — `cff4291` (fix)〔上一会话完成，本会话未改动其任何内容〕
 2. **Task 2: IN-01（Q4=A）删除后点残留清理** — `c1df1e0` (fix)
 3. **Task 3: `#06-17-8`（Q3=A1）读档前全清既有动态块** — `13234b7` (fix)
-4. **Plan metadata:** 本 SUMMARY 的 `docs(07-13): …` 提交 (docs)
+4. **Plan metadata:** 本 SUMMARY 的 `docs(07-13): …` 提交 — `d92e405` (docs)
+5. **Plan metadata:** `state.json` 机器可读状态同步 `chore(07-13): …` — `0fcb101` (chore)
+6. **Plan metadata:** 本条计数更正提交（把 `actuals.commits` 实测值改为含上述元数据提交的 `8`）(docs)
 
 两条非任务提交的来历（如实登记，不影响计划产出）：`3da7863` 是上一会话为同步 origin 而做的合并；`954c3fc` 是该合并从 origin 带入的 07-12 重复完成提交（与主线 `4917baa` 同内容）。二者均未触碰本计划五个文件（下方「Issues Encountered 3」）。
 
@@ -247,7 +249,7 @@ Task 0 的四条用户裁决（`07-13-PLAN.md` 的 `<record>`，锁于 `b37c218`
 
 **3. 计划头与 HEAD 之间存在一条合并提交与其带入的重复 07-12 完成提交**
 
-- **现象:** `git rev-list --count b37c218..HEAD` = 6，其中 `3da7863`（上一会话同步 origin 的合并）与 `954c3fc`（该合并带入的 07-12 重复完成提交，与主线 `4917baa` 同内容）不是本计划产出；三条任务提交 + 本 SUMMARY 的元数据提交 = 4。
+- **现象:** `git rev-list --count b37c218..HEAD` = 8（截至本行更正提交），其中 `3da7863`（上一会话同步 origin 的合并）与 `954c3fc`（该合并带入的 07-12 重复完成提交，与主线 `4917baa` 同内容）不是本计划产出；三条任务提交 + 三条元数据提交 = 6。
 - **处置:** 按 #3968 以 `plan_head_before`（`b37c218`）**实测**计数并如实登记构成（见「Task Commits」）；两条非任务提交未触碰本计划 5 个文件（`git log --name-only` 复核）。**未**回退/改写任何提交（`refactor/data` 已推送，禁止 amend）。
 
 **4. 上一会话遗留的未跟踪接力文件**
@@ -290,7 +292,7 @@ None —— 本计划未引入硬编码空值、占位文案、未接线数据�
 
 ## Self-Check: PASSED
 
-- FOUND: `cff4291`（Task 1，上一会话，未改动）、`c1df1e0`（Task 2）、`13234b7`（Task 3）（`git log --oneline b37c218..HEAD`；`git rev-list --count b37c218..HEAD` = 6）
+- FOUND: `cff4291`（Task 1，上一会话，未改动）、`c1df1e0`（Task 2）、`13234b7`（Task 3）（`git log --oneline b37c218..HEAD`；`git rev-list --count b37c218..HEAD` = 8，构成见「Task Commits」）
 - FOUND: 5 个改动文件（`git diff --name-only b37c218..HEAD`），全部在 frontmatter `files_modified` 内；三条任务提交零计划外文件
 - VERIFIED: `pnpm test:ci` = 66 文件 / **737 通过 / 0 失败 / 1 跳过**（仅 `equipment.test.ts:353` 码 147，D-06）
 - VERIFIED: `pnpm exec eslint` 5 文件 0 错误；`vue-tsc --noEmit` 对 5 文件 0 命中（整仓 27 条均属并发 WIP）
