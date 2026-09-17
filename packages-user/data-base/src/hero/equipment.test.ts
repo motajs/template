@@ -6,6 +6,7 @@ import {
     type IItemRawData,
     ItemCategory,
     ItemStore,
+    ReplayCode,
     TileStore,
     TileType
 } from '@user/data-common';
@@ -54,6 +55,46 @@ interface TestEnv {
     store: HeroEquipsStore<IHeroAttr>;
     equipment: HeroEquipment<IHeroAttr>;
     attribute: HeroAttribute<IHeroAttr>;
+    replaySystem: ReplaySystemStub;
+}
+
+/** 录像路由桩，只保留真正进入录像的指令，禁用窗口内的写入被丢弃 */
+interface ReplayRouteStub {
+    /**
+     * 写入一条录像指令
+     * @param code 指令码
+     * @param params 指令参数
+     */
+    add(code: ReplayCode, params: unknown[]): void;
+    /** 未被禁用窗口丢弃、真正进入录像的指令，按写入顺序排列 */
+    readonly commands: [ReplayCode, unknown[]][];
+}
+
+/** 录像系统桩，用禁用计数复现录像数组在禁用窗口内丢弃指令的行为 */
+interface ReplaySystemStub {
+    route: ReplayRouteStub;
+    disable: ReturnType<typeof vi.fn>;
+    revert: ReturnType<typeof vi.fn>;
+}
+
+/** 构造一个用禁用计数复现录像数组丢弃行为的录像系统桩 */
+function createReplaySystem(): ReplaySystemStub {
+    let disabled = 0;
+    const commands: [ReplayCode, unknown[]][] = [];
+    const route: ReplayRouteStub = {
+        add(code, params) {
+            if (disabled > 0) return;
+            commands.push([code, params]);
+        },
+        commands
+    };
+    const disable = vi.fn(() => {
+        disabled++;
+    });
+    const revert = vi.fn(() => {
+        if (disabled > 0) disabled--;
+    });
+    return { route, disable, revert };
 }
 
 /** 构造一份合成的勇士基础属性 */
@@ -104,16 +145,20 @@ function createEnv(): TestEnv {
     const tileStore = new TileStore();
     const itemStore = new ItemStore<IHeroAttr, unknown>();
     // 录像系统桩，用于满足装备/卸下时的 route.add 记录与临时禁用录像
-    const replaySystem = {
-        route: { add: vi.fn() },
-        disable: vi.fn(),
-        revert: vi.fn()
-    };
+    const replaySystem = createReplaySystem();
     const state = { tileStore, itemStore, replaySystem } as never;
     const attribute = new HeroAttribute<IHeroAttr>(createBaseAttr());
     const store = new HeroEquipsStore<IHeroAttr>(state);
     const equipment = new HeroEquipment<IHeroAttr>(store, attribute);
-    return { state, tileStore, itemStore, store, equipment, attribute };
+    return {
+        state,
+        tileStore,
+        itemStore,
+        store,
+        equipment,
+        attribute,
+        replaySystem
+    };
 }
 
 /** 向图块与道具存储注册一个装备道具定义 */
@@ -312,6 +357,58 @@ describe('HeroEquipment equip and unequip', () => {
         const result = logger.catch(() => env.equipment.equip(uid, 'weapon'));
 
         expect(result.info.map(info => info.code)).toContain(147);
+    });
+});
+
+describe('HeroEquipment replay isolation on load', () => {
+    // 验证读档重新装备期间禁用录像且不产生任何录像指令，禁用与恢复次数配对平衡
+    it('suppresses replay recording while loading the equipment state', () => {
+        const env = createEnv();
+        registerItem(env, createItem(10, 'sword', [0], [['atk', 5]]));
+        env.equipment.setSlots(['weapon']);
+        const uid = env.store.add(10);
+        env.equipment.equip(uid, 0);
+        const saved = env.equipment.saveState();
+        expect(env.attribute.getFinalAttribute('atk')).toBe(15);
+
+        env.equipment.unequip(0);
+        env.replaySystem.route.commands.length = 0;
+        env.replaySystem.disable.mockClear();
+        env.replaySystem.revert.mockClear();
+
+        env.equipment.loadState(saved);
+
+        const disableCount = env.replaySystem.disable.mock.calls.length;
+        const revertCount = env.replaySystem.revert.mock.calls.length;
+        expect(env.replaySystem.route.commands).toEqual([]);
+        expect(disableCount).toBeGreaterThan(0);
+        expect(revertCount).toBe(disableCount);
+        expect(env.equipment.getEquipped(0)).toBe(uid);
+        expect(env.attribute.getFinalAttribute('atk')).toBe(15);
+    });
+
+    // 验证读档包裹窗口结束后装备与卸下的录像记录能力仍保留
+    it('keeps recording equip and unequip after loading', () => {
+        const env = createEnv();
+        registerItem(env, createItem(10, 'sword', [0], [['atk', 5]]));
+        env.equipment.setSlots(['weapon']);
+        const uid = env.store.add(10);
+        env.equipment.equip(uid, 0);
+        const saved = env.equipment.saveState();
+        env.equipment.unequip(0);
+        env.equipment.loadState(saved);
+
+        env.replaySystem.route.commands.length = 0;
+        env.equipment.unequip(0);
+        expect(env.replaySystem.route.commands).toEqual([
+            [ReplayCode.Unequip, [0]]
+        ]);
+
+        env.equipment.equip(uid, 0);
+        expect(env.replaySystem.route.commands).toEqual([
+            [ReplayCode.Unequip, [0]],
+            [ReplayCode.Equip, [uid]]
+        ]);
     });
 });
 
