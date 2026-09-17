@@ -1,13 +1,8 @@
 import { isNil } from 'lodash-es';
 import { logger } from '@motajs/common';
-import {
-    ITileLegacyConverter,
-    ITileRawData,
-    ITileStore,
-    TileType
-} from './types';
+import { ITileRawData, ITileStore, TileType } from './types';
 
-export class TileStore<TLegacy = unknown> implements ITileStore<TLegacy> {
+export class TileStore implements ITileStore {
     /** 以图块数字为键的原始图块定义表 */
     private readonly dataMap: Map<number, ITileRawData> = new Map();
 
@@ -19,9 +14,6 @@ export class TileStore<TLegacy = unknown> implements ITileStore<TLegacy> {
 
     /** 由图块数字保存的默认事件映射 */
     private readonly eventMap: Map<number, Map<number, string>> = new Map();
-
-    /** 当前挂载的旧样板图块转换器 */
-    private legacyConverter: ITileLegacyConverter<TLegacy> | null = null;
 
     getData(num: number): ITileRawData | null {
         return this.dataMap.get(num) ?? null;
@@ -81,21 +73,6 @@ export class TileStore<TLegacy = unknown> implements ITileStore<TLegacy> {
         } else {
             return token;
         }
-    }
-
-    attachLegacyConverter(converter: ITileLegacyConverter<TLegacy>): void {
-        this.legacyConverter = converter;
-    }
-
-    fromLegacy(num: number, legacy: TLegacy): ITileRawData {
-        const converter = this.legacyConverter;
-        if (!converter) {
-            logger.error(56);
-            throw new Error('Expected a tile legacy converter.');
-        }
-        const data = converter.fromLegacy(num, legacy);
-        this.addTile(data);
-        return data;
     }
 
     /** 删除一组旧的图块定义及其双向索引 */

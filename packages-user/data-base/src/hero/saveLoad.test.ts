@@ -74,7 +74,7 @@ interface EquipEnv {
 /** 极E��一个含图块、E��具存储与假录像系统的公共层假对象 */
 function createState(): IDataCommon {
     const tileStore = new TileStore();
-    const itemStore = new ItemStore<IHeroAttr, unknown>();
+    const itemStore = new ItemStore<IHeroAttr>();
     const route = { add: vi.fn() };
     return {
         tileStore,

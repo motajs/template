@@ -62,16 +62,7 @@ export interface ITileRawData {
     readonly eventPass: boolean;
 }
 
-export interface ITileLegacyConverter<TLegacy> {
-    /**
-     * 将旧样板图块定义转换为新的图块原始数据
-     * @param num 图块数字
-     * @param legacy 旧样板图块定义
-     */
-    fromLegacy(num: number, legacy: TLegacy): ITileRawData;
-}
-
-export interface ITileStore<TLegacy = unknown> {
+export interface ITileStore {
     /**
      * 获取指定图块数字对应的完整原始定义
      * @param num 图块数字
@@ -119,19 +110,6 @@ export interface ITileStore<TLegacy = unknown> {
      * @param token 图块数字或 id
      */
     id(token: number | string): string | undefined;
-
-    /**
-     * 挂载一个旧样板转换器
-     * @param converter 旧样板转换器
-     */
-    attachLegacyConverter(converter: ITileLegacyConverter<TLegacy>): void;
-
-    /**
-     * 使用当前转换器转换并写入一个旧样板图块定义
-     * @param num 图块数字
-     * @param legacy 旧样板图块定义
-     */
-    fromLegacy(num: number, legacy: TLegacy): ITileRawData;
 }
 
 //#endregion
@@ -208,16 +186,7 @@ export interface IItemRawData<THero> {
     readonly equip: IItemEquipData<THero>;
 }
 
-export interface IItemLegacyConverter<THero, TLegacy> {
-    /**
-     * 将旧样板道具定义转换为新的道具原始数据
-     * @param num 道具图块数字
-     * @param legacy 旧样板道具定义
-     */
-    fromLegacy(num: number, legacy: TLegacy): IItemRawData<THero>;
-}
-
-export interface IItemStore<THero, TLegacy> {
+export interface IItemStore<THero> {
     /**
      * 获取指定图块数字对应的道具原始数据
      * @param num 道具图块数字
@@ -235,21 +204,6 @@ export interface IItemStore<THero, TLegacy> {
      * @param data 道具原始数据
      */
     addItem(data: IItemRawData<THero>): void;
-
-    /**
-     * 挂载一个旧样板转换器
-     * @param converter 旧样板转换器
-     */
-    attachLegacyConverter(
-        converter: IItemLegacyConverter<THero, TLegacy>
-    ): void;
-
-    /**
-     * 使用当前转换器转换并写入一个旧样板道具定义
-     * @param num 道具图块数字
-     * @param legacy 旧样板道具定义
-     */
-    fromLegacy(num: number, legacy: TLegacy): IItemRawData<THero>;
 }
 
 //#endregion

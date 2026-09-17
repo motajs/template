@@ -35,8 +35,6 @@ import {
     FlagSystem,
     IMotaDataLoader,
     MotaDataLoader,
-    loading,
-    IReadonlyEnemy,
     IMapState,
     MapState
 } from '@user/data-base';
@@ -62,23 +60,7 @@ import {
     registerSpecials,
     MainEnemyComparer
 } from './enemy';
-import {
-    BG2_ZINDEX,
-    BG_ZINDEX,
-    EVENT_ZINDEX,
-    FG2_ZINDEX,
-    FG_ZINDEX,
-    HERO_DEFAULT_ATTRIBUTE,
-    TILE_HEIGHT,
-    TILE_WIDTH
-} from './shared';
-import {
-    ItemLegacyBridge,
-    LegacyItemData,
-    LegacyTileData,
-    TileLegacyBridge
-} from './legacy';
-import { isNil } from 'lodash-es';
+import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
 import { DefaultHeroMoveTopImpl, DefaultPassPredicateImpl } from './hero';
 import { createEventRegistrations } from './event/registrations';
 import {
@@ -93,8 +75,8 @@ export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
-    readonly tileStore: ITileStore<LegacyTileData>;
-    readonly itemStore: IItemStore<IHeroAttr, LegacyItemData>;
+    readonly tileStore: ITileStore;
+    readonly itemStore: IItemStore<IHeroAttr>;
     readonly mapStore: IMapStore;
     readonly eventStore: IGameEventStore;
     readonly directionMapper: IDirectionMapper;
@@ -139,19 +121,13 @@ export class CoreState implements ICoreState {
         this.faceManager.registerById('dir8', dir8);
 
         // 图块
-        const tileStore = new TileStore<LegacyTileData>();
-        tileStore.attachLegacyConverter(new TileLegacyBridge());
-        this.tileStore = tileStore;
+        this.tileStore = new TileStore();
         // 道具
-        const itemStore = new ItemStore<IHeroAttr, LegacyItemData>();
-        itemStore.attachLegacyConverter(new ItemLegacyBridge(this));
-        this.itemStore = itemStore;
+        this.itemStore = new ItemStore<IHeroAttr>();
         // 地图
-        const mapStore = new MapStore();
-        this.mapStore = mapStore;
+        this.mapStore = new MapStore();
         // 游戏事件
-        const eventStore = new GameEventStore();
-        this.eventStore = eventStore;
+        this.eventStore = new GameEventStore();
         this.directionMapper = new DirectionMapper();
 
         //#endregion
@@ -162,7 +138,7 @@ export class CoreState implements ICoreState {
         this.flags = new FlagSystem();
 
         // 地图
-        this.maps = new MapState(tileStore, this);
+        this.maps = new MapState(this.tileStore, this);
 
         // 勇士
         const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
@@ -237,17 +213,6 @@ export class CoreState implements ICoreState {
         this.addSaveableContent('@system/enemy', this.enemyManager);
         this.addSaveableContent('@system/replay', this.replaySystem);
 
-        // 加载初始化，先使用兼容层实现
-        loading.once('loaded', () => {
-            this.initTileStore(core.maps.blocksInfo);
-            this.initItemStore(core.items.items);
-            this.initEnemyManager(enemys_fcae963b_31c9_42b4_b48c_bb48d09f3f80);
-            this.initMapState(
-                core.floorIds,
-                core.floors as Record<FloorIds, ResolvedFloor>
-            );
-        });
-
         // 勇士顶层初始化
         const heroMoveTopImpl = new DefaultHeroMoveTopImpl(this);
         this.hero.location.mover.useTopImplementation(heroMoveTopImpl);
@@ -283,168 +248,6 @@ export class CoreState implements ICoreState {
         replay.registerCommand(ReplayCode.UseItem, useItem);
         replay.registerCommand(ReplayCode.Equip, equip);
         replay.registerCommand(ReplayCode.Unequip, unequip);
-    }
-
-    /**
-     * 初始化图块存储对象
-     * @param data 旧样板图块定义对象
-     */
-    private initTileStore(data: typeof core.maps.blocksInfo) {
-        const entries = Object.entries(data);
-        for (const [key, block] of entries) {
-            this.tileStore.fromLegacy(Number(key), block);
-        }
-
-        for (const [key, block] of entries) {
-            if (!block.faceIds) continue;
-            const { down, up, left, right } = block.faceIds;
-            const downNum = this.tileStore.idToNumber(down);
-            if (downNum !== Number(key)) continue;
-            const upNum = this.tileStore.idToNumber(up);
-            const leftNum = this.tileStore.idToNumber(left);
-            const rightNum = this.tileStore.idToNumber(right);
-            this.roleFace.malloc(downNum, FaceDirection.Down);
-            if (!isNil(upNum)) {
-                this.roleFace.bind(upNum, downNum, FaceDirection.Up);
-            }
-            if (!isNil(leftNum)) {
-                this.roleFace.bind(leftNum, downNum, FaceDirection.Left);
-            }
-            if (!isNil(rightNum)) {
-                this.roleFace.bind(rightNum, downNum, FaceDirection.Right);
-            }
-        }
-    }
-
-    /**
-     * 初始化道具存储对象
-     * @param data 旧样板道具定义对象
-     */
-    private initItemStore(data: typeof core.items.items) {
-        const entries = Object.entries(data);
-        for (const [id, legacy] of entries) {
-            const num = this.tileStore.idToNumber(id);
-            if (isNil(num)) {
-                logger.warn(145, id);
-                continue;
-            }
-            this.itemStore.fromLegacy(num, legacy);
-        }
-    }
-
-    /**
-     * 初始化怪物管理器对象
-     * @param data 旧样板怪物存储对象
-     */
-    private initEnemyManager(data: Record<EnemyIds, Enemy>) {
-        const manager = this.enemyManager;
-        const reference = new Map<number, IReadonlyEnemy<IEnemyAttr>>();
-        for (const [id, enemy] of Object.entries(structuredClone(data))) {
-            const num = this.tileStore.idToNumber(id);
-            if (isNil(num)) continue;
-            if (enemy.faceIds) {
-                // 有 faceId 的要把其他的也映射到当前怪物
-                const { left, up, right, down } = enemy.faceIds;
-                const leftCode = this.tileStore.idToNumber(left)!;
-                const upCode = this.tileStore.idToNumber(up)!;
-                const rightCode = this.tileStore.idToNumber(right)!;
-                const downCode = this.tileStore.idToNumber(down)!;
-                const prefab = manager.fromLegacyEnemy(downCode, enemy);
-                reference.set(downCode, prefab);
-                manager.addPrefab(prefab);
-                this.roleFace.malloc(downCode, FaceDirection.Down);
-                this.roleFace.bind(leftCode, downCode, FaceDirection.Left);
-                this.roleFace.bind(upCode, downCode, FaceDirection.Up);
-                this.roleFace.bind(rightCode, downCode, FaceDirection.Down);
-                manager.reusePrefab(num, leftCode, left);
-                manager.reusePrefab(num, upCode, up);
-                manager.reusePrefab(num, rightCode, right);
-            } else {
-                const prefab = manager.fromLegacyEnemy(num, enemy);
-                reference.set(num, prefab);
-                manager.addPrefab(prefab);
-            }
-        }
-        manager.compareWith(reference);
-    }
-
-    /**
-     * 初始化地图状态
-     * @param floors 楼层列表
-     * @param data 每个楼层对应的旧版地图信息
-     */
-    private initMapState(
-        floors: FloorIds[],
-        data: Record<FloorIds, ResolvedFloor>
-    ) {
-        const reference = new Map<string, Map<number, Uint32Array>>();
-        for (const id of floors) {
-            const floor = data[id];
-            const state = this.maps.createMap(id, floor.width, floor.height);
-            const bg = state.addLayer();
-            const bg2 = state.addLayer();
-            const event = state.addLayer();
-            const fg = state.addLayer();
-            const fg2 = state.addLayer();
-            bg.setZIndex(BG_ZINDEX);
-            bg2.setZIndex(BG2_ZINDEX);
-            event.setZIndex(EVENT_ZINDEX);
-            fg.setZIndex(FG_ZINDEX);
-            fg2.setZIndex(FG2_ZINDEX);
-            state.setLayerAlias(bg, 'bg');
-            state.setLayerAlias(bg2, 'bg2');
-            state.setLayerAlias(event, 'event');
-            state.setEventLayer(event);
-            state.setLayerAlias(fg, 'fg');
-            state.setLayerAlias(fg2, 'fg2');
-            state.setActiveStatus(false);
-
-            const size = floor.width * floor.height;
-            const ref = new Map<number, Uint32Array>();
-
-            if (floor.bgmap && floor.bgmap.length > 0) {
-                const arr = new Uint32Array(floor.bgmap.flat());
-                bg.setMapRef(arr);
-                ref.set(BG_ZINDEX, new Uint32Array(arr));
-            } else {
-                ref.set(BG_ZINDEX, new Uint32Array(size));
-            }
-
-            if (floor.bg2map && floor.bg2map.length > 0) {
-                const arr = new Uint32Array(floor.bg2map.flat());
-                bg2.setMapRef(arr);
-                ref.set(BG2_ZINDEX, new Uint32Array(arr));
-            } else {
-                ref.set(BG2_ZINDEX, new Uint32Array(size));
-            }
-
-            if (floor.map && floor.map.length > 0) {
-                const arr = new Uint32Array(floor.map.flat());
-                event.setMapRef(arr);
-                ref.set(EVENT_ZINDEX, new Uint32Array(arr));
-            } else {
-                ref.set(EVENT_ZINDEX, new Uint32Array(size));
-            }
-
-            if (floor.fgmap && floor.fgmap.length > 0) {
-                const arr = new Uint32Array(floor.fgmap.flat());
-                fg.setMapRef(arr);
-                ref.set(FG_ZINDEX, new Uint32Array(arr));
-            } else {
-                ref.set(FG_ZINDEX, new Uint32Array(size));
-            }
-
-            if (floor.fg2map && floor.fg2map.length > 0) {
-                const arr = new Uint32Array(floor.fg2map.flat());
-                fg2.setMapRef(arr);
-                ref.set(FG2_ZINDEX, new Uint32Array(arr));
-            } else {
-                ref.set(FG2_ZINDEX, new Uint32Array(size));
-            }
-
-            reference.set(id, ref);
-        }
-        this.maps.compareWith(reference);
     }
 
     //#endregion

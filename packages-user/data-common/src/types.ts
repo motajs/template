@@ -45,9 +45,9 @@ export interface IHeroAttr {
 
 export interface IDataCommon {
     /** 图块定义存储 */
-    readonly tileStore: ITileStore<MapDataOf<keyof NumberToId>>;
+    readonly tileStore: ITileStore;
     /** 道具定义存储 */
-    readonly itemStore: IItemStore<IHeroAttr, Item<AllIdsOf<'items'>>>;
+    readonly itemStore: IItemStore<IHeroAttr>;
     /** 地图定义存储 */
     readonly mapStore: IMapStore;
     /** 游戏事件存储 */

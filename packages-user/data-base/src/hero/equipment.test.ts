@@ -145,7 +145,7 @@ function createItem(
 /** 构造一个装配勇士装备对象的测试环境 */
 function createEnv(): TestEnv {
     const tileStore = new TileStore();
-    const itemStore = new ItemStore<IHeroAttr, unknown>();
+    const itemStore = new ItemStore<IHeroAttr>();
     // 录像系统桩，用于满足装备/卸下时的 route.add 记录与临时禁用录像
     const replaySystem = createReplaySystem();
     const state = { tileStore, itemStore, replaySystem } as never;

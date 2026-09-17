@@ -25,6 +25,7 @@ import {
     RightStatusBar
 } from './statusBar';
 import { ReplayingStatus } from './toolbar';
+// @ts-expect-error 需要重构
 import { getHeroStatusOn, state } from '@user/data-state';
 import { hook } from '@user/data-base';
 import { mainUIController } from './controller';

@@ -57,7 +57,7 @@ interface ItemFixture {
 /** 构造一个装配勇士道具对象的测试环境 */
 function createEnv(): TestEnv {
     const tileStore = new TileStore();
-    const itemStore = new ItemStore<IHeroAttr, unknown>();
+    const itemStore = new ItemStore<IHeroAttr>();
     // 录像系统桩，仅用于满足道具使用时的 route.add 记录
     const replaySystem = { route: { add: vi.fn() } };
     const state = { tileStore, itemStore, replaySystem } as never;

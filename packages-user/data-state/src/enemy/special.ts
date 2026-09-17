@@ -3,7 +3,6 @@ import {
     defineNonePropertySpecial,
     IEnemyManager
 } from '@user/data-base';
-import { getHeroStatusOn } from '../legacy/hero';
 import { IEnemyAttr } from '@user/data-common';
 
 //#region 复合属性值类型
@@ -176,6 +175,7 @@ export function registerSpecials(manager: IEnemyManager<IEnemyAttr>): void {
                     const { vampire, add } = special.value;
                     return (
                         `战斗前，怪物首先吸取角色的${vampire}%生命` +
+                        // @ts-expect-error 需要重构
                         `（约${Math.floor((vampire / 100) * getHeroStatusOn('hp'))}点）作为伤害` +
                         (add ? `，并把伤害数值加到自身生命上。` : `。`)
                     );
