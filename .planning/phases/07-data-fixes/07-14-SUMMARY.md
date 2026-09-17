@@ -22,7 +22,7 @@ affects: [07-data-fixes, phase-07-verification, packages-user/data-fallback, pha
 actuals:
   tokens: 662
   tasks: 3
-  commits: 3
+  commits: 5
   plan_head_before: a80e383892b9b10af9342f02f2e5b5edbdb7244d
 
 tech-stack:
@@ -125,13 +125,15 @@ status: complete
 
 ## Task Commits
 
-`actuals.commits = 3`（`plan_head_before = a80e383892b9b10af9342f02f2e5b5edbdb7244d`；`git rev-list --count a80e383..HEAD`）。全部为**普通提交、钩子生效**，未使用 `--no-verify`、未 amend 任何提交：
+`actuals.commits = 5`（`plan_head_before = a80e383892b9b10af9342f02f2e5b5edbdb7244d`；`git rev-list --count a80e383..HEAD` 实测 = 5）。其中 **4 条为本计划产出**，**1 条为并发用户提交**（非本计划产出、执行者从未暂存）。全部为**普通提交、钩子生效**，未使用 `--no-verify`、未 amend 任何提交：
 
 1. **Task 0: 锁定用户裁决** — `25b213a` (docs) — `docs(07-14): lock user adjudication — #06-17-7 wontfix, compat layer slated for removal`；仅 `.planning/phases/07-data-fixes/07-14-PLAN.md`（+20/−3），无删除文件
-2. **Task 2: SUMMARY** — `docs(07-14): complete legacy hero proxy plan as user-adjudicated wontfix`（本文件）
-3. **Task 3: tracking** — `docs(phase-07): update tracking after plan 07-14`（`STATE.md` + `ROADMAP.md`，如 `state.json` 被工具改写则一并纳入）
+2. **（非本计划产出）并发用户提交** — `f7e5e5e` (docs) — `docs: 更新提示`；仅 `AGENTS.md`（+10），由**用户并行提交**其渲染端重构期 WIP（父提交恰为 `25b213a`，时间 18:03:31，落在执行者运行 `test:ci`/`vue-tsc` 的窗口内）。**执行者从未 `git add`/`git commit` 过 `AGENTS.md`**（硬约束 3）；该提交**不计入**本计划工作，**不回退、不改写**（禁止 amend；且 `refactor/data` 已推送）。如实登记
+3. **Task 2: SUMMARY** — `6697214` (docs) — `docs(07-14): complete legacy hero proxy plan as user-adjudicated wontfix`（本文件）
+4. **Task 3: tracking** — `a941d39` (docs) — `docs(phase-07): update tracking after plan 07-14`（`STATE.md` + `ROADMAP.md` + `state.json`）
+5. **元数据更正** — 本条提交 (docs) — 把 `actuals.commits` 由初测的 `3` 更正为**含并发用户提交与本研究提交的实测 `5`**，并逐条登记构成
 
-**Task 1 无提交**（经裁决整跳过）。
+**Task 1 无提交**（经裁决整跳过）。**`AGENTS.md` 出现的任何 diff 行均归属第 2 条并发用户提交**，与本计划无关。
 
 ## Files Created/Modified
 
@@ -256,13 +258,15 @@ None —— 本计划**未引入任何**硬编码空值、占位文案、未接�
 
 - FOUND: `25b213a`（Task 0 裁决锁；`git show --stat` = 1 file, +20/−3, 无删除）
 - FOUND: `.planning/phases/07-data-fixes/07-14-PLAN.md` 的 Task 0 `<record>` 含用户原话逐字、Q1..Q4 = 不改动、理由、WONTFIX 结论、2026-09-17
-- VERIFIED: `git diff --name-only a80e383..HEAD` = 仅 `.planning/phases/07-data-fixes/07-14-PLAN.md`（零源码、零测试）
+- VERIFIED: 本计划产出的 4 条提交**仅触及 `.planning/` 文件**；`git diff --name-only a80e383..HEAD` 的全部条目 = 本计划 4 个 `.planning/` 路径 + `AGENTS.md`（后者**唯一归属并发用户提交 `f7e5e5e`**，非本计划产出）
 - VERIFIED: `pnpm test:ci` = `Test Files 66 passed (66)` / `Tests 737 passed | 1 skipped (738)`
 - VERIFIED: `git grep "it\.skip(" -- "*.test.ts"` 恰 1 条，`equipment.test.ts:353` 码 147（D-06），未新增
 - VERIFIED: `packages-user/data-fallback/src/hero.test.ts` 不存在；`git log a80e383..HEAD -- packages-user/data-fallback/` 为空
+- VERIFIED: 零源码、零测试改动 —— `git diff --name-only a80e383..HEAD` 不含任何 `packages*/**` 路径
 - VERIFIED: `pnpm exec eslint` 计划声明 3 文件 exit 0；`vue-tsc --noEmit` 过滤 `data-fallback` 0 命中
 - VERIFIED: `WINDOWS.md` 零改动（`Select-String "06-17"` 无命中；`git status` 无该文件）
-- VERIFIED: 用户 WIP（`AGENTS.md`、`client-base/src/types.ts`、`client-modules/src/types.ts`）未被暂存/提交（`git status --short` 仍为 ` M`）
+- VERIFIED: 执行者**从未暂存 `AGENTS.md`**；该文件出现在 `a80e383..HEAD` 区间仅因用户并发提交 `f7e5e5e`（`git log a80e383..HEAD -- AGENTS.md` 唯一命中）
+- VERIFIED: 未暂存 WIP：`packages-user/client-base/src/types.ts`、`packages-user/client-modules/src/types.ts` 仍为 ` M`（`git status --short`）；`AGENTS.md` 已不在工作树修改列表（因用户已自行提交其 WIP）
 
 ---
 
