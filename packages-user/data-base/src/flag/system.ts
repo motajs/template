@@ -9,7 +9,7 @@ export class FlagSystem implements IFlagSystem {
         return this.fieldMap.has(field);
     }
 
-    insertField<T>(field: PropertyKey, value: T): IFlagCommonField<T> {
+    setField<T>(field: PropertyKey, value: T): IFlagCommonField<T> {
         return this.getOrInsert(field, value);
     }
 

@@ -67,7 +67,7 @@ describe('FlagSystem save and load round trips', () => {
     // 验证 loadState 在同实例上原地恢复字段值（#06-17-5）
     it('keeps field objects on loadState', () => {
         const system = new FlagSystem();
-        const before = system.insertField('score', 7);
+        const before = system.setField('score', 7);
 
         const saved = system.saveState();
         system.loadState(saved);

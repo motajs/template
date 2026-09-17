@@ -48,7 +48,7 @@ beforeAll(async () => {
 /** 创建一个 Flag 系统及其中一个已插入字段，便于直接操作字段对象 */
 function createField<T>(key: PropertyKey, value: T) {
     const system = new modules.FlagSystem();
-    return { system, field: system.insertField(key, value) };
+    return { system, field: system.setField(key, value) };
 }
 
 describe('FlagSystem field container', () => {
@@ -57,7 +57,7 @@ describe('FlagSystem field container', () => {
         const system = new modules.FlagSystem();
         expect(system.occupied('score')).toBe(false);
 
-        system.insertField('score', 1);
+        system.setField('score', 1);
 
         expect(system.occupied('score')).toBe(true);
     });
@@ -108,7 +108,7 @@ describe('FlagSystem field container', () => {
     // 验证 deleteField 移除字段并恢复未占用状态
     it('deletes a field', () => {
         const system = new modules.FlagSystem();
-        system.insertField('temp', 1);
+        system.setField('temp', 1);
 
         system.deleteField('temp');
 
