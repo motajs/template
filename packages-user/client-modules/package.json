@@ -11,7 +11,6 @@
         "@motajs/types": "workspace:*",
         "@motajs/system": "workspace:*",
         "@user/data-base": "workspace:*",
-        "@user/data-state": "workspace:*",
-        "@user/legacy-plugin-data": "workspace:*"
+        "@user/data-state": "workspace:*"
     }
 }

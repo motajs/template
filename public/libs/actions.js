@@ -1294,34 +1294,7 @@ actions.prototype._keyUpViewMaps = function (keycode) {
 
 ////// 快捷商店界面时的点击操作 //////
 actions.prototype._clickQuickShop = function (x, y) {
-    const shop = Mota.require('@user/legacy-plugin-data');
-    var shopIds = shop.listShopIds();
-    if (this._out(x)) return;
-    var topIndex =
-        this._HY_ -
-        Math.floor(shopIds.length / 2) +
-        (core.status.event.ui.offset || 0);
-    if (y >= topIndex && y < topIndex + shopIds.length) {
-        var shopId = shopIds[y - topIndex];
-        if (!shop.canOpenShop(shopId)) {
-            core.playSound('操作失败');
-            core.drawTip('当前项尚未开启');
-            return;
-        }
-        var message = shop.canUseQuickShop(shopId);
-        if (message == null) {
-            // core.ui.closePanel();
-            shop.openShop(shopIds[y - topIndex], false);
-        } else {
-            core.playSound('操作失败');
-            core.drawTip(message);
-        }
-    }
-    // 离开
-    else if (y == topIndex + shopIds.length) {
-        core.playSound('取消');
-        core.ui.closePanel();
-    }
+    // Deprecated.
 };
 
 ////// 快捷商店界面时，放开某个键的操作 //////

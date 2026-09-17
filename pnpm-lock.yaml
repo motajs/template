@@ -276,9 +276,6 @@ importers:
       '@user/data-state':
         specifier: workspace:*
         version: link:../data-state
-      '@user/legacy-plugin-data':
-        specifier: workspace:*
-        version: link:../legacy-plugin-data
 
   packages-user/data-base:
     dependencies:
@@ -411,24 +408,12 @@ importers:
       '@user/data-system':
         specifier: workspace:*
         version: link:../data-system
-      '@user/legacy-plugin-data':
-        specifier: workspace:*
-        version: link:../legacy-plugin-data
 
   packages-user/legacy-plugin-client:
     dependencies:
       '@user/client-modules':
         specifier: workspace:*
         version: link:../client-modules
-      '@user/data-state':
-        specifier: workspace:*
-        version: link:../data-state
-
-  packages-user/legacy-plugin-data:
-    dependencies:
-      '@user/data-base':
-        specifier: workspace:*
-        version: link:../data-base
       '@user/data-state':
         specifier: workspace:*
         version: link:../data-state

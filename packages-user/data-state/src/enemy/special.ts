@@ -34,8 +34,10 @@ export interface IHaloValue {
 
 //#endregion
 
+// TODO: 注释需要更新
 /**
  * 注册所有怪物特殊属性到 enemyManager
+ *
  *
  * 属性实现位置一览（'./'表示当前文件夹  '../'表示上一级文件夹）：
  * 1. 调参类属性 | 仅影响战斗过程的属性：./damage.ts calDamageWithTurn 函数
@@ -46,7 +48,6 @@ export interface IHaloValue {
  * 6. 中毒的瞬移效果：还在脚本编辑的 moveDirectly
  * 7. 衰弱效果：../state/hero.ts getHeroStatusOf 方法
  * 8. 重生属性：还在脚本编辑的 changingFloor
- * 9. 阻击 | 捕捉 的每步效果：packages-user/legacy-plugin-data/src/enemy/checkblock.ts
  */
 export function registerSpecials(manager: IEnemyManager<IEnemyAttr>): void {
     manager.setAttributeDefaults('guard', new Set());

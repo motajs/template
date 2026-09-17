@@ -16,7 +16,6 @@ import type * as DataSystem from '@user/data-system';
 import type * as DataState from '@user/data-state';
 import type * as DataFallback from '@user/data-fallback';
 import type * as LegacyPluginClient from '@user/legacy-plugin-client';
-import type * as LegacyPluginData from '@user/legacy-plugin-data';
 // ---------- 必要的第三方库
 import type * as MutateAnimate from 'mutate-animate';
 import type * as Vue from 'vue';
@@ -41,7 +40,6 @@ interface ModuleInterface {
     '@user/data-fallback': typeof DataFallback;
     '@user/data-state': typeof DataState;
     '@user/legacy-plugin-client': typeof LegacyPluginClient;
-    '@user/legacy-plugin-data': typeof LegacyPluginData;
     // ---------- 必要的第三方库
     MutateAnimate: typeof MutateAnimate;
     Vue: typeof Vue;

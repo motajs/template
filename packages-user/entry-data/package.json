@@ -6,7 +6,6 @@
         "@user/data-base": "workspace:*",
         "@user/data-system": "workspace:*",
         "@user/data-fallback": "workspace:*",
-        "@user/data-state": "workspace:*",
-        "@user/legacy-plugin-data": "workspace:*"
+        "@user/data-state": "workspace:*"
     }
 }

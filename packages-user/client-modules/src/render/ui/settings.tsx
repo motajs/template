@@ -163,7 +163,7 @@ export const ReplaySettings = defineComponent<MainSettingsProps>(props => {
                 props.controller.closeAll();
                 core.ui.closePanel();
                 const route = core.status.route.slice();
-                const flags = client.data.flags;
+                const flags = client.flags;
                 const seed = flags.getFieldValue<number>('__seed__');
                 core.startGame(core.status.hard, seed, route);
                 break;
@@ -218,7 +218,7 @@ export const ReplaySettings = defineComponent<MainSettingsProps>(props => {
                 break;
             }
             case ReplayChoice.Download: {
-                const flags = client.data.flags;
+                const flags = client.flags;
                 const seed = flags.getFieldValue<number>('__seed__');
                 core.download(
                     core.firstData.name + '_' + core.formatDate2() + '.h5route',
