@@ -64,15 +64,15 @@ describe('FlagSystem save and load round trips', () => {
         expect(system.occupied('extra')).toBe(false);
     });
 
-    // 验证 loadState 会重建字段对象并保留恢复值
-    it('rebuilds field objects on loadState', () => {
+    // 验证 loadState 在同实例上原地恢复字段值（#06-17-5）
+    it('keeps field objects on loadState', () => {
         const system = new FlagSystem();
         const before = system.insertField('score', 7);
 
         const saved = system.saveState();
         system.loadState(saved);
 
-        expect(system.getField('score')).not.toBe(before);
+        expect(system.getField('score')).toBe(before);
         expect(system.getFieldValue<number>('score')).toBe(7);
     });
 });

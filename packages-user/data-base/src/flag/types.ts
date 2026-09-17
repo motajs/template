@@ -1,6 +1,6 @@
 //#region 字段
 
-import { ISaveableContent } from '@user/data-common';
+import { ISaveableContent, SaveCompression } from '@user/data-common';
 
 export interface IFlagCommonField<T> {
     /** 此字段所处的 Flag 系统 */
@@ -133,6 +133,15 @@ export interface IFlagSystem extends ISaveableContent<IFlagSystemSave> {
      * @param defaultValue 字段默认值
      */
     getFieldValueDefaults<T>(field: PropertyKey, defaultValue: T): T;
+
+    /**
+     * 读取 Flag 系统存档。存档中已存在的字段会复用原实例并在其实例上原地写值，
+     * 因此外部通过 {@link getField} / {@link getOrInsert} 持有的字段引用跨读档仍然有效；
+     * 存档中不存在的字段一律删除，即读档结果以存档为准。
+     * @param state Flag 系统存档
+     * @param compression 压缩级别
+     */
+    loadState(state: IFlagSystemSave, compression: SaveCompression): void;
 }
 
 //#endregion

@@ -63,11 +63,26 @@ export class FlagSystem implements IFlagSystem {
     }
 
     loadState(state: IFlagSystemSave): void {
-        this.fieldMap.clear();
+        // 按 key 复用现有字段原地写值，使外部持有的引用跨读档仍然有效
         for (const [key, data] of state.fields) {
-            const field = new FlagCommonField<unknown>(this, key, undefined);
-            field.fromStructured(data);
-            this.fieldMap.set(key, field);
+            const existing = this.fieldMap.get(key);
+            if (existing) {
+                existing.fromStructured(data);
+            } else {
+                const field = new FlagCommonField<unknown>(
+                    this,
+                    key,
+                    undefined
+                );
+                field.fromStructured(data);
+                this.fieldMap.set(key, field);
+            }
+        }
+        // 以存档为准：存档中不存在的字段一律删除
+        for (const key of this.fieldMap.keys()) {
+            if (!state.fields.has(key)) {
+                this.fieldMap.delete(key);
+            }
         }
     }
 }

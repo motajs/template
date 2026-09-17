@@ -169,3 +169,61 @@ describe('FlagSystem value accessors', () => {
         expect(system.getFieldValue<number>('lives')).toBe(3);
     });
 });
+
+describe('FlagSystem same-reference load (#06-17-5)', () => {
+    // 验证同 key 字段跨读档为同一实例，且数值恢复到存档点
+    it('keeps the same field instance and restores its value', () => {
+        const system = new modules.FlagSystem();
+        const before = system.getOrInsert('score', 5);
+        before.set(7);
+
+        const saved = system.saveState();
+        before.set(99);
+
+        system.loadState(saved);
+
+        expect(system.getField('score')).toBe(before);
+        expect(before.get()).toBe(7);
+    });
+
+    // 验证读档覆盖后 getOrInsert 仍返回此前持有的同一实例
+    it('reuses the held field instance through getOrInsert after load', () => {
+        const system = new modules.FlagSystem();
+        const before = system.getOrInsert('count', 1);
+
+        const saved = system.saveState();
+        before.set(99);
+        system.loadState(saved);
+
+        expect(system.getOrInsert('count', 42)).toBe(before);
+        expect(before.get()).toBe(1);
+    });
+
+    // 验证复杂字段值在原地复用实例上以存档克隆恢复
+    it('restores structured field values on the same instance', () => {
+        const system = new modules.FlagSystem();
+        const before = system.getOrInsert('nested', { list: [1, 2] });
+
+        const saved = system.saveState();
+        before.set({ list: [9] });
+        system.loadState(saved);
+
+        expect(system.getField('nested')).toBe(before);
+        expect(before.get()).toEqual({ list: [1, 2] });
+    });
+
+    // 验证存档中不存在的字段在读档后被删除（以存档为准）
+    it('deletes fields absent from the save', () => {
+        const system = new modules.FlagSystem();
+        system.setFieldValue('score', 7);
+        const kept = system.getField('score');
+
+        const saved = system.saveState();
+        system.setFieldValue('extra', 1);
+
+        system.loadState(saved);
+
+        expect(system.getField('score')).toBe(kept);
+        expect(system.occupied('extra')).toBe(false);
+    });
+});
