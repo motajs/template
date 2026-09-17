@@ -21,10 +21,10 @@ milestone_name: milestone
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-10)
+See: .planning/PROJECT.md (updated 2026-09-17)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 07 — 数据端缺陷修复
+**Current focus:** Phase 1 — 事件系统
 
 ## Current Position
 
@@ -228,9 +228,8 @@ None yet.
 - eventStore circular paths are explicitly preserved as the Phase 01 baseline; the revised 01-08 regression does not require those paths to disappear.
 - Plan 01-12 leaves the repository-wide type gate blocked only by pre-existing diagnostics outside the plan-owned files; these are recorded in the phase deferred-items ledger.
 - Plan 01-13 records the same repository-wide type gate diagnostics outside its implementation and test files in the phase deferred-items ledger.
-- 06-09 阻断项：`pnpm test:ci` 存在先于本计划的既有回归（commit `cee8439` 将录像记录接入 `data-base/src/hero/{equipment,items,mover}.ts`，4 个既有 data-base 测试与 2 个 data-state 文件共 6 文件 / 15 用例失败）。本计划硬约束禁止修改这些越界文件，故 D-44(c) 无法全绿；本计划未新增失败（新增 41 通过 / 6 跳过）。详见 `06-TEST-FINDINGS.md` `#06-09` 阻断项。
 
-- 06-15 待用户裁决：G-06-01-D 用例无法跑绿（`deleteAura` 后再次 `buildup` 不回到基础值），与既有 #06-01-4 同根因（`buildup()` 未在重建前 `reset()` 各视图），已按 D-05 写正确预期 `it.skip` 并登记 `#06-15-1`。D-27/D-30「每公开方法 ≥1 正常用例」判据仍差 `deleteAura` 一条可跑绿用例（现为受阻塞正确预期 skip）。处置需用户确认：① 后续修复批次修复 `buildup` 视图重置（同时解 #06-01-4 与 #06-15-1）；② 经确认把 `deleteAura` 从 D-30 判据排除。详见 `06-TEST-FINDINGS.md` `#06-15-1` 与 `06-15-SUMMARY.md`。
+- 07-REVIEW-recheck.md（2026-09-17，增量复审）新增 8 条未经裁决的发现（1 Critical：`HeroEquipment.compareEquip` 对已装备项取差值错误；3 Warning：`normalizeParam` 字节长度 0、`checkBufferExpand` 倍数为 1 时无限递归、`HeroAttribute.clone` 丢修饰器名/绑定；4 Info）。**未纳入 Phase 7 登记范围，也未经用户确认为问题**；是否开修复计划待用户裁决。
 
 ### Quick Tasks Completed
 
@@ -247,6 +246,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-17T10:03:55.811Z
+Last session: 2026-09-17T10:45:02.336Z
 Stopped at: Phase 07 complete, ready to plan Phase 1
 Resume file: None

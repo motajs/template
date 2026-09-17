@@ -29,7 +29,7 @@
 - [ ] 移动端 + 桌面端双布局：渲染端支持两种布局
 - [ ] legacy 内容移植：删除被新接口覆盖的旧系统，迁移相关内容；无覆盖才新增接口
 - [ ] 单元测试：为重构后的引擎补齐单测（由 AI 完成）
-- [ ] 收尾工作：系统完成后随测试逐步发现的零碎项，不提前规划
+- [ ] 收尾工作：系统完成后随测试逐步发现的零碎项，不提前规划（Phase 7 已收口数据端由单测暴露的登记缺陷：07-01..07-13 修复，#06-17-7 经裁定不修复；渲染端/legacy 侧仍待处理）
 
 ### Out of Scope
 
@@ -39,7 +39,7 @@
 ## Context
 
 - **技术栈**：TypeScript 6 + Vue 3 + 自研 WebGL2 渲染器 + Vite 7 + pnpm 10 monorepo；数据端独立打包为 IIFE 供 Node 回放验证。
-- **重构背景**：从旧 mota-js 运行时（`public/`）逐步重构，通过 `Patch` 桥接 legacy 全局变量。渲染端先完成重构，数据端接口设计中。
+- **重构背景**：从旧 mota-js 运行时（`public/`）逐步重构，通过 `Patch` 桥接 legacy 全局变量。渲染端先完成重构；数据端 L0–L3 已落地，并通过 Phase 3 / Phase 6 / Phase 7 的独立 Node replay、单测与质量门禁验收。
 - **双端约束**：数据端无 DOM；渲染相关代码必须用 `r()`/`rf()` 门控或走 `hook` 事件，渲染端被动、不向数据端推送更新。
 - **协作模型**：接口/架构设计由用户主导；AI 负责接口实现与单元测试；AI 可在验证通过后自行创建 git commit，无需用户逐次审批。
 
@@ -61,6 +61,8 @@
 | AI 可在验证通过后自行创建 git commit | 以自动化验证替代逐次审批，降低碎片化提交成本 | 已执行 |
 
 | Phase 3 数据端通过独立 Node replay 与四包质量门禁验收 | 保证数据端不依赖 DOM 且边界可重复验证 | Phase 3 验证通过 |
+| Phase 7 数据端缺陷修复采用「同引用原则」：容器/属性存读档在自身实例上原地完成 | 长生命周期外部引用跨读档保持有效，避免静默写入孤儿实例 | Phase 7 验证通过（24/24 must-haves，737 passed / 0 failed） |
+| Phase 7 `#06-17-7`（legacy hero 代理）判定不修复（WONTFIX） | 旧引擎兼容层 `data-fallback` 即将删除，改它没有收益 | Phase 7 关闭；该层随后已被删除 |
 
 ## Evolution
 
@@ -80,4 +82,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-10 after Phase 3*
+*Last updated: 2026-09-17 after Phase 7*
