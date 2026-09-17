@@ -306,7 +306,15 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         }
         if (!cloneModifier) return cloned;
         for (const [name, modifiers] of this.modifier) {
-            const arr: IHeroModifier[] = modifiers.map(v => v.clone());
+            const arr: IHeroModifier[] = modifiers.map(v => {
+                const copy = v.clone();
+                copy.bindAttribute(cloned);
+                cloned.modifierName.set(copy, name);
+                if (!this.getModifierSaveEnabled(v)) {
+                    cloned.modifierNosave.add(copy);
+                }
+                return copy;
+            });
             cloned.modifier.set(name, arr);
             cloned.recalculateAttribute(name);
         }

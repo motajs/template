@@ -1,4 +1,4 @@
-// 测试 HeroAttribute 构件：基础/最终属性、修饰器增删排序、存盘开关、克隆、自身存读档与告警码 108/109
+// 测试 HeroAttribute 构件：基础/最终属性、修饰器增删排序、存盘开关、克隆、自身存读档与告警码 108/109、克隆体修饰器簿记与存档开关
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { BaseHeroModifier, HeroAttribute } from './attribute';
 import { logger } from '@motajs/common';
@@ -313,6 +313,45 @@ describe('HeroAttribute cloning and progress', () => {
         const structured = attribute.toStructured();
         structured.hp = 999;
         expect(attribute.getBaseAttribute('hp')).toBe(100);
+    });
+
+    // 验证克隆体的修饰器可通过遍历、索引定位、setValue 通知与存档四种簿记访问
+    it('keeps the modifier bookkeeping of cloned attributes', () => {
+        const attribute = createNumericAttribute();
+        attribute.addModifier('hp', new TestModifier(5));
+        attribute.addModifier('atk', new TestModifier(3, 10));
+        const clone = attribute.clone();
+        const clonedHp = [...clone.getModifiers('hp')][0];
+
+        expect([...clone.iterateModifiers()].map(v => v[0]).sort()).toEqual([
+            'atk',
+            'hp'
+        ]);
+        expect(clone.getModifierIndex(clonedHp)).toBe(0);
+
+        clonedHp.setValue(9);
+        expect(clone.getFinalAttribute('hp')).toBe(109);
+        expect(attribute.getFinalAttribute('hp')).toBe(105);
+
+        expect(
+            clone
+                .saveState(SaveCompression.NoCompression)
+                .modifiers.map(v => v.name)
+                .sort()
+        ).toEqual(['atk', 'hp']);
+    });
+
+    // 验证克隆修饰器继承源修饰器的存档开关，不存档的修饰器不进入克隆体存档
+    it('keeps the save-ability of cloned modifiers', () => {
+        const attribute = createNumericAttribute();
+        attribute.addModifier('hp', new TestModifier(5), false);
+        const clone = attribute.clone();
+        const clonedHp = [...clone.getModifiers('hp')][0];
+
+        expect(clone.getModifierSaveEnabled(clonedHp)).toBe(false);
+        expect(
+            clone.saveState(SaveCompression.NoCompression).modifiers
+        ).toHaveLength(0);
     });
 
     // 验证 catchCalculateProgress 输出计算过程且不修改最终属性
