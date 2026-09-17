@@ -764,6 +764,35 @@ describe('ReplayArray param codec', () => {
     });
 });
 
+describe('ReplayArray param type table', () => {
+    // 参数类型码表只增不改：锚定 float=6、非负 bigint=7、负 bigint=8、短字符串基址 9、负 int64=5
+    it('keeps the param type code mapping stable', () => {
+        const floatArray = createArray();
+        floatArray.add(0, [1.5]);
+        expect(firstParamToken(floatArray)).toBe(6);
+
+        const bigintArray = createArray();
+        bigintArray.add(0, [100n]);
+        expect(firstParamToken(bigintArray)).toBe(7);
+
+        const negativeBigintArray = createArray();
+        negativeBigintArray.add(0, [-100n]);
+        expect(firstParamToken(negativeBigintArray)).toBe(8);
+
+        const int64Array = createArray();
+        int64Array.add(0, [-2147483649]);
+        expect(firstParamToken(int64Array)).toBe(5);
+
+        const shortStringArray = createArray();
+        shortStringArray.add(0, ['hi']);
+        expect(firstParamToken(shortStringArray)).toBe(11);
+
+        const longStringArray = createArray();
+        longStringArray.add(0, ['a'.repeat(300)]);
+        expect(firstParamToken(longStringArray)).toBe(9);
+    });
+});
+
 describe('ReplayArray stream and buffer combination', () => {
     // 验证 createReadStream 从起始索引顺序读回多步，每参数为 number 且流索引逐次递进，末尾返回 null
     it('reads a sequence of steps through a read stream', () => {

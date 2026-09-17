@@ -261,6 +261,8 @@ export interface IReplayArray {
      * - 8: 负 bigint
      * - 9: string
      * - 10 ~ 255: n - 9 长度的字符串
+     *
+     * 参数类型码表遵循只增不改的约定：新语义必须分配新的类型码，禁止复用既有类型码。
      */
     getParamArray(): ArrayBuffer;
 
@@ -352,6 +354,10 @@ export interface IReplaySystemSave {
      * - 8: 负 bigint --- n + 2 Byte, 其中 n 是 bigint 的字节数
      * - 9: string    --- n + 5 Byte, 其中 n 是字符串编码后的字节数
      * - 10 ~ 255: n - 9 长度的字符串 --- n + 1 Byte, 其中 n 是字符串编码后的字节数
+     *
+     * 参数类型码表遵循只增不改的约定：新语义必须分配新的类型码，禁止复用既有类型码。
+     * 历史上 5/6/7/8 与短字符串基址曾发生一次性重新分配，且项目未发布，
+     * 因此本存档不承诺能被新版本读回由旧格式写出的录像。
      */
     readonly paramArray: ArrayBuffer;
 }
