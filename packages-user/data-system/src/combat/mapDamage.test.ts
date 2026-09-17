@@ -404,6 +404,35 @@ describe('MapDamage sourceless damage', () => {
             ...fixture.damage.getSeparatedDamage({ x: 3, y: 2 })
         ]).toHaveLength(0);
     });
+
+    // 验证删除无来源伤害的两条臂：删一条保留剩余，删净后返回空且可再次添加（IN-01 空点清理）
+    it('prunes the sourceless point once every damage is deleted', () => {
+        const fixture = createFixture();
+        fixture.damage.useReducer(fixture.reducer);
+        const first = createInfo(5);
+        const second = createInfo(3);
+        fixture.damage.addMapDamage(fixture.locator, first);
+        fixture.damage.addMapDamage(fixture.locator, second);
+        expect(fixture.damage.getReducedDamage(fixture.locator)?.damage).toBe(
+            8
+        );
+
+        fixture.damage.deleteMapDamage(fixture.locator, first);
+        expect(fixture.damage.getReducedDamage(fixture.locator)?.damage).toBe(
+            3
+        );
+
+        fixture.damage.deleteMapDamage(fixture.locator, second);
+        expect(fixture.damage.getReducedDamage(fixture.locator)).toBeNull();
+        expect([
+            ...fixture.damage.getSeparatedDamage(fixture.locator)
+        ]).toHaveLength(0);
+
+        fixture.damage.addMapDamage(fixture.locator, createInfo(6));
+        expect(fixture.damage.getReducedDamage(fixture.locator)?.damage).toBe(
+            6
+        );
+    });
 });
 
 describe('MapDamage sourced conversion and reduction', () => {
@@ -540,6 +569,22 @@ describe('MapDamage sourced conversion and reduction', () => {
 
         fixture.damage.deleteEnemy(fixture.view);
 
+        expect([
+            ...fixture.damage.getSeparatedDamage(fixture.locator)
+        ]).toHaveLength(0);
+    });
+
+    // 验证删除怪物后惰性重算不再触达被删视图（IN-01 的删除端剪除）
+    it('does not rebuild damage from a deleted view after pruning', () => {
+        const fixture = createFixture();
+        fixture.damage.useReducer(fixture.reducer);
+        fixture.damage.useConverter(fixture.converter);
+        const spy = vi.spyOn(fixture.damageView, 'getDamageWithoutCheck');
+
+        fixture.damage.deleteEnemy(fixture.view);
+
+        expect(fixture.damage.getReducedDamage(fixture.locator)).toBeNull();
+        expect(spy).not.toHaveBeenCalled();
         expect([
             ...fixture.damage.getSeparatedDamage(fixture.locator)
         ]).toHaveLength(0);

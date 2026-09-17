@@ -116,6 +116,9 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
         const current = this.sourcelessDamage.get(index);
         if (!current) return;
         current.damages.delete(info);
+        if (current.damages.size === 0 && current.affectedBy.size === 0) {
+            this.sourcelessDamage.delete(index);
+        }
         this.markDirtyIndex(index);
     }
 
@@ -157,6 +160,10 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
             affecting.damages.forEach((dam, index) => {
                 this.damageStore.delete(dam);
                 collection.add(index);
+                const point = this.sourcedDamage.get(index);
+                if (!point) return;
+                point.affectedBy.delete(viewItem);
+                point.damages.delete(dam);
             });
             this.viewStore.delete(viewItem);
         }
