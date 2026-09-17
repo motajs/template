@@ -279,8 +279,13 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
                 return {} as Partial<THero>;
             }
             for (const [name, modifier] of state.getModifiers()) {
+                // 索引取自原属性，为负时说明原属性已不含该修饰器对象，克隆上不得删除任何修饰器
                 const index = this.attribute.getModifierIndex(modifier);
-                clone.deleteModifierByIndex(name, index);
+                if (index < 0) continue;
+                // 克隆体按原属性同顺序重建修饰器数组，故取克隆自己的同槽位新对象作为删除目标
+                const cloned = [...clone.getModifiers(name)][index];
+                if (!cloned) continue;
+                clone.deleteModifier(name, cloned);
             }
         }
 

@@ -7,11 +7,13 @@ import {
     ItemCategory,
     ItemStore,
     ReplayCode,
+    SaveCompression,
     TileStore,
     TileType
 } from '@user/data-common';
 import { logger } from '@motajs/common';
 import { HeroAttribute } from './attribute';
+import { ValueModifier } from './modifier';
 import { HeroEquipsStore } from './equipStore';
 import { HeroEquipment } from './equipment';
 import { EquipStatus } from './types';
@@ -426,6 +428,41 @@ describe('HeroEquipment compare and guards', () => {
 
         expect(Object.keys(diff).sort()).toEqual(['atk', 'def']);
         expect(diff.atk).toBe(5);
+        expect(diff.def).toBe(-3);
+    });
+
+    // 验证装备实例经 rebuildModifiers 重建后原属性已不含其修饰器，克隆上不会误删同名旁的修饰器
+    it('keeps foreign modifiers when the equipped instance was rebuilt', () => {
+        const env = createEnv();
+        registerItem(env, createItem(10, 'sword', [0], [['atk', 5]]));
+        registerItem(env, createItem(11, 'axe', [0], [['atk', 12]]));
+        registerItem(env, createItem(12, 'bow', [0], [['def', 3]]));
+        env.equipment.setSlots(['weapon']);
+        const sword = env.store.add(10);
+        // 英雄侧同名修饰器优先级低于装备修饰器，重建后排在克隆属性数组末尾
+        env.attribute.addModifier('atk', new ValueModifier(7, -1));
+        env.equipment.equip(sword, 0);
+        expect(env.attribute.getFinalAttribute('atk')).toBe(22);
+
+        const axe = env.store.add(11);
+        const bow = env.store.add(12);
+        // 现役装备的修饰器仍在原属性上时可被定位删除，差值等于斧加成减现役剑加成
+        expect(env.equipment.compareEquip(axe, bow, 0).atk).toBe(7);
+
+        // 让现役装备走一次读档重建，其修饰器变为新对象，而原属性上仍是旧对象
+        env.store.loadState(
+            env.store.saveState(SaveCompression.NoCompression),
+            SaveCompression.NoCompression
+        );
+        const rebuilt = [...env.store.get(sword)!.getModifiers()][0][1];
+        // 触发机制：重建后的修饰器无法在原属性上解析，删除目标只能退化为按槽位取值，
+        // 旧实现把该索引直接用在克隆属性上，负索引会删掉克隆属性末尾的英雄侧修饰器
+        expect(env.attribute.getModifierIndex(rebuilt)).toBe(-1);
+
+        const diff = env.equipment.compareEquip(axe, bow, 0);
+
+        // 原属性不含现役装备的修饰器时克隆上不删除任何修饰器，故差值只体现斧与弓的加成
+        expect(diff.atk).toBe(12);
         expect(diff.def).toBe(-3);
     });
 
