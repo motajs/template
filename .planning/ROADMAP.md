@@ -371,4 +371,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
-| 7. 数据端缺陷修复 | 14/14 | In Progress|  |
+| 7. 数据端缺陷修复 | 14/14 | Complete    | 2026-09-17 |
