@@ -211,7 +211,8 @@ export interface IReplayArray {
     delete(index: number): void;
 
     /**
-     * 修改指定索引处的录像步。
+     * 修改指定索引处的录像步。新的参数列表允许与原有参数编码长度不同，
+     * 此情形下其后所有录像步的参数起始索引会同步平移。
      * 由于此操作会涉及大量的内存迁移，耗时较长，因此不建议频繁调用。
      * @param index 要修改的步索引
      * @param command 新的指令标识

@@ -503,8 +503,10 @@ export class ReplayArray implements IReplayArray {
         if (this.disabled > 0) return;
         const normalized = this.normalizeParamList(params);
         const length = this.calculateParamsLength(normalized);
-        const paramStart = this.indexArray[index];
-        const nextParam = this.indexArray[index + 1];
+        // 末步的参数终点取 paramUsed，与 delete 同口径，避免读到未初始化的 indexArray[index + 1]
+        const range = this.getParamRange(index);
+        const paramStart = range.start;
+        const nextParam = range.end;
         const paramLength = nextParam - paramStart;
         const deltaLength = length - paramLength;
         if (deltaLength > 0) {
@@ -530,8 +532,8 @@ export class ReplayArray implements IReplayArray {
         // 然后设置参数数组
         this.setParamArray(paramStart, normalized);
 
-        // 最后调整索引数组
-        for (let i = paramStart + 1; i < this.length; i++) {
+        // 最后调整索引数组，从本命令的下一条起平移：本命令的起始索引自身不变
+        for (let i = index + 1; i < this.length; i++) {
             this.indexArray[i] += deltaLength;
         }
 

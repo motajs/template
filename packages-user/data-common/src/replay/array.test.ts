@@ -245,6 +245,118 @@ describe('ReplayArray single operations', () => {
     });
 });
 
+describe('ReplayArray set index maintenance', () => {
+    // 验证中间步 set 增长参数编码长度后其后步骤的索引同步平移，逐步读回命令与参数均正确（CR-01）
+    it('keeps later steps readable after a middle set grows the param length', () => {
+        const array = createArray();
+        array.add(1, [1]);
+        array.add(2, [2]);
+        array.add(3, [30]);
+
+        array.set(1, 5, [true, true, true]);
+
+        expect(array.length).toBe(3);
+        expect(array.get(0)).toEqual({ command: 1, params: [1], index: 0 });
+        expect(array.get(1)).toEqual({
+            command: 5,
+            params: [true, true, true],
+            index: 1
+        });
+        expect(array.get(2)).toEqual({ command: 3, params: [30], index: 2 });
+    });
+
+    // 验证中间步 set 缩短参数编码长度后后续参数字节前移，且末位残留字节被清零
+    it('keeps later steps readable after a middle set shrinks the param length', () => {
+        const array = createArray();
+        array.add(1, [1]);
+        array.add(2, [2]);
+        array.add(3, [30]);
+
+        array.set(1, 5, []);
+
+        expect(array.length).toBe(3);
+        expect(array.get(0)).toEqual({ command: 1, params: [1], index: 0 });
+        expect(array.get(1)).toEqual({ command: 5, params: [], index: 1 });
+        expect(array.get(2)).toEqual({ command: 3, params: [30], index: 2 });
+    });
+
+    // 验证末步 set 增长参数时以 paramUsed 作为参数终点，不产生位移，且之后仍能正确追加
+    it('sets the last step with more params and appends afterwards', () => {
+        const array = createArray();
+        array.add(1, [1]);
+        array.add(2, [2]);
+
+        array.set(1, 5, [true, true, true]);
+
+        expect(array.length).toBe(2);
+        expect(array.get(0)).toEqual({ command: 1, params: [1], index: 0 });
+        expect(array.get(1)).toEqual({
+            command: 5,
+            params: [true, true, true],
+            index: 1
+        });
+
+        array.add(3, [30]);
+        expect(array.get(2)).toEqual({ command: 3, params: [30], index: 2 });
+    });
+
+    // 验证末步 set 缩短参数后 paramUsed 相应减少，后续追加的参数落在正确偏移上
+    it('sets the last step with fewer params and appends afterwards', () => {
+        const array = createArray();
+        array.add(1, [1]);
+        array.add(2, [300, 400, 500]);
+
+        array.set(1, 5, [7]);
+
+        expect(array.get(0)).toEqual({ command: 1, params: [1], index: 0 });
+        expect(array.get(1)).toEqual({ command: 5, params: [7], index: 1 });
+
+        array.add(3, [30]);
+        expect(array.get(2)).toEqual({ command: 3, params: [30], index: 2 });
+    });
+
+    // 验证中间步 set 增长参数后，读取流逐条读回与按索引读回结果一致
+    it('reads every step through a read stream after a growing set', () => {
+        const array = createArray();
+        array.add(1, [10]);
+        array.add(2, [20]);
+        array.add(3, [30]);
+        array.set(1, 5, [true, 'ab', 300]);
+
+        const expected: ReadonlyArray<readonly [number, ReplayParamValue[]]> = [
+            [1, [10]],
+            [5, [true, 'ab', 300]],
+            [3, [30]]
+        ];
+        const stream = array.createReadStream(0);
+        expected.forEach(([command, params], i) => {
+            expectStepTyped(stream.read()!, command, params, i + 1);
+            const step = array.get(i);
+            expect(step.command).toBe(command);
+            params.forEach((param, j) =>
+                expectParamTyped(step.params[j], param)
+            );
+        });
+        expect(stream.read()).toBeNull();
+        expect(stream.index).toBe(3);
+    });
+
+    // 验证末步 set 改变参数长度后，读取流仍能读完两步并在末尾返回 null
+    it('reads every step through a read stream after setting the last step', () => {
+        const array = createArray();
+        array.add(1, [10]);
+        array.add(2, [20]);
+
+        array.set(1, 5, [true, true, true, true, true]);
+
+        const stream = array.createReadStream(0);
+        expectStepTyped(stream.read()!, 1, [10], 1);
+        expectStepTyped(stream.read()!, 5, [true, true, true, true, true], 2);
+        expect(stream.read()).toBeNull();
+        expect(stream.index).toBe(2);
+    });
+});
+
 describe('ReplayArray param codec', () => {
     // 验证 boolean 参数按 type 0 写入并读回布尔值
     it('round-trips boolean parameters', () => {
