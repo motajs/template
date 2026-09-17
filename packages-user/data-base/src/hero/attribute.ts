@@ -233,9 +233,12 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
     ): IHeroModifier<THero[K]> | null {
         const arr = this.modifier.get(name);
         if (!arr) return null;
-        const modifier = arr.splice(index, 1);
-        if (modifier.length === 0) return null;
-        else return modifier[0] as IHeroModifier<THero[K]>;
+        const modifier = arr[index] as IHeroModifier<THero[K]> | undefined;
+        // 越界与负索引一律不删除任何修饰器，避免旧 splice 语义下误删末尾元素
+        if (!modifier) return null;
+        // 删除簿记统一由 deleteModifier 承担，故需先取出修饰器再委托以保留返回值
+        this.deleteModifier(name, modifier);
+        return modifier;
     }
 
     markDirty(name: keyof THero): void {

@@ -203,6 +203,60 @@ describe('HeroAttribute modifier management', () => {
         expect(attribute.deleteModifierByIndex('hp', 0)).toBeNull();
     });
 
+    // 验证按索引删除后修饰器不再被迭代、索引解析为 -1 且最终属性按剩余修饰器重算
+    it('removes a modifier by index from the iterator and the final attribute', () => {
+        const attribute = createAttribute();
+        const first = new TestModifier(5, 10);
+        const second = new TestModifier(2, 0);
+        attribute.addModifier('hp', first);
+        attribute.addModifier('hp', second);
+        expect(attribute.getFinalAttribute('hp')).toBe(107);
+
+        expect(attribute.deleteModifierByIndex('hp', 0)).toBe(first);
+        expect([...attribute.iterateModifiers()]).toEqual([['hp', second]]);
+        expect(attribute.getModifierIndex(first)).toBe(-1);
+        expect(attribute.getFinalAttribute('hp')).toBe(102);
+    });
+
+    // 验证被按索引删除的修饰器已解除归属，可以重新挂载且不再被码 108 拒绝
+    it('allows an index-deleted modifier to be attached again', () => {
+        const attribute = createAttribute();
+        const first = new TestModifier(5);
+        attribute.addModifier('hp', first);
+
+        expect(attribute.deleteModifierByIndex('hp', 0)).toBe(first);
+
+        const result = logger.catch(() => attribute.addModifier('hp', first));
+        expect(result.info.map(info => info.code)).not.toContain(108);
+        expect(attribute.getModifierIndex(first)).toBe(0);
+        expect(attribute.getFinalAttribute('hp')).toBe(105);
+    });
+
+    // 验证索引越界或为负时返回 null 且不删除任何修饰器
+    it('keeps every modifier when the index is out of range', () => {
+        const attribute = createAttribute();
+        const first = new TestModifier(5, 10);
+        const second = new TestModifier(2, 0);
+        attribute.addModifier('hp', first);
+        attribute.addModifier('hp', second);
+
+        expect(attribute.deleteModifierByIndex('hp', -1)).toBeNull();
+        expect(attribute.deleteModifierByIndex('hp', 2)).toBeNull();
+        expect([...attribute.getModifiers('hp')]).toEqual([first, second]);
+        expect(attribute.getFinalAttribute('hp')).toBe(107);
+    });
+
+    // 验证按索引删除不存档修饰器时其存盘开关记录被一并清理
+    it('clears the save flag of an index-deleted modifier', () => {
+        const attribute = createAttribute();
+        const unsaved = new TestModifier(3);
+        attribute.addModifier('hp', unsaved, false);
+        expect(attribute.getModifierSaveEnabled(unsaved)).toBe(false);
+
+        expect(attribute.deleteModifierByIndex('hp', 0)).toBe(unsaved);
+        expect(attribute.getModifierSaveEnabled(unsaved)).toBe(true);
+    });
+
     // 验证存盘开关可分别设置与查询
     it('tracks the per-modifier save flag', () => {
         const attribute = createAttribute();

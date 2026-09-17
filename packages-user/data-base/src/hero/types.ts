@@ -219,7 +219,8 @@ export interface IHeroAttribute<THero>
     ): void;
 
     /**
-     * 根据修饰器索引删除指定修饰器
+     * 根据修饰器索引删除指定修饰器。删除簿记与 `deleteModifier` 共用同一份实现，
+     * 修饰器会被解绑且不再属于本属性；索引越界或为负时返回 `null`，且不删除任何修饰器
      * @param name 属性名称
      * @param index 修饰器索引
      * @returns 被删除的修饰器
