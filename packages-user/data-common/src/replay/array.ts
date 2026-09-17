@@ -221,8 +221,9 @@ export class ReplayArray implements IReplayArray {
     /**
      * 将数值标准化为数字或 Uint8Array
      * @param param 参数值
+     * @returns 标准化结果，当参数无法用现有编码表示时返回 `null`
      */
-    private normalizeParam(param: ReplayParamValue): INormalizedParam {
+    private normalizeParam(param: ReplayParamValue): INormalizedParam | null {
         if (typeof param === 'boolean') {
             // 0 - boolean
             return {
@@ -267,11 +268,12 @@ export class ReplayArray implements IReplayArray {
             };
         } else if (typeof param === 'bigint') {
             // 7 - 非负 bigint / 8 - 负 bigint，均以幅值按字节写入
-            const wall = 2n ** 2047n;
-            if (param > wall - 1n || param < -wall) {
-                logger.warn(152);
-            }
+            // 幅值长度只有一个字节，故幅值必须小于 2 ^ 2040（即 255 字节），否则长度字节会溢出
             const magnitude = param < 0n ? -param : param;
+            if (magnitude >= 2n ** 2040n) {
+                logger.warn(152);
+                return null;
+            }
             const bit = magnitude.toString(2);
             const length = Math.ceil(bit.length / 8);
             const arr = new Uint8Array(length);
@@ -310,7 +312,7 @@ export class ReplayArray implements IReplayArray {
     }
 
     /**
-     * 将一系列参数值标准化为数字或 Uint8Array
+     * 将一系列参数值标准化为数字或 Uint8Array，无法表示的参数会被丢弃
      * @param params 参数值列表
      */
     private normalizeParamList(params: ReplayParamValue[]): INormalizedParam[] {
@@ -319,7 +321,13 @@ export class ReplayArray implements IReplayArray {
             logger.warn(153, params.length.toString());
             arr = params.slice(0, 255);
         }
-        return arr.map(v => this.normalizeParam(v));
+        // 丢弃的项不保留占位，保证命令参数计数与实际写入的参数个数一致
+        const normalized: INormalizedParam[] = [];
+        arr.forEach(v => {
+            const param = this.normalizeParam(v);
+            if (param) normalized.push(param);
+        });
+        return normalized;
     }
 
     /**
@@ -423,7 +431,7 @@ export class ReplayArray implements IReplayArray {
         // 追加指令
         const commandSize = this.getCommandSize();
         const commandStart = commandSize * this.length;
-        this.setCommandArray(commandStart, params.length, command);
+        this.setCommandArray(commandStart, normalized.length, command);
 
         // 追加参数
         this.setParamArray(this.paramUsed, normalized);
@@ -454,7 +462,7 @@ export class ReplayArray implements IReplayArray {
 
         // 插入到末尾等同于追加，此时无需任何位移
         if (index === this.length) {
-            this.setCommandArray(commandStart, params.length, command);
+            this.setCommandArray(commandStart, normalized.length, command);
             this.setParamArray(this.paramUsed, normalized);
             this.indexArray[this.length] = this.paramUsed;
 
@@ -472,7 +480,7 @@ export class ReplayArray implements IReplayArray {
         this.indexArray.copyWithin(index + 1, index);
 
         // 然后进行赋值操作，索引数组因为这一个指令的起始索引其实没变，所以不需要赋值
-        this.setCommandArray(commandStart, params.length, command);
+        this.setCommandArray(commandStart, normalized.length, command);
         this.setParamArray(paramStart, normalized);
 
         this.length++;
@@ -551,7 +559,7 @@ export class ReplayArray implements IReplayArray {
         // 先写入指令
         const commandSize = this.getCommandSize();
         const commandStart = index * commandSize;
-        this.setCommandArray(commandStart, params.length, command);
+        this.setCommandArray(commandStart, normalized.length, command);
 
         // 然后根据差值位移参数数组，如果参数长度减少还需要将最后几项置零
         this.paramArray.copyWithin(nextParam + deltaLength, nextParam);

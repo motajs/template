@@ -636,6 +636,62 @@ describe('ReplayArray param codec', () => {
         expect(info.map(v => v.code)).toContain(152);
     });
 
+    // 验证 bigint 的长度字节边界值（2^2040 - 1）仍可完整读写且后续参数不错位
+    it('round-trips the largest bigint that fits the length byte', () => {
+        const array = createArray({
+            initParamLength: 512,
+            paramMaxLength: 4096
+        });
+        const value = 2n ** 2040n - 1n;
+        array.add(0, [value, 7]);
+
+        const params = array.get(0).params;
+        expectParamTyped(params[0], value);
+        expectParamTyped(params[1], 7);
+        expect(firstParamToken(array)).toBe(7);
+        // 长度字节为 255，与写入的幅值字节数一致
+        expect(new Uint8Array(array.getParamArray())[1]).toBe(255);
+    });
+
+    // 验证 2^2040 及以上的 bigint 触发告警码 152 并丢弃该参数，命令与其余参数仍完整写入且计数一致
+    it('drops the unrepresentable bigint param and keeps the rest of the command', () => {
+        for (const value of [
+            2n ** 2040n,
+            2n ** 2041n,
+            2n ** 2048n,
+            -(2n ** 2040n)
+        ]) {
+            const array = createArray({
+                initParamLength: 512,
+                paramMaxLength: 4096
+            });
+            const { info } = logger.catch(() => array.add(0, [value, 7, 'x']));
+
+            expect(info.map(v => v.code)).toContain(152);
+            expect(array.length).toBe(1);
+            expect(array.get(0).command).toBe(0);
+            expect(array.get(0).params).toEqual([7, 'x']);
+            // 命令计数与实际写入的参数个数一致
+            expect(new Uint8Array(array.getCommandArray())[0]).toBe(2);
+        }
+    });
+
+    // 验证被丢弃的 bigint 参数不影响读流：后续命令仍从正确偏移解码
+    it('keeps the read stream aligned after dropping an unrepresentable bigint', () => {
+        const array = createArray({
+            initParamLength: 512,
+            paramMaxLength: 4096
+        });
+        logger.catch(() => array.add(1, [2n ** 2041n, 7]));
+        array.add(2, [20]);
+
+        const stream = array.createReadStream(0);
+        expectStepTyped(stream.read()!, 1, [7], 1);
+        expectStepTyped(stream.read()!, 2, [20], 2);
+        expect(stream.read()).toBeNull();
+        expect(stream.index).toBe(2);
+    });
+
     // 验证单条命令参数超过 255 个时触发告警码 153 并忽略溢出参数
     it('warns code 153 when a command exceeds 255 params', () => {
         const array = createArray({
@@ -647,6 +703,64 @@ describe('ReplayArray param codec', () => {
         const { info } = logger.catch(() => array.add(0, params));
 
         expect(info.map(v => v.code)).toContain(153);
+    });
+
+    // 验证 256 个参数的命令只写入截断后的计数 255，且后续命令仍能被读流正确读回
+    it('writes the truncated param count when a command exceeds 255 params', () => {
+        const array = createArray({
+            initParamLength: 1024,
+            paramMaxLength: 4096
+        });
+        const params = new Array<number>(256).fill(0);
+
+        logger.catch(() => array.add(0, params));
+        array.add(1, [9]);
+
+        expect(new Uint8Array(array.getCommandArray())[0]).toBe(255);
+        expect(array.get(0).params.length).toBe(255);
+
+        const stream = array.createReadStream(0);
+        const first = stream.read()!;
+        expect(first.command).toBe(0);
+        expect(first.params.length).toBe(255);
+        expectStepTyped(stream.read()!, 1, [9], 2);
+        expect(stream.read()).toBeNull();
+    });
+
+    // 验证 insert 与 set 同样写入截断后的参数计数，其后命令仍能正确读回
+    it('writes the truncated param count through insert and set', () => {
+        const params = new Array<number>(300).fill(0);
+
+        const inserted = createArray({
+            initParamLength: 1024,
+            paramMaxLength: 4096
+        });
+        inserted.add(1, [9]);
+        logger.catch(() => inserted.insert(1, 2, params));
+        inserted.add(3, [8]);
+
+        expect(new Uint8Array(inserted.getCommandArray())[2]).toBe(255);
+        expect(inserted.get(1).params.length).toBe(255);
+        const insertedStream = inserted.createReadStream(0);
+        expectStepTyped(insertedStream.read()!, 1, [9], 1);
+        expect(insertedStream.read()!.params.length).toBe(255);
+        expectStepTyped(insertedStream.read()!, 3, [8], 3);
+        expect(insertedStream.read()).toBeNull();
+
+        const replaced = createArray({
+            initParamLength: 1024,
+            paramMaxLength: 4096
+        });
+        replaced.add(1, [9]);
+        replaced.add(2, [20]);
+        logger.catch(() => replaced.set(0, 2, params));
+
+        expect(new Uint8Array(replaced.getCommandArray())[0]).toBe(255);
+        expect(replaced.get(0).params.length).toBe(255);
+        const replacedStream = replaced.createReadStream(0);
+        expect(replacedStream.read()!.params.length).toBe(255);
+        expectStepTyped(replacedStream.read()!, 2, [20], 2);
+        expect(replacedStream.read()).toBeNull();
     });
 });
 
