@@ -1,4 +1,4 @@
-// 测试地图伤害：无来源伤害增删、有来源转换与合并、告警码 102/103/104、分离伤害合并、deleteEnemy 与 markEnemyDirty
+// 测试地图伤害：无来源伤害增删、有来源转换与合并、告警码 102/103/104、分离伤害合并、deleteEnemy 与 markEnemyDirty、CR-02 空视图集/范围收缩、IN-01 删除后点残留
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     type IRange,
@@ -543,6 +543,85 @@ describe('MapDamage sourced conversion and reduction', () => {
         expect([
             ...fixture.damage.getSeparatedDamage(fixture.locator)
         ]).toHaveLength(0);
+    });
+
+    // 验证伤害来源消失后旧坐标不再返回幽灵伤害（CR-02 视图集变空）
+    it('drops ghost damage when the enemy view set becomes empty', () => {
+        const fixture = createFixture();
+        fixture.damage.useReducer(fixture.reducer);
+        fixture.damage.useConverter(fixture.converter);
+        expect(fixture.damage.getReducedDamage(fixture.locator)?.damage).toBe(
+            7
+        );
+
+        fixture.converter.views.length = 0;
+        fixture.damage.markEnemyDirty(fixture.view);
+
+        expect(fixture.damage.getReducedDamage(fixture.locator)).toBeNull();
+        expect([
+            ...fixture.damage.getSeparatedDamage(fixture.locator)
+        ]).toHaveLength(0);
+    });
+
+    // 验证伤害范围收缩后跌出范围的坐标不再保留旧缓存（CR-02 范围收缩）
+    it('drops stale damage on indexes that fall out of a shrunken range', () => {
+        const fixture = createFixture();
+        const indexA = fixture.context.indexer.locToIndex(
+            fixture.locator.x,
+            fixture.locator.y
+        );
+        const indexB = fixture.context.indexer.locToIndex(2, 1);
+        const locatorB: ITileLocator = { x: 2, y: 1 };
+        const view = new FakeView(7, [indexA, indexB]);
+        fixture.damage.useReducer(fixture.reducer);
+        fixture.damage.useConverter(new FakeConverter([view]));
+        expect(fixture.damage.getReducedDamage(fixture.locator)?.damage).toBe(
+            7
+        );
+        expect(fixture.damage.getReducedDamage(locatorB)?.damage).toBe(7);
+
+        view.range.indexes.length = 1;
+        fixture.damage.markEnemyDirty(fixture.view);
+
+        expect(fixture.damage.getReducedDamage(locatorB)).toBeNull();
+        expect([...fixture.damage.getSeparatedDamage(locatorB)]).toHaveLength(
+            0
+        );
+        expect(fixture.damage.getReducedDamage(fixture.locator)?.damage).toBe(
+            7
+        );
+    });
+
+    // 验证视图集变空后仍登记空集，此后标记怪物脏走局部刷新而非整表刷新
+    it('keeps refreshing locally after an empty view set is registered', () => {
+        const fixture = createFixture();
+        fixture.damage.useReducer(fixture.reducer);
+        fixture.damage.useConverter(fixture.converter);
+        fixture.converter.views.length = 0;
+        fixture.damage.markEnemyDirty(fixture.view);
+        const iterateSpy = vi.spyOn(fixture.context, 'iterateEnemy');
+        const calls = fixture.converter.calls;
+
+        fixture.damage.markEnemyDirty(fixture.view);
+
+        expect(iterateSpy).not.toHaveBeenCalled();
+        expect(fixture.converter.calls).toBe(calls + 1);
+    });
+
+    // 验证 refreshAll 同样登记空视图集，此后标记怪物脏不退回整表刷新
+    it('registers an empty view set through refreshAll as well', () => {
+        const fixture = createFixture();
+        fixture.damage.useReducer(fixture.reducer);
+        fixture.damage.useConverter(fixture.converter);
+        fixture.converter.views.length = 0;
+        fixture.damage.refreshAll();
+        const iterateSpy = vi.spyOn(fixture.context, 'iterateEnemy');
+        const calls = fixture.converter.calls;
+
+        fixture.damage.markEnemyDirty(fixture.view);
+
+        expect(iterateSpy).not.toHaveBeenCalled();
+        expect(fixture.converter.calls).toBe(calls + 1);
     });
 });
 

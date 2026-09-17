@@ -240,10 +240,13 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     private removeEnemyAffecting(view: IEnemyView<TEnemy>) {
         const views = this.enemyStore.get(view);
         if (!views) return;
+        // 收集被移除贡献的坐标索引，遍历结束后统一标脏以清掉其旧合并缓存
+        const removed = new Set<number>();
         views.forEach(viewItem => {
             const store = this.viewStore.get(viewItem);
             if (!store) return;
             store.damages.forEach((dam, index) => {
+                removed.add(index);
                 const point = this.sourcedDamage.get(index);
                 if (!point) return;
                 point.affectedBy.delete(viewItem);
@@ -253,6 +256,9 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
             this.viewStore.delete(viewItem);
         });
         this.enemyStore.delete(view);
+        removed.forEach(index => {
+            this.markDirtyIndex(index);
+        });
     }
 
     /**
@@ -297,8 +303,9 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
         if (!handler) return;
         const views = this.converter.convert(handler, this.context);
         const set = new Set<IMapDamageView<any>>(views);
-        if (set.size === 0) return;
+        // 空集也需要登记，否则该怪物此后标脏会退回整表刷新
         this.enemyStore.set(view, set);
+        if (set.size === 0) return;
         const collection = new Set<number>();
         set.forEach(viewItem => {
             const range = viewItem.getRange();
@@ -342,8 +349,9 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
         if (!handler) return;
         const views = this.converter.convert(handler, this.context);
         const set = new Set<IMapDamageView<any>>(views);
-        if (set.size === 0) return;
+        // 空集也需要登记，否则该怪物此后标脏会退回整表刷新
         this.enemyStore.set(view, set);
+        if (set.size === 0) return;
         set.forEach(viewItem => {
             const range = viewItem.getRange();
             const param = viewItem.getRangeParam();
