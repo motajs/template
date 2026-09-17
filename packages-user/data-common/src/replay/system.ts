@@ -63,7 +63,7 @@ export class ReplaySystem
     record(code: number, ...params: ReplayParamValue[]): void {
         this.route.add(code, params);
         this.forEachHook(hook =>
-            hook.onRecordCommand?.(code, this.route.length, params)
+            hook.onRecordCommand?.(code, this.route.length - 1, params)
         );
     }
 
