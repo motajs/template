@@ -298,21 +298,21 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     }
 
     /**
-     * 刷新指定位置的怪物地图伤害，并执行刷新缓存的操作
+     * 刷新指定位置的怪物地图伤害
      */
-    private refreshEnemyAndClearCache(
+    private refreshEnemy(
         view: IEnemyView<TEnemy>,
         locator: ITileLocator
-    ) {
+    ): Set<number> | null {
         this.removeEnemyAffecting(view);
-        if (!this.converter) return;
+        if (!this.converter) return null;
         const handler = this.createReadonlyHandler(view, locator);
-        if (!handler) return;
+        if (!handler) return null;
         const views = this.converter.convert(handler, this.context);
         const set = new Set<IMapDamageView<any>>(views);
         // 空集也需要登记，否则该怪物此后标脏会退回整表刷新
         this.enemyStore.set(view, set);
-        if (set.size === 0) return;
+        if (set.size === 0) return null;
         const collection = new Set<number>();
         set.forEach(viewItem => {
             const range = viewItem.getRange();
@@ -340,49 +340,21 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
                 }
             }
         });
-        collection.forEach(v => {
-            this.dirtyIndexes.delete(v);
-            this.reducedCache.delete(v);
-        });
+        return collection;
     }
 
     /**
-     * 刷新指定位置的怪物地图伤害
+     * 刷新指定位置的怪物地图伤害，并执行刷新缓存的操作
      */
-    private refreshEnemy(view: IEnemyView<TEnemy>, locator: ITileLocator) {
-        this.removeEnemyAffecting(view);
-        if (!this.converter) return;
-        const handler = this.createReadonlyHandler(view, locator);
-        if (!handler) return;
-        const views = this.converter.convert(handler, this.context);
-        const set = new Set<IMapDamageView<any>>(views);
-        // 空集也需要登记，否则该怪物此后标脏会退回整表刷新
-        this.enemyStore.set(view, set);
-        if (set.size === 0) return;
-        set.forEach(viewItem => {
-            const range = viewItem.getRange();
-            const param = viewItem.getRangeParam();
-            range.bindHost(this.context);
-            for (const index of range.iterateLoc(param)) {
-                const loc = this.indexer.indexToLocator(index);
-                const point = this.sourcedDamage.getOrInsertComputed(
-                    index,
-                    () => ({
-                        affectedBy: new Set(),
-                        damages: new Set()
-                    })
-                );
-                const damage = viewItem.getDamageWithoutCheck(loc);
-                if (damage) {
-                    this.registerSourcedDamage(
-                        point,
-                        viewItem,
-                        view,
-                        index,
-                        damage
-                    );
-                }
-            }
+    private refreshEnemyAndClearCache(
+        view: IEnemyView<TEnemy>,
+        locator: ITileLocator
+    ) {
+        const collection = this.refreshEnemy(view, locator);
+        if (!collection) return;
+        collection.forEach(v => {
+            this.dirtyIndexes.delete(v);
+            this.reducedCache.delete(v);
         });
     }
 
