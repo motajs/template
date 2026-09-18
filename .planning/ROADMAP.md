@@ -184,8 +184,12 @@ Plans:
 **Plans**: 1/2 plans executed（第一步·只读对账已完成；第二步·勇士移动接口探索（只读）已规划 — 04-CONTEXT D-01/D-02/D-13/D-17/D-18；后续适配实施与双布局待探索结果与缺失候选裁决后另行规划）
 
 Plans:
+**Wave 1**
 
 - [x] 04-01-PLAN.md — 渲染端 ↔ 数据端接口对账（只读清点，产出 `04-RENDER-INTERFACE-AUDIT.md`；按 ① 错配 / ② 数据端缺失 / ③ 多余旧路径 三类登记）
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 04-02-PLAN.md — 勇士移动接口探索（只读，D-17）：产出 `04-HERO-MOVER-INTERFACE.md`（数据端现行接口 / 渲染端现状 / 逐成员三态对账 / 缺失接口候选 / 未确定 / 处置；排除 `HeroRendering`（D-18）与 `core.*`（D-12）；不改任何代码，适配（04-03+）未规划）
 
 **UI hint**: yes
