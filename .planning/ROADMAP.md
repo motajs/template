@@ -181,11 +181,12 @@ Plans:
   3. 移动端（窄屏）布局下，同一场景正常显示且可操作
   4. 数据端与渲染端保持双端分离——数据端无 DOM，仍可在 Node 环境跑回放验证
 
-**Plans**: 1/1 plans executed（第一步·只读对账；本阶段增量规划，后续适配实施与双布局待对账结果出来后另行规划 — 04-CONTEXT D-01/D-02）
+**Plans**: 1/2 plans executed（第一步·只读对账已完成；第二步·勇士移动接口探索（只读）已规划 — 04-CONTEXT D-01/D-02/D-13/D-17/D-18；后续适配实施与双布局待探索结果与缺失候选裁决后另行规划）
 
 Plans:
 
 - [x] 04-01-PLAN.md — 渲染端 ↔ 数据端接口对账（只读清点，产出 `04-RENDER-INTERFACE-AUDIT.md`；按 ① 错配 / ② 数据端缺失 / ③ 多余旧路径 三类登记）
+- [ ] 04-02-PLAN.md — 勇士移动接口探索（只读，D-17）：产出 `04-HERO-MOVER-INTERFACE.md`（数据端现行接口 / 渲染端现状 / 逐成员三态对账 / 缺失接口候选 / 未确定 / 处置；排除 `HeroRendering`（D-18）与 `core.*`（D-12）；不改任何代码，适配（04-03+）未规划）
 
 **UI hint**: yes
 
@@ -380,7 +381,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
-| 4. 渲染适配与双布局 | 1/1 | In Progress|  |
+| 4. 渲染适配与双布局 | 1/2 | In Progress|  |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | 暂缓 (Deferred) | - |
