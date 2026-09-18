@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 milestone: v1.0
 current_phase: 04
 current_phase_name: 渲染适配与双布局
-status: executing
-stopped_at: Phase 4 context gathered
-last_updated: "2026-09-18T02:05:26.602Z"
-last_activity: 2026-09-17
-last_activity_desc: Phase 07 paused; plan 07-16 deferred pending the user's data-layer rework
-state_head: 6d8075166a0469783835272f2a4fa04c283ee71e
+status: verifying
+stopped_at: Completed 04-01-PLAN.md（只读对账账本已交付；阶段 4 剩余工作待用户拆分）
+last_updated: "2026-09-18T02:52:58.322Z"
+last_activity: 2026-09-18
+last_activity_desc: Phase 04 execution started
+state_head: 4327e6733b1e241c3a840a91c63c9c10e860624c
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 72
-  completed_plans: 70
+  completed_plans: 71
 milestone_name: milestone
 ---
 
@@ -24,14 +24,14 @@ milestone_name: milestone
 See: .planning/PROJECT.md (updated 2026-09-17)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 07 — 数据端缺陷修复
+**Current focus:** Phase 04 — 渲染适配与双布局
 
 ## Current Position
 
-Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
-Plan: 15 of 16 complete (07-01..07-15); 07-16 planned, awaiting the user's data-layer rework
-Status: Deferred — user is manually reworking the data layer; more tests will break until that finishes
-Last activity: 2026-09-17 — Phase 07 paused; 07-16 deferred
+Phase: 04 (渲染适配与双布局) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-09-18 — Phase 04 execution started
 
 Progress: [█████░░░░░] 50%
 
@@ -96,6 +96,7 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P15 | 12min | 2 tasks | 3 files |
 | Phase 07-data-fixes P13 | 56min | 5 tasks | 5 files |
 | Phase 07 P14 | 3min | 3 tasks | 1 files |
+| Phase 04 P01 | 11min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -212,6 +213,10 @@ Recent decisions affecting current work:
 - [Phase 07]: [Phase 07] 07-14 Q1..Q4 = 不改动（用户，2026-09-17，原话「关于旧引擎的兼容部分不动，很快就要删除了，没必要改。」）：`packages-user/data-fallback` 旧引擎兼容层即将删除，代理不修、`get` 口径不变、不建 `hero.test.ts`、`patchFlags` 不处理
 - [Phase 07]: [Phase 07] 07-14 `#06-17-7`（审计 C）判为 WONTFIX／经用户裁定不修复，属本阶段成功标准第 1 条「修复或经用户裁定改契约/不修复」的合法闭合；该计划零代码、零测试、零依赖，`WINDOWS.md` 不新建条目（D-14）
 - [Phase 07]: [Phase 07] 07-14 收口基线维持 66 文件 / 737 通过 / 0 失败 / 1 跳过（无新增测试文件，计划原预期的 66→67 被裁决取代）；`07-VERIFICATION.md` 已失效，需重跑 `/gsd-verify-work 7`
+- [Phase 04]: 04-01：只读接口对账交付 04-RENDER-INTERFACE-AUDIT.md（8 段骨架 + ① 9 条 / ③ 42 条 / ② 本步未确认），被查两包零改动。
+- [Phase 04]: 04-01：带 // @ts-expect-error 需要重构 的 import（HeroMover/IMoveController、HeroAnimateDirection、IHeroMoveController(Hooks)、getHeroStatusOn、ItemState、state.maps layerState）一律归 ① 错配（渲染侧适配项），不归 ②。
+- [Phase 04]: 04-01：② 数据端缺失节零确认——候选（core.firstData 工程元数据、勇士渲染粒度钩子）转入「未能从阅读确定（未猜测）」，不臆造缺失接口。
+- [Phase 04]: 04-01：REND-01/REND-02 保持 Pending，本 run 只交付差异账本，适配实施与双布局未规划/未实施。
 
 ### Roadmap Evolution
 
@@ -249,6 +254,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-18T01:06:46.471Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-render-adaptation/04-CONTEXT.md
+Last session: 2026-09-18T02:52:58.072Z
+Stopped at: Completed 04-01-PLAN.md（只读对账账本已交付；阶段 4 剩余工作待用户拆分）
+Resume file: None
