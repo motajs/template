@@ -278,15 +278,22 @@ Plans:
   3. pnpm test:ci 全绿且不新增跳过用例，数据范围 check:type / check:circular 门禁通过
   4. 改动仅限数据端（packages 与 packages-user/data-*），不改动渲染端 @user/client-* 与 legacy 渲染接线，双端分离约束保持
 
-**Plans**: 14/14 plans executed — 07-01..07-09 已执行（07-09 为阶段标记 Complete 后追加的重开计划，已执行并有 SUMMARY）；07-10..07-14 为第二轮追加（把 C–H 与 CR-01/CR-02 由「只登记」转为「修复」，**尚未执行**）（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`）
+**Plans**: 16 plans — 07-01..07-15 已执行（07-15 完成 4 条复审缺口修复）；**07-16 暂缓（DEFERRED）**：寻路重构后的测试对齐批次，待用户完成数据端手工修改后再执行（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`）
 
 > **阶段重开（2026-09-16）**：`07-LOADSTATE-AUDIT.md` 登记的同引用审计条目 `#06-17-1`（A）与 `#06-17-2`（B）在本阶段收口后追加为计划 `07-09`，Phase 7 因此由 `Complete` 回到未完成；执行 07-09 后 `07-VERIFICATION.md`（2026-09-16 结论仅覆盖 8/8 计划的工作树）**失效，必须重跑 `/gsd-verify-work`** 重新出具验证结论。
 
 > **阶段二次追加（2026-09-16）**：`07-LOADSTATE-AUDIT.md` 的同引用审计条目 **C–H**（`#06-17-3..8`）、`07-REVIEW.md` 的 **CR-01 / CR-02** 与 4 条相关警告（WR-01/02/03/07、WR-04/05/06）、以及 `06-TEST-FINDINGS.md` 中此前「只登记不修」的部分，经用户裁定**由「登记」转为「修复」**，追加为计划 `07-10`（replay 编解码与索引编辑）、`07-11`（容器同引用存读档）、`07-12`（装备/属性存档正确性）、`07-13`（地图失效边界）、`07-14`（legacy hero 代理）。07-09 的范围守卫（「C–H 只登记不修」）据此**解除**。
 > 每个计划以 `checkpoint:decision`（`gate="blocking-human"`）关卡开头，逐条列出需用户裁决的契约点（`set()` 语义、录像格式版本、溢出处置、诊断码、逐子系统同引用保留、读档禁录、失效契约等）；**契约未裁决前不得执行**。执行完毕后 `07-VERIFICATION.md` 必须重跑。
 
+> **阶段三次追加（2026-09-17）**：Phase 7 关闭后的增量代码复审 `07-REVIEW-recheck.md` 报出 8 条发现（1 Critical + 3 Warning + 4 Info）。其中 4 条 Info 由用户自行修复并提交（`34ba9e8`/`219ac49`/`3a3a6ac`/`a2a8e6e`）；剩余 **CR-01 / WR-01 / WR-02 / WR-03** 追加为计划 `07-15`，**已执行完毕**（`53f067a`/`a7c9f97`/`49116c0`/`bb19865` + `07-15-SUMMARY.md`）。共同成因：第二轮批次仅以「让目标用例转绿」为目标，未按设计语言把契约、簿记与边界条件一次做对。
+
+> **阶段四次追加（2026-09-17）**：用户完成寻路系统重构（`4aaea68`）后，数据端 **17 个测试文件 / 73 用例**因接口变动与形状变化失败（接口族：寻路 `useMapState`/`useDirGroup` 变更、录像 `route`→`array` 与 `onRecordCommand` 0-based 索引、`HeroLocation.setFloor(IGameMap)`、`CoreState.initMapState` 删除；另含 5 个疑似行为变化的文件）。经用户要求追加计划 `07-16`（**只改测试、不改生产代码**），已完成规划并登记缺口（`07-VERIFICATION.md` 的 `### Post-Refactor Test Breakage`）。
+> **该计划暂缓（DEFERRED）**：用户观察到数据端仍需大量手工修改、并将继续导致测试报错，故等数据端全部改完后再执行。恢复时该缺口清单（2026-09-17 快照）与 `07-16-PLAN.md` **须先重新核对（很可能需要重规划）**，再走 `/gsd-execute-phase 7 --gaps-only`；随后 `/gsd-verify-work 7` 重出验证。
+
 Plans:
 
+- [ ] 07-16-PLAN.md — **暂缓（DEFERRED）**：寻路重构后的测试对齐批次——把 17 个测试文件对齐到已发布接口（只改测试、不改生产代码），含 5 个疑似行为变化文件待用户 Task 0 逐行裁决。**待用户完成数据端手工修改后再执行**（恢复前须重新核对缺口清单与计划）
+- [x] 07-15-PLAN.md — 复审缺陷批次：CR-01（`HeroEquipment.compareEquip` 对已装备项漏算）/ WR-01（`normalizeParam` 回退口径致字节偏移错位）/ WR-02（`checkBufferExpand` 乘数为 1 时自我递归）/ WR-03（`HeroAttribute.clone()` 绕过簿记）——**已执行**（`07-15-SUMMARY.md`）
 - [x] 07-10-PLAN.md — replay：CR-01（`set()` 索引数组损坏，与 `delete()` 对齐）/ 审计 H `#06-17-3`（`setReplayArray` 漏 `expireStreams`）/ WR-01（bigint 长度字节溢出）/ WR-02（参数计数用未截断长度）/ WR-03（编解码格式版本）/ WR-07（`insert`/`delete`/`set` 越界校验）
 - [x] 07-11-PLAN.md — 容器同引用：`#06-17-4`（`equipStore` 重建实例脱钩）/ `#06-17-5`（`flag/system` 字段脱钩）/ `#06-17-6`（followers 重建脱钩）
 - [x] 07-12-PLAN.md — 装备/属性存档正确性：WR-04（装备修饰器活值未持久化）/ WR-05（`deleteModifierByIndex` 簿记残留）/ WR-06（`HeroEquipment.loadState` 读档写录像）
@@ -371,4 +378,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. 渲染适配与双布局 | 0/TBD | Not started | - |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
-| 7. 数据端缺陷修复 | 14/14 | Complete    | 2026-09-17 |
+| 7. 数据端缺陷修复 | 15/16 | 暂缓 (Deferred) | - |

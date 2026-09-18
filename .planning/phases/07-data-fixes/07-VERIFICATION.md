@@ -362,7 +362,9 @@ Source: `07-REVIEW-recheck.md` — the incremental code review run after the pha
    - Fix: route cloned modifiers through the same bookkeeping `addModifier` establishes.
    - Evidence: `07-REVIEW-recheck.md:159-183`.
 
-### Post-Refactor Test Breakage (recorded 2026-09-17, user-requested repair)
+### Post-Refactor Test Breakage (recorded 2026-09-17, user-requested repair) — **DEFERRED 2026-09-17**
+
+> **暂缓（2026-09-17，用户指示）**：下面的清单是 **2026-09-17 的测量快照**。用户仍在手工重构数据端、接口与形状会继续变化，因此还会产生更多测试报错——那是进行中的工作，不是缺陷。计划 `07-16`（本批测试对齐）**暂缓**，待数据端全部改完后再启动；**启动前必须重新测量并据此重规划**（本清单很可能已过期），然后走 `/gsd-execute-phase 7 --gaps-only`，最后 `/gsd-verify-work 7`。**不要**把用户并发改动引入的失败当作缺陷登记或修复。
 
 Source: the user's own in-flight refactors — the pathfinding-system refactor plus the earlier `ReplaySystem.route` → `.array` rename (`a2a8e6e`) and the `onRecordCommand` index fix (`34ba9e8`). These are NOT review findings; they are test files that no longer match the shipped interfaces/behaviour. The user asked for one Phase 7 plan to repair them (2026-09-17).
 

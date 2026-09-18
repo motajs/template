@@ -4,10 +4,10 @@ milestone: v1.0
 current_phase: 07
 current_phase_name: 数据端缺陷修复
 status: executing
-stopped_at: Phase 07 complete, ready to plan Phase 1
-last_updated: "2026-09-17T12:32:39.331Z"
+stopped_at: Phase 07 paused — 07-16 (post-refactor test alignment) DEFERRED until the user finishes the data-layer manual rework
+last_updated: "2026-09-17T12:45:00.000Z"
 last_activity: 2026-09-17
-last_activity_desc: Phase 07 execution started
+last_activity_desc: Phase 07 paused; plan 07-16 deferred pending the user's data-layer rework
 state_head: 19ad1ea91ab7a69b0b65020d49bbe65ab30ec301
 progress:
   total_phases: 7
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 
 ## Current Position
 
-Phase: 07 (数据端缺陷修复) — EXECUTING
-Plan: 1 of 15
-Status: Executing Phase 07
-Last activity: 2026-09-17 — Phase 07 execution started
+Phase: 07 (数据端缺陷修复) — PAUSED (plan 07-16 DEFERRED)
+Plan: 15 of 16 complete (07-01..07-15); 07-16 planned, awaiting the user's data-layer rework
+Status: Deferred — user is manually reworking the data layer; more tests will break until that finishes
+Last activity: 2026-09-17 — Phase 07 paused; 07-16 deferred
 
 Progress: [█████░░░░░] 50%
 
@@ -229,6 +229,8 @@ None yet.
 - Plan 01-12 leaves the repository-wide type gate blocked only by pre-existing diagnostics outside the plan-owned files; these are recorded in the phase deferred-items ledger.
 - Plan 01-13 records the same repository-wide type gate diagnostics outside its implementation and test files in the phase deferred-items ledger.
 
+- **Phase 07 暂缓（2026-09-17）**：用户在并发手工重构数据端，接口/形状仍在变，测试会持续报错——这不是缺陷，是进行中的工作。**07-16（寻路重构后的测试对齐）已暂缓**，等数据端全部改完再启动；届时先重新核对 `07-VERIFICATION.md` 的 `### Post-Refactor Test Breakage` 缺口清单（2026-09-17 快照很可能已过期）与 `07-16-PLAN.md`（很可能需重规划），再 `/gsd-execute-phase 7 --gaps-only`，最后 `/gsd-verify-work 7`。期间**不要**把用户并发改动引入的类型错误/测试失败当作缺陷登记或修复。
+
 - 07-REVIEW-recheck.md（2026-09-17，增量复审）新增 8 条未经裁决的发现（1 Critical：`HeroEquipment.compareEquip` 对已装备项取差值错误；3 Warning：`normalizeParam` 字节长度 0、`checkBufferExpand` 倍数为 1 时无限递归、`HeroAttribute.clone` 丢修饰器名/绑定；4 Info）。**未纳入 Phase 7 登记范围，也未经用户确认为问题**；是否开修复计划待用户裁决。
 
 ### Quick Tasks Completed
@@ -243,9 +245,10 @@ None yet.
 |----------|------|--------|-------------|-----------|
 | quality gate | Pre-existing TypeScript diagnostics outside Plan 01-12 files | deferred | 2026-09-09 | v1.0 |
 | quality gate | Pre-existing TypeScript diagnostics outside Plan 01-13 files | deferred | 2026-09-09 | v1.0 |
+| test alignment | Plan 07-16 (post-refactor test alignment, 17 files / 73 failures snapshot) — DEFERRED by the user until the data-layer manual rework finishes; the gap inventory in `07-VERIFICATION.md` (`### Post-Refactor Test Breakage`) and `07-16-PLAN.md` MUST be re-checked (likely re-planned) before executing | deferred | 2026-09-17 | v1.0 |
 
 ## Session Continuity
 
-Last session: 2026-09-17T10:45:02.336Z
-Stopped at: Phase 07 complete, ready to plan Phase 1
-Resume file: None
+Last session: 2026-09-17T12:45:00.000Z
+Stopped at: Phase 07 paused — 07-16 (post-refactor test alignment) deferred until the user's data-layer rework is complete
+Resume file: .planning/phases/07-data-fixes/.continue-here.md
