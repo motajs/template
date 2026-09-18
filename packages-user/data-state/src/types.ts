@@ -1,7 +1,9 @@
 import { IMotaDataLoader, IStateBase } from '@user/data-base';
-import { ILoadProgressTotal } from '@motajs/loader';
+import { ILoadManager } from '@motajs/loader';
 import { IStateSystem } from '@user/data-system';
 import { ISaveableContent } from '@user/data-common';
+
+export interface ICoreStateConfig {}
 
 export interface ISaveableExecutor<T> {
     /**
@@ -15,7 +17,7 @@ export interface ISaveableExecutor<T> {
 export interface ICoreState
     extends IStateSystem, ISaveableContent<ReadonlyMap<string, unknown>> {
     /** 加载进度对象 */
-    readonly loadProgress: ILoadProgressTotal;
+    readonly loadProgress: ILoadManager;
     /** 数据端加载对象 */
     readonly dataLoader: IMotaDataLoader;
 

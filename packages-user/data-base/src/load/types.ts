@@ -1,5 +1,5 @@
 import {
-    ILoadProgressTotal,
+    ILoadManager,
     ILoadTask,
     ILoadTaskProcessor,
     LoadDataType
@@ -9,7 +9,7 @@ export type CustomLoadFunc<R> = (data: R) => Promise<void>;
 
 export interface IMotaDataLoader {
     /** 加载进度对象 */
-    readonly progress: ILoadProgressTotal;
+    readonly progress: ILoadManager;
 
     /** json 处理器 */
     readonly jsonProcessor: ILoadTaskProcessor<LoadDataType.JSON, any>;

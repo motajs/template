@@ -63,7 +63,7 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly bgmPlayer: IBGMPlayer<BgmIds>;
 
     constructor() {
-        super();
+        super({});
 
         //#region Layer 4
 

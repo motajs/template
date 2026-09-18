@@ -1,5 +1,5 @@
 import {
-    ILoadProgressTotal,
+    ILoadManager,
     LoadDataType,
     ILoadTask,
     ILoadTaskProcessor
@@ -24,7 +24,7 @@ export class MotaDataLoader implements IMotaDataLoader {
 
     readonly jsonProcessor: ILoadTaskProcessor<LoadDataType.JSON, any>;
 
-    constructor(readonly progress: ILoadProgressTotal) {
+    constructor(readonly progress: ILoadManager) {
         this.jsonProcessor = new LoadJSONProcessor();
     }
 

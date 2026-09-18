@@ -29,7 +29,7 @@
         "27": "No autotile connection data, please ensure you have created autotile connection map.",
         "28": "Cannot compile map render shader.",
         "29": "Cannot get uniform location of map render shader.",
-        "30": "",
+        "30": "Load task needs a load starter binding before loading.",
         "31": "No asset data is specified when rending map.",
         "32": "Every layer added to map renderer must share the same size. Different layer: $1.",
         "33": "Map layer transfered to vertex generator must belong to the renderer that the generator use.",

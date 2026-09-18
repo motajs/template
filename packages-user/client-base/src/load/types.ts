@@ -1,5 +1,5 @@
 import {
-    ILoadProgressTotal,
+    ILoadManager,
     ILoadTask,
     ILoadTaskProcessor,
     LoadDataType
@@ -37,7 +37,7 @@ export interface ICompressedMotaAssetsLoadList {
 
 export interface IMotaAssetsLoader {
     /** 加载进度对象 */
-    readonly progress: ILoadProgressTotal;
+    readonly progress: ILoadManager;
     /** 当前是否正在加载 */
     readonly loading: boolean;
     /** 当前是否已经加载完毕 */
