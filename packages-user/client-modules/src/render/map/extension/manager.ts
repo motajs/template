@@ -1,6 +1,4 @@
-// @ts-expect-error 需要重构
-import { IHeroMoveController } from '@user/data-base';
-import { IMapLayer } from '@user/data-base';
+import { IHeroLocation, IMapLayer } from '@user/data-base';
 import {
     IMapDoorRenderer,
     IMapExtensionManager,
@@ -15,7 +13,7 @@ import { IOnMapTextRenderer } from './types';
 
 export class MapExtensionManager implements IMapExtensionManager {
     /** 勇士状态至勇士渲染器的映射 */
-    readonly heroMap: Map<IHeroMoveController, IMapHeroRenderer> = new Map();
+    readonly heroMap: Map<IHeroLocation, IMapHeroRenderer> = new Map();
     /** 地图图层到门渲染器的映射 */
     readonly doorMap: Map<IMapLayer, IMapDoorRenderer> = new Map();
     /** 单例的文字渲染拓展（独立图层） */
@@ -23,10 +21,7 @@ export class MapExtensionManager implements IMapExtensionManager {
 
     constructor(readonly renderer: IMapRenderer) {}
 
-    addHero(
-        state: IHeroMoveController,
-        layer: IMapLayer
-    ): IMapHeroRenderer | null {
+    addHero(state: IHeroLocation, layer: IMapLayer): IMapHeroRenderer | null {
         if (this.heroMap.has(state)) {
             logger.error(45, 'hero renderer');
             return null;
@@ -36,7 +31,7 @@ export class MapExtensionManager implements IMapExtensionManager {
         return heroRenderer;
     }
 
-    removeHero(state: IHeroMoveController): void {
+    removeHero(state: IHeroLocation): void {
         const renderer = this.heroMap.get(state);
         if (!renderer) return;
         renderer.destroy();

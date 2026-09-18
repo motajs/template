@@ -1,18 +1,11 @@
 import { ITexture, Font } from '@motajs/render';
-import {
-    FaceDirection,
-    // @ts-expect-error 需要重构
-    HeroAnimateDirection,
-    // @ts-expect-error 需要重构
-    IHeroMoveController
-} from '@user/data-common';
-import { IMapLayer } from '@user/data-base';
+import { IHeroLocation, IMapLayer } from '@user/data-base';
 
 import { IMapRenderResult } from '../types';
 
 export interface IMapExtensionManager {
     /** 勇士状态至勇士渲染器的映射 */
-    readonly heroMap: Map<IHeroMoveController, IMapHeroRenderer>;
+    readonly heroMap: Map<IHeroLocation, IMapHeroRenderer>;
     /** 地图图层到门渲染器的映射 */
     readonly doorMap: Map<IMapLayer, IMapDoorRenderer>;
     /** 单例的文字渲染拓展（独立图层） */
@@ -23,16 +16,13 @@ export interface IMapExtensionManager {
      * @param state 勇士状态
      * @param layer 勇士所在图层
      */
-    addHero(
-        state: IHeroMoveController,
-        layer: IMapLayer
-    ): IMapHeroRenderer | null;
+    addHero(state: IHeroLocation, layer: IMapLayer): IMapHeroRenderer | null;
 
     /**
      * 移除勇士渲染拓展
      * @param state 勇士状态
      */
-    removeHero(state: IHeroMoveController): void;
+    removeHero(state: IHeroLocation): void;
 
     /**
      * 添加开门动画拓展
@@ -87,47 +77,6 @@ export interface IMapHeroRenderer {
     removeAllFollowers(): void;
 
     /**
-     * 设置勇士位置
-     */
-    setPosition(x: number, y: number): void;
-
-    /**
-     * 开始移动，在移动前需要调用此方法切换勇士状态
-     */
-    startMove(): void;
-
-    /**
-     * 等待勇士移动停止后，将移动状态切换为停止
-     * @param waitFollower 是否也等待跟随者移动结束
-     */
-    waitMoveEnd(waitFollower: boolean): Promise<void>;
-
-    /**
-     * 立刻停止移动，勇士和跟随者瞬移到目标点
-     */
-    stopMove(): void;
-
-    /**
-     * 勇士朝某个方向移动
-     * @param direction 移动方向
-     */
-    move(direction: FaceDirection, time: number): Promise<void>;
-
-    /**
-     * 跳跃勇士至目标点
-     * @param x 目标点横坐标
-     * @param y 目标点纵坐标
-     * @param time 跳跃时长
-     * @param waitFollower 是否等待跟随者也跳跃完毕
-     */
-    jumpTo(
-        x: number,
-        y: number,
-        time: number,
-        waitFollower: boolean
-    ): Promise<void>;
-
-    /**
      * 设置勇士不透明度
      * @param alpha 不透明度
      */
@@ -139,18 +88,6 @@ export interface IMapHeroRenderer {
      * @param alpha 跟随者不透明度
      */
     setFollowerAlpha(identifier: string, alpha: number): void;
-
-    /**
-     * 设置勇士移动的动画播放方向，一般后退会使用反向播放的动画，前进使用正向播放的动画
-     * @param direction 动画方向
-     */
-    setHeroAnimateDirection(direction: HeroAnimateDirection): void;
-
-    /**
-     * 设置勇士朝向
-     * @param direction 勇士朝向，不填表示顺时针旋转
-     */
-    turn(direction?: FaceDirection): void;
 
     /**
      * 摧毁这个勇士渲染拓展，释放相关资源

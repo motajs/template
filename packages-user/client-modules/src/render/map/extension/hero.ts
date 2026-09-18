@@ -2,15 +2,14 @@ import {
     degradeFace,
     FaceDirection,
     getFaceMovement,
-    // @ts-expect-error 需要重构
-    HeroAnimateDirection,
-    // @ts-expect-error 需要重构
-    IHeroMoveController,
-    // @ts-expect-error 需要重构
-    IHeroMoveControllerHooks,
-    nextFaceDirection
+    IObjectMover,
+    IObjectMoverHooks,
+    nextFaceDirection,
+    ObjectAnimDirection,
+    ObjectMoveStep,
+    ObjectMoveType
 } from '@user/data-common';
-import { IMapLayer } from '@user/data-base';
+import { IHeroLocation, IHeroLocationHooks, IMapLayer } from '@user/data-base';
 import { IMapRenderer, IMapRendererTicker, IMovingBlock } from '../types';
 import { isNil } from 'lodash-es';
 import { IHookController, logger } from '@motajs/common';
@@ -50,15 +49,17 @@ interface HeroRenderEntity {
     /** 移动的 `Promise`，移动完成时兑现，如果停止，则一直是兑现状态 */
     promise: Promise<void>;
     /** 勇士移动的动画方向 */
-    animateDirection: HeroAnimateDirection;
+    animateDirection: ObjectAnimDirection;
 }
 
 export class MapHeroRenderer implements IMapHeroRenderer {
     private static readonly splitter: ITextureSplitter<number> =
         new TextureRowSplitter();
 
-    /** 勇士钩子 */
-    readonly controller: IHookController<IHeroMoveControllerHooks>;
+    /** 勇士位置钩子 */
+    readonly locationController: IHookController<IHeroLocationHooks>;
+    /** 勇士移动钩子 */
+    readonly moverController: IHookController<IObjectMoverHooks<IHeroLocation>>;
     /** 勇士每个朝向的贴图对象 */
     readonly textureMap: Map<FaceDirection, IMaterialFramedData> = new Map();
     /** 勇士渲染实体，与 `entities[0]` 同引用 */
@@ -76,17 +77,20 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     constructor(
         readonly renderer: IMapRenderer,
         readonly layer: IMapLayer,
-        readonly hero: IHeroMoveController
+        readonly hero: IHeroLocation
     ) {
-        this.controller = hero.addHook(new MapHeroHook(this));
-        this.controller.load();
+        const hook = new MapHeroHook(this);
+        this.locationController = hero.addHook(hook);
+        this.locationController.load();
+        this.moverController = hero.mover.addHook(hook);
+        this.moverController.load();
         const moving = this.addHeroMoving(renderer, layer, hero);
         const heroEntity: HeroRenderEntity = {
             block: moving,
             identifier: '',
             targetX: hero.x,
             targetY: hero.y,
-            direction: hero.direction,
+            direction: hero.getCurrentFaceDirection(),
             nextDirection: FaceDirection.Unknown,
             moving: false,
             animating: false,
@@ -94,7 +98,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
             lastAnimateTime: 0,
             animateFrame: 0,
             promise: Promise.resolve(),
-            animateDirection: HeroAnimateDirection.Forward
+            animateDirection: ObjectAnimDirection.Forward
         };
         this.heroEntity = heroEntity;
         this.entities.push(heroEntity);
@@ -110,19 +114,23 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     private addHeroMoving(
         renderer: IMapRenderer,
         layer: IMapLayer,
-        hero: IHeroMoveController
+        hero: IHeroLocation
     ) {
-        if (isNil(hero.image)) {
+        // @ts-expect-error 需要重构（贴图别名来源属 D-18，待用户先改数据端后处理）
+        const imageAlias = hero.image;
+        if (isNil(imageAlias)) {
             logger.warn(88);
             return renderer.addMovingBlock(layer, 0, hero.x, hero.y);
         }
-        const image = this.renderer.manager.getImageByAlias(hero.image);
+        const image = this.renderer.manager.getImageByAlias(imageAlias);
         if (!image) {
-            logger.warn(89, hero.image);
+            logger.warn(89, imageAlias);
             return renderer.addMovingBlock(layer, 0, hero.x, hero.y);
         }
         this.updateHeroTexture(image);
-        const tex = this.textureMap.get(degradeFace(hero.direction));
+        const tex = this.textureMap.get(
+            degradeFace(hero.getCurrentFaceDirection())
+        );
         if (!tex) {
             return renderer.addMovingBlock(layer, 0, hero.x, hero.y);
         }
@@ -167,7 +175,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
             if (v.animating) {
                 const dt = time - v.lastAnimateTime;
                 if (dt > v.animateInterval) {
-                    if (v.animateDirection === HeroAnimateDirection.Forward) {
+                    if (v.animateDirection === ObjectAnimDirection.Forward) {
                         v.animateFrame++;
                     } else {
                         v.animateFrame--;
@@ -190,7 +198,9 @@ export class MapHeroRenderer implements IMapHeroRenderer {
 
     setImage(image: ITexture): void {
         this.updateHeroTexture(image);
-        const tex = this.textureMap.get(degradeFace(this.hero.direction));
+        const tex = this.textureMap.get(
+            degradeFace(this.hero.getCurrentFaceDirection())
+        );
         if (!tex) return;
         this.heroEntity.block.setTexture(tex);
     }
@@ -369,7 +379,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
             lastAnimateTime: 0,
             animateFrame: 0,
             promise: Promise.resolve(),
-            animateDirection: HeroAnimateDirection.Forward
+            animateDirection: ObjectAnimDirection.Forward
         };
         moving.useSpecifiedFrame(0);
         this.entities.push(entity);
@@ -434,7 +444,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
         follower.block.setAlpha(alpha);
     }
 
-    setHeroAnimateDirection(direction: HeroAnimateDirection): void {
+    setHeroAnimateDirection(direction: ObjectAnimDirection): void {
         this.heroEntity.animateDirection = direction;
     }
 
@@ -450,11 +460,14 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     }
 
     destroy() {
-        this.controller.unload();
+        this.locationController.unload();
+        this.moverController.unload();
     }
 }
 
-class MapHeroHook implements Partial<IHeroMoveControllerHooks> {
+class MapHeroHook implements Partial<
+    IHeroLocationHooks & IObjectMoverHooks<IHeroLocation>
+> {
     constructor(readonly hero: MapHeroRenderer) {}
 
     onSetImage(image: ImageIds): void {
@@ -466,33 +479,55 @@ class MapHeroHook implements Partial<IHeroMoveControllerHooks> {
         this.hero.setImage(texture);
     }
 
-    onSetPosition(x: number, y: number): void {
+    onSetPos(x: number, y: number): void {
+        if (this.hero.hero.mover.moving) return;
         this.hero.setPosition(x, y);
     }
 
-    onTurnHero(direction: FaceDirection): void {
-        this.hero.turn(direction);
-    }
-
-    onStartMove(): void {
+    async onMoveStart(): Promise<void> {
         this.hero.startMove();
     }
 
-    onMoveHero(direction: FaceDirection, time: number): Promise<void> {
-        return this.hero.move(direction, time);
+    async onMoveEnd(): Promise<void> {
+        await this.hero.waitMoveEnd();
     }
 
-    onEndMove(): Promise<void> {
-        return this.hero.waitMoveEnd();
-    }
-
-    onJumpHero(
-        x: number,
-        y: number,
-        time: number,
-        waitFollower: boolean
+    async onStepEnd(
+        _code: number,
+        step: Readonly<ObjectMoveStep>,
+        tile: IHeroLocation,
+        mover: IObjectMover<IHeroLocation>
     ): Promise<void> {
-        return this.hero.jumpTo(x, y, time, waitFollower);
+        this.hero.setHeroAnimateDirection(mover.currAnimDir);
+        switch (step.type) {
+            case ObjectMoveType.Dir:
+                return this.hero.move(step.move, mover.currentSpeed);
+            case ObjectMoveType.DirFace:
+                this.hero.turn(step.face);
+                return this.hero.move(step.move, mover.currentSpeed);
+            case ObjectMoveType.Special:
+                return this.hero.move(mover.moveDirection, mover.currentSpeed);
+            case ObjectMoveType.Face:
+                this.hero.turn(step.value);
+                break;
+            case ObjectMoveType.Teleport:
+                this.hero.setPosition(tile.x, tile.y);
+                break;
+            case ObjectMoveType.Jump:
+                return this.hero.jumpTo(
+                    tile.x,
+                    tile.y,
+                    mover.currentSpeed,
+                    false
+                );
+            case ObjectMoveType.AnimDir:
+            case ObjectMoveType.Speed:
+                break;
+        }
+    }
+
+    onSetFaceDir(dir: FaceDirection): void {
+        this.hero.turn(dir);
     }
 
     onSetAlpha(alpha: number): void {
