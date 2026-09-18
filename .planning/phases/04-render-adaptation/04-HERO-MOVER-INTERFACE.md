@@ -43,19 +43,111 @@ Phase 4 第二步（D-17）：04-01 的只读对账把主要失配点定位在**
 
 ## 数据端现行接口
 
-（Task 2 横向补齐成员级清单）
+**`data-common` 移动器族（`packages-user/data-common/src/common/mover.ts`）：**
 
+- **`ObjectMoveType`**（步骤类型枚举：`Dir` / `DirFace` / `Speed` / `Face` / `Special` / `AnimDir` / `Teleport` / `Jump`）：`packages-user/data-common/src/common/mover.ts:14`
+- **`ObjectSpecialStep`**（`Forward` / `Backward`）：`packages-user/data-common/src/common/mover.ts:33`
+- **`ObjectAnimDirection`**（`Forward` / `Backward`；替代渲染端 `HeroAnimateDirection`）：`packages-user/data-common/src/common/mover.ts:40`
 - **`IObjectMovable`**（`x` / `y` / `setPos` / `getCurrentFaceDirection`）：`packages-user/data-common/src/common/mover.ts:47`
+- **`IObjectMoveStepDir` / `IObjectMoveStepDirFace` / `IObjectMoveStepSpeed` / `IObjectMoveStepFace` / `IObjectMoveStepSpecial` / `IObjectMoveAnimDir` / `IObjectMoveTP` / `IObjectMoveJump`**：`packages-user/data-common/src/common/mover.ts:66` 起
+- **`ObjectMoveStep`**（上述各步骤的联合类型）：`packages-user/data-common/src/common/mover.ts:132`
+- **`IMoverController`**（`done` / `onEnd` / `push(...steps)` / `insert(...steps)` / `stop()`）：`packages-user/data-common/src/common/mover.ts:142`
+- **`IObjectMoverHooks<T>`**（`onMoveStart` / `onMoveEnd` / `onStepStart` / `onStepEnd` / `onSetPos` / `onSetFaceDir` / `onSetMoveDir`）：`packages-user/data-common/src/common/mover.ts:166`
+- **`IObjectMover<T>`**（`moving` / `tile` / `faceDirection` / `moveDirection` / `currAnimDir` / `currentSpeed` / `faceHandler` / `setPos` / `setFaceDir` / `setMoveDir` / `tp` / `jump` / `step` / `stepFace` / `forward` / `backward` / `speed` / `face` / `animDir` / `push` / `clear` / `start`，extends `IHookable<IObjectMoverHooks<T>>`）：`packages-user/data-common/src/common/mover.ts:235`
+- **`ObjectMover<T>` 基类**（`moveQueue` / `start()` 实现）：`packages-user/data-common/src/common/mover.ts:357`（队列 `:364`、`start` `:689`）
+
+**`data-base/hero` 位置移动族：**
+
+- **`IHeroLocationHooks`**（`onSetPos` / `onSetFloor`）：`packages-user/data-base/src/hero/types.ts:277`
+- **`IHeroLocation`**（`floorId` / `map` / `mover`，extends `IObjectMovable`）：`packages-user/data-base/src/hero/types.ts:303`
+- **`HeroMoveCode`** / **`IHeroMoveTopHandler`** / **`IHeroMoveTopImpl`** / **`IHeroMoverConfig`**：`packages-user/data-base/src/hero/types.ts:327` / `:338` / `:351` / `:390`
 - **`IHeroMover<T>`**（`config` / `getConfig` / `useTopImplementation`，extends `IObjectMover<T>`）：`packages-user/data-base/src/hero/types.ts:399`
-- **barrel 实际导出核对**：`packages-user/data-common/src/index.ts:1` → `packages-user/data-common/src/common/index.ts:4`；`packages-user/data-base/src/index.ts:3` → `packages-user/data-base/src/hero/index.ts:8`
+- **`IHeroFollower`**：`packages-user/data-base/src/hero/types.ts:464`
+- **`IHeroFollowersControllerHooks`**（`onAddFollower` / `onRemoveFollower` / `onGatherFollowers`）：`packages-user/data-base/src/hero/types.ts:486`
+- **`IHeroFollowersController`**（`addFollower` / `getFollower` / `getFollowersById` / `getAllFollowers` / `removeFollower` / `removeAllFollowers` / `gatherFollowers` / `gatherFollowersSync`）：`packages-user/data-base/src/hero/types.ts:508`
+- **`IHeroStateHooks`**（`onBeforeChangeFloor` / `onAfterChangeFloor`）：`packages-user/data-base/src/hero/types.ts:858`
+- **`IHeroState`**（`location` → `IHeroLocation`、`followers` → `IHeroFollowersController`）：`packages-user/data-base/src/hero/types.ts:889`
+- **`HeroMover<T>`**（`config` / `getConfig` / `useTopImplementation`，extends `ObjectMover<T>`）：`packages-user/data-base/src/hero/mover.ts:22`（配置 `:46` / `:59` / `:67`）
+
+**barrel 实际导出核对（D-05）：**
+
+- **`@user/data-common`**：`packages-user/data-common/src/index.ts:1` 转发 `./common` → `packages-user/data-common/src/common/index.ts:4` 转发 `./mover`；故 `IObjectMover` / `IMoverController` / `IObjectMoverHooks` / `IObjectMovable` / `ObjectAnimDirection` 可经 `@user/data-common` 取得。
+- **`@user/data-base`**：`packages-user/data-base/src/index.ts:3` 转发 `./hero` → `packages-user/data-base/src/hero/index.ts:8` 转发 `./mover`、`:10` 转发 `./types`；故 `HeroMover` / `IHeroMover` / `IHeroLocation` / `IHeroState` 可经 `@user/data-base` 取得。
+- **`@user/data-state`**：`packages-user/data-state/src/index.ts:1` 转发 `./hero`，但 `packages-user/data-state/src/hero/index.ts:1` 仅转发 `./moverImpl` / `:2` `./predicate` / `:3` `./types`，**未导出** `HeroMover` / `IMoveController`；渲染端 `packages-user/client-modules/src/action/move.ts:4` 从 `@user/data-state` import 二者因此失配（见 `#04-02-R-02`）。
+- **`@motajs/common`**：`IHookable.addHook` / `IHookController.load/unload` 契约位于 `packages/common/src/types.ts:81` / `:52`，由 `packages/common/src/hook.ts:24` 的 `Hookable.addHook` 实现（`hero.addHook` 的落点）。
 
 ## 渲染端现状
 
-（Task 2 横向补齐使用点清单）
+**`render/map/extension/hero.ts`（`MapHeroRenderer` / `MapHeroHook`）：**
 
-- **`MapHeroRenderer` 构造器**（`hero.addHook` / `hero.x` / `hero.y` / `hero.direction`）：`packages-user/client-modules/src/render/map/extension/hero.ts:76`
-- **`hero.addHook(new MapHeroHook(this))`**：`packages-user/client-modules/src/render/map/extension/hero.ts:81`
-- **`HeroKeyMover`**（移动器使用面）：`packages-user/client-modules/src/action/move.ts:11`
+- 构造器（`hero.addHook(new MapHeroHook(this))` / `hero.x` / `hero.y` / `hero.direction`）：`packages-user/client-modules/src/render/map/extension/hero.ts:76-102`
+- `addHeroMoving`（`hero.image` 贴图别名读取 `:115` / `:119` / `:121` —— 属贴图子系统，按 D-18 排除，不进入对账与候选）：`packages-user/client-modules/src/render/map/extension/hero.ts:110`
+- `updateHeroTexture`（贴图，按 D-18 排除）：`packages-user/client-modules/src/render/map/extension/hero.ts:138`
+- `tick`（`HeroAnimateDirection.Forward` 使用点 `:170`）：`packages-user/client-modules/src/render/map/extension/hero.ts:165`
+- `setImage`（贴图，按 D-18 排除）：`packages-user/client-modules/src/render/map/extension/hero.ts:191`
+- `setAlpha`（alpha，按 D-18 排除）：`packages-user/client-modules/src/render/map/extension/hero.ts:198`
+- `setPosition`：`packages-user/client-modules/src/render/map/extension/hero.ts:202`
+- `moveEntity`：`packages-user/client-modules/src/render/map/extension/hero.ts:215`
+- `jumpEntity`：`packages-user/client-modules/src/render/map/extension/hero.ts:264`
+- `startMove`：`packages-user/client-modules/src/render/map/extension/hero.ts:282`
+- `waitMoveEnd`：`packages-user/client-modules/src/render/map/extension/hero.ts:295`
+- `stopMove`：`packages-user/client-modules/src/render/map/extension/hero.ts:300`
+- `move`：`packages-user/client-modules/src/render/map/extension/hero.ts:307`
+- `jumpTo`：`packages-user/client-modules/src/render/map/extension/hero.ts:316`
+- `addFollower`：`packages-user/client-modules/src/render/map/extension/hero.ts:341`
+- `removeFollower`：`packages-user/client-modules/src/render/map/extension/hero.ts:378`
+- `removeAllFollowers`：`packages-user/client-modules/src/render/map/extension/hero.ts:424`
+- `setFollowerAlpha`（alpha，按 D-18 排除）：`packages-user/client-modules/src/render/map/extension/hero.ts:431`
+- `setHeroAnimateDirection`：`packages-user/client-modules/src/render/map/extension/hero.ts:437`
+- `turn`：`packages-user/client-modules/src/render/map/extension/hero.ts:441`
+- `MapHeroHook`（`Partial<IHeroMoveControllerHooks>`；`onSetImage` / `onSetAlpha` / `onSetFollowerAlpha` 属贴图 / alpha 子系统按 D-18 排除；移动 / 位置 / 跟随者钩子 `onSetPosition` / `onTurnHero` / `onStartMove` / `onMoveHero` / `onEndMove` / `onJumpHero` / `onAddFollower` / `onRemoveFollower` / `onRemoveAllFollowers` 见 `:469-512`）：`packages-user/client-modules/src/render/map/extension/hero.ts:457`
+
+**`render/map/extension/types.ts`：**
+
+- `IMapExtensionManager.heroMap`（键类型 `IHeroMoveController`）：`packages-user/client-modules/src/render/map/extension/types.ts:15`
+- `addHero` / `removeHero`（参数 `IHeroMoveController`）：`packages-user/client-modules/src/render/map/extension/types.ts:26` / `:35`
+- `IMapHeroRenderer` 契约（`setImage` / `addFollower` / `removeFollower` / `removeAllFollowers` / `setPosition` / `startMove` / `waitMoveEnd` / `stopMove` / `move` / `jumpTo` / `setAlpha` / `setFollowerAlpha` / `setHeroAnimateDirection` / `turn`）：`packages-user/client-modules/src/render/map/extension/types.ts:63`
+- `setHeroAnimateDirection(direction: HeroAnimateDirection)`：`packages-user/client-modules/src/render/map/extension/types.ts:147`
+
+**`render/map/extension/manager.ts`：**
+
+- `// @ts-expect-error 需要重构` + `import { IHeroMoveController } from '@user/data-base'`：`packages-user/client-modules/src/render/map/extension/manager.ts:1-2`
+- `heroMap` / `addHero` / `removeHero`：`packages-user/client-modules/src/render/map/extension/manager.ts:18` / `:26` / `:39`
+
+**`action/move.ts`（`HeroKeyMover` 全类）：**
+
+- `// @ts-expect-error 需要重构` + `import { HeroMover, IMoveController } from '@user/data-state'`：`packages-user/client-modules/src/action/move.ts:3-4`
+- `class HeroKeyMover` / `controller?: IMoveController` / `mover: HeroMover`：`packages-user/client-modules/src/action/move.ts:11` / `:19` / `:29`
+- legacy 门控 `core.isReplaying()` / `core.isPlaying()` / `core.waitHeroToStop()` / `core.status.lockControl`：`packages-user/client-modules/src/action/move.ts:66` / `:97` / `:123` / `:156`
+- `this.mover.oneStep(this.moveDir)` / `this.mover.startMove(false, false, false, true)`：`packages-user/client-modules/src/action/move.ts:125`
+- `controller.onEnd.then(...)`：`packages-user/client-modules/src/action/move.ts:130`
+- `this.mover.on('stepEnd', this.onStepEnd)`：`packages-user/client-modules/src/action/move.ts:137`
+- `con.queue.length` / `con.push({ type: 'dir', value: this.moveDir })`：`packages-user/client-modules/src/action/move.ts:169`
+- `this.controller?.stop()` / `this.mover.off('stepEnd', this.onStepEnd)`：`packages-user/client-modules/src/action/move.ts:145` / `:180`
+
+**`client.ts` 接线点：**
+
+- 被注释的 `this.mainMapExtension.addHero(this.hero.mover, layer)`：`packages-user/client-modules/src/client.ts:148`
+
+**`render/map/{moving,status,renderer}.ts`（仅移动器契约参考，不登记为独立对账对象）：**
+
+- `IMovingBlock` / `addMovingBlock` / `getMovingBlock` / `updateMoving`：`packages-user/client-modules/src/render/map/types.ts:194` / `:534` / `:544` / `:1101`
+- `IMovingRenderer` / `MovingBlock`：`packages-user/client-modules/src/render/map/moving.ts:8` / `:26`
+- `MapRenderer.addMovingBlock` / `requestTicker`：`packages-user/client-modules/src/render/map/renderer.ts:1616` / `:1698`
+- `StaticBlockStatus` / `DynamicBlockStatus`：`packages-user/client-modules/src/render/map/status.ts:4` / `:39`
+
+**`// @ts-expect-error 需要重构` 清单位置（被查两包全部出现点）：**
+
+- `packages-user/client-modules/src/action/move.ts:3`
+- `packages-user/client-modules/src/render/map/extension/hero.ts:5`
+- `packages-user/client-modules/src/render/map/extension/hero.ts:7`
+- `packages-user/client-modules/src/render/map/extension/hero.ts:9`
+- `packages-user/client-modules/src/render/map/extension/manager.ts:1`
+- `packages-user/client-modules/src/render/map/extension/types.ts:4`
+- `packages-user/client-modules/src/render/map/extension/types.ts:6`
+- `packages-user/client-modules/src/render/ui/main.tsx:28`（非勇士移动，属 D-11 属性读取）
+- `packages-user/client-modules/src/render/ui/main.tsx:247`（非勇士移动，属 `state.maps` 类型错配）
+- `packages-user/client-modules/src/render/ui/statistics.tsx:10`（非勇士移动，属 D-11）
 
 ## 逐成员对账（匹配 / 渲染端需改 / 数据端缺失）
 
