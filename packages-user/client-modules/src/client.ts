@@ -1,4 +1,4 @@
-import { ICoreState } from '@user/data-state';
+import { CoreState } from '@user/data-state';
 import { IClientCore } from './types';
 import {
     IMotaAudioContext,
@@ -15,7 +15,9 @@ import {
     IAutotileProcessor,
     MotaAssetsLoader,
     MaterialManager,
-    AutotileProcessor
+    AutotileProcessor,
+    ISaveSystem,
+    SaveSystem
 } from '@user/client-base';
 import {
     IMapRenderer,
@@ -41,9 +43,12 @@ import {
 import { loading } from '@user/data-base';
 import { fallbackLoad } from './fallback/load';
 
-export class ClientCore implements IClientCore {
-    readonly loader: IMotaAssetsLoader;
+export class ClientCore extends CoreState implements IClientCore {
+    // Layer 4 渲染基础层
+    readonly save: ISaveSystem;
 
+    // Layer 5 渲染顶层
+    readonly loader: IMotaAssetsLoader;
     readonly materials: IMaterialManager;
     readonly autotile: IAutotileProcessor;
 
@@ -57,7 +62,14 @@ export class ClientCore implements IClientCore {
     readonly soundPlayer: ISoundPlayer<SoundIds>;
     readonly bgmPlayer: IBGMPlayer<BgmIds>;
 
-    constructor(public data: ICoreState) {
+    constructor() {
+        super();
+
+        //#region Layer 4
+
+        this.save = new SaveSystem();
+        this.save.init(`@game/${core.firstData.name}`);
+
         //#region 音频系统
 
         this.audioContext = new MotaAudioContext();
@@ -74,8 +86,8 @@ export class ClientCore implements IClientCore {
         //#endregion
 
         this.loader = new MotaAssetsLoader(
-            data.loadProgress,
-            data.dataLoader,
+            this.loadProgress,
+            this.dataLoader,
             this.audioContext,
             this.soundPlayer,
             this.materials
@@ -114,12 +126,12 @@ export class ClientCore implements IClientCore {
             // 使用分频器，用户可以在设置中调整，如果设备性能较差调高分频有助于提高性能表现
             excitaion: excitationDivider
         });
-        this.mainMapRenderer = new MapRenderer(this.materials, data.layer);
+        this.mainMapRenderer = new MapRenderer(this.materials);
         this.mainMapExtension = new MapExtensionManager(this.mainMapRenderer);
 
         // 兼容层
         loading.once('assetBuilt', () => {
-            this.createMainExtension();
+            this.initMapExtensions();
         });
 
         //#endregion
@@ -128,24 +140,16 @@ export class ClientCore implements IClientCore {
     /**
      * 进行地图渲染拓展初始化
      */
-    private async createMainExtension() {
+    private async initMapExtensions() {
         // 算是一种妥协吧，等之后加载系统重构之后应该会清晰很多
         await this.materials.trackedAsset.then();
 
         this.mainMapRenderer.useAsset(this.materials.trackedAsset);
-        const layer = this.data.layer.getLayerByAlias('event');
-        if (layer) {
-            this.mainMapExtension.addHero(this.data.hero.mover, layer);
-            this.mainMapExtension.addDoor(layer);
-        }
+        // const layer = this.maps.getLayerByAlias('event');
+        // if (layer) {
+        //     this.mainMapExtension.addHero(this.hero.mover, layer);
+        //     this.mainMapExtension.addDoor(layer);
+        // }
         this.mainMapExtension.addText();
-    }
-
-    bindDataState(state: ICoreState): void {
-        this.data = state;
-    }
-
-    getDataState(): ICoreState {
-        return this.data;
     }
 }

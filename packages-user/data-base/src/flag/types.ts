@@ -1,3 +1,5 @@
+import { ISaveableContent } from '@user/data-common';
+
 //#region 字段
 
 export interface IFlagCommonField<T> {
@@ -42,7 +44,7 @@ export interface IFlagSystemSave {
     readonly fields: Map<PropertyKey, any>;
 }
 
-export interface IFlagSystem {
+export interface IFlagSystem extends ISaveableContent<IFlagSystemSave> {
     /**
      * 判断一个字段是否被占用，类似于旧样板的 `core.hasFlag`
      * @param field 字段名称
@@ -54,7 +56,7 @@ export interface IFlagSystem {
      * @param field 字段名称
      * @param value 字段值
      */
-    insertField<T>(field: PropertyKey, value: T): IFlagCommonField<T>;
+    setField<T>(field: PropertyKey, value: T): IFlagCommonField<T>;
 
     /**
      * 获取指定字段对象
@@ -131,17 +133,6 @@ export interface IFlagSystem {
      * @param defaultValue 字段默认值
      */
     getFieldValueDefaults<T>(field: PropertyKey, defaultValue: T): T;
-
-    /**
-     * 对 Flag 系统进行结构化复制，形成存档对象
-     */
-    saveState(): IFlagSystemSave;
-
-    /**
-     * 从指定存档对象读取信息
-     * @param state 存档对象
-     */
-    loadState(state: IFlagSystemSave): void;
 }
 
 //#endregion

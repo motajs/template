@@ -2367,18 +2367,7 @@ ui.prototype._drawNotes = function () {
 
 ////// 绘制快捷商店选择栏 //////
 ui.prototype._drawQuickShop = function () {
-    const shop = Mota.require('@user/legacy-plugin-data');
-    core.status.event.id = 'selectShop';
-    var shopList = core.status.shops,
-        keys = shop.listShopIds();
-    var choices = keys.map(function (shopId) {
-        return {
-            text: shopList[shopId].textInList,
-            color: shop.isShopVisited(shopId) ? null : '#999999'
-        };
-    });
-    choices.push('返回游戏');
-    this.drawChoices2(null, choices, void 0, true);
+    // Deprecated.
 };
 
 ui.prototype._drawSyncSave = function () {

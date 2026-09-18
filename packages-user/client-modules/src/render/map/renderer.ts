@@ -30,7 +30,7 @@ import {
     MapTileBehavior,
     MapTileSizeTestMode
 } from './types';
-import { ILayerState, ILayerStateHooks, IMapLayer } from '@user/data-state';
+import { IGameMap, IGameMapHooks, IMapLayer } from '@user/data-base';
 import { IHookController, logger } from '@motajs/common';
 import { compileProgramWith } from '@motajs/client-base';
 import { isNil, maxBy } from 'lodash-es';
@@ -78,9 +78,9 @@ export class MapRenderer
     assetWidth: number = 4096;
     assetHeight: number = 4096;
 
-    layerState: ILayerState;
+    map: IGameMap | null = null;
     /** 地图状态钩子控制器 */
-    private layerStateHook: IHookController<ILayerStateHooks>;
+    private mapHook: IHookController<IGameMapHooks> | null = null;
 
     /** 排序后的图层 */
     private sortedLayers: IMapLayer[] = [];
@@ -205,13 +205,8 @@ export class MapRenderer
     /**
      * 创建地图渲染器
      * @param manager 素材管理器
-     * @param gl 画布 WebGL2 上下文
-     * @param transform 视角变换矩阵
      */
-    constructor(
-        readonly manager: IMaterialManager,
-        layerState: ILayerState
-    ) {
+    constructor(readonly manager: IMaterialManager) {
         this.movingIndexPool.push(
             ...Array.from({ length: this.movingCount }, (_, i) => i).reverse()
         );
@@ -219,11 +214,6 @@ export class MapRenderer
         this.gl = this.canvas.getContext('webgl2')!;
         this.transform = new Transform();
         this.transform.bind(this);
-        this.layerState = layerState;
-        this.layerStateHook = layerState.addHook(
-            new RendererLayerStateHook(this)
-        );
-        this.layerStateHook.load();
         // 上下文初始化要依赖于 offsetPool，因此提前调用
         const offsetPool = this.getOffsetPool();
         this.offsetPool = offsetPool;
@@ -414,40 +404,42 @@ export class MapRenderer
      * 图层排序
      */
     private sortLayer() {
-        this.sortedLayers = [...this.layerState.layerList].sort((a, b) => {
+        if (!this.map) return;
+        this.sortedLayers = [...this.map.layerList].sort((a, b) => {
             return a.zIndex - b.zIndex;
         });
         this.sortedLayers.forEach((v, i) => this.layerIndexMap.set(v, i));
     }
 
     updateLayerList() {
+        if (!this.map) return;
         this.sortLayer();
         this.resizeLayer();
-        this.layerCount = this.layerState.layerList.size;
+        this.layerCount = this.map.layerList.size;
         this.vertex.updateLayerArray();
     }
 
-    setLayerState(layerState: ILayerState): void {
-        if (layerState === this.layerState) return;
-        this.layerStateHook.unload();
-        this.layerState = layerState;
-        this.layerStateHook = layerState.addHook(
-            new RendererLayerStateHook(this)
-        );
-        this.layerStateHook.load();
+    setLayerState(map: IGameMap): void {
+        if (map === this.map) return;
+        this.mapHook?.unload();
+        this.map = map;
+        this.mapHook = map.addHook(new RendererLayerStateHook(this));
+        this.mapHook.load();
         this.sortLayer();
         this.resizeLayer();
-        this.layerCount = layerState.layerList.size;
+        this.layerCount = map.layerList.size;
         this.vertex.updateLayerArray();
         this.vertex.resizeMap();
     }
 
     getLayer(identifier: string): IMapLayer | null {
-        return this.layerState.getLayerByAlias(identifier) ?? null;
+        if (!this.map) return null;
+        return this.map.getLayerByAlias(identifier) ?? null;
     }
 
     hasLayer(layer: IMapLayer): boolean {
-        return this.layerState.hasLayer(layer);
+        if (!this.map) return false;
+        return this.map.hasLayer(layer);
     }
 
     getSortedLayer(): IMapLayer[] {
@@ -1735,7 +1727,7 @@ export class MapRenderer
     //#endregion
 }
 
-class RendererLayerStateHook implements Partial<ILayerStateHooks> {
+class RendererLayerStateHook implements Partial<IGameMapHooks> {
     constructor(readonly renderer: MapRenderer) {}
 
     onChangeBackground(tile: number): void {

@@ -114,6 +114,9 @@ importers:
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
+      '@types/madge':
+        specifier: ^5.0.3
+        version: 5.0.3
       '@types/node':
         specifier: ^22.19.15
         version: 22.19.15
@@ -273,9 +276,6 @@ importers:
       '@user/data-state':
         specifier: workspace:*
         version: link:../data-state
-      '@user/legacy-plugin-data':
-        specifier: workspace:*
-        version: link:../legacy-plugin-data
 
   packages-user/data-base:
     dependencies:
@@ -288,24 +288,24 @@ importers:
       '@motajs/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@user/data-common':
+        specifier: workspace:*
+        version: link:../data-common
 
-  packages-user/data-fallback:
+  packages-user/data-common:
     dependencies:
-      '@motajs/legacy-common':
+      '@motajs/anon-tokyo':
         specifier: workspace:*
-        version: link:../../packages/legacy-common
-      '@user/data-base':
+        version: link:../../packages/anon-tokyo
+      '@motajs/common':
         specifier: workspace:*
-        version: link:../data-base
-      '@user/data-state':
-        specifier: workspace:*
-        version: link:../data-state
-      '@user/data-utils':
-        specifier: workspace:*
-        version: link:../data-utils
+        version: link:../../packages/common
 
   packages-user/data-state:
     dependencies:
+      '@motajs/anon-tokyo':
+        specifier: workspace:*
+        version: link:../../packages/anon-tokyo
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
@@ -315,12 +315,21 @@ importers:
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
-      '@user/data-utils':
+      '@user/data-common':
         specifier: workspace:*
-        version: link:../data-utils
+        version: link:../data-common
+      '@user/data-system':
+        specifier: workspace:*
+        version: link:../data-system
 
-  packages-user/data-utils:
+  packages-user/data-system:
     dependencies:
+      '@motajs/anon-tokyo':
+        specifier: workspace:*
+        version: link:../../packages/anon-tokyo
+      '@motajs/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
@@ -336,9 +345,6 @@ importers:
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
-      '@motajs/legacy-client':
-        specifier: workspace:*
-        version: link:../../packages/legacy-client
       '@motajs/legacy-common':
         specifier: workspace:*
         version: link:../../packages/legacy-common
@@ -363,9 +369,6 @@ importers:
       '@user/client-modules':
         specifier: workspace:*
         version: link:../client-modules
-      '@user/legacy-plugin-client':
-        specifier: workspace:*
-        version: link:../legacy-plugin-client
 
   packages-user/entry-data:
     dependencies:
@@ -375,43 +378,19 @@ importers:
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
-      '@user/data-fallback':
+      '@user/data-common':
         specifier: workspace:*
-        version: link:../data-fallback
+        version: link:../data-common
       '@user/data-state':
         specifier: workspace:*
         version: link:../data-state
-      '@user/data-utils':
+      '@user/data-system':
         specifier: workspace:*
-        version: link:../data-utils
-      '@user/legacy-plugin-data':
-        specifier: workspace:*
-        version: link:../legacy-plugin-data
-
-  packages-user/legacy-plugin-client:
-    dependencies:
-      '@user/client-modules':
-        specifier: workspace:*
-        version: link:../client-modules
-      '@user/data-state':
-        specifier: workspace:*
-        version: link:../data-state
-
-  packages-user/legacy-plugin-data:
-    dependencies:
-      '@user/data-base':
-        specifier: workspace:*
-        version: link:../data-base
-      '@user/data-state':
-        specifier: workspace:*
-        version: link:../data-state
-      '@user/data-utils':
-        specifier: workspace:*
-        version: link:../data-utils
-
-  packages-user/types: {}
+        version: link:../data-system
 
   packages/animate: {}
+
+  packages/anon-tokyo: {}
 
   packages/audio:
     dependencies:
@@ -432,22 +411,7 @@ importers:
 
   packages/common: {}
 
-  packages/legacy-client:
-    dependencies:
-      '@motajs/legacy-system':
-        specifier: workspace:*
-        version: link:../legacy-system
-      '@motajs/legacy-ui':
-        specifier: workspace:*
-        version: link:../legacy-ui
-
   packages/legacy-common:
-    dependencies:
-      '@motajs/common':
-        specifier: workspace:*
-        version: link:../common
-
-  packages/legacy-data:
     dependencies:
       '@motajs/common':
         specifier: workspace:*
@@ -2317,6 +2281,9 @@ packages:
 
   '@types/lodash@4.17.24':
     resolution: {integrity: sha512-gIW7lQLZbue7lRSWEFql49QJJWThrTFFeIMJdp3eH4tKoxm1OvEPg02rm4wCCSHS0cL3/Fizimb35b7k8atwsQ==}
+
+  '@types/madge@5.0.3':
+    resolution: {integrity: sha512-NlQJd0qRAoyu+pawTDhLxkW940QT2dqASfwd2g/xEZu2F4Xjwa7TVRSPdbmZwUF1ygvAh0/nepeN7JjwEuOXCA==}
 
   '@types/markdown-it@14.1.2':
     resolution: {integrity: sha512-promo4eFwuiW+TfGxhi+0x3czqTYJkG8qB17ZUJiVF10Xm7NLVRSLUsfRTU/6h1e24VvRnXCx+hG7li58lkzog==}
@@ -8206,6 +8173,10 @@ snapshots:
       '@types/lodash': 4.17.24
 
   '@types/lodash@4.17.24': {}
+
+  '@types/madge@5.0.3':
+    dependencies:
+      '@types/node': 22.19.15
 
   '@types/markdown-it@14.1.2':
     dependencies:

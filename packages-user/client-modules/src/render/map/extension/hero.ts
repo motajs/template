@@ -2,12 +2,15 @@ import {
     degradeFace,
     FaceDirection,
     getFaceMovement,
+    // @ts-expect-error 需要重构
     HeroAnimateDirection,
-    IHeroMover,
-    IHeroMovingHooks,
+    // @ts-expect-error 需要重构
+    IHeroMoveController,
+    // @ts-expect-error 需要重构
+    IHeroMoveControllerHooks,
     nextFaceDirection
-} from '@user/data-base';
-import { IMapLayer, state } from '@user/data-state';
+} from '@user/data-common';
+import { IMapLayer } from '@user/data-base';
 import { IMapRenderer, IMapRendererTicker, IMovingBlock } from '../types';
 import { isNil } from 'lodash-es';
 import { IHookController, logger } from '@motajs/common';
@@ -15,6 +18,7 @@ import { BlockCls, IMaterialFramedData } from '@user/client-base';
 import { ITexture, ITextureSplitter, TextureRowSplitter } from '@motajs/render';
 import { IMapHeroRenderer } from './types';
 import { TimingFn } from 'mutate-animate';
+import { state } from '@user/data-state';
 
 /** 默认的移动时长 */
 const DEFAULT_TIME = 100;
@@ -54,7 +58,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
         new TextureRowSplitter();
 
     /** 勇士钩子 */
-    readonly controller: IHookController<IHeroMovingHooks>;
+    readonly controller: IHookController<IHeroMoveControllerHooks>;
     /** 勇士每个朝向的贴图对象 */
     readonly textureMap: Map<FaceDirection, IMaterialFramedData> = new Map();
     /** 勇士渲染实体，与 `entities[0]` 同引用 */
@@ -72,7 +76,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     constructor(
         readonly renderer: IMapRenderer,
         readonly layer: IMapLayer,
-        readonly hero: IHeroMover
+        readonly hero: IHeroMoveController
     ) {
         this.controller = hero.addHook(new MapHeroHook(this));
         this.controller.load();
@@ -106,7 +110,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     private addHeroMoving(
         renderer: IMapRenderer,
         layer: IMapLayer,
-        hero: IHeroMover
+        hero: IHeroMoveController
     ) {
         if (isNil(hero.image)) {
             logger.warn(88);
@@ -450,7 +454,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     }
 }
 
-class MapHeroHook implements Partial<IHeroMovingHooks> {
+class MapHeroHook implements Partial<IHeroMoveControllerHooks> {
     constructor(readonly hero: MapHeroRenderer) {}
 
     onSetImage(image: ImageIds): void {

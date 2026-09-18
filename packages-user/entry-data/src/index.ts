@@ -1,14 +1,11 @@
 import { createMota } from './mota';
 import { create } from './create';
-import { patchAll } from '@user/data-fallback';
 import { loading } from '@user/data-base';
 import { Patch } from '@motajs/legacy-common';
 import { logger } from '@motajs/common';
-import { state } from '@user/data-state';
 
 export function createData() {
     createMota();
-    patchAll(state);
     create();
 
     if (main.replayChecking) {

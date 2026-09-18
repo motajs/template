@@ -1,0 +1,114 @@
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    logger
+} from '@motajs/common';
+import {
+    IReplayArray,
+    IReplayCommand,
+    IReplaySandbox,
+    IReplaySandboxConfig,
+    IReplaySystem,
+    IReplaySystemHooks,
+    IReplaySystemSave,
+    ReplayCommandWidth,
+    ReplayParamValue
+} from './types';
+import { ReplayArray } from './array';
+import { ReplaySandbox } from './sandbox';
+
+export class ReplaySystem
+    extends Hookable<IReplaySystemHooks>
+    implements IReplaySystem
+{
+    replaying: boolean = false;
+    sandbox: IReplaySandbox | null = null;
+    readonly array: IReplayArray;
+
+    /** 所有注册的指令 */
+    private readonly commands: Map<number, IReplayCommand> = new Map();
+
+    constructor() {
+        super();
+        this.array = new ReplayArray({
+            initCommandLength: 1000,
+            initParamLength: 10000,
+            commandExpandMultiplier: 1.2,
+            paramExpandMultiplier: 1.2,
+            commandWidth: ReplayCommandWidth.Uint8,
+            commandMaxLength: 1_000_000,
+            paramMaxLength: 10_000_000
+        });
+    }
+
+    protected createController(
+        hook: Partial<IReplaySystemHooks>
+    ): IHookController<IReplaySystemHooks> {
+        return new HookController(this, hook);
+    }
+
+    registerCommand(code: number, command: IReplayCommand): void {
+        if (this.commands.has(code)) {
+            logger.warn(163);
+            return;
+        }
+        this.commands.set(code, command);
+    }
+
+    getCommand(code: number): IReplayCommand | null {
+        return this.commands.get(code) ?? null;
+    }
+
+    record(code: number, ...params: ReplayParamValue[]): void {
+        this.array.add(code, params);
+        this.forEachHook(hook =>
+            hook.onRecordCommand?.(code, this.array.length - 1, params)
+        );
+    }
+
+    createReplaySandbox(
+        config: Readonly<IReplaySandboxConfig>
+    ): IReplaySandbox {
+        config.reseter.reset(config.save);
+        const sandbox = new ReplaySandbox(
+            config.route,
+            this,
+            config.startIndex ?? 0
+        );
+        this.sandbox = sandbox;
+        this.forEachHook(hook => hook.onCreateSandbox?.(sandbox));
+        return sandbox;
+    }
+
+    releaseSandbox(): void {
+        this.sandbox?.stop();
+        this.sandbox = null;
+    }
+
+    disable(): void {
+        this.array.disable();
+    }
+
+    revert(): void {
+        this.array.revert();
+    }
+
+    saveState(): IReplaySystemSave {
+        return {
+            length: this.array.length,
+            commandWidth: this.array.commandWidth,
+            commandArray: this.array.getCommandArray(),
+            paramArray: this.array.getParamArray()
+        };
+    }
+
+    loadState(state: IReplaySystemSave): void {
+        this.array.setReplayArray(
+            state.commandWidth,
+            state.commandArray,
+            state.paramArray,
+            state.length
+        );
+    }
+}

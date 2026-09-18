@@ -131,9 +131,6 @@ var functions_d6ad677b_427a_4623_b50f_a445a3b0ef8a = {
                     );
             }
 
-            // 根据分区信息自动砍层与恢复
-            Mota.require('@user/legacy-plugin-data')?.autoRemoveMaps?.(floorId);
-
             // ---------- 重绘新地图；这一步将会设置core.status.floorId ---------- //
             core.drawMap(floorId);
 

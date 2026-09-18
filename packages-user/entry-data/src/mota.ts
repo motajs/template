@@ -1,7 +1,6 @@
 import type * as Client from '@motajs/client';
 import type * as ClientBase from '@motajs/client-base';
 import type * as Common from '@motajs/common';
-import type * as LegacyClient from '@motajs/legacy-client';
 import type * as LegacyCommon from '@motajs/legacy-common';
 import type * as LegacySystem from '@motajs/legacy-system';
 import type * as LegacyUI from '@motajs/legacy-ui';
@@ -10,12 +9,10 @@ import type * as RenderVue from '@motajs/render-vue';
 import type * as System from '@motajs/system';
 import type * as UserClientBase from '@user/client-base';
 import type * as ClientModules from '@user/client-modules';
+import type * as DataCommon from '@user/data-common';
 import type * as DataBase from '@user/data-base';
-import type * as DataFallback from '@user/data-fallback';
+import type * as DataSystem from '@user/data-system';
 import type * as DataState from '@user/data-state';
-import type * as DataUtils from '@user/data-utils';
-import type * as LegacyPluginClient from '@user/legacy-plugin-client';
-import type * as LegacyPluginData from '@user/legacy-plugin-data';
 // ---------- 必要的第三方库
 import type * as MutateAnimate from 'mutate-animate';
 import type * as Vue from 'vue';
@@ -25,7 +22,6 @@ interface ModuleInterface {
     '@motajs/client': typeof Client;
     '@motajs/client-base': typeof ClientBase;
     '@motajs/common': typeof Common;
-    '@motajs/legacy-client': typeof LegacyClient;
     '@motajs/legacy-common': typeof LegacyCommon;
     '@motajs/legacy-system': typeof LegacySystem;
     '@motajs/legacy-ui': typeof LegacyUI;
@@ -34,12 +30,10 @@ interface ModuleInterface {
     '@motajs/system': typeof System;
     '@user/client-base': typeof UserClientBase;
     '@user/client-modules': typeof ClientModules;
+    '@user/data-common': typeof DataCommon;
     '@user/data-base': typeof DataBase;
-    '@user/data-fallback': typeof DataFallback;
+    '@user/data-system': typeof DataSystem;
     '@user/data-state': typeof DataState;
-    '@user/data-utils': typeof DataUtils;
-    '@user/legacy-plugin-client': typeof LegacyPluginClient;
-    '@user/legacy-plugin-data': typeof LegacyPluginData;
     // ---------- 必要的第三方库
     MutateAnimate: typeof MutateAnimate;
     Vue: typeof Vue;

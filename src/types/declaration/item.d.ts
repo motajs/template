@@ -98,6 +98,10 @@ interface Equip extends EquipBase {
  * 道具相关的内容
  */
 interface Items {
+    readonly items: {
+        [P in AllIdsOf<'items'>]: Item<P>;
+    };
+
     /**
      * @deprecated 可使用，2.C 将会有替代接口\
      * 获得所有道具

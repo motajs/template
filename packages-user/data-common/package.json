@@ -1,0 +1,7 @@
+{
+    "name": "@user/data-common",
+    "dependencies": {
+        "@motajs/anon-tokyo": "workspace:*",
+        "@motajs/common": "workspace:*"
+    }
+}

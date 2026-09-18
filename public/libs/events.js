@@ -2304,14 +2304,12 @@ events.prototype._action_unloadEquip = function (data, x, y, prefix) {
 };
 
 events.prototype._action_openShop = function (data, x, y, prefix) {
-    Mota.require('@user/legacy-plugin-data').setShopVisited(data.id, true);
-    if (data.open)
-        Mota.require('@user/legacy-plugin-data').openShop(data.id, true);
+    // Deprecated.
     core.doAction();
 };
 
 events.prototype._action_disableShop = function (data, x, y, prefix) {
-    Mota.require('@user/legacy-plugin-data').setShopVisited(data.id, false);
+    // Deprecated.
     core.doAction();
 };
 
@@ -3392,36 +3390,7 @@ events.prototype.openToolbox = function (fromUserAction) {
 
 ////// 点击快捷商店按钮时的打开操作 //////
 events.prototype.openQuickShop = function (fromUserAction) {
-    if (core.isReplaying()) return;
-    const shop = Mota.require('@user/legacy-plugin-data');
-
-    if (Object.keys(core.status.shops).length == 0) {
-        core.playSound('操作失败');
-        core.drawTip('本游戏没有快捷商店！');
-        return;
-    }
-
-    // --- 如果只有一个商店，则直接打开之
-    if (Object.keys(core.status.shops).length == 1) {
-        var shopId = Object.keys(core.status.shops)[0];
-        if (core.status.event.id != null) return;
-        if (!shop.canOpenShop(shopId)) {
-            core.playSound('操作失败');
-            core.drawTip('当前无法打开快捷商店！');
-            return;
-        }
-        var message = shop.canUseQuickShop(shopId);
-        if (message != null) {
-            core.playSound('操作失败');
-            core.drawTip(message);
-            return;
-        }
-        shop.openShop(shopId, false);
-        return;
-    }
-
-    if (!this._checkStatus('selectShop', fromUserAction)) return;
-    core.ui._drawQuickShop();
+    // Deprecated.
 };
 
 events.prototype.openKeyBoard = function (fromUserAction) {

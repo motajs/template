@@ -3,8 +3,7 @@ import {
     defineNonePropertySpecial,
     IEnemyManager
 } from '@user/data-base';
-import { getHeroStatusOn } from '../legacy/hero';
-import { IEnemyAttr } from './types';
+import { IEnemyAttr } from '@user/data-common';
 
 //#region 复合属性值类型
 
@@ -34,19 +33,19 @@ export interface IHaloValue {
 
 //#endregion
 
+// TODO: 注释需要更新
 /**
  * 注册所有怪物特殊属性到 enemyManager
+ *
  *
  * 属性实现位置一览（'./'表示当前文件夹  '../'表示上一级文件夹）：
  * 1. 调参类属性 | 仅影响战斗过程的属性：./damage.ts calDamageWithTurn 函数
  * 2. 地图伤害：./damage.ts DamageEnemy.calMapDamage 方法
  * 3. 光环属性：./damage.ts DamageEnemy.provideHalo 方法
- * 4. 仇恨 | 退化 等战后效果：packages-user/data-fallback/src/battle.ts 中的 afterBattle
- * 5. 中毒的每步效果：../state/move.ts HeroMover.onStepEnd 方法
- * 6. 中毒的瞬移效果：还在脚本编辑的 moveDirectly
- * 7. 衰弱效果：../state/hero.ts getHeroStatusOf 方法
- * 8. 重生属性：还在脚本编辑的 changingFloor
- * 9. 阻击 | 捕捉 的每步效果：packages-user/legacy-plugin-data/src/enemy/checkblock.ts
+ * 4. 中毒的每步效果：../state/move.ts HeroMover.onStepEnd 方法
+ * 5. 中毒的瞬移效果：还在脚本编辑的 moveDirectly
+ * 6. 衰弱效果：../state/hero.ts getHeroStatusOf 方法
+ * 7. 重生属性：还在脚本编辑的 changingFloor
  */
 export function registerSpecials(manager: IEnemyManager<IEnemyAttr>): void {
     manager.setAttributeDefaults('guard', new Set());
@@ -176,6 +175,7 @@ export function registerSpecials(manager: IEnemyManager<IEnemyAttr>): void {
                     const { vampire, add } = special.value;
                     return (
                         `战斗前，怪物首先吸取角色的${vampire}%生命` +
+                        // @ts-expect-error 需要重构
                         `（约${Math.floor((vampire / 100) * getHeroStatusOn('hp'))}点）作为伤害` +
                         (add ? `，并把伤害数值加到自身生命上。` : `。`)
                     );

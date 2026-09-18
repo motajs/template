@@ -1,0 +1,48 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": "v1.0",
+  "phases": [
+    {
+      "number": "1",
+      "name": "事件系统",
+      "status": "in_progress"
+    },
+    {
+      "number": "2",
+      "name": "寻路系统",
+      "status": "in_progress"
+    },
+    {
+      "number": "3",
+      "name": "数据端完成",
+      "status": "complete"
+    },
+    {
+      "number": "4",
+      "name": "渲染适配与双布局",
+      "status": "pending"
+    },
+    {
+      "number": "5",
+      "name": "Legacy 移植",
+      "status": "pending"
+    },
+    {
+      "number": "6",
+      "name": "单元测试",
+      "status": "in_progress"
+    },
+    {
+      "number": "7",
+      "name": "数据端缺陷修复",
+      "status": "complete"
+    }
+  ],
+  "next": {
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 07 of 7 · executing"
+  },
+  "updated_at": "2026-09-17T12:32:39.429Z"
+}

@@ -1,5 +1,6 @@
 import { KeyCode } from '@motajs/client-base';
 import { Hotkey, HotkeyData } from '@motajs/system';
+// @ts-expect-error 需要重构
 import { HeroMover, IMoveController } from '@user/data-state';
 import { Ticker } from 'mutate-animate';
 import { mainScope } from './hotkey';

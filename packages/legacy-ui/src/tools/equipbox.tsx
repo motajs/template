@@ -62,6 +62,7 @@ export function getNowStatus(nowEquip?: Equip, onCol: boolean = false) {
         'hpmax',
         'money'
     ] as (keyof SelectType<HeroStatus, number>)[];
+    // @ts-expect-error 需要重构
     const { getHeroStatusOn } = Mota.require('@user/data-state');
 
     return (

@@ -7,6 +7,7 @@ import {
 import { defineComponent } from 'vue';
 import { waitbox, ListPage, TextContent } from '../components';
 import { DefaultProps } from '@motajs/render-vue';
+// @ts-expect-error 需要重构
 import { ItemState } from '@user/data-state';
 
 // 未完工

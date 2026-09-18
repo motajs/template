@@ -1,7 +1,6 @@
 import { Mota } from '@user/entry-data';
 import * as Client from '@motajs/client';
 import * as ClientBase from '@motajs/client-base';
-import * as LegacyClient from '@motajs/legacy-client';
 import * as LegacySystem from '@motajs/legacy-system';
 import * as LegacyUI from '@motajs/legacy-ui';
 import * as Render from '@motajs/render';
@@ -9,7 +8,6 @@ import * as RenderVue from '@motajs/render-vue';
 import * as System from '@motajs/system';
 import * as UserClientBase from '@user/client-base';
 import * as ClientModules from '@user/client-modules';
-import * as LegacyPluginClient from '@user/legacy-plugin-client';
 import * as MutateAnimate from 'mutate-animate';
 import * as Vue from 'vue';
 import * as Lodash from 'lodash-es';
@@ -20,7 +18,6 @@ export function create() {
 
     Mota.register('@motajs/client', Client);
     Mota.register('@motajs/client-base', ClientBase);
-    Mota.register('@motajs/legacy-client', LegacyClient);
     Mota.register('@motajs/legacy-system', LegacySystem);
     Mota.register('@motajs/legacy-ui', LegacyUI);
     Mota.register('@motajs/render', Render);
@@ -28,7 +25,6 @@ export function create() {
     Mota.register('@motajs/system', System);
     Mota.register('@user/client-base', UserClientBase);
     Mota.register('@user/client-modules', ClientModules);
-    Mota.register('@user/legacy-plugin-client', LegacyPluginClient);
     Mota.register('MutateAnimate', MutateAnimate);
     Mota.register('Vue', Vue);
     Mota.register('Lodash', Lodash);

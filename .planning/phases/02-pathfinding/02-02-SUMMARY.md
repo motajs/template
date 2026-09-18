@@ -1,0 +1,415 @@
+---
+phase: 02-pathfinding
+plan: 02
+subsystem: pathfinding
+tags: [pathfinding, dijkstra, directed-graph, mover, pass-predicate, zero-dependency, logger-codes]
+
+# Dependency graph
+requires:
+  - phase: 02-pathfinding (plan 01)
+    provides: 拍板记录（P1 修复 go、D-08 触发语义、4 向图）、mover.test.ts 4 用例 skip 脚手架、用户提交的 path/types.ts 接口事实源（7a011b2）
+  - phase: 01-event-system
+    provides: IMapLayer/MapState/TileStore 地图数据面、IPassPredicate/IPassCheckHandler 通行检测接口、Fixture 测试模式
+provides:
+  - 修复后的 mover.ts 坐标回写（`||` 语义）+ 4/4 绿色 L0 回归，多步逐步移动自此坐标正确
+  - path/types.ts 用户授权的 moveTo/teleportTo 返回类型修正（`IPathfindingController | null`）
+  - L2 寻路纯计算核心：PathfindingGraphBuilder（有向图构建，注入 IPassPredicate + useDirGroup，Dir4 默认，终端节点分类，warn 173 边界守卫）
+  - PathfindingSystem + PathfindingFinder：自写 Dijkstra 最小损失搜索（默认每格损失 1，可注入 PathCostFunction，warn 174 损失守卫）、find/getPath 步骤序列、moveTo/teleportTo 控制器包装、PathFallbackPolicy 回退决策（null 默认逐步）、interrupt 占位
+  - logger.json 新码：warn 173（寻路输入非法）、warn 174（损失值非法）
+affects: [02-03, phase-04-rendering]
+
+# Actuals (#2632)
+actuals:
+  tokens: 13900        # chars/4 over realized diff（本计划 10 个文件，+1569/-8 行 + 类规则补丁）
+  tasks: 3
+  commits: 9           # MEASURED: git rev-list --count 9efadc9(plan_head_before)..HEAD；含 2 个用户穿插提交（0e6536f、ffedb80），本计划自身 7 个（3 任务 + 2 合规补丁 + 2 计划元数据文档）
+
+# Tech tracking
+tech-stack:
+  added: []            # 零新依赖（Dijkstra 自写 ~60 行，T-02-SC）
+  patterns:
+    - "L2 禁 import L3：通行性判定经 usePassPredicate 注入，谓词语义单一事实源由 02-03 重构后提供"
+    - "useDirGroup 经 IDirectionMapper.map(group) 解析邻域增量，增量→FaceDirection 单一映射函数"
+    - "每次寻路动态构建有向图、不缓存（数据端状态可变）"
+    - "logger 数字码集中登记（warn 173/174），非法输入告警 + 空结果守卫"
+
+key-files:
+  created:
+    - packages-user/data-system/src/path/graph.ts
+    - packages-user/data-system/src/path/graph.test.ts
+    - packages-user/data-system/src/path/finder.ts
+    - packages-user/data-system/src/path/system.ts
+    - packages-user/data-system/src/path/system.test.ts
+    - packages-user/data-system/src/path/index.ts
+  modified:
+    - packages-user/data-common/src/common/mover.ts
+    - packages-user/data-common/src/common/mover.test.ts
+    - packages-user/data-system/src/path/types.ts
+    - packages-user/data-system/src/index.ts
+    - packages/common/src/logger.json
+
+key-decisions:
+  - "floorId 解析经 maps.iterateAllMaps() 引用匹配（fromRaw 楼层默认 active=false，仅迭代激活楼层会使 02-03 的真实谓词拿不到 floorId）"
+  - "L2 取得移动器用结构化守卫 hasMover（'mover' in movable + IMovableWithMover 类型守卫），零 as 断言；IDynamicTile 等真实移动对象天然满足"
+  - "终端节点（canPass 且 shouldHit）在搜索层执行约束：可作路径终点、永不被扩展为中间节点；D-08 情形 1 相邻格可达性由 02-03 直接 find() 判定"
+  - "moveTo 恒为逐步（D-09 语义），回退策略仅作用于 teleportTo；策略 null 时默认必定逐步"
+  - "interrupt() 为计划声明的占位实现（停止进行中移动），接管时序由 02-03 Task 4 落地"
+
+patterns-established:
+  - "有向边判定由注入谓词完成，graph.ts 不含任何掩码语义（谓词为单一事实源）"
+  - "守卫形态：isNil/inMap → logger.warn(新码) → 返回空结果，不抛异常（照 mapDamage.ts 守卫）"
+
+requirements-completed: []  # PATH-01/PATH-02 为 02-02/02-03 共享声明，shared-ID 门（#2388）下 0/2 ready——待 02-03 SUMMARY 完成后标记
+
+# Coverage metadata (#1602)
+coverage:
+  - id: D1
+    description: mover.ts:651 坐标回写条件按拍板修复为 ||，x 正交/y 正交/斜向/传送 4 个回归用例全部翻绿
+    requirement: PATH-01
+    verification:
+      - kind: unit
+        ref: "packages-user/data-common/src/common/mover.test.ts#object mover position writeback (pnpm exec vitest run — 4 passed, 0 skipped)"
+        status: pass
+      - kind: other
+        ref: "git diff 断言：mover.ts 仅含 651 行条件一处变更"
+        status: pass
+    human_judgment: false
+  - id: D2
+    description: path/types.ts 用户授权的 moveTo/teleportTo 返回类型修正（追加 | null），除此之外零改动
+    requirement: PATH-01
+    verification:
+      - kind: other
+        ref: "git diff packages-user/data-system/src/path/types.ts 仅含两处返回类型行"
+        status: pass
+    human_judgment: false
+  - id: D3
+    description: 有向图构建：useDirGroup 经 IDirectionMapper 解析邻域（默认 Dir4 四正交）、注入 IPassPredicate 判边、单向门方向性、shouldHit 终端节点分类、未绑定图层 warn 173 空图守卫
+    requirement: PATH-01
+    verification:
+      - kind: unit
+        ref: "packages-user/data-system/src/path/graph.test.ts#pathfinding graph building (6 passed)"
+        status: pass
+    human_judgment: false
+  - id: D4
+    description: 最小损失搜索：默认每格损失 1 的最短步骤序列、自定义损失改变选路、损失守卫（非有限/负数 warn 174 按默认 1）、不可达返回空数组
+    requirement: PATH-01
+    verification:
+      - kind: unit
+        ref: "packages-user/data-system/src/path/system.test.ts#pathfinding system (12 passed)"
+        status: pass
+    human_judgment: false
+  - id: D5
+    description: 仅取路径 getPath（不移动）、moveTo/teleportTo 控制器包装契约（无路径/未绑定/移动中返回 null）、PathFallbackPolicy 回退决策（null 默认逐步、策略收步骤序列并生效）
+    requirement: PATH-01
+    verification:
+      - kind: unit
+        ref: "packages-user/data-system/src/path/system.test.ts#pathfinding system (12 passed)"
+        status: pass
+    human_judgment: false
+  - id: D6
+    description: L2 不引用 L3（graph/system 无 data-state 引用）且 path 相关零循环依赖；签名与用户 types.ts 逐字一致（类型门 0 诊断）
+    requirement: PATH-01
+    verification:
+      - kind: other
+        ref: "grep data-state on path/*.ts = 无命中；pnpm check:type 过滤 src[\\/]path[\\/] = 无输出；pnpm check:circular path = 0"
+        status: pass
+    human_judgment: false
+  - id: D7
+    description: 移动方式决策与逐步执行在真实 mover 链路上的端到端体感（逐步触发途经事件、瞬移跳过副作用）——L2 仅产出正确的控制器包装与决策结果，事件链路实感属 02-03 L3 接线验收范围
+    verification: []
+    human_judgment: true
+    rationale: L2 测试用 TestMover 桩验证步骤翻译与回写；真实 HeroMover + DefaultHeroMoveTopImpl 事件派发体感需 02-03 接线后在 Node 回放/人工确认
+
+# Metrics
+duration: 29min
+completed: 2026-09-09
+status: complete
+---
+
+# Phase 02 Plan 02: L0 修复与 L2 寻路核心 Summary
+
+**mover.ts:651 坐标回写缺陷按拍板修复（4/4 回归翻绿），L2 落地注入式寻路核心：有向图构建 + 自写 Dijkstra 最小损失搜索 + getPath/moveTo/teleportTo 控制器契约与回退策略，Node 下 22 测试全绿**
+
+## Performance
+
+- **Duration:** 29 min
+- **Started:** 2026-09-09T17:07:30+08:00
+- **Completed:** 2026-09-09T17:36+08:00
+- **Tasks:** 3（Task 1 tracer / Task 2 / Task 3）+ 1 个中途规则合规补丁
+- **Files modified:** 10（不含用户穿插提交的 dev.md）
+
+## Accomplishments
+
+- **Task 1（tracer）**：mover.ts:651 回写条件按拍板 `&&`→`||`，4 个 skip 回归用例（x 正交/y 正交/斜向/传送）全部翻绿——多步逐步移动自此能以真实坐标计算后续步骤（RESEARCH P1 收口）
+- **Task 2**：path/types.ts 落地用户逐字授权的 moveTo/teleportTo 返回类型修正（仅两处 `| null`，diff 断言通过）；新建 graph.ts 有向图构建器——邻域经 `useDirGroup` + `IDirectionMapper.map(group)`（默认 `InternalDirectionGroup.Dir4`）、边可行性由注入 `IPassPredicate.canPass` 判定（单向门由谓词不对称产生）、`shouldHit` 真图块分类为仅可作终点的终端节点、`inMap`+`isNil` 守卫 + warn 173；graph.test.ts 6 用例绿（单向门 A→B 可行 B→A 不可行、Dir8 组 8 邻域、终端分类、空图守卫）
+- **Task 3**：system.ts/finder.ts 落地 `PathfindingSystem`/`PathfindingFinder`（骨架照 GameEventSystem/useXxx 注入惯例，后按新风格规则拆分一文件一类）——自写 O(V²) Dijkstra（默认每格损失 1、`PathCostFunction` 可注入、损失守卫 warn 174）、`find`/`getPath` 返回 `IPathfindingStep[]`（dir/from/to）且不移动任何对象、不可达返回空数组、moveTo/teleportTo 经结构化 `hasMover` 守卫取 `IMoverController` 构成 `IPathfindingController { controller, path }`（无路径/未绑定/移动中返回 null）、`PathFallbackPolicy` 回退决策（null 默认必定逐步、策略以步骤序列为入参）、interrupt 占位；index.ts barrel + data-system barrel 追加；system.test.ts 12 用例绿
+- **logger.json**：登记本阶段新码 warn 173（寻路输入非法/绑定缺失）、warn 174（损失值非有限或负数）
+
+## Task Commits
+
+Each task was committed atomically:
+
+1. **Task 1: 按拍板结果修复 L0 坐标回写缺陷并翻绿回归测试** - `e1f6101` (fix)
+2. **Task 2: 授权的 types.ts 返回类型修正 + 有向图构建** - `0cd6ab6` (feat)
+3. **Task 3: 最小损失搜索 + 仅取路径 + 回退策略槽位** - `53d019f` (feat)
+4. **补丁 1: 用户新增类规则合规（IPathfindingGraphBuilder 接口声明 + implements）** - `e199d99` (refactor)
+5. **补丁 2: 用户新增风格规则合规（finder.ts 独立文件 + 去临时函数常量 + eslint 清理）** - `cbcaec8` (refactor)
+
+**Plan metadata:** (本提交 — docs(02-02): complete)
+
+_注：期间用户穿插提交 `0e6536f`（docs: 更新类相关规则）与 `ffedb80`（docs: 调整风格要求），非本计划产出；均已按新规则补齐合规补丁（e199d99 / cbcaec8）。_
+
+## Files Created/Modified
+
+- `packages-user/data-common/src/common/mover.ts` - 651 行回写条件 `&&`→`||`（唯一改动行）
+- `packages-user/data-common/src/common/mover.test.ts` - 4 个 it.skip → it 翻绿
+- `packages-user/data-system/src/path/types.ts` - 用户授权的 moveTo/teleportTo 返回类型修正（唯一允许改动）
+- `packages-user/data-system/src/path/graph.ts` - IPathGraph/IPathGraphNode/IPathGraphEdge + IPathfindingGraphBuilder + PathfindingGraphBuilder（方向增量→FaceDirection 映射、floorId 引用解析、终端分类、守卫）
+- `packages-user/data-system/src/path/graph.test.ts` - 6 用例：无谓词无边、Dir4 四邻域、Dir8 八邻域、单向门方向性、终端节点分类、空图守卫
+- `packages-user/data-system/src/path/system.ts` - PathfindingFinder（Dijkstra + 损失守卫）+ PathfindingSystem（getPath/moveTo/teleportTo/回退决策/interrupt）
+- `packages-user/data-system/src/path/system.test.ts` - 12 用例覆盖默认/自定义损失、守卫、不可达、终端约束、控制器契约、回退策略、打断
+- `packages-user/data-system/src/path/index.ts` - path barrel
+- `packages-user/data-system/src/index.ts` - 追加 `export * from './path'`
+- `packages/common/src/logger.json` - warn 173 / warn 174 登记
+
+## Decisions Made
+
+- **floorId 解析**：`maps.iterateAllMaps()` 引用匹配而非 iterateActiveMaps——`fromRaw` 楼层默认 `active=false`，否则 02-03 注入的真实谓词（moverImpl 语义要求非空 floorId）拿不到楼层 id
+- **移动器获取**：`IObjectMovable` 接口不含 mover 成员，L2 用结构化类型守卫 `'mover' in movable`（`IMovableWithMover`）零 `as` 取得 `IObjectMover`；`mover.start()` 返回 null 即「已有移动进行中」契约的自然检测点
+- **终端节点约束落点**：图记录全部 canPass 边 + terminal 标记，约束在搜索层执行（终端可作终点、永不被扩展）；D-08 情形 1（no-pass 目标的相邻格）由 02-03 直接 `find(heroPos, 相邻格)` 判定，L2 无专用查询 API（per 计划）
+- **moveTo 恒逐步、策略仅作用于 teleportTo**：与用户 types.ts jsdoc 逐字对齐（moveTo「逐步寻路，触发途经事件」；teleportTo「瞬移前经回退策略判定」）
+- **每次寻路动态建图不缓存**（CONTEXT 酌情项默认建议，数据端状态可变）
+
+## Deviations from Plan
+
+### Auto-fixed Issues
+
+**1. [Rule 3 - Blocking] 用户新增类规则（dev.md）中途生效，补齐接口声明合规**
+- **Found during:** Task 3 提交后收口阶段（用户穿插提交 `0e6536f`）
+- **Issue:** dev.md 新增「所有的类必须先进行 `interface` 声明，之后由类 `implements` 之实现」；`PathfindingGraphBuilder` 与测试 `TestMover` 此前无 implements
+- **Fix:** 新增导出接口 `IPathfindingGraphBuilder`（持有原类 API jsdoc），类改为 `implements IPathfindingGraphBuilder`；TestMover 补 `implements IObjectMover<TestTile>`；全测试重跑 18/18 绿
+- **Files modified:** packages-user/data-system/src/path/graph.ts, packages-user/data-system/src/path/system.test.ts
+- **Verification:** `pnpm exec vitest run "packages-user/data-system/src/path"` 18 passed；check:type path 过滤 0 诊断
+- **Committed in:** e199d99 (refactor(02-02))
+
+**2. [Rule 3 - Blocking] 用户新增风格规则（dev.md `ffedb80`）中途生效，合规重构**
+- **Found during:** SUMMARY 收口阶段（用户穿插提交 `ffedb80`：不得将对象上的函数声明为临时变量、一个文件通常只容纳一个类、向外暴露的接口类型应放 types.ts）
+- **Issue:** graph.ts/system.ts 存在 3 处 `const fn = this.fn` 形态；PathfindingFinder 与 PathfindingSystem 同文件
+- **Fix:** 3 处改为守卫后直接 `this.fn()` 调用（`this.predicate`/`this.cost`/`this.policy`）；PathfindingFinder 抽取至独立 `finder.ts`（一文件一类），path barrel 追加 finder 导出；顺带清理 eslint 两处（未使用导入、mover.test.ts 既有 import 折叠）；复跑 22/22 绿、eslint 0 错、check:type path 过滤 0 诊断、circular 0
+- **Files modified:** packages-user/data-system/src/path/{finder.ts(新), system.ts, graph.ts, graph.test.ts, index.ts}, packages-user/data-common/src/common/mover.test.ts
+- **Verification:** vitest 3 文件 22 passed；eslint 目标目录 0 problems
+- **Committed in:** cbcaec8 (refactor(02-02))
+
+**待用户决策（未擅动）：** 「向外暴露的接口类型应放到 types.ts」与「path/types.ts 为用户所有（D-07：除授权修正外不得改动）」冲突——`IPathGraph*`/`IPathfindingGraphBuilder` 现 co-located 于 graph.ts、`IMovableWithMover` 于 system.ts。在用户授权扩展 path/types.ts 之前保持现状，02-03/用户可择机裁夺。
+
+---
+
+**Total deviations:** 2 auto-fixed（2 blocking rule compliance）。
+**Impact on plan:** 两笔均为用户中途新增 dev.md 规则的合规重构，纯声明/结构归位，零行为变更；不影响验收面。
+
+## Issues Encountered
+
+- 计划 `<verification>` 的 `check:type` 过滤式类型门写为 `src[\\/]path[\\/]|mover\.ts`，其中 `mover\.ts` 会命中**既有**诊断：`packages-user/data-base/src/hero/mover.ts:183/185`（TS2339，`IHeroMoveTopImpl` 被用户 7a011b2 重构为 `predicate()` 形态后消费方未同步）——属 02-03 Task 1 谓词重构的收口范围，按范围边界规则不修，已记录于 `deferred-items.md`。本计划实际改动文件的类型诊断为 0（`src[\\/]path[\\/]` 过滤无输出；data-common mover.ts 无诊断）。
+- PowerShell `Set-Content` 曾损坏 mover.test.ts 的 UTF-8 中文注释（Task 1 中途发现），立即 `git checkout` 恢复并改用 Edit 工具重做；最终 diff 干净。
+
+## Known Stubs
+
+| 文件 | 位置 | 原因 |
+| ---- | ---- | ---- |
+| `packages-user/data-system/src/path/system.ts` | `interrupt()` | 计划声明的占位实现（停止进行中移动）；接管时序（stop 后 await 兑现，选项 1）由 02-03 Task 4 落地，已登记 broken-windows 台账 #5 |
+
+## User Setup Required
+
+None - no external service configuration required.
+
+## Next Phase Readiness
+
+- 02-03（L3 hero 接线）可开工：谓词注入槽位（`usePassPredicate`）、回退策略槽位（`useFallbackPolicy`）、绑定槽位（`useMapState`/`useMapLayer`/`useMovable`）与 `useDirGroup` 全部就绪；02-03 Task 1 将 moverImpl 重构为 `predicate()` 后经 `usePassPredicate` 注入即实现图边判定与逐步移动判定单一事实源
+- 02-03 需顺带收口 `data-base/src/hero/mover.ts` 对旧 `canPass/shouldHit` 直调的既有类型诊断（见 deferred-items.md），并落地 D-08 情形 1（相邻格 + 面朝目标 + OnTouch 直派）与 interrupt 接管时序
+- PATH-01/PATH-02 按 shared-ID 门延迟标记，待 02-03 SUMMARY 完成后由其触发 `requirements.mark-complete`
+
+---
+*Phase: 02-pathfinding*
+*Completed: 2026-09-09*
+
+## Self-Check: PASSED
+
+- SUMMARY.md 与全部 11 个计划内文件（含 finder.ts）均在盘；Task 1/2/3 与两笔合规补丁提交（`e1f6101`、`0cd6ab6`、`53d019f`、`e199d99`、`cbcaec8`）均在 git log 中确认
+- 验证命令复跑（合规补丁后）：mover.test.ts 4/4 + path 目录 18/18 全绿；eslint 目标目录 0 problems；`check:type` 过滤 `src[\\/]path[\\/]` 无输出；`check:circular` 无 path 相关路径（既有基线循环不变）
+- requirements.ready-ids：0/2 ready（PATH-01/PATH-02 与 02-03 共享，shared-ID 门生效），frontmatter `requirements-completed: []`
+- broken-windows 台账：02-01 的 skipped-test #4 标记 fixed；新增 #5（interrupt 占位 stub, open）
+
+## Review Fixes (user audit round 1)
+
+> 用户对 Wave 2 产出的代码审查修复轮（9 条指令全部落实）；根因已由用户在 `9a60442` 自行修复（`useMover(mover: IObjectMover<IObjectMovable> | null)`），本轮对齐实现侧。
+
+### 性能测试结果（完整 find 流水线：建图 + 最优路径发现）
+
+```text
+[pathfinding-perf] map=100x100 steps=198 elapsed=608.55ms
+```
+
+- 地图：100 x 100（10000 节点），固定种子生成约 20% 墙体的确定性障碍图案，起点 (0,0) 至终点 (99,99)
+- 最优步数：198（恰为 99 + 99 的曼哈顿距离，绕障未增加步数）
+- 总耗时：608.55 ms（`performance.now()` 计时，宽松 sanity 上限 5000 ms），`pnpm exec vitest run` 单测 619ms 完成全流程
+
+### 指令落实明细
+
+| # | 指令 | 落实情况 | 验证 |
+| - | ---- | ---- | ---- |
+| 1 | 禁止 `'mover' in xxx` 运行时形状检查 | 删除 `IMovableWithMover` 接口与 `hasMover` 结构化守卫，`PathfindingSystem` 直接持有 `IObjectMover<IObjectMovable> \| null` 类型绑定，位置经 `mover.tile.x/y` 读取；path/*.ts 复扫 0 残留 | grep `'mover' in` 无命中；23/23 测试绿 |
+| 2 | 类与接口本身不带 doc 注释 | 移除 `PathfindingGraphBuilder`/`PathfindingFinder`/`PathfindingSystem` 类注释与 `IPathfindingGraphBuilder` 接口注释（类型迁入 types.ts 时同样不写接口注释）；测试侧移除纯复述的 `TestTileDefinition`/`TestTile`/`SystemFixture` 注释 | 逐文件核查；例外：测试 `FixturePredicate` 保留（「复刻 DefaultHeroMoveTopImpl 掩码语义」为来源说明，dev.md 特殊情况例外） |
+| 3 | 实现侧不重复接口已有的注释 | 类实现侧与接口逐字重复的方法 jsdoc 全部移除（useMapState/useMapLayer/useCostFunction/usePassPredicate/useDirGroup/useFallbackPolicy/useMover/moveTo/teleportTo/interrupt/build）；仅保留内容确不相同者：`find`（告警+空数组契约、不可达语义）与 `getPath`（未绑定告警语义） | 类型门 0 诊断 |
+| 4 | 导出类型归位 types.ts | `IPathGraphEdge`/`IPathGraphNode`/`IPathGraph`/`IPathfindingGraphBuilder` 迁入 path/types.ts，graph.ts/finder.ts 改由 `./types` 导入；未改动用户既有接口语义 | `pnpm check:type` 过滤 `src[\\/]path[\\/]` 无输出 |
+| 5 | 私有方法先于调用者 | `resolveFloorId` 移至 `build` 前；`getNodeCost`→`search`→`find` 链式前置；`startMove` 移至 `moveTo`/`teleportTo` 前 | 代码走查 |
+| 6 | 短文件不用 region | 移除 graph.ts/finder.ts/system.ts 全部 `#region`/`#endregion`（移动器识别/寻路系统等 5 处） | grep 无命中 |
+| 7 | 注释面向 API 使用者而非维护者 | `search` jsdoc 去除「Dijkstra」算法叙述；`getNodeCost` 去除「非负权不变式」内部不变量叙述；`interrupt` 去除「03 计划接线」计划性叙述（其余与接口重复故整条移除）；保留的 jsdoc 均为可观察行为契约 | 代码走查 |
+| 8 | 对齐新 types.ts（`useMover`） | `useMover` 参数改收 `IObjectMover<IObjectMovable> \| null`，字段 `movable`→`mover`，测试改传 `tile.mover`，测试描述同步（movable→mover）；path/*.ts 无 `movable` 残留标识符 | grep `movable` 无命中；check:type 0 诊断 |
+| 9 | 性能测试 | 新建 `path/performance.test.ts`：100x100 固定种子障碍图，计时 `system.getPath()`（绑定系统上的完整建图+搜索流水线），结构化输出 map/steps/elapsed，断言找到路径且耗时低于 5000ms sanity 上限，常驻通过不 skip | 见上方性能结果 |
+
+### 验证汇总（修复轮全部复核）
+
+- `pnpm exec vitest run "packages-user/data-system/src/path"` — 4 文件 23 passed（含新增性能测试）
+- `pnpm exec vitest run "packages-user/data-common/src/common/mover.test.ts"` — 4/4 绿
+- `pnpm check:type` 过滤 `src[\\/]path[\\/]|common[\\/]mover` — 0 诊断（其余 legacy 既有诊断不在本计划范围）
+- `pnpm check:circular` — 无涉及 path 的循环（`common/mover.ts` 所在循环节点全部为本轮未触碰的既有基线边）
+- `pnpm exec eslint` 目标目录（path/ + data-common mover 两文件）— 0 problems
+
+**提交：** `d9ee80f`（refactor，指令 1–8）、本提交（test，指令 9 + 本记录）
+
+## Optimizations (user round 2)
+
+> 用户对 Wave 2 的第二轮优化指令（3 条全部落实），外加一处用户 `7dd4f39` 契约变更（`getLocationData`：地图内坐标恒返回 `ILayerLocation`，仅越界返回 `null`；`ILayerLocation.static` 改为可空）引发的测试夹具对齐。用户授权修改 `path/types.ts`（cost 字段、builder `useCostFunction`、`build(start)` 签名）。
+
+### 指令落实明细
+
+| # | 指令 | 落实情况 | 验证 |
+| - | ---- | ---- | ---- |
+| 1 | 图构建时预计算节点损失 | `getNodeCost` 从 finder 移入 builder（私有 `resolveCost`，置于 `build` 之前），每个节点在出图时调用损失函数恰一次并写入 `IPathGraphNode.cost`；NaN/负数告警 174 并回退损失 1，**每个非法节点每次构建最多告警一次**（非每次松弛）；Infinity 为合法损失（用户 `e27015c` 拍板），无告警、正常参与寻路；`search()` 直接读 `node.cost`，finder 的 `getNodeCost` 删除 | graph.test.ts 4 个新用例（预计算值上 `node.cost`、Infinity 无告警、NaN/负数各告警恰一次且回退 1）；system.test.ts NaN/Infinity 用例复跑绿 |
+| 2 | 以绑定移动器位置为 BFS 中心建图 | `build(start)` 以起始位置为 BFS 起点，仅沿 `canPass` 可通行有向边扩展，**可达区域外节点完全不入图**（对齐 D-02「仅包含从当前位置可以到达的位置」原语义）；`shouldHit` 仍将目标格标记为终端节点；图层未绑定或起始位置越界 → 告警 173 + 空图（契约与原状一致）；`finder.find` 传入 `start`，`system.getPath` 本就传移动器当前位置，system.ts 无需改动 | graph.test.ts 新用例：墙体隔断区域（3 列地图中央墙列）右侧列 3 节点不入图（nodes.size === 3）；越界起点告警 173 + 空图；未注入谓词时图仅含起始节点 |
+| 3 | 移除冗余 ILocationData null 检查 | 复核 `mapLayer.ts` 现行契约（`getLocationData`：`!inMap` 才返回 `null`）后，删除全图扫描的 `blocks` null 数组模式与 `if (!loc) continue` / `if (!next) continue` 分支；`layer.inMap(x, y)` 成为唯一的图外过滤，入图坐标经 `!` 非空断言取值 | `check:type` 0 诊断；测试全绿 |
+
+### 附带对齐（用户 `7dd4f39` 契约变更涟漪）
+
+- 用户 `7dd4f39` 将 `ILayerLocation.static` 类型改为 `IStaticTile \| null`，path 三个测试文件的 `FixturePredicate` 中 `curr?.static.raw()` 等 10 处由此产生 `TS18047`，阻塞本计划类型门（过滤 `src[\\/]path[\\/]` 需 0 诊断）。按用户自身在 `eventPath.test.ts` 的 `?.static?.` 风格对齐为 `?.static?.raw()`，运行时行为不变（地图内坐标恒有静态图块）。[Rule 3 - 阻塞类型门]
+- graph.test.ts 夹具补注册墙体图块（num 6），使 BFS 可达性新用例的墙列语义真实生效。
+
+### 性能对比（100x100，种子 20260909，5 轮 min/avg，二叉堆基线 → 本轮）
+
+```text
+[pathfinding-perf] map=100x100 steps=198 elapsed=58.86ms
+[pathfinding-segmented] map=100x100 steps=198 runs=5
+  graph_build: min=26.23ms avg=31.01ms
+  full_find(build+search): min=30.73ms avg=33.26ms
+  search_only(approx = find - build): min=-9.19ms avg=2.25ms
+```
+
+| 分段 | 基线（二叉堆轮） | 本轮 | 变化 |
+| ---- | ---- | ---- | ---- |
+| graph_build | min=34.59 avg=40.15 | min=26.23 avg=31.01 | avg −23% |
+| full_find | min=44.02 avg=48.82 | min=30.73 avg=33.26 | avg −32% |
+| search_only | avg≈8.67 | avg=2.25 | avg −74%（损失查表变字段读取） |
+| 完整流水线 | ~77ms（steps=198） | 58.86ms（steps=198） | −24% |
+
+- search_only 为 `find - build` 近似值，min 为负属两计时点分轮测量的正常抖动
+- steps=198 不变：最优路径完全一致，优化不改变寻路结果
+
+### 验证汇总（本轮全部复核）
+
+- `pnpm exec vitest run "packages-user/data-system/src/path"` — 3 文件 27 passed（新增 4 个 BFS/损失语义用例）
+- `pnpm exec vitest run "packages-user/data-common/src/common/mover.test.ts"` — 4/4 绿
+- `pnpm exec vitest run "packages-user/data-base/src"` — 3 文件 16 passed（getLocationData 契约回归守卫）
+- `pnpm check:type` 过滤 `src[\\/]path[\\/]|common[\\/]mover` — 0 诊断（其余为 client-modules 等处 legacy 既有诊断，不在本计划范围）
+- `pnpm check:circular` — 18 条循环均为既有基线，无涉及 path/
+- `pnpm exec eslint packages-user/data-system/src/path` — 0 problems
+
+**提交：** `239ac0d`（refactor(02-02)，指令 1–3 + 夹具对齐 + 类型门修复）、SUMMARY 记录提交见文末
+
+## Performance Test Upgrade (user round 3)
+
+> 用户对性能测试的第三轮升级指令（2 条全部落实）：计时改用 Performance API 的 mark/measure（`performance.now` 存在时钟分辨率误差），并新增多尺寸地图矩阵覆盖小图性能。仅改动 `performance.test.ts`（夹具/谓词/地图生成逻辑不变），未触碰生产代码与 02-03。
+
+### 指令落实明细
+
+| # | 指令 | 落实情况 | 验证 |
+| - | ---- | ---- | ---- |
+| 1 | performance.mark + measure 替代 performance.now | 新增顶层 `measureCall<T>(name, fn)` 辅助函数：测量前 `clearMarks/clearMeasures` 清理同名条目（防累积），段边界 `performance.mark`，段后 `performance.measure(name, startMark, endMark)` 并读取 `PerformanceMeasure.duration`；完整流水线与 graph_build / full_find 分段均经此包装 | vitest 全绿；eslint 0 |
+| 2 | 多尺寸地图矩阵 | `MAP_SIZES = [10, 30, 60, 100, 150]`，两个用例均遍历矩阵：完整流水线逐尺寸单次 mark/measure 计时；分段测量逐尺寸 `RUNS=5` 轮取 min+avg；sanity 上限改为 `500 + size²` ms 的按尺寸放宽函数；每尺寸一条 `[pathfinding-perf]` / 一段 `[pathfinding-segmented]` 结构化输出，供编排器逐行转发 | 5 尺寸 steps=18/58/118/198/300（恰为曼哈顿距离，绕障零损耗） |
+
+### 性能结果（多尺寸矩阵，种子 20260909，mark/measure 计时）
+
+```text
+[pathfinding-perf] map=10x10 steps=18 elapsed=3.29ms
+[pathfinding-perf] map=30x30 steps=58 elapsed=9.51ms
+[pathfinding-perf] map=60x60 steps=118 elapsed=25.54ms
+[pathfinding-perf] map=100x100 steps=198 elapsed=36.61ms
+[pathfinding-perf] map=150x150 steps=300 elapsed=91.74ms
+
+[pathfinding-segmented] map=10x10 steps=18 runs=5
+  graph_build: min=0.23ms avg=0.31ms
+  full_find(build+search): min=0.32ms avg=0.97ms
+  search_only(approx = find - build): min=-0.14ms avg=0.67ms
+[pathfinding-segmented] map=30x30 steps=58 runs=5
+  graph_build: min=1.93ms avg=2.80ms
+  full_find(build+search): min=2.52ms avg=2.84ms
+  search_only(approx = find - build): min=-2.98ms avg=0.04ms
+[pathfinding-segmented] map=60x60 steps=118 runs=5
+  graph_build: min=8.38ms avg=10.42ms
+  full_find(build+search): min=11.19ms avg=12.20ms
+  search_only(approx = find - build): min=-2.01ms avg=1.78ms
+[pathfinding-segmented] map=100x100 steps=198 runs=5
+  graph_build: min=25.91ms avg=28.59ms
+  full_find(build+search): min=32.29ms avg=35.82ms
+  search_only(approx = find - build): min=4.99ms avg=7.23ms
+[pathfinding-segmented] map=150x150 steps=300 runs=5
+  graph_build: min=67.47ms avg=72.83ms
+  full_find(build+search): min=83.53ms avg=87.44ms
+  search_only(approx = find - build): min=-7.05ms avg=14.60ms
+```
+
+- 缩放趋势：节点数 100→22500（225 倍）时 graph_build avg 0.31→72.83ms（约 235 倍），近线性于节点数；search_only 全程占比小（100x100 avg 7.23ms），总耗时主要由建图主导
+- search_only 为 `find - build` 近似值，min 为负属分轮测量的正常抖动；steps 随尺寸恰为曼哈顿距离，最优路径零绕障
+- 套件总时长约 2s（单文件 run），符合「数秒内」约束
+
+### 验证汇总（本轮）
+
+- `pnpm exec vitest run "packages-user/data-system/src/path/performance.test.ts"` — 2 passed（常驻通过，无 skip）
+- `pnpm exec vitest run "packages-user/data-system/src/path"` — 3 文件 27 passed
+- `pnpm exec eslint "packages-user/data-system/src/path/performance.test.ts"` — 0 problems
+
+**提交：** `2b483cd`（test(02-02)，本轮指令 1–2）、本提交（docs，SUMMARY 记录）
+
+## Real-map Performance Round (user round 4)
+
+> 用户追加指令：将六张真实 13x13 游戏地图加入性能测试并逐图测量。仅改动 `performance.test.ts`（生产代码与 02-03 未触碰），提交 `f1a9e62`。
+
+### 落实明细
+
+- **夹具参数化**：`createPerformanceSystem` 新增可选参数 `start`（移动器起始位置，经 `tile.setPos` 落位）与 `defs`（图块定义表），`buildGraph` 改以该起点 BFS 建图；合成矩阵默认值（start 左上角、num 1 开阔/num 6 墙体）完全不变
+- **真实地图图块语义**：数字 1 → 墙体（outPass/inPass 0），数字 0/2/3/4/5/6 → 空地（outPass/inPass 15）；id 全部唯一避免 TileStore warn 134
+- **端点解析 `resolveEndpoints`**：按行序取先后两个入口（数字 5）作 start/target；入口不足两个时以固定种子 20260909 伪随机抽取非墙空地补足并单独记录所选图块
+- **测量**：每图 20 轮（13x13 极小，样本加密稳定均值），分段输出 build(min/avg)、find(min/avg)、search(≈find−build avg)；不可达不硬断言，输出 `unreachable=yes|no` 作有效数据
+
+### 性能结果（六张真实地图，种子 20260909，mark/measure，20 轮）
+
+```text
+[pathfinding-realmap] map=1 seed-picked start=(6,1) target=(7,11)
+[pathfinding-realmap] map=1 13x13 start=(6,1) target=(7,11) steps=15 build=0.23/0.37ms find=0.26/0.27ms search=-0.10ms unreachable=no
+[pathfinding-realmap] map=2 13x13 start=(12,11) target=(1,12) steps=16 build=0.25/0.29ms find=0.28/0.39ms search=0.10ms unreachable=no
+[pathfinding-realmap] map=3 13x13 start=(10,6) target=(2,10) steps=12 build=0.21/0.23ms find=0.23/0.29ms search=0.06ms unreachable=no
+[pathfinding-realmap] map=4 13x13 start=(6,1) target=(6,11) steps=14 build=0.25/0.27ms find=0.28/0.34ms search=0.07ms unreachable=no
+[pathfinding-realmap] map=5 13x13 start=(11,1) target=(0,7) steps=17 build=0.21/0.29ms find=0.23/0.28ms search=-0.01ms unreachable=no
+[pathfinding-realmap] map=6 13x13 start=(0,1) target=(6,12) steps=19 build=0.23/0.34ms find=0.25/0.32ms search=-0.01ms unreachable=no
+```
+
+- 六图全部可达（steps 12–19）；单图全流程 build+search 合计约 0.3–0.4ms，主要耗时仍由建图主导，search 占比极小（接近计时抖动量级，故个别轮次出现负值近似）
+- 事实核对：用户备注称地图 1 无入口，实际其 (6,1) 处有一个入口 5——按「仅一个入口」分支处理：start = 该入口，target = 种子抽选空地 (7,11)（已单独记录），结果可达
+- 地图 6 中 (10,9) 的数字 6 按语义注册为空地，与预期一致
+
+### 验证汇总（本轮）
+
+- `pnpm exec vitest run "packages-user/data-system/src/path/performance.test.ts"` — 3 passed
+- `pnpm exec vitest run "packages-user/data-system/src/path"` — 3 文件 28 passed
+- `pnpm exec eslint "packages-user/data-system/src/path/performance.test.ts"` — 0 problems
+
+**提交：** `f1a9e62`（test(02-02)，真实地图用例）、本提交（docs，SUMMARY 记录）
