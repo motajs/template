@@ -1,4 +1,4 @@
-import { ITileLocator } from '@motajs/common';
+import { ITileLocator, IFaceHandler } from '@motajs/common';
 import {
     IDataBaseExtended,
     ILayerLocation,
@@ -6,7 +6,6 @@ import {
     IPassPredicate
 } from '@user/data-base';
 import {
-    IFaceHandler,
     ILocationHelper,
     IMoverController,
     IObjectMovable,

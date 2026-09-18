@@ -41,9 +41,9 @@ export class PrivateBooleanDirtyTracker implements IDirtyTracker<boolean> {
 /**
  * 列表的脏标记追踪器。当传入 `dirtySince` 的标记不属于当前的追踪器时，会返回空集合
  */
-export class PrivateListDirtyTracker<T extends number>
-    implements IDirtyTracker<Set<T>>
-{
+export class PrivateListDirtyTracker<T extends number> implements IDirtyTracker<
+    Set<T>
+> {
     /** 标记映射，键表示在索引，值表示其对应的标记数字 */
     private readonly markMap: Map<T, number> = new Map();
     /** 标记 symbol 映射，值表示这个 symbol 对应的标记数字 */
@@ -89,9 +89,9 @@ export class PrivateListDirtyTracker<T extends number>
     }
 }
 
-export class PrivateMapDirtyTracker<T extends string>
-    implements IDirtyTracker<Record<T, boolean>>
-{
+export class PrivateMapDirtyTracker<T extends string> implements IDirtyTracker<
+    Record<T, boolean>
+> {
     /** 标记映射，键表示名称，值表示其对应的标记数字 */
     private readonly markMap: Map<T, number> = new Map();
     /** 标记 symbol 映射，值表示这个 symbol 对应的标记数字 */

@@ -4,10 +4,10 @@ import {
     IHookable,
     IHookBase,
     IHookController,
-    ITileLocator
+    ITileLocator,
+    IFaceHandler
 } from '@motajs/common';
 import { FaceDirection } from './types';
-import { IFaceHandler } from './faceManager';
 
 //#region 对象移动
 

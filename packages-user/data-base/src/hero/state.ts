@@ -20,11 +20,15 @@ import {
 import {
     FaceDirection,
     IDataCommon,
-    IFaceHandler,
     IFacedTileLocator,
     SaveCompression
 } from '@user/data-common';
-import { Hookable, HookController, IHookController } from '@motajs/common';
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    IFaceHandler
+} from '@motajs/common';
 
 export class HeroState<THero>
     extends Hookable<IHeroStateHooks>

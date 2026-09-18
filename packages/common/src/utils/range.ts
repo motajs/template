@@ -1,11 +1,11 @@
 import { clamp } from 'lodash-es';
 import {
-    IDirectionDescriptor,
     IManhattanRangeParam,
     IRangeHost,
     IRange,
     IRayRangeParam,
-    IRectRangeParam
+    IRectRangeParam,
+    IFaceDescriptor
 } from './types';
 
 export abstract class BaseRange<T> implements IRange<T> {
@@ -156,7 +156,7 @@ export class RayRange extends BaseRange<IRayRangeParam> {
     private isPointOnRay(
         x: number,
         y: number,
-        direction: IDirectionDescriptor,
+        direction: IFaceDescriptor,
         param: Readonly<IRayRangeParam>
     ): boolean {
         if (direction.x === 0 && direction.y === 0) {

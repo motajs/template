@@ -2,12 +2,12 @@ import {
     Hookable,
     HookController,
     IHookController,
-    logger
+    logger,
+    IFaceHandler
 } from '@motajs/common';
 import {
     FaceDirection,
     IDataCommon,
-    IFaceHandler,
     IFacedTileLocator,
     SaveCompression
 } from '@user/data-common';

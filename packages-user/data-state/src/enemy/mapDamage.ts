@@ -7,7 +7,8 @@ import {
     RayRange,
     RectRange,
     ITileLocator,
-    IDirectionDescriptor
+    IFaceHandler,
+    IFaceDescriptor
 } from '@motajs/common';
 import {
     IEnemyContext,
@@ -26,7 +27,7 @@ import {
 import { IZoneValue } from './special';
 import { MapDamageType } from './types';
 import { IHeroAttr, IEnemyAttr } from '@user/data-common';
-import { IFaceHandler, FaceGroup } from '@user/data-common';
+import { FaceGroup } from '@user/data-common';
 
 const RECT_RANGE = new RectRange();
 const MANHATTAN_RANGE = new ManhattanRange();
@@ -153,7 +154,7 @@ export class RepulseDamageView extends BaseMapDamageView<IManhattanRangeParam> {
 
 export class LaserDamageView extends BaseMapDamageView<IRayRangeParam> {
     /** 激光方向列表 */
-    private readonly dirs: IDirectionDescriptor[];
+    private readonly dirs: IFaceDescriptor[];
 
     constructor(
         context: IEnemyContext<IEnemyAttr, IHeroAttr>,

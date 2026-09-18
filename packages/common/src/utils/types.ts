@@ -128,7 +128,7 @@ export interface IRayRangeParam {
     /** 中心点纵坐标 */
     cy: number;
     /** 方向列表 */
-    dir: IDirectionDescriptor[];
+    dir: IFaceDescriptor[];
 }
 
 //#endregion
@@ -142,33 +142,58 @@ export interface ITileLocator {
     y: number;
 }
 
-export const enum InternalDirectionGroup {
-    /** 上下左右四方向 */
-    Dir4,
-    /** 上下左右+左上+右上+左下+右下八方向 */
-    Dir8
-}
-
-export interface IDirectionDescriptor {
+export interface IFaceDescriptor {
     /** 横坐标增量 */
     readonly x: number;
     /** 纵坐标增量 */
     readonly y: number;
 }
 
-export interface IDirectionMapper {
+export interface IFaceHandler<T extends number> {
     /**
-     * 注册一个方向组别
-     * @param group 方向组别
-     * @param dir 方向锁包含的描述器
+     * 将任意朝向值降级为本组支持的方向。
+     * 对于无法合理降级的方向（包括 `Unknown`），返回 `FaceDirection.Unknown`
+     * @param dir 任意朝向值
      */
-    registerGroup(group: number, dir: Iterable<IDirectionDescriptor>): void;
+    degrade(dir: number): T;
 
     /**
-     * 根据指定方向组别进行遍历
-     * @param group 方向组别
+     * 获取指定方向的单步坐标偏移量，输入先经过 `degrade`
+     * @param dir 朝向
      */
-    map(group: number): Iterable<IDirectionDescriptor>;
+    movement(dir: number): IFaceDescriptor;
+
+    /**
+     * 获取指定方向走 `count` 步的坐标偏移量，等价于 `movement * count`。
+     * `count` 允许为负数，表示反向位移，输入先经过 `degrade`
+     * @param dir 朝向
+     * @param count 步数，允许为负
+     */
+    move(dir: number, count: number): IFaceDescriptor;
+
+    /**
+     * 获取本组内的反方向，输入先经过 `degrade`，`Unknown` 返回 `Unknown`
+     * @param dir 朝向
+     */
+    opposite(dir: number): T;
+
+    /**
+     * 在本组方向集合内顺时针（默认）或逆时针旋转一步，输入先经过 `degrade`，
+     * `Unknown` 返回 `Unknown`
+     * @param dir 朝向
+     * @param anticlockwise 是否逆时针，默认顺时针
+     */
+    next(dir: number, anticlockwise?: boolean): T;
+
+    /**
+     * 迭代本组支持的所有朝向，包含 `Unknown`
+     */
+    mapDirection(): Iterable<T>;
+
+    /**
+     * 迭代本组所有朝向及其对应的坐标描述器，包含 `Unknown`（对应 `{ x: 0, y: 0 }`）
+     */
+    mapMovement(): Iterable<[T, IFaceDescriptor]>;
 }
 
 //#endregion

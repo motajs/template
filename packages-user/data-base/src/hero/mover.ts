@@ -1,7 +1,6 @@
-import { ITileLocator, logger } from '@motajs/common';
+import { ITileLocator, logger, IFaceHandler } from '@motajs/common';
 import {
     FaceDirection,
-    IFaceHandler,
     IMoverController,
     ObjectMoveStep,
     ObjectMover,

@@ -1,9 +1,5 @@
-import { ITileLocator, logger } from '@motajs/common';
-import {
-    IFaceHandler,
-    ILocationIndexer,
-    MapLocIndexer
-} from '@user/data-common';
+import { ITileLocator, logger, IFaceHandler } from '@motajs/common';
+import { ILocationIndexer, MapLocIndexer } from '@user/data-common';
 import {
     ILayerLocation,
     IMapLayer,

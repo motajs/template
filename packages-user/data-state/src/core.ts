@@ -1,4 +1,4 @@
-import { DirectionMapper, IDirectionMapper, logger } from '@motajs/common';
+import { logger } from '@motajs/common';
 import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
 import {
     IRoleFaceBinder,
@@ -79,7 +79,6 @@ export class CoreState implements ICoreState {
     readonly itemStore: IItemStore<IHeroAttr>;
     readonly mapStore: IMapStore;
     readonly eventStore: IGameEventStore;
-    readonly directionMapper: IDirectionMapper;
     readonly replaySystem: IReplaySystem;
 
     // Layer 1 数据层，所有可存档内容都在这，一般用于数据存储
@@ -128,7 +127,6 @@ export class CoreState implements ICoreState {
         this.mapStore = new MapStore();
         // 游戏事件
         this.eventStore = new GameEventStore();
-        this.directionMapper = new DirectionMapper();
 
         //#endregion
 

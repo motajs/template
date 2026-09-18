@@ -1,4 +1,4 @@
-import { ITileLocator, logger } from '@motajs/common';
+import { ITileLocator, logger, IFaceHandler } from '@motajs/common';
 import { IMapLayer, IPassPredicate, IStateBase } from '@user/data-base';
 import { isNil } from 'lodash-es';
 import { MapGraphBuilder } from './graph';
@@ -11,7 +11,6 @@ import {
     IPathfindingResult,
     PathfindingStatus
 } from './types';
-import { IFaceHandler } from '@user/data-common';
 
 interface IDistanceHeapEntry {
     /** 条目的键值，堆中键值最小的条目最先取出 */
