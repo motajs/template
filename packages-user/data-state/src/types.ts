@@ -1,9 +1,15 @@
 import { IMotaDataLoader, IStateBase } from '@user/data-base';
-import { ILoadManager } from '@motajs/loader';
+import { ILoadManager, ILoadTaskStarter } from '@motajs/loader';
 import { IStateSystem } from '@user/data-system';
 import { ISaveableContent } from '@user/data-common';
 
-export interface ICoreStateConfig {}
+export interface ICoreStateConfig {
+    /**
+     * 加载启动器，用于适配不同加载环境。
+     * 例如网页端会使用 Web 加载器，而 node 端会使用专门的 node 加载器
+     */
+    readonly loadStarter: ILoadTaskStarter;
+}
 
 export interface ISaveableExecutor<T> {
     /**

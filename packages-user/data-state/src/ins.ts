@@ -1,3 +1,4 @@
+import { WebLoadStarter } from '@motajs/loader';
 import { CoreState } from './core';
 
 // TODO: 逐渐弱化 CoreState 的单例概念，每个接口都通过参数传入 ICoreState 对象
@@ -7,4 +8,6 @@ import { CoreState } from './core';
  * 此对象是数据端状态，本身不负责任何渲染操作，仅会向渲染端发送数据让渲染端渲染，不要把渲染操作直接放到此对象上，
  * 否则可能导致录像验证失败。
  */
-export const state = new CoreState({});
+export const state = new CoreState({
+    loadStarter: new WebLoadStarter()
+});
