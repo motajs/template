@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 04
 current_phase_name: 渲染适配与双布局
 status: executing
-stopped_at: Completed 04-01-PLAN.md（只读对账账本已交付；阶段 4 剩余工作待用户拆分）
-last_updated: "2026-09-18T04:24:14.367Z"
+stopped_at: Completed 04-02-PLAN.md（勇士移动只读接口探索账本已交付；缺失候选待用户裁决）
+last_updated: "2026-09-18T04:51:30.189Z"
 last_activity: 2026-09-18
 last_activity_desc: Phase 04 execution started
-state_head: 908fbf385b8517429de5c3095e0b79b46ecd1df6
+state_head: d4fe24c9dd1cd272d054c872e5c15f36777b105b
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 73
-  completed_plans: 71
+  completed_plans: 72
 milestone_name: milestone
 ---
 
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 
 ## Current Position
 
-Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
-Plan: 1 of 1
+Phase: 04 (渲染适配与双布局) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
 Last activity: 2026-09-18 — Phase 04 execution started
 
@@ -97,6 +97,7 @@ Progress: [█████░░░░░] 50%
 | Phase 07-data-fixes P13 | 56min | 5 tasks | 5 files |
 | Phase 07 P14 | 3min | 3 tasks | 1 files |
 | Phase 04 P01 | 11min | 3 tasks | 1 files |
+| Phase 04 P2 | 23min | 4 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -217,6 +218,9 @@ Recent decisions affecting current work:
 - [Phase 04]: 04-01：带 // @ts-expect-error 需要重构 的 import（HeroMover/IMoveController、HeroAnimateDirection、IHeroMoveController(Hooks)、getHeroStatusOn、ItemState、state.maps layerState）一律归 ① 错配（渲染侧适配项），不归 ②。
 - [Phase 04]: 04-01：② 数据端缺失节零确认——候选（core.firstData 工程元数据、勇士渲染粒度钩子）转入「未能从阅读确定（未猜测）」，不臆造缺失接口。
 - [Phase 04]: 04-01：REND-01/REND-02 保持 Pending，本 run 只交付差异账本，适配实施与双布局未规划/未实施。
+- [Phase 04]: 04-02：勇士移动只读接口探索交付 04-HERO-MOVER-INTERFACE.md（8 段骨架 + 12 条三态对账 #04-02-R-01..12 + 2 条缺失候选 + 7 条未确定），被查两包相对基线零变化、零生产代码改动。
+- [Phase 04]: 04-02：缺失接口候选 2 条——移动语义钩子族（#04-02-G-01）与 HeroKeyMover 依赖的 oneStep/控制器 queue（#04-02-G-02）——只记录不设计不修复，待用户裁决（D-13）。
+- [Phase 04]: 04-02：HeroRendering 渲染状态（D-18）与 legacy core.*（D-12）为显式排除项；REND-01/REND-02 保持 Pending（本 run 只探索未实施）。
 
 ### Roadmap Evolution
 
@@ -254,6 +258,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-18T02:52:58.072Z
-Stopped at: Completed 04-01-PLAN.md（只读对账账本已交付；阶段 4 剩余工作待用户拆分）
+Last session: 2026-09-18T04:50:15.723Z
+Stopped at: Completed 04-02-PLAN.md（勇士移动只读接口探索账本已交付；缺失候选待用户裁决）
 Resume file: None
