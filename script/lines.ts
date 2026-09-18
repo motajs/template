@@ -16,7 +16,7 @@ import { formatSize } from './utils.js';
         'dist',
         '_bundle'
     ];
-    const ignoreFile = ['.d.ts', '.min.'];
+    const ignoreFile = ['.d.ts', '.min.', '.test.', '.perf.'];
     const exts = [
         '.ts',
         '.tsx',
