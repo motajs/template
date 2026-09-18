@@ -181,7 +181,7 @@ Plans:
   3. 移动端（窄屏）布局下，同一场景正常显示且可操作
   4. 数据端与渲染端保持双端分离——数据端无 DOM，仍可在 Node 环境跑回放验证
 
-**Plans**: 2/2 plans executed（第一步·只读对账已完成；第二步·勇士移动接口探索（只读）已规划 — 04-CONTEXT D-01/D-02/D-13/D-17/D-18；后续适配实施与双布局待探索结果与缺失候选裁决后另行规划）
+**Plans**: 3 plans（第一步·只读对账已完成；第二步·勇士移动接口探索（只读）已完成；第三步·勇士本体适配（渲染端被动重接）已规划，待执行 — 04-CONTEXT D-01/D-02/D-13/D-17/D-18/D-19/D-20/D-21/D-22；其余渲染适配与移动端/桌面端双布局待后续增量另行规划）
 
 Plans:
 **Wave 1**
@@ -191,6 +191,10 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 04-02-PLAN.md — 勇士移动接口探索（只读，D-17）：产出 `04-HERO-MOVER-INTERFACE.md`（数据端现行接口 / 渲染端现状 / 逐成员三态对账 / 缺失接口候选 / 未确定 / 处置；排除 `HeroRendering`（D-18）与 `core.*`（D-12）；不改任何代码，适配（04-03+）未规划）
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 04-03-PLAN.md — 勇士本体适配（渲染端被动重接）：`render/map/extension/{hero,types,manager}.ts` 绑定 `IHeroLocation` / `IHeroMover`，改接现有钩子 `IHeroLocationHooks` / `IObjectMoverHooks`（D-21），按 D-20 裁剪 `IMapHeroRenderer` 的外部驱动成员；排除贴图/不透明度（D-18）、跟随者（D-22）、移动控制（D-19）、`core.*`（D-12）与裸函数（D-11），不新增数据端接口
 
 **UI hint**: yes
 
