@@ -31,6 +31,7 @@
 | New File | Role | Data Flow | Closest Analog | Match Quality |
 |----------|------|-----------|----------------|---------------|
 | `.planning/phases/04-render-adaptation/04-RENDER-INTERFACE-AUDIT.md` | audit / registry document | read-only inventory（分类登记：错配 / 数据端缺失 / 多余旧路径） | `.planning/phases/07-data-fixes/07-LOADSTATE-AUDIT.md`（只读审计骨架）+ `.planning/phases/06-unit-tests/06-TEST-FINDINGS.md`（字段定义表 + 分节登记） | exact（结构） |
+| `.planning/phases/04-render-adaptation/04-HERO-MOVER-INTERFACE.md` | audit / interface-reconciliation ledger | read-only interface exploration（逐成员三态对账：匹配 / 渲染端需改 / 数据端缺失 + 缺失接口候选登记） | `.planning/phases/04-render-adaptation/04-RENDER-INTERFACE-AUDIT.md`（同阶段只读对账骨架、元信息块与「方法」段写法）+ `.planning/phases/02-pathfinding/02-INTERFACE-DRAFT.md`（「接口事实源」声明块）+ `.planning/phases/07-data-fixes/07-LOADSTATE-AUDIT.md`（8 段审计骨架） | exact（结构） |
 
 ### B. 扫描目标组（只读，不修改）
 
