@@ -56,6 +56,13 @@
 - **D-22:** **跟随者暂缓**（`IHeroFollower` / `IHeroFollowersController` 及其 hooks）：用户尚未确定「跟随者的位置/动画由数据端驱动还是渲染端计算」以及 `onRemoveAllFollowers` 的处置，需再考虑。本次**不纳入** 04-03，也**不单列**计划；待用户想清楚后再规划。
 - **D-23:** **不使用 `client` / `state` 全局单例**（`client-modules/src/core.ts` 的 `client`、`data-state/src/ins.ts` 的 `state`）。若有必须调用它们的地方，**停止执行并告知用户**，由用户决定解决方案；不得自行选择绕过方案。**适用范围：新增/后续改动**；存量单例使用由用户**自己逐步整改**，AI 不主动清除、不据此阻塞当前工作。
 
+### 04-03 人工审查修改要求（用户裁定，2026-09-18；仅记录，待规划）
+- **D-24:** 勇士渲染中仍在用的已弃用工具（`@user/data-common` 的 `getFaceMovement` / `degradeFace` / `nextFaceDirection`，见 `data-common/src/common/utils.ts`）**全部改为 `IFaceHandler` 对应接口**（`packages/common/src/utils/types.ts:152`：`degrade` / `movement` / `move` / `opposite` / `next` / `mapDirection` / `mapMovement`）。因不得使用 `state`，**直接在 `MapHeroRenderer` 构造器参数中要求传入 `IFaceHandler`**（`IFaceHandler<FaceDirection>`）；后续用户会按实际情况再调整。
+- **D-25:** `IHeroLocationHooks` 与 `IObjectMoverHooks` 的钩子实现**拆成两个类**（两个接口存在重复钩子，合在一个类会重复调用）。且 **`onSetPos` 直接设置，不再判断是否移动中**——渲染必须完全客观地描述数据端正在发生的事情，否则渲染与数据会偏差。
+- **D-26:** 补上 **`AnimDir` 的设置**（`ObjectMoveType.AnimDir` 分支不再跳过）。
+- **D-27:** **不使用 `mutate-animate`**，改用功能更全的 `@motajs/animate`（前者能实现的后者都能实现）。**本次范围仅限删除勇士（`render/map/extension/hero.ts`）对 `mutate-animate` 的调用并改用 `@motajs/animate`**；其余存量使用由用户自己逐步处理。
+- **D-28:** **存量 `state` 使用暂不处理**（含 `hero.ts` 的 `state.roleFace.getFaceOf`）：这涉及引擎整体的底层架构，由用户后续统一整改。本阶段**不因「不得使用单例」而清除存量**；改动只约束新增/后续代码。
+
 ### the agent's Discretion
 - D-07 的「影响」字段具体写法、「多余旧路径」是否需要进一步细分，交由 AI 在对账执行时按实际情况把握，但不得据此扩大范围。
 
