@@ -62,6 +62,7 @@
 - **D-26:** 补上 **`AnimDir` 的设置**（`ObjectMoveType.AnimDir` 分支不再跳过）。
 - **D-27:** **不使用 `mutate-animate`**，改用功能更全的 `@motajs/animate`（前者能实现的后者都能实现）。**本次范围仅限删除勇士（`render/map/extension/hero.ts`）对 `mutate-animate` 的调用并改用 `@motajs/animate`**；其余存量使用由用户自己逐步处理。
 - **D-28:** **存量 `state` 使用暂不处理**（含 `hero.ts` 的 `state.roleFace.getFaceOf`）：这涉及引擎整体的底层架构，由用户后续统一整改。本阶段**不因「不得使用单例」而清除存量**；改动只约束新增/后续代码。
+- **D-29:** **`degrade` 与 `next` 均用 `Dir4FaceHandler`**（贴图只有四向；与移动 (Dir8) 失配，需单独处理）。因构造器参数已多，**`MapHeroRenderer` 构造器改为直接传入 `IFaceManager`**（`data-common/src/common/faceManager.ts:13`；`core.ts:117-120` 注册 `FaceGroup.Dir4`/`Dir8`）：`degrade` / `next` 经 `faceManager.get(FaceGroup.Dir4)` 取四向处理器；移动相关的 `movement` 仍取勇士自身 `mover.faceHandler`（Dir8）。**注入路径走 B**：`IMapExtensionManager.addHero(state, layer, faceManager)` 新增 `faceManager: IFaceManager` 参数（**改 `types.ts` 接口**），`manager.ts` 转发给构造器；未来接线处再传。后续用户再进一步改进。
 
 ### the agent's Discretion
 - D-07 的「影响」字段具体写法、「多余旧路径」是否需要进一步细分，交由 AI 在对账执行时按实际情况把握，但不得据此扩大范围。

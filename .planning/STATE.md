@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 ## Current Position
 
 Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
-Plan: 3 of 3
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-09-18 — Phase 04 execution started
 
