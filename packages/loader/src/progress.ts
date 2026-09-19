@@ -1,17 +1,22 @@
 import { clamp } from 'lodash-es';
-import { ILoadProgressTotal, ILoadTask, LoadDataType } from './types';
-import { logger } from '@motajs/common';
+import { ILoadManager, ILoadManagerHooks, ILoadTask } from './types';
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    logger
+} from '@motajs/common';
 
-export class LoadProgressTotal<
-    T extends LoadDataType = LoadDataType,
-    R = any
-> implements ILoadProgressTotal<T, R> {
+export class LoadManager
+    extends Hookable<ILoadManagerHooks>
+    implements ILoadManager
+{
     /** 当前已经附着的加载任务 */
-    private readonly attached: Map<ILoadTask<T, R>, number> = new Map();
+    private readonly attached: Map<ILoadTask, number> = new Map();
     /** 当前已经加载完毕的任务 */
-    readonly loadedTasks: Set<ILoadTask<T, R>> = new Set();
+    readonly loadedTasks: Set<ILoadTask> = new Set();
     /** 当前已经添加的任务 */
-    readonly addedTasks: Set<ILoadTask<T, R>> = new Set();
+    readonly addedTasks: Set<ILoadTask> = new Set();
 
     /** 总加载量 */
     private total: number = 0;
@@ -23,26 +28,37 @@ export class LoadProgressTotal<
     /** 兑现当前的 `nextPromise` */
     private nextResolve: () => void;
 
-    async *[Symbol.asyncIterator]() {
-        while (true) {
-            if (this.loadedTasks.size === this.addedTasks.size) {
-                return;
-            }
-            yield this.nextPromise;
-        }
-    }
-
     constructor() {
+        super();
         const { promise, resolve } = Promise.withResolvers<void>();
         this.nextPromise = promise;
         this.nextResolve = resolve;
     }
 
-    addTask(task: ILoadTask<T, R>) {
-        this.addedTasks.add(task);
+    protected createController(
+        hook: Partial<ILoadManagerHooks>
+    ): IHookController<ILoadManagerHooks> {
+        return new HookController(this, hook);
     }
 
-    onProgress(task: ILoadTask<T, R>, loaded: number, total: number): void {
+    addTask(task: ILoadTask) {
+        this.addedTasks.add(task);
+        task.addHook({
+            onProgress: (loaded, total) => this.onProgress(task, loaded, total)
+        });
+    }
+
+    async *load(): AsyncIterable<number> {
+        while (true) {
+            if (this.loadedTasks.size === this.addedTasks.size) {
+                return;
+            }
+            await this.nextPromise;
+            yield this.loaded;
+        }
+    }
+
+    onProgress(task: ILoadTask, loaded: number, total: number): void {
         if (!this.addedTasks.has(task)) {
             logger.warn(95);
             return;

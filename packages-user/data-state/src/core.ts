@@ -1,5 +1,5 @@
 import { logger } from '@motajs/common';
-import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
+import { ILoadManager, LoadManager } from '@motajs/loader';
 import {
     IRoleFaceBinder,
     IFaceManager,
@@ -48,7 +48,7 @@ import {
     IPathfindingSystem,
     PathfindingSystem
 } from '@user/data-system';
-import { ICoreState, ISaveableExecutor } from './types';
+import { ICoreState, ICoreStateConfig, ISaveableExecutor } from './types';
 import {
     CommonAuraConverter,
     EnemyLegacyBridge,
@@ -93,7 +93,7 @@ export class CoreState implements ICoreState {
     readonly pathfinding: IPathfindingSystem;
 
     // Layer 3 用户层，也就是最顶层的内容，一般仅用于初始化以及仅供渲染端调用的顶层模块
-    readonly loadProgress: ILoadProgressTotal;
+    readonly loadProgress: ILoadManager;
     readonly dataLoader: IMotaDataLoader;
 
     /** 可存档对象映射 */
@@ -106,7 +106,7 @@ export class CoreState implements ICoreState {
         ISaveableExecutor<any>
     > = new Map();
 
-    constructor() {
+    constructor(config: Readonly<ICoreStateConfig>) {
         //#region L0 初始化
 
         // 朝向
@@ -143,7 +143,7 @@ export class CoreState implements ICoreState {
         const heroState = new HeroState(this, dir8, heroAttribute);
         this.hero = heroState;
 
-        this.loadProgress = new LoadProgressTotal();
+        this.loadProgress = new LoadManager();
         this.dataLoader = new MotaDataLoader(this.loadProgress);
 
         // 怪物管理器
@@ -322,8 +322,4 @@ export class CoreState implements ICoreState {
     }
 
     //#endregion
-}
-
-export function createCoreState(): CoreState {
-    return new CoreState();
 }

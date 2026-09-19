@@ -42,6 +42,7 @@ import {
 } from './shared';
 import { loading } from '@user/data-base';
 import { fallbackLoad } from './fallback/load';
+import { WebLoadStarter } from '@motajs/loader';
 
 export class ClientCore extends CoreState implements IClientCore {
     // Layer 4 渲染基础层
@@ -63,7 +64,9 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly bgmPlayer: IBGMPlayer<BgmIds>;
 
     constructor() {
-        super();
+        super({
+            loadStarter: new WebLoadStarter()
+        });
 
         //#region Layer 4
 
