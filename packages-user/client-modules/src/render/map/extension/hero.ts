@@ -22,7 +22,7 @@ import { state } from '@user/data-state';
 /** 默认的移动时长 */
 const DEFAULT_TIME = 100;
 
-interface HeroRenderEntity {
+interface IHeroRenderEntity {
     /** 移动图块对象 */
     readonly block: IMovingBlock;
     /** 标识符，用于判定跟随者 */
@@ -63,13 +63,13 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     /** 勇士每个朝向的贴图对象 */
     readonly textureMap: Map<FaceDirection, IMaterialFramedData> = new Map();
     /** 勇士渲染实体，与 `entities[0]` 同引用 */
-    readonly heroEntity: HeroRenderEntity;
+    readonly heroEntity: IHeroRenderEntity;
 
     /**
      * 渲染实体，索引 0 表示勇士，后续索引依次表示跟随的跟随者。
      * 整体是一个状态机，而且下一个跟随者只与上一个跟随者有关，下一个跟随者移动的方向就是上一个跟随者上一步移动后指向的方向。
      */
-    readonly entities: HeroRenderEntity[] = [];
+    readonly entities: IHeroRenderEntity[] = [];
 
     /** 每帧执行的帧动画对象 */
     readonly ticker: IMapRendererTicker;
@@ -85,7 +85,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
         this.moverController = hero.mover.addHook(hook);
         this.moverController.load();
         const moving = this.addHeroMoving(renderer, layer, hero);
-        const heroEntity: HeroRenderEntity = {
+        const heroEntity: IHeroRenderEntity = {
             block: moving,
             identifier: '',
             targetX: hero.x,
@@ -223,7 +223,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
      * @param time 移动时长
      */
     private moveEntity(
-        entity: HeroRenderEntity,
+        entity: IHeroRenderEntity,
         direction: FaceDirection,
         time: number
     ) {
@@ -272,7 +272,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
      * @param time 跳跃时长
      */
     private jumpEntity(
-        entity: HeroRenderEntity,
+        entity: IHeroRenderEntity,
         x: number,
         y: number,
         time: number
@@ -295,7 +295,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
         this.heroEntity.lastAnimateTime = this.ticker.timestamp;
     }
 
-    private endEntityMoving(entity: HeroRenderEntity) {
+    private endEntityMoving(entity: IHeroRenderEntity) {
         entity.moving = false;
         entity.animating = false;
         entity.animateFrame = 0;
@@ -366,7 +366,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
         const x = last.block.x - dxn;
         const y = last.block.y - dyn;
         const moving = this.renderer.addMovingBlock(this.layer, tex, x, y);
-        const entity: HeroRenderEntity = {
+        const entity: IHeroRenderEntity = {
             block: moving,
             identifier: id,
             targetX: last.targetX - dx,

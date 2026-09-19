@@ -1,6 +1,5 @@
 import { ITexture, Font } from '@motajs/render';
 import { IHeroLocation, IMapLayer } from '@user/data-base';
-
 import { IMapRenderResult } from '../types';
 
 export interface IMapExtensionManager {
