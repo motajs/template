@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 04
 current_phase_name: 渲染适配与双布局
 status: executing
-stopped_at: Completed 04-03-PLAN.md（勇士本体被动适配：绑定 IHeroLocation + 订阅现有钩子，三文件机器门禁全绿）
-last_updated: "2026-09-19T05:12:50.217Z"
+stopped_at: Completed 04-04-PLAN.md（勇士渲染修正：注入 IFaceManager、拆钩子类、补 AnimDir、换 @motajs/animate，三文件机器门禁全绿；REND-01/REND-02 保持 Pending）
+last_updated: "2026-09-19T08:59:27.618Z"
 last_activity: 2026-09-18
 last_activity_desc: Phase 04 execution started
-state_head: bac3e46fba57ea42fa39460810e8dc8c4c8a406c
+state_head: 0ad933368c4b2245bba179acdcda4a7b45e5eb7c
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 75
-  completed_plans: 73
+  completed_plans: 74
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 ## Current Position
 
 Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-09-18 — Phase 04 execution started
 
@@ -99,6 +99,7 @@ Progress: [█████░░░░░] 50%
 | Phase 04 P01 | 11min | 3 tasks | 1 files |
 | Phase 04 P2 | 23min | 4 tasks | 1 files |
 | Phase 04 P3 | 40min | 4 tasks | 3 files |
+| Phase 04 P4 | ~45min | 4 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -225,6 +226,9 @@ Recent decisions affecting current work:
 - [Phase 04]: [Phase 04]: 04-03：渲染端勇士本体绑定 IHeroLocation，经 hero.addHook / hero.mover.addHook 订阅数据端现有钩子（D-21），不新增数据端接口、不改数据端文件
 - [Phase 04]: [Phase 04]: 04-03：IMapHeroRenderer 按 D-20 删除 8 个外部驱动成员声明，勇士渲染改为完全被动；对应类内实现方法保留并只由钩子回调调用
 - [Phase 04]: [Phase 04]: 04-03：D-18 贴图别名 hero.image 只做最小编译桥接（读取收敛为一处 + 既有 // @ts-expect-error 惯用法标注），不重设贴图来源；D-18 / D-22 成员逐字保留
+- [Phase 04]: [Phase 04]: 04-04：MapHeroRenderer 注入 IFaceManager（faceManager 字段 + 派生 dir4），degrade/next 走 Dir4FaceHandler（FaceGroup.Dir4），movement 走 hero.mover.faceHandler（Dir8）；IMapExtensionManager.addHero 新增 faceManager 形参并由 manager.ts 转发（D-24/D-29）
+- [Phase 04]: [Phase 04]: 04-04：MapHeroHook 拆为 MapHeroLocationHook（onSetPos 无条件、只出现一次，承载 D-18/D-22 多余方法）与 MapHeroMoverHook（onMoveStart/onMoveEnd/onStepEnd/onSetFaceDir），各自注册各自 controller；onStepEnd 的 AnimDir 分支按 step.dir 设置动画方向（D-25/D-26）
+- [Phase 04]: [Phase 04]: 04-04：hero.ts 弃用 mutate-animate 的 TimingFn<2>，改用 @motajs/animate 的 ExcitationCurve2D；D-28 存量 state.roleFace.getFaceOf 三处与 import 逐字保留；types.ts 单行 addHero 签名与 manager.ts 单行构造调用按仓库惯例加 // prettier-ignore 以同时满足计划的单行静态门禁与 prettier
 
 ### Roadmap Evolution
 
@@ -262,6 +266,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-18T08:00:17.538Z
-Stopped at: Completed 04-03-PLAN.md（勇士本体被动适配：绑定 IHeroLocation + 订阅现有钩子，三文件机器门禁全绿）
+Last session: 2026-09-19T08:59:26.713Z
+Stopped at: Completed 04-04-PLAN.md（勇士渲染修正：注入 IFaceManager、拆钩子类、补 AnimDir、换 @motajs/animate，三文件机器门禁全绿；REND-01/REND-02 保持 Pending）
 Resume file: None
