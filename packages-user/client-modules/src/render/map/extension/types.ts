@@ -1,4 +1,5 @@
 import { ITexture, Font } from '@motajs/render';
+import { IFaceManager } from '@user/data-common';
 import { IHeroLocation, IMapLayer } from '@user/data-base';
 import { IMapRenderResult } from '../types';
 
@@ -15,7 +16,8 @@ export interface IMapExtensionManager {
      * @param state 勇士状态
      * @param layer 勇士所在图层
      */
-    addHero(state: IHeroLocation, layer: IMapLayer): IMapHeroRenderer | null;
+    // prettier-ignore
+    addHero(state: IHeroLocation, layer: IMapLayer, faceManager: IFaceManager): IMapHeroRenderer | null;
 
     /**
      * 移除勇士渲染拓展

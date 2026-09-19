@@ -1,3 +1,4 @@
+import { IFaceManager } from '@user/data-common';
 import { IHeroLocation, IMapLayer } from '@user/data-base';
 import {
     IMapDoorRenderer,
@@ -21,12 +22,17 @@ export class MapExtensionManager implements IMapExtensionManager {
 
     constructor(readonly renderer: IMapRenderer) {}
 
-    addHero(state: IHeroLocation, layer: IMapLayer): IMapHeroRenderer | null {
+    addHero(
+        state: IHeroLocation,
+        layer: IMapLayer,
+        faceManager: IFaceManager
+    ): IMapHeroRenderer | null {
         if (this.heroMap.has(state)) {
             logger.error(45, 'hero renderer');
             return null;
         }
-        const heroRenderer = new MapHeroRenderer(this.renderer, layer, state);
+        // prettier-ignore
+        const heroRenderer = new MapHeroRenderer(this.renderer, layer, state, faceManager);
         this.heroMap.set(state, heroRenderer);
         return heroRenderer;
     }

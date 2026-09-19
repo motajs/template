@@ -1,10 +1,9 @@
 import {
-    degradeFace,
     FaceDirection,
-    getFaceMovement,
+    FaceGroup,
+    IFaceManager,
     IObjectMover,
     IObjectMoverHooks,
-    nextFaceDirection,
     ObjectAnimDirection,
     ObjectMoveStep,
     ObjectMoveType
@@ -12,11 +11,11 @@ import {
 import { IHeroLocation, IHeroLocationHooks, IMapLayer } from '@user/data-base';
 import { IMapRenderer, IMapRendererTicker, IMovingBlock } from '../types';
 import { isNil } from 'lodash-es';
-import { IHookController, logger } from '@motajs/common';
+import { IFaceHandler, IHookController, logger } from '@motajs/common';
 import { BlockCls, IMaterialFramedData } from '@user/client-base';
 import { ITexture, ITextureSplitter, TextureRowSplitter } from '@motajs/render';
 import { IMapHeroRenderer } from './types';
-import { TimingFn } from 'mutate-animate';
+import { ExcitationCurve2D } from '@motajs/animate';
 import { state } from '@user/data-state';
 
 /** 默认的移动时长 */
@@ -60,6 +59,8 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     readonly locationController: IHookController<IHeroLocationHooks>;
     /** 勇士移动钩子 */
     readonly moverController: IHookController<IObjectMoverHooks<IHeroLocation>>;
+    /** 派生自 `faceManager` 的贴图四向朝向处理器 */
+    readonly dir4: IFaceHandler<FaceDirection>;
     /** 勇士每个朝向的贴图对象 */
     readonly textureMap: Map<FaceDirection, IMaterialFramedData> = new Map();
     /** 勇士渲染实体，与 `entities[0]` 同引用 */
@@ -77,12 +78,13 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     constructor(
         readonly renderer: IMapRenderer,
         readonly layer: IMapLayer,
-        readonly hero: IHeroLocation
+        readonly hero: IHeroLocation,
+        readonly faceManager: IFaceManager
     ) {
-        const hook = new MapHeroHook(this);
-        this.locationController = hero.addHook(hook);
+        this.dir4 = faceManager.get<FaceDirection>(FaceGroup.Dir4)!;
+        this.locationController = hero.addHook(new MapHeroLocationHook(this));
         this.locationController.load();
-        this.moverController = hero.mover.addHook(hook);
+        this.moverController = hero.mover.addHook(new MapHeroMoverHook(this));
         this.moverController.load();
         const moving = this.addHeroMoving(renderer, layer, hero);
         const heroEntity: IHeroRenderEntity = {
@@ -129,7 +131,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
         }
         this.updateHeroTexture(image);
         const tex = this.textureMap.get(
-            degradeFace(hero.getCurrentFaceDirection())
+            this.dir4.degrade(hero.getCurrentFaceDirection())
         );
         if (!tex) {
             return renderer.addMovingBlock(layer, 0, hero.x, hero.y);
@@ -199,7 +201,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     setImage(image: ITexture): void {
         this.updateHeroTexture(image);
         const tex = this.textureMap.get(
-            degradeFace(this.hero.getCurrentFaceDirection())
+            this.dir4.degrade(this.hero.getCurrentFaceDirection())
         );
         if (!tex) return;
         this.heroEntity.block.setTexture(tex);
@@ -227,7 +229,8 @@ export class MapHeroRenderer implements IMapHeroRenderer {
         direction: FaceDirection,
         time: number
     ) {
-        const { x: dx, y: dy } = getFaceMovement(direction);
+        const { x: dx, y: dy } =
+            this.hero.mover.faceHandler.movement(direction);
         if (dx === 0 && dy === 0) return;
         const block = entity.block;
         const tx = block.x + dx;
@@ -252,7 +255,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
      * @param dx 横向偏移量
      * @param dy 纵向偏移量
      */
-    private generateJumpFn(dx: number, dy: number): TimingFn<2> {
+    private generateJumpFn(dx: number, dy: number): ExcitationCurve2D {
         const distance = Math.hypot(dx, dy);
         const peak = 3 + distance;
 
@@ -354,15 +357,21 @@ export class MapHeroRenderer implements IMapHeroRenderer {
             logger.warn(92);
             return;
         }
-        const nowFace = degradeFace(last.nextDirection, FaceDirection.Down);
+        const degraded = this.dir4.degrade(last.nextDirection);
+        const nowFace =
+            degraded === FaceDirection.Unknown ? FaceDirection.Down : degraded;
         const faced = state.roleFace.getFaceOf(image, nowFace);
         const tex = this.renderer.manager.getIfBigImage(faced?.face ?? image);
         if (!tex) {
             logger.warn(91, image.toString());
             return;
         }
-        const { x: dxn, y: dyn } = getFaceMovement(last.nextDirection);
-        const { x: dx, y: dy } = getFaceMovement(last.direction);
+        const { x: dxn, y: dyn } = this.hero.mover.faceHandler.movement(
+            last.nextDirection
+        );
+        const { x: dx, y: dy } = this.hero.mover.faceHandler.movement(
+            last.direction
+        );
         const x = last.block.x - dxn;
         const y = last.block.y - dyn;
         const moving = this.renderer.addMovingBlock(this.layer, tex, x, y);
@@ -450,7 +459,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
 
     turn(direction?: FaceDirection): void {
         const next = isNil(direction)
-            ? nextFaceDirection(this.heroEntity.direction)
+            ? this.dir4.next(this.heroEntity.direction)
             : direction;
         const tex = this.textureMap.get(next);
         if (tex) {
@@ -465,9 +474,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     }
 }
 
-class MapHeroHook implements Partial<
-    IHeroLocationHooks & IObjectMoverHooks<IHeroLocation>
-> {
+class MapHeroLocationHook implements Partial<IHeroLocationHooks> {
     constructor(readonly hero: MapHeroRenderer) {}
 
     onSetImage(image: ImageIds): void {
@@ -480,9 +487,32 @@ class MapHeroHook implements Partial<
     }
 
     onSetPos(x: number, y: number): void {
-        if (this.hero.hero.mover.moving) return;
         this.hero.setPosition(x, y);
     }
+
+    onSetAlpha(alpha: number): void {
+        this.hero.setAlpha(alpha);
+    }
+
+    onAddFollower(follower: number, identifier: string): void {
+        this.hero.addFollower(follower, identifier);
+    }
+
+    onRemoveFollower(identifier: string, animate: boolean): void {
+        this.hero.removeFollower(identifier, animate);
+    }
+
+    onRemoveAllFollowers(): void {
+        this.hero.removeAllFollowers();
+    }
+
+    onSetFollowerAlpha(identifier: string, alpha: number): void {
+        this.hero.setFollowerAlpha(identifier, alpha);
+    }
+}
+
+class MapHeroMoverHook implements Partial<IObjectMoverHooks<IHeroLocation>> {
+    constructor(readonly hero: MapHeroRenderer) {}
 
     async onMoveStart(): Promise<void> {
         this.hero.startMove();
@@ -521,6 +551,8 @@ class MapHeroHook implements Partial<
                     false
                 );
             case ObjectMoveType.AnimDir:
+                this.hero.setHeroAnimateDirection(step.dir);
+                break;
             case ObjectMoveType.Speed:
                 break;
         }
@@ -528,25 +560,5 @@ class MapHeroHook implements Partial<
 
     onSetFaceDir(dir: FaceDirection): void {
         this.hero.turn(dir);
-    }
-
-    onSetAlpha(alpha: number): void {
-        this.hero.setAlpha(alpha);
-    }
-
-    onAddFollower(follower: number, identifier: string): void {
-        this.hero.addFollower(follower, identifier);
-    }
-
-    onRemoveFollower(identifier: string, animate: boolean): void {
-        this.hero.removeFollower(identifier, animate);
-    }
-
-    onRemoveAllFollowers(): void {
-        this.hero.removeAllFollowers();
-    }
-
-    onSetFollowerAlpha(identifier: string, alpha: number): void {
-        this.hero.setFollowerAlpha(identifier, alpha);
     }
 }
