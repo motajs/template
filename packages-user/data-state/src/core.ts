@@ -1,4 +1,5 @@
 import { logger } from '@motajs/common';
+import { ILoadManager, LoadManager } from '@motajs/loader';
 import {
     IRoleFaceBinder,
     IFaceManager,
@@ -59,7 +60,7 @@ import {
 } from './enemy';
 import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
 import { DefaultHeroMoveTopImpl, DefaultPassPredicateImpl } from './hero';
-import { createEventRegistrations } from './event/registrations';
+import { createEventRegistrations } from './event';
 import {
     ReplayEquip,
     ReplayMove,
@@ -67,10 +68,11 @@ import {
     ReplayUnequip,
     ReplayUseItem
 } from './replay';
-import { IMotaDataLoader } from './loader/types';
-import { MotaDataLoader } from './loader/loader';
-import { ILoadManager, LoadManager } from '@motajs/loader';
-import { DefaultDataLoaderHook } from './loader/hook';
+import {
+    IMotaDataLoader,
+    MotaDataLoader,
+    DefaultDataLoaderHook
+} from './loader';
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据

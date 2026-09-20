@@ -1,3 +1,4 @@
+import { IMapAreaInterval } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
 
 //#region 数据端主配置
@@ -82,6 +83,8 @@ export interface ICoreStateCoreConfig {
     readonly title: string;
     /** 游戏版本号，仅呈现作用，对游戏本身没有任何影响 */
     readonly version: string;
+    /** 地图分区配置 */
+    readonly floorAreas: IMapAreaInterval[];
     /** 游戏数据配置 */
     readonly content: ICoreStateContentConfig;
     /** 游戏的初始状态数据 */

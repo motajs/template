@@ -10,10 +10,8 @@ import {
 } from '@motajs/audio';
 import { IRenderTreeRoot, MotaRenderer } from '@motajs/render';
 import {
-    IMotaAssetsLoader,
     IMaterialManager,
     IAutotileProcessor,
-    MotaAssetsLoader,
     MaterialManager,
     AutotileProcessor,
     ISaveSystem,
@@ -49,7 +47,6 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly save: ISaveSystem;
 
     // Layer 5 渲染顶层
-    readonly loader: IMotaAssetsLoader;
     readonly materials: IMaterialManager;
     readonly autotile: IAutotileProcessor;
 
@@ -88,14 +85,6 @@ export class ClientCore extends CoreState implements IClientCore {
         this.autotile = new AutotileProcessor(this.materials);
 
         //#endregion
-
-        this.loader = new MotaAssetsLoader(
-            this.loadProgress,
-            this.dataLoader,
-            this.audioContext,
-            this.soundPlayer,
-            this.materials
-        );
 
         // 兼容层
         loading.once('loaded', () => {

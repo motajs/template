@@ -1,9 +1,10 @@
-// Type: packages-user/data-state/src/types.ts ICoreStateCoreConfig
+// Type: packages-user/data-state/src/common.ts ICoreStateCoreConfig
 // --- SYSTEM PREFIX END --- //
 {
     "name": "template",
     "title": "魔塔样板",
     "version": "Ver 2.C",
+    "floorAreas": [],
     "content": {
         "mapsDir": "maps",
         "mapListDir": "maps/.list.jsonc",

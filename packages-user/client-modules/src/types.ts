@@ -1,11 +1,8 @@
 import { IMapExtensionManager, IMapRenderer } from './render/map';
-import { IMotaAssetsLoader, IClientBase } from '@user/client-base';
+import { IClientBase } from '@user/client-base';
 import { IExcitation, IExcitationDivider } from '@motajs/animate';
 
 export interface IClientCore extends IClientBase {
-    /** 渲染端加载对象 */
-    readonly loader: IMotaAssetsLoader;
-
     /** 用于渲染系统的 Raf 激励源 */
     readonly rafExcitation: IExcitation<number>;
     /** 用于渲染系统的激励源分频器 */
