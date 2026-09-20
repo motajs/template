@@ -366,12 +366,9 @@ export class MapHeroRenderer implements IMapHeroRenderer {
             logger.warn(91, image.toString());
             return;
         }
-        const { x: dxn, y: dyn } = this.hero.mover.faceHandler.movement(
-            last.nextDirection
-        );
-        const { x: dx, y: dy } = this.hero.mover.faceHandler.movement(
-            last.direction
-        );
+        const handler = this.hero.mover.faceHandler;
+        const { x: dxn, y: dyn } = handler.movement(last.nextDirection);
+        const { x: dx, y: dy } = handler.movement(last.direction);
         const x = last.block.x - dxn;
         const y = last.block.y - dyn;
         const moving = this.renderer.addMovingBlock(this.layer, tex, x, y);

@@ -31,8 +31,12 @@ export class MapExtensionManager implements IMapExtensionManager {
             logger.error(45, 'hero renderer');
             return null;
         }
-        // prettier-ignore
-        const heroRenderer = new MapHeroRenderer(this.renderer, layer, state, faceManager);
+        const heroRenderer = new MapHeroRenderer(
+            this.renderer,
+            layer,
+            state,
+            faceManager
+        );
         this.heroMap.set(state, heroRenderer);
         return heroRenderer;
     }
