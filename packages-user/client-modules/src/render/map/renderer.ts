@@ -30,7 +30,13 @@ import {
     MapTileBehavior,
     MapTileSizeTestMode
 } from './types';
-import { IGameMap, IGameMapHooks, IMapLayer } from '@user/data-base';
+import {
+    IGameMap,
+    IGameMapHooks,
+    IMapLayer,
+    IMapLayerHookController,
+    IMapLayerHooks
+} from '@user/data-base';
 import { IHookController, logger } from '@motajs/common';
 import { compileProgramWith } from '@motajs/client-base';
 import { isNil, maxBy } from 'lodash-es';
@@ -81,6 +87,8 @@ export class MapRenderer
     map: IGameMap | null = null;
     /** 地图状态钩子控制器 */
     private mapHook: IHookController<IGameMapHooks> | null = null;
+    /** 逐图层更新钩子的登记，用于图层列表变化时同步注册与注销 */
+    private layerHooks: Map<IMapLayer, IMapLayerHookController> = new Map();
 
     /** 排序后的图层 */
     private sortedLayers: IMapLayer[] = [];
@@ -411,8 +419,28 @@ export class MapRenderer
         this.sortedLayers.forEach((v, i) => this.layerIndexMap.set(v, i));
     }
 
+    /**
+     * 使登记的逐图层更新钩子与当前地图的图层列表保持一致
+     */
+    private syncLayerHooks(): void {
+        for (const [layer, controller] of this.layerHooks) {
+            if (this.map && this.map.layerList.has(layer)) continue;
+            controller.unload();
+            this.layerHooks.delete(layer);
+        }
+        if (!this.map) return;
+        for (const layer of this.map.layerList) {
+            if (this.layerHooks.has(layer)) continue;
+            // prettier-ignore
+            const controller = layer.addHook(new RendererLayerHook(this, layer));
+            controller.load();
+            this.layerHooks.set(layer, controller);
+        }
+    }
+
     updateLayerList() {
         if (!this.map) return;
+        this.syncLayerHooks();
         this.sortLayer();
         this.resizeLayer();
         this.layerCount = this.map.layerList.size;
@@ -423,6 +451,7 @@ export class MapRenderer
         if (map === this.map) return;
         this.mapHook?.unload();
         this.map = map;
+        this.syncLayerHooks();
         this.mapHook = map.addHook(new RendererLayerStateHook(this));
         this.mapHook.load();
         this.sortLayer();
@@ -1741,24 +1770,20 @@ class RendererLayerStateHook implements Partial<IGameMapHooks> {
     onUpdateLayer(): void {
         this.renderer.updateLayerList();
     }
+}
 
-    onUpdateLayerArea(
-        layer: IMapLayer,
-        x: number,
-        y: number,
-        width: number,
-        height: number
-    ): void {
-        this.renderer.updateLayerArea(layer, x, y, width, height);
+class RendererLayerHook implements Partial<IMapLayerHooks> {
+    constructor(
+        readonly renderer: MapRenderer,
+        readonly layer: IMapLayer
+    ) {}
+
+    onUpdateArea(x: number, y: number, width: number, height: number): void {
+        this.renderer.updateLayerArea(this.layer, x, y, width, height);
     }
 
-    onUpdateLayerBlock(
-        layer: IMapLayer,
-        block: number,
-        x: number,
-        y: number
-    ): void {
-        this.renderer.updateLayerBlock(layer, block, x, y);
+    onUpdateBlock(block: number, x: number, y: number): void {
+        this.renderer.updateLayerBlock(this.layer, block, x, y);
     }
 }
 
