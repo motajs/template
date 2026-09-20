@@ -1,5 +1,6 @@
 // Type: packages-user/data-common/src/store/types IItemRawData
 // ItemEffect: ./item.ts
+// --- SYSTEM PREFIX END --- //
 [
     {
         "num": 200,

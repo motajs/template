@@ -1,5 +1,4 @@
 import { logger } from '@motajs/common';
-import { ILoadManager, LoadManager } from '@motajs/loader';
 import {
     IRoleFaceBinder,
     IFaceManager,
@@ -33,8 +32,6 @@ import {
     IHeroState,
     IFlagSystem,
     FlagSystem,
-    IMotaDataLoader,
-    MotaDataLoader,
     IMapState,
     MapState
 } from '@user/data-base';
@@ -70,6 +67,10 @@ import {
     ReplayUnequip,
     ReplayUseItem
 } from './replay';
+import { IMotaDataLoader } from './loader/types';
+import { MotaDataLoader } from './loader/loader';
+import { ILoadManager, LoadManager } from '@motajs/loader';
+import { DefaultDataLoaderHook } from './loader/hook';
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
@@ -93,8 +94,8 @@ export class CoreState implements ICoreState {
     readonly pathfinding: IPathfindingSystem;
 
     // Layer 3 用户层，也就是最顶层的内容，一般仅用于初始化以及仅供渲染端调用的顶层模块
-    readonly loadProgress: ILoadManager;
-    readonly dataLoader: IMotaDataLoader;
+    readonly loader: IMotaDataLoader;
+    readonly loadManager: ILoadManager;
 
     /** 可存档对象映射 */
     private readonly saveables: Map<string, ISaveableContent<any>> = new Map();
@@ -142,9 +143,6 @@ export class CoreState implements ICoreState {
         const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
         const heroState = new HeroState(this, dir8, heroAttribute);
         this.hero = heroState;
-
-        this.loadProgress = new LoadManager();
-        this.dataLoader = new MotaDataLoader(this.loadProgress);
 
         // 怪物管理器
         const comparer = new MainEnemyComparer();
@@ -200,6 +198,15 @@ export class CoreState implements ICoreState {
         //#endregion
 
         //#region L3 初始化
+
+        // 加载
+        this.loadManager = new LoadManager();
+        this.loader = new MotaDataLoader(
+            this.loadManager,
+            config.coreURL,
+            config.loadStarter
+        );
+        this.loader.addHook(new DefaultDataLoaderHook());
 
         // 存档内容
         this.addSaveableContent('@system/hero', this.hero);

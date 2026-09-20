@@ -1,14 +1,22 @@
 // Type: packages-user/data-state/src/types.ts ICoreStateCoreConfig
+// --- SYSTEM PREFIX END --- //
 {
     "name": "template",
     "title": "魔塔样板",
     "version": "Ver 2.C",
     "content": {
-        "mapsDir": "content/maps",
-        "mapListDir": "content/maps/.list.jsonc",
-        "enemyDir": "content/enemy.jsonc",
-        "itemDir": "content/item.jsonc",
-        "tileDir": "content/tile.jsonc"
+        "mapsDir": "maps",
+        "mapListDir": "maps/.list.jsonc",
+        "enemyDir": "enemy.jsonc",
+        "itemDir": "item.jsonc",
+        "itemEffectDir": "item.js",
+        "tileDir": "tile.jsonc",
+        "defaults": {
+            "enemyDefault": "defaults/enemy.jsonc",
+            "itemDefault": "defaults/item.jsonc",
+            "mapDefault": "defaults/map.jsonc",
+            "tileDefault": "defaults/tile.jsonc"
+        }
     },
     "init": {
         "startEvent": "game-start",

@@ -1,4 +1,4 @@
-export * from './progress';
+export * from './manager';
 export * from './starter';
 export * from './stream';
 export * from './task';

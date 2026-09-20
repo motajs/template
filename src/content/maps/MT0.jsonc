@@ -1,4 +1,5 @@
 // Type: packages-user/data-common/src/store/types IMapRawData
+// --- SYSTEM PREFIX END --- //
 {
     "floorId": "MT0",
     "width": 13,

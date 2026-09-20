@@ -1,6 +1,7 @@
 // Type: packages-user/data-common/src/store/types ITileRawData
 // "@required" means the property is required.
 // For objects, system will compare every properties.
+// --- SYSTEM PREFIX END --- //
 {
     "num": "@required",
     "id": "@required",

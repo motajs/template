@@ -49,6 +49,11 @@ export class LoadManager
     }
 
     async *load(): AsyncIterable<number> {
+        for (const task of this.addedTasks) {
+            if (!task.contentLoaded) {
+                task.start();
+            }
+        }
         while (true) {
             if (this.loadedTasks.size === this.addedTasks.size) {
                 return;
