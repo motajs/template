@@ -477,6 +477,12 @@ importers:
 
   src:
     dependencies:
+      '@user/data-common':
+        specifier: workspace:*
+        version: link:../packages-user/data-common
+      '@user/data-state':
+        specifier: workspace:*
+        version: link:../packages-user/data-state
       '@user/entry-client':
         specifier: workspace:*
         version: link:../packages-user/entry-client

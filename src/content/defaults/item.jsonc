@@ -1,0 +1,18 @@
+// Type: packages-user/data-common/src/store/types IItemRawData
+// "@required" means the property is required.
+// For objects, system will compare every properties.
+{
+    "num": "@required",
+    "category": 0,
+    "name": "新道具",
+    "text": "",
+    "hideInToolbox": false,
+    "equip": {
+        "slots": [],
+        "animate": null,
+        "value": {},
+        "percentage": {},
+        "loadEvent": null,
+        "unloadEvent": null
+    }
+}

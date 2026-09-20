@@ -9,5 +9,6 @@ import { CoreState } from './core';
  * 否则可能导致录像验证失败。
  */
 export const state = new CoreState({
-    loadStarter: new WebLoadStarter()
+    loadStarter: new WebLoadStarter(),
+    coreURL: 'placeholder'
 });

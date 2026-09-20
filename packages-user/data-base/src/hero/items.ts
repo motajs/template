@@ -84,7 +84,7 @@ export class HeroItems<THero> implements IHeroItems<THero> {
 
         if (raw.category === ItemCategory.Pick) {
             for (let i = 0; i < count; i++) {
-                raw.effect.useEffect(raw);
+                raw.effect.useEffect?.(raw, this.state);
             }
             return;
         }
@@ -104,7 +104,8 @@ export class HeroItems<THero> implements IHeroItems<THero> {
                 map.delete(num);
             }
         } else if (count > 0) {
-            map.set(num, { id: raw.id, num: raw.num, raw, count });
+            const store = this.state.tileStore;
+            map.set(num, { id: store.id(raw.num)!, num: raw.num, raw, count });
         }
     }
 
@@ -124,12 +125,13 @@ export class HeroItems<THero> implements IHeroItems<THero> {
             return false;
         }
 
-        if (!raw.effect.canUse(raw)) return false;
+        const can = raw.effect.canUse?.(raw, this.state) ?? true;
+        if (!can) return false;
 
         const replay = this.state.replaySystem;
         replay.array.add(ReplayCode.UseItem, [raw.num]);
 
-        raw.effect.useEffect(raw);
+        raw.effect.useEffect?.(raw, this.state);
 
         if (raw.category === ItemCategory.Consumable) {
             state.count--;
@@ -167,8 +169,9 @@ export class HeroItems<THero> implements IHeroItems<THero> {
         for (const save of saves) {
             const raw = this.state.itemStore.getData(save.num);
             if (!raw) continue;
+            const store = this.state.tileStore;
             map.set(save.num, {
-                id: raw.id,
+                id: store.id(raw.num)!,
                 num: raw.num,
                 raw,
                 count: save.count

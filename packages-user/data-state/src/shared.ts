@@ -30,6 +30,7 @@ export const DEFAULT_HERO_IMAGE: ImageIds = 'hero.png';
 /** 勇士的初始属性，数值填多少目前都无所谓，因为最终会从旧样板读取，但是必须得填 */
 export const HERO_DEFAULT_ATTRIBUTE: IHeroAttr = {
     name: '',
+    level: 0,
     hp: 1,
     hpmax: 0,
     atk: 0,

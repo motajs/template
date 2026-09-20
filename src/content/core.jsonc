@@ -1,0 +1,47 @@
+// Type: packages-user/data-state/src/types.ts ICoreStateCoreConfig
+{
+    "name": "template",
+    "title": "魔塔样板",
+    "version": "Ver 2.C",
+    "content": {
+        "mapsDir": "content/maps",
+        "mapListDir": "content/maps/.list.jsonc",
+        "enemyDir": "content/enemy.jsonc",
+        "itemDir": "content/item.jsonc",
+        "tileDir": "content/tile.jsonc"
+    },
+    "init": {
+        "startEvent": "game-start",
+        "hero": {
+            "x": 6,
+            "y": 6,
+            "floorId": "MT0",
+            "equipSlots": ["武器", "盾牌"],
+            "attribute": {
+                "name": "阳光",
+                "level": 0,
+                "hp": 10000,
+                "atk": 100,
+                "def": 100,
+                "mdef": 0,
+                "mana": 0,
+                "manamax": 0,
+                "money": 0,
+                "exp": 0
+            }
+        }
+    },
+    "flag": {
+        "flyNearStair": false,
+        "flyRecordPosition": true,
+        "itemHint": true,
+        "enableNegativeDamage": false,
+        "betweenDamageMax": true,
+        "enablePick": true,
+        "ignoreChangeFLoor": true,
+        "allowDeadZone": false,
+        "enableTeleport": true,
+        "enableRouteFolding": true,
+        "enableTeleportMerge": true
+    }
+}

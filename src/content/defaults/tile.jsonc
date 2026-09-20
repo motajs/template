@@ -1,0 +1,15 @@
+// Type: packages-user/data-common/src/store/types ITileRawData
+// "@required" means the property is required.
+// For objects, system will compare every properties.
+{
+    "num": "@required",
+    "id": "@required",
+    "events": {},
+    "type": 0,
+    "eventPass": false,
+    "pass": {
+        "onlyEvents": true,
+        "outPass": 15,
+        "inPass": 15
+    }
+}

@@ -65,7 +65,8 @@ export class ClientCore extends CoreState implements IClientCore {
 
     constructor() {
         super({
-            loadStarter: new WebLoadStarter()
+            loadStarter: new WebLoadStarter(),
+            coreURL: 'placeholder'
         });
 
         //#region Layer 4

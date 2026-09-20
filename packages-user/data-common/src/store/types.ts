@@ -129,25 +129,27 @@ export const enum ItemCategory {
     Equipment
 }
 
-export interface IItemEffect<THero> {
+export interface IItemEffect<THero, State = unknown> {
     /**
      * 道具使用事件内容对于 `Pick` 类型，会在拾取时触发；
      * 对于 `Constant` 和 `Consumable` 类型，会在使用时触发。
      */
-    readonly useEvent: unknown;
+    readonly useEvent?: string;
 
     /**
      * 道具使用效果，使用道具时调用。对于 `Pick` 类型，会在拾取时触发；
      * 对于 `Constant` 和 `Consumable` 类型，会在使用时触发。
      * @param item 当前道具数据
+     * @param state 当前的数据端对象，即 `CoreState` 对象
      */
-    useEffect(item: IItemRawData<THero>): void;
+    useEffect?(item: IItemRawData<THero>, state: State): void;
 
     /**
      * 能否使用道具，仅对 `Constant` 和 `Consumable` 类型的道具生效
      * @param item 当前道具数据
+     * @param state 当前的数据端对象，即 `CoreState` 对象
      */
-    canUse(item: IItemRawData<THero>): boolean;
+    canUse?(item: IItemRawData<THero>, state: State): boolean;
 }
 
 export interface IItemEquipData<THero> {
@@ -156,9 +158,9 @@ export interface IItemEquipData<THero> {
     /** 动画 id */
     readonly animate: AnimationIds;
     /** 数值加成 */
-    readonly value: Map<SelectKey<THero, number>, number>;
+    readonly value: Record<SelectKey<THero, number>, number>;
     /** 百分比加成 */
-    readonly percentage: Map<SelectKey<THero, number>, number>;
+    readonly percentage: Record<SelectKey<THero, number>, number>;
     /** 穿上装备事件 */
     readonly loadEvent: unknown;
     /** 脱下装备事件 */
@@ -168,8 +170,6 @@ export interface IItemEquipData<THero> {
 export interface IItemRawData<THero> {
     /** 道具在地图上的图块数字 */
     readonly num: number;
-    /** 道具的字符串标识符 */
-    readonly id: string;
     /** 道具分类 */
     readonly category: ItemCategory;
     /** 道具显示名称 */
@@ -188,10 +188,10 @@ export interface IItemRawData<THero> {
 
 export interface IItemStore<THero> {
     /**
-     * 获取指定图块数字对应的道具原始数据
-     * @param num 道具图块数字
+     * 获取指定图块数字或图块 id 对应的道具原始数据
+     * @param token 道具图块数字或图块 id
      */
-    getData(num: number): IItemRawData<THero> | null;
+    getData(token: number | string): IItemRawData<THero> | null;
 
     /**
      * 获取指定图块数字对应的道具分类
@@ -304,6 +304,33 @@ export interface IGameEventStore {
     >(
         id: string
     ): IReadonlyGameEvent<P, E, R> | null;
+}
+
+//#endregion
+
+//#region enemy
+
+export interface IEnemyRawData<T> {
+    /** 怪物的图块数字 */
+    readonly num: number;
+    /** 怪物数据定义 */
+    readonly attribute: Readonly<T>;
+    /** 怪物拥有的特殊属性，键表示特殊属性数字，值表示特殊属性数值 */
+    readonly special: Record<number, any>;
+}
+
+export interface IEnemyStore<T> {
+    /**
+     * 添加怪物原始数据定义
+     * @param enemy 怪物原始数据
+     */
+    addEnemy(enemy: IEnemyRawData<T>): void;
+
+    /**
+     * 根据图块数字或图块 id 获取怪物原始数据
+     * @param token 怪物的图块数字或图块 id
+     */
+    getEnemy(token: number | string): IEnemyRawData<T> | null;
 }
 
 //#endregion

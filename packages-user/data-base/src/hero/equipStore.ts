@@ -32,8 +32,15 @@ export class EquipmentState<THero> implements IEquipmentState<THero> {
         this.modifiers = [];
 
         const equip = item.equip;
-        this.value = new Map(equip.value);
-        this.percentage = new Map(equip.percentage);
+        this.value = new Map(
+            Object.entries(equip.value) as [SelectKey<THero, number>, number][]
+        );
+        this.percentage = new Map(
+            Object.entries(equip.percentage) as [
+                SelectKey<THero, number>,
+                number
+            ][]
+        );
 
         if (buildModifier) {
             this.rebuildModifiers();
@@ -81,14 +88,14 @@ export class EquipmentState<THero> implements IEquipmentState<THero> {
         const { value, percentage } = this.item.equip;
         const valueDiff = new Map<SelectKey<THero, number>, number>();
         for (const [name, equipValue] of this.value) {
-            const base = value.get(name);
+            const base = value[name];
             if (base !== equipValue) {
                 valueDiff.set(name, equipValue);
             }
         }
         const perDiff = new Map<SelectKey<THero, number>, number>();
         for (const [name, equipPer] of this.percentage) {
-            const base = percentage.get(name);
+            const base = percentage[name];
             if (base !== equipPer) {
                 perDiff.set(name, equipPer);
             }
@@ -134,11 +141,15 @@ export class EquipmentState<THero> implements IEquipmentState<THero> {
         this.percentage.clear();
 
         // 基准为装备原始定义，再叠加存档中的差异条目
-        for (const [name, value] of this.item.equip.value) {
-            this.value.set(name, value);
+        for (const [name, value] of Object.entries<number>(
+            this.item.equip.value
+        )) {
+            this.value.set(name as SelectKey<THero, number>, value);
         }
-        for (const [name, value] of this.item.equip.percentage) {
-            this.percentage.set(name, value);
+        for (const [name, value] of Object.entries<number>(
+            this.item.equip.percentage
+        )) {
+            this.percentage.set(name as SelectKey<THero, number>, value);
         }
 
         // 差异内容

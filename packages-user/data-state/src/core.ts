@@ -122,7 +122,7 @@ export class CoreState implements ICoreState {
         // 图块
         this.tileStore = new TileStore();
         // 道具
-        this.itemStore = new ItemStore<IHeroAttr>();
+        this.itemStore = new ItemStore<IHeroAttr>(this.tileStore);
         // 地图
         this.mapStore = new MapStore();
         // 游戏事件

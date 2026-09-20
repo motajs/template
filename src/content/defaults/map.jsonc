@@ -1,0 +1,10 @@
+// Type: packages-user/data-common/src/store/types IMapRawData
+// "@required" means the property is required.
+// For objects, system will compare every properties.
+{
+    "floorId": "@required",
+    "width": 13,
+    "map": {},
+    "layerAlias": {},
+    "events": {}
+}

@@ -255,7 +255,7 @@
         "178": "Save data with keys of '$1' are saved but not be loaded, is there some issue for it?",
         "179": "Replay $1 received an out-of-range index $2, the current replay length is $3. The operation will be ignored.",
         "180": "Specified face group does not exist, face group setting failed.",
-        "181": "",
+        "181": "Number $1 has been registered to $2 store, old one will be overridden.",
         "182": "Cannot bind '$1' instance to '$2' since they belong to different CoreState instance.",
         "183": "An in-map location is expected to begin map graph building, but got outside.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."

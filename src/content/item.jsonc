@@ -1,3 +1,11 @@
 // Type: packages-user/data-common/src/store/types IItemRawData
 // ItemEffect: ./item.ts
-{}
+[
+    {
+        "num": 200,
+        "category": 1,
+        "name": "怪物手册",
+        "text": "蕴含着魔塔中所有怪物的详细信息",
+        "hideInToolbox": false
+    }
+]
