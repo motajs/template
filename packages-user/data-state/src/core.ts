@@ -203,12 +203,9 @@ export class CoreState implements ICoreState {
 
         // 加载
         this.loadManager = new LoadManager();
-        this.loader = new MotaDataLoader(
-            this.loadManager,
-            config.coreURL,
-            config.loadStarter
-        );
+        this.loader = new MotaDataLoader(this.loadManager, config.loadStarter);
         this.loader.addHook(new DefaultDataLoaderHook());
+        this.loader.addCoreConfig('core', config.coreURL);
 
         // 存档内容
         this.addSaveableContent('@system/hero', this.hero);

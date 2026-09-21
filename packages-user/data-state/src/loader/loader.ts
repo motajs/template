@@ -28,6 +28,8 @@ export class MotaDataLoader
     /** 当前是否已经加载完毕 */
     private dataLoaded: boolean = false;
 
+    /** 核心配置文件路径 */
+    private coreConfigs: Map<string, string> = new Map();
     /** 额外配置对象的路径 */
     private extraConfigs: Map<string, string> = new Map();
     /** 配置文件列表 */
@@ -38,7 +40,6 @@ export class MotaDataLoader
 
     constructor(
         readonly manager: ILoadManager,
-        readonly coreDir: string,
         readonly starter: ILoadTaskStarter
     ) {
         super();
@@ -51,6 +52,10 @@ export class MotaDataLoader
         hook: Partial<IMotaDataLoaderHooks>
     ): IHookController<IMotaDataLoaderHooks> {
         return new HookController(this, hook);
+    }
+
+    addCoreConfig(identifier: string, url: string): void {
+        this.coreConfigs.set(identifier, url);
     }
 
     addExtraConfig(identifier: string, url: string): void {
@@ -83,23 +88,24 @@ export class MotaDataLoader
         const processor = new PrefixedJSONCProcessor<ICoreStateCoreConfig>(
             '// --- SYSTEM PREFIX END --- //'
         );
-        const coreTask = new LoadTask<LoadDataType.Text, ICoreStateCoreConfig>({
-            identifier: 'data-core-config',
-            url: this.resolveURL(this.coreDir),
-            dataType: LoadDataType.Text
-        });
-        coreTask.setProcessor(processor);
-        coreTask.setStarter(this.starter);
-        this.manager.addTask(coreTask);
+        for (const [id, url] of this.coreConfigs) {
+            const coreTask = new LoadTask<
+                LoadDataType.Text,
+                ICoreStateCoreConfig
+            >({
+                identifier: id,
+                url: this.resolveURL(url),
+                dataType: LoadDataType.Text
+            });
+            coreTask.setProcessor(processor);
+            coreTask.setStarter(this.starter);
+            this.manager.addTask(coreTask);
+        }
         yield* this.manager.load();
 
         // 然后加载其他配置文件
-        const coreConfig = await coreTask.loaded();
-        this.configMap.set('core', coreConfig);
         await Promise.all(
-            this.forEachHook(hook =>
-                hook.onCoreConfigLoaded?.(coreConfig, this)
-            )
+            this.forEachHook(hook => hook.onCoreConfigLoaded?.(this))
         );
 
         for (const [id, url] of this.extraConfigs) {

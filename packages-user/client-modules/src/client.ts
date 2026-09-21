@@ -1,5 +1,5 @@
 import { CoreState } from '@user/data-state';
-import { IClientCore } from './types';
+import { IClientCore, IClientCoreConfig } from './types';
 import {
     IMotaAudioContext,
     ISoundPlayer,
@@ -60,7 +60,7 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly soundPlayer: ISoundPlayer<SoundIds>;
     readonly bgmPlayer: IBGMPlayer<BgmIds>;
 
-    constructor() {
+    constructor(config: IClientCoreConfig) {
         super({
             loadStarter: new WebLoadStarter(),
             coreURL: 'placeholder'
@@ -128,6 +128,8 @@ export class ClientCore extends CoreState implements IClientCore {
         });
 
         //#endregion
+
+        this.loader.addCoreConfig('client', config.clientURL);
     }
 
     /**

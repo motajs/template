@@ -68,6 +68,7 @@
         "66": "Load url '$1' error, since specified a prefixed jsonc parser, but no(or more than one) prefix split string '$2' found in response string.",
         "67": "Load url '$1' error since the raw json string splitted by prefix split string cannot be parsed to a valid JavaScript object. Parse error info: $2",
         "68": "Extra config identifier '$1' has conflicts. More than one extra config use this identifier, and the final load result is unpredictable since network decides which one to be loaded fast.",
+        "69": "$1 core config not loaded for the next loading phase.",
         "2001": "Replay($1): Replay parameter count mismatch: expected $2, got $3.",
         "2002": "Replay($1): Replay parameter type mismatch: index $2, expected $3, got $4.",
         "2003": "Replay(move): Expected hero to be stopped before execute moving step.",

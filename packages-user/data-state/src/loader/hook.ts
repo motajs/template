@@ -1,3 +1,4 @@
+import { logger } from '@motajs/common';
 import { ICoreStateCoreConfig } from '../common';
 import { IMotaDataLoader, IMotaDataLoaderHooks } from './types';
 
@@ -6,10 +7,12 @@ export class DefaultDataLoaderHook implements IMotaDataLoaderHooks {
 
     destroy(): void {}
 
-    onCoreConfigLoaded(
-        coreConfig: ICoreStateCoreConfig,
-        loader: IMotaDataLoader
-    ): Promise<void> {
+    onCoreConfigLoaded(loader: IMotaDataLoader): Promise<void> {
+        const coreConfig = loader.getConfig<ICoreStateCoreConfig>('core');
+        if (!coreConfig) {
+            logger.error(69, 'Data');
+            return Promise.resolve();
+        }
         const content = coreConfig.content;
         loader.addExtraConfig('enemy', content.enemyDir);
         loader.addExtraConfig('item', content.itemDir);
