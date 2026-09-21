@@ -1,18 +1,12 @@
+import { IClientSystem } from '@user/client-system';
 import { IMapExtensionManager, IMapRenderer } from './render/map';
-import { IClientBase } from '@user/client-base';
-import { IExcitation, IExcitationDivider } from '@motajs/animate';
 
 export interface IClientCoreConfig {
     /** 渲染端数据配置文件路径，相对于 `src/content` */
     readonly clientURL: string;
 }
 
-export interface IClientCore extends IClientBase {
-    /** 用于渲染系统的 Raf 激励源 */
-    readonly rafExcitation: IExcitation<number>;
-    /** 用于渲染系统的激励源分频器 */
-    readonly excitationDivider: IExcitationDivider<number>;
-
+export interface IClientCore extends IClientSystem {
     /** 主地图渲染器，主要用于渲染游戏画面中的地图 */
     readonly mainMapRenderer: IMapRenderer;
     /** 副地图渲染器，主要用于渲染缩略图、浏览地图等内容 */

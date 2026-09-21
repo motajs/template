@@ -13,7 +13,7 @@ import {
 import {
     IBlockIdentifier,
     IMaterialData,
-    IMaterialManager,
+    ITextureManager,
     IIndexedIdentifier,
     IMaterialAssetData,
     BlockCls,
@@ -35,7 +35,7 @@ interface TilesetCache {
     readonly texture: ITexture;
 }
 
-export class MaterialManager implements IMaterialManager {
+export class MaterialManager implements ITextureManager {
     readonly tileStore: ITextureStore = new TextureStore();
     readonly tilesetStore: ITextureStore = new TextureStore();
     readonly imageStore: ITextureStore = new TextureStore();

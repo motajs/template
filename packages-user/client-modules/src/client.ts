@@ -10,7 +10,7 @@ import {
 } from '@motajs/audio';
 import { IRenderTreeRoot, MotaRenderer } from '@motajs/render';
 import {
-    IMaterialManager,
+    ITextureManager,
     IAutotileProcessor,
     MaterialManager,
     AutotileProcessor,
@@ -47,7 +47,7 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly save: ISaveSystem;
 
     // Layer 5 渲染顶层
-    readonly materials: IMaterialManager;
+    readonly materials: ITextureManager;
     readonly autotile: IAutotileProcessor;
 
     readonly rafExcitation: IExcitation<number>;

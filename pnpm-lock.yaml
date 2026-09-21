@@ -428,6 +428,12 @@ importers:
       '@motajs/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@user/client-base':
+        specifier: workspace:*
+        version: link:../client-base
+      '@user/client-system':
+        specifier: workspace:*
+        version: link:../client-system
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
@@ -437,6 +443,12 @@ importers:
       '@user/data-state':
         specifier: workspace:*
         version: link:../data-state
+
+  packages-user/client-system:
+    dependencies:
+      '@user/client-base':
+        specifier: workspace:*
+        version: link:../client-base
 
   packages-user/data-base:
     dependencies:

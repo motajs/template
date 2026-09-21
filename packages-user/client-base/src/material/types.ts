@@ -6,6 +6,7 @@ import {
     ITextureStore,
     SizedCanvasImageSource
 } from '@motajs/render';
+import { ICoreStateExtended } from '@user/data-state';
 
 export const enum BlockCls {
     Unknown,
@@ -81,13 +82,6 @@ export interface IAutotileConnection {
     readonly center: number;
 }
 
-export interface IBigImageReturn {
-    /** 大怪物贴图在 store 中的标识符 */
-    readonly identifier: number;
-    /** 存储大怪物贴图的存储对象 */
-    readonly store: ITextureStore;
-}
-
 export interface IMaterialFramedData {
     /** 贴图对象 */
     texture: ITexture;
@@ -107,9 +101,9 @@ export interface IMaterialAsset
     readonly data: ITextureComposedData;
 }
 
-export interface IAutotileProcessor {
+export interface IAutotileProcessor extends ICoreStateExtended {
     /** 该自动元件处理器使用的素材管理器 */
-    readonly manager: IMaterialManager;
+    readonly manager: ITextureManager;
 
     /**
      * 设置一个自动元件的特殊连接方式，设置后当前自动元件将会单方面与目标元件连接，
@@ -199,7 +193,7 @@ export interface IAutotileProcessor {
     ): Generator<ITextureRenderable, void>;
 }
 
-export interface IMaterialGetter {
+export interface ITextureGetter {
     /**
      * 根据图块数字获取图块，可以获取额外素材，会自动将未缓存的额外素材缓存
      * @param identifier 图块的图块数字
@@ -211,25 +205,6 @@ export interface IMaterialGetter {
      * @param identifier 图块标识符，即图块数字
      */
     getBlockCls(identifier: number): BlockCls;
-
-    /**
-     * 判断一个图块是否包含 `bigImage` 贴图，即是否是大怪物
-     * @param identifier 图块标识符，即图块数字
-     */
-    isBigImage(identifier: number): boolean;
-
-    /**
-     * 根据图块标识符获取一个图块的 `bigImage` 贴图
-     * @param identifier 图块标识符，即图块数字
-     */
-    getBigImage(identifier: number): Readonly<IMaterialFramedData> | null;
-
-    /**
-     * 根据图块标识符，首先判断是否是 `bigImage` 贴图，如果是，则返回 `bigImage` 贴图，
-     * 否则返回普通贴图。如果图块不存在，则返回 `null`
-     * @param identifier 图块标识符，即图块数字
-     */
-    getIfBigImage(identifier: number): Readonly<IMaterialFramedData> | null;
 
     /**
      * 根据标识符获取图集信息
@@ -250,7 +225,7 @@ export interface IMaterialGetter {
     getImage(identifier: number): ITexture | null;
 }
 
-export interface IMaterialAliasGetter {
+export interface ITextureAliasGetter {
     /**
      * 根据图块 id 获取图块，可以获取额外素材，会自动将未缓存的额外素材缓存
      * @param alias 图块 id
@@ -280,16 +255,12 @@ export interface IMaterialAliasGetter {
      * @param alias 图块别名，即图块的 id
      */
     getBlockClsByAlias(alias: string): BlockCls;
-
-    /**
-     * 根据图块别名获取一个图块的 `bigImage` 贴图
-     * @param alias 图块别名，即图块的 id
-     */
-    getBigImageByAlias(alias: string): Readonly<IMaterialFramedData> | null;
 }
 
-export interface IMaterialManager
-    extends IMaterialGetter, IMaterialAliasGetter {
+export interface ITextureManager
+    extends ITextureGetter, ITextureAliasGetter, ICoreStateExtended {
+    /** 通过加载获取的所有纹理贴图存储，包括图块、普通图片等 */
+    readonly textures: ITextureStore;
     /** 贴图存储，把 terrains 等内容单独分开存储 */
     readonly tileStore: ITextureStore;
     /** tilesets 贴图存储，每个 tileset 是一个贴图对象 */
@@ -298,8 +269,6 @@ export interface IMaterialManager
     readonly imageStore: ITextureStore;
     /** 图集存储，将常用贴图存入其中 */
     readonly assetStore: ITextureStore;
-    /** bigImage 存储，存储大怪物数据 */
-    readonly bigImageStore: ITextureStore;
 
     /** 图集信息存储 */
     readonly assetDataStore: Iterable<[number, ITextureComposedData]>;
@@ -446,18 +415,6 @@ export interface IMaterialManager
     getAliasByIdentifier(identifier: number): string | undefined;
 
     /**
-     * 设置一个图块的 `bigImage` 贴图，即大怪物贴图，但不止怪物能用
-     * @param identifier 图块标识符，即图块数字
-     * @param image `bigImage` 对应的贴图对象
-     * @param frames `bigImage` 的帧数，即贴图有多少帧
-     */
-    setBigImage(
-        identifier: number,
-        image: ITexture,
-        frames: number
-    ): IBigImageReturn;
-
-    /**
      * 当前的所有图集中是否包含指定的贴图对象
      * @param texture 贴图对象
      */
@@ -470,7 +427,7 @@ export interface IMaterialManager
     getTextureAsset(texture: ITexture): number | undefined;
 }
 
-export interface IAssetBuilder {
+export interface IAssetBuilder extends ICoreStateExtended {
     /**
      * 将图集打包器输出至指定贴图存储对象，只能输出到一个存储对象中，设置多个仅最后一个有效
      * @param store 贴图存储对象
@@ -502,7 +459,8 @@ export interface IAssetBuilder {
     close(): void;
 }
 
-export interface ITrackedAssetData extends IDirtyTracker<Set<number>> {
+export interface ITrackedAssetData
+    extends IDirtyTracker<Set<number>>, ICoreStateExtended {
     /** 图像源列表 */
     readonly sourceList: Map<number, ImageBitmap>;
     /**
@@ -511,7 +469,7 @@ export interface ITrackedAssetData extends IDirtyTracker<Set<number>> {
      */
     readonly skipRef: Map<SizedCanvasImageSource, number>;
     /** 贴图数据 */
-    readonly materials: IMaterialGetter;
+    readonly materials: ITextureGetter;
 
     /**
      * 取消使用此图集，释放相关资源

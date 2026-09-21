@@ -1,6 +1,9 @@
 import { ITexture } from '@motajs/render';
 import { BlockCls } from './types';
 
+/**
+ * @deprecated 后续理应不需要此接口
+ */
 export function getClsByString(cls: Cls): BlockCls {
     switch (cls) {
         case 'terrains':
@@ -26,6 +29,9 @@ export function getClsByString(cls: Cls): BlockCls {
     }
 }
 
+/**
+ * @deprecated 后续应对存储结构进行重构，每个 tile 都可以自定义帧数
+ */
 export function getTextureFrame(cls: BlockCls, texture: ITexture) {
     switch (cls) {
         case BlockCls.Animates:

@@ -10,7 +10,7 @@ import {
     BlockCls,
     IAutotileProcessor,
     IMaterialFramedData,
-    IMaterialManager,
+    ITextureManager,
     ITrackedAssetData
 } from '@user/client-base';
 import {
@@ -214,7 +214,7 @@ export class MapRenderer
      * 创建地图渲染器
      * @param manager 素材管理器
      */
-    constructor(readonly manager: IMaterialManager) {
+    constructor(readonly manager: ITextureManager) {
         this.movingIndexPool.push(
             ...Array.from({ length: this.movingCount }, (_, i) => i).reverse()
         );

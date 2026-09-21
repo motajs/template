@@ -6,7 +6,7 @@ import {
     TextureMaxRectsStreamComposer,
     SizedCanvasImageSource
 } from '@motajs/render';
-import { IAssetBuilder, IMaterialGetter, ITrackedAssetData } from './types';
+import { IAssetBuilder, ITextureGetter, ITrackedAssetData } from './types';
 import { logger, PrivateListDirtyTracker } from '@motajs/common';
 
 export class AssetBuilder implements IAssetBuilder {
@@ -24,7 +24,7 @@ export class AssetBuilder implements IAssetBuilder {
     /** 贴图更新的 promise */
     private pending: Promise<void> = Promise.resolve();
 
-    constructor(readonly materials: IMaterialGetter) {
+    constructor(readonly materials: ITextureGetter) {
         this.trackedData = new TrackedAssetData(materials, this);
     }
 
@@ -108,7 +108,7 @@ class TrackedAssetData
     private promises: Set<Promise<ImageBitmap>> = new Set();
 
     constructor(
-        readonly materials: IMaterialGetter,
+        readonly materials: ITextureGetter,
         readonly builder: AssetBuilder
     ) {
         super(0);

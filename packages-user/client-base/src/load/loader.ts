@@ -22,7 +22,7 @@ import {
 } from '@user/data-base';
 import { IMotaAudioContext, ISoundPlayer } from '@motajs/audio';
 import { loading } from '@user/data-base';
-import { IMaterialManager } from '../material';
+import { ITextureManager } from '../material';
 import { ITextureSplitter, Texture, TextureRowSplitter } from '@motajs/render';
 import { iconNames } from './data';
 import { IMotaDataLoader } from '@user/data-base';
@@ -55,7 +55,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
         private readonly dataLoader: IMotaDataLoader,
         private readonly ac: IMotaAudioContext,
         private readonly sounds: ISoundPlayer<SoundIds>,
-        private readonly materials: IMaterialManager
+        private readonly materials: ITextureManager
     ) {
         this.imageProcessor = new LoadImageProcessor();
         this.audioProcessor = new LoadAudioProcessor(ac);

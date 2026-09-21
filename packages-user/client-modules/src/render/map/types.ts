@@ -7,7 +7,7 @@ import {
 import {
     IAutotileProcessor,
     IMaterialFramedData,
-    IMaterialManager,
+    ITextureManager,
     ITrackedAssetData
 } from '@user/client-base';
 import { IGameMap, IMapLayer } from '@user/data-base';
@@ -326,7 +326,7 @@ export interface IMapRenderResult {
 
 export interface IMapRenderer {
     /** 地图渲染器使用的资源管理器 */
-    readonly manager: IMaterialManager;
+    readonly manager: ITextureManager;
     /** 画布渲染上下文 */
     readonly gl: WebGL2RenderingContext;
 

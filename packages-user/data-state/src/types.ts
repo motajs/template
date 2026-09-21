@@ -4,8 +4,6 @@ import { IStateSystem } from '@user/data-system';
 import { ISaveableContent } from '@user/data-common';
 import { IMotaDataLoader } from './loader/types';
 
-//#region 数据端主对象
-
 export interface ICoreStateConfig {
     /**
      * 加载启动器，用于适配不同加载环境。
@@ -44,4 +42,7 @@ export interface ICoreState
     ): void;
 }
 
-//#endregion
+export interface ICoreStateExtended {
+    /** 当前对象对应的数据层主对象（Layer 3 对象） */
+    readonly state: ICoreState;
+}
