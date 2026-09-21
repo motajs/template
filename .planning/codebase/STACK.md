@@ -103,7 +103,7 @@
 **Production:**
 - Static HTML5 game: `pnpm build:game` produces `dist/` (deployable static bundle) and `dist.zip`.
 - Deployment target: GitHub Pages via `.github/workflows/page.yml` (builds `dist` folder to `gh-pages` branch).
-- The data layer (`src/data.ts`) is built separately as an IIFE bundle (`data.process.js`) usable for replay verification in Node.
+- The data layer is built separately as a library; the verification system imports it at runtime and calls its interfaces to verify.
 
 ---
 

@@ -38,7 +38,7 @@
 
 ## Context
 
-- **技术栈**：TypeScript 6 + Vue 3 + 自研 WebGL2 渲染器 + Vite 7 + pnpm 12 monorepo；数据端独立打包为 IIFE 供 Node 回放验证。
+- **技术栈**：TypeScript 6 + Vue 3 + 自研 WebGL2 渲染器 + Vite 7 + pnpm 12 monorepo；数据端独立打包为库，验证系统现场引入并调用其接口完成验证。
 - **重构背景**：从旧 mota-js 运行时（`public/`）逐步重构，通过 `Patch` 桥接 legacy 全局变量。渲染端先完成重构；数据端 L0–L3 已落地，并通过 Phase 3 / Phase 6 / Phase 7 的独立 Node replay、单测与质量门禁验收。
 - **双端约束**：数据端无 DOM；渲染相关代码必须用 `r()`/`rf()` 门控或走 `hook` 事件，渲染端被动、不向数据端推送更新。
 - **协作模型**：接口/架构设计由用户主导；AI 负责接口实现与单元测试；AI 可在验证通过后自行创建 git commit，无需用户逐次审批。
