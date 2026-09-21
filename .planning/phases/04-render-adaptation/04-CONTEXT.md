@@ -64,6 +64,12 @@
 - **D-28:** **存量 `state` 使用暂不处理**（含 `hero.ts` 的 `state.roleFace.getFaceOf`）：这涉及引擎整体的底层架构，由用户后续统一整改。本阶段**不因「不得使用单例」而清除存量**；改动只约束新增/后续代码。
 - **D-29:** **`degrade` 与 `next` 均用 `Dir4FaceHandler`**（贴图只有四向；与移动 (Dir8) 失配，需单独处理）。因构造器参数已多，**`MapHeroRenderer` 构造器改为直接传入 `IFaceManager`**（`data-common/src/common/faceManager.ts:13`；`core.ts:117-120` 注册 `FaceGroup.Dir4`/`Dir8`）：`degrade` / `next` 经 `faceManager.get(FaceGroup.Dir4)` 取四向处理器；移动相关的 `movement` 仍取勇士自身 `mover.faceHandler`（Dir8）。**注入路径走 B**：`IMapExtensionManager.addHero(state, layer, faceManager)` 新增 `faceManager: IFaceManager` 参数（**改 `types.ts` 接口**），`manager.ts` 转发给构造器；未来接线处再传。后续用户再进一步改进。
 
+### 下一个目标：material 接口适应（用户裁定，2026-09-21；待规划）
+- **D-30:** 下一个任务 = **完成 material 相关的接口适应**。用户已自行修改接口 `packages-user/client-base/src/types.ts`（提交 `4e305e3 refactor(type): material types.`，涉及 `material/types.ts`、`types.ts`、多个消费者的同步改名）并改完受影响的一部分内容；剩余未适应的实现与消费者由本任务处理。
+- **D-31:** 本次改动的根因：用户**重写了 Texture 的底层管理器，删除 `big-image` 概念**（旧样板概念，新引擎不再需要；旧兼容可**无痛丢弃**）。`4e305e3` 已从接口删除 `IBigImageReturn` / `isBigImage` / `getBigImage` / `getIfBigImage` / `getBigImageByAlias` / `setBigImage` / `bigImageStore`，并把 `IMaterialManager`→`ITextureManager`、`IMaterialGetter`→`ITextureGetter`、`IMaterialAliasGetter`→`ITextureAliasGetter`，新增 `textures` 与 `ICoreStateExtended` 约束。**影响面可能很大。**
+- **D-32:** 计划分**两步**：**第一步**收集影响范围（只读清点）；**第二步**进行修改。第二步骤第一步结果与用户审阅后再规划。
+  - **边界确认（2026-09-21）：** 范围限 `packages-user`；`packages` 不纳入（理应不受本改动影响）。**以 `packages-user/client-base/src/types.ts`（及 `material/types.ts`）为基准**。**若发现其余 big-image 残留，必须在清点文档中报告。** `src/` 或 `packages/` 内若命中，仅报告、不修改。第一步产出 `.planning/phases/04-render-adaptation/04-MATERIAL-INTERFACE-IMPACT.md`（只读，允许派只读子代理）；第二步待用户审阅第一步结果后再规划。
+
 ### the agent's Discretion
 - D-07 的「影响」字段具体写法、「多余旧路径」是否需要进一步细分，交由 AI 在对账执行时按实际情况把握，但不得据此扩大范围。
 

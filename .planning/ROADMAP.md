@@ -181,7 +181,7 @@ Plans:
   3. 移动端（窄屏）布局下，同一场景正常显示且可操作
   4. 数据端与渲染端保持双端分离——数据端无 DOM，仍可在 Node 环境跑回放验证
 
-**Plans**: 5/5 plans executed（04-01..04-05）+ 1 planned（04-06，material 接口影响范围清点·只读，未执行）
+**Plans**: 5 of 6 executed（04-01..04-05）+ 04-06 planned（material 接口影响范围清点·只读，未执行）
 **Plan register note (2026-09-21):** 第五个增量 `04-05`（收口 `#04-01-M-06` / `#04-01-M-09`：状态栏 9 个数值属性改经 `client.hero.attribute.getFinalAttribute(...)` 读取 + 逐图层钩子类 `RendererLayerHook`，2026-09-20 执行）此前未登记进本路线图，本次一并补登；第六个增量 `04-06` = material 接口适应（D-30/D-31/D-32）**第一步·只读影响清点**，产出 `04-MATERIAL-INTERFACE-IMPACT.md`，第二步（实施）待用户审阅后另行规划。
 
 Plans:
@@ -399,7 +399,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
-| 4. 渲染适配与双布局 | 4/4 | In Progress|  |
+| 4. 渲染适配与双布局 | 5/6 | In Progress|  |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | 暂缓 (Deferred) | - |
