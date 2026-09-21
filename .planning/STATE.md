@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
 Plan: 4 of 4
 Status: Ready to execute
-Last activity: 2026-09-18 — Phase 04 execution started
+Last activity: 2026-09-21 — Completed quick task 260921-lwa: Upgrade toolchain to pnpm 12.5.1 and Node 24
 
 Progress: [█████░░░░░] 50%
 
@@ -255,6 +255,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260913-qtq | event built-ins refactor and anon-tokyo import rename | 2026-09-13 | f0fd2f5 | [260913-qtq-event-built-ins-refactor-and-anon-tokyo-](./quick/260913-qtq-event-built-ins-refactor-and-anon-tokyo-/) |
+| 260921-lwa | Upgrade toolchain to pnpm 12.5.1 and Node 24 (workspace config, lockfile, docs) | 2026-09-21 | 1dd3ad4 | [260921-lwa-pnpm-12-5-1](./quick/260921-lwa-pnpm-12-5-1/) |
 
 ## Deferred Items
 
