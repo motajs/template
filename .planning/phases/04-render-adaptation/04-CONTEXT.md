@@ -70,6 +70,10 @@
 - **D-32:** 计划分**两步**：**第一步**收集影响范围（只读清点）；**第二步**进行修改。第二步骤第一步结果与用户审阅后再规划。
   - **边界确认（2026-09-21）：** 范围限 `packages-user`；`packages` 不纳入（理应不受本改动影响）。**以 `packages-user/client-base/src/types.ts`（及 `material/types.ts`）为基准**。**若发现其余 big-image 残留，必须在清点文档中报告。** `src/` 或 `packages/` 内若命中，仅报告、不修改。第一步产出 `.planning/phases/04-render-adaptation/04-MATERIAL-INTERFACE-IMPACT.md`（只读，允许派只读子代理）；第二步待用户审阅第一步结果后再规划。
 - **D-33:** **范围外一律不改**；**不追求解决全部类型错误**（整仓 199 条中大量为既有/无关），**只修复与本次 material 接口适应相关的项**。第二步实施时严格按此约束。
+- **D-34:** （第二步·实施裁决 2026-09-21）清点文档 **A 类**（已移除的 big-image 符号引用）——**跟 big-image 有关的全部删除**；若有方法/函数依赖它，则做**合理修改或删除**。
+- **D-35:** （C 类）**补充实现**——`ITextureManager.textures` 与 `ICoreStateExtended`（`state: ICoreState`）在 `MaterialManager` / `AutotileProcessor` / `AssetBuilder` / `TrackedAssetData` 上的实现；**`state` 统一通过构造器传入**。
+- **D-36:** （D 类）**全部删除**——`MaterialManager` 的 big-image 实现残留（`bigImageStore`/`bigImageData`/`bigImageId` 等）与 `render/elements/cache.ts` 的 legacy big-image 路径。
+- **D-37:** （E 类）**补充依赖声明**——为 `packages-user/client-base/package.json` 补上 `@user/data-state` 依赖（其源码已 import 该包）。
 
 ### the agent's Discretion
 - D-07 的「影响」字段具体写法、「多余旧路径」是否需要进一步细分，交由 AI 在对账执行时按实际情况把握，但不得据此扩大范围。
