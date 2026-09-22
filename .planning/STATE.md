@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 milestone: v1.0
 current_phase: 04
 current_phase_name: 渲染适配与双布局
-status: executing
-stopped_at: Completed 04-04-PLAN.md（勇士渲染修正：注入 IFaceManager、拆钩子类、补 AnimDir、换 @motajs/animate，三文件机器门禁全绿；REND-01/REND-02 保持 Pending）
-last_updated: "2026-09-22T03:29:38.480Z"
+status: verifying
+stopped_at: Completed 04-07-PLAN.md（material 接口适应实施：big-image 全删、7 处改 getTile、四实现类构造器注入 state、cache.ts legacy 路径删除、补 @user/data-state 声明；material 诊断 19→0、总行数 199→180；REND-01/REND-02 保持 Pending）
+last_updated: "2026-09-22T04:25:51.526Z"
 last_activity: 2026-09-21
 last_activity_desc: Phase 04 execution started
-state_head: f55a76297f0d4f929f8e0fab376e341d698a4631
+state_head: 1bb42f66ca04d118a893c5b5222ea7927e145e04
 progress:
   total_phases: 7
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 78
-  completed_plans: 76
+  completed_plans: 77
 milestone_name: milestone
 ---
 
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 ## Current Position
 
 Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
-Plan: 6 of 6
-Status: Ready to execute
+Plan: 7 of 7
+Status: Phase complete — ready for verification
 Last activity: 2026-09-21 — Completed quick task 260921-lwa: Upgrade toolchain to pnpm 12.5.1 and Node 24
 
 Progress: [█████░░░░░] 50%
@@ -100,6 +100,7 @@ Progress: [█████░░░░░] 50%
 | Phase 04 P2 | 23min | 4 tasks | 1 files |
 | Phase 04 P3 | 40min | 4 tasks | 3 files |
 | Phase 04 P4 | ~45min | 4 tasks | 3 files |
+| Phase 04 P7 | 35min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -229,6 +230,8 @@ Recent decisions affecting current work:
 - [Phase 04]: [Phase 04]: 04-04：MapHeroRenderer 注入 IFaceManager（faceManager 字段 + 派生 dir4），degrade/next 走 Dir4FaceHandler（FaceGroup.Dir4），movement 走 hero.mover.faceHandler（Dir8）；IMapExtensionManager.addHero 新增 faceManager 形参并由 manager.ts 转发（D-24/D-29）
 - [Phase 04]: [Phase 04]: 04-04：MapHeroHook 拆为 MapHeroLocationHook（onSetPos 无条件、只出现一次，承载 D-18/D-22 多余方法）与 MapHeroMoverHook（onMoveStart/onMoveEnd/onStepEnd/onSetFaceDir），各自注册各自 controller；onStepEnd 的 AnimDir 分支按 step.dir 设置动画方向（D-25/D-26）
 - [Phase 04]: [Phase 04]: 04-04：hero.ts 弃用 mutate-animate 的 TimingFn<2>，改用 @motajs/animate 的 ExcitationCurve2D；D-28 存量 state.roleFace.getFaceOf 三处与 import 逐字保留；types.ts 单行 addHero 签名与 manager.ts 单行构造调用按仓库惯例加 // prettier-ignore 以同时满足计划的单行静态门禁与 prettier
+- [Phase 04]: [Phase 04]: 04-07：D-35 裁定 state 一律经构造器注入（ClientCore 传 this、renderer 从 manager.state 取），不取全局单例（D-23）；textures 由新建专用 TextureStore 承担（本次范围内无写入者）
+- [Phase 04]: [Phase 04]: 04-07：D-34 的 getIfBigImage ≡ getTile（bigImageData 唯一写入者 setBigImage 消费者调用点 0），7 处消费者改写行为保持；getOffsetPool 的 big-image 偏移收集删除、其余来源保留
 
 ### Roadmap Evolution
 
@@ -267,6 +270,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-19T08:59:26.713Z
-Stopped at: Completed 04-04-PLAN.md（勇士渲染修正：注入 IFaceManager、拆钩子类、补 AnimDir、换 @motajs/animate，三文件机器门禁全绿；REND-01/REND-02 保持 Pending）
+Last session: 2026-09-22T04:25:51.224Z
+Stopped at: Completed 04-07-PLAN.md（material 接口适应实施：big-image 全删、7 处改 getTile、四实现类构造器注入 state、cache.ts legacy 路径删除、补 @user/data-state 声明；material 诊断 19→0、总行数 199→180；REND-01/REND-02 保持 Pending）
 Resume file: None

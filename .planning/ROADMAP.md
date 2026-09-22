@@ -181,7 +181,7 @@ Plans:
   3. 移动端（窄屏）布局下，同一场景正常显示且可操作
   4. 数据端与渲染端保持双端分离——数据端无 DOM，仍可在 Node 环境跑回放验证
 
-**Plans**: 7 plans — 04-01..04-06 已执行（04-06 = material 接口影响范围清点·只读）；**04-07（material 接口适应实施·第二步）已规划待执行**；渲染适配与移动端/桌面端双布局（REND-01/REND-02）整体仍未完成
+**Plans**: 7/7 plans executed — 04-01..04-06 已执行（04-06 = material 接口影响范围清点·只读）；**04-07（material 接口适应实施·第二步）已规划待执行**；渲染适配与移动端/桌面端双布局（REND-01/REND-02）整体仍未完成
 **Plan register note (2026-09-21):** 第五个增量 `04-05`（收口 `#04-01-M-06` / `#04-01-M-09`：状态栏 9 个数值属性改经 `client.hero.attribute.getFinalAttribute(...)` 读取 + 逐图层钩子类 `RendererLayerHook`，2026-09-20 执行）此前未登记进本路线图，本次一并补登；第六个增量 `04-06` = material 接口适应（D-30/D-31/D-32）**第一步·只读影响清点**，产出 `04-MATERIAL-INTERFACE-IMPACT.md`，第二步（实施）待用户审阅后另行规划。
 
 Plans:
@@ -204,11 +204,11 @@ Plans:
 **Wave 5** *(blocked on Wave 4 completion)*
 
 - [x] 04-05-PLAN.md — 收口 `#04-01-M-06` / `#04-01-M-09`：状态栏 9 个数值属性从失效的 `getHeroStatusOn` 改经 `client.hero.attribute.getFinalAttribute(...)` 读取（并移除 `main.tsx:28` 失效的 `@ts-expect-error`）；新增模块内不导出类 `RendererLayerHook`（`Partial<IMapLayerHooks>`）把逐图层 `onUpdateArea` / `onUpdateBlock` 转发到 `MapRenderer.updateLayerArea` / `updateLayerBlock`，并在 `setLayerState` / `updateLayerList` 两条路径注册与注销（M-06 使用 `client` 单例经用户裁定为 D-23 的显式例外）— **2026-09-20 已执行**（本次补登）
-- [ ] 04-06-PLAN.md — material 接口影响范围清点（**只读**，D-30/D-31/D-32 第一步）：以 `4e305e3` 后的 `client-base/src/{types.ts,material/types.ts}` 为基准，清点 `packages-user` 内对已移除 7 符号（`IBigImageReturn` / `isBigImage` / `getBigImage` / `getIfBigImage` / `getBigImageByAlias` / `setBigImage` / `bigImageStore`）、3 个改名接口、新增 `textures` 与 4 处 `ICoreStateExtended` 约束未实现、以及所有 big-image 残留（含 `material/manager.ts` 与 `render/elements/cache.ts`）的引用，按 A 已移除 / B 改名 / C 约束未实现 / D big-image 残留 / E 范围外命中（`src/`、`packages/` 仅报告）/ F 未确定 六类分组，每行精确到符号 + `file:line`；产出 `04-MATERIAL-INTERFACE-IMPACT.md`，生产代码零改动，第二步实施待用户审阅后另行规划
+- [x] 04-06-PLAN.md — material 接口影响范围清点（**只读**，D-30/D-31/D-32 第一步）：以 `4e305e3` 后的 `client-base/src/{types.ts,material/types.ts}` 为基准，清点 `packages-user` 内对已移除 7 符号（`IBigImageReturn` / `isBigImage` / `getBigImage` / `getIfBigImage` / `getBigImageByAlias` / `setBigImage` / `bigImageStore`）、3 个改名接口、新增 `textures` 与 4 处 `ICoreStateExtended` 约束未实现、以及所有 big-image 残留（含 `material/manager.ts` 与 `render/elements/cache.ts`）的引用，按 A 已移除 / B 改名 / C 约束未实现 / D big-image 残留 / E 范围外命中（`src/`、`packages/` 仅报告）/ F 未确定 六类分组，每行精确到符号 + `file:line`；产出 `04-MATERIAL-INTERFACE-IMPACT.md`，生产代码零改动，第二步实施待用户审阅后另行规划
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 04-07-PLAN.md — material 接口适应实施（**第二步·代码改动**，D-30/D-31/D-32 第二步 + D-33..D-37）：按 04-06 清点的 A/C/D/E 四类落地——A 类（D-34）删除全部 big-image 引用并把 `getIfBigImage` 的 7 处消费者（`door.ts` 2 / `hero.ts` 3 / `renderer.ts` 1 / `vertex.ts` 1）改为行为等价的 `getTile`、删除 `renderer.ts` `getOffsetPool` 的 big-image 偏移收集；C 类（D-35）为 `MaterialManager` 补 `textures`、为 `MaterialManager` / `AutotileProcessor` / `AssetBuilder` / `TrackedAssetData` 补构造器注入的 `state`（不取全局单例，D-23；`renderer.ts` 从 `manager.state` 取值）；D 类（D-36）删除 `MaterialManager` 的 big-image 实现残留（`bigImageStore` / `bigImageData` / `bigImageId` / 五个方法 / `setDefaultFrame` 耦合）与 `render/elements/cache.ts` 的 legacy big-image 路径；E 类（D-37）为 `client-base/package.json` 补 `@user/data-state` 声明（不安装、不同步 lockfile）。10 个文件原子提交；门禁 = material 归属诊断归零 + 在范围文件零诊断 + 总行数不增加（规划日 199 / 19 → ≤ 180）+ `packages-user` 内 big-image 记号归零 + eslint / CRLF / 范围（基线感知）/ 并发基线；运行时 UAT 不可得（渲染端无测试设施）如实声明
+- [x] 04-07-PLAN.md — material 接口适应实施（**第二步·代码改动**，D-30/D-31/D-32 第二步 + D-33..D-37）：按 04-06 清点的 A/C/D/E 四类落地——A 类（D-34）删除全部 big-image 引用并把 `getIfBigImage` 的 7 处消费者（`door.ts` 2 / `hero.ts` 3 / `renderer.ts` 1 / `vertex.ts` 1）改为行为等价的 `getTile`、删除 `renderer.ts` `getOffsetPool` 的 big-image 偏移收集；C 类（D-35）为 `MaterialManager` 补 `textures`、为 `MaterialManager` / `AutotileProcessor` / `AssetBuilder` / `TrackedAssetData` 补构造器注入的 `state`（不取全局单例，D-23；`renderer.ts` 从 `manager.state` 取值）；D 类（D-36）删除 `MaterialManager` 的 big-image 实现残留（`bigImageStore` / `bigImageData` / `bigImageId` / 五个方法 / `setDefaultFrame` 耦合）与 `render/elements/cache.ts` 的 legacy big-image 路径；E 类（D-37）为 `client-base/package.json` 补 `@user/data-state` 声明（不安装、不同步 lockfile）。10 个文件原子提交；门禁 = material 归属诊断归零 + 在范围文件零诊断 + 总行数不增加（规划日 199 / 19 → ≤ 180）+ `packages-user` 内 big-image 记号归零 + eslint / CRLF / 范围（基线感知）/ 并发基线；运行时 UAT 不可得（渲染端无测试设施）如实声明
 
 **UI hint**: yes
 
@@ -403,7 +403,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
-| 4. 渲染适配与双布局 | 6/6 | In Progress|  |
+| 4. 渲染适配与双布局 | 7/7 | In Progress|  |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | 暂缓 (Deferred) | - |
