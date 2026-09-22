@@ -1261,7 +1261,7 @@ export class MapRenderer
         } else {
             // 多帧图块
             if (tex.cls === BlockCls.Autotile) {
-                const gen = this.autotile.renderAnimatedWith(tex, 0b1111_1111);
+                const gen = this.autotile.renderAnimated(tex, 0b1111_1111);
                 return this.useDynamicBackground(gl, data, [...gen]);
             } else {
                 const gen = this.tileAnimater.once(tex.texture, tex.frames);

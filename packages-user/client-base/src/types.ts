@@ -1,7 +1,7 @@
 import { IBGMPlayer, IMotaAudioContext, ISoundPlayer } from '@motajs/audio';
 import { ISaveSystem } from './save';
 import { ICoreState } from '@user/data-state';
-import { IAutotileProcessor, ITextureManager } from './material';
+import { ITextureManager } from './material';
 import { IRenderTreeRoot } from '@motajs/render';
 import { IExcitation, IExcitationDivider } from '@motajs/animate';
 
@@ -16,8 +16,6 @@ export interface IClientBase extends ICoreState {
     readonly bgmPlayer: IBGMPlayer<BgmIds>;
     /** 素材管理器 */
     readonly materials: ITextureManager;
-    /** 自动元件处理器 */
-    readonly autotile: IAutotileProcessor;
     /** 渲染画面的根元素 */
     readonly renderer: IRenderTreeRoot;
     /** 用于渲染系统的 Raf 激励源 */

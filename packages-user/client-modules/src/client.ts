@@ -12,7 +12,7 @@ import { IRenderTreeRoot, MotaRenderer } from '@motajs/render';
 import {
     ITextureManager,
     IAutotileProcessor,
-    MaterialManager,
+    TextureManager,
     AutotileProcessor,
     ISaveSystem,
     SaveSystem
@@ -48,7 +48,6 @@ export class ClientCore extends CoreState implements IClientCore {
 
     // Layer 5 渲染顶层
     readonly materials: ITextureManager;
-    readonly autotile: IAutotileProcessor;
 
     readonly rafExcitation: IExcitation<number>;
     readonly excitationDivider: IExcitationDivider<number>;
@@ -81,8 +80,12 @@ export class ClientCore extends CoreState implements IClientCore {
 
         //#region 素材系统
 
-        this.materials = new MaterialManager(this);
-        this.autotile = new AutotileProcessor(this.materials, this);
+        this.materials = new TextureManager(
+            this,
+            this.tileStore,
+            config.tilesetReserve,
+            config.tilesetUnit
+        );
 
         //#endregion
 

@@ -6,23 +6,13 @@ import {
     ITextureStore,
     SizedCanvasImageSource
 } from '@motajs/render';
+import { ITileStore, TileType } from '@user/data-common';
 import { ICoreStateExtended } from '@user/data-state';
 
-export const enum BlockCls {
-    Unknown,
-    Terrains,
-    Animates,
-    Enemys,
-    Npcs,
-    Items,
-    Enemy48,
-    Npc48,
-    Tileset,
-    Autotile
-}
-
 export const enum AutotileType {
+    /** 2x3 大小的自动元件 */
     Small2x3,
+    /** 3x4 大小的自动元件 */
     Big3x4
 }
 
@@ -85,8 +75,8 @@ export interface IAutotileConnection {
 export interface IMaterialFramedData {
     /** 贴图对象 */
     texture: ITexture;
-    /** 图块类型 */
-    cls: BlockCls;
+    /** 贴图对应图块的图块类型 */
+    tileType: TileType;
     /** 贴图总帧数 */
     frames: number;
     /** 每帧的横向偏移量 */
@@ -102,12 +92,21 @@ export interface IMaterialAsset
 }
 
 export interface IAutotileProcessor extends ICoreStateExtended {
-    /** 该自动元件处理器使用的素材管理器 */
-    readonly manager: ITextureManager;
+    /**
+     * 展平自动元件，纵向排列 48 种组合
+     * @param source 图像源
+     * @param type 自动元件的类型
+     * @param frames 自动元件的帧数
+     */
+    flatten(
+        source: SizedCanvasImageSource,
+        type: AutotileType,
+        frames: number
+    ): SizedCanvasImageSource | null;
 
     /**
-     * 设置一个自动元件的特殊连接方式，设置后当前自动元件将会单方面与目标元件连接，
-     * 一个自动元件可以与多个自动元件有特殊连接
+     * 设置一个自动元件的特殊连接方式，设置后当前自动元件将会单方面与目标图块连接，
+     * 一个自动元件可以与多个图块有特殊连接
      * @param autotile 自动元件
      * @param target 当前自动元件将会连接至的自动元件
      */
@@ -142,52 +141,22 @@ export interface IAutotileProcessor extends ICoreStateExtended {
 
     /**
      * 根据图块数字，获取指定自动元件经过连接的可渲染对象
-     * @param autotile 自动元件的图块数字
+     * @param tile 自动元件的图块信息
      * @param connection 连接方式，上方连接是第一位，顺时针旋转位次依次升高
      * @returns 连接方式的可渲染对象，可以通过偏移量依次获取其他帧
      */
-    render(autotile: number, connection: number): ITextureRenderable | null;
-
-    /**
-     * 根据图块贴图对象，获取指定自动元件经过连接的可渲染对象
-     * @param tile 自动元件的图块贴图数据
-     * @param connection 连接方式，上方连接是第一位，顺时针旋转位次依次升高
-     * @returns 连接方式的可渲染对象，可以通过偏移量依次获取其他帧
-     */
-    renderWith(
-        tile: Readonly<IMaterialFramedData>,
+    render(
+        tile: IMaterialFramedData,
         connection: number
     ): ITextureRenderable | null;
 
     /**
-     * 根据图块贴图对象，获取指定自动元件经过连接的可渲染对象，但是会假设传入的图块就是自动元件，不做不必要的判断
-     * @param tile 自动元件的图块贴图数据
-     * @param connection 连接方式，上方连接是第一位，顺时针旋转位次依次升高
-     * @returns 连接方式的可渲染对象，可以通过偏移量依次获取其他帧
-     */
-    renderWithoutCheck(
-        tile: Readonly<IMaterialFramedData>,
-        connection: number
-    ): ITextureRenderable | null;
-
-    /**
-     * 根据图块数字，获取指定自动元件经过链接的动态可渲染对象
-     * @param autotile 自动元件的图块数字
+     * 根据图块贴图对象，获取指定自动元件经过链接的动态可渲染对象
+     * @param autotile 自动元件的图块信息
      * @param connection 自动元件的连接方式
      * @returns 生成器，每一个输出代表每一帧的渲染对象，不同自动元件的帧数可能不同
      */
     renderAnimated(
-        autotile: number,
-        connection: number
-    ): Generator<ITextureRenderable, void>;
-
-    /**
-     * 根据图块贴图对象，获取指定自动元件经过链接的动态可渲染对象
-     * @param autotile 自动元件的图块数字
-     * @param connection 自动元件的连接方式
-     * @returns 生成器，每一个输出代表每一帧的渲染对象，不同自动元件的帧数可能不同
-     */
-    renderAnimatedWith(
         tile: Readonly<IMaterialFramedData>,
         connection: number
     ): Generator<ITextureRenderable, void>;
@@ -196,33 +165,27 @@ export interface IAutotileProcessor extends ICoreStateExtended {
 export interface ITextureGetter {
     /**
      * 根据图块数字获取图块，可以获取额外素材，会自动将未缓存的额外素材缓存
-     * @param identifier 图块的图块数字
+     * @param num 图块的图块数字
      */
-    getTile(identifier: number): Readonly<IMaterialFramedData> | null;
-
-    /**
-     * 根据图块标识符获取图块类型
-     * @param identifier 图块标识符，即图块数字
-     */
-    getBlockCls(identifier: number): BlockCls;
+    getTile(num: number): Readonly<IMaterialFramedData> | null;
 
     /**
      * 根据标识符获取图集信息
-     * @param identifier 图集的标识符
+     * @param num 图集的标识符
      */
-    getAsset(identifier: number): ITextureComposedData | null;
+    getAsset(num: number): ITextureComposedData | null;
 
     /**
      * 根据额外素材索引获取额外素材
-     * @param identifier 额外素材的索引
+     * @param num 额外素材的索引
      */
-    getTileset(identifier: number): ITexture | null;
+    getTileset(num: number): ITexture | null;
 
     /**
      * 根据图片的索引获取图片
-     * @param identifier 图片的索引
+     * @param num 图片的索引
      */
-    getImage(identifier: number): ITexture | null;
+    getImage(num: number): ITexture | null;
 }
 
 export interface ITextureAliasGetter {
@@ -249,16 +212,15 @@ export interface ITextureAliasGetter {
      * @param alias 图集的别名
      */
     getAssetByAlias(alias: string): ITextureComposedData | null;
-
-    /**
-     * 根据图块别名获取图块类型
-     * @param alias 图块别名，即图块的 id
-     */
-    getBlockClsByAlias(alias: string): BlockCls;
 }
 
 export interface ITextureManager
     extends ITextureGetter, ITextureAliasGetter, ICoreStateExtended {
+    /** 使用的图块数据存储对象 */
+    readonly tiles: ITileStore;
+    /** 自动元件处理器 */
+    readonly autotile: IAutotileProcessor;
+
     /** 通过加载获取的所有纹理贴图存储，包括图块、普通图片等 */
     readonly textures: ITextureStore;
     /** 贴图存储，把 terrains 等内容单独分开存储 */
@@ -275,51 +237,73 @@ export interface ITextureManager
     /** 带有脏标记追踪的图集信息 */
     readonly trackedAsset: ITrackedAssetData;
 
-    /** 图块类型映射 */
-    readonly clsMap: Map<number, BlockCls>;
+    /** Tileset 额外素材预留多少数字，即从多少数字开始，素材变为额外素材 */
+    readonly tilesetReserve: number;
+    /**
+     * Tileset 额外素材的素材数量单位，例如 10000 就表示每个额外素材最少使用 10000 个数字位，
+     * 如果超出则变为 20000, 30000，以此类推。
+     */
+    readonly tilesetUnit: number;
 
     /**
-     * 添加网格类型的贴图，包括 terrains 和 items 类型
+     * 添加网格类型的贴图，此方式添加的贴图仅有一帧，不包含动画。
      * @param source 图像源
-     * @param map 贴图字符串 id 与图块数字映射，按照先从左到右，再从上到下的顺序映射
+     * @param width 每个贴图的像素宽度
+     * @param height 每个贴图的像素高度
+     * @param map 贴图的图块数字映射，按照先从左到右，再从上到下的顺序映射，如下图所示
+     *
+     * ```txt
+     * 0    1    2   ...  n-1
+     * n   n+1  n+2  ... 2n-1
+     * .   ...  ...  ...  ...
+     * ```
      */
     addGrid(
         source: SizedCanvasImageSource,
-        map: ArrayLike<IBlockIdentifier>
+        map: ArrayLike<number>,
+        width: number,
+        height: number
     ): Iterable<IMaterialData>;
 
     /**
-     * 添加行动画的贴图，包括 animates enemys npcs enemy48 npc48 类型
+     * 添加行动画的贴图，要求每一行的帧数一致，如不一致请拆分成多次调用
      * @param source 图像源
-     * @param map 贴图字符串 id 与图块数字映射，按从上到下的顺序映射
-     * @param frames 每一行的帧数
-     * @param height 每一行的高度
+     * @param map 贴图的图块数字映射，按从上到下的顺序映射
+     * @param width 每一帧的像素宽度
+     * @param height 每一帧的像素高度，也就是每一行的高度
      */
     addRowAnimate(
         source: SizedCanvasImageSource,
-        map: ArrayLike<IBlockIdentifier>,
+        map: ArrayLike<number>,
+        width: number,
         height: number
     ): Iterable<IMaterialData>;
 
     /**
      * 添加自动元件
      * @param source 图像源
-     * @param identifier 自动元件的字符串 id 及图块数字
+     * @param identifier 自动元件的图块数字
+     * @param type 自动元件类型，是 3x4 还是 2x3
      * @returns 由于自动元件是懒加载的，因此不会返回任何东西
      */
     addAutotile(
         source: SizedCanvasImageSource,
-        identifier: IBlockIdentifier
+        identifier: number,
+        type: AutotileType
     ): void;
 
     /**
      * 添加一个 tileset 类型的素材
      * @param source 图像源
-     * @param alias tileset 的标识符，包含其在 tilesets 列表中的索引和图片名称
+     * @param identifier tileset 的标识符对象
+     * @param cellWidth Tileset 中每个 tile 的宽度
+     * @param cellHeight Tileset 中每个 tile 的高度
      */
     addTileset(
         source: SizedCanvasImageSource,
-        identifier: IIndexedIdentifier
+        identifier: IIndexedIdentifier,
+        cellWidth: number,
+        cellHeight: number
     ): IMaterialData | null;
 
     /**
@@ -334,44 +318,48 @@ export interface ITextureManager
 
     /**
      * 设置指定图块默认显示第几帧
-     * @param identifier 图块标识符，即图块数字
+     * @param num 图块标识符，即图块数字
      * @param defaultFrame 图块的默认帧数
      */
-    setDefaultFrame(identifier: number, defaultFrame: number): void;
+    setDefaultFrame(num: number, defaultFrame: number): void;
 
     /**
      * 获取图块的默认帧数，-1 表示正常动画，非负整数表示默认使用指定帧数，除非单独指定
-     * @param identifier 图块标识符，即图块数字
+     * @param num 图块标识符，即图块数字
      */
-    getDefaultFrame(identifier: number): number;
+    getDefaultFrame(num: number): number;
 
     /**
-     * 缓存某个 tileset，当需要缓存多个时，请使用 {@link cacheTilesetList} 方法
-     * @param identifier tileset 的标识符，即图块数字
+     * 获取指定图块的总帧数，若图块不存在，返回 0
+     * @param num 图块标识符，即图块数字
      */
-    cacheTileset(identifier: number): ITexture | null;
+    getFrameCount(num: number): number;
 
     /**
-     * 缓存一系列 tileset
-     * @param identifierList 标识符列表，即图块数字列表
+     * 缓存某个 tileset 上的图块，作用是生成贴图并打包入图集，
+     * 当需要缓存多个时，请使用 {@link cacheTilesetList} 方法
+     * @param num tileset 图块的标识符，即图块数字
      */
-    cacheTilesetList(
-        identifierList: Iterable<number>
-    ): Iterable<ITexture | null>;
+    cacheTileset(num: number): ITexture | null;
 
     /**
-     * 缓存某个自动元件，当需要缓存多个时，请使用 {@link cacheAutotileList} 方法
-     * @param identifier 自动元件标识符，即图块数字
+     * 缓存一系列 tileset 上的图块
+     * @param list 标识符列表，即图块数字列表
      */
-    cacheAutotile(identifier: number): ITexture | null;
+    cacheTilesetList(list: Iterable<number>): Iterable<ITexture | null>;
+
+    /**
+     * 缓存某个自动元件，作用是生成展平贴图并打包入图集，展平贴图指将自动元件拆分成 48 种连接方式纵向堆叠组成的贴图。
+     * 当需要缓存多个时，请使用 {@link cacheAutotileList} 方法
+     * @param num 自动元件标识符，即图块数字
+     */
+    cacheAutotile(num: number): ITexture | null;
 
     /**
      * 缓存一系列自动元件
-     * @param identifierList 自动元件标识符列表，即图块数字列表
+     * @param list 自动元件标识符列表，即图块数字列表
      */
-    cacheAutotileList(
-        identifierList: Iterable<number>
-    ): Iterable<ITexture | null>;
+    cacheAutotileList(list: Iterable<number>): Iterable<ITexture | null>;
 
     /**
      * 把常用素材打包成为图集形式供后续使用
@@ -392,27 +380,15 @@ export interface ITextureManager
 
     /**
      * 根据图块标识符在图集中获取对应的可渲染对象
-     * @param identifier 图块标识符，即图块数字
+     * @param num 图块标识符，即图块数字
      */
-    getRenderable(identifier: number): ITextureRenderable | null;
+    getRenderable(num: number): ITextureRenderable | null;
 
     /**
      * 根据图块别名在图集中获取对应的可渲染对象
      * @param alias 图块的别名，即图块的 id
      */
     getRenderableByAlias(alias: string): ITextureRenderable | null;
-
-    /**
-     * 根据图块别名获取图块标识符，即图块数字
-     * @param alias 图块别名，即图块的 id
-     */
-    getIdentifierByAlias(alias: string): number | undefined;
-
-    /**
-     * 根据图块标识符获取图块别名，即图块的 id
-     * @param identifier 图块标识符，即图块数字
-     */
-    getAliasByIdentifier(identifier: number): string | undefined;
 
     /**
      * 当前的所有图集中是否包含指定的贴图对象

@@ -262,6 +262,14 @@
         "181": "Number $1 has been registered to $2 store, old one will be overridden.",
         "182": "Cannot bind '$1' instance to '$2' since they belong to different CoreState instance.",
         "183": "An in-map location is expected to begin map graph building, but got outside.",
+        "184": "Cannot add tile texture $1 since no registered id for it in tile store.",
+        "185": "Cannot add row animated texture since it cannot be splitted averagely by specified width. Texture width: $1, split width: $2.",
+        "186": "Tileset has a size that cannot be splitted evenly by specified cell size, overflowed content will be ignored. Tileset size: [$1, $2], cell size: [$1, $2].",
+        "187": "Cannot get tile that indeed has a texture but no frame and offset infomation, which seems like a internal bug of mota-js engine, please report a bug.",
+        "188": "Tileset tile $1 exceeds tileset itself. You may check the num indeed corresponding to a tileset tile, or may a internal bug of mota-js engine.",
+        "189": "Cannot flatten autotile since it cannot be splitted evenly. Autotile width: $1, frames: $2.",
+        "190": "Cannot flatten autotile since its width or height cannot be divided evenly. Autotile frame size: [$1,$2].",
+        "191": "Cannot cache autotile since no its frame or type data stored.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }
