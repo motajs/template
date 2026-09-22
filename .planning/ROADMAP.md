@@ -181,8 +181,8 @@ Plans:
   3. 移动端（窄屏）布局下，同一场景正常显示且可操作
   4. 数据端与渲染端保持双端分离——数据端无 DOM，仍可在 Node 环境跑回放验证
 
-**Plans**: 7/7 plans executed — 04-01..04-06 已执行（04-06 = material 接口影响范围清点·只读）；**04-07（material 接口适应实施·第二步）已规划待执行**；渲染适配与移动端/桌面端双布局（REND-01/REND-02）整体仍未完成
-**Plan register note (2026-09-21):** 第五个增量 `04-05`（收口 `#04-01-M-06` / `#04-01-M-09`：状态栏 9 个数值属性改经 `client.hero.attribute.getFinalAttribute(...)` 读取 + 逐图层钩子类 `RendererLayerHook`，2026-09-20 执行）此前未登记进本路线图，本次一并补登；第六个增量 `04-06` = material 接口适应（D-30/D-31/D-32）**第一步·只读影响清点**，产出 `04-MATERIAL-INTERFACE-IMPACT.md`，第二步（实施）待用户审阅后另行规划。
+**Plans**: 8/8 plans planned — 04-01..04-07 已执行（04-06 = material 接口影响范围清点·只读；04-07 = material 接口适应实施·第二步）；**04-08（TextureManager 新接口影响范围清点·只读，D-38/D-39/D-40/D-41/D-42 第一步）已规划待执行**；渲染适配与移动端/桌面端双布局（REND-01/REND-02）整体仍未完成
+**Plan register note (2026-09-21):** 第五个增量 `04-05`（收口 `#04-01-M-06` / `#04-01-M-09`：状态栏 9 个数值属性改经 `client.hero.attribute.getFinalAttribute(...)` 读取 + 逐图层钩子类 `RendererLayerHook`，2026-09-20 执行）此前未登记进本路线图，本次一并补登；第六个增量 `04-06` = material 接口适应（D-30/D-31/D-32）**第一步·只读影响清点**，产出 `04-MATERIAL-INTERFACE-IMPACT.md`，第二步（实施）待用户审阅后另行规划。第七个增量 `04-07` = material 接口适应实施（**第二步·代码改动**，D-33..D-37），2026-09-22 已执行（10 文件原子提交）。**第八个增量 `04-08` = TextureManager 新接口适应（D-38..D-42）第一步·只读影响清点**，产出 `04-TEXTURE-INTERFACE-IMPACT.md`；第二步（实施）待用户审阅后另行规划。
 
 Plans:
 **Wave 1**
@@ -209,6 +209,10 @@ Plans:
 **Wave 6** *(blocked on Wave 5 completion)*
 
 - [x] 04-07-PLAN.md — material 接口适应实施（**第二步·代码改动**，D-30/D-31/D-32 第二步 + D-33..D-37）：按 04-06 清点的 A/C/D/E 四类落地——A 类（D-34）删除全部 big-image 引用并把 `getIfBigImage` 的 7 处消费者（`door.ts` 2 / `hero.ts` 3 / `renderer.ts` 1 / `vertex.ts` 1）改为行为等价的 `getTile`、删除 `renderer.ts` `getOffsetPool` 的 big-image 偏移收集；C 类（D-35）为 `MaterialManager` 补 `textures`、为 `MaterialManager` / `AutotileProcessor` / `AssetBuilder` / `TrackedAssetData` 补构造器注入的 `state`（不取全局单例，D-23；`renderer.ts` 从 `manager.state` 取值）；D 类（D-36）删除 `MaterialManager` 的 big-image 实现残留（`bigImageStore` / `bigImageData` / `bigImageId` / 五个方法 / `setDefaultFrame` 耦合）与 `render/elements/cache.ts` 的 legacy big-image 路径；E 类（D-37）为 `client-base/package.json` 补 `@user/data-state` 声明（不安装、不同步 lockfile）。10 个文件原子提交；门禁 = material 归属诊断归零 + 在范围文件零诊断 + 总行数不增加（规划日 199 / 19 → ≤ 180）+ `packages-user` 内 big-image 记号归零 + eslint / CRLF / 范围（基线感知）/ 并发基线；运行时 UAT 不可得（渲染端无测试设施）如实声明
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 04-08-PLAN.md — TextureManager 新接口影响范围清点（**只读**，D-38/D-39/D-40/D-41/D-42 第一步）：以 `d36ea69`（`refactor: 贴图存储方式`）后的 `client-base/src/{types.ts,material/types.ts,material/manager.ts,material/autotile.ts,material/index.ts}` 为基准，清点 `packages-user` 消费者面对改名（`MaterialManager`→`TextureManager` 与构造器）、移除（`BlockCls` 枚举 / `IMaterialFramedData.cls`→`tileType` / `IAutotileProcessor` 三方法合一 / `renderAnimatedWith`→`renderAnimated` / `getIdentifierByAlias` / `getAliasByIdentifier` / `getBlockCls(ByAlias)` / `IClientBase.autotile` / `create()` 与 `createMaterial()`）与新增收紧（`tiles` / `autotile` / `tilesetReserve` / `tilesetUnit` / `getFrameCount` / 四个 `add*` 参数 / `flatten` / `AutotileType` / `IClientCoreConfig` 两个必填字段）的引用，按 A 符号改名与移除 / B 成员与签名变化 / C 地图渲染消费者定位索引 / D 被删且无替代（需用户反馈）/ E 加载相关与添加素材（仅报告，D-39/D-41）/ F 未确定 六类分组，每行精确到符号 + `file:line` 且 ≥2 锚点；产出 `04-TEXTURE-INTERFACE-IMPACT.md`，生产代码零改动（`material/` 按 D-42 只登记），第二步实施待用户审阅后另行规划
 
 **UI hint**: yes
 
