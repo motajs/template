@@ -69,6 +69,7 @@
 - **D-31:** 本次改动的根因：用户**重写了 Texture 的底层管理器，删除 `big-image` 概念**（旧样板概念，新引擎不再需要；旧兼容可**无痛丢弃**）。`4e305e3` 已从接口删除 `IBigImageReturn` / `isBigImage` / `getBigImage` / `getIfBigImage` / `getBigImageByAlias` / `setBigImage` / `bigImageStore`，并把 `IMaterialManager`→`ITextureManager`、`IMaterialGetter`→`ITextureGetter`、`IMaterialAliasGetter`→`ITextureAliasGetter`，新增 `textures` 与 `ICoreStateExtended` 约束。**影响面可能很大。**
 - **D-32:** 计划分**两步**：**第一步**收集影响范围（只读清点）；**第二步**进行修改。第二步骤第一步结果与用户审阅后再规划。
   - **边界确认（2026-09-21）：** 范围限 `packages-user`；`packages` 不纳入（理应不受本改动影响）。**以 `packages-user/client-base/src/types.ts`（及 `material/types.ts`）为基准**。**若发现其余 big-image 残留，必须在清点文档中报告。** `src/` 或 `packages/` 内若命中，仅报告、不修改。第一步产出 `.planning/phases/04-render-adaptation/04-MATERIAL-INTERFACE-IMPACT.md`（只读，允许派只读子代理）；第二步待用户审阅第一步结果后再规划。
+- **D-33:** **范围外一律不改**；**不追求解决全部类型错误**（整仓 199 条中大量为既有/无关），**只修复与本次 material 接口适应相关的项**。第二步实施时严格按此约束。
 
 ### the agent's Discretion
 - D-07 的「影响」字段具体写法、「多余旧路径」是否需要进一步细分，交由 AI 在对账执行时按实际情况把握，但不得据此扩大范围。
