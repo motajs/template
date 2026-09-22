@@ -4,6 +4,7 @@
         "@motajs/audio": "workspace:*",
         "@motajs/render": "workspace:*",
         "@motajs/client-base": "workspace:*",
-        "@user/data-base": "workspace:*"
+        "@user/data-base": "workspace:*",
+        "@user/data-state": "workspace:*"
     }
 }

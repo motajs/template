@@ -231,7 +231,7 @@ export class MapRenderer
         );
         this.contextData = data;
         this.vertex = new MapVertexGenerator(this, data);
-        this.autotile = new AutotileProcessor(manager);
+        this.autotile = new AutotileProcessor(manager, manager.state);
         this.tick = this.tick.bind(this);
         this.viewport = new MapViewport(this);
         this.tileAnimater = new TextureColumnAnimater();
@@ -648,13 +648,6 @@ export class MapRenderer
 
     private getOffsetPool(): number[] {
         const pool = new Set([32]);
-        // 其他的都是 bigImage 了，直接遍历获取
-        for (const identifier of this.manager.bigImageStore.keys()) {
-            const data = this.manager.getBigImage(identifier);
-            if (!data) continue;
-            const offset = data.texture.width / data.frames;
-            pool.add(offset);
-        }
         // 还有勇士图片
         for (const tex of this.manager.imageStore.values()) {
             if (!this.manager.assetContainsTexture(tex)) continue;
@@ -1247,7 +1240,7 @@ export class MapRenderer
         tile: number
     ): Promise<void> {
         // 图块背景
-        const tex = this.manager.getIfBigImage(tile);
+        const tex = this.manager.getTile(tile);
         if (!tex) {
             // 图块不存在
             logger.error(35);

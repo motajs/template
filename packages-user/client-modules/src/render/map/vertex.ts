@@ -543,7 +543,7 @@ export class MapVertexGenerator
     ) {
         // 此处仅更新当前图块，不更新周围一圈的自动元件
         // 周围一圈的自动元件需要在更新某个图块或者某个区域时处理，不在这里处理
-        const tile = this.renderer.manager.getIfBigImage(num);
+        const tile = this.renderer.manager.getTile(num);
 
         if (!tile) {
             // 不存在可渲染对象，认为是空图块

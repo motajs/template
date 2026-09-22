@@ -7,6 +7,7 @@ import {
     SizedCanvasImageSource
 } from '@motajs/render';
 import { IAssetBuilder, ITextureGetter, ITrackedAssetData } from './types';
+import { ICoreState } from '@user/data-state';
 import { logger, PrivateListDirtyTracker } from '@motajs/common';
 
 export class AssetBuilder implements IAssetBuilder {
@@ -24,8 +25,11 @@ export class AssetBuilder implements IAssetBuilder {
     /** 贴图更新的 promise */
     private pending: Promise<void> = Promise.resolve();
 
-    constructor(readonly materials: ITextureGetter) {
-        this.trackedData = new TrackedAssetData(materials, this);
+    constructor(
+        readonly materials: ITextureGetter,
+        readonly state: ICoreState
+    ) {
+        this.trackedData = new TrackedAssetData(materials, this, state);
     }
 
     pipe(store: ITextureStore): void {
@@ -109,7 +113,8 @@ class TrackedAssetData
 
     constructor(
         readonly materials: ITextureGetter,
-        readonly builder: AssetBuilder
+        readonly builder: AssetBuilder,
+        readonly state: ICoreState
     ) {
         super(0);
     }

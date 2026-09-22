@@ -33,7 +33,7 @@ export class MapDoorRenderer implements IMapDoorRenderer {
         const array = this.layer.getMapRef().array;
         const index = y * this.layer.width + x;
         const num = array[index];
-        const data = this.renderer.manager.getIfBigImage(num);
+        const data = this.renderer.manager.getTile(num);
         if (!data) return;
         const frames = data.frames;
         for (let i = 0; i < frames; i++) {
@@ -43,7 +43,7 @@ export class MapDoorRenderer implements IMapDoorRenderer {
     }
 
     async closeDoor(num: number, x: number, y: number): Promise<void> {
-        const data = this.renderer.manager.getIfBigImage(num);
+        const data = this.renderer.manager.getTile(num);
         if (!data) return;
         const moving = this.renderer.addMovingBlock(this.layer, num, x, y);
         const frames = data.frames;

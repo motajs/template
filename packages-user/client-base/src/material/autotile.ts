@@ -12,6 +12,7 @@ import {
     IMaterialFramedData,
     ITextureManager
 } from './types';
+import { ICoreState } from '@user/data-state';
 import { isNil } from 'lodash-es';
 
 interface ConnectedAutotile {
@@ -45,7 +46,10 @@ export class AutotileProcessor implements IAutotileProcessor {
     /** 自动元件父子关系映射，父元件 -> 子元件列表 */
     readonly childMap: Map<number, Set<number>> = new Map();
 
-    constructor(readonly manager: ITextureManager) {}
+    constructor(
+        readonly manager: ITextureManager,
+        readonly state: ICoreState
+    ) {}
 
     private ensureChildSet(num: number) {
         const set = this.childMap.get(num);

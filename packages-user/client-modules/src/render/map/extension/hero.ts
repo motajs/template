@@ -236,7 +236,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
         const tx = block.x + dx;
         const ty = block.y + dy;
         const nextTile = state.roleFace.getFaceOf(block.tile, direction);
-        const nextTex = this.renderer.manager.getIfBigImage(
+        const nextTex = this.renderer.manager.getTile(
             nextTile?.identifier ?? block.tile
         );
         entity.animateInterval = time;
@@ -361,7 +361,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
         const nowFace =
             degraded === FaceDirection.Unknown ? FaceDirection.Down : degraded;
         const faced = state.roleFace.getFaceOf(image, nowFace);
-        const tex = this.renderer.manager.getIfBigImage(faced?.face ?? image);
+        const tex = this.renderer.manager.getTile(faced?.face ?? image);
         if (!tex) {
             logger.warn(91, image.toString());
             return;
@@ -425,9 +425,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
                 last.nextDirection
             );
             if (!nextFace) continue;
-            const tile = this.renderer.manager.getIfBigImage(
-                nextFace.identifier
-            );
+            const tile = this.renderer.manager.getTile(nextFace.identifier);
             if (!tile) continue;
             moving.block.setTexture(tile);
             moving.direction = last.nextDirection;

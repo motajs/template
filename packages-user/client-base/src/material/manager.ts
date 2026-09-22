@@ -17,11 +17,11 @@ import {
     IIndexedIdentifier,
     IMaterialAssetData,
     BlockCls,
-    IBigImageReturn,
     IAssetBuilder,
     IMaterialFramedData,
     ITrackedAssetData
 } from './types';
+import { ICoreState } from '@user/data-state';
 import { logger } from '@motajs/common';
 import { getClsByString, getTextureFrame } from './utils';
 import { isNil } from 'lodash-es';
@@ -40,7 +40,7 @@ export class MaterialManager implements ITextureManager {
     readonly tilesetStore: ITextureStore = new TextureStore();
     readonly imageStore: ITextureStore = new TextureStore();
     readonly assetStore: ITextureStore = new TextureStore();
-    readonly bigImageStore: ITextureStore = new TextureStore();
+    readonly textures: ITextureStore = new TextureStore();
 
     /** 自动元件图像源映射 */
     readonly autotileSource: Map<number, SizedCanvasImageSource> = new Map();
@@ -52,8 +52,6 @@ export class MaterialManager implements ITextureManager {
     /** 带有脏标记追踪的图集对象 */
     readonly trackedAsset: ITrackedAssetData;
 
-    /** 大怪物数据 */
-    readonly bigImageData: Map<number, IMaterialFramedData> = new Map();
     /** tileset 中 `Math.floor(id / 10000) + 1` 映射到 tileset 对应索引的映射，用于处理图块超出 10000 的 tileset */
     readonly tilesetOffsetMap: Map<number, number> = new Map();
     /** 图集打包器 */
@@ -73,8 +71,6 @@ export class MaterialManager implements ITextureManager {
     /** 行切分器 */
     readonly rowSplitter: TextureRowSplitter = new TextureRowSplitter();
 
-    /** 大怪物贴图的标识符 */
-    private bigImageId: number = 0;
     /** 当前 tileset 索引 */
     private nowTilesetIndex: number = -1;
     /** 当前 tileset 偏移 */
@@ -82,8 +78,8 @@ export class MaterialManager implements ITextureManager {
     /** 是否已经构建过素材 */
     private built: boolean = false;
 
-    constructor() {
-        this.assetBuilder = new AssetBuilder(this);
+    constructor(readonly state: ICoreState) {
+        this.assetBuilder = new AssetBuilder(this, state);
         this.assetBuilder.pipe(this.assetStore);
         this.trackedAsset = this.assetBuilder.tracked();
     }
@@ -230,10 +226,6 @@ export class MaterialManager implements ITextureManager {
 
     setDefaultFrame(identifier: number, defaultFrame: number): void {
         this.defaultFrames.set(identifier, defaultFrame);
-        const bigImageData = this.bigImageData.get(identifier);
-        if (bigImageData) {
-            bigImageData.defaultFrame = defaultFrame;
-        }
     }
 
     getDefaultFrame(identifier: number): number {
@@ -547,49 +539,6 @@ export class MaterialManager implements ITextureManager {
 
     getAliasByIdentifier(identifier: number): string | undefined {
         return this.numIdMap.get(identifier);
-    }
-
-    setBigImage(
-        identifier: number,
-        image: ITexture,
-        frames: number
-    ): IBigImageReturn {
-        const bigImageId = this.bigImageId++;
-        this.bigImageStore.addTexture(bigImageId, image);
-        const cls = this.clsMap.get(identifier) ?? BlockCls.Unknown;
-        const store: IMaterialFramedData = {
-            texture: image,
-            cls,
-            offset: image.width / 4,
-            frames,
-            defaultFrame: this.defaultFrames.get(identifier) ?? -1
-        };
-        this.bigImageData.set(identifier, store);
-        const data: IBigImageReturn = {
-            identifier: bigImageId,
-            store: this.bigImageStore
-        };
-        return data;
-    }
-
-    isBigImage(identifier: number): boolean {
-        return this.bigImageData.has(identifier);
-    }
-
-    getBigImage(identifier: number): Readonly<IMaterialFramedData> | null {
-        return this.bigImageData.get(identifier) ?? null;
-    }
-
-    getBigImageByAlias(alias: string): Readonly<IMaterialFramedData> | null {
-        const identifier = this.idNumMap.get(alias);
-        if (isNil(identifier)) return null;
-        return this.bigImageData.get(identifier) ?? null;
-    }
-
-    getIfBigImage(identifier: number): Readonly<IMaterialFramedData> | null {
-        const bigImage = this.bigImageData.get(identifier);
-        if (bigImage) return bigImage;
-        else return this.getTile(identifier);
     }
 
     assetContainsTexture(texture: ITexture): boolean {

@@ -32,8 +32,6 @@ interface RenderableDataBase {
     frame: number;
     /** 对应图块属性的动画帧数，-1表示没有设定，0表示第一帧 */
     animate: number;
-    /** 是否是大怪物 */
-    bigImage: boolean;
     render: [x: number, y: number, width: number, height: number][];
 }
 
@@ -45,7 +43,6 @@ export interface RenderableData extends RenderableDataBase {
 export interface AutotileRenderable extends RenderableDataBase {
     image: Record<string, SizedCanvasImageSource>;
     autotile: true;
-    bigImage: false;
 }
 
 class TextureCache {
@@ -124,7 +121,6 @@ class TextureCache {
         num: number
     ): RenderableData | AutotileRenderable | null {
         const map = maps_90f36752_8815_4be8_b32b_d7fad1d0542e;
-        const enemys = enemys_fcae963b_31c9_42b4_b48c_bb48d09f3f80;
         const icons = icons_4665ee12_3a1f_44a4_bea3_0fccba634dc1;
 
         /** 特判空图块与空气墙 */
@@ -140,8 +136,7 @@ class TextureCache {
                 frame: 1,
                 render: [[x * 32, y * 32, 32, 32]],
                 animate: 0,
-                autotile: false,
-                bigImage: false
+                autotile: false
             };
             this.renderable.set(num, data);
             return data;
@@ -150,48 +145,7 @@ class TextureCache {
         const data = map[num as Exclude<AllNumbers, 0>];
         // 地狱般的分支if
         if (data) {
-            let { faceIds, bigImage } = data;
             const { cls, id, animate } = data;
-            if (cls === 'enemys' || cls === 'enemy48') {
-                // 怪物需要特殊处理，因为它的大怪物信息不在 maps 里面
-                ({ bigImage, faceIds } = enemys[id as EnemyIds]);
-            }
-            if (bigImage) {
-                const image = core.material.images.images[bigImage];
-                if (!image) {
-                    logger.warn(10, id);
-                    return null;
-                }
-                let line = 0;
-                if (faceIds) {
-                    const arr = ['down', 'left', 'right', 'up'];
-                    for (let i = 0; i < arr.length; i++) {
-                        if (faceIds[arr[i] as Dir] === id) {
-                            line = i;
-                            break;
-                        }
-                    }
-                }
-                const totalLines = image.width / image.height >= 2 ? 1 : 4;
-                const w = Math.round(image.width / 4);
-                const h = Math.round(image.height / totalLines);
-                const y = h * line;
-                const data: RenderableData = {
-                    image,
-                    frame: 4,
-                    render: [
-                        [0, y, w, h],
-                        [w, y, w, h],
-                        [w * 2, y, w, h],
-                        [w * 3, y, w, h]
-                    ],
-                    animate: (animate ?? 0) - 1,
-                    autotile: false,
-                    bigImage: true
-                };
-                this.renderable.set(num, data);
-                return data;
-            }
             // enemy48和npc48都应该视为大怪物
             if (cls === 'enemy48' || cls === 'npc48') {
                 const img = core.material.images[cls];
@@ -211,8 +165,7 @@ class TextureCache {
                         [w * 3, y, w, h]
                     ],
                     animate: (animate ?? 0) - 1,
-                    autotile: false,
-                    bigImage: true
+                    autotile: false
                 };
                 this.renderable.set(num, data);
                 return data;
@@ -240,7 +193,6 @@ class TextureCache {
                     frame: auto.frame,
                     render,
                     autotile: true,
-                    bigImage: false,
                     animate: (animate ?? 0) - 1
                 };
                 this.renderable.set(num, data);
@@ -273,7 +225,6 @@ class TextureCache {
                     frame: frame,
                     render,
                     autotile: false,
-                    bigImage: false,
                     animate: (animate ?? 0) - 1
                 };
                 this.renderable.set(num, data);

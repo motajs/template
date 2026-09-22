@@ -81,8 +81,8 @@ export class ClientCore extends CoreState implements IClientCore {
 
         //#region 素材系统
 
-        this.materials = new MaterialManager();
-        this.autotile = new AutotileProcessor(this.materials);
+        this.materials = new MaterialManager(this);
+        this.autotile = new AutotileProcessor(this.materials, this);
 
         //#endregion
 
