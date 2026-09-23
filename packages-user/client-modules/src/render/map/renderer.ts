@@ -1249,10 +1249,7 @@ export class MapRenderer
         if (tex.frames === 1) {
             // 对于一帧图块，只需要传递一个纹理
             if (tex.tileType === TileType.Autotile) {
-                const renderable = this.autotile.render(
-                    tex,
-                    0b1111_1111
-                )!;
+                const renderable = this.autotile.render(tex, 0b1111_1111)!;
                 return this.useStaticBackground(gl, data, renderable);
             } else {
                 return this.useStaticBackground(gl, data, tex.texture.render());
