@@ -16,7 +16,7 @@ affects: [04-render-adaptation]
 actuals:
   tokens: 1622
   tasks: 3
-  commits: 3
+  commits: 4
   plan_head_before: 93ed3115fc82feef993c55858335c8c64ef724cf
 tech-stack:
   added: []
@@ -64,7 +64,7 @@ status: complete
 
 1. **Task 1（tracer）：勇士贴图 → 移动图块 → 顶点动态分支 → `manager.autotile`** - `d90c09f` (fix) — `hero.ts` 字面量 `tileType: TileType.Unknown`；`vertex.ts` `updateMoving` 解构 `tileType` + `render`；`renderer.ts` `manager.autotile` 取值并移除 `AutotileProcessor` import
 2. **Task 2：补齐剩余转换（vertex 静态判定 + renderer 背景分支与 import 清理）** - `88a21bf` (fix) — `vertex.ts` `updateAutotile` 用 `render`、两处判定改 `tileType`、移除 `BlockCls` import；`renderer.ts` 背景两处判定改 `tileType`、单帧调用改 `render`、引入 `TileType`、移除 `BlockCls` import
-3. **Task 3：收口（六道门禁 + 人工复核 + SUMMARY）** - 本 SUMMARY 提交（见下方 Task Commits 记录）
+3. **Task 3：收口（六道门禁 + 人工复核 + SUMMARY）** - `db87fbd` (docs) — `docs(04-09): record texture interface adaptation`
 
 _附：`523ea6b` (style) — Task 2 的单帧 `render` 调用缩行后 prettier 要求收成一行，作为独立 `style` 提交修正（见 Deviations）。_
 
