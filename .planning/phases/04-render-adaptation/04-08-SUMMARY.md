@@ -59,7 +59,7 @@ status: complete
 
 ## Task Commits
 
-1. **Task 1+2+3: TextureManager 新接口影响范围清点（只读）** - `docs(04-08): TextureManager 新接口影响范围清点（只读，D-38/D-40 第一步）` (docs) — 仅含 `04-TEXTURE-INTERFACE-IMPACT.md`、`04-08-PLAN.md`、`04-08-SUMMARY.md` 三个文件
+1. **Task 1+2+3: TextureManager 新接口影响范围清点（只读）** - `04a43cb` (docs) — `docs(04-08): TextureManager 新接口影响范围清点（只读，D-38/D-40 第一步）`；提交文件集 = `04-TEXTURE-INTERFACE-IMPACT.md` + `04-08-SUMMARY.md`（`04-08-PLAN.md` 未改动、无 diff，故无变更进入提交）；未纳入任何生产源码或 `.planning/` 其它文件
 
 _说明：按 04-08-PLAN 要求，Task 1（tracer）/ Task 2 为同一交付文档骨架与横向补齐的中间态，不单独提交；Task 3 定稿并完成全部门禁后一次原子提交三个规划文件。_
 
@@ -170,8 +170,10 @@ _说明：按 04-08-PLAN 要求，Task 1（tracer）/ Task 2 为同一交付文�
 
 - 交付文档已落盘 `.planning/phases/04-render-adaptation/04-TEXTURE-INTERFACE-IMPACT.md`；11 节齐备；全文 CRLF。
 - 六道门禁（Task 1 六道 / Task 3 六道）全部转绿；标志性输出：`OK headings 11`、`OK baseline tokens 23`、`OK tsc total 263 texture 23 listed 25`、`OK A rows 13`、`OK zero stale symbol references (5 names)`、`OK categories A13 B8 C8 D9 E7 F8`、`OK read-only unchanged entries 0; REND-01/REND-02 still Pending`、`OK 04-01..04-07 untouched; plans 04-01,...`、`OK CRLF`。
-- 生产源码零改动（porcelain 逐条一致，条目全部为用户并发改动）。
-- 提交仅含 `04-TEXTURE-INTERFACE-IMPACT.md` / `04-08-PLAN.md` / `04-08-SUMMARY.md` 三个文件。
+- 生产源码零改动（相对只读起始基线 entries 0 一致，`packages` / `packages-user` / `src` 无 worktree 变化）。
+- 提交 `04a43cb` 的文件集为 plan 允许的 3 文件之子集（实际含 `04-TEXTURE-INTERFACE-IMPACT.md` 与 `04-08-SUMMARY.md`；`04-08-PLAN.md` 无 diff）；未纳入任何生产源码、`04-CONTEXT.md` 或 `.planning/` 其它文件；提交后无删除项。
+
+## Self-Check: PASSED
 
 ---
 *Phase: 04-render-adaptation*
