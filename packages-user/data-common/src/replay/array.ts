@@ -22,7 +22,8 @@ interface INormalizedParam {
      * - 7: 非负 bigint，载荷为幅值
      * - 8: 负 bigint，载荷为幅值
      * - 9: string，带 int32 长度前缀
-     * - 10 ~ 255: n - 9 长度的字符串
+     * - 10 ~ 31: 留空，以备后续新增类型
+     * - 32 ~ 255: n - 32 长度的字符串
      *
      * 该类型码表属于录像参数编解码格式的一部分，遵循只增不改的约定：新语义必须分配
      * 新的类型码，禁止复用既有类型码。历史上 5/6/7/8 与短字符串基址（长度 + 9）曾
@@ -291,10 +292,11 @@ export class ReplayArray implements IReplayArray {
             };
         } else if (typeof param === 'string') {
             const arr = this.textEncoder.encode(param);
-            if (arr.length > 0 && arr.length <= 246) {
-                // 10 ~ 255 - string
+            // 223 = 255 - 32
+            if (arr.length >= 0 && arr.length <= 223) {
+                // 32 ~ 255 - string
                 return {
-                    paramType: arr.length + 9,
+                    paramType: arr.length + 32,
                     paramValue: arr,
                     byteLength: arr.length + 1
                 };
@@ -400,9 +402,11 @@ export class ReplayArray implements IReplayArray {
                 // 9 - string
                 this.paramView.setInt32(index + 1, arr.length);
                 this.paramArray.set(arr, index + 5);
-            } else {
-                // 10 ~ 255 - string
+            } else if (param.paramType >= 32) {
+                // 32 ~ 255 - string
                 this.paramArray.set(arr, index + 1);
+            } else {
+                logger.error(70, 'encode', param.paramType.toString());
             }
             index += param.byteLength;
         });
@@ -717,13 +721,15 @@ export class ReplayArray implements IReplayArray {
             const arr = this.paramArray.slice(startIndex + 5, endIndex);
             byte = length + 5;
             value = this.textDecoder.decode(arr);
-        } else {
-            // 10 ~ 255 - string
-            const length = type - 9;
+        } else if (type >= 32) {
+            // 32 ~ 255 - string
+            const length = type - 32;
             const endIndex = startIndex + 1 + length;
             const arr = this.paramArray.slice(startIndex + 1, endIndex);
             byte = length + 1;
             value = this.textDecoder.decode(arr);
+        } else {
+            logger.error(70, 'decode', type.toString());
         }
 
         return {
