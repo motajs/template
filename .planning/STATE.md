@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 04
 current_phase_name: 渲染适配与双布局
 status: executing
-stopped_at: Completed 04-07-PLAN.md（material 接口适应实施：big-image 全删、7 处改 getTile、四实现类构造器注入 state、cache.ts legacy 路径删除、补 @user/data-state 声明；material 诊断 19→0、总行数 199→180；REND-01/REND-02 保持 Pending）
-last_updated: "2026-09-23T03:17:38.728Z"
-last_activity: 2026-09-21
-last_activity_desc: Phase 04 execution started
-state_head: b4c8482f874dd710f97a91f854283fe670734ecb
+stopped_at: Completed 04-08-PLAN.md（TextureManager 新接口影响范围清点·只读：交付 04-TEXTURE-INTERFACE-IMPACT.md（11 节 / A13 B8 C8 D9 E7 F8 / 每行双 file:line 锚点）；旧名 5 个源码面 0 引用；texture 归属错误 23 不变、总错误 263；生产代码零改动；REND-01/REND-02 保持 Pending，第二步未规划）
+last_updated: "2026-09-23T05:20:00.000Z"
+last_activity: 2026-09-23
+last_activity_desc: Completed 04-08-PLAN.md（TextureManager 新接口影响范围清点·只读）
+state_head: e47c34c6b0152217d4f20630d89c5297b5336e80
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 79
-  completed_plans: 77
+  completed_plans: 78
 milestone_name: milestone
 ---
 
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 
 ## Current Position
 
-Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
-Plan: 7 of 7
-Status: Ready to execute
-Last activity: 2026-09-21 — Completed quick task 260921-lwa: Upgrade toolchain to pnpm 12.5.1 and Node 24
+Phase: 04 (渲染适配与双布局) — IN PROGRESS
+Plan: 8 of 8
+Status: 04-08 完成（TextureManager 新接口影响范围只读清点）；Phase 4 整体未完成 — REND-01/REND-02 仍 Pending，第二步（texture 接口适应实施）待用户审阅后另行规划
+Last activity: 2026-09-23 — Completed 04-08-PLAN.md（TextureManager 新接口影响范围清点·只读）
 
 Progress: [█████░░░░░] 50%
 
