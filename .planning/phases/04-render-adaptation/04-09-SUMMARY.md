@@ -16,7 +16,7 @@ affects: [04-render-adaptation]
 actuals:
   tokens: 1622
   tasks: 3
-  commits: 4
+  commits: 5
   plan_head_before: 93ed3115fc82feef993c55858335c8c64ef724cf
 tech-stack:
   added: []
@@ -68,7 +68,7 @@ status: complete
 
 _附：`523ea6b` (style) — Task 2 的单帧 `render` 调用缩行后 prettier 要求收成一行，作为独立 `style` 提交修正（见 Deviations）。_
 
-_`plan_head_before: 93ed3115fc82feef993c55858335c8c64ef724cf`（本计划提交前的 HEAD）。_
+_`plan_head_before: 93ed3115fc82feef993c55858335c8c64ef724cf`（本计划提交前的 HEAD）。`actuals.commits` = `git rev-list --count 93ed311..2ba1c21` = 5（含三份源文件提交、`style` 修正、SUMMARY 提交与上一次执行记录提交；不含本次记录提交本身）。_
 
 ## Files Created/Modified
 
