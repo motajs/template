@@ -15,7 +15,7 @@ affects: [04-render-adaptation]
 actuals:
   tokens: 12513
   tasks: 3
-  commits: 1
+  commits: 3
   plan_head_before: d74cc35
 tech-stack:
   added: []
@@ -61,7 +61,12 @@ status: complete
 
 1. **Task 1+2+3: TextureManager 新接口影响范围清点（只读）** - `04a43cb` (docs) — `docs(04-08): TextureManager 新接口影响范围清点（只读，D-38/D-40 第一步）`；提交文件集 = `04-TEXTURE-INTERFACE-IMPACT.md` + `04-08-SUMMARY.md`（`04-08-PLAN.md` 未改动、无 diff，故无变更进入提交）；未纳入任何生产源码或 `.planning/` 其它文件
 
-_说明：按 04-08-PLAN 要求，Task 1（tracer）/ Task 2 为同一交付文档骨架与横向补齐的中间态，不单独提交；Task 3 定稿并完成全部门禁后一次原子提交三个规划文件。_
+_说明：按 04-08-PLAN 要求，Task 1（tracer）/ Task 2 为同一交付文档骨架与横向补齐的中间态，不单独提交；Task 3 定稿并完成全部门禁后一次原子提交。_
+
+2. **SUMMARY 执行记录** - `5d0c117` (docs) — `docs(04-08): record execution state`（仅含本 SUMMARY 的 Self-Check 与提交记录）
+3. **本次 record 提交** - `docs(04-08): record execution state`（`commits` 计数校准；`git rev-list --count d74cc35..HEAD` = 3）
+
+_`plan_head_before: d74cc35`（本计划提交前的 HEAD；用户数据端提交 `7743795` / `d74cc35` 之上）。_
 
 ## Files Created/Modified
 
