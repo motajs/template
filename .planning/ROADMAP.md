@@ -181,8 +181,9 @@ Plans:
   3. 移动端（窄屏）布局下，同一场景正常显示且可操作
   4. 数据端与渲染端保持双端分离——数据端无 DOM，仍可在 Node 环境跑回放验证
 
-**Plans**: 8/8 plans executed planned — 04-01..04-07 已执行（04-06 = material 接口影响范围清点·只读；04-07 = material 接口适应实施·第二步）；**04-08（TextureManager 新接口影响范围清点·只读，D-38/D-39/D-40/D-41/D-42 第一步）已规划待执行**；渲染适配与移动端/桌面端双布局（REND-01/REND-02）整体仍未完成
+**Plans**: 8 已执行 + 1 已规划待执行（04-09） — 04-01..04-07 已执行（04-06 = material 接口影响范围清点·只读；04-07 = material 接口适应实施·第二步）；04-08（TextureManager 新接口影响范围清点·只读，D-38/D-39/D-40/D-41/D-42 第一步）已执行；**04-09（TextureManager 新接口适应实施·第二步·代码改动，D-43..D-50）已规划待执行**（执行前须 Task 0 汇报关卡等待用户「可以执行」）；渲染适配与移动端/桌面端双布局（REND-01/REND-02）整体仍未完成
 **Plan register note (2026-09-21):** 第五个增量 `04-05`（收口 `#04-01-M-06` / `#04-01-M-09`：状态栏 9 个数值属性改经 `client.hero.attribute.getFinalAttribute(...)` 读取 + 逐图层钩子类 `RendererLayerHook`，2026-09-20 执行）此前未登记进本路线图，本次一并补登；第六个增量 `04-06` = material 接口适应（D-30/D-31/D-32）**第一步·只读影响清点**，产出 `04-MATERIAL-INTERFACE-IMPACT.md`，第二步（实施）待用户审阅后另行规划。第七个增量 `04-07` = material 接口适应实施（**第二步·代码改动**，D-33..D-37），2026-09-22 已执行（10 文件原子提交）。**第八个增量 `04-08` = TextureManager 新接口适应（D-38..D-42）第一步·只读影响清点**，产出 `04-TEXTURE-INTERFACE-IMPACT.md`；第二步（实施）待用户审阅后另行规划。
+**Plan register note (2026-09-23):** 第九个增量 `04-09` = TextureManager 新接口适应**第二步（实施·代码改动）**（用户裁定 D-43..D-50：`renderWithoutCheck` 三处调用点改新 `render(tile, connection)`；`BlockCls` / `cls` 判定改为 `tileType === TileType.Autotile`、不做映射表；`extension/hero.ts` 勇士字面量填 `tileType: TileType.Unknown`；`MapRenderer` 不再自建 `AutotileProcessor` 而取 `manager.autotile`、保留 `readonly autotile` 字段与 `IMapRenderer` 签名；不改 `material/**` 与加载面；不考虑 legacy 兼容）。对象 = `packages-user/client-modules/src/render/map/{vertex.ts,renderer.ts,extension/hero.ts}` 的 **13 条** texture 归属 TS 诊断（vertex 6 / renderer 5 / hero 2），目标归零；`moving.ts` 与 `render/map/types.ts` 经核实无需改动。**已规划待执行**，执行前须 Task 0 汇报关卡等待用户「可以执行」；`REND-01` / `REND-02` 仍 Pending（本步仅为 REND-01 的 texture 子切片）。
 
 Plans:
 **Wave 1**
@@ -213,6 +214,10 @@ Plans:
 **Wave 7** *(blocked on Wave 6 completion)*
 
 - [x] 04-08-PLAN.md — TextureManager 新接口影响范围清点（**只读**，D-38/D-39/D-40/D-41/D-42 第一步）：以 `d36ea69`（`refactor: 贴图存储方式`）后的 `client-base/src/{types.ts,material/types.ts,material/manager.ts,material/autotile.ts,material/index.ts}` 为基准，清点 `packages-user` 消费者面对改名（`MaterialManager`→`TextureManager` 与构造器）、移除（`BlockCls` 枚举 / `IMaterialFramedData.cls`→`tileType` / `IAutotileProcessor` 三方法合一 / `renderAnimatedWith`→`renderAnimated` / `getIdentifierByAlias` / `getAliasByIdentifier` / `getBlockCls(ByAlias)` / `IClientBase.autotile` / `create()` 与 `createMaterial()`）与新增收紧（`tiles` / `autotile` / `tilesetReserve` / `tilesetUnit` / `getFrameCount` / 四个 `add*` 参数 / `flatten` / `AutotileType` / `IClientCoreConfig` 两个必填字段）的引用，按 A 符号改名与移除 / B 成员与签名变化 / C 地图渲染消费者定位索引 / D 被删且无替代（需用户反馈）/ E 加载相关与添加素材（仅报告，D-39/D-41）/ F 未确定 六类分组，每行精确到符号 + `file:line` 且 ≥2 锚点；产出 `04-TEXTURE-INTERFACE-IMPACT.md`，生产代码零改动（`material/` 按 D-42 只登记），第二步实施待用户审阅后另行规划
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 04-09-PLAN.md — TextureManager 新接口适应实施（**第二步·代码改动**，D-43..D-50）：`renderWithoutCheck` 的三处调用点（`render/map/vertex.ts:461`、`render/map/vertex.ts:874`、`render/map/renderer.ts:1253`）改新 `render(tile, connection)` 且不保留跳过检查入口（D-43）；自动元件判定与解构（`render/map/renderer.ts:1252` / `:1263`、`render/map/vertex.ts:517` / `:561` / `:872` 与 `:852`）改 `tileType === TileType.Autotile`，不做映射表、不用 `AutotileType` 分类（D-44）；`render/map/extension/hero.ts:167` 填 `tileType: TileType.Unknown`（D-45，D-18 不排除该文件）；`MapRenderer` 保留 `readonly autotile: IAutotileProcessor` 字段与 `IMapRenderer` 签名、构造器改取 `manager.autotile`、不再自建 `AutotileProcessor`（D-46）；只做接口适应不重设计 `textures` / `tileStore` / `tiles`（D-47）、`material/**` 零改动（D-48）、不考虑 legacy 兼容（D-49）、`IBlockIdentifier` 零出现（D-50）；`moving.ts` 与 `render/map/types.ts` 无需改动；门禁 = 三文件 texture 归属诊断 13→0 + eslint / prettier / CRLF / 符号零命中 / 基线与禁用路径；`autonomous: false`（Task 0 汇报关卡）；`REND-01` / `REND-02` 仍 Pending
 
 **UI hint**: yes
 
@@ -407,7 +412,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
-| 4. 渲染适配与双布局 | 8/8 | In Progress|  |
+| 4. 渲染适配与双布局 | 8/9 | In Progress|  |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | 暂缓 (Deferred) | - |

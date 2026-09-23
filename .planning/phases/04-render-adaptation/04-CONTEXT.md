@@ -82,6 +82,19 @@
 - **D-41:** 「加载相关」的排除边界（用户界定）：**加载本身**，以及**向 `TextureManager` 中添加素材的内容**（均由用户自行适配新加载系统）。
 - **D-42:** `packages-user/client-base/src/material/` 文件夹已由用户**重构完毕**；AI **只修改消费者**（如地图渲染）。**若某接口被删除且无替代，必须向用户反馈**，不得自行发明替代方案。
 
+### 下一个目标：TextureManager 新接口适应·**第二步（实施）**（用户裁定，2026-09-23；待规划）
+> 本步的输入 = 第一步只读清点产物 `.planning/phases/04-render-adaptation/04-TEXTURE-INTERFACE-IMPACT.md`（A13 / B8 / C8 / D9 / E7 / F8）。以下 D-43..D-50 为用户对该台账 D / F 两类未决项的逐条裁决。
+
+- **D-43:** `renderWithoutCheck` 的替代 = **直接用新 `render(tile, connection)`**。用户原话：现在 `render` 已经进行了简化，性能比原本的 `renderWithoutCheck` 更好。3 处调用点（`render/map/vertex.ts:461`、`render/map/vertex.ts:874`、`render/map/renderer.ts:1253`）**全部改为 `render`**，不得保留或新增「跳过检查」入口。
+- **D-44:** `BlockCls` 的替代 = **`TileType`（`@user/data-common`）**。自动元件判定（`render/map/renderer.ts:1252`/`:1263`、`render/map/vertex.ts:517`/`:561`/`:872`）统一走 `tileType === TileType.Autotile`；**自动元件不需要做布局类型（`AutotileType`）判断**。用户明确：**不为旧 `BlockCls` 值做一一映射**——该类型尚未完全定稿、后续还会改，不得为了凑齐对应关系而发明映射表。
+- **D-45:** `render/map/extension/hero.ts:167` 的 `tileType` 取值 = **`TileType.Unknown`**。用户澄清：**D-18 指的是数据层的 `HeroRendering` 对象，不是渲染端的勇士渲染代码**，故 `render/map/extension/hero.ts` **不受 D-18 排除**，属本步范围。
+- **D-46:** `MapRenderer` **不再自建 `AutotileProcessor`**；**保留** `readonly autotile: IAutotileProcessor` 字段（`render/map/types.ts`，`IMapRenderer` 签名不变），**构造器内赋值为 `manager.autotile`**（用户原话：「全换成 manager 上的」）。
+- **D-47:** `ITextureManager.textures` / `tileStore` / `tiles` 的职责边界**不在本步解决**——地图背景已走现有 `manager.getTile`（`ITextureGetter` 未变），本步**只做接口适应**，不重新设计存储取值。
+- **D-48:** `textures` 的**写入侧归用户自行处理的加载系统**；**AI 不得修改 `packages-user/client-base/src/material/` 下的任何内容**（沿用并再次确认 D-42）。
+- **D-49:** **不考虑 legacy 兼容**——本次大重构的目的就是删除 legacy。凡「是否破坏 legacy 插件面」一类顾虑（对应 04-08 台账 `#04-08-D-08` / `#04-08-F-07`）**一律作废，不作为本步约束或验收项**。
+- **D-50:** `IBlockIdentifier` 已被用户删除，**其所有用法一并删除；本步范围内不得出现该接口**（其消费点 `packages-user/client-modules/src/fallback/load.ts` 属加载面，归用户）。
+- **本步范围（据 D-38..D-50 与 D-33 收敛）：** AI 渲染端适配对象 = `packages-user/client-modules/src/render/map/vertex.ts`、`render/map/renderer.ts`、`render/map/extension/hero.ts`（台账中 texture 归属 13 条错误），连带 `render/map/moving.ts` / `render/map/types.ts` 的类型面；**排除**加载面（`fallback/load.ts`、`client-base/src/load/**`）、`packages-user/client-base/src/material/**`、`packages/`、`src/`、legacy 兼容。目标：texture 归属 23 条中属 AI 面的 13 条归零；**不追平全仓既有类型错误**（D-33）。`REND-01` / `REND-02` 仍 Pending——本步仅为 REND-01 的 texture 子切片。
+
 ### the agent's Discretion
 - D-07 的「影响」字段具体写法、「多余旧路径」是否需要进一步细分，交由 AI 在对账执行时按实际情况把握，但不得据此扩大范围。
 
