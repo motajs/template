@@ -122,7 +122,7 @@ describe('replay commands', () => {
         expect(start).not.toHaveBeenCalled();
 
         let result: boolean | undefined;
-        const pending = command.notExecuted().then(value => {
+        const pending = command.finalize().then(value => {
             result = value;
         });
         await Promise.resolve();
@@ -147,7 +147,7 @@ describe('replay commands', () => {
 
         (mover as unknown as { moving: boolean }).moving = false;
         vi.spyOn(mover, 'start').mockReturnValueOnce(null);
-        await expect(command.notExecuted()).resolves.toBe(false);
+        await expect(command.finalize()).resolves.toBe(false);
         expect(error).toHaveBeenCalledWith(2004);
         error.mockRestore();
     });
