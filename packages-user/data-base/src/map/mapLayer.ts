@@ -15,7 +15,6 @@ import {
 } from './types';
 import { Hookable, HookController, ITileLocator, logger } from '@motajs/common';
 import {
-    degradeFace,
     FaceDirection,
     IDataCommon,
     IRoleFaceBinder,
@@ -525,14 +524,7 @@ export class MapLayer
 
     @shouldReplay('Setting map layer  block direction should be replayed.')
     setDynamicDirection(tile: IDynamicTile, direction: FaceDirection): number {
-        const numBefore = tile.num();
-        tile.setFaceDirection(direction);
-        if (tile.num() !== numBefore) return tile.num();
-        const degraded = degradeFace(direction);
-        if (degraded !== direction) {
-            tile.setFaceDirection(degraded);
-        }
-        return tile.num();
+        return tile.setFaceDirection(direction);
     }
 
     @shouldReplay('Updating dynamic tile position should be replayed.')

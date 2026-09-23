@@ -1,4 +1,3 @@
-import { isNil } from 'lodash-es';
 import {
     FaceDirection,
     IMoverController,
@@ -76,12 +75,7 @@ export class DynamicTile
     }
 
     getCurrentFaceDirection(): FaceDirection {
-        const curr = this.layer.faceBinder.getFaceDirection(this.tileNum);
-        if (isNil(curr)) {
-            return FaceDirection.Unknown;
-        } else {
-            return curr;
-        }
+        return this.layer.faceBinder.getFaceDirection(this.tileNum);
     }
 
     @shouldReplay('Transfering dynamic tile to static should be replayed.')

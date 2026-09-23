@@ -1,6 +1,7 @@
 import { ITileLocator } from '@motajs/common';
 import {
     FaceDirection,
+    FaceGroup,
     IDataCommon,
     IDataCommonExtended,
     ISaveableContent,
@@ -58,10 +59,17 @@ export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
         const cur = this.num();
         const next = this.layer.faceBinder.getFaceOf(cur, direction);
         if (next) {
+            // 先尝试在 dir8 中寻找
             this.set(next.identifier);
             return next.identifier;
         } else {
-            return cur;
+            // 找不到则降级到 dir4
+            const handler = this.state.faceManager.get(FaceGroup.Dir4);
+            if (!handler) return cur;
+            const degraded = handler.degrade(direction);
+            const next = this.layer.faceBinder.getFaceOf(cur, degraded);
+            if (next) return next.identifier;
+            else return cur;
         }
     }
 

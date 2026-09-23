@@ -270,6 +270,7 @@
         "189": "Cannot flatten autotile since it cannot be splitted evenly. Autotile width: $1, frames: $2.",
         "190": "Cannot flatten autotile since its width or height cannot be divided evenly. Autotile frame size: [$1,$2].",
         "191": "Cannot cache autotile since no its frame or type data stored.",
+        "192": "A FaceGroup.Dir8 face handler registration is expected.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }
