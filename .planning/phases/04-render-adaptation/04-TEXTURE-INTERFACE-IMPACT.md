@@ -108,7 +108,7 @@
 
 机器比对形式（与本节门禁的同一正则同形，便于逐字比对）：错误总行数：263；texture 归属错误行数：23。
 
-**与规划日（2026-09-22，HEAD `d36ea69`，工作树干净）的差异：** 规划日实测总行数为 **202**，当日实测为 **263**，差 **+61**。原因：用户并发进行中的数据端重构（`packages-user/data-base` / `data-common` / `data-system`；本 run 期间先为未提交改动，后经 `7743795` / `d74cc35` 提交）为数据层类型错误的新增来源（`data-base` 116 + `data-state` 57 + `data-system` 53），与 `d36ea69` texture 接口改动无关。**texture 归属错误行数仍为 23（与规划日一致）**，说明 texture 接口改动对消费者面的影响未因工作树改动而扩大。以上以当日实测为准（见 assumptions）。
+**与规划日（2026-09-22，HEAD `d36ea69`，工作树干净）的差异：** 规划日实测总行数为 **202**，当日实测为 **263**，差 **+61**。原因：用户并发进行中的数据端重构（`packages-user/data-base` / `data-common` / `data-system`；本 run 期间先为未提交改动，后经 `7743795` / `d74cc35` 提交）为数据层类型错误的新增来源（`data-base` 116 + `data-state` 57 + `data-system` 52），与 `d36ea69` texture 接口改动无关。**texture 归属错误行数仍为 23（与规划日一致）**，说明 texture 接口改动对消费者面的影响未因工作树改动而扩大。以上以当日实测为准（见 assumptions）。
 
 **texture 归属错误逐行列出（23 条 = `client-base` 1 条 + `client-modules` 22 条）：**
 
@@ -146,9 +146,9 @@
 - **② 加载系统重构（提交 `cc434a6`）既有 15 条**（与 `d36ea69` 无关）：
     - `packages-user/client-base/src/load/loader.ts:17,18,19,20,21,28` `error TS2305`×6：`Module '"@user/data-base"' has no exported member 'LoadAudioProcessor' / 'LoadFontProcessor' / 'LoadImageProcessor' / 'LoadTextProcessor' / 'LoadZipProcessor' / 'IMotaDataLoader'.`
     - `packages-user/client-modules/src/render/ui/load.tsx:73,74,79,80,93,94,120,121,141` `error TS2339`×9：`Property 'initSystemLoadTask' / 'load' / 'progress' does not exist on type 'IMotaDataLoader'.`
-- **③ 其余既有 226 条**：`packages-user/data-base`（116）、`packages-user/data-state`（57）、`packages-user/data-system`（53）的测试 / 寻路 / 数据端接口相关既有错误，含用户当日并发未提交改动引入的新增项；与 texture 接口改动无关。
+- **③ 其余既有 225 条**：`packages-user/data-base`（116）、`packages-user/data-state`（57）、`packages-user/data-system`（52）的测试 / 寻路 / 数据端接口相关既有错误，含用户当日并发未提交改动引入的新增项；与 texture 接口改动无关。
 
-**口径说明：** 「texture 归属 / 加载既有 / 其余既有」的划分为**规划日 / 执行日的人工归类**（texture 23 = `client-base` 1 + `client-modules` 22；加载既有 15；其余既有 225），**须用户在审阅时确认**。若用户判定其中某条应改类，执行者按裁定重新归类并同步数字与「处置」一节的口径说明，不得改动其它事实。此划分**不由任何机器门禁断言**；门禁只覆盖**错误总行数**（Task 3 重跑等于本记录值 264）。
+**口径说明：** 「texture 归属 / 加载既有 / 其余既有」的划分为**规划日 / 执行日的人工归类**（texture 23 = `client-base` 1 + `client-modules` 22；加载既有 15；其余既有 225），**须用户在审阅时确认**。若用户判定其中某条应改类，执行者按裁定重新归类并同步数字与「处置」一节的口径说明，不得改动其它事实。此划分**不由任何机器门禁断言**；门禁只覆盖**错误总行数**（Task 3 重跑等于本记录值 263）。
 
 ## A 符号改名与移除的引用点
 
