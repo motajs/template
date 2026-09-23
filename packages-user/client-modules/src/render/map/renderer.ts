@@ -6,7 +6,6 @@ import {
     Transform
 } from '@motajs/render';
 import {
-    BlockCls,
     IAutotileProcessor,
     IMaterialFramedData,
     ITextureManager,
@@ -36,6 +35,7 @@ import {
     IMapLayerHookController,
     IMapLayerHooks
 } from '@user/data-base';
+import { TileType } from '@user/data-common';
 import { IHookController, logger } from '@motajs/common';
 import { compileProgramWith } from '@motajs/client-base';
 import { isNil, maxBy } from 'lodash-es';
@@ -1248,8 +1248,8 @@ export class MapRenderer
         this.backgroundFrameCount = tex.frames;
         if (tex.frames === 1) {
             // 对于一帧图块，只需要传递一个纹理
-            if (tex.cls === BlockCls.Autotile) {
-                const renderable = this.autotile.renderWithoutCheck(
+            if (tex.tileType === TileType.Autotile) {
+                const renderable = this.autotile.render(
                     tex,
                     0b1111_1111
                 )!;
@@ -1259,7 +1259,7 @@ export class MapRenderer
             }
         } else {
             // 多帧图块
-            if (tex.cls === BlockCls.Autotile) {
+            if (tex.tileType === TileType.Autotile) {
                 const gen = this.autotile.renderAnimated(tex, 0b1111_1111);
                 return this.useDynamicBackground(gl, data, [...gen]);
             } else {

@@ -25,7 +25,7 @@ import {
 } from '../../shared';
 import { BlockSplitter } from './block';
 import { clamp, isNil } from 'lodash-es';
-import { BlockCls, IMaterialFramedData } from '@user/client-base';
+import { IMaterialFramedData } from '@user/client-base';
 import { IRect } from '@motajs/render';
 import { INSTANCED_COUNT } from './constant';
 
@@ -459,7 +459,7 @@ export class MapVertexGenerator
             this.mapWidth
         );
         // 使用不带检查的版本可以减少分支数量，提升性能
-        const renderable = autotile.renderWithoutCheck(tile, connection);
+        const renderable = autotile.render(tile, connection);
         if (!renderable) return;
         const assetIndex = this.renderer.getAssetSourceIndex(renderable.source);
         const offsetIndex = this.renderer.getOffsetIndex(tile.offset);
@@ -515,7 +515,7 @@ export class MapVertexGenerator
             blockIndex: by * block.width + bx
         };
         const tile = this.renderer.manager.getTile(mapArray[newIndex.mapIndex]);
-        if (!tile || tile.cls !== BlockCls.Autotile) return;
+        if (!tile || tile.tileType !== TileType.Autotile) return;
         this.updateAutotile(
             mapArray,
             vertex,
@@ -559,7 +559,7 @@ export class MapVertexGenerator
         }
 
         // todo: 这样的话，如果更新了指定分块，那么本来设置的帧数也会重置为默认帧数，如何修改？
-        if (tile.cls === BlockCls.Autotile) {
+        if (tile.tileType === TileType.Autotile) {
             // 如果图块是自动元件
             this.updateAutotile(
                 mapArray,
