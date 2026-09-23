@@ -1,52 +1,13 @@
 import { logger } from '@motajs/common';
-import { SaveCompression } from '@user/data-common';
+import { SaveCompression, shouldReplay } from '@user/data-common';
 import {
     IHeroAttribute,
     IHeroAttributeCloneOption,
     IHeroAttributeSave,
     IHeroModifier,
-    IHeroModifierOwner,
     IModifierStateSave
 } from './types';
 import { isNil } from 'lodash-es';
-
-export abstract class BaseHeroModifier<T, V> implements IHeroModifier<T, V, V> {
-    abstract readonly type: string;
-    abstract readonly priority: number;
-
-    owner: IHeroModifierOwner | null = null;
-
-    constructor(private currentValue: V) {}
-
-    get value(): V {
-        return this.currentValue;
-    }
-
-    setValue(value: V): void {
-        this.currentValue = value;
-        this.owner?.markModifierDirty(this);
-    }
-
-    getValue(): V {
-        return this.currentValue;
-    }
-
-    bindAttribute(attribute: IHeroModifierOwner | null): void {
-        this.owner = attribute;
-    }
-
-    saveState(_compression: SaveCompression): V {
-        return this.currentValue;
-    }
-
-    loadState(state: V, _compression: SaveCompression): void {
-        this.setValue(state);
-    }
-
-    abstract modify(value: T, baseValue: T, name: string): T;
-
-    abstract clone(): IHeroModifier<T, V>;
-}
 
 export class HeroAttribute<THero> implements IHeroAttribute<THero> {
     /** 当前勇士属性修饰器 */
@@ -142,21 +103,25 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
 
     //#region 属性操作
 
+    @shouldReplay('Hero attribute change should be replayed.')
     set<K extends keyof THero>(name: K, value: THero[K]): void {
         this.attribute[name] = value;
         this.markDirty(name);
     }
 
+    @shouldReplay('Hero attribute change should be replayed.')
     add(name: SelectKey<THero, number>, value: number): void {
         (this.attribute[name] as number) += value;
         this.markDirty(name);
     }
 
+    @shouldReplay('Hero attribute change should be replayed.')
     mul(name: SelectKey<THero, number>, value: number): void {
         (this.attribute[name] as number) *= value;
         this.markDirty(name);
     }
 
+    @shouldReplay('Hero attribute change should be replayed.')
     div(name: SelectKey<THero, number>, value: number): void {
         (this.attribute[name] as number) /= value;
         this.markDirty(name);
@@ -187,6 +152,7 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         return arr.indexOf(modifier);
     }
 
+    @shouldReplay('Changing hero attrubute modifier should be replayed.')
     addModifier<K extends keyof THero>(
         name: K,
         modifier: IHeroModifier<THero[K]>,
@@ -210,6 +176,7 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         this.markDirty(name);
     }
 
+    @shouldReplay('Changing hero attrubute modifier should be replayed.')
     deleteModifier<K extends keyof THero>(
         name: K,
         modifier: IHeroModifier<THero[K], unknown>
@@ -227,6 +194,7 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         this.markDirty(name);
     }
 
+    @shouldReplay('Changing hero attrubute modifier should be replayed.')
     deleteModifierByIndex<K extends keyof THero>(
         name: K,
         index: number
