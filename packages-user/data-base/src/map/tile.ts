@@ -4,7 +4,8 @@ import {
     IDataCommon,
     IDataCommonExtended,
     ISaveableContent,
-    ITileRawData
+    ITileRawData,
+    shouldReplay
 } from '@user/data-common';
 import { LayerEventView } from './eventView';
 import {
@@ -52,6 +53,7 @@ export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
         eventView.markPure();
     }
 
+    @shouldReplay('Setting map tile face direction should be replayed.')
     setFaceDirection(direction: FaceDirection): number {
         const cur = this.num();
         const next = this.layer.faceBinder.getFaceOf(cur, direction);

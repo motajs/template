@@ -3,7 +3,8 @@ import {
     FaceDirection,
     IMoverController,
     IObjectMover,
-    ITileRawData
+    ITileRawData,
+    shouldReplay
 } from '@user/data-common';
 import {
     IDynamicBlockSave,
@@ -53,6 +54,7 @@ export class DynamicTile
         return this.tileRaw;
     }
 
+    @shouldReplay('Setting dynamic block num should be replayed.')
     set(num: number): void {
         this.tileNum = num;
         const data = this.state.tileStore.getData(num);
@@ -65,6 +67,7 @@ export class DynamicTile
         this.restoreDefaultEvents();
     }
 
+    @shouldReplay('Setting dynamic block position should be replayed.')
     setPos(x: number, y: number): void {
         this.x = x;
         this.y = y;
@@ -81,10 +84,12 @@ export class DynamicTile
         }
     }
 
+    @shouldReplay('Transfering dynamic tile to static should be replayed.')
     toStatic(): IStaticTile | null {
         return this.layer.transferToStatic(this);
     }
 
+    @shouldReplay('Transfering dynamic tile to static should be replayed.')
     toStaticIfSafe(): IStaticTile | null {
         return this.layer.transferToStaticIfSafe(this);
     }

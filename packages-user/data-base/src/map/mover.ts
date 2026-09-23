@@ -3,7 +3,8 @@ import {
     getFaceMovement,
     ObjectMover,
     ObjectMoveStep,
-    ObjectMoveType
+    ObjectMoveType,
+    shouldReplay
 } from '@user/data-common';
 import { IDynamicTile } from './types';
 import { DYNAMIC_MOVER_FACE } from '../shared';
@@ -31,6 +32,7 @@ export class DynamicTileMover extends ObjectMover<IDynamicTile> {
         return Promise.resolve(DynamicMoveCode.Success);
     }
 
+    @shouldReplay('Dynamic tile moving step should be replayed.')
     protected onStepEnd(
         code: number,
         step: ObjectMoveStep,

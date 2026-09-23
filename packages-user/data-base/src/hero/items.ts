@@ -3,7 +3,8 @@ import {
     IDataCommon,
     ItemCategory,
     ReplayCode,
-    SaveCompression
+    SaveCompression,
+    shouldReplay
 } from '@user/data-common';
 import { HeroEquipsStore } from './equipStore';
 import {
@@ -75,6 +76,7 @@ export class HeroItems<THero> implements IHeroItems<THero> {
         return this.getItemState(item)?.count ?? 0;
     }
 
+    @shouldReplay('Adding item to hero should be replayed.')
     addItem(item: number | string, count: number = 1): void {
         const num = this.resolveNum(item);
         if (isNil(num)) return;
@@ -113,6 +115,7 @@ export class HeroItems<THero> implements IHeroItems<THero> {
         this.addItem(item, 1);
     }
 
+    @shouldReplay('Using item should be replayed.')
     useItem(item: number | string): boolean {
         const state = this.internalGetItemState(item);
         if (!state) return false;

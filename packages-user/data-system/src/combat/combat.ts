@@ -23,6 +23,7 @@ import {
     IReadonlyEnemy,
     IStateBase
 } from '@user/data-base';
+import { shouldReplay } from '@user/data-common';
 
 export class CombatFlow<TEnemy, THero>
     extends Hookable<ICombatFlowHooks<TEnemy, THero>>
@@ -193,6 +194,7 @@ export class CombatFlow<TEnemy, THero>
         return damage;
     }
 
+    @shouldReplay('Battle with enemy should be replayed.')
     battle(
         enemy: IEnemyView<TEnemy>
     ): Promise<IEnemyDamageInfo<TEnemy, THero> | null> {
@@ -214,6 +216,7 @@ export class CombatFlow<TEnemy, THero>
         return this.combatFlow(handler, eHandler);
     }
 
+    @shouldReplay('Battle with enemy should be replayed.')
     battleComputed(
         enemy: IReadonlyEnemy<TEnemy>
     ): Promise<IEnemyDamageInfo<TEnemy, THero> | null> {
