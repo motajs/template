@@ -1,4 +1,5 @@
 import { IMapLayer } from '@user/data-base';
+import { TileType } from '@user/data-common';
 import {
     IBlockData,
     IBlockSplitter,
@@ -849,7 +850,7 @@ export class MapVertexGenerator
 
     updateMoving(block: IMovingBlock, updateTexture: boolean): void {
         if (!this.renderer.hasMoving(block)) return;
-        const { cls, frames, offset, texture } = block.texture;
+        const { tileType, frames, offset, texture } = block.texture;
         const vertex: IMapVertexData = {
             instancedArray: this.dynamicInstancedArray
         };
@@ -869,9 +870,9 @@ export class MapVertexGenerator
         const update = updateTexture
             ? VertexUpdate.NoFrame
             : VertexUpdate.Position;
-        if (cls === BlockCls.Autotile) {
+        if (tileType === TileType.Autotile) {
             // 自动元件使用全部不连接
-            const renderable = this.renderer.autotile.renderWithoutCheck(
+            const renderable = this.renderer.autotile.render(
                 block.texture,
                 0b0000_0000
             );

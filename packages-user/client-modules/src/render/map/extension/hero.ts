@@ -6,13 +6,14 @@ import {
     IObjectMoverHooks,
     ObjectAnimDirection,
     ObjectMoveStep,
-    ObjectMoveType
+    ObjectMoveType,
+    TileType
 } from '@user/data-common';
 import { IHeroLocation, IHeroLocationHooks, IMapLayer } from '@user/data-base';
 import { IMapRenderer, IMapRendererTicker, IMovingBlock } from '../types';
 import { isNil } from 'lodash-es';
 import { IFaceHandler, IHookController, logger } from '@motajs/common';
-import { BlockCls, IMaterialFramedData } from '@user/client-base';
+import { IMaterialFramedData } from '@user/client-base';
 import { ITexture, ITextureSplitter, TextureRowSplitter } from '@motajs/render';
 import { IMapHeroRenderer } from './types';
 import { ExcitationCurve2D } from '@motajs/animate';
@@ -164,7 +165,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
             const data: IMaterialFramedData = {
                 offset: dirImage.width / 4,
                 texture: dirImage,
-                cls: BlockCls.Unknown,
+                tileType: TileType.Unknown,
                 frames: 4,
                 defaultFrame: 0
             };

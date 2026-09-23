@@ -6,7 +6,6 @@ import {
     Transform
 } from '@motajs/render';
 import {
-    AutotileProcessor,
     BlockCls,
     IAutotileProcessor,
     IMaterialFramedData,
@@ -231,7 +230,7 @@ export class MapRenderer
         );
         this.contextData = data;
         this.vertex = new MapVertexGenerator(this, data);
-        this.autotile = new AutotileProcessor(manager, manager.state);
+        this.autotile = manager.autotile;
         this.tick = this.tick.bind(this);
         this.viewport = new MapViewport(this);
         this.tileAnimater = new TextureColumnAnimater();
