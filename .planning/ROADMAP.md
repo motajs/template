@@ -217,7 +217,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 04-09-PLAN.md — TextureManager 新接口适应实施（**第二步·代码改动**，D-43..D-50）：`renderWithoutCheck` 的三处调用点（`render/map/vertex.ts:461`、`render/map/vertex.ts:874`、`render/map/renderer.ts:1253`）改新 `render(tile, connection)` 且不保留跳过检查入口（D-43）；自动元件判定与解构（`render/map/renderer.ts:1252` / `:1263`、`render/map/vertex.ts:517` / `:561` / `:872` 与 `:852`）改 `tileType === TileType.Autotile`，不做映射表、不用 `AutotileType` 分类（D-44）；`render/map/extension/hero.ts:167` 填 `tileType: TileType.Unknown`（D-45，D-18 不排除该文件）；`MapRenderer` 保留 `readonly autotile: IAutotileProcessor` 字段与 `IMapRenderer` 签名、构造器改取 `manager.autotile`、不再自建 `AutotileProcessor`（D-46）；只做接口适应不重设计 `textures` / `tileStore` / `tiles`（D-47）、`material/**` 零改动（D-48）、不考虑 legacy 兼容（D-49）、`IBlockIdentifier` 零出现（D-50）；`moving.ts` 与 `render/map/types.ts` 无需改动；门禁 = 三文件 texture 归属诊断 13→0 + eslint / prettier / CRLF / 符号零命中 / 基线与禁用路径；`autonomous: false`（Task 0 汇报关卡）；`REND-01` / `REND-02` 仍 Pending
+- [x] 04-09-PLAN.md — TextureManager 新接口适应实施（**第二步·代码改动**，D-43..D-50）：`renderWithoutCheck` 的三处调用点（`render/map/vertex.ts:461`、`render/map/vertex.ts:874`、`render/map/renderer.ts:1253`）改新 `render(tile, connection)` 且不保留跳过检查入口（D-43）；自动元件判定与解构（`render/map/renderer.ts:1252` / `:1263`、`render/map/vertex.ts:517` / `:561` / `:872` 与 `:852`）改 `tileType === TileType.Autotile`，不做映射表、不用 `AutotileType` 分类（D-44）；`render/map/extension/hero.ts:167` 填 `tileType: TileType.Unknown`（D-45，D-18 不排除该文件）；`MapRenderer` 保留 `readonly autotile: IAutotileProcessor` 字段与 `IMapRenderer` 签名、构造器改取 `manager.autotile`、不再自建 `AutotileProcessor`（D-46）；只做接口适应不重设计 `textures` / `tileStore` / `tiles`（D-47）、`material/**` 零改动（D-48）、不考虑 legacy 兼容（D-49）、`IBlockIdentifier` 零出现（D-50）；`moving.ts` 与 `render/map/types.ts` 无需改动；门禁 = 三文件 texture 归属诊断 13→0 + eslint / prettier / CRLF / 符号零命中 / 基线与禁用路径；`autonomous: false`（Task 0 汇报关卡）；`REND-01` / `REND-02` 仍 Pending
 
 **UI hint**: yes
 
@@ -412,7 +412,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
-| 4. 渲染适配与双布局 | 8/9 | In Progress|  |
+| 4. 渲染适配与双布局 | 9/9 | In Progress|  |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | 暂缓 (Deferred) | - |

@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 04
 current_phase_name: 渲染适配与双布局
 status: executing
-stopped_at: "Completed 04-08-PLAN.md（TextureManager 新接口影响范围清点·只读：交付 04-TEXTURE-INTERFACE-IMPACT.md（11 节 / A13 B8 C8 D9 E7 F8 / 每行双 file:line 锚点）；旧名 5 个源码面 0 引用；texture 归属错误 23 不变、总错误 263；生产代码零改动；REND-01/REND-02 保持 Pending，第二步未规划）"
-last_updated: "2026-09-23T06:46:17.171Z"
+stopped_at: "Completed 04-09-PLAN.md（TextureManager 新接口适应·第二步实施：render/map/{vertex,renderer,extension/hero}.ts 三文件按 D-43..D-50 改接新接口；范围内 texture 归属诊断 13→0、全仓错误 263→250；material/ 与加载面零改动；REND-01/REND-02 保持 Pending）"
+last_updated: "2026-09-23T07:10:00.000Z"
 last_activity: 2026-09-23
-last_activity_desc: Planned 04-09-PLAN.md（TextureManager 新接口适应·第二步；通过 checker）
-state_head: c225fbe100c71247e4de9d0bff103cad2fabc773
+last_activity_desc: Completed 04-09-PLAN.md（TextureManager 新接口适应·第二步）
+state_head: 50cf9a3
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 80
-  completed_plans: 78
+  completed_plans: 79
 milestone_name: milestone
 ---
 
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 
 ## Current Position
 
-Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
-Plan: 8/9 已执行；04-09（TextureManager 新接口适应·第二步）已规划待执行（Wave 8）
-Status: 04-09 已规划并通过 checker（0 blocker / 0 warning / 3 info-advisory）；待用户回复「可以执行」后执行；Phase 4 整体仍未完成 — REND-01/REND-02 保持 Pending
-Last activity: 2026-09-23 — Planned 04-09-PLAN.md（TextureManager 新接口适应·第二步）
+Phase: 04 (渲染适配与双布局) — IN PROGRESS
+Plan: 9/9 已执行（04-01..04-09）
+Status: 04-09 完成（TextureManager 新接口适应·第二步：三文件 texture 归属诊断 13→0）；Phase 4 整体仍未完成 — REND-01/REND-02 保持 Pending，移动端/桌面端双布局与其余渲染适配未做
+Last activity: 2026-09-23 — Completed 04-09-PLAN.md（TextureManager 新接口适应·第二步）
 
 Progress: [█████░░░░░] 50%
 
