@@ -398,6 +398,9 @@ importers:
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
+      '@user/data-state':
+        specifier: workspace:*
+        version: link:../data-state
 
   packages-user/client-modules:
     dependencies:

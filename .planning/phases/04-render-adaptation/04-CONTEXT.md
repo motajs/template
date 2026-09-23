@@ -75,6 +75,13 @@
 - **D-36:** （D 类）**全部删除**——`MaterialManager` 的 big-image 实现残留（`bigImageStore`/`bigImageData`/`bigImageId` 等）与 `render/elements/cache.ts` 的 legacy big-image 路径。
 - **D-37:** （E 类）**补充依赖声明**——为 `packages-user/client-base/package.json` 补上 `@user/data-state` 依赖（其源码已 import 该包）。
 
+### 下一个目标：TextureManager 新接口适应（用户裁定，2026-09-22；待规划）
+- **D-38:** 用户已完成 **TextureManager 相关重构**（提交 `d36ea69「refactor: 贴图存储方式」`，本地已快进同步），影响面大、**主要在地图渲染部分**。下一目标 = **适应新接口**。
+- **D-39:** **不得修改加载相关的内容**（用户将自行适配新加载系统，属其处理范围）。
+- **D-40:** 本目标同样走**两步**：**先收集（只读清点）再修复**。第一步产出只读影响清单文档；第二步待用户审阅后再规划。
+- **D-41:** 「加载相关」的排除边界（用户界定）：**加载本身**，以及**向 `TextureManager` 中添加素材的内容**（均由用户自行适配新加载系统）。
+- **D-42:** `packages-user/client-base/src/material/` 文件夹已由用户**重构完毕**；AI **只修改消费者**（如地图渲染）。**若某接口被删除且无替代，必须向用户反馈**，不得自行发明替代方案。
+
 ### the agent's Discretion
 - D-07 的「影响」字段具体写法、「多余旧路径」是否需要进一步细分，交由 AI 在对账执行时按实际情况把握，但不得据此扩大范围。
 
