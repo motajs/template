@@ -5,14 +5,14 @@ current_phase: 04
 current_phase_name: 渲染适配与双布局
 status: executing
 stopped_at: Completed 04-11-PLAN.md（渲染端结构性重构·第二步移植实施：components/elements/map + layout 下沉 @user/client-base（39 文件移动 / 42 新路径）；client-base 新增 shared + 桶导出 + 5 依赖；实现层改指 @user/client-base；架构耦合 10 处 @ts-expect-error 暂记；按 D-68 不要求可运行；REND-01/REND-02 保持 Pending）
-last_updated: "2026-09-24T09:30:00.000Z"
+last_updated: "2026-09-24T10:35:43.630Z"
 last_activity: 2026-09-24
-last_activity_desc: Completed 04-11-PLAN.md（渲染端结构性重构·第二步移植实施）
-state_head: 0b93426
+last_activity_desc: Planned 04-12-PLAN.md（04-11 落地修正：桶导出边界 + 消费者直连 + shared 单文件）
+state_head: 126d8e40201c0bb09ee628a71668cd214b9757de
 progress:
   total_phases: 7
   completed_phases: 1
-  total_plans: 82
+  total_plans: 83
   completed_plans: 81
 milestone_name: milestone
 ---
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 
 ## Current Position
 
-Phase: 04 (渲染适配与双布局) — IN PROGRESS
-Plan: 11/11 已执行（04-01..04-11）
-Status: 04-11 完成（结构性重构·第二步移植：通用渲染资产已下沉 client-base）；Phase 4 整体仍未完成 — REND-01/REND-02 保持 Pending，其余渲染适配与移动端/桌面端双布局未做
-Last activity: 2026-09-24 — Completed 04-11-PLAN.md（渲染端结构性重构·第二步移植实施）
+Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
+Plan: 11/12 已执行（04-01..04-11）；04-12（04-11 落地修正：桶导出边界 + 消费者直连 + shared 单文件）已规划待执行（Wave 11）
+Status: 04-12 已规划并通过 checker（0 blocker / 0 warning / 4 info-advisory）；待用户回复「可以执行」后执行；Phase 4 整体仍未完成 — REND-01/REND-02 保持 Pending
+Last activity: 2026-09-24 — Planned 04-12-PLAN.md（04-11 落地修正：桶导出边界）
 
 Progress: [█████░░░░░] 50%
 
