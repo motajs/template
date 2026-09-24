@@ -4,15 +4,15 @@ milestone: v1.0
 current_phase: 04
 current_phase_name: 渲染适配与双布局
 status: executing
-stopped_at: "Completed 04-09-PLAN.md（TextureManager 新接口适应·第二步实施：render/map/{vertex,renderer,extension/hero}.ts 三文件按 D-43..D-50 改接新接口；范围内 texture 归属诊断 13→0、全仓错误 263→250；material/ 与加载面零改动；REND-01/REND-02 保持 Pending）"
-last_updated: "2026-09-23T07:10:00.000Z"
-last_activity: 2026-09-23
-last_activity_desc: Completed 04-09-PLAN.md（TextureManager 新接口适应·第二步）
-state_head: 50cf9a3
+stopped_at: Completed 04-09-PLAN.md（TextureManager 新接口适应·第二步实施：render/map/{vertex,renderer,extension/hero}.ts 三文件按 D-43..D-50 改接新接口；范围内 texture 归属诊断 13→0、全仓错误 263→250；material/ 与加载面零改动；REND-01/REND-02 保持 Pending）
+last_updated: "2026-09-24T06:31:01.419Z"
+last_activity: 2026-09-24
+last_activity_desc: Planned 04-10-PLAN.md（渲染端结构性重构·第一步只读清点；通过 checker）
+state_head: c9bf0c63a849d7d923106a9e3e9fbccd039fa5f2
 progress:
   total_phases: 7
   completed_phases: 1
-  total_plans: 80
+  total_plans: 81
   completed_plans: 79
 milestone_name: milestone
 ---
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 
 ## Current Position
 
-Phase: 04 (渲染适配与双布局) — IN PROGRESS
-Plan: 9/9 已执行（04-01..04-09）
-Status: 04-09 完成（TextureManager 新接口适应·第二步：三文件 texture 归属诊断 13→0）；Phase 4 整体仍未完成 — REND-01/REND-02 保持 Pending，移动端/桌面端双布局与其余渲染适配未做
-Last activity: 2026-09-23 — Completed 04-09-PLAN.md（TextureManager 新接口适应·第二步）
+Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
+Plan: 9/10 已执行（04-01..04-09）；04-10（渲染端结构性重构·第一步只读清点）已规划待执行（Wave 9）
+Status: 04-10 已规划并通过 checker（0 blocker / 0 warning / 2 info-advisory）；待用户回复「可以执行」后执行；Phase 4 整体仍未完成 — REND-01/REND-02 保持 Pending
+Last activity: 2026-09-24 — Planned 04-10-PLAN.md（渲染端结构性重构·第一步只读清点）
 
 Progress: [█████░░░░░] 50%
 
