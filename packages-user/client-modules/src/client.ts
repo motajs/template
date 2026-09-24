@@ -1,5 +1,5 @@
 import { CoreState } from '@user/data-state';
-import { IClientCore } from './types';
+import { IClientCore, IClientCoreConfig } from './types';
 import {
     IMotaAudioContext,
     ISoundPlayer,
@@ -10,11 +10,9 @@ import {
 } from '@motajs/audio';
 import { IRenderTreeRoot, MotaRenderer } from '@motajs/render';
 import {
-    IMotaAssetsLoader,
-    IMaterialManager,
+    ITextureManager,
     IAutotileProcessor,
-    MotaAssetsLoader,
-    MaterialManager,
+    TextureManager,
     AutotileProcessor,
     ISaveSystem,
     SaveSystem
@@ -24,7 +22,7 @@ import {
     IMapExtensionManager,
     MapRenderer,
     MapExtensionManager
-} from './render/map';
+} from '@user/client-base';
 import {
     ExcitationDivider,
     ExcitationVariator,
@@ -42,15 +40,14 @@ import {
 } from './shared';
 import { loading } from '@user/data-base';
 import { fallbackLoad } from './fallback/load';
+import { WebLoadStarter } from '@motajs/loader';
 
 export class ClientCore extends CoreState implements IClientCore {
     // Layer 4 渲染基础层
     readonly save: ISaveSystem;
 
     // Layer 5 渲染顶层
-    readonly loader: IMotaAssetsLoader;
-    readonly materials: IMaterialManager;
-    readonly autotile: IAutotileProcessor;
+    readonly materials: ITextureManager;
 
     readonly rafExcitation: IExcitation<number>;
     readonly excitationDivider: IExcitationDivider<number>;
@@ -62,8 +59,11 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly soundPlayer: ISoundPlayer<SoundIds>;
     readonly bgmPlayer: IBGMPlayer<BgmIds>;
 
-    constructor() {
-        super();
+    constructor(config: IClientCoreConfig) {
+        super({
+            loadStarter: new WebLoadStarter(),
+            coreURL: 'placeholder'
+        });
 
         //#region Layer 4
 
@@ -80,18 +80,14 @@ export class ClientCore extends CoreState implements IClientCore {
 
         //#region 素材系统
 
-        this.materials = new MaterialManager();
-        this.autotile = new AutotileProcessor(this.materials);
+        this.materials = new TextureManager(
+            this,
+            this.tileStore,
+            config.tilesetReserve,
+            config.tilesetUnit
+        );
 
         //#endregion
-
-        this.loader = new MotaAssetsLoader(
-            this.loadProgress,
-            this.dataLoader,
-            this.audioContext,
-            this.soundPlayer,
-            this.materials
-        );
 
         // 兼容层
         loading.once('loaded', () => {
@@ -135,6 +131,8 @@ export class ClientCore extends CoreState implements IClientCore {
         });
 
         //#endregion
+
+        this.loader.addCoreConfig('client', config.clientURL);
     }
 
     /**

@@ -19,7 +19,8 @@ import {
     ILocationIndexer,
     ITileStore,
     MapLocIndexer,
-    SaveCompression
+    SaveCompression,
+    shouldReplay
 } from '@user/data-common';
 import { MapLayer } from './mapLayer';
 
@@ -56,6 +57,7 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
         this.indexer.setWidth(width);
     }
 
+    @shouldReplay('Adding game map layer should be replayed.')
     addLayer(): IMapLayer {
         const array = new Uint32Array(this.width * this.height);
         const layer = new MapLayer(array, this.width, this.height, this);
@@ -69,6 +71,7 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
         return layer;
     }
 
+    @shouldReplay('Removing game map layer should be replayed.')
     removeLayer(layer: IMapLayer): void {
         this.layerList.delete(layer as IResizableMapLayer);
         const alias = this.layerAliasMap.get(layer);
@@ -109,6 +112,7 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
         return this.layerAliasMap.get(layer);
     }
 
+    @shouldReplay('Resizing game map layer should be replayed.')
     resizeLayer(
         width: number,
         height: number,
@@ -141,6 +145,7 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
         this.active = active;
     }
 
+    @shouldReplay("Setting game map's event layer should be replayed.")
     setEventLayer(layer: IMapLayer | null): void {
         if (!layer) {
             this.eventLayer = null;

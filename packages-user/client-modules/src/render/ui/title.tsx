@@ -28,7 +28,7 @@ import {
     transitionedColor,
     useKey
 } from '../use';
-import { ExitFullscreen, Fullscreen, SoundVolume } from '../components';
+import { ExitFullscreen, Fullscreen, SoundVolume } from '@user/client-base';
 import { mainSetting, triggerFullscreen } from '@motajs/legacy-ui';
 import { saveLoad } from './save';
 import { MainSceneUI } from './main';

@@ -1,9 +1,10 @@
 import { ITileLocator, logger } from '@motajs/common';
 import {
-    getFaceMovement,
+    FaceGroup,
     ObjectMover,
     ObjectMoveStep,
-    ObjectMoveType
+    ObjectMoveType,
+    shouldReplay
 } from '@user/data-common';
 import { IDynamicTile } from './types';
 import { DYNAMIC_MOVER_FACE } from '../shared';
@@ -31,6 +32,7 @@ export class DynamicTileMover extends ObjectMover<IDynamicTile> {
         return Promise.resolve(DynamicMoveCode.Success);
     }
 
+    @shouldReplay('Dynamic tile moving step should be replayed.')
     protected onStepEnd(
         code: number,
         step: ObjectMoveStep,
@@ -44,16 +46,21 @@ export class DynamicTileMover extends ObjectMover<IDynamicTile> {
             x: tile.x,
             y: tile.y
         };
+        const handler = tile.state.faceManager.get(FaceGroup.Dir8);
+        if (!handler) {
+            logger.warn(192);
+            return Promise.resolve({ x: tile.x, y: tile.y });
+        }
         switch (step.type) {
             case ObjectMoveType.Dir: {
-                const { x, y } = getFaceMovement(step.move);
+                const { x, y } = handler.movement(step.move);
                 tile.setFaceDirection(step.move);
                 locator.x += x;
                 locator.y += y;
                 break;
             }
             case ObjectMoveType.DirFace: {
-                const { x, y } = getFaceMovement(step.move);
+                const { x, y } = handler.movement(step.move);
                 tile.setFaceDirection(step.face);
                 locator.x += x;
                 locator.y += y;
@@ -64,7 +71,7 @@ export class DynamicTileMover extends ObjectMover<IDynamicTile> {
                 break;
             }
             case ObjectMoveType.Special: {
-                const { x, y } = getFaceMovement(this.moveDirection);
+                const { x, y } = handler.movement(this.moveDirection);
                 tile.setFaceDirection(this.faceDirection);
                 locator.x += x;
                 locator.y += y;

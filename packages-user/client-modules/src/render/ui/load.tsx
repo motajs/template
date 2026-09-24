@@ -74,6 +74,7 @@ export const LoadScene = defineComponent<ILoadProps>(props => {
         loader.load().then(() => {
             loadEnd();
         });
+        // @ts-expect-error 需要重构
         for await (const _ of loader.progress) {
             taskProgress.set(loader.progress.getLoadedTasks());
             byteProgress.set(loader.progress.getLoadedByte());

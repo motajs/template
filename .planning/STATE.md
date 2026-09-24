@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.0
-current_phase: 07
-current_phase_name: 数据端缺陷修复
+current_phase: 04
+current_phase_name: 渲染适配与双布局
 status: executing
-stopped_at: Phase 07 paused — 07-16 (post-refactor test alignment) DEFERRED until the user finishes the data-layer manual rework
-last_updated: "2026-09-17T12:45:00.000Z"
-last_activity: 2026-09-17
-last_activity_desc: Phase 07 paused; plan 07-16 deferred pending the user's data-layer rework
-state_head: 19ad1ea91ab7a69b0b65020d49bbe65ab30ec301
+stopped_at: Completed 04-11-PLAN.md（渲染端结构性重构·第二步移植实施：components/elements/map + layout 下沉 @user/client-base（39 文件移动 / 42 新路径）；client-base 新增 shared + 桶导出 + 5 依赖；实现层改指 @user/client-base；架构耦合 10 处 @ts-expect-error 暂记；按 D-68 不要求可运行；REND-01/REND-02 保持 Pending）
+last_updated: "2026-09-24T10:35:43.630Z"
+last_activity: 2026-09-24
+last_activity_desc: Planned 04-12-PLAN.md（04-11 落地修正：桶导出边界 + 消费者直连 + shared 单文件）
+state_head: 126d8e40201c0bb09ee628a71668cd214b9757de
 progress:
   total_phases: 7
-  completed_phases: 0
-  total_plans: 70
-  completed_plans: 69
+  completed_phases: 1
+  total_plans: 83
+  completed_plans: 81
 milestone_name: milestone
 ---
 
@@ -24,14 +24,14 @@ milestone_name: milestone
 See: .planning/PROJECT.md (updated 2026-09-17)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 07 — 数据端缺陷修复
+**Current focus:** Phase 04 — 渲染适配与双布局
 
 ## Current Position
 
-Phase: 07 (数据端缺陷修复) — PAUSED (plan 07-16 DEFERRED)
-Plan: 15 of 16 complete (07-01..07-15); 07-16 planned, awaiting the user's data-layer rework
-Status: Deferred — user is manually reworking the data layer; more tests will break until that finishes
-Last activity: 2026-09-17 — Phase 07 paused; 07-16 deferred
+Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
+Plan: 11/12 已执行（04-01..04-11）；04-12（04-11 落地修正：桶导出边界 + 消费者直连 + shared 单文件）已规划待执行（Wave 11）
+Status: 04-12 已规划并通过 checker（0 blocker / 0 warning / 4 info-advisory）；待用户回复「可以执行」后执行；Phase 4 整体仍未完成 — REND-01/REND-02 保持 Pending
+Last activity: 2026-09-24 — Planned 04-12-PLAN.md（04-11 落地修正：桶导出边界）
 
 Progress: [█████░░░░░] 50%
 
@@ -96,6 +96,11 @@ Progress: [█████░░░░░] 50%
 | Phase 06 P15 | 12min | 2 tasks | 3 files |
 | Phase 07-data-fixes P13 | 56min | 5 tasks | 5 files |
 | Phase 07 P14 | 3min | 3 tasks | 1 files |
+| Phase 04 P01 | 11min | 3 tasks | 1 files |
+| Phase 04 P2 | 23min | 4 tasks | 1 files |
+| Phase 04 P3 | 40min | 4 tasks | 3 files |
+| Phase 04 P4 | ~45min | 4 tasks | 3 files |
+| Phase 04 P7 | 35min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -212,6 +217,21 @@ Recent decisions affecting current work:
 - [Phase 07]: [Phase 07] 07-14 Q1..Q4 = 不改动（用户，2026-09-17，原话「关于旧引擎的兼容部分不动，很快就要删除了，没必要改。」）：`packages-user/data-fallback` 旧引擎兼容层即将删除，代理不修、`get` 口径不变、不建 `hero.test.ts`、`patchFlags` 不处理
 - [Phase 07]: [Phase 07] 07-14 `#06-17-7`（审计 C）判为 WONTFIX／经用户裁定不修复，属本阶段成功标准第 1 条「修复或经用户裁定改契约/不修复」的合法闭合；该计划零代码、零测试、零依赖，`WINDOWS.md` 不新建条目（D-14）
 - [Phase 07]: [Phase 07] 07-14 收口基线维持 66 文件 / 737 通过 / 0 失败 / 1 跳过（无新增测试文件，计划原预期的 66→67 被裁决取代）；`07-VERIFICATION.md` 已失效，需重跑 `/gsd-verify-work 7`
+- [Phase 04]: 04-01：只读接口对账交付 04-RENDER-INTERFACE-AUDIT.md（8 段骨架 + ① 9 条 / ③ 42 条 / ② 本步未确认），被查两包零改动。
+- [Phase 04]: 04-01：带 // @ts-expect-error 需要重构 的 import（HeroMover/IMoveController、HeroAnimateDirection、IHeroMoveController(Hooks)、getHeroStatusOn、ItemState、state.maps layerState）一律归 ① 错配（渲染侧适配项），不归 ②。
+- [Phase 04]: 04-01：② 数据端缺失节零确认——候选（core.firstData 工程元数据、勇士渲染粒度钩子）转入「未能从阅读确定（未猜测）」，不臆造缺失接口。
+- [Phase 04]: 04-01：REND-01/REND-02 保持 Pending，本 run 只交付差异账本，适配实施与双布局未规划/未实施。
+- [Phase 04]: 04-02：勇士移动只读接口探索交付 04-HERO-MOVER-INTERFACE.md（8 段骨架 + 12 条三态对账 #04-02-R-01..12 + 2 条缺失候选 + 7 条未确定），被查两包相对基线零变化、零生产代码改动。
+- [Phase 04]: 04-02：缺失接口候选 2 条——移动语义钩子族（#04-02-G-01）与 HeroKeyMover 依赖的 oneStep/控制器 queue（#04-02-G-02）——只记录不设计不修复，待用户裁决（D-13）。
+- [Phase 04]: 04-02：HeroRendering 渲染状态（D-18）与 legacy core.*（D-12）为显式排除项；REND-01/REND-02 保持 Pending（本 run 只探索未实施）。
+- [Phase 04]: [Phase 04]: 04-03：渲染端勇士本体绑定 IHeroLocation，经 hero.addHook / hero.mover.addHook 订阅数据端现有钩子（D-21），不新增数据端接口、不改数据端文件
+- [Phase 04]: [Phase 04]: 04-03：IMapHeroRenderer 按 D-20 删除 8 个外部驱动成员声明，勇士渲染改为完全被动；对应类内实现方法保留并只由钩子回调调用
+- [Phase 04]: [Phase 04]: 04-03：D-18 贴图别名 hero.image 只做最小编译桥接（读取收敛为一处 + 既有 // @ts-expect-error 惯用法标注），不重设贴图来源；D-18 / D-22 成员逐字保留
+- [Phase 04]: [Phase 04]: 04-04：MapHeroRenderer 注入 IFaceManager（faceManager 字段 + 派生 dir4），degrade/next 走 Dir4FaceHandler（FaceGroup.Dir4），movement 走 hero.mover.faceHandler（Dir8）；IMapExtensionManager.addHero 新增 faceManager 形参并由 manager.ts 转发（D-24/D-29）
+- [Phase 04]: [Phase 04]: 04-04：MapHeroHook 拆为 MapHeroLocationHook（onSetPos 无条件、只出现一次，承载 D-18/D-22 多余方法）与 MapHeroMoverHook（onMoveStart/onMoveEnd/onStepEnd/onSetFaceDir），各自注册各自 controller；onStepEnd 的 AnimDir 分支按 step.dir 设置动画方向（D-25/D-26）
+- [Phase 04]: [Phase 04]: 04-04：hero.ts 弃用 mutate-animate 的 TimingFn<2>，改用 @motajs/animate 的 ExcitationCurve2D；D-28 存量 state.roleFace.getFaceOf 三处与 import 逐字保留；types.ts 单行 addHero 签名与 manager.ts 单行构造调用按仓库惯例加 // prettier-ignore 以同时满足计划的单行静态门禁与 prettier
+- [Phase 04]: [Phase 04]: 04-07：D-35 裁定 state 一律经构造器注入（ClientCore 传 this、renderer 从 manager.state 取），不取全局单例（D-23）；textures 由新建专用 TextureStore 承担（本次范围内无写入者）
+- [Phase 04]: [Phase 04]: 04-07：D-34 的 getIfBigImage ≡ getTile（bigImageData 唯一写入者 setBigImage 消费者调用点 0），7 处消费者改写行为保持；getOffsetPool 的 big-image 偏移收集删除、其余来源保留
 
 ### Roadmap Evolution
 
@@ -238,6 +258,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260913-qtq | event built-ins refactor and anon-tokyo import rename | 2026-09-13 | f0fd2f5 | [260913-qtq-event-built-ins-refactor-and-anon-tokyo-](./quick/260913-qtq-event-built-ins-refactor-and-anon-tokyo-/) |
+| 260921-lwa | Upgrade toolchain to pnpm 12.5.1 and Node 24 (workspace config, lockfile, docs) | 2026-09-21 | 1dd3ad4 | [260921-lwa-pnpm-12-5-1](./quick/260921-lwa-pnpm-12-5-1/) |
 
 ## Deferred Items
 
@@ -249,6 +270,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-17T12:45:00.000Z
-Stopped at: Phase 07 paused — 07-16 (post-refactor test alignment) deferred until the user's data-layer rework is complete
-Resume file: .planning/phases/07-data-fixes/.continue-here.md
+Last session: 2026-09-22T04:25:51.224Z
+Stopped at: Completed 04-07-PLAN.md（material 接口适应实施：big-image 全删、7 处改 getTile、四实现类构造器注入 state、cache.ts legacy 路径删除、补 @user/data-state 声明；material 诊断 19→0、总行数 199→180；REND-01/REND-02 保持 Pending）
+Resume file: None

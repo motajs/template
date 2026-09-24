@@ -16,11 +16,11 @@
 ## Runtime
 
 **Environment:**
-- Node.js `^20.0.0 || >=22.0.0` (per `dev.md`)
+- Node.js `^24.0.0` (per `dev.md`)
 - Browsers supporting ESNext; production build targets `Chrome >= 56`, `Firefox >= 51`, `Edge >= 79`, `Safari >= 15`, `Opera >= 43` via `@vitejs/plugin-legacy` (`script/build-game.ts`)
 
 **Package Manager:**
-- pnpm `>= 10.0.0` (per `dev.md`)
+- pnpm `>= 12.0.0` (per `dev.md`)
 - Lockfile: `pnpm-lock.yaml` (present)
 - Workspace: `pnpm-workspace.yaml` — globs `packages/*`, `packages-user/*`, and `src/`; `onlyBuiltDependencies`: `core-js`, `esbuild`, `ttf2woff2`, `vue-demi`
 
@@ -97,13 +97,13 @@
 ## Platform Requirements
 
 **Development:**
-- Node.js 20/22+, pnpm 10+, VSCode (recommended extensions: `dbaeumer.vscode-eslint`, `esbenp.prettier-vscode`, `vue.volar`, `slevesque.shader`, `tobermory.es6-string-html` in `.vscode/extensions.json`).
+- Node.js 24+, pnpm 12+, VSCode (recommended extensions: `dbaeumer.vscode-eslint`, `esbenp.prettier-vscode`, `vue.volar`, `slevesque.shader`, `tobermory.es6-string-html` in `.vscode/extensions.json`).
 - Run `pnpm dev` (Vite on 5173 + Express editor server on 3000) or `pnpm test`.
 
 **Production:**
 - Static HTML5 game: `pnpm build:game` produces `dist/` (deployable static bundle) and `dist.zip`.
 - Deployment target: GitHub Pages via `.github/workflows/page.yml` (builds `dist` folder to `gh-pages` branch).
-- The data layer (`src/data.ts`) is built separately as an IIFE bundle (`data.process.js`) usable for replay verification in Node.
+- The data layer is built separately as a library; the verification system imports it at runtime and calls its interfaces to verify.
 
 ---
 

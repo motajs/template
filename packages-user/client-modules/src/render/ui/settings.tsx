@@ -13,12 +13,12 @@ import {
     ChoicesProps,
     getConfirm,
     waitbox
-} from '../components';
+} from '@user/client-base';
 import { mainUi } from '@motajs/legacy-ui';
 import { gameKey, generateKeyboardEvent } from '@motajs/system';
 import { getVitualKeyOnce } from '@motajs/legacy-ui';
 import { getAllSavesData, getSaveData, syncFromServer } from '../utils';
-import { getInput } from '../components';
+import { getInput } from '@user/client-base';
 import { openStatistics } from './statistics';
 import { saveWithExist } from './save';
 import { compressToBase64 } from 'lz-string';

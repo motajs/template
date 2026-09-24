@@ -1,5 +1,5 @@
 import {
-    ILoadProgressTotal,
+    ILoadManager,
     LoadDataType,
     ILoadTask,
     LoadTask,
@@ -22,7 +22,7 @@ import {
 } from '@user/data-base';
 import { IMotaAudioContext, ISoundPlayer } from '@motajs/audio';
 import { loading } from '@user/data-base';
-import { IMaterialManager } from '../material';
+import { ITextureManager } from '../material';
 import { ITextureSplitter, Texture, TextureRowSplitter } from '@motajs/render';
 import { iconNames } from './data';
 import { IMotaDataLoader } from '@user/data-base';
@@ -51,11 +51,11 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
     private readonly rowSplitter: ITextureSplitter<number>;
 
     constructor(
-        readonly progress: ILoadProgressTotal,
+        readonly progress: ILoadManager,
         private readonly dataLoader: IMotaDataLoader,
         private readonly ac: IMotaAudioContext,
         private readonly sounds: ISoundPlayer<SoundIds>,
-        private readonly materials: IMaterialManager
+        private readonly materials: ITextureManager
     ) {
         this.imageProcessor = new LoadImageProcessor();
         this.audioProcessor = new LoadAudioProcessor(ac);
@@ -207,9 +207,11 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
                 url,
                 identifier: `@system-font/${font}`,
                 dataType: LoadDataType.ArrayBuffer,
+                // @ts-expect-error 需要重构
                 processor: this.fontProcessor,
                 progress: this.progress
             });
+            task.setProcessor(this.fontProcessor);
             this.addCustomLoadTask(task, data => this.fontLoaded(font, data));
         });
 
@@ -220,6 +222,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
                 url,
                 identifier: `@system-image/${image}`,
                 dataType: LoadDataType.Blob,
+                // @ts-expect-error 需要重构
                 processor: this.imageProcessor,
                 progress: this.progress
             });
@@ -238,6 +241,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
                 url,
                 identifier: `@system-sound/${sound}`,
                 dataType: LoadDataType.Uint8Array,
+                // @ts-expect-error 需要重构
                 processor: this.audioProcessor,
                 progress: this.progress
             });
@@ -251,6 +255,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
                 url,
                 identifier: `@system-tileset/${tileset}`,
                 dataType: LoadDataType.Blob,
+                // @ts-expect-error 需要重构
                 processor: this.imageProcessor,
                 progress: this.progress
             });
@@ -268,6 +273,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
                 url,
                 identifier: `@system-autotile/${key}`,
                 dataType: LoadDataType.Blob,
+                // @ts-expect-error 需要重构
                 processor: this.imageProcessor,
                 progress: this.progress
             });
@@ -294,6 +300,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
                     url,
                     identifier: `@system-material/${materialName}`,
                     dataType: LoadDataType.Blob,
+                    // @ts-expect-error 需要重构
                     processor: this.imageProcessor,
                     progress: this.progress
                 });
@@ -308,6 +315,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
             url: animatesUrl,
             identifier: '@system-animates',
             dataType: LoadDataType.Text,
+            // @ts-expect-error 需要重构
             processor: this.textProcessor,
             progress: this.progress
         });
@@ -454,6 +462,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
             url: `loadList.json`,
             dataType: LoadDataType.JSON,
             identifier: '@system-loadList',
+            // @ts-expect-error 需要重构
             processor: this.dataLoader.jsonProcessor,
             progress: { onProgress() {} }
         });
@@ -465,6 +474,7 @@ export class MotaAssetsLoader implements IMotaAssetsLoader {
             url: loadList.file,
             identifier: `@system-zip/${loadList.file}`,
             dataType: LoadDataType.ArrayBuffer,
+            // @ts-expect-error 需要重构
             processor: this.zipProcessor,
             progress: this.progress
         });

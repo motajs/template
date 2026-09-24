@@ -186,6 +186,13 @@ export interface IFaceHandler<T extends number> {
     next(dir: number, anticlockwise?: boolean): T;
 
     /**
+     * 获取对应于指定偏移量的朝向方向。如果有多个符合要求，那么会返回其中一个符合要求的朝向
+     * @param dx 横坐标移动偏移量
+     * @param dy 纵坐标移动偏移量
+     */
+    dirOf(dx: number, dy: number): T;
+
+    /**
      * 迭代本组支持的所有朝向，包含 `Unknown`
      */
     mapDirection(): Iterable<T>;

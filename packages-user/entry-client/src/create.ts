@@ -33,7 +33,6 @@ export function create() {
 }
 
 async function createModule() {
-    UserClientBase.create();
     ClientModules.create();
     LegacyUI.create();
 

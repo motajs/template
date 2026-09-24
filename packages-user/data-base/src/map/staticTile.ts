@@ -1,4 +1,4 @@
-import { ITileRawData } from '@user/data-common';
+import { ITileRawData, shouldReplay } from '@user/data-common';
 import {
     IDynamicTile,
     IMapLayer,
@@ -24,11 +24,13 @@ export class StaticTile
         return this.state.tileStore.getData(this.num());
     }
 
+    @shouldReplay('Setting static tile num should be replayed.')
     set(num: number): void {
         this.layer.setBlock(num, this.locator.x, this.locator.y);
         this.restoreDefaultEvents();
     }
 
+    @shouldReplay('Transfering static tile to dynamic should be replayed.')
     toDynamic(): IDynamicTile {
         return this.layer.transferToDynamic(this.locator.x, this.locator.y)!;
     }

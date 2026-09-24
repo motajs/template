@@ -1,0 +1,213 @@
+# Phase 4: 渲染适配与双布局 - Context
+
+**Gathered:** 2026-09-18
+**Status:** Ready for planning (incremental — 本次仅锁定第一步)
+
+<domain>
+## Phase Boundary
+
+阶段 4 的最终目标（ROADMAP）：渲染端通过新数据层接口驱动，并同时支持移动端与桌面端布局（REND-01、REND-02）。
+
+**重要：本阶段无法一次规划完毕。** 用户明确要求增量规划，本次讨论只规划**第一步**：
+
+> 收集当前所有与数据端接口不匹配的渲染端实现（含依赖数据端的渲染行为），形成对账文档，作为后续计划如何拆分实施的依据。数据端未提供而渲染端需要的接口、双方错配等，单独成节写入该文档，便于后续处理。
+
+第一步是**只读清点**，不修改任何代码。后续步骤待第一手对账结果出来后另行规划。
+
+</domain>
+
+<decisions>
+## Implementation Decisions
+
+### 增量规划方式
+- **D-01:** 阶段 4 采用增量规划，不一次性产出完整计划；本 CONTEXT 仅锁定第一步（对账），后续步骤待对账结果出来后再规划。
+- **D-02:** 第一步交付物为对账文档 `.planning/phases/04-render-adaptation/04-RENDER-INTERFACE-AUDIT.md`；该步为只读清点，不改任何代码。
+
+### 对账范围与基准
+- **D-03:** 被查对象限定 `packages-user` 下的 `client-base` 与 `client-modules` 两个渲染端包。`packages` 偏向第三方库、本身不影响渲染端与数据端，不查；其余 packages-user 子包（`entry-client`、`legacy-plugin-client`、`legacy-plugin-data`、`data-fallback`）不纳入本次第一步。
+- **D-04:** 数据端 `data-common` / `data-base` / `data-system` / `data-state` 不作为被查对象，仅作为接口基准（契约源为各自 `types.ts`、`core.ts`、`ins.ts` 等）。
+- **D-05:** 用户会同步修改数据端**实现**，但接口签名不变；对账一律以「接口」为准，不受实现变动影响。
+
+### 问题分类与记录粒度
+- **D-06:** 问题按三类划分：① 错配（渲染端按旧形状/旧签名调用，数据端接口已变）；② 数据端缺失（渲染端需要而数据端未提供的接口）；③ 多余旧路径（渲染端仍在走已被新接口取代的 legacy/旧路径）。
+- **D-07:** 每条记录精确到接口名，并包含其所属文件、问题描述、影响等内容。
+- **D-08:** 采用单文档分节组织；「数据端缺失接口」独立成节，便于后续单独处理。
+
+### 执行方式
+- **D-09:** 允许派子代理进行只读扫描（不得修改任何文件）。
+
+### 设计补充（用户裁定，2026-09-18；仅记录，暂不执行）
+- **D-10:** `HeroRendering` 删除；渲染端相关的数据存储放到渲染端，渲染端自身也可以继承 `ISaveableContent`。
+- **D-11:** 诸如 `getHeroStatusOn` 这种裸函数，除非它是功能性函数，或者属于某些已明确的函数（如 replay 的那些修饰器裸函数），否则大多是将要删除的。
+- **D-12:** 所有调用 `core.*` 或 `client.*` 的地方大多需要删除。现行接口设计倾向**无全局单例**：所有内容全部挂到主类上，主类允许多例。其中 `core.*` 属旧引擎适配，应属于**第五阶段**，暂时可忽略；`client.*` 属于**本阶段**需要处理的内容。
+- **D-13:** 数据端缺失接口可能较多，等到开始改的时候再逐步确认（本阶段不从对账清单一次性定死缺失接口）。
+- **D-14:** 全局 `hook` 和 `loading` 也是 legacy 内容，需要删除。
+- **D-15:** 存档系统的 UI 目前还未接入新的存档系统。
+- **D-16:** 渲染端还需要进行结构化重构：将渲染端拆为类似数据端的 common-base-system-state 结构，但只需拆为三层——`base-system-client`（不再需要 common）。
+
+### 下一步聚焦（用户裁定，2026-09-18；待规划）
+- **D-17:** 由对账结果看，主要失配点在**勇士移动**部分。下一步规划：把**勇士移动适配到新接口**——先进行**接口探索**（并找出缺失的接口），再进行**适配工作**。
+- **D-18:** `HeroRendering` 相关暂不处理：用户先修改数据端，之后再处理。
+
+### 设计补充二（用户裁定，2026-09-18；仅记录）
+- **D-19:** 移动控制（`startMove` / `oneStep` / `IMoveController` 队列等，即探索文档 `#04-02-G-02`）由用户**手动修改**，AI 暂不处理。
+- **D-20:** 勇士渲染为**完全被动渲染**：不得提供允许渲染状态被外部修改的公共接口；旧版 `startMove` 等接口应**删除**，渲染端只需**绑定对应的勇士位置对象**即可。只有渲染端自身有需要的内容（如不透明度、贴图等），才允许在渲染端修改（与 D-10「`HeroRendering` 删除、渲染状态存储放渲染端」一致）。
+- **D-21:** 探索文档 `#04-02-G-01`（移动语义钩子）裁决：**按用户新增的 `IObjectMoverHooks.onStepStart` / `onStepEnd` 等现有数据端钩子走**，渲染端改为接入这些已有钩子，**不新增数据端公共接口**（与 D-20 被动渲染一致）。
+- **D-22:** **跟随者暂缓**（`IHeroFollower` / `IHeroFollowersController` 及其 hooks）：用户尚未确定「跟随者的位置/动画由数据端驱动还是渲染端计算」以及 `onRemoveAllFollowers` 的处置，需再考虑。本次**不纳入** 04-03，也**不单列**计划；待用户想清楚后再规划。
+- **D-23:** **不使用 `client` / `state` 全局单例**（`client-modules/src/core.ts` 的 `client`、`data-state/src/ins.ts` 的 `state`）。若有必须调用它们的地方，**停止执行并告知用户**，由用户决定解决方案；不得自行选择绕过方案。**适用范围：新增/后续改动**；存量单例使用由用户**自己逐步整改**，AI 不主动清除、不据此阻塞当前工作。
+
+### 04-03 人工审查修改要求（用户裁定，2026-09-18；仅记录，待规划）
+- **D-24:** 勇士渲染中仍在用的已弃用工具（`@user/data-common` 的 `getFaceMovement` / `degradeFace` / `nextFaceDirection`，见 `data-common/src/common/utils.ts`）**全部改为 `IFaceHandler` 对应接口**（`packages/common/src/utils/types.ts:152`：`degrade` / `movement` / `move` / `opposite` / `next` / `mapDirection` / `mapMovement`）。因不得使用 `state`，**直接在 `MapHeroRenderer` 构造器参数中要求传入 `IFaceHandler`**（`IFaceHandler<FaceDirection>`）；后续用户会按实际情况再调整。
+- **D-25:** `IHeroLocationHooks` 与 `IObjectMoverHooks` 的钩子实现**拆成两个类**（两个接口存在重复钩子，合在一个类会重复调用）。且 **`onSetPos` 直接设置，不再判断是否移动中**——渲染必须完全客观地描述数据端正在发生的事情，否则渲染与数据会偏差。
+- **D-26:** 补上 **`AnimDir` 的设置**（`ObjectMoveType.AnimDir` 分支不再跳过）。
+- **D-27:** **不使用 `mutate-animate`**，改用功能更全的 `@motajs/animate`（前者能实现的后者都能实现）。**本次范围仅限删除勇士（`render/map/extension/hero.ts`）对 `mutate-animate` 的调用并改用 `@motajs/animate`**；其余存量使用由用户自己逐步处理。
+- **D-28:** **存量 `state` 使用暂不处理**（含 `hero.ts` 的 `state.roleFace.getFaceOf`）：这涉及引擎整体的底层架构，由用户后续统一整改。本阶段**不因「不得使用单例」而清除存量**；改动只约束新增/后续代码。
+- **D-29:** **`degrade` 与 `next` 均用 `Dir4FaceHandler`**（贴图只有四向；与移动 (Dir8) 失配，需单独处理）。因构造器参数已多，**`MapHeroRenderer` 构造器改为直接传入 `IFaceManager`**（`data-common/src/common/faceManager.ts:13`；`core.ts:117-120` 注册 `FaceGroup.Dir4`/`Dir8`）：`degrade` / `next` 经 `faceManager.get(FaceGroup.Dir4)` 取四向处理器；移动相关的 `movement` 仍取勇士自身 `mover.faceHandler`（Dir8）。**注入路径走 B**：`IMapExtensionManager.addHero(state, layer, faceManager)` 新增 `faceManager: IFaceManager` 参数（**改 `types.ts` 接口**），`manager.ts` 转发给构造器；未来接线处再传。后续用户再进一步改进。
+
+### 下一个目标：material 接口适应（用户裁定，2026-09-21；待规划）
+- **D-30:** 下一个任务 = **完成 material 相关的接口适应**。用户已自行修改接口 `packages-user/client-base/src/types.ts`（提交 `4e305e3 refactor(type): material types.`，涉及 `material/types.ts`、`types.ts`、多个消费者的同步改名）并改完受影响的一部分内容；剩余未适应的实现与消费者由本任务处理。
+- **D-31:** 本次改动的根因：用户**重写了 Texture 的底层管理器，删除 `big-image` 概念**（旧样板概念，新引擎不再需要；旧兼容可**无痛丢弃**）。`4e305e3` 已从接口删除 `IBigImageReturn` / `isBigImage` / `getBigImage` / `getIfBigImage` / `getBigImageByAlias` / `setBigImage` / `bigImageStore`，并把 `IMaterialManager`→`ITextureManager`、`IMaterialGetter`→`ITextureGetter`、`IMaterialAliasGetter`→`ITextureAliasGetter`，新增 `textures` 与 `ICoreStateExtended` 约束。**影响面可能很大。**
+- **D-32:** 计划分**两步**：**第一步**收集影响范围（只读清点）；**第二步**进行修改。第二步骤第一步结果与用户审阅后再规划。
+  - **边界确认（2026-09-21）：** 范围限 `packages-user`；`packages` 不纳入（理应不受本改动影响）。**以 `packages-user/client-base/src/types.ts`（及 `material/types.ts`）为基准**。**若发现其余 big-image 残留，必须在清点文档中报告。** `src/` 或 `packages/` 内若命中，仅报告、不修改。第一步产出 `.planning/phases/04-render-adaptation/04-MATERIAL-INTERFACE-IMPACT.md`（只读，允许派只读子代理）；第二步待用户审阅第一步结果后再规划。
+- **D-33:** **范围外一律不改**；**不追求解决全部类型错误**（整仓 199 条中大量为既有/无关），**只修复与本次 material 接口适应相关的项**。第二步实施时严格按此约束。
+- **D-34:** （第二步·实施裁决 2026-09-21）清点文档 **A 类**（已移除的 big-image 符号引用）——**跟 big-image 有关的全部删除**；若有方法/函数依赖它，则做**合理修改或删除**。
+- **D-35:** （C 类）**补充实现**——`ITextureManager.textures` 与 `ICoreStateExtended`（`state: ICoreState`）在 `MaterialManager` / `AutotileProcessor` / `AssetBuilder` / `TrackedAssetData` 上的实现；**`state` 统一通过构造器传入**。
+- **D-36:** （D 类）**全部删除**——`MaterialManager` 的 big-image 实现残留（`bigImageStore`/`bigImageData`/`bigImageId` 等）与 `render/elements/cache.ts` 的 legacy big-image 路径。
+- **D-37:** （E 类）**补充依赖声明**——为 `packages-user/client-base/package.json` 补上 `@user/data-state` 依赖（其源码已 import 该包）。
+
+### 下一个目标：TextureManager 新接口适应（用户裁定，2026-09-22；待规划）
+- **D-38:** 用户已完成 **TextureManager 相关重构**（提交 `d36ea69「refactor: 贴图存储方式」`，本地已快进同步），影响面大、**主要在地图渲染部分**。下一目标 = **适应新接口**。
+- **D-39:** **不得修改加载相关的内容**（用户将自行适配新加载系统，属其处理范围）。
+- **D-40:** 本目标同样走**两步**：**先收集（只读清点）再修复**。第一步产出只读影响清单文档；第二步待用户审阅后再规划。
+- **D-41:** 「加载相关」的排除边界（用户界定）：**加载本身**，以及**向 `TextureManager` 中添加素材的内容**（均由用户自行适配新加载系统）。
+- **D-42:** `packages-user/client-base/src/material/` 文件夹已由用户**重构完毕**；AI **只修改消费者**（如地图渲染）。**若某接口被删除且无替代，必须向用户反馈**，不得自行发明替代方案。
+
+### 下一个目标：TextureManager 新接口适应·**第二步（实施）**（用户裁定，2026-09-23；待规划）
+> 本步的输入 = 第一步只读清点产物 `.planning/phases/04-render-adaptation/04-TEXTURE-INTERFACE-IMPACT.md`（A13 / B8 / C8 / D9 / E7 / F8）。以下 D-43..D-50 为用户对该台账 D / F 两类未决项的逐条裁决。
+
+- **D-43:** `renderWithoutCheck` 的替代 = **直接用新 `render(tile, connection)`**。用户原话：现在 `render` 已经进行了简化，性能比原本的 `renderWithoutCheck` 更好。3 处调用点（`render/map/vertex.ts:461`、`render/map/vertex.ts:874`、`render/map/renderer.ts:1253`）**全部改为 `render`**，不得保留或新增「跳过检查」入口。
+- **D-44:** `BlockCls` 的替代 = **`TileType`（`@user/data-common`）**。自动元件判定（`render/map/renderer.ts:1252`/`:1263`、`render/map/vertex.ts:517`/`:561`/`:872`）统一走 `tileType === TileType.Autotile`；**自动元件不需要做布局类型（`AutotileType`）判断**。用户明确：**不为旧 `BlockCls` 值做一一映射**——该类型尚未完全定稿、后续还会改，不得为了凑齐对应关系而发明映射表。
+- **D-45:** `render/map/extension/hero.ts:167` 的 `tileType` 取值 = **`TileType.Unknown`**。用户澄清：**D-18 指的是数据层的 `HeroRendering` 对象，不是渲染端的勇士渲染代码**，故 `render/map/extension/hero.ts` **不受 D-18 排除**，属本步范围。
+- **D-46:** `MapRenderer` **不再自建 `AutotileProcessor`**；**保留** `readonly autotile: IAutotileProcessor` 字段（`render/map/types.ts`，`IMapRenderer` 签名不变），**构造器内赋值为 `manager.autotile`**（用户原话：「全换成 manager 上的」）。
+- **D-47:** `ITextureManager.textures` / `tileStore` / `tiles` 的职责边界**不在本步解决**——地图背景已走现有 `manager.getTile`（`ITextureGetter` 未变），本步**只做接口适应**，不重新设计存储取值。
+- **D-48:** `textures` 的**写入侧归用户自行处理的加载系统**；**AI 不得修改 `packages-user/client-base/src/material/` 下的任何内容**（沿用并再次确认 D-42）。
+- **D-49:** **不考虑 legacy 兼容**——本次大重构的目的就是删除 legacy。凡「是否破坏 legacy 插件面」一类顾虑（对应 04-08 台账 `#04-08-D-08` / `#04-08-F-07`）**一律作废，不作为本步约束或验收项**。
+- **D-50:** `IBlockIdentifier` 已被用户删除，**其所有用法一并删除；本步范围内不得出现该接口**（其消费点 `packages-user/client-modules/src/fallback/load.ts` 属加载面，归用户）。
+- **本步范围（据 D-38..D-50 与 D-33 收敛）：** AI 渲染端适配对象 = `packages-user/client-modules/src/render/map/vertex.ts`、`render/map/renderer.ts`、`render/map/extension/hero.ts`（台账中 texture 归属 13 条错误），连带 `render/map/moving.ts` / `render/map/types.ts` 的类型面；**排除**加载面（`fallback/load.ts`、`client-base/src/load/**`）、`packages-user/client-base/src/material/**`、`packages/`、`src/`、legacy 兼容。目标：texture 归属 23 条中属 AI 面的 13 条归零；**不追平全仓既有类型错误**（D-33）。`REND-01` / `REND-02` 仍 Pending——本步仅为 REND-01 的 texture 子切片。
+
+### 下一个目标：渲染端结构性重构（通用内容迁至 `client-base`）（用户裁定，2026-09-23；待规划）
+> 分**两步**：**第一步**只读影响清点（产出影响台账文档）；**第二步**移植实施（待用户审阅第一步结果后另行规划）。
+- **D-51:** 目标 = 把 `packages-user/client-modules/src/render/` 下的**通用内容**迁移到 `packages-user/client-base/src/`（渲染**系统层**）下，以纠正分层——通用渲染资产应属 `client-base`，`client-modules` 只保留实现层 / 交互层内容。
+- **D-52:** **移植集合（明确）** = `render/components`、`render/elements`、`render/map` 三个文件夹；外加 `render/utils/layout.ts`。
+- **D-53:** **目标布局**：**不新建 `render` 目录**，三个文件夹直接放到 `client-base/src/` 下（`client-base/src/{components,elements,map}/`）；`layout.ts` **单独开 `layout/` 文件夹**存放（`client-base/src/layout/`）。
+- **D-54:** **不移植** `render/utils/` 的其余内容（`index.ts` / `saves.ts` / `use.ts`）。`ui` / `fx` / `weather` 三个文件夹与 `render` 顶层文件（`action.ts` / `index.tsx` / `renderer.ts` / `scene.ts` / `use.ts`）**均不在本次移植集合**。
+- **D-55:** **不考虑任何 Legacy 内容**——legacy 相关报错一律不管、不修、不登记为待办；AI 只负责**移植范围内**的报错清零，范围外（含 legacy）一律只报告。
+- **D-56:** 用户会**同步进行其他修改**：AI 不得触碰、不得提交用户的并发改动。
+- **D-57（第一步交付物）:** 第一步为**只读影响清点**，产出影响台账文档，至少覆盖：被移文件清单（`components` / `elements` / `map` / `layout.ts`）、三者内部交叉引用、**外部导入点**（`client-modules` 内 `ui` / `fx` / `weather` / `render` 顶层文件 / `action` / `fallback` 等，以及其它 monorepo 包）、barrel 导出现状、`package.json` 依赖现状、**分层 / 循环依赖风险**（`client-base` 不得反向依赖 `client-modules`）、legacy 命中（只报告）、未确定项。生产代码零改动；第二步待用户审阅后另行规划。
+
+### 下一个目标：渲染端结构性重构·**第二步（移植实施）**（用户裁定，2026-09-24；待规划）
+> 输入 = 第一步只读台账 `.planning/phases/04-render-adaptation/04-STRUCTURE-MIGRATION-IMPACT.md`（A9/B9/C8/D10/E6/F10）。以下 D-58..D-68 为用户对台账 C/D/F 类未决项的逐条裁决。**本步只做「复制文件夹 + 调整引用」的移植，不要求可运行 / 不要求零类型错误**；架构耦合处用 `// @ts-expect-error` 暂记，用户后续自行收尾。**效率优先，细节不纠结。**
+- **D-58（shared）:** 分层反向依赖中的 `client-modules/src/shared.ts` 常量问题——**在系统层单独新建 `client-base/src/shared/`**，把被移 `map` 文件实际需要的常量挪过去（`client-modules/src/shared.ts` 保留给留在实现层的消费者）。
+- **D-59（renderer / using）:** `render/renderer`（`mainRenderer` / `tagManager` / `using`）涉及整体架构设计，**先不处理、不做反向引用、不做解耦**；被移文件中相应导入 / 使用处以 `// @ts-expect-error`（附简要原因）临时忽略，留待用户后续处理。
+- **D-60（utils）:** `render/utils/` **不移植**；其指向被移 `layout.ts`（及其他被移内容）的引用以 `// @ts-expect-error` 处理。
+- **D-61（layout）:** `render/utils/layout.ts` → `client-base/src/layout/layout.ts`；并**新增 `client-base/src/layout/index.ts`**（barrel）。用户后续再进一步修改。
+- **D-62（命名）:** 文件名 / 目录名**与原先一致**；操作方式 = 直接复制文件，然后调整引用。
+- **D-63（桶导出与消费者）:** `client-base/src/index.ts` **新增** `./components` / `./elements` / `./map` / `./layout`（及 `./shared`）的桶导出；实现层消费者改为**直接引用 `@user/client-base`**。
+- **D-64（?raw）:** shader 的 `?raw` 引用可正常执行，**不需要处理**。
+- **D-65（legacy）:** 任何情况下都不考虑 legacy（重申 D-55）——legacy 报错一律不管（「一万个报错也不用管」）。
+- **D-66（依赖）:** `client-base/package.json` 自然要**新增所需依赖并执行 `pnpm i`**。
+- **D-67（标签注册）:** `createElements()` 的标签 / 元件注册**先移植，错误用 `@ts-expect-error`**。
+- **D-68（本步性质）:** 任务只有**移植**——把那几个文件夹复制到系统层并调整引用；**没有「保证能运行」的要求**，其余什么都不用管。架构耦合 / 无法立刻正确接线处一律 `// @ts-expect-error` 暂记。
+
+### 修正：桶导出边界原则 + 04-11 落地修正（用户裁定，2026-09-24；待规划）
+- **D-69（桶导出边界原则，硬约束）:** 一个 barrel（`index.ts` / `index.tsx`）**只允许 `export * from './<同目录下的文件或子文件夹>'`**；**不得导出本文件夹之外的任何内容**（同包上层、其它文件夹、其它包、`@user/client-base` 一律禁止）。反过来：任何需要被移内容的**消费端必须直接 `import ... from '@user/client-base'`**，**不得经任何 barrel 转发导出**。本原则在此显式确立，作为后续所有结构改动的约束。
+- **D-70（依 D-69 对 04-11 落地的修正范围）:**
+  1. `packages-user/client-modules/src/render/utils/index.ts`：**删除 `export * from './layout'` 及其 `@ts-expect-error`**——`layout` 已不在 `render/utils/` 内，该 barrel 不得再导出它。
+  2. `packages-user/client-modules/src/render/ui/save.tsx`：`adjustGrid` / `IGridLayoutData` 改从 `@user/client-base` 引入（`getSave` / `SaveData` 仍从 `../utils`）；`render/ui/title.tsx`：`adjustCover` 改从 `@user/client-base` 引入。
+  3. `packages-user/client-modules/src/render/utils/saves.ts`：`getConfirm` / `waitbox` 改从 `@user/client-base` 引入，**删除其 `@ts-expect-error`**。
+  4. `packages-user/client-base/src/shared/{shared.ts,index.ts}` → **`packages-user/client-base/src/shared.ts`**（**单文件**；`client-base/src/index.ts` 的 `export * from './shared'` 与 `map/*` 的 `../shared` 说明符不受影响）。
+  5. **保留** 8 处架构耦合 `@ts-expect-error`（`components/{choices,input,misc,scroll,textboxTyper,tip}.tsx`、`elements/index.ts` 对 `render/use.ts` / `render/renderer`）——属 D-59 / D-67，由用户后续收尾。
+  6. **不得**新增任何转发导出；`render/index.tsx` 维持现状（用户已删除越界两行，现合规）。
+  - 旁注（仅报告、不修改）：`packages/client/src/index.ts:1` 的 `export * from '@motajs/client-base'` 亦违反 D-69，但在 `packages/`（D-33 只报告）。
+
+### the agent's Discretion
+- D-07 的「影响」字段具体写法、「多余旧路径」是否需要进一步细分，交由 AI 在对账执行时按实际情况把握，但不得据此扩大范围。
+
+</decisions>
+
+<canonical_refs>
+## Canonical References
+
+**Downstream agents MUST read these before planning or implementing.**
+
+### Project and phase requirements
+- `.planning/PROJECT.md` — 项目架构、双端分离、AI 实现边界与质量约束
+- `.planning/REQUIREMENTS.md` — REND-01 / REND-02 需求
+- `.planning/ROADMAP.md` — Phase 4 目标、成功标准与相邻阶段边界（Phase Details → Phase 4）
+- `.planning/STATE.md` — 当前仓库状态与既有决策
+- `dev.md` — 项目结构与开发原则；「双端分离」章节定义 `@user/client-base`（系统层）与 `@user/client-modules`（实现层）
+
+### Data-side interface baselines (基准，不是被查对象)
+- `packages-user/data-common/src/types.ts` — L0 `IDataCommon` 契约
+- `packages-user/data-base/src/types.ts` — L1 `IStateBase` 契约
+- `packages-user/data-system/src/types.ts` — L2 `IStateSystem` 契约
+- `packages-user/data-state/src/types.ts` — L3 `ICoreState` 契约
+- `packages-user/data-state/src/core.ts` — 顶层装配与 legacy 初始化路径
+- `packages-user/data-state/src/ins.ts` — 既有单例入口
+- `packages-user/data-common/src/replay/types.ts` — 录像命令/沙箱/状态契约
+- `packages-user/data-common/src/store/types.ts` — Tile raw-data 与事件访问契约
+- `packages-user/entry-data/src/mota.ts` — `Mota` 注册表与 `r()`/`rf()` 渲染调用门控
+- `packages-user/data-base/src/game.ts` — `hook` / `gameListener` 渲染通知机制
+
+### Render side under audit (被查对象)
+- `packages-user/client-base/src/index.ts` — 渲染系统层入口
+- `packages-user/client-modules/src/index.ts` — 渲染实现层入口
+
+### Prior phase context
+- `.planning/phases/03-data-completion/03-CONTEXT.md` — 数据端完成阶段的接口边界与已锁定决策（D-01..D-28、S-01..S-05）
+
+</canonical_refs>
+
+<code_context>
+## Existing Code Insights
+
+> 本次未对渲染端代码做实际扫描（用户要求讨论阶段不由 AI 先行探索）。以下来自既有 `.planning/codebase/` 分析文档，仅作方向参考；对账执行时以实际代码为准。
+
+### Reusable Assets
+- `@user/client-base`（`packages-user/client-base/src/`）— 渲染端系统层，负责渲染核心系统（`load/`、`material/`）
+- `@user/client-modules`（`packages-user/client-modules/src/`）— 渲染端实现层，依赖系统层实现渲染与用户交互（`render/`、`action/`、`fallback/`）
+- `hook` / `gameListener`（`packages-user/data-base/src/game.ts`）— 数据端向渲染端发布通知的既有机制
+- `Mota.r()` / `Mota.rf()`（`packages-user/entry-data/src/mota.ts`）— 数据端调用渲染端代码的唯一受控入口
+
+### Established Patterns
+- 依赖方向单向：`src → packages-user → packages`；数据端分层 `data-common → data-base → data-system → data-state`
+- 双端分离：渲染端只向数据端发消息，不向数据端推送更新；数据端无 DOM
+- 公共契约以 `types.ts` + barrel 导出表达，接口设计归用户，AI 不得自行发明公共接口行为
+
+### Integration Points
+- 渲染端读取游戏状态的耦合点即对账重点：需判定其读取的是新数据层接口还是 legacy 全局
+- `packages-user/entry-client/src/create.ts` 为渲染端组合根（本次不在被查范围，但对账时可作为理解接线方式的参考）
+
+</code_context>
+
+<specifics>
+## Specific Ideas
+
+- 「收集当前所有与数据端接口不匹配的渲染端实现」——不止显式调用，依赖数据端的渲染**行为**也可能不匹配，需一并清点。
+- 数据端缺失接口与错配项要单独成节，便于用户后续处理（用户会自行决定其在数据端或渲染端解决）。
+- 对账以接口为准，不受用户并行修改数据端实现的影响。
+
+</specifics>
+
+<deferred>
+## Deferred Ideas
+
+- 阶段 4 的后续步骤（实际适配实施、移动端/桌面端双布局实现）——待第一步对账结果出来后另行规划。
+- 已确认不在本次第一步范围：`packages` 全部、`entry-client`、`legacy-plugin-client`、`legacy-plugin-data`、`data-fallback`。
+
+</deferred>
+
+---
+
+*Phase: 4-渲染适配与双布局*
+*Context gathered: 2026-09-18*

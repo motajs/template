@@ -21,6 +21,22 @@ export const enum ReplayCode {
     Unequip
 }
 
+export const enum ReplayCommandType {
+    /** 主动录像，即录像指令本身会执行某些操作 */
+    Active,
+    /** 被动录像，即外部通过 `IReplaySandbox.getPassive` 获取本步录像的参数，由外部进行后续操作 */
+    Passive
+}
+
+export const enum ReplayCommandResult {
+    /** 录像步执行成功 */
+    Success,
+    /** 录像步执行失败 */
+    Failed,
+    /** 录像步执行失败，但可以被忽略，继续执行后续录像。会在控制台输出信息。 */
+    Ignored
+}
+
 export type ReplayParamValue = number | string | boolean | bigint;
 
 export interface IReplayStepHandler {
@@ -32,19 +48,33 @@ export interface IReplayStepHandler {
     readonly index: number;
 }
 
+export interface IReplayPassiveHandler {
+    /** 录像步信息 */
+    readonly step: IReplayStepHandler;
+
+    /**
+     * 本被动录像步执行完毕，进入下一个录像步
+     * @param status 被动录像步执行情况
+     */
+    next(status: ReplayCommandResult): void;
+}
+
 export interface IReplayCommand {
+    /** 录像类型，是主动录像还是被动录像 */
+    readonly type: ReplayCommandType;
+
     /**
      * 执行当前录像步对应的操作逻辑
      * @param step 当前录像步信息
-     * @returns 当此录像步执行完毕时兑现的 `Promise`，兑现值表示此录像步是否播放成功
+     * @returns 当此录像步执行完毕时兑现的 `Promise`，兑现值表示此录像步的执行情况
      */
-    execute(step: IReplayStepHandler): Promise<boolean>;
+    execute(step: IReplayStepHandler): Promise<ReplayCommandResult>;
 
     /**
      * 若上一步是当前录像指令，而下一步不是，触发此函数，一般用于连续步骤的后处理
      * @returns 当此后处理执行完毕时兑现的 `Promise`，兑现值表示是否执行成功
      */
-    notExecuted?(): Promise<boolean>;
+    finalize?(): Promise<ReplayCommandResult>;
 }
 
 export interface IReplaySandboxHooks extends IHookBase {
@@ -90,6 +120,11 @@ export interface IReplaySandbox extends IHookable<IReplaySandboxHooks> {
     readonly speed: number;
     /** 当前是否正在播放，当调用 `play` 后，调用 `stop` 前，此值会是 `true` */
     readonly playing: boolean;
+
+    /**
+     * 获取被动录像参数。如果下一步是被动录像，那么获取其参数，如果不是，返回 `null`
+     */
+    getPassive(): IReplayPassiveHandler | null;
 
     /**
      * 设置播放倍率
@@ -260,7 +295,7 @@ export interface IReplayArray {
      * - 7: 非负 bigint
      * - 8: 负 bigint
      * - 9: string
-     * - 10 ~ 255: n - 9 长度的字符串
+     * - 32 ~ 255: n - 32 长度的字符串
      *
      * 参数类型码表遵循只增不改的约定：新语义必须分配新的类型码，禁止复用既有类型码。
      */
@@ -360,7 +395,7 @@ export interface IReplaySystemSave {
      * - 7: bigint    --- n + 2 Byte, 其中 n 是 bigint 的字节数
      * - 8: 负 bigint --- n + 2 Byte, 其中 n 是 bigint 的字节数
      * - 9: string    --- n + 5 Byte, 其中 n 是字符串编码后的字节数
-     * - 10 ~ 255: n - 9 长度的字符串 --- n + 1 Byte, 其中 n 是字符串编码后的字节数
+     * - 32 ~ 255: n - 32 长度的字符串 --- n + 1 Byte, 其中 n 是字符串编码后的字节数
      *
      * 参数类型码表遵循只增不改的约定：新语义必须分配新的类型码，禁止复用既有类型码。
      * 历史上 5/6/7/8 与短字符串基址曾发生一次性重新分配，且项目未发布，

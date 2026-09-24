@@ -1,0 +1,560 @@
+import {
+    FaceDirection,
+    FaceGroup,
+    IFaceManager,
+    IObjectMover,
+    IObjectMoverHooks,
+    ObjectAnimDirection,
+    ObjectMoveStep,
+    ObjectMoveType,
+    TileType
+} from '@user/data-common';
+import { IHeroLocation, IHeroLocationHooks, IMapLayer } from '@user/data-base';
+import { IMapRenderer, IMapRendererTicker, IMovingBlock } from '../types';
+import { isNil } from 'lodash-es';
+import { IFaceHandler, IHookController, logger } from '@motajs/common';
+import { IMaterialFramedData } from '@user/client-base';
+import { ITexture, ITextureSplitter, TextureRowSplitter } from '@motajs/render';
+import { IMapHeroRenderer } from './types';
+import { ExcitationCurve2D } from '@motajs/animate';
+import { state } from '@user/data-state';
+
+/** 默认的移动时长 */
+const DEFAULT_TIME = 100;
+
+interface IHeroRenderEntity {
+    /** 移动图块对象 */
+    readonly block: IMovingBlock;
+    /** 标识符，用于判定跟随者 */
+    readonly identifier: string;
+    /** 目标横坐标，移动时有效 */
+    targetX: number;
+    /** 目标纵坐标，移动时有效 */
+    targetY: number;
+    /** 当前的移动朝向 */
+    direction: FaceDirection;
+    /** 下一个跟随者的移动方向 */
+    nextDirection: FaceDirection;
+
+    /** 当前是否正在移动 */
+    moving: boolean;
+    /** 当前是否正在动画，移动跟动画要分开，有的操作比如跳跃就是在移动中但是没动画 */
+    animating: boolean;
+    /** 帧动画间隔 */
+    animateInterval: number;
+    /** 当一次动画时刻 */
+    lastAnimateTime: number;
+    /** 当前的动画帧数 */
+    animateFrame: number;
+    /** 移动的 `Promise`，移动完成时兑现，如果停止，则一直是兑现状态 */
+    promise: Promise<void>;
+    /** 勇士移动的动画方向 */
+    animateDirection: ObjectAnimDirection;
+}
+
+export class MapHeroRenderer implements IMapHeroRenderer {
+    private static readonly splitter: ITextureSplitter<number> =
+        new TextureRowSplitter();
+
+    /** 勇士位置钩子 */
+    readonly locationController: IHookController<IHeroLocationHooks>;
+    /** 勇士移动钩子 */
+    readonly moverController: IHookController<IObjectMoverHooks<IHeroLocation>>;
+    /** 派生自 `faceManager` 的贴图四向朝向处理器 */
+    readonly dir4: IFaceHandler<FaceDirection>;
+    /** 勇士每个朝向的贴图对象 */
+    readonly textureMap: Map<FaceDirection, IMaterialFramedData> = new Map();
+    /** 勇士渲染实体，与 `entities[0]` 同引用 */
+    readonly heroEntity: IHeroRenderEntity;
+
+    /**
+     * 渲染实体，索引 0 表示勇士，后续索引依次表示跟随的跟随者。
+     * 整体是一个状态机，而且下一个跟随者只与上一个跟随者有关，下一个跟随者移动的方向就是上一个跟随者上一步移动后指向的方向。
+     */
+    readonly entities: IHeroRenderEntity[] = [];
+
+    /** 每帧执行的帧动画对象 */
+    readonly ticker: IMapRendererTicker;
+
+    constructor(
+        readonly renderer: IMapRenderer,
+        readonly layer: IMapLayer,
+        readonly hero: IHeroLocation,
+        readonly faceManager: IFaceManager
+    ) {
+        this.dir4 = faceManager.get<FaceDirection>(FaceGroup.Dir4)!;
+        this.locationController = hero.addHook(new MapHeroLocationHook(this));
+        this.locationController.load();
+        this.moverController = hero.mover.addHook(new MapHeroMoverHook(this));
+        this.moverController.load();
+        const moving = this.addHeroMoving(renderer, layer, hero);
+        const heroEntity: IHeroRenderEntity = {
+            block: moving,
+            identifier: '',
+            targetX: hero.x,
+            targetY: hero.y,
+            direction: hero.getCurrentFaceDirection(),
+            nextDirection: FaceDirection.Unknown,
+            moving: false,
+            animating: false,
+            animateInterval: 0,
+            lastAnimateTime: 0,
+            animateFrame: 0,
+            promise: Promise.resolve(),
+            animateDirection: ObjectAnimDirection.Forward
+        };
+        this.heroEntity = heroEntity;
+        this.entities.push(heroEntity);
+        this.ticker = renderer.requestTicker(time => this.tick(time));
+    }
+
+    /**
+     * 添加勇士对应的移动图块
+     * @param renderer 渲染器
+     * @param layer 图块所属图层
+     * @param hero 勇士状态对象
+     */
+    private addHeroMoving(
+        renderer: IMapRenderer,
+        layer: IMapLayer,
+        hero: IHeroLocation
+    ) {
+        // @ts-expect-error 需要重构（贴图别名来源属 D-18，待用户先改数据端后处理）
+        const imageAlias = hero.image;
+        if (isNil(imageAlias)) {
+            logger.warn(88);
+            return renderer.addMovingBlock(layer, 0, hero.x, hero.y);
+        }
+        const image = this.renderer.manager.getImageByAlias(imageAlias);
+        if (!image) {
+            logger.warn(89, imageAlias);
+            return renderer.addMovingBlock(layer, 0, hero.x, hero.y);
+        }
+        this.updateHeroTexture(image);
+        const tex = this.textureMap.get(
+            this.dir4.degrade(hero.getCurrentFaceDirection())
+        );
+        if (!tex) {
+            return renderer.addMovingBlock(layer, 0, hero.x, hero.y);
+        }
+        const block = renderer.addMovingBlock(layer, tex, hero.x, hero.y);
+        block.useSpecifiedFrame(0);
+        return block;
+    }
+
+    /**
+     * 更新勇士贴图
+     * @param image 勇士使用的贴图，包含四个方向
+     */
+    private updateHeroTexture(image: ITexture) {
+        const textures = [
+            ...image.split(MapHeroRenderer.splitter, image.height / 4)
+        ];
+        if (textures.length !== 4) {
+            logger.warn(90, hero.image);
+            return;
+        }
+        const faceList = [
+            FaceDirection.Down,
+            FaceDirection.Left,
+            FaceDirection.Right,
+            FaceDirection.Up
+        ];
+        faceList.forEach((v, i) => {
+            const dirImage = textures[i];
+            const data: IMaterialFramedData = {
+                offset: dirImage.width / 4,
+                texture: dirImage,
+                tileType: TileType.Unknown,
+                frames: 4,
+                defaultFrame: 0
+            };
+            this.textureMap.set(v, data);
+        });
+    }
+
+    private tick(time: number) {
+        this.entities.forEach(v => {
+            if (v.animating) {
+                const dt = time - v.lastAnimateTime;
+                if (dt > v.animateInterval) {
+                    if (v.animateDirection === ObjectAnimDirection.Forward) {
+                        v.animateFrame++;
+                    } else {
+                        v.animateFrame--;
+                        if (v.animateFrame < 0) {
+                            // 小于 0，则加上帧数的整数倍，就写个 10000 倍吧
+                            v.animateFrame += v.block.texture.frames * 10000;
+                        }
+                    }
+                    v.lastAnimateTime = time;
+                    v.block.useSpecifiedFrame(v.animateFrame);
+                }
+            } else {
+                if (v.animateFrame !== 0) {
+                    v.animateFrame = 0;
+                    v.block.useSpecifiedFrame(0);
+                }
+            }
+        });
+    }
+
+    setImage(image: ITexture): void {
+        this.updateHeroTexture(image);
+        const tex = this.textureMap.get(
+            this.dir4.degrade(this.hero.getCurrentFaceDirection())
+        );
+        if (!tex) return;
+        this.heroEntity.block.setTexture(tex);
+    }
+
+    setAlpha(alpha: number): void {
+        this.heroEntity.block.setAlpha(alpha);
+    }
+
+    setPosition(x: number, y: number): void {
+        this.entities.forEach(v => {
+            v.block.setPos(x, y);
+            v.nextDirection = FaceDirection.Unknown;
+        });
+    }
+
+    /**
+     * 移动指定渲染实体，不会影响其他渲染实体。多次调用时会按顺序依次移动
+     * @param entity 渲染实体
+     * @param direction 移动方向
+     * @param time 移动时长
+     */
+    private moveEntity(
+        entity: IHeroRenderEntity,
+        direction: FaceDirection,
+        time: number
+    ) {
+        const { x: dx, y: dy } =
+            this.hero.mover.faceHandler.movement(direction);
+        if (dx === 0 && dy === 0) return;
+        const block = entity.block;
+        const tx = block.x + dx;
+        const ty = block.y + dy;
+        const nextTile = state.roleFace.getFaceOf(block.tile, direction);
+        const nextTex = this.renderer.manager.getTile(
+            nextTile?.identifier ?? block.tile
+        );
+        entity.animateInterval = time;
+        entity.promise = entity.promise.then(async () => {
+            entity.moving = true;
+            entity.animating = true;
+            entity.direction = direction;
+            if (nextTex) block.setTexture(nextTex);
+            await block.lineTo(tx, ty, time);
+            entity.nextDirection = entity.direction;
+        });
+    }
+
+    /**
+     * 生成跳跃曲线
+     * @param dx 横向偏移量
+     * @param dy 纵向偏移量
+     */
+    private generateJumpFn(dx: number, dy: number): ExcitationCurve2D {
+        const distance = Math.hypot(dx, dy);
+        const peak = 3 + distance;
+
+        return (progress: number) => {
+            const x = dx * progress;
+            const y = progress * dy + (progress ** 2 - progress) * peak;
+
+            return [x, y];
+        };
+    }
+
+    /**
+     * 将指定渲染实体跳跃至目标点，多次调用时会按顺序依次执行，可以与 `moveEntity` 混用
+     * @param entity 渲染实体
+     * @param x 目标横坐标
+     * @param y 目标纵坐标
+     * @param time 跳跃时长
+     */
+    private jumpEntity(
+        entity: IHeroRenderEntity,
+        x: number,
+        y: number,
+        time: number
+    ) {
+        const block = entity.block;
+        entity.promise = entity.promise.then(async () => {
+            const dx = block.x - x;
+            const dy = block.y - y;
+            const fn = this.generateJumpFn(dx, dy);
+            entity.moving = true;
+            entity.animating = false;
+            entity.animateFrame = 0;
+            await block.moveRelative(fn, time);
+        });
+    }
+
+    startMove(): void {
+        this.heroEntity.moving = true;
+        this.heroEntity.animating = true;
+        this.heroEntity.lastAnimateTime = this.ticker.timestamp;
+    }
+
+    private endEntityMoving(entity: IHeroRenderEntity) {
+        entity.moving = false;
+        entity.animating = false;
+        entity.animateFrame = 0;
+        entity.block.useSpecifiedFrame(0);
+    }
+
+    async waitMoveEnd(): Promise<void> {
+        await Promise.all(this.entities.map(v => v.promise));
+        this.entities.forEach(v => this.endEntityMoving(v));
+    }
+
+    stopMove(): void {
+        this.entities.forEach(v => {
+            v.block.endMoving();
+            this.endEntityMoving(v);
+        });
+    }
+
+    async move(direction: FaceDirection, time: number): Promise<void> {
+        this.moveEntity(this.heroEntity, direction, time);
+        for (let i = 1; i < this.entities.length; i++) {
+            const last = this.entities[i - 1];
+            this.moveEntity(this.entities[i], last.nextDirection, time);
+        }
+        await Promise.all(this.entities.map(v => v.promise));
+    }
+
+    async jumpTo(
+        x: number,
+        y: number,
+        time: number,
+        waitFollower: boolean
+    ): Promise<void> {
+        // 首先要把所有的跟随者移动到勇士所在位置
+        for (let i = 1; i < this.entities.length; i++) {
+            // 对于每一个跟随者，需要向前遍历每一个跟随者，然后朝向移动，这样就可以聚集在一起了
+            const now = this.entities[i];
+            for (let j = i - 1; j >= 0; j--) {
+                const last = this.entities[j];
+                this.moveEntity(now, last.nextDirection, DEFAULT_TIME);
+            }
+        }
+        this.entities.forEach(v => {
+            this.jumpEntity(v, x, y, time);
+        });
+        if (waitFollower) {
+            await Promise.all(this.entities.map(v => v.promise));
+        } else {
+            return this.heroEntity.promise;
+        }
+    }
+
+    addFollower(image: number, id: string): void {
+        const last = this.entities[this.entities.length - 1];
+        if (last.moving) {
+            logger.warn(92);
+            return;
+        }
+        const degraded = this.dir4.degrade(last.nextDirection);
+        const nowFace =
+            degraded === FaceDirection.Unknown ? FaceDirection.Down : degraded;
+        const faced = state.roleFace.getFaceOf(image, nowFace);
+        const tex = this.renderer.manager.getTile(faced?.face ?? image);
+        if (!tex) {
+            logger.warn(91, image.toString());
+            return;
+        }
+        const handler = this.hero.mover.faceHandler;
+        const { x: dxn, y: dyn } = handler.movement(last.nextDirection);
+        const { x: dx, y: dy } = handler.movement(last.direction);
+        const x = last.block.x - dxn;
+        const y = last.block.y - dyn;
+        const moving = this.renderer.addMovingBlock(this.layer, tex, x, y);
+        const entity: IHeroRenderEntity = {
+            block: moving,
+            identifier: id,
+            targetX: last.targetX - dx,
+            targetY: last.targetY - dy,
+            direction: nowFace,
+            nextDirection: FaceDirection.Unknown,
+            moving: false,
+            animating: false,
+            animateInterval: 0,
+            lastAnimateTime: 0,
+            animateFrame: 0,
+            promise: Promise.resolve(),
+            animateDirection: ObjectAnimDirection.Forward
+        };
+        moving.useSpecifiedFrame(0);
+        this.entities.push(entity);
+    }
+
+    async removeFollower(follower: string, animate: boolean): Promise<void> {
+        const index = this.entities.findIndex(v => v.identifier === follower);
+        if (index === -1) return;
+        if (this.entities[index].moving) {
+            logger.warn(93);
+            return;
+        }
+        if (index === this.entities.length - 1) {
+            this.entities[index].block.destroy();
+            this.entities.splice(index, 1);
+            return;
+        }
+        // 展示动画
+        if (animate) {
+            for (let i = index + 1; i < this.entities.length; i++) {
+                const last = this.entities[i - 1];
+                const moving = this.entities[i];
+                this.moveEntity(moving, last.nextDirection, DEFAULT_TIME);
+            }
+            this.entities[index].block.destroy();
+            this.entities.splice(index, 1);
+            await Promise.all(this.entities.map(v => v.promise));
+            return;
+        }
+        // 不展示动画
+        for (let i = index + 1; i < this.entities.length; i++) {
+            const last = this.entities[i - 1];
+            const moving = this.entities[i];
+            moving.block.setPos(last.block.x, last.block.y);
+            const nextFace = state.roleFace.getFaceOf(
+                moving.block.tile,
+                last.nextDirection
+            );
+            if (!nextFace) continue;
+            const tile = this.renderer.manager.getTile(nextFace.identifier);
+            if (!tile) continue;
+            moving.block.setTexture(tile);
+            moving.direction = last.nextDirection;
+            moving.nextDirection = moving.direction;
+        }
+        this.entities[index].block.destroy();
+        this.entities.splice(index, 1);
+    }
+
+    removeAllFollowers(): void {
+        for (let i = 1; i < this.entities.length; i++) {
+            this.entities[i].block.destroy();
+        }
+        this.entities.length = 1;
+    }
+
+    setFollowerAlpha(identifier: string, alpha: number): void {
+        const follower = this.entities.find(v => v.identifier === identifier);
+        if (!follower) return;
+        follower.block.setAlpha(alpha);
+    }
+
+    setHeroAnimateDirection(direction: ObjectAnimDirection): void {
+        this.heroEntity.animateDirection = direction;
+    }
+
+    turn(direction?: FaceDirection): void {
+        const next = isNil(direction)
+            ? this.dir4.next(this.heroEntity.direction)
+            : direction;
+        const tex = this.textureMap.get(next);
+        if (tex) {
+            this.heroEntity.block.setTexture(tex);
+            this.heroEntity.direction = next;
+        }
+    }
+
+    destroy() {
+        this.locationController.unload();
+        this.moverController.unload();
+    }
+}
+
+class MapHeroLocationHook implements Partial<IHeroLocationHooks> {
+    constructor(readonly hero: MapHeroRenderer) {}
+
+    onSetImage(image: ImageIds): void {
+        const texture = this.hero.renderer.manager.getImageByAlias(image);
+        if (!texture) {
+            logger.warn(89, hero.image);
+            return;
+        }
+        this.hero.setImage(texture);
+    }
+
+    onSetPos(x: number, y: number): void {
+        this.hero.setPosition(x, y);
+    }
+
+    onSetAlpha(alpha: number): void {
+        this.hero.setAlpha(alpha);
+    }
+
+    onAddFollower(follower: number, identifier: string): void {
+        this.hero.addFollower(follower, identifier);
+    }
+
+    onRemoveFollower(identifier: string, animate: boolean): void {
+        this.hero.removeFollower(identifier, animate);
+    }
+
+    onRemoveAllFollowers(): void {
+        this.hero.removeAllFollowers();
+    }
+
+    onSetFollowerAlpha(identifier: string, alpha: number): void {
+        this.hero.setFollowerAlpha(identifier, alpha);
+    }
+}
+
+class MapHeroMoverHook implements Partial<IObjectMoverHooks<IHeroLocation>> {
+    constructor(readonly hero: MapHeroRenderer) {}
+
+    async onMoveStart(): Promise<void> {
+        this.hero.startMove();
+    }
+
+    async onMoveEnd(): Promise<void> {
+        await this.hero.waitMoveEnd();
+    }
+
+    async onStepEnd(
+        _code: number,
+        step: Readonly<ObjectMoveStep>,
+        tile: IHeroLocation,
+        mover: IObjectMover<IHeroLocation>
+    ): Promise<void> {
+        this.hero.setHeroAnimateDirection(mover.currAnimDir);
+        switch (step.type) {
+            case ObjectMoveType.Dir:
+                return this.hero.move(step.move, mover.currentSpeed);
+            case ObjectMoveType.DirFace:
+                this.hero.turn(step.face);
+                return this.hero.move(step.move, mover.currentSpeed);
+            case ObjectMoveType.Special:
+                return this.hero.move(mover.moveDirection, mover.currentSpeed);
+            case ObjectMoveType.Face:
+                this.hero.turn(step.value);
+                break;
+            case ObjectMoveType.Teleport:
+                this.hero.setPosition(tile.x, tile.y);
+                break;
+            case ObjectMoveType.Jump:
+                return this.hero.jumpTo(
+                    tile.x,
+                    tile.y,
+                    mover.currentSpeed,
+                    false
+                );
+            case ObjectMoveType.AnimDir:
+                this.hero.setHeroAnimateDirection(step.dir);
+                break;
+            case ObjectMoveType.Speed:
+                break;
+        }
+    }
+
+    onSetFaceDir(dir: FaceDirection): void {
+        this.hero.turn(dir);
+    }
+}

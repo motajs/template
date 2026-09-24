@@ -6,11 +6,17 @@ import {
 } from '@motajs/common';
 import {
     IReplayArray,
+    IReplayCommand,
+    IReplayPassiveHandler,
     IReplayReadStream,
     IReplaySandbox,
     IReplaySandboxHooks,
-    IReplaySystem
+    IReplayStepHandler,
+    IReplaySystem,
+    ReplayCommandResult,
+    ReplayCommandType
 } from './types';
+import { isNil } from 'lodash-es';
 
 export class ReplaySandbox
     extends Hookable<IReplaySandboxHooks>
@@ -25,8 +31,14 @@ export class ReplaySandbox
     private needPause: boolean = false;
     /** 当前录像是否播放完毕 */
     private ending: boolean = false;
+
     /** 暂停 `Promise` 的 `resolve` 函数 */
     private pauseResolve: () => void = () => {};
+
+    /** 被动录像步兑现函数 */
+    private passiveResolve: (status: ReplayCommandResult) => void = () => {};
+    /** 下一步被动录像步的 `StepHandler`，注意不是 `PassiveHandler` */
+    private passiveHandler: IReplayStepHandler | null = null;
 
     /** 录像的流式读取器 */
     private reader: Readonly<IReplayReadStream>;
@@ -47,6 +59,20 @@ export class ReplaySandbox
         hook: Partial<IReplaySandboxHooks>
     ): IHookController<IReplaySandboxHooks> {
         return new HookController(this, hook);
+    }
+
+    getPassive(): IReplayPassiveHandler | null {
+        if (!this.passiveHandler) {
+            logger.error(73);
+            return null;
+        }
+        const handler: IReplayPassiveHandler = {
+            step: this.passiveHandler,
+            next: status => {
+                this.passiveResolve(status);
+            }
+        };
+        return handler;
     }
 
     setSpeed(speed: number): void {
@@ -121,19 +147,63 @@ export class ReplaySandbox
     /**
      * 触发上一步指令的连续步骤后处理
      */
-    private async finalizeLast(): Promise<boolean> {
-        if (this.last === -1) return true;
+    private async finalizeLast(): Promise<ReplayCommandResult> {
+        if (this.last === -1) return ReplayCommandResult.Success;
         const last = this.system.getCommand(this.last);
         if (!last) {
             logger.warn(157, this.last.toString());
-            return false;
+            return ReplayCommandResult.Failed;
         }
-        const success = (await last.notExecuted?.()) ?? true;
-        if (!success) {
-            logger.warn(175, this.last.toString());
-            return false;
+        return last.finalize?.() ?? ReplayCommandResult.Success;
+    }
+
+    /**
+     * 执行下一个录像步
+     * @param command 录像步对象
+     * @param next 录像步参数
+     */
+    private async executeCommand(
+        command: IReplayCommand,
+        next: IReplayStepHandler
+    ): Promise<ReplayCommandResult> {
+        if (command.type === ReplayCommandType.Passive) {
+            // 被动录像步
+            const { promise, resolve } =
+                Promise.withResolvers<ReplayCommandResult>();
+            this.passiveResolve = resolve;
+            const status = await promise;
+            if (isNil(status)) {
+                logger.error(71);
+                return ReplayCommandResult.Failed;
+            } else {
+                return status;
+            }
+        } else {
+            // 主动录像步
+            const status = command.execute(next);
+            return status;
         }
-        return true;
+    }
+
+    /**
+     * 检查录像执行状态，进行适当的控制台输出
+     * @param status 录像执行状态
+     * @param method 录像步执行方法，可填 `active` `passive` `finalize`
+     */
+    private checkReplayStatus(
+        status: ReplayCommandResult,
+        method: string
+    ): boolean {
+        if (status === ReplayCommandResult.Success) return true;
+        else if (status === ReplayCommandResult.Failed) {
+            logger.error(72, method);
+            return false;
+        } else {
+            logger.log(
+                `Ignored replay error with a Ignored status returned by ${method} command.`
+            );
+            return true;
+        }
     }
 
     async step(): Promise<boolean> {
@@ -143,44 +213,40 @@ export class ReplaySandbox
             return false;
         }
         const next = this.reader.read();
-        if (!next) {
-            // notExecuted
-            const ne = await this.finalizeLast();
-            if (ne) {
-                this.last = -1;
-                this.ending = true;
-            }
-            return false;
-        }
 
-        // notExecuted
-        if (next.command !== this.last) {
+        // finalize 执行
+        if (!next || next.command !== this.last) {
             const ne = await this.finalizeLast();
-            if (!ne) {
+            const success = this.checkReplayStatus(ne, 'finalize');
+            if (success) {
+                if (!next) {
+                    this.last = -1;
+                    this.ending = true;
+                    return false;
+                }
+            } else {
                 return false;
             }
         }
         this.last = next.command;
 
-        // execute
+        // 获取指令本身
         const command = this.system.getCommand(next.command);
         if (!command) {
             logger.warn(157, next.command.toString());
             return false;
         }
-        const success = await command.execute(next);
-        if (!success) {
-            logger.warn(
-                158,
-                next.command.toString(),
-                JSON.stringify(next.params)
-            );
+
+        const status = await this.executeCommand(command, next);
+        const success = this.checkReplayStatus(
+            status,
+            command.type === ReplayCommandType.Active ? 'execute' : 'passive'
+        );
+        if (success) {
+            await Promise.all(this.forEachHook(hook => hook.onStep?.(next)));
+            return true;
+        } else {
             return false;
         }
-
-        // hook
-        await Promise.all(this.forEachHook(hook => hook.onStep?.(next)));
-
-        return true;
     }
 }

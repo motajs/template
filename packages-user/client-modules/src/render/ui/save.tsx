@@ -13,7 +13,7 @@ import {
     onMounted,
     shallowReactive
 } from 'vue';
-import { getConfirm, Page, PageExpose, Thumbnail } from '../components';
+import { getConfirm, Page, PageExpose, Thumbnail } from '@user/client-base';
 import { useKey } from '../use';
 import {
     HALF_HEIGHT,

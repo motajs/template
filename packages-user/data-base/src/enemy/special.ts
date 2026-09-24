@@ -9,8 +9,6 @@ export interface ICommonSpecialConfig<T> {
     getSpecialName: (special: ISpecial<T>) => string;
     /** 获取特殊属性的描述 */
     getDescription: (special: ISpecial<T>) => string;
-    /** 从旧样板怪物对象获取此特殊属性对应的属性值 */
-    fromLegacyEnemy: (enemy: Enemy) => T;
 }
 
 export class CommonSerializableSpecial<T> implements ISpecial<T> {
@@ -34,10 +32,6 @@ export class CommonSerializableSpecial<T> implements ISpecial<T> {
 
     getDescription(): string {
         return this.config.getDescription(this);
-    }
-
-    fromLegacyEnemy(enemy: Enemy): void {
-        this.value = this.config.fromLegacyEnemy(enemy);
     }
 
     clone(): ISpecial<T> {
@@ -86,19 +80,15 @@ export class NonePropertySpecial implements ISpecial<void> {
         return this.config.getDescription(this);
     }
 
-    fromLegacyEnemy(_enemy: Enemy): void {
-        // unneeded
-    }
-
     clone(): ISpecial<void> {
         return new NonePropertySpecial(this.code, this.config);
     }
 
-    saveState(_compression: SaveCompression): void {
+    saveState(): void {
         return undefined;
     }
 
-    loadState(_state: void, _compression: SaveCompression): void {
+    loadState(): void {
         // 无属性，无需操作
     }
 

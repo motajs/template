@@ -1,0 +1,5 @@
+// Type: type required.
+// "@required" means the property is required.
+// For objects, system will compare every properties.
+// --- SYSTEM PREFIX END --- //
+{}

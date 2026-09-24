@@ -662,17 +662,55 @@ export interface IHeroEquipsStoreSave<THero> {
     readonly equipments: readonly IEquipmentStateSave<THero>[];
 }
 
-/**
- * 装备实例。其修饰器由装备自身加成重建而来，是派生视图：
- * 跨读档不保留旧的修饰器对象引用属预期行为，读档后它们会被重新创建
- */
-export interface IEquipmentState<THero> extends ISaveableContent<
-    IEquipmentStateSave<THero>
-> {
+export interface IEquipmentStateHooks<THero> extends IHookBase {
+    /**
+     * 当装备的修饰器发生变化时执行，当发生修饰器增加、减少、数值修改时都会触发
+     * @param modifiers 当前装备所拥有的所有修饰器
+     */
+    onChangeModifier?(
+        modifiers: Iterable<[SelectKey<THero, number>, IHeroModifier<number>]>
+    ): void;
+}
+
+export interface IEquipmentState<THero>
+    extends
+        ISaveableContent<IEquipmentStateSave<THero>>,
+        IHookable<IEquipmentStateHooks<THero>> {
     /** 装备实例 uid */
     readonly uid: number;
     /** 装备的定义数据引用 */
     readonly item: IItemRawData<THero>;
+
+    /**
+     * 设置此装备对指定勇士属性值的增加量
+     * @param name 勇士属性名
+     * @param value 要将装备的此属性增量设置为的值
+     */
+    setValue(name: SelectKey<THero, number>, value: number): void;
+
+    /**
+     * 设置此装备对指定勇士属性值的百分比增加量
+     * @param name 勇士属性名
+     * @param value 要将装备的此属性百分比增量设置为的值
+     */
+    setPercentage(name: SelectKey<THero, number>, value: number): void;
+
+    /**
+     * 获取装备对指定勇士属性值的增加量，若装备不增加对应属性，则返回 `0`
+     * @param name 勇士属性名
+     */
+    getValue(name: SelectKey<THero, number>): number;
+
+    /**
+     * 获取装备对指定勇士属性值的百分比增加量，若装备不增加对应属性，则返回 `0`
+     * @param name 勇士属性名
+     */
+    getPercentage(name: SelectKey<THero, number>): number;
+
+    /**
+     * 构建所有的修饰器，每个装备实例只需要进行一次构建
+     */
+    buildModifiers(): void;
 
     /**
      * 获取装备产生的所有修饰器，每个元素为 [属性名, 修饰器]

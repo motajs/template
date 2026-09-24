@@ -15,11 +15,11 @@ import {
 } from './types';
 import { Hookable, HookController, ITileLocator, logger } from '@motajs/common';
 import {
-    degradeFace,
     FaceDirection,
     IDataCommon,
     IRoleFaceBinder,
-    SaveCompression
+    SaveCompression,
+    shouldReplay
 } from '@user/data-common';
 import { DynamicTile } from './dynamicTile';
 import { LayerEventView } from './eventView';
@@ -233,6 +233,7 @@ export class MapLayer
         return x >= 0 && y >= 0 && x < this.width && y < this.height;
     }
 
+    @shouldReplay('Setting map layer block should be replayed.')
     setBlock(block: number, x: number, y: number): void {
         if (!this.inMap(x, y)) return;
         const index = y * this.width + x;
@@ -254,6 +255,7 @@ export class MapLayer
         return this.mapArray[y * this.width + x];
     }
 
+    @shouldReplay('Removing map layer block should be replayed.')
     removeBlock(x: number, y: number): number {
         if (!this.inMap(x, y)) {
             return -1;
@@ -287,6 +289,7 @@ export class MapLayer
         };
     }
 
+    @shouldReplay('Setting map layer data should be replayed.')
     putMapData(array: Uint32Array, x: number, y: number, width: number): void {
         if (array.length % width !== 0) {
             logger.warn(8);
@@ -394,6 +397,7 @@ export class MapLayer
         return this.mapData;
     }
 
+    @shouldReplay('Setting map layer  block direction should be replayed.')
     setStaticDirection(x: number, y: number, direction: FaceDirection): number {
         const tile = this.getTile(x, y);
         if (!tile) return -1;
@@ -415,6 +419,7 @@ export class MapLayer
 
     //#region 动态图层操作
 
+    @shouldReplay('Creating dynamic tile should be replayed.')
     createDynamic(num: number, x: number, y: number): IDynamicTile {
         const tile = new DynamicTile(num, x, y, this);
         const location = this.getLocationData(x, y);
@@ -432,6 +437,7 @@ export class MapLayer
         return tile;
     }
 
+    @shouldReplay('Transfering static tile to dynamic should be replayed.')
     transferToDynamic(
         x: number,
         y: number,
@@ -457,6 +463,7 @@ export class MapLayer
         return tile;
     }
 
+    @shouldReplay('Transfering dynamic tile to static should be replayed.')
     transferToStatic(
         tile: IDynamicTile,
         keepEvent: boolean = true
@@ -477,6 +484,7 @@ export class MapLayer
         return this.getTile(x, y);
     }
 
+    @shouldReplay('Transfering dynamic tile to static should be replayed.')
     transferToStaticIfSafe(
         tile: IDynamicTile,
         keepEvent: boolean = true
@@ -495,6 +503,7 @@ export class MapLayer
         return this.getTile(x, y);
     }
 
+    @shouldReplay('Deleting dynamic tile should be replayed.')
     async deleteDynamic(tile: IDynamicTile): Promise<void> {
         if (!this.posTileMap.has(tile)) {
             logger.warn(130);
@@ -513,17 +522,12 @@ export class MapLayer
         return this.posTileMap.keys();
     }
 
+    @shouldReplay('Setting map layer  block direction should be replayed.')
     setDynamicDirection(tile: IDynamicTile, direction: FaceDirection): number {
-        const numBefore = tile.num();
-        tile.setFaceDirection(direction);
-        if (tile.num() !== numBefore) return tile.num();
-        const degraded = degradeFace(direction);
-        if (degraded !== direction) {
-            tile.setFaceDirection(degraded);
-        }
-        return tile.num();
+        return tile.setFaceDirection(direction);
     }
 
+    @shouldReplay('Updating dynamic tile position should be replayed.')
     updateDynamicTile(tile: IDynamicTile): void {
         const oldPos = this.posTileMap.get(tile);
         if (oldPos) {
@@ -542,6 +546,7 @@ export class MapLayer
 
     //#region 开关门
 
+    @shouldReplay('Opening door should be replayed.')
     async openDoor(x: number, y: number): Promise<void> {
         const index = y * this.width + x;
         const num = this.mapArray[index];
@@ -554,6 +559,7 @@ export class MapLayer
         this.setBlock(0, x, y);
     }
 
+    @shouldReplay('Closing door should be replayed.')
     async closeDoor(num: number, x: number, y: number): Promise<void> {
         const index = y * this.width + x;
         const nowNum = this.mapArray[index];
@@ -573,10 +579,12 @@ export class MapLayer
 
     //#region 图层操作
 
+    @shouldReplay('Setting z-index of map layer should be replayed.')
     setZIndex(zIndex: number): void {
         this.zIndex = zIndex;
     }
 
+    @shouldReplay('Setting role face binder of map layer should be replayed.')
     setFaceBinder(binder: IRoleFaceBinder | null): void {
         if (!binder) return;
         this.faceBinder = binder;
@@ -616,6 +624,7 @@ export class MapLayer
         return new MapLayerHookController(this, hook);
     }
 
+    @shouldReplay('Resizing map layer should be replayed.')
     resize(width: number, height: number): void {
         if (this.width === width && this.height === height) {
             return;
@@ -656,6 +665,7 @@ export class MapLayer
         });
     }
 
+    @shouldReplay('Resizing map layer should be replayed.')
     resize2(width: number, height: number): void {
         this.layerDirty = true;
         this.pointEvents.clear();
