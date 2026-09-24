@@ -95,6 +95,41 @@
 - **D-50:** `IBlockIdentifier` 已被用户删除，**其所有用法一并删除；本步范围内不得出现该接口**（其消费点 `packages-user/client-modules/src/fallback/load.ts` 属加载面，归用户）。
 - **本步范围（据 D-38..D-50 与 D-33 收敛）：** AI 渲染端适配对象 = `packages-user/client-modules/src/render/map/vertex.ts`、`render/map/renderer.ts`、`render/map/extension/hero.ts`（台账中 texture 归属 13 条错误），连带 `render/map/moving.ts` / `render/map/types.ts` 的类型面；**排除**加载面（`fallback/load.ts`、`client-base/src/load/**`）、`packages-user/client-base/src/material/**`、`packages/`、`src/`、legacy 兼容。目标：texture 归属 23 条中属 AI 面的 13 条归零；**不追平全仓既有类型错误**（D-33）。`REND-01` / `REND-02` 仍 Pending——本步仅为 REND-01 的 texture 子切片。
 
+### 下一个目标：渲染端结构性重构（通用内容迁至 `client-base`）（用户裁定，2026-09-23；待规划）
+> 分**两步**：**第一步**只读影响清点（产出影响台账文档）；**第二步**移植实施（待用户审阅第一步结果后另行规划）。
+- **D-51:** 目标 = 把 `packages-user/client-modules/src/render/` 下的**通用内容**迁移到 `packages-user/client-base/src/`（渲染**系统层**）下，以纠正分层——通用渲染资产应属 `client-base`，`client-modules` 只保留实现层 / 交互层内容。
+- **D-52:** **移植集合（明确）** = `render/components`、`render/elements`、`render/map` 三个文件夹；外加 `render/utils/layout.ts`。
+- **D-53:** **目标布局**：**不新建 `render` 目录**，三个文件夹直接放到 `client-base/src/` 下（`client-base/src/{components,elements,map}/`）；`layout.ts` **单独开 `layout/` 文件夹**存放（`client-base/src/layout/`）。
+- **D-54:** **不移植** `render/utils/` 的其余内容（`index.ts` / `saves.ts` / `use.ts`）。`ui` / `fx` / `weather` 三个文件夹与 `render` 顶层文件（`action.ts` / `index.tsx` / `renderer.ts` / `scene.ts` / `use.ts`）**均不在本次移植集合**。
+- **D-55:** **不考虑任何 Legacy 内容**——legacy 相关报错一律不管、不修、不登记为待办；AI 只负责**移植范围内**的报错清零，范围外（含 legacy）一律只报告。
+- **D-56:** 用户会**同步进行其他修改**：AI 不得触碰、不得提交用户的并发改动。
+- **D-57（第一步交付物）:** 第一步为**只读影响清点**，产出影响台账文档，至少覆盖：被移文件清单（`components` / `elements` / `map` / `layout.ts`）、三者内部交叉引用、**外部导入点**（`client-modules` 内 `ui` / `fx` / `weather` / `render` 顶层文件 / `action` / `fallback` 等，以及其它 monorepo 包）、barrel 导出现状、`package.json` 依赖现状、**分层 / 循环依赖风险**（`client-base` 不得反向依赖 `client-modules`）、legacy 命中（只报告）、未确定项。生产代码零改动；第二步待用户审阅后另行规划。
+
+### 下一个目标：渲染端结构性重构·**第二步（移植实施）**（用户裁定，2026-09-24；待规划）
+> 输入 = 第一步只读台账 `.planning/phases/04-render-adaptation/04-STRUCTURE-MIGRATION-IMPACT.md`（A9/B9/C8/D10/E6/F10）。以下 D-58..D-68 为用户对台账 C/D/F 类未决项的逐条裁决。**本步只做「复制文件夹 + 调整引用」的移植，不要求可运行 / 不要求零类型错误**；架构耦合处用 `// @ts-expect-error` 暂记，用户后续自行收尾。**效率优先，细节不纠结。**
+- **D-58（shared）:** 分层反向依赖中的 `client-modules/src/shared.ts` 常量问题——**在系统层单独新建 `client-base/src/shared/`**，把被移 `map` 文件实际需要的常量挪过去（`client-modules/src/shared.ts` 保留给留在实现层的消费者）。
+- **D-59（renderer / using）:** `render/renderer`（`mainRenderer` / `tagManager` / `using`）涉及整体架构设计，**先不处理、不做反向引用、不做解耦**；被移文件中相应导入 / 使用处以 `// @ts-expect-error`（附简要原因）临时忽略，留待用户后续处理。
+- **D-60（utils）:** `render/utils/` **不移植**；其指向被移 `layout.ts`（及其他被移内容）的引用以 `// @ts-expect-error` 处理。
+- **D-61（layout）:** `render/utils/layout.ts` → `client-base/src/layout/layout.ts`；并**新增 `client-base/src/layout/index.ts`**（barrel）。用户后续再进一步修改。
+- **D-62（命名）:** 文件名 / 目录名**与原先一致**；操作方式 = 直接复制文件，然后调整引用。
+- **D-63（桶导出与消费者）:** `client-base/src/index.ts` **新增** `./components` / `./elements` / `./map` / `./layout`（及 `./shared`）的桶导出；实现层消费者改为**直接引用 `@user/client-base`**。
+- **D-64（?raw）:** shader 的 `?raw` 引用可正常执行，**不需要处理**。
+- **D-65（legacy）:** 任何情况下都不考虑 legacy（重申 D-55）——legacy 报错一律不管（「一万个报错也不用管」）。
+- **D-66（依赖）:** `client-base/package.json` 自然要**新增所需依赖并执行 `pnpm i`**。
+- **D-67（标签注册）:** `createElements()` 的标签 / 元件注册**先移植，错误用 `@ts-expect-error`**。
+- **D-68（本步性质）:** 任务只有**移植**——把那几个文件夹复制到系统层并调整引用；**没有「保证能运行」的要求**，其余什么都不用管。架构耦合 / 无法立刻正确接线处一律 `// @ts-expect-error` 暂记。
+
+### 修正：桶导出边界原则 + 04-11 落地修正（用户裁定，2026-09-24；待规划）
+- **D-69（桶导出边界原则，硬约束）:** 一个 barrel（`index.ts` / `index.tsx`）**只允许 `export * from './<同目录下的文件或子文件夹>'`**；**不得导出本文件夹之外的任何内容**（同包上层、其它文件夹、其它包、`@user/client-base` 一律禁止）。反过来：任何需要被移内容的**消费端必须直接 `import ... from '@user/client-base'`**，**不得经任何 barrel 转发导出**。本原则在此显式确立，作为后续所有结构改动的约束。
+- **D-70（依 D-69 对 04-11 落地的修正范围）:**
+  1. `packages-user/client-modules/src/render/utils/index.ts`：**删除 `export * from './layout'` 及其 `@ts-expect-error`**——`layout` 已不在 `render/utils/` 内，该 barrel 不得再导出它。
+  2. `packages-user/client-modules/src/render/ui/save.tsx`：`adjustGrid` / `IGridLayoutData` 改从 `@user/client-base` 引入（`getSave` / `SaveData` 仍从 `../utils`）；`render/ui/title.tsx`：`adjustCover` 改从 `@user/client-base` 引入。
+  3. `packages-user/client-modules/src/render/utils/saves.ts`：`getConfirm` / `waitbox` 改从 `@user/client-base` 引入，**删除其 `@ts-expect-error`**。
+  4. `packages-user/client-base/src/shared/{shared.ts,index.ts}` → **`packages-user/client-base/src/shared.ts`**（**单文件**；`client-base/src/index.ts` 的 `export * from './shared'` 与 `map/*` 的 `../shared` 说明符不受影响）。
+  5. **保留** 8 处架构耦合 `@ts-expect-error`（`components/{choices,input,misc,scroll,textboxTyper,tip}.tsx`、`elements/index.ts` 对 `render/use.ts` / `render/renderer`）——属 D-59 / D-67，由用户后续收尾。
+  6. **不得**新增任何转发导出；`render/index.tsx` 维持现状（用户已删除越界两行，现合规）。
+  - 旁注（仅报告、不修改）：`packages/client/src/index.ts:1` 的 `export * from '@motajs/client-base'` 亦违反 D-69，但在 `packages/`（D-33 只报告）。
+
 ### the agent's Discretion
 - D-07 的「影响」字段具体写法、「多余旧路径」是否需要进一步细分，交由 AI 在对账执行时按实际情况把握，但不得据此扩大范围。
 
