@@ -1,16 +1,15 @@
 import { logger } from '@motajs/common';
-import { Enemy as EnemyImpl } from './enemy';
 import {
     IEnemy,
     IEnemyComparer,
     IEnemyManager,
     IEnemyManagerSaveState,
-    IEnemyLegacyBridge,
     IReadonlyEnemy,
     SpecialCreation,
     IEnemySaveState
 } from './types';
-import { SaveCompression } from '@user/data-common';
+import { ITileStore, SaveCompression } from '@user/data-common';
+import { isNil } from 'lodash-es';
 
 export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
     /** 特殊属性注册表，code -> 创建函数 */
@@ -22,14 +21,8 @@ export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
     private readonly attributeRegistry: Map<keyof TEnemy, any> = new Map();
     /** 怪物模板表，code -> IEnemy */
     private readonly prefabByCode: Map<number, IEnemy<TEnemy>> = new Map();
-    /** 怪物模板表，id -> IEnemy */
-    private readonly prefabById: Map<string, IEnemy<TEnemy>> = new Map();
-    /** 旧样板怪物 id 到 code 的映射，用于 fromLegacyEnemy 快速查找已有模板 */
-    private readonly legacyIdToCode: Map<string, number> = new Map();
     /** 复用映射，reusedCode -> sourceCode */
     private readonly reuseByCode: Map<number, number> = new Map();
-    /** 复用映射，reusedId -> sourceId */
-    private readonly reuseById: Map<string, string> = new Map();
     /** 脏模板集合，存储发生了变化的模板 code */
     private readonly dirtySet: Set<number> = new Set();
     /** 参考快照，code -> IReadonlyEnemy，由 compareWith 提供 */
@@ -39,7 +32,7 @@ export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
     /** 是否已首次调用 compareWith */
     private hasReference: boolean = false;
 
-    constructor(readonly bridge: IEnemyLegacyBridge<TEnemy>) {}
+    constructor(private readonly tileStore: ITileStore) {}
 
     registerSpecial(code: number, cons: SpecialCreation<any, TEnemy>): void {
         this.specialRegistry.set(code, cons);
@@ -61,59 +54,16 @@ export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
         this.attributeRegistry.set(name, defaultValue);
     }
 
-    fromLegacyEnemy(code: number, enemy: Enemy): IEnemy<TEnemy> {
-        // 如果该旧样板怪物已经通过 addPrefabFromLegacy 注册为模板，直接克隆模板
-        const existingCode = this.legacyIdToCode.get(enemy.id);
-        if (existingCode) {
-            const prefab = this.prefabByCode.get(existingCode);
-            if (prefab) {
-                return prefab.clone();
-            }
-        }
-
-        return this.convertLegacyEnemy(code, enemy);
-    }
-
     /**
-     * 根据旧样板怪物与注册过的默认属性构造属性对象
-     * @param enemy 旧样板怪物对象
+     * 根据怪物的图块数字或 id 获取其模板
+     * @param token 怪物的图块数字或 id
+     * @returns
      */
-    private createAttributes(enemy: Enemy): TEnemy {
-        const attrs: Partial<TEnemy> = {};
-        for (const [name, defaultValue] of this.attributeRegistry) {
-            attrs[name] = structuredClone(defaultValue);
-        }
-
-        Object.assign(attrs, this.bridge.fromLegacyEnemy(enemy, attrs));
-
-        return attrs as TEnemy;
-    }
-
-    /**
-     * 真正执行旧样板怪物到新怪物对象的转换
-     * @param code 怪物图块数字
-     * @param enemy 旧样板怪物对象
-     */
-    private convertLegacyEnemy(code: number, enemy: Enemy): IEnemy<TEnemy> {
-        const attrs = this.createAttributes(enemy);
-        const result = new EnemyImpl<TEnemy>(
-            enemy.id,
-            code,
-            structuredClone(attrs)
-        );
-
-        // 转换特殊属性
-        if (enemy.special) {
-            for (const specialCode of enemy.special) {
-                const creator = this.specialRegistry.get(specialCode);
-                if (!creator) continue;
-                const special = creator(result);
-                special.fromLegacyEnemy(enemy);
-                result.addSpecial(special);
-            }
-        }
-
-        return result;
+    private internalGetPrefab(token: number | string) {
+        const num = this.tileStore.num(token);
+        if (isNil(num)) return null;
+        const sourceCode = this.reuseByCode.get(num) ?? num;
+        return this.prefabByCode.get(sourceCode) ?? null;
     }
 
     createEnemy(code: number): IEnemy<TEnemy> | null {
@@ -122,79 +72,39 @@ export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
         return prefab.clone();
     }
 
-    // 不变式：所有按 code/id 取模板的公开入口都必须经 internalGetPrefab 解析复用映射，
-    // 复用映射把同一模板的多个朝向 code 别名到来源模板，绕过解析会让这些 code 取不到模板
-    createEnemyById(id: string): IEnemy<TEnemy> | null {
-        const prefab = this.internalGetPrefab(id);
-        if (!prefab) return null;
-        return prefab.clone();
-    }
-
-    private internalGetPrefab(code: number | string) {
-        if (typeof code === 'number') {
-            const sourceCode = this.reuseByCode.get(code) ?? code;
-            return this.prefabByCode.get(sourceCode) ?? null;
-        } else {
-            const sourceId = this.reuseById.get(code) ?? code;
-            return this.prefabById.get(sourceId) ?? null;
-        }
-    }
-
     addPrefab(enemy: IEnemy<TEnemy>): void {
-        if (
-            this.prefabByCode.has(enemy.code) ||
-            this.prefabById.has(enemy.id)
-        ) {
+        if (this.prefabByCode.has(enemy.code)) {
             return;
         }
         const cloned = enemy.clone();
         this.prefabByCode.set(enemy.code, cloned);
-        this.prefabById.set(enemy.id, cloned);
         this.updateDirty(cloned.code, cloned);
     }
 
-    addPrefabFromLegacy(code: number, enemy: Enemy): void {
-        if (this.prefabByCode.has(code) || this.prefabById.has(enemy.id)) {
-            return;
-        }
-        const prefab = this.convertLegacyEnemy(code, enemy);
-        this.prefabByCode.set(code, prefab);
-        this.prefabById.set(prefab.id, prefab);
-        this.legacyIdToCode.set(enemy.id, code);
-        this.updateDirty(code, prefab);
+    getPrefab(token: number | string): IReadonlyEnemy<TEnemy> | null {
+        return this.internalGetPrefab(token);
     }
 
-    getPrefab(code: number): IReadonlyEnemy<TEnemy> | null {
-        const sourceCode = this.reuseByCode.get(code) ?? code;
-        return this.prefabByCode.get(sourceCode) ?? null;
-    }
-
-    getPrefabById(id: string): IReadonlyEnemy<TEnemy> | null {
-        const sourceId = this.reuseById.get(id) ?? id;
-        return this.prefabById.get(sourceId) ?? null;
-    }
-
-    deletePrefab(code: number | string): void {
-        const prefab = this.internalGetPrefab(code);
+    deletePrefab(token: number | string): void {
+        const prefab = this.internalGetPrefab(token);
         if (!prefab) return;
         this.prefabByCode.delete(prefab.code);
-        this.prefabById.delete(prefab.id);
     }
 
-    changePrefab(code: number | string, enemy: IEnemy<TEnemy>): void {
+    changePrefab(token: number | string, enemy: IEnemy<TEnemy>): void {
         // 先删除旧的模板（如果存在）
-        this.deletePrefab(code);
+        this.deletePrefab(token);
         // 再添加新的模板
         this.prefabByCode.set(enemy.code, enemy);
-        this.prefabById.set(enemy.id, enemy);
         this.updateDirty(enemy.code, enemy);
     }
 
-    reusePrefab(source: number | string, code: number, id: string): void {
+    reusePrefab(source: number | string, reuse: number | string): void {
         const prefab = this.internalGetPrefab(source);
         if (!prefab) return;
-        this.reuseByCode.set(code, prefab.code);
-        this.reuseById.set(id, prefab.id);
+        const num = this.tileStore.num(reuse);
+        if (isNil(num)) return;
+        this.reuseByCode.set(num, prefab.code);
     }
 
     compareWith(reference: ReadonlyMap<number, IReadonlyEnemy<TEnemy>>): void {
@@ -223,12 +133,8 @@ export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
         const prefabCode = prefab.code;
         if (result !== prefab) {
             this.prefabByCode.set(result.code, result);
-            this.prefabById.set(result.id, result);
             if (result.code !== prefabCode) {
                 this.prefabByCode.delete(prefabCode);
-            }
-            if (result.id !== prefab.id) {
-                this.prefabById.delete(prefab.id);
             }
         }
         this.updateDirty(result.code, result);
