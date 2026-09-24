@@ -2,7 +2,7 @@ import { Font } from '@motajs/render';
 import { defineComponent } from 'vue';
 import { DEFAULT_FONT, MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
 import { hook } from '@user/data-base';
-import { createElements } from './elements';
+import { createElements } from '@user/client-base';
 import { mainRenderer } from './renderer';
 import { createUI } from './ui';
 import { createAction } from './action';
@@ -42,8 +42,8 @@ export function createRender() {
     Font.setDefaults(DEFAULT_FONT);
 }
 
-export * from './components';
-export * from './elements';
+export * from '@user/client-base';
+export * from '@user/client-base';
 export * from './fx';
 export * from './ui';
 export * from './utils';

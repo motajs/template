@@ -386,18 +386,33 @@ importers:
 
   packages-user/client-base:
     dependencies:
+      '@motajs/animate':
+        specifier: workspace:*
+        version: link:../../packages/animate
       '@motajs/audio':
         specifier: workspace:*
         version: link:../../packages/audio
       '@motajs/client-base':
         specifier: workspace:*
         version: link:../../packages/client-base
+      '@motajs/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       '@motajs/render':
         specifier: workspace:*
         version: link:../../packages/render
+      '@motajs/render-vue':
+        specifier: workspace:*
+        version: link:../../packages/render-vue
+      '@motajs/system':
+        specifier: workspace:*
+        version: link:../../packages/system
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
+      '@user/data-common':
+        specifier: workspace:*
+        version: link:../data-common
       '@user/data-state':
         specifier: workspace:*
         version: link:../data-state

@@ -22,7 +22,7 @@ import {
     DYNAMIC_RESERVE,
     MAP_BLOCK_HEIGHT,
     MAP_BLOCK_WIDTH
-} from '../../shared';
+} from '../shared';
 import { BlockSplitter } from './block';
 import { clamp, isNil } from 'lodash-es';
 import { IMaterialFramedData } from '@user/client-base';

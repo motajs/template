@@ -28,6 +28,7 @@ import {
 } from '@motajs/render';
 import { hyper, linear, Transition } from 'mutate-animate';
 import { clamp } from 'lodash-es';
+// @ts-expect-error render/use.ts 按 D-54 留在实现层，本文件已移入系统层，按 D-68 暂以标注记录，不反向引用、不解耦
 import { transitioned } from '../use';
 import { SetupComponentOptions } from '@motajs/system';
 import { DefaultProps } from '@motajs/render-vue';

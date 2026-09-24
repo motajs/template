@@ -1,6 +1,7 @@
 import { ElementLocator, Font } from '@motajs/render';
 import { logger } from '@motajs/common';
 import { computed, defineComponent, onUnmounted, ref } from 'vue';
+// @ts-expect-error render/use.ts 按 D-54 留在实现层，本文件已移入系统层，按 D-68 暂以标注记录，不反向引用、不解耦
 import { transitioned } from '../use';
 import { hyper } from 'mutate-animate';
 import { debounce } from 'lodash-es';

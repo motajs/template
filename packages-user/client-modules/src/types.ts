@@ -1,5 +1,5 @@
 import { IClientSystem } from '@user/client-system';
-import { IMapExtensionManager, IMapRenderer } from './render/map';
+import { IMapExtensionManager, IMapRenderer } from '@user/client-base';
 
 export interface IClientCoreConfig {
     /** 渲染端数据配置文件路径，相对于 `src/content` */

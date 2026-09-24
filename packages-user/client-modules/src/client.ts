@@ -22,7 +22,7 @@ import {
     IMapExtensionManager,
     MapRenderer,
     MapExtensionManager
-} from './render/map';
+} from '@user/client-base';
 import {
     ExcitationDivider,
     ExcitationVariator,

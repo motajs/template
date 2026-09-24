@@ -6,7 +6,7 @@ import {
 } from '@motajs/render';
 // import { WeatherController } from '../weather';
 import { defineComponent, onUnmounted, reactive, ref } from 'vue';
-import { Textbox, TextboxProps, Tip } from '../components';
+import { Textbox, TextboxProps, Tip } from '@user/client-base';
 import { GameUI } from '@motajs/system';
 import {
     ENABLE_RIGHT_STATUS_BAR,
