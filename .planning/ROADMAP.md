@@ -227,7 +227,7 @@ Plans:
 
 **Wave 10** *(blocked on Wave 9 completion)*
 
-- [ ] 04-11-PLAN.md — 渲染端结构性重构·**第二步·移植实施（代码改动）**（D-58..D-68）：把 D-52 的 **39** 文件（`render/components` 13 / `render/elements` 5 / `render/map` 20 / `render/utils/layout.ts` 1）按 D-53 放进 `packages-user/client-base/src/{components,elements,map}/` 与 `client-base/src/layout/layout.ts`（新增 `layout/index.ts`，D-61）并**删除 `client-modules/src/render/` 下的原件**（MOVE）；D-58 新建 `client-base/src/shared/`（摘取被移 `map` 文件所需的 10 个常量，`client-modules/src/shared.ts` 保留）并把被移 `map` 文件的 shared 说明符改指 4 处（`'../shared'` × 3 / `'../../shared'` × 1）；D-63 `client-base/src/index.ts` 新增 `./components` / `./elements` / `./map` / `./layout` / `./shared` 五条桶导出，实现层消费者（`render/ui` 8 文件 11 处含 `toolbar.tsx` 两处深层导入、`fallback/ui.ts:2`、`render/index.tsx:5,45,46`、`client.ts:25`、`types.ts:2`）改指 `@user/client-base`；D-59 / D-68 的 `render/renderer`（3 处）与 `render/use.ts`（5 处）耦合、D-60 的 `render/utils/`（`index.ts:1` / `saves.ts:2`）断链共 **10** 处加带原因 `// @ts-expect-error`，**不反向引用、不解耦**；D-66 `client-base/package.json` 新增 5 条 `workspace:*` 依赖（`@motajs/animate` / `@motajs/common` / `@motajs/render-vue` / `@motajs/system` / `@user/data-common`）并执行 `pnpm i`；D-64 `?raw` 不处理、D-65 legacy 一律不管、D-62 命名一律不变；门禁 = 目标落位 / 移动已发生 / 桶导出 / 依赖与 lockfile / 消费者改指 / 反向引用零命中（`@user/client-modules` 于 `client-base`）/ `@ts-expect-error` 落点（10 新增 + 7 既有）/ 39 文件允许差异 / 实现层差异 / 范围与用户改动 / 无 `import type` / CRLF 共 12 道 + 计划文件范围门禁 + 人工复核（**不设 `check:type` / `build` / TS 诊断数类门禁**，D-68）；`autonomous: false`（Task 0 汇报关卡等待用户「可以执行」）；`REND-01` / `REND-02` 仍 Pending
+- [x] 04-11-PLAN.md — 渲染端结构性重构·**第二步·移植实施（代码改动）**（D-58..D-68）：把 D-52 的 **39** 文件（`render/components` 13 / `render/elements` 5 / `render/map` 20 / `render/utils/layout.ts` 1）按 D-53 放进 `packages-user/client-base/src/{components,elements,map}/` 与 `client-base/src/layout/layout.ts`（新增 `layout/index.ts`，D-61）并**删除 `client-modules/src/render/` 下的原件**（MOVE）；D-58 新建 `client-base/src/shared/`（摘取被移 `map` 文件所需的 10 个常量，`client-modules/src/shared.ts` 保留）并把被移 `map` 文件的 shared 说明符改指 4 处（`'../shared'` × 3 / `'../../shared'` × 1）；D-63 `client-base/src/index.ts` 新增 `./components` / `./elements` / `./map` / `./layout` / `./shared` 五条桶导出，实现层消费者（`render/ui` 8 文件 11 处含 `toolbar.tsx` 两处深层导入、`fallback/ui.ts:2`、`render/index.tsx:5,45,46`、`client.ts:25`、`types.ts:2`）改指 `@user/client-base`；D-59 / D-68 的 `render/renderer`（3 处）与 `render/use.ts`（5 处）耦合、D-60 的 `render/utils/`（`index.ts:1` / `saves.ts:2`）断链共 **10** 处加带原因 `// @ts-expect-error`，**不反向引用、不解耦**；D-66 `client-base/package.json` 新增 5 条 `workspace:*` 依赖（`@motajs/animate` / `@motajs/common` / `@motajs/render-vue` / `@motajs/system` / `@user/data-common`）并执行 `pnpm i`；D-64 `?raw` 不处理、D-65 legacy 一律不管、D-62 命名一律不变；门禁 = 目标落位 / 移动已发生 / 桶导出 / 依赖与 lockfile / 消费者改指 / 反向引用零命中（`@user/client-modules` 于 `client-base`）/ `@ts-expect-error` 落点（10 新增 + 7 既有）/ 39 文件允许差异 / 实现层差异 / 范围与用户改动 / 无 `import type` / CRLF 共 12 道 + 计划文件范围门禁 + 人工复核（**不设 `check:type` / `build` / TS 诊断数类门禁**，D-68）；`autonomous: false`（Task 0 汇报关卡等待用户「可以执行」）；`REND-01` / `REND-02` 仍 Pending
 
 **UI hint**: yes
 
@@ -422,7 +422,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
-| 4. 渲染适配与双布局 | 10/10 | In Progress|  |
+| 4. 渲染适配与双布局 | 11/11 | In Progress|  |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | 暂缓 (Deferred) | - |
