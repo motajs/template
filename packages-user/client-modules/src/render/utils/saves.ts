@@ -1,6 +1,5 @@
 import { compressToBase64, decompressFromBase64 } from 'lz-string';
-// @ts-expect-error components 已按 D-58..D-68 移植到 @user/client-base，本文件按 D-60 暂以标注记录断链
-import { getConfirm, waitbox } from '../components';
+import { getConfirm, waitbox } from '@user/client-base';
 import { IUIMountable } from '@motajs/system';
 import { SyncSaveFromServerResponse } from '@motajs/client-base';
 import { CENTER_LOC, POP_BOX_WIDTH } from '../../shared';
