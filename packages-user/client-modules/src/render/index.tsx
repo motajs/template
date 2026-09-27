@@ -42,13 +42,10 @@ export function createRender() {
     Font.setDefaults(DEFAULT_FONT);
 }
 
-export * from '@user/client-base';
-export * from '@user/client-base';
 export * from './fx';
 export * from './ui';
 export * from './utils';
 export * from './weather';
 export * from './renderer';
 export * from './scene';
-export * from '../shared';
 export * from './use';
