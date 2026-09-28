@@ -3,12 +3,6 @@ import { IMotaDataLoader, IMotaDataLoaderHooks } from '@user/data-state';
 import { IClientConfig } from '../common';
 
 export class RenderLoaderHooks implements IMotaDataLoaderHooks {
-    constructor() {}
-
-    awake(): void {}
-
-    destroy(): void {}
-
     onCoreConfigLoaded?(loader: IMotaDataLoader): Promise<void> {
         const client = loader.getConfig<IClientConfig>('client');
         if (!client) {

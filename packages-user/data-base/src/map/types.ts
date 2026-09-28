@@ -67,6 +67,11 @@ export interface ILayerEventView extends IReadonlyEventView {
     delete(priority: number): void;
 
     /**
+     * 将点事件重置为参考基准
+     */
+    reset(): void;
+
+    /**
      * 清空所有事件
      */
     clear(): void;
@@ -152,7 +157,7 @@ export interface IDynamicTile
         ISaveableContent<Readonly<IDynamicBlockSave>> {
     /** 该动态图块的移动器 */
     readonly mover: IObjectMover<IDynamicTile>;
-    /** 该动态图块所属的动态图层 */
+    /** 该动态图块所属的图层 */
     readonly layer: IMapLayer;
 
     /**
@@ -210,7 +215,7 @@ export interface IMapLayerHooks extends IHookBase {
      * @param width 地图宽度
      * @param height 地图高度
      */
-    onResize(width: number, height: number): void;
+    onResize?(width: number, height: number): void;
 
     /**
      * 当更新某个区域的图块时执行，对应于 `putMapData` 方法
@@ -219,7 +224,7 @@ export interface IMapLayerHooks extends IHookBase {
      * @param width 更新区域宽度
      * @param height 更新区域高度
      */
-    onUpdateArea(x: number, y: number, width: number, height: number): void;
+    onUpdateArea?(x: number, y: number, width: number, height: number): void;
 
     /**
      * 当更新某个点的图块时执行，如果设置的图块与原先一样，则不会触发此方法，对应于 `setBlock` 方法
@@ -227,14 +232,14 @@ export interface IMapLayerHooks extends IHookBase {
      * @param x 更新点横坐标
      * @param y 更新点纵坐标
      */
-    onUpdateBlock(block: number, x: number, y: number): void;
+    onUpdateBlock?(block: number, x: number, y: number): void;
 
     /**
      * 当开门时触发，返回一个 `Promise`，当相关动画执行完毕后兑现
      * @param x 门横坐标
      * @param y 门纵坐标
      */
-    onOpenDoor(x: number, y: number): Promise<void>;
+    onOpenDoor?(x: number, y: number): Promise<void>;
 
     /**
      * 当关门时触发，返回一个 `Promise`，当相关动画执行完毕后兑现
@@ -242,7 +247,7 @@ export interface IMapLayerHooks extends IHookBase {
      * @param x 门横坐标
      * @param y 门纵坐标
      */
-    onCloseDoor(num: number, x: number, y: number): Promise<void>;
+    onCloseDoor?(num: number, x: number, y: number): Promise<void>;
 
     /**
      * 当动态图块被创建时触发，包括从静态图块转换为动态图块
@@ -489,6 +494,9 @@ export interface IMapLayer
     /** 该图层使用的朝向绑定器 */
     readonly faceBinder: IRoleFaceBinder;
 
+    /** 图层别名，可以用于从 `IGameMap` 获取图层实例 */
+    readonly alias: string;
+
     /**
      * 设置图层的参考基准，存档时会根据参考基准进行必要的压缩处理，仅可调用一次，多次调用无效
      * @param data 图层的静态地图矩阵
@@ -638,8 +646,9 @@ export interface IGameMap
 
     /**
      * 添加图层，使用楼层预设的宽高
+     * @param alias 图层别名，用于获取图层实例
      */
-    addLayer(): IMapLayer;
+    addLayer(alias: string): IMapLayer;
 
     /**
      * 移除指定图层
@@ -652,25 +661,6 @@ export interface IGameMap
      * @param layer 图层对象
      */
     hasLayer(layer: IMapLayer): boolean;
-
-    /**
-     * 设置图层别名
-     * @param layer 图层对象
-     * @param alias 图层别名
-     */
-    setLayerAlias(layer: IMapLayer, alias: string): void;
-
-    /**
-     * 根据图层别名获取图层对象
-     * @param alias 图层别名
-     */
-    getLayerByAlias(alias: string): IMapLayer | null;
-
-    /**
-     * 获取图层对象的别名
-     * @param layer 图层对象
-     */
-    getLayerAlias(layer: IMapLayer): string | undefined;
 
     /**
      * 设置地图的参考基准，存档时会根据参考基准进行必要的压缩，仅可调用一次，多次调用无效

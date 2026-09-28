@@ -3,10 +3,6 @@ import { ICoreStateCoreConfig } from '../common';
 import { IMotaDataLoader, IMotaDataLoaderHooks } from './types';
 
 export class DefaultDataLoaderHook implements IMotaDataLoaderHooks {
-    awake(): void {}
-
-    destroy(): void {}
-
     onCoreConfigLoaded(loader: IMotaDataLoader): Promise<void> {
         const coreConfig = loader.getConfig<ICoreStateCoreConfig>('core');
         if (!coreConfig) {

@@ -23,13 +23,9 @@ export class LayerEventView implements ILayerEventView {
      * @param priority 事件优先级
      */
     private isEntryDirty(priority: number): boolean {
-        const storeHas = this.store.has(priority);
-        const referenceHas = this.reference.has(priority);
-        return (
-            storeHas !== referenceHas ||
-            (storeHas &&
-                this.store.get(priority) !== this.reference.get(priority))
-        );
+        const stored = this.store.get(priority);
+        const ref = this.reference.get(priority);
+        return stored !== ref;
     }
 
     /**
@@ -59,6 +55,14 @@ export class LayerEventView implements ILayerEventView {
         const before = this.isEntryDirty(priority);
         this.store.delete(priority);
         this.updateDirtyEntry(priority, before);
+    }
+
+    @shouldReplay('Reseting layer event view should be replayed.')
+    reset(): void {
+        this.store.clear();
+        for (const [priority, id] of this.reference) {
+            this.store.set(priority, id);
+        }
     }
 
     clear(): void {

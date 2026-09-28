@@ -47,8 +47,9 @@ export class MapLayer
     /** 坐标到动态图块集合的映射，外层 key = y，内层 key = x */
     private readonly tilePosMap: Map<number, Map<number, Set<IDynamicTile>>> =
         new Map();
-    /** 动态图块到其当前坐标的映射 */
-    private readonly posTileMap: Map<IDynamicTile, ITileLocator> = new Map();
+    /** 图层的所有已缓存位置的动态图块，目的是能够持有更新前的位置，从而在图块更新时能够更新内部存储 */
+    private readonly cachedDynamics: Map<IDynamicTile, ITileLocator> =
+        new Map();
     /** 图层脏标记 */
     private layerDirty: boolean = false;
     /** 图层参考基准，用于存档压缩对比 */
@@ -61,7 +62,8 @@ export class MapLayer
         array: Uint32Array,
         width: number,
         height: number,
-        public readonly map: IGameMap
+        readonly map: IGameMap,
+        readonly alias: string
     ) {
         super();
         this.state = map.state;
@@ -78,52 +80,31 @@ export class MapLayer
     }
 
     /**
-     * 将动态图块登记到指定坐标的索引表中
+     * 将动态图块登记到索引表中
      * @param tile 动态图块
-     * @param x 横坐标
-     * @param y 纵坐标
      */
-    private addTileToPosMap(tile: IDynamicTile, x: number, y: number): void {
-        let xMap = this.tilePosMap.get(y);
-        if (!xMap) {
-            xMap = new Map();
-            this.tilePosMap.set(y, xMap);
-        }
-        let set = xMap.get(x);
-        if (!set) {
-            set = new Set();
-            xMap.set(x, set);
-        }
+    private addDynamicToPosMap(tile: IDynamicTile): void {
+        const { x, y } = tile;
+        const xMap = this.tilePosMap.getOrInsertComputed(y, () => new Map());
+        const set = xMap.getOrInsertComputed(x, () => new Set());
         set.add(tile);
+        // 需要使用不同引用的 locator，避免与 tile 本身的 locator 同引用导致缓存位置失效
+        // 缓存位置的目的是能在动态图块位置更新时还持有旧位置，能够执行内部存储的移动
+        this.cachedDynamics.set(tile, { x, y });
     }
 
     /**
-     * 将动态图块从指定坐标的索引表中移除
+     * 将动态图块从指定缓存坐标的索引表中移除
      * @param tile 动态图块
      * @param x 横坐标
      * @param y 纵坐标
      */
-    private removeTileFromPosMap(
-        tile: IDynamicTile,
-        x: number,
-        y: number
-    ): void {
+    private removeDynamic(tile: IDynamicTile, x: number, y: number): void {
+        this.cachedDynamics.delete(tile);
         this.tilePosMap.get(y)?.get(x)?.delete(tile);
     }
 
-    /**
-     * 从两个内部映射中移除图块记录
-     * @param tile 动态图块
-     */
-    private removeTile(tile: IDynamicTile): void {
-        const pos = this.posTileMap.get(tile);
-        if (pos) {
-            this.removeTileFromPosMap(tile, pos.x, pos.y);
-        }
-        this.posTileMap.delete(tile);
-    }
-
-    //#region 点事件操作
+    //#region 事件操作
 
     /**
      * 将动态图块的事件同步回当前静态格点
@@ -431,8 +412,7 @@ export class MapLayer
                 tileEvent.set(priority, id);
             }
         }
-        this.addTileToPosMap(tile, x, y);
-        this.posTileMap.set(tile, { x, y });
+        this.addDynamicToPosMap(tile);
         this.forEachHook(hook => hook.onCreateDynamic?.(tile));
         return tile;
     }
@@ -463,25 +443,45 @@ export class MapLayer
         return tile;
     }
 
+    /**
+     * 真正执行动态到静态的转换
+     * @param tile 动态图块实例
+     * @param keepEvent 是否保持图块事件至静态图层
+     */
+    private toStatic(
+        tile: IDynamicTile,
+        keepEvent: boolean = true
+    ): IStaticTile | null {
+        this.setBlock(tile.num(), tile.x, tile.y);
+        const staticTile = this.getTile(tile.x, tile.y);
+        if (!staticTile) return null;
+        if (keepEvent) {
+            const staticEvent = staticTile.tileEvent();
+            const dynamicEvent = tile.tileEvent();
+            staticEvent.clear();
+            for (const [priority, id] of dynamicEvent.get()) {
+                staticEvent.set(priority, id);
+            }
+        }
+        this.removeDynamic(tile, tile.x, tile.y);
+        this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
+        return staticTile;
+    }
+
     @shouldReplay('Transfering dynamic tile to static should be replayed.')
     transferToStatic(
         tile: IDynamicTile,
         keepEvent: boolean = true
     ): IStaticTile | null {
-        const x = tile.x;
-        const y = tile.y;
-        if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
+        const { x, y } = tile;
+        if (!this.inMap(x, y)) {
             logger.warn(128, x.toString(), y.toString());
             return null;
         }
         if (this.getBlock(x, y) !== 0) {
             logger.warn(129, x.toString(), y.toString());
         }
-        this.setBlock(tile.num(), x, y);
-        this.syncStaticEvent(tile, keepEvent);
-        this.removeTile(tile);
-        this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
-        return this.getTile(x, y);
+        return this.toStatic(tile, keepEvent);
     }
 
     @shouldReplay('Transfering dynamic tile to static should be replayed.')
@@ -489,27 +489,17 @@ export class MapLayer
         tile: IDynamicTile,
         keepEvent: boolean = true
     ): IStaticTile | null {
-        const x = tile.x;
-        const y = tile.y;
-        if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
-            logger.warn(128, x.toString(), y.toString());
+        if (!this.inMap(tile.x, tile.y)) {
+            logger.warn(128, tile.x.toString(), tile.y.toString());
             return null;
         }
         if (this.getBlock(tile.x, tile.y) !== 0) return null;
-        this.setBlock(tile.num(), x, y);
-        this.syncStaticEvent(tile, keepEvent);
-        this.removeTile(tile);
-        this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
-        return this.getTile(x, y);
+        return this.toStatic(tile, keepEvent);
     }
 
     @shouldReplay('Deleting dynamic tile should be replayed.')
     async deleteDynamic(tile: IDynamicTile): Promise<void> {
-        if (!this.posTileMap.has(tile)) {
-            logger.warn(130);
-            return;
-        }
-        this.removeTile(tile);
+        this.removeDynamic(tile, tile.x, tile.y);
         const hooks = this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
         await Promise.all(hooks);
     }
@@ -519,7 +509,7 @@ export class MapLayer
     }
 
     iterateDynamicTiles(): Iterable<IDynamicTile> {
-        return this.posTileMap.keys();
+        return this.cachedDynamics.keys();
     }
 
     @shouldReplay('Setting map layer  block direction should be replayed.')
@@ -529,15 +519,15 @@ export class MapLayer
 
     @shouldReplay('Updating dynamic tile position should be replayed.')
     updateDynamicTile(tile: IDynamicTile): void {
-        const oldPos = this.posTileMap.get(tile);
+        const oldPos = this.cachedDynamics.get(tile);
         if (oldPos) {
-            this.removeTileFromPosMap(tile, oldPos.x, oldPos.y);
+            this.removeDynamic(tile, oldPos.x, oldPos.y);
             oldPos.x = tile.x;
             oldPos.y = tile.y;
-            this.addTileToPosMap(tile, tile.x, tile.y);
+            this.addDynamicToPosMap(tile);
         } else {
-            this.addTileToPosMap(tile, tile.x, tile.y);
-            this.posTileMap.set(tile, { x: tile.x, y: tile.y });
+            this.addDynamicToPosMap(tile);
+            this.cachedDynamics.set(tile, { x: tile.x, y: tile.y });
         }
         this.forEachHook(hook => hook.onUpdateDynamicPosition?.(tile));
     }
@@ -866,7 +856,7 @@ export class MapLayer
         const tiles = [...this.iterateDynamicTiles()];
         for (const tile of tiles) {
             this.syncStaticEvent(tile, false);
-            this.removeTile(tile);
+            this.removeDynamic(tile, tile.x, tile.y);
             this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
         }
     }

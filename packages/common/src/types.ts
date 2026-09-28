@@ -69,13 +69,13 @@ export interface IHookBase {
      * 加载此钩子对象
      * @param controller 钩子控制器对象
      */
-    awake(controller: IHookController<this>): void;
+    awake?(controller: IHookController<this>): void;
 
     /**
      * 摧毁此钩子对象
      * @param controller 钩子控制器对象
      */
-    destroy(controller: IHookController<this>): void;
+    destroy?(controller: IHookController<this>): void;
 }
 
 export interface IHookable<
