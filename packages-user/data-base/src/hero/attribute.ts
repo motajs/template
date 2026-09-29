@@ -199,10 +199,9 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         name: K,
         index: number
     ): IHeroModifier<THero[K]> | null {
-        const arr = this.modifier.get(name);
+        const arr = this.modifier.get(name) as IHeroModifier<THero[K]>[];
         if (!arr) return null;
-        const modifier = arr[index] as IHeroModifier<THero[K]> | undefined;
-        // 越界与负索引一律不删除任何修饰器，避免旧 splice 语义下误删末尾元素
+        const modifier = arr[index];
         if (!modifier) return null;
         // 删除簿记统一由 deleteModifier 承担，故需先取出修饰器再委托以保留返回值
         this.deleteModifier(name, modifier);

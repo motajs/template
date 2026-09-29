@@ -110,6 +110,12 @@ export interface ITileStore {
      * @param token 图块数字或 id
      */
     id(token: number | string): string | undefined;
+
+    /**
+     * 传入图块数字或 id，返回图块数字和 id
+     * @param token 图块数字或 id
+     */
+    identity(token: number | string): [number, string] | [];
 }
 
 //#endregion

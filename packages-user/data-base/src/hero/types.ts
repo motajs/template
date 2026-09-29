@@ -579,9 +579,7 @@ export interface IHeroItemSave {
 
 export interface IHeroItemsSave<THero> {
     /** 永久道具存档 */
-    readonly constants: readonly IHeroItemSave[];
-    /** 消耗道具存档 */
-    readonly consumables: readonly IHeroItemSave[];
+    readonly items: readonly IHeroItemSave[];
     /** 装备实例仓库存档 */
     readonly equipStore: IHeroEquipsStoreSave<THero>;
 }
@@ -593,6 +591,8 @@ export interface IHeroItemState<THero> {
     readonly num: number;
     /** 道具原始定义数据引用 */
     readonly raw: IItemRawData<THero>;
+    /** 是否为可消耗道具 */
+    readonly consumable: boolean;
     /** 道具持有数量 */
     count: number;
 }
@@ -608,13 +608,6 @@ export interface IHeroItems<THero>
      * @param count 要增加的数量，默认为 1
      */
     addItem(item: number | string, count?: number): void;
-
-    /**
-     * 勇士获取指定道具，当道具为 `Pick` 类型时会立刻执行其效果，否则使背包中的数量加一。
-     * 是 `addItem(item, 1)` 的另一种写法。
-     * @param item 带锯图块数字或 id
-     */
-    getItem(item: number | string): void;
 
     /**
      * 获取指定道具的状态
@@ -640,12 +633,6 @@ export interface IHeroItems<THero>
 
 //#region 勇士装备
 
-/**
- * 装备实例的存档。装备自身的数值与百分比加成是加成的唯一事实源，
- * 存档持久化的正是这两个表：无压缩档全量存储、压缩档只存与原始定义的差异；
- * 读档也由它们重建装备修饰器。故运行时要改变装备加成，必须改装备自身属性，
- * 而不是修改它的修饰器
- */
 export interface IEquipmentStateSave<THero> {
     /** 装备实例 uid */
     readonly uid: number;
@@ -914,10 +901,6 @@ export interface IHeroStateSave<THero> {
     readonly attribute: IHeroAttributeSave<THero>;
     /** 勇士当前位置 */
     readonly location: IHeroLocationSave;
-    /** 勇士渲染状态 */
-    readonly rendering: IHeroRenderingSave;
-    /** 勇士当前的跟随者 */
-    readonly followers: readonly IHeroFollowerSave[];
     /** 勇士道具背包状态 */
     readonly items: IHeroItemsSave<THero>;
     /** 勇士装备状态 */
@@ -932,10 +915,6 @@ export interface IHeroState<THero>
     readonly location: IHeroLocation;
     /** 勇士属性对象 */
     readonly attribute: IReadonlyHeroAttribute<THero>;
-    /** 勇士跟随者对象 */
-    readonly followers: IHeroFollowersController;
-    /** 勇士的渲染对象，包含一些必要渲染信息，存在于数据端，并非渲染端 */
-    readonly rendering: IHeroRendering;
     /** 勇士道具背包 */
     readonly items: IHeroItems<THero>;
     /** 勇士装备系统 */
