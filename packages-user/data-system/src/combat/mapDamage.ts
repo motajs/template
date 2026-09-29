@@ -102,7 +102,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     }
 
     addMapDamage(locator: ITileLocator, info: IMapDamageInfo): void {
-        const index = this.indexer.locaterToIndex(locator);
+        const index = this.indexer.locatorToIndex(locator);
         const store = this.sourcelessDamage.getOrInsertComputed(index, () => ({
             affectedBy: new Set(),
             damages: new Set()
@@ -112,7 +112,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     }
 
     deleteMapDamage(locator: ITileLocator, info: IMapDamageInfo): void {
-        const index = this.indexer.locaterToIndex(locator);
+        const index = this.indexer.locatorToIndex(locator);
         const current = this.sourcelessDamage.get(index);
         if (!current) return;
         current.damages.delete(info);
@@ -132,7 +132,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     }
 
     markDirty(locator: ITileLocator): void {
-        this.markDirtyIndex(this.indexer.locaterToIndex(locator));
+        this.markDirtyIndex(this.indexer.locatorToIndex(locator));
     }
 
     markEnemyDirty(view: IEnemyView<TEnemy>): void {
@@ -179,7 +179,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
             return null;
         }
 
-        const index = this.indexer.locaterToIndex(locator);
+        const index = this.indexer.locatorToIndex(locator);
         if (this.dirtyIndexes.has(index)) {
             this.refreshIndex(index);
         }
@@ -221,7 +221,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     getSeparatedDamage(
         locator: ITileLocator
     ): Iterable<Readonly<IMapDamageInfo>> {
-        const index = this.indexer.locaterToIndex(locator);
+        const index = this.indexer.locatorToIndex(locator);
         if (this.dirtyIndexes.has(index)) {
             this.refreshIndex(index);
         }
@@ -319,7 +319,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
             const param = viewItem.getRangeParam();
             range.bindHost(this.context);
             for (const index of range.iterateLoc(param)) {
-                const loc = this.indexer.indexToLocator(index);
+                const loc = this.indexer.locator(index);
                 const point = this.sourcedDamage.getOrInsertComputed(
                     index,
                     () => ({
@@ -383,7 +383,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
         this.dirtyIndexes.delete(index);
         this.reducedCache.delete(index);
 
-        const locator = this.indexer.indexToLocator(index);
+        const locator = this.indexer.locator(index);
         const point = this.sourcedDamage.get(index);
         if (!point) return;
 

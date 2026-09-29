@@ -222,7 +222,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     getEnemyLocator(enemy: IEnemy<TEnemy>): Readonly<ITileLocator> | null {
         const index = this.locatorEnemyMap.get(enemy);
         if (index === undefined) return null;
-        return this.indexer.indexToLocator(index);
+        return this.indexer.locator(index);
     }
 
     getEnemyLocatorByView(
@@ -230,16 +230,16 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     ): Readonly<ITileLocator> | null {
         const index = this.locatorViewMap.get(view);
         if (index === undefined) return null;
-        return this.indexer.indexToLocator(index);
+        return this.indexer.locator(index);
     }
 
     getEnemyByLocator(locator: ITileLocator): IEnemyView<TEnemy> | null {
-        const index = this.indexer.locToIndex(locator.x, locator.y);
+        const index = this.indexer.index(locator.x, locator.y);
         return this.enemyViewMap.get(index) ?? null;
     }
 
     getEnemyByLoc(x: number, y: number): IEnemyView<TEnemy> | null {
-        const index = this.indexer.locToIndex(x, y);
+        const index = this.indexer.index(x, y);
         return this.enemyViewMap.get(index) ?? null;
     }
 
@@ -278,7 +278,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     }
 
     setEnemyAt(locator: ITileLocator, enemy: IEnemy<TEnemy>): void {
-        const index = this.indexer.locToIndex(locator.x, locator.y);
+        const index = this.indexer.index(locator.x, locator.y);
         this.deleteEnemyAt(index);
 
         const view = new EnemyView<TEnemy>(enemy, this);
@@ -299,7 +299,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     }
 
     deleteEnemy(locator: ITileLocator): void {
-        const index = this.indexer.locToIndex(locator.x, locator.y);
+        const index = this.indexer.index(locator.x, locator.y);
         this.deleteEnemyAt(index);
     }
 
@@ -319,7 +319,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
         for (const index of matched) {
             const view = viewMap.get(index);
             if (view) {
-                const locator = this.indexer.indexToLocator(index);
+                const locator = this.indexer.locator(index);
                 yield [locator, view];
             }
         }
@@ -334,7 +334,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
 
     *iterateEnemy(): Iterable<[ITileLocator, IEnemyView<TEnemy>]> {
         for (const [index, view] of this.enemyViewMap) {
-            const locator = this.indexer.indexToLocator(index);
+            const locator = this.indexer.locator(index);
             yield [locator, view];
         }
     }
@@ -514,7 +514,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
         const modifier = effect.for(this);
 
         for (const [index, view] of this.enemyViewMap) {
-            const locator = this.indexer.indexToLocator(index);
+            const locator = this.indexer.locator(index);
             const enemy = view.getComputingEnemy();
             const handler = this.createHandler(enemy, locator);
 
@@ -568,7 +568,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
 
         for (const [index, view] of this.enemyViewMap) {
             const enemy = view.getComputingEnemy();
-            const locator = this.indexer.indexToLocator(index);
+            const locator = this.indexer.locator(index);
             const handler = this.createHandler(enemy, locator);
 
             for (const special of enemy.iterateSpecials()) {
@@ -647,7 +647,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     private buildupQuery(): void {
         for (const [index, view] of this.enemyViewMap) {
             const enemy = view.getComputingEnemy();
-            const locator = this.indexer.indexToLocator(index);
+            const locator = this.indexer.locator(index);
             const handler = this.createHandler(enemy, locator);
             let queried = false;
             const query = () => {
@@ -673,7 +673,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     private buildupFinal(): void {
         for (const [index, view] of this.enemyViewMap) {
             const enemy = view.getComputingEnemy();
-            const locator = this.indexer.indexToLocator(index);
+            const locator = this.indexer.locator(index);
             const handler = this.createHandler(enemy, locator);
             for (const effect of this.finalEffects) {
                 effect.apply(handler);

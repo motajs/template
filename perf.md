@@ -1,5 +1,16 @@
 # `Map.getOrInsert` vs `Map.getOrInsertComputed`
 
+所有需要默认值的 Map get 操作，全部使用 `Map.getOrInsert` 或 `Map.getOrInsertComputed`，不得自己写类似下面这种的代码：
+
+```ts
+let list = map.get(key);
+if (!list) {
+    list = [];
+    map.set(key, list);
+}
+return list;
+```
+
 - 使用 `Map.getOrInsert`: 数字、短字符串（约 100 以内）、布尔值、空数组、空对象、对象引用
 - 使用 `Map.getOrInsertComputed`: 长字符串、空 Set、空 Map、自定义类构建出的实例（new Class()）、有内容的数组、有内容的对象、有内容的 Set、有内容的 Map。
 - 使用哪个都可以: 函数

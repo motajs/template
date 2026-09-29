@@ -10,6 +10,10 @@ export class LayerEventView implements ILayerEventView {
     /** 当前存储与参考基准不一致的条目数量 */
     private dirtyEntries: number = 0;
 
+    [Symbol.iterator]() {
+        return this.store.entries();
+    }
+
     get(): ReadonlyMap<number, string> {
         return this.store;
     }

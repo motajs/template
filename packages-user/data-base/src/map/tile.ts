@@ -13,6 +13,7 @@ import {
     ILayerEventView,
     IMapBlockSaveBase,
     IMapLayer,
+    IReadonlyTileBase,
     ITileBase
 } from './types';
 
@@ -79,6 +80,14 @@ export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
 
     pointEvent(): ILayerEventView | null {
         return this.layer.event(this.locator.x, this.locator.y);
+    }
+
+    syncTileEvent(origin: IReadonlyTileBase): void {
+        const ev = this.tileEvents;
+        ev.clear();
+        for (const [priority, id] of origin.tileEvent()) {
+            ev.set(priority, id);
+        }
     }
 
     abstract saveState(): Readonly<TSave>;

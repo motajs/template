@@ -59,8 +59,7 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
 
     @shouldReplay('Adding game map layer should be replayed.')
     addLayer(alias: string): IMapLayer {
-        const array = new Uint32Array(this.width * this.height);
-        const layer = new MapLayer(array, this.width, this.height, this, alias);
+        const layer = new MapLayer(this.width, this.height, this, alias);
         this.layerList.add(layer);
         this.forEachHook(hook => {
             hook.onUpdateLayer?.(this.layerList);

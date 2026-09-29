@@ -326,9 +326,7 @@ function createFixture(): MapDamageFixture {
         markDirty: () => {}
     };
     enemies.set(view, locator);
-    const damageView = new FakeView(7, [
-        indexer.locToIndex(locator.x, locator.y)
-    ]);
+    const damageView = new FakeView(7, [indexer.index(locator.x, locator.y)]);
     const context = {
         state,
         indexer,
@@ -611,11 +609,11 @@ describe('MapDamage sourced conversion and reduction', () => {
     // 验证伤害范围收缩后跌出范围的坐标不再保留旧缓存（CR-02 范围收缩）
     it('drops stale damage on indexes that fall out of a shrunken range', () => {
         const fixture = createFixture();
-        const indexA = fixture.context.indexer.locToIndex(
+        const indexA = fixture.context.indexer.index(
             fixture.locator.x,
             fixture.locator.y
         );
-        const indexB = fixture.context.indexer.locToIndex(2, 1);
+        const indexB = fixture.context.indexer.index(2, 1);
         const locatorB: ITileLocator = { x: 2, y: 1 };
         const view = new FakeView(7, [indexA, indexB]);
         fixture.damage.useReducer(fixture.reducer);
@@ -674,7 +672,7 @@ describe('MapDamage multi-source stacking', () => {
     // 验证同一点上两条有来源伤害会分别保留并求和合并
     it('stacks two sourced damages at the same point', () => {
         const fixture = createFixture();
-        const index = fixture.context.indexer.locToIndex(
+        const index = fixture.context.indexer.index(
             fixture.locator.x,
             fixture.locator.y
         );
@@ -717,7 +715,7 @@ describe('MapDamage multi-source stacking', () => {
     // 验证多来源（有来源与无来源混合）叠加后伤害求和、类型取最大、额外标记取并集
     it('merges mixed sourced and sourceless damages into one reduced result', () => {
         const fixture = createFixture();
-        const index = fixture.context.indexer.locToIndex(
+        const index = fixture.context.indexer.index(
             fixture.locator.x,
             fixture.locator.y
         );

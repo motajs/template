@@ -89,7 +89,7 @@ export class MapGraphBuilder implements IMapGraphBuilder {
         const terminals: Set<number> = new Set();
         const adjacency: Map<number, IPathGraphEdge[]> = new Map();
         const mapped: Set<number> = new Set();
-        const startIndex = indexer.locaterToIndex(start);
+        const startIndex = indexer.locatorToIndex(start);
         adjacency.set(startIndex, []);
 
         // 以起始位置为中心 BFS，仅沿可通行有向边扩展，不可达区域不入图
@@ -97,7 +97,7 @@ export class MapGraphBuilder implements IMapGraphBuilder {
         let head = 0;
         while (head < queue.length) {
             const { x, y } = queue[head++]!;
-            const index = indexer.locToIndex(x, y);
+            const index = indexer.index(x, y);
             const edges: IPathGraphEdge[] = [];
             for (const [dir, desc] of face.mapMovement()) {
                 // 如果连接原地，那么应该忽略，避免陷入死循环
@@ -106,7 +106,7 @@ export class MapGraphBuilder implements IMapGraphBuilder {
                 const ny = y + desc.y;
                 if (!layer.inMap(nx, ny)) continue;
 
-                const nextIndex = indexer.locToIndex(nx, ny);
+                const nextIndex = indexer.index(nx, ny);
                 const next: ITileLocator = { x: nx, y: ny };
                 const handler: IPassCheckHandler = {
                     currLoc: { x, y },
@@ -132,7 +132,7 @@ export class MapGraphBuilder implements IMapGraphBuilder {
 
         const nodes: Map<number, IPathGraphNode> = new Map();
         for (const index of mapped) {
-            const { x, y } = indexer.indexToLocator(index);
+            const { x, y } = indexer.locator(index);
             const block = layer.getLocationData(x, y)!;
             nodes.set(index, {
                 x,

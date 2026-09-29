@@ -35,6 +35,8 @@ export interface IDynamicBlockSave extends IMapBlockSaveBase {
 }
 
 export interface IReadonlyEventView {
+    [Symbol.iterator](): Iterator<[priority: number, event: string]>;
+
     /**
      * 获取所有的事件
      * @returns 键表示优先级，值表示事件在 `IGameEventStore` 的索引
@@ -131,6 +133,12 @@ export interface ITileBase extends IReadonlyTileBase {
      * 获取此图块所在位置的点事件
      */
     pointEvent(): ILayerEventView | null;
+
+    /**
+     * 复制某个图块的图块事件至当前图块
+     * @param origin 要从哪个图块复制
+     */
+    syncTileEvent(origin: IReadonlyTileBase): void;
 }
 
 export interface IStaticTile
@@ -359,7 +367,7 @@ interface ILayerStatic {
     setStaticDirection(x: number, y: number, direction: FaceDirection): number;
 
     /**
-     * 迭代所有的图块
+     * 迭代所有的非空图块。非空定义为此格图块数字不为 0，因此哪怕有事件也会视为空图块
      */
     iterateBlocks(): Iterable<ILayerLocation>;
 }
@@ -424,14 +432,6 @@ interface ILayerDynamic {
     iterateDynamicTiles(): Iterable<IDynamicTile>;
 
     /**
-     * 设置动态图块的朝向
-     * @param tile 要设置朝向的动态图块
-     * @param direction 目标朝向
-     * @returns 更新朝向后该动态图块的图块数字
-     */
-    setDynamicDirection(tile: IDynamicTile, direction: FaceDirection): number;
-
-    /**
      * 更新动态图块位置，用于在图块发生移动时更新内部存储，一般不需要手动调用
      * @param tile 动态图块
      */
@@ -477,6 +477,9 @@ export interface IMapLayer
         ILayerStatic,
         ILayerDynamic,
         ISaveableContent<IMapLayerSave> {
+    /** 地图使用的坐标索引器 */
+    readonly indexer: ILocationHelper;
+
     /** 地图宽度 */
     readonly width: number;
     /** 地图高度 */
