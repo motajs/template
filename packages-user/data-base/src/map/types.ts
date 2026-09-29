@@ -834,7 +834,7 @@ export interface IMapState
      * 那么会自动取消激活当前分区，然后激活新进入的分区。此函数一般不需要手动调用。
      * @param id 楼层 id
      */
-    notifyEnterFloor(id: string): void;
+    autoActivateFloor(id: string): void;
 }
 
 //#endregion

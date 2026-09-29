@@ -41,16 +41,14 @@ export class StaticTile
     }
 
     saveState(): Readonly<IStaticBlockSave> {
-        let save: IStaticBlockSave;
         const eventView = this.tileEvent();
         if (eventView.dirty()) {
-            save = {
+            return {
                 events: new Map(eventView.get())
             };
         } else {
-            save = {};
+            return {};
         }
-        return save;
     }
 
     loadState(save: Readonly<IStaticBlockSave>): void {

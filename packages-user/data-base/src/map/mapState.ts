@@ -4,7 +4,6 @@ import {
     SaveCompression,
     shouldReplay
 } from '@user/data-common';
-import { ITileStore } from '@user/data-common';
 import {
     IGameMap,
     IGameMapSave,
@@ -34,10 +33,7 @@ export class MapState implements IMapState {
     /** 自动分区激活器开关 */
     private autoActivitorEnabled: boolean = false;
 
-    constructor(
-        private readonly tileStore: ITileStore,
-        public readonly state: IDataCommon
-    ) {}
+    constructor(readonly state: IDataCommon) {}
 
     //#region 楼层管理
 
@@ -72,11 +68,10 @@ export class MapState implements IMapState {
         const state = this.createMap(raw.floorId, raw.width, height);
         for (const [zIndex, map] of entries) {
             const z = Number(zIndex);
-            const layer = state.addLayer();
             const alias = raw.layerAlias[z];
+            const layer = state.addLayer(alias);
             layer.setMapRef(new Uint32Array(map));
             layer.setZIndex(z);
-            state.setLayerAlias(layer, alias);
 
             // 设置坐标点事件
             const events = raw.events[z];
@@ -106,8 +101,7 @@ export class MapState implements IMapState {
         } else {
             this.maps.push(id);
         }
-        const tile = this.tileStore;
-        const state = new GameMap(this.state, tile, id, width, height);
+        const state = new GameMap(this.state, id, width, height);
         // 若已设置参考基准，新楼层直接视为全脏
         if (this.compared) {
             state.markDirty(true);
@@ -162,7 +156,7 @@ export class MapState implements IMapState {
         this.autoActivitorEnabled = enable;
     }
 
-    notifyEnterFloor(id: string): void {
+    autoActivateFloor(id: string): void {
         if (!this.autoActivitorEnabled) return;
         const idx = this.maps.indexOf(id);
         if (idx === -1) return;

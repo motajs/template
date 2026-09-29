@@ -318,19 +318,19 @@ describe('MapState activation and areas', () => {
             new Set([[{ start: 0, end: 0 }], [{ start: 1, end: 1 }]])
         );
 
-        mapState.notifyEnterFloor('A');
+        mapState.autoActivateFloor('A');
         expect(mapState.isMapActive('A')).toBe(false);
 
         mapState.useAutoActivitor(true);
-        mapState.notifyEnterFloor('A');
+        mapState.autoActivateFloor('A');
         expect(mapState.isMapActive('A')).toBe(true);
 
-        mapState.notifyEnterFloor('B');
+        mapState.autoActivateFloor('B');
         expect(mapState.isMapActive('A')).toBe(false);
         expect(mapState.isMapActive('B')).toBe(true);
 
         mapState.useAutoActivitor(false);
-        mapState.notifyEnterFloor('A');
+        mapState.autoActivateFloor('A');
         expect(mapState.isMapActive('A')).toBe(false);
     });
 });
