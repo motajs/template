@@ -232,7 +232,7 @@ Plans:
 
 **Wave 11** *(blocked on Wave 10 completion)*
 
-- [ ] 04-12-PLAN.md — 04-11 落地修正·**桶导出边界 + 消费者直连 + `shared` 单文件（代码改动）**（D-69 / D-70）：按 **D-69（硬约束：barrel 只允许 `export * from './<同目录项>'`，消费者必须直连 `@user/client-base`、不得经 barrel 转发）** 落地 D-70 的 6 条修正——① `client-modules/src/render/utils/index.ts` **删除**指向 `./layout` 的越界转发 `export *` 与其 `@ts-expect-error`（保留 `./saves` / `./use`）；② `render/ui/save.tsx` 拆分 `../utils` 导入（`adjustGrid` / `IGridLayoutData` → `@user/client-base`，`getSave` / `SaveData` 仍留 `../utils`）、`render/ui/title.tsx` 的 `adjustCover` → `@user/client-base`；③ `render/utils/saves.ts` 的 `getConfirm` / `waitbox` → `@user/client-base` 并删除其 `@ts-expect-error`；④ `client-base/src/shared/{shared.ts,index.ts}` 折成单文件 `client-base/src/shared.ts` 并删除 `shared/` 目录（`client-base/src/index.ts` 的 `./shared` 与 `map/*` 的 4 处相对说明符**一字不改**、仍解析）；⑤ **逐字保留** `client-base/src/{components/{choices,input,misc,scroll,textboxTyper,tip}.tsx,elements/index.ts}` 内 **8** 处引用 `render/use.ts` / `render/renderer` 的架构耦合 `@ts-expect-error`（D-59 / D-67，留待用户收尾；`textboxTyper.ts` 另有 1 处既有 `无法推导` 标注同属保留，故这 7 文件合计 9 处）；⑥ **零新增转发导出**、`client-modules/src/render/index.tsx` 维持现状；门禁 = 桶边界（8 个 in-scope barrel 的 `export * from` 全为 `./` 前缀 + `render/utils/index.ts` 不再转发 `./layout`）/ F1..F4 收口自检 / F5 的 8 处标注逐字保留 + porcelain 零命中 / 范围与用户改动 / CRLF + 人工复核（**不设 `check:type` / `build` / TS 诊断数类门禁**，D-68 的延续）；`autonomous: false`（Task 0 汇报关卡等待用户「可以执行」）；无依赖变更、不执行 `pnpm i`；本步不引入任何新命名；`REND-01` / `REND-02` 仍 Pending
+- [x] 04-12-PLAN.md — 04-11 落地修正·**桶导出边界 + 消费者直连 + `shared` 单文件（代码改动）**（D-69 / D-70）：按 **D-69（硬约束：barrel 只允许 `export * from './<同目录项>'`，消费者必须直连 `@user/client-base`、不得经 barrel 转发）** 落地 D-70 的 6 条修正——① `client-modules/src/render/utils/index.ts` **删除**指向 `./layout` 的越界转发 `export *` 与其 `@ts-expect-error`（保留 `./saves` / `./use`）；② `render/ui/save.tsx` 拆分 `../utils` 导入（`adjustGrid` / `IGridLayoutData` → `@user/client-base`，`getSave` / `SaveData` 仍留 `../utils`）、`render/ui/title.tsx` 的 `adjustCover` → `@user/client-base`；③ `render/utils/saves.ts` 的 `getConfirm` / `waitbox` → `@user/client-base` 并删除其 `@ts-expect-error`；④ `client-base/src/shared/{shared.ts,index.ts}` 折成单文件 `client-base/src/shared.ts` 并删除 `shared/` 目录（`client-base/src/index.ts` 的 `./shared` 与 `map/*` 的 4 处相对说明符**一字不改**、仍解析）；⑤ **逐字保留** `client-base/src/{components/{choices,input,misc,scroll,textboxTyper,tip}.tsx,elements/index.ts}` 内 **8** 处引用 `render/use.ts` / `render/renderer` 的架构耦合 `@ts-expect-error`（D-59 / D-67，留待用户收尾；`textboxTyper.ts` 另有 1 处既有 `无法推导` 标注同属保留，故这 7 文件合计 9 处）；⑥ **零新增转发导出**、`client-modules/src/render/index.tsx` 维持现状；门禁 = 桶边界（8 个 in-scope barrel 的 `export * from` 全为 `./` 前缀 + `render/utils/index.ts` 不再转发 `./layout`）/ F1..F4 收口自检 / F5 的 8 处标注逐字保留 + porcelain 零命中 / 范围与用户改动 / CRLF + 人工复核（**不设 `check:type` / `build` / TS 诊断数类门禁**，D-68 的延续）；`autonomous: false`（Task 0 汇报关卡等待用户「可以执行」）；无依赖变更、不执行 `pnpm i`；本步不引入任何新命名；`REND-01` / `REND-02` 仍 Pending
 
 **UI hint**: yes
 
@@ -427,7 +427,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
-| 4. 渲染适配与双布局 | 11/11 | In Progress|  |
+| 4. 渲染适配与双布局 | 12/12 | In Progress|  |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | 暂缓 (Deferred) | - |
