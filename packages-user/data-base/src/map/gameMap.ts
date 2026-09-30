@@ -66,7 +66,6 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
         });
         const controller = layer.addHook(new StateMapLayerHook(this, layer));
         this.layerHookMap.set(layer, controller);
-        controller.load();
         this.aliasLayerMap.set(alias, layer);
         return layer;
     }

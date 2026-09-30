@@ -84,9 +84,7 @@ export class MapHeroRenderer implements IMapHeroRenderer {
     ) {
         this.dir4 = faceManager.get<FaceDirection>(FaceGroup.Dir4)!;
         this.locationController = hero.addHook(new MapHeroLocationHook(this));
-        this.locationController.load();
         this.moverController = hero.mover.addHook(new MapHeroMoverHook(this));
-        this.moverController.load();
         const moving = this.addHeroMoving(renderer, layer, hero);
         const heroEntity: IHeroRenderEntity = {
             block: moving,

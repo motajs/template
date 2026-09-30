@@ -1,15 +1,27 @@
-import { logger } from '@motajs/common';
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    logger
+} from '@motajs/common';
 import { SaveCompression, shouldReplay } from '@user/data-common';
 import {
     IHeroAttribute,
     IHeroAttributeCloneOption,
+    IHeroAttributeHooks,
     IHeroAttributeSave,
     IHeroModifier,
     IModifierStateSave
 } from './types';
 import { isNil } from 'lodash-es';
 
-export class HeroAttribute<THero> implements IHeroAttribute<THero> {
+export class HeroAttribute<THero>
+    extends Hookable<IHeroAttributeHooks<THero>>
+    implements IHeroAttribute<THero>
+{
+    /** 当前的勇士基础属性 */
+    private attribute: THero;
+
     /** 当前勇士属性修饰器 */
     private readonly modifier: Map<keyof THero, IHeroModifier[]> = new Map();
     /** 当前每个修饰器对应的属性名称 */
@@ -24,13 +36,17 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
     /** 当前勇士最终属性 */
     private readonly finalAttribute: THero;
 
-    /**
-     * @param attribute 当前勇士的基础属性
-     */
-    constructor(private attribute: THero) {
+    constructor(attribute: THero) {
+        super();
         // 克隆入参，避免调用方传入的共享基础属性对象被本实例改写
         this.attribute = structuredClone(attribute);
         this.finalAttribute = structuredClone(attribute);
+    }
+
+    protected createController(
+        hook: Partial<IHeroAttributeHooks<THero>>
+    ): IHookController<IHeroAttributeHooks<THero>> {
+        return new HookController(this, hook);
     }
 
     //#region 属性计算
@@ -70,6 +86,7 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         }
 
         this.finalAttribute[name] = value;
+        this.forEachHook(hook => hook.onUpdateAttribute?.(name, value));
     }
 
     *catchCalculateProgress<K extends keyof THero>(name: K) {

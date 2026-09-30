@@ -54,11 +54,6 @@ export interface IHookController<H extends IHookBase = IHookBase> {
     readonly hook: Partial<H>;
 
     /**
-     * 加载此控制器对应的钩子对象
-     */
-    load(): void;
-
-    /**
      * 卸载此控制器对应的钩子对象，之后此钩子将不会再被触发
      */
     unload(): void;

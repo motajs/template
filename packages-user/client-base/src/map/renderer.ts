@@ -432,7 +432,6 @@ export class MapRenderer
             if (this.layerHooks.has(layer)) continue;
             // prettier-ignore
             const controller = layer.addHook(new RendererLayerHook(this, layer));
-            controller.load();
             this.layerHooks.set(layer, controller);
         }
     }
@@ -452,7 +451,6 @@ export class MapRenderer
         this.map = map;
         this.syncLayerHooks();
         this.mapHook = map.addHook(new RendererLayerStateHook(this));
-        this.mapHook.load();
         this.sortLayer();
         this.resizeLayer();
         this.layerCount = map.layerList.size;

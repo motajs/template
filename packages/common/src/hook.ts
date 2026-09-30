@@ -27,6 +27,8 @@ export abstract class Hookable<
         this.hookMap.set(hook, obj);
         this.controllerMap.set(controller, obj);
         this.hookList.add(obj);
+        hook.awake?.(obj.controller);
+        this.loadedList.add(obj);
         return controller;
     }
 
@@ -74,10 +76,6 @@ export class HookController<H extends IHookBase> implements IHookController<H> {
         readonly hookable: IHookable<H, IHookController<H>>,
         readonly hook: Partial<H>
     ) {}
-
-    load(): void {
-        this.hookable.loadHook(this.hook);
-    }
 
     unload(): void {
         this.hookable.removeHookByController(this);

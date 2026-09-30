@@ -20,7 +20,6 @@ export class MapDoorRenderer implements IMapDoorRenderer {
         readonly layer: IMapLayer
     ) {
         this.controller = layer.addHook(new MapDoorHook(this));
-        this.controller.load();
     }
 
     setAnimateInterval(interval: number): void {

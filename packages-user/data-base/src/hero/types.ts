@@ -92,7 +92,18 @@ export interface IHeroAttributeCloneOption {
     cloneModifier: boolean;
 }
 
-export interface IReadonlyHeroAttribute<THero> {
+export interface IHeroAttributeHooks<THero> extends IHookBase {
+    /**
+     * 当勇士的某个属性发生变化时触发
+     * @param name 属性名称
+     * @param value 属性值
+     */
+    onUpdateAttribute?<K extends keyof THero>(name: K, value: THero[K]): void;
+}
+
+export interface IReadonlyHeroAttribute<THero> extends IHookable<
+    IHeroAttributeHooks<THero>
+> {
     /**
      * 获取勇士的基础属性，即未经过任何 Buff 或装备等加成的属性
      * @param name 属性名称
