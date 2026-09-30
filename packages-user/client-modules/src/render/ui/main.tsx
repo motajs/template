@@ -26,7 +26,6 @@ import {
 } from './statusBar';
 import { ReplayingStatus } from './toolbar';
 import { state } from '@user/data-state';
-import { hook } from '@user/data-base';
 import { mainUIController } from './controller';
 import { isNil } from 'lodash-es';
 import { using } from '../renderer';
@@ -138,14 +137,19 @@ const MainScene = defineComponent(() => {
         locked.value = core.status.lockControl;
     };
 
-    // 监听状态栏更新事件
-    hook.on('statusBarUpdate', updateStatus);
-    hook.on('statusBarUpdate', updateDataFallback);
+    // 保留函数调用，避免被识别为未使用函数而报错
+    // 后续修改后需要删除
+    updateDataFallback();
+    updateStatus();
 
-    onUnmounted(() => {
-        hook.off('statusBarUpdate', updateStatus);
-        hook.off('statusBarUpdate', updateDataFallback);
-    });
+    // 监听状态栏更新事件
+    // hook.on('statusBarUpdate', updateStatus);
+    // hook.on('statusBarUpdate', updateDataFallback);
+
+    // onUnmounted(() => {
+    //     hook.off('statusBarUpdate', updateStatus);
+    //     hook.off('statusBarUpdate', updateDataFallback);
+    // });
 
     //#region sprite 渲染
 

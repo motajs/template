@@ -23,7 +23,6 @@ import { transitioned } from '../use';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { clamp } from 'lodash-es';
 import { sleep } from '@motajs/common';
-import { loading } from '@user/data-base';
 import { GameTitleUI } from './title';
 import { client } from '../../core';
 
@@ -62,7 +61,6 @@ export const LoadScene = defineComponent<ILoadProps>(props => {
     ];
 
     const loadEnd = async () => {
-        loading.emit('loaded');
         alpha.set(0);
         await sleep(400);
         props.controller.closeAll();

@@ -1,4 +1,3 @@
-export * from './load';
 export * from './material';
 export * from './save';
 

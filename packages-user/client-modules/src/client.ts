@@ -11,9 +11,7 @@ import {
 import { IRenderTreeRoot, MotaRenderer } from '@motajs/render';
 import {
     ITextureManager,
-    IAutotileProcessor,
     TextureManager,
-    AutotileProcessor,
     ISaveSystem,
     SaveSystem
 } from '@user/client-base';
@@ -38,8 +36,6 @@ import {
     MAIN_WIDTH,
     VARIATOR_DEBUG_SPEED
 } from './shared';
-import { loading } from '@user/data-base';
-import { fallbackLoad } from './fallback/load';
 import { WebLoadStarter } from '@motajs/loader';
 
 export class ClientCore extends CoreState implements IClientCore {
@@ -90,10 +86,10 @@ export class ClientCore extends CoreState implements IClientCore {
         //#endregion
 
         // 兼容层
-        loading.once('loaded', () => {
-            fallbackLoad(this.materials);
-            loading.emit('assetBuilt');
-        });
+        // loading.once('loaded', () => {
+        //     fallbackLoad(this.materials);
+        //     loading.emit('assetBuilt');
+        // });
 
         //#region 渲染系统
 
@@ -126,9 +122,9 @@ export class ClientCore extends CoreState implements IClientCore {
         this.mainMapExtension = new MapExtensionManager(this.mainMapRenderer);
 
         // 兼容层
-        loading.once('assetBuilt', () => {
-            this.initMapExtensions();
-        });
+        // loading.once('assetBuilt', () => {
+        //     this.initMapExtensions();
+        // });
 
         //#endregion
 
