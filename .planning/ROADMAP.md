@@ -237,7 +237,7 @@ Plans:
 
 **Wave 12** *(blocked on Wave 11 completion)*
 
-- [ ] 04-13-PLAN.md — 部分 UI 的进一步接口适配·**第一步·只读收集需要修改的点（只读，D-71 / D-72 / D-73）**：以 `d8fa4b8 refactor: Delete global loading & hook object` 后的工作树为基准，收集渲染端**部分 UI** 对已删全局 `loading` / `hook` 与旧加载系统的使用点，产出 `04-UI-ADAPTATION-IMPACT.md`（元信息块 + `只读起始基线` / `背景` / `方法` / `基准变更（d8fa4b8）` / A 全局 loading / hook 使用点（UI 面）/ B 目标对象与钩子 API 证据 / C 旧加载 UI 清单与新加载系统 / D 分层与 barrel（D-69）检查 / E legacy 命中（仅报告）/ F 未能从阅读确定（未猜测）/ 修改点汇总 / 处置；A 类 = `render/ui/load.tsx` 旧加载接口（`:71,72,76-79,91-92,118-119,139`）+ `render/ui/main.tsx` `statusBarUpdate`（`:140-143,146-151`）+ `render/index.tsx` `restart`（`:35-38`），边界非 UI 面（`client.ts:88-92,124-127` / `client-modules/src/index.ts` / `entry-client/src/create.ts:16,31,34-41`）只报告；B 类逐处给目标对象证据（`IMotaDataLoader` / `ILoadManager` / 数据端可 hook 对象接口）或 undetermined；C 类登记旧 `LoadScene` / `LoadSceneUI` 与已删 `client-base/src/load/**` + 新 `@motajs/loader` / `data-state/src/loader/**` / `CoreState.loader` / `loadManager`；D 类 4 个 barrel 节点（只报告）；E 类 legacy 只报告；F 类 ≥ 5 条未确定项；事实行每行 ≥2 个 `file:line` 锚点），**本步生产代码零改动、不引入任何命名变更**；门禁 = 只读基线一致 + 台账结构 / 内容 / 证据纪律 + 范围与用户改动 + 既有 `04-01`..`04-12` 产物保护 + CRLF + 人工复核（**不设 `check:type` / `build` / TS 诊断数类门禁**，D-68 的延续）；`autonomous: false`（Task 0 汇报关卡等待用户「可以执行」）；第二步（适配实施）待用户审阅后另行规划（D-72）；`REND-01` / `REND-02` 仍 Pending
+- [x] 04-13-PLAN.md — 部分 UI 的进一步接口适配·**第一步·只读收集需要修改的点（只读，D-71 / D-72 / D-73）**：以 `d8fa4b8 refactor: Delete global loading & hook object` 后的工作树为基准，收集渲染端**部分 UI** 对已删全局 `loading` / `hook` 与旧加载系统的使用点，产出 `04-UI-ADAPTATION-IMPACT.md`（元信息块 + `只读起始基线` / `背景` / `方法` / `基准变更（d8fa4b8）` / A 全局 loading / hook 使用点（UI 面）/ B 目标对象与钩子 API 证据 / C 旧加载 UI 清单与新加载系统 / D 分层与 barrel（D-69）检查 / E legacy 命中（仅报告）/ F 未能从阅读确定（未猜测）/ 修改点汇总 / 处置；A 类 = `render/ui/load.tsx` 旧加载接口（`:71,72,76-79,91-92,118-119,139`）+ `render/ui/main.tsx` `statusBarUpdate`（`:140-143,146-151`）+ `render/index.tsx` `restart`（`:35-38`），边界非 UI 面（`client.ts:88-92,124-127` / `client-modules/src/index.ts` / `entry-client/src/create.ts:16,31,34-41`）只报告；B 类逐处给目标对象证据（`IMotaDataLoader` / `ILoadManager` / 数据端可 hook 对象接口）或 undetermined；C 类登记旧 `LoadScene` / `LoadSceneUI` 与已删 `client-base/src/load/**` + 新 `@motajs/loader` / `data-state/src/loader/**` / `CoreState.loader` / `loadManager`；D 类 4 个 barrel 节点（只报告）；E 类 legacy 只报告；F 类 ≥ 5 条未确定项；事实行每行 ≥2 个 `file:line` 锚点），**本步生产代码零改动、不引入任何命名变更**；门禁 = 只读基线一致 + 台账结构 / 内容 / 证据纪律 + 范围与用户改动 + 既有 `04-01`..`04-12` 产物保护 + CRLF + 人工复核（**不设 `check:type` / `build` / TS 诊断数类门禁**，D-68 的延续）；`autonomous: false`（Task 0 汇报关卡等待用户「可以执行」）；第二步（适配实施）待用户审阅后另行规划（D-72）；`REND-01` / `REND-02` 仍 Pending
 
 **UI hint**: yes
 
@@ -432,7 +432,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
-| 4. 渲染适配与双布局 | 12/12 (+1 planned) | In Progress|  |
+| 4. 渲染适配与双布局 | 13/13 | In Progress|  |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | 暂缓 (Deferred) | - |
