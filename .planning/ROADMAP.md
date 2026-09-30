@@ -242,7 +242,7 @@ Plans:
 
 **Wave 13** *(blocked on Wave 12 completion)*
 
-- [ ] 04-14-PLAN.md — 部分 UI 的进一步接口适配·**第二步·适配实施（代码改动，D-74 / D-75 / D-76 / D-77 / D-78）**：`render/ui/main.tsx` 状态栏改在勇士属性对象 `client.hero.attribute` 上注册 `onUpdateAttribute` 钩子（tracer，删除全局 `hook` 残留与手工调用垫片，新增局部 `attributeHook`）；`render/ui/load.tsx` 改依 `client.loader.start()` + `client.loader.manager.get*`；删除 `render/index.tsx:35-38` 的 `restart` 注释块与 `client.ts:88-92,124-127` / `entry-client/src/create.ts:16,31,34-41` 的非 UI 残留（`client-modules/src/index.ts` 零残留不编辑）；默认不重新接线旧加载 UI 装配点（开点，待用户裁定）；`autonomous: false`（Task 0 汇报关卡等待用户「可以执行」）；门禁全静态（不设 `check:type` / `build` / TS 诊断数类门禁，D-68 的延续）；`REND-01` / `REND-02` 仍 Pending
+- [x] 04-14-PLAN.md — 部分 UI 的进一步接口适配·**第二步·适配实施（代码改动，D-74 / D-75 / D-76 / D-77 / D-78）**：`render/ui/main.tsx` 状态栏改在勇士属性对象 `client.hero.attribute` 上注册 `onUpdateAttribute` 钩子（tracer，删除全局 `hook` 残留与手工调用垫片，新增局部 `attributeHook`）；`render/ui/load.tsx` 改依 `client.loader.start()` + `client.loader.manager.get*`；删除 `render/index.tsx:35-38` 的 `restart` 注释块与 `client.ts:88-92,124-127` / `entry-client/src/create.ts:16,31,34-41` 的非 UI 残留（`client-modules/src/index.ts` 零残留不编辑）；默认不重新接线旧加载 UI 装配点（开点，待用户裁定）；`autonomous: false`（Task 0 汇报关卡等待用户「可以执行」）；门禁全静态（不设 `check:type` / `build` / TS 诊断数类门禁，D-68 的延续）；`REND-01` / `REND-02` 仍 Pending
 
 **UI hint**: yes
 
@@ -437,7 +437,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
-| 4. 渲染适配与双布局 | 13/13 | In Progress|  |
+| 4. 渲染适配与双布局 | 14/14 | In Progress|  |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | 暂缓 (Deferred) | - |
