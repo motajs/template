@@ -84,12 +84,6 @@ export interface IHookable<
     addHook(hook: Partial<H>): C;
 
     /**
-     * 加载指定的钩子对象
-     * @param hook 钩子对象
-     */
-    loadHook(hook: Partial<H>): void;
-
-    /**
      * 移除钩子对象，会调用钩子对象的 `destroy` 方法
      * @param hook 钩子对象
      */
