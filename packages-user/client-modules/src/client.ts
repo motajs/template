@@ -85,12 +85,6 @@ export class ClientCore extends CoreState implements IClientCore {
 
         //#endregion
 
-        // 兼容层
-        // loading.once('loaded', () => {
-        //     fallbackLoad(this.materials);
-        //     loading.emit('assetBuilt');
-        // });
-
         //#region 渲染系统
 
         const rafExcitation = new RafExcitation();
@@ -120,11 +114,6 @@ export class ClientCore extends CoreState implements IClientCore {
         });
         this.mainMapRenderer = new MapRenderer(this.materials);
         this.mainMapExtension = new MapExtensionManager(this.mainMapRenderer);
-
-        // 兼容层
-        // loading.once('assetBuilt', () => {
-        //     this.initMapExtensions();
-        // });
 
         //#endregion
 

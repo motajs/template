@@ -32,11 +32,6 @@ export function createRender() {
     createAction();
     createWeather();
 
-    // hook.on('restart', () => {
-    //     sceneController.closeAll();
-    //     sceneController.open(GameTitleUI, {});
-    // });
-
     Font.setDefaults(DEFAULT_FONT);
 }
 

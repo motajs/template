@@ -137,19 +137,17 @@ const MainScene = defineComponent(() => {
         locked.value = core.status.lockControl;
     };
 
-    // 保留函数调用，避免被识别为未使用函数而报错
-    // 后续修改后需要删除
-    updateDataFallback();
-    updateStatus();
-
     // 监听状态栏更新事件
-    // hook.on('statusBarUpdate', updateStatus);
-    // hook.on('statusBarUpdate', updateDataFallback);
+    const attributeHook = client.hero.attribute.addHook({
+        onUpdateAttribute: () => {
+            updateStatus();
+            updateDataFallback();
+        }
+    });
 
-    // onUnmounted(() => {
-    //     hook.off('statusBarUpdate', updateStatus);
-    //     hook.off('statusBarUpdate', updateDataFallback);
-    // });
+    onUnmounted(() => {
+        attributeHook.unload();
+    });
 
     //#region sprite 渲染
 
