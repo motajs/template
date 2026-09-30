@@ -5,14 +5,14 @@ current_phase: 04
 current_phase_name: 渲染适配与双布局
 status: executing
 stopped_at: Completed 04-12-PLAN.md（桶导出边界修正：shared 单文件化 + 消费者直连 @user/client-base；8 个 in-scope barrel 全部只导出同目录项；架构耦合 8 处标注逐字保留；由用户在异地执行，commit 81e4e98；REND-01/REND-02 保持 Pending）
-last_updated: "2026-09-25T00:00:00.000Z"
+last_updated: "2026-09-30T06:35:14.477Z"
 last_activity: 2026-09-25
-last_activity_desc: Completed 04-12-PLAN.md（桶导出边界修正；用户在异地执行）
-state_head: d8fa4b8
+last_activity_desc: Planned 04-13-PLAN.md（部分 UI 进一步接口适配·第一步只读收集）
+state_head: 8b114c77c408ccb9f1ca8f9f34c5817140de5cf6
 progress:
   total_phases: 7
   completed_phases: 1
-  total_plans: 83
+  total_plans: 84
   completed_plans: 82
 milestone_name: milestone
 ---
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 
 ## Current Position
 
-Phase: 04 (渲染适配与双布局) — IN PROGRESS
-Plan: 12/12 已执行（04-01..04-12）
-Status: 04-12 完成（桶导出边界修正）；下一步 = 部分 UI 的进一步接口适配（D-71），走两步：先只读收集（04-13）、再执行；Phase 4 整体仍未完成 — REND-01/REND-02 保持 Pending
-Last activity: 2026-09-25 — Completed 04-12-PLAN.md（桶导出边界修正；异地执行）
+Phase: 04 (渲染适配与双布局) — READY TO EXECUTE
+Plan: 12/13 已执行（04-01..04-12）；04-13（部分 UI 进一步接口适配·第一步只读收集）已规划待执行（Wave 12）
+Status: 04-13 已规划并通过 checker（0 blocker / 0 warning / 5 info-advisory，已修订 4 项）；待用户回复「可以执行」后执行；Phase 4 整体仍未完成 — REND-01/REND-02 保持 Pending
+Last activity: 2026-09-30 — Planned 04-13-PLAN.md（部分 UI 进一步接口适配·第一步只读收集）
 
 Progress: [█████░░░░░] 50%
 
