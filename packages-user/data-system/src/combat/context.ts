@@ -110,6 +110,8 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
         this.needUpdate = true;
     }
 
+    //#region 功能注册
+
     registerAuraConverter(converter: IAuraConverter<TEnemy, THero>): void {
         this.auraConverter.add(converter);
         this.converterStatus.set(converter, true);
@@ -200,6 +202,8 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     getBindedHero(): IReadonlyHeroAttribute<THero> | null {
         return this.bindedHero;
     }
+
+    //#endregion
 
     /**
      * 创建可修改信息对象

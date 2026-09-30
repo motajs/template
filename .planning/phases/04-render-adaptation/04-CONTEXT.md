@@ -130,6 +130,22 @@
   6. **不得**新增任何转发导出；`render/index.tsx` 维持现状（用户已删除越界两行，现合规）。
   - 旁注（仅报告、不修改）：`packages/client/src/index.ts:1` 的 `export * from '@motajs/client-base'` 亦违反 D-69，但在 `packages/`（D-33 只报告）。
 
+### 下一个目标：部分 UI 的进一步接口适配（用户裁定，2026-09-25；待规划）
+> 分**至少两个计划**：**第一个** = 只读收集需要修改的点（影响面台账）；**后续**再真正执行。沿用 GSD 标准流程（新增计划 → 检查并修订计划 → 执行计划）。
+- **D-71（目标）:** 完成**部分 UI 的进一步接口适配**。此前已有一轮适配；数据端经用户近期调整（含 `d8fa4b8 refactor: Delete global loading & hook object`、加载系统重构等）后，仍有若干需适配的点：
+  1. **全局 `loading` / `hook` 对象已被删除**——组件**不得**再依赖这些全局对象监听全局钩子，**必须在对应的对象上监听**。
+  2. **加载系统重构**——现使用新的加载系统，**旧的加载 UI 已不能用了，需要重新适配**。
+- **D-72（两步走）:** 本目标**至少两个计划**——**第一个计划只做只读收集**（清点需要修改的点，产出影响台账；生产代码零改动）；**第二个及后续**才真正执行适配。第一个计划的产出是后续执行计划的输入。
+- **D-73（边界延续）:** 沿用既有约束——范围外一律不改、不追平全部类型错误（D-33）；`packages-user/client-base/src/material/**` 归用户、AI 不得改（D-42 / D-48）；不考虑任何 legacy（D-49 / D-55 / D-65）；不得触碰 / 提交用户并发改动（D-56）；不要求「保证能运行」、不得以 `check:type` / `build` / TS 诊断数作为门禁（D-68，除非用户另行说明）；桶导出边界（**D-69**）继续适用。
+
+### 部分 UI 进一步接口适配·**F 类裁决**（用户裁定，2026-09-30；供第二步适配实施规划）
+> 输入 = `04-UI-ADAPTATION-IMPACT.md` 的 F 类未决项（F-01..F-05）。
+- **D-74（F-01）:** 旧加载 UI 的「任务进度 / 字节进度 / 总字节」数据来源 = **新加载接口提供的方法**（不再 undetermined；用 `ILoadManager` / `IMotaDataLoader` 上的现有方法）。
+- **D-75（F-02）:** 旧 `loader.progress` 异步迭代的等价 = 新加载接口的 **`start()`（返回 `AsyncIterable`）**（不再 undetermined）。
+- **D-76（F-04）:** `restart` 事件**不再需要**——相关（被注释的 `hook.on('restart', ...)`）内容**直接删除**。
+- **D-77（F-05）:** `packages-user/client-modules/src/client.ts:88-92,124-127`、`packages-user/client-modules/src/index.ts`、`packages-user/entry-client/src/create.ts:16,31,34-41` 三处**非 UI** 的旧加载 / 钩子接线残留**直接删除**——「重构即删旧内容」，不做适配、不保留。
+- **F-03（已裁决 2026-09-30）→ D-78:** `statusBarUpdate` 的精确监听对象 = **勇士属性对象**。用户在提交 `7180649 refactor: hook & feat: 勇士属性更新接口` 中提供了接口：`IHeroAttributeHooks<THero>.onUpdateAttribute?(name, value)`（`packages-user/data-base/src/hero/types.ts:95-102`），属性对象 `IReadonlyHeroAttribute<THero> extends IHookable<IHeroAttributeHooks<THero>>`（`types.ts:104-106`）——即状态栏应改在勇士属性对象（`client.hero.attribute`）上**注册钩子监听 `onUpdateAttribute`**，属性变化时更新；触发点见 `packages-user/data-base/src/hero/attribute.ts:89`。仍可 hook 的其它数据端对象接口见台账 B-03。
+
 ### the agent's Discretion
 - D-07 的「影响」字段具体写法、「多余旧路径」是否需要进一步细分，交由 AI 在对账执行时按实际情况把握，但不得据此扩大范围。
 

@@ -743,7 +743,7 @@ export interface ICombatFlowHandler<TEnemy, THero> extends IDataBaseExtended {
     /** 可修改勇士对象 */
     readonly hero: IHeroAttribute<THero>;
     /** 可修改怪物对象 */
-    readonly enemy: IEnemy<TEnemy>;
+    readonly enemy: IReadonlyEnemy<TEnemy>;
     /** 怪物上下文 */
     readonly context: IEnemyContext<TEnemy, THero>;
     /** 怪物位置 */
