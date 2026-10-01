@@ -37,6 +37,8 @@ import {
     VARIATOR_DEBUG_SPEED
 } from './shared';
 import { WebLoadStarter } from '@motajs/loader';
+import { IRendererUsing, RendererUsing } from '@motajs/render-vue';
+import { UIController } from '@motajs/system';
 
 export class ClientCore extends CoreState implements IClientCore {
     // Layer 4 渲染基础层
@@ -48,8 +50,11 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly rafExcitation: IExcitation<number>;
     readonly excitationDivider: IExcitationDivider<number>;
     readonly renderer: IRenderTreeRoot;
+    readonly using: IRendererUsing;
     readonly mainMapRenderer: IMapRenderer;
     readonly mainMapExtension: IMapExtensionManager;
+    readonly sceneController: UIController;
+    readonly mainUIController: UIController;
 
     readonly audioContext: IMotaAudioContext;
     readonly soundPlayer: ISoundPlayer<SoundIds>;
@@ -112,8 +117,11 @@ export class ClientCore extends CoreState implements IClientCore {
             // 使用分频器，用户可以在设置中调整，如果设备性能较差调高分频有助于提高性能表现
             excitaion: excitationDivider
         });
+        this.using = new RendererUsing(this.renderer);
         this.mainMapRenderer = new MapRenderer(this.materials);
         this.mainMapExtension = new MapExtensionManager(this.mainMapRenderer);
+        this.sceneController = new UIController('main-scene');
+        this.mainUIController = new UIController('main-ui');
 
         //#endregion
 
