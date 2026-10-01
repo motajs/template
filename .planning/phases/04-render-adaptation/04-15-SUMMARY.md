@@ -1,29 +1,28 @@
 ---
 phase: 04-render-adaptation
 plan: 15
-subsystem: render-de-singletonization
-tags: [read-only, singleton-audit, de-singletonization, client-modules, client-base, IClientBaseExtended, ICoreStateExtended, d69-barrel]
+subsystem: render-singleton-audit
+tags: [read-only, singleton-audit, de-singletonization, d68, d56, two-step]
 requires:
   - phase: 04-render-adaptation
-    provides: 用户 2026-10-01 去单例化裁定（渲染端不得再有单例、全部挂主类 `ClientCore` / `client`、子系统继承 / 实现 `IClientBaseExtended` / `ICoreStateExtended`、镜像数据端模式、两步走）
+    provides: 用户裁定 2026-10-01（渲染端不得再有单例、全部挂 ClientCore / client、子系统继承 / 实现 IClientBaseExtended / ICoreStateExtended、镜像数据端模式、两步走、仅限「模块顶层 export const x = new X()」单例）
   - phase: 04-render-adaptation
-    provides: 既有只读台账 04-UI-ADAPTATION-IMPACT.md / 04-STRUCTURE-MIGRATION-IMPACT.md（版式与证据纪律模板）
+    provides: 既有台账 04-UI-ADAPTATION-IMPACT.md（格式模板）与 04-STRUCTURE-MIGRATION-IMPACT.md（证据纪律模板）
 provides:
-  - .planning/phases/04-render-adaptation/04-RENDER-SINGLETON-AUDIT.md（渲染端去单例化·第一步只读清点台账；元信息块 + 12 小节 + A–F 六类 + 单例→目标映射汇总 + 处置）
-  - 供第二步（04-16：挂载 + 接口继承重构）消费的单例→目标映射汇总（含 undetermined 标注）
+  - .planning/phases/04-render-adaptation/04-RENDER-SINGLETON-AUDIT.md（渲染端去单例化第一步·只读单例清点台账；A / E / F 三类 + 单例→目标映射汇总）
+  - 供第二步（04-16 挂载 + 接口继承重构）消费的单例清单与目标映射汇总
 affects: [04-render-adaptation]
 actuals:
-  tokens: 15145
-  tasks: 5
+  tokens: 13919
+  tasks: 4
   commits: 1
-  plan_head_before: 2d3287804d90bf3cde1d6299ac71815fd677a7eb
+  plan_head_before: 015a1993e8e95ab5fd80b5f8002f196beb2913c2
 tech-stack:
   added: []
   patterns:
-    - "只读单例清点台账：元信息块 + 只读起始基线 + 12 小节 + A–F 六类固定列序表 + 单例→目标映射汇总 + 处置"
-    - "证据纪律：事实行每行 ≥2 个 file:line 锚点；证据行带 [证据行] 标记 + git grep 核对命令与原样结果"
+    - "只读单例台账：元信息块 + 只读起始基线 + 背景 / 方法 / 枚举口径 + A / E / F 三类 + 单例→目标映射汇总 + 处置"
+    - "证据纪律：A 事实行每行 ≥2 个 file:line 锚点；零命中 / 对照扫描行带 [证据行] 标记 + 核对命令与原样结果；完整性由 git grep 反查"
     - "只登记不判定：静态阅读不能定论者一律进 F 类（未猜测），不得写成错配 / 缺失 / 残留 / 待办"
-    - "目标模式：挂主类 `ClientCore` / `client` + `IClientBaseExtended` / `ICoreStateExtended` 之一 + 先例 file:line"
 key-files:
   created:
     - .planning/phases/04-render-adaptation/04-RENDER-SINGLETON-AUDIT.md
@@ -31,160 +30,169 @@ key-files:
   modified: []
   deleted: []
 key-decisions:
-  - "本 run 为纯只读收集（用户 2026-10-01 去单例化第一步）：生产源码改动 0，files_modified 仅台账；Task 1/2/3 不独立提交，Task 4 单次白名单提交"
-  - "A–E 分类行统一覆盖：A 30 个对象（+ 1 条 [证据行] 完整性反查）/ B 8 / C 6 / D 4 / E 7；F 7 条；单例→目标映射汇总 41 行"
-  - "目标接口一律给候选 `IClientBaseExtended` / `ICoreStateExtended` 或 undetermined，不裁定取舍、不给挂载写法（命名先获批）"
-  - "renderer 实例簇与 ClientCore 构造器内自建对象重复（client.ts:90,91,108）／外部框架级全局（mainRenderer / using / tagManager / gameKey）／GameUI 实例是否纳入 一律进 F 类，不臆测"
-  - "Task 1/2/3 的门禁按原样语义落到仓库外 %TEMP%\\opencode\\04-15-gates-pre.cjs 执行，判据不变（PowerShell 5.1 引号 / $ / CJK 兼容）"
+  - "本 run 为纯只读单例清点（去单例化第一步）：生产源码改动 0，files_modified 仅台账；Task 1/2/3 不独立提交，Task 4 单次白名单提交"
+  - "范围仅限单例：仅登记模块顶层实例化对象 export const x = new X()（30 条：client-modules 24 + client-base 6）；可变模块级状态 / 全局注册表 / 全局访问器 / 顶层副作用 / 非 new 导出一律 OUT"
+  - "A 表 30 条事实行 + 1 条完整性反查 [证据行]；F 类 7 条（仅单例相关，只登记不判定）；目标接口取舍一律 undetermined（IClientBaseExtended vs ICoreStateExtended 交用户裁决）"
+  - "Task 0 blocking-human 汇报关卡已由用户回复「可以执行」闭环；本 run 覆盖先前错误范围（6 类）产物，重写为仅单例范围"
 requirements-completed: []
-duration: ~40min
+duration: ~35min
 completed: 2026-10-01
 status: complete
 ---
 
-# Phase 4 Plan 15: 渲染端去单例化·第一步（只读收集）Summary
+# Phase 4 Plan 15: 渲染端去单例化·第一步（只读收集单例）Summary
 
-**对 `packages-user/client-modules` 与 `packages-user/client-base` 两个包内全部单例做只读清点：枚举 30 个模块级实例化对象 + 8 项可变模块级状态与全局注册表 + 6 项全局访问器与框架级全局引用 + 4 项顶层副作用模块，逐一给出定义 / 消费者 `file:line`、与 `ClientCore` / `client` 的关系、目标接口候选（`IClientBaseExtended` / `ICoreStateExtended` + 先例）或 undetermined，产出 `04-RENDER-SINGLETON-AUDIT.md`；生产代码零改动、未引入任何命名变更、无运行时验证（D-68 的延续），REND-01 / REND-02 保持 Pending。**
+**对 `packages-user/client-modules` 与 `packages-user/client-base` 两个包内的全部单例（严格定义：模块顶层实例化对象 `export const x = new X()`，共 30 条）做只读清点，产出 `04-RENDER-SINGLETON-AUDIT.md`（A / E / F 三类 + 单例→目标映射汇总）；每个单例带 `file:line` 锚点与目标接口候选 / 先例，未定者进 F 类「只登记不判定」；生产代码零改动、未引入任何命名变更、无运行时验证（D-68 的延续）。**
 
 ## Performance
 
-- **Duration:** ~40min
-- **Started:** 2026-10-01
+- **Duration:** ~35min
+- **Started:** 2026-10-01T08:01:42Z
 - **Completed:** 2026-10-01
-- **Tasks:** 5（Task 0 blocking-human 汇报关卡 — 用户已回复「可以执行」；Task 1 tracer；Task 2；Task 3；Task 4 收口）
-- **Files:** 1 新增（`04-RENDER-SINGLETON-AUDIT.md`）+ 本 SUMMARY；生产源码改动 **0**
+- **Tasks:** 4（Task 0 blocking-human 汇报关卡 — 用户已回复「可以执行」；Task 1 tracer；Task 2；Task 3；Task 4 收口）
+- **Files:** 1 重写（`04-RENDER-SINGLETON-AUDIT.md`）+ 本 SUMMARY；生产源码改动 **0**
 
 ## 只读起始基线（Task 1 步骤 0a）
 
 - **只读起始基线（packages / packages-user / src）：**
-  - ` M packages-user/data-system/src/combat/context.ts`
-- **起始 HEAD：** `2d3287804d90bf3cde1d6299ac71815fd677a7eb`（short `2d32878`）
+  ` M packages-user/data-system/src/combat/context.ts`
+- **起始 HEAD：** `015a1993e8e95ab5fd80b5f8002f196beb2913c2`
 - **起始分支：** `refine/data-client`
-- **用户并发改动：** `packages-user/data-system/src/combat/context.ts` 的既有未提交改动仍在（porcelain ` M`，内容哈希 `9982509d3d8ec4c58d5c71f37f1a576a13c3337f`）；本 run 未回滚 / 暂存 / 提交 / 修改（D-56 精神）。
-- **机读标记：** 台账含 `<!-- baseline-hash-combat-context: 9982509d3d8ec4c58d5c71f37f1a576a13c3337f -->`，Task 1/2/3/4 生产树门禁均正向确认该哈希一致。
+- **用户并发改动：** ` M packages-user/data-system/src/combat/context.ts`（未提交，**原样保留**，本 run 未回滚 / 未暂存 / 未提交 / 未修改；D-56）
+- **机读标记：** `<!-- baseline-hash-combat-context: 9982509d3d8ec4c58d5c71f37f1a576a13c3337f -->`
+- **第二个 block 点：** Task 0 的 `blocking-human` 汇报关卡已由用户明确回复「可以执行」闭环。
 
 ## Accomplishments
 
-**唯一交付物：** `.planning/phases/04-render-adaptation/04-RENDER-SINGLETON-AUDIT.md`（只读）。
+**唯一交付物：** `.planning/phases/04-render-adaptation/04-RENDER-SINGLETON-AUDIT.md`（只读；重写先前错误范围产物）。
 
 | 节 | 落点 | 条目数 |
 |---|---|---|
-| 元信息块 + 只读起始基线 + 背景 + 方法 + 枚举口径 | 6 行元信息块；porcelain 原样（含用户 WIP）；用户 2026-10-01 裁定要点；六类判定口径表；证据纪律 | — |
-| **A 模块级实例化对象** | `texture` / `client` / renderer 实例簇（`rafExcitation` / `excitationDivider` / `mainRenderer` / `using` / `tagManager`）/ `sceneController` / `mainUIController` / `MainBackgroundUI` / 20 个 `GameUI` 实例 / `DEFAULT_FONT` + 1 条 `[证据行]` 完整性反查 | **30 对象 + 1 证据行** |
-| **B 可变模块级状态与全局注册表** | `nowOrientation` / `orientationHooks` / `transitionMap` / `mainScope`（`Symbol.for`）/ `static extern` / `static weathers` / `RenderColorTransition.key` / `textboxTyper` 模块级 `Set` + 1 条 `[证据行]` | **8 + 1 证据行** |
-| **C 全局访问器与框架级全局引用** | `Mota.require`（`cache.ts:491` / `misc.ts:89,219`；legacy 只报告）/ `window.*`（`use.ts` 与 UI）/ `core.*`（legacy 只报告）/ 外部包全局 `gameKey` / `tagManager` / `mainRenderer` / 数据端单例 `state` 引用 + 1 条 `[证据行]` | **6 + 1 证据行** |
-| **D 顶层副作用模块** | `gameKey` 顶层注册链 / `keyStorage` 存储读写与事件 / `window.addEventListener` / `renderer.ts` 顶层 `bindExcitation` / `setDivider` + 1 条 `[证据行]` | **4 + 1 证据行** |
-| **E 主类关系与目标挂载面映射** | `client`（目标主类本身）/ `texture` / renderer 实例簇 / UI 控制器与 `GameUI` 簇 / `use.ts` 可变状态 + `hotkey` 符号 / weather 静态注册表 / client-base `GameUI` + `Mota.require` | **7** |
-| **F 未能从阅读确定（未猜测）** | F-01 外部框架级全局归属 / F-02 重复单例权威归属 / F-03 `GameUI` 实例是否纳入 / F-04 `window` 副作用与无 DOM 约束 / F-05 目标接口取舍 / F-06 `IClientBaseExtended` 实现情况 / F-07 无消费者的状态栏 UI | **7** |
-| **单例→目标映射汇总（供 04-16 消费）** | 41 行固定列表（定义 file:line / 符号 / 类型 / 目标或 undetermined / 先例 / 归属包 / 置信）+ 两个包内单例总数说明 | **41** |
-| **处置** | 只读完成；第二步（04-16）未规划、待用户审阅；REND-01 / REND-02 保持 Pending | — |
+| 元信息块 + 只读起始基线 + 背景 + 方法 + 枚举口径 | 6 行元信息块；porcelain 原样（含用户 `combat/context.ts`）+ 哈希标记；用户 2026-10-01 裁定要点；枚举面 / 核对手法 / 证据纪律；单例定义 + 显式排除清单 | — |
+| **A 模块级实例化对象** | 30 条单例事实行（`#04-15-A-01`..`#04-15-A-30`）+ 1 条完整性反查 `[证据行]`（`#04-15-A-31`）：client-modules 24 / client-base 6 | **31**（30 单例 + 1 证据行） |
+| **E 主类关系与目标挂载面映射** | 8 条（`#04-15-E-01`..`#04-15-E-08`）：逐簇给出当前归属 / 与 `ClientCore` 关系 / 目标接口候选与先例 / undetermined | **8** |
+| **F 未能从阅读确定（未猜测）** | 7 条（`#04-15-F-01`..`#04-15-F-07`）：texture / (a) 外部包单例 / (b) 重复 renderer 实例 / (c) `GameUI` 实例是否纳入 / (d) 目标接口取舍 / (e) `IClientBaseExtended` 无实现类 / (f) 无消费者 UI | **7** |
+| **单例→目标映射汇总（供 04-16 消费）** | 30 行（每单例一行）+ 单例总数声明（24 + 6 = 30） | **30** |
+| **处置** | 只读完成 + 仅登记单例 + 第二步待规划 + `REND-01` / `REND-02` Pending + 单例总数 | — |
 
-**A–E 分类行：** A 32 / B 9 / C 7 / D 5 / E 7 = **60** 条表行（门禁实测一致）；F **7** 条。**两个包内单例对象合计 48 个单例点**（A 30 + B 8 + C 6 + D 4）。
+**单例总数（当日 `git grep` 实测，与规划日一致）：** 客户端（`packages-user/client-modules`）**24** + 系统层（`packages-user/client-base`）**6** = **30**。
+
+**单例清单（A 表 `#04-15-A-01`..`#04-15-A-30`）：** `texture`；`client`；`rafExcitation` / `excitationDivider` / `mainRenderer` / `using`；`sceneController`；`mainUIController` / `MainBackgroundUI`；`LoadSceneUI` / `MainSceneUI` / `SaveUI` / `MainSettingsUI` / `ReplaySettingsUI` / `GameInfoUI` / `SyncSaveUI` / `SyncSaveSelectUI` / `DownloadSaveSelectUI` / `ClearSaveSelectUI` / `StatisticsUI` / `leftStatusBarUI` / `rightStatusBarUI` / `GameTitleUI` / `ViewMapUI`；`DEFAULT_FONT`；`ConfirmBoxUI` / `ChoicesUI` / `InputBoxUI` / `WaitBoxUI` / `BackgroundUI`。
 
 ## Task Commits
 
 1. **Task 0（blocking-human 汇报关卡）** — 用户已回复「可以执行」，无文件改动、无提交
-2. **Task 1（tracer）** — 台账骨架 + 12 小节 + `texture` 一条线端到端（`#04-15-A-01`；门禁全绿，无独立提交）
-3. **Task 2** — client-modules 单例横向铺开（主单例 / renderer 簇 / scene / UI 控制器与 `GameUI` / `use.ts` 可变状态 / weather 静态注册表 / hotkey 符号与顶层副作用；门禁全绿，无独立提交）
-4. **Task 3** — client-base 单例横向铺开 + A–E 分类收口 + `## 单例→目标映射汇总` 定稿 + D-69 barrel 检查（门禁全绿，无独立提交）
+2. **Task 1（tracer）** — 台账骨架 + 9 小节 + tracer `texture` 行（`#04-15-A-01`）+ 基线哈希标记（门禁全绿，无独立提交）
+3. **Task 2** — client-modules 单例铺开（`#04-15-A-02`..`#04-15-A-25`）+ E-02..E-07 + F-02..F-04 + 映射汇总（门禁全绿，无独立提交）
+4. **Task 3** — client-base 单例铺开（`#04-15-A-26`..`#04-15-A-30`）+ 完整性反查 `[证据行]`（`#04-15-A-31`）+ E-08 + F-05..F-07 + 映射汇总定稿 + 处置定稿（门禁全绿，无独立提交）
 5. **Task 4** — 收口门禁 + 人工复核 + 本 SUMMARY + 白名单提交
 
-**Plan metadata:** 单一白名单提交（见「提交记录」）。Task 1/2/3 的 action 未定义独立提交步骤；Task 4 步骤 (10) 明示单次白名单提交（与 04-10 / 04-13 的单一提交口径一致）。
+**Plan metadata:** 单一白名单提交（见「提交记录」）。Task 1/2/3 的 action 未定义独立提交步骤；Task 4 步骤 (10) 明示单次白名单提交（与 04-13 的单一提交口径一致）。
 
 ## 提交记录
 
-- `docs(04-15): 渲染端去单例化只读清点（第一步）` —— 单次白名单提交，仅含 `04-RENDER-SINGLETON-AUDIT.md` + 本 `04-15-SUMMARY.md`（未暂存用户 `combat/context.ts` 或任何其它文件；提交 hash 见 orchestrator 回报 / `git log`）。
+- `docs(04-15): 渲染端去单例化只读清点（仅单例）` —— 单次白名单提交，仅含 `files_modified`（`04-RENDER-SINGLETON-AUDIT.md`）+ 本 `04-15-SUMMARY.md`（提交 hash 见 orchestrator 回报 / `git log`）。
 
-## A–F 落点表（关键锚点）
+## A / E / F 落点表（关键锚点）
 
 | 面 | 条目 | 关键 `file:line` 锚点 |
 |---|---|---|
-| **A 模块级实例化对象** | `texture`（tracer） | `packages-user/client-base/src/elements/cache.ts:280` ↔ `packages-user/client-base/src/elements/cache.ts:48` / `packages-user/client-base/src/components/textbox.tsx:399` / `packages-user/client-base/src/elements/misc.ts:87` |
-| | renderer 实例簇 | `packages-user/client-modules/src/render/renderer.ts:18,20,35,43,45` ↔ `packages-user/client-modules/src/client.ts:48,90,108` |
-| | 主单例 / scene / UI 控制器 | `packages-user/client-modules/src/core.ts:6` / `packages-user/client-modules/src/render/scene.ts:3` / `packages-user/client-modules/src/render/ui/controller.tsx:11,29` |
-| | `GameUI` 实例簇 | `packages-user/client-modules/src/render/ui/load.tsx:161` / `main.tsx:312` / `save.tsx:462` / `settings.tsx:663,665,667,669,671,673,678` / `statistics.tsx:302` / `statusBar.tsx:488,489` / `title.tsx:484` / `viewmap.tsx:556`；`packages-user/client-base/src/components/choices.tsx:796,798` / `input.tsx:602` / `misc.tsx:591,592` |
-| **B 可变状态 / 注册表** | use.ts + hotkey + weather | `packages-user/client-modules/src/render/use.ts:34,35,287` / `packages-user/client-modules/src/action/hotkey.ts:5` / `packages-user/client-modules/src/render/weather/controller.ts:15,17` |
-| **C 全局访问器 / 框架级全局** | Mota / window / core / 外部包 | `packages-user/client-base/src/elements/cache.ts:491` / `packages-user/client-base/src/elements/misc.ts:89,219` / `packages-user/client-modules/src/render/use.ts:40,48,51,60` / `packages-user/client-modules/src/action/hotkey.ts:2` |
-| **D 顶层副作用** | hotkey / use / renderer | `packages-user/client-modules/src/action/hotkey.ts:9,470,471,523,526` / `packages-user/client-modules/src/render/use.ts:51` / `packages-user/client-modules/src/render/renderer.ts:22,26,32` |
-| **E 目标映射** | 目标接口 / 先例 | `IClientBaseExtended`（`packages-user/client-base/src/types.ts:27`）/ `ICoreStateExtended`（`packages-user/data-state/src/types.ts:45`）/ 先例 `packages-user/client-base/src/material/types.ts:94,218,406,439` / `packages-user/data-state/src/ins.ts:11` |
-| **F undetermined** | F-01..F-07 | 见台账 `## F 未能从阅读确定（未猜测）` 一节 |
+| **A 单例（client-base）** | A-01 `texture` | `packages-user/client-base/src/elements/cache.ts:280`（类 `:48`）↔ `textbox.tsx:33` / `textboxTyper.ts:5` / `tip.tsx:8` / `elements/misc.ts:9` |
+| **A 单例（client-base 组件）** | A-26..A-30 | `choices.tsx:796,798` / `input.tsx:602` / `misc.tsx:591,592` ↔ `choices.tsx:606,659,722,777` / `input.tsx:555` / `misc.tsx:578` |
+| **A 单例（client-modules）** | A-02 `client` | `packages-user/client-modules/src/core.ts:6`（类 `client.ts:41`）↔ 7 处消费者（`load.tsx:27` 等） |
+| | A-03..A-06 renderer 簇 | `render/renderer.ts:18,20,35,43` ↔ `render/index.tsx:5,22,23,26` / `client-base/components/misc.tsx:16` |
+| | A-07 `sceneController` | `render/scene.ts:3` ↔ `render/index.tsx:8,17,25` |
+| | A-08/A-09 控制器 | `render/ui/controller.tsx:11,29` ↔ `render/ui/main.tsx:29,284` / `controller.tsx:32` |
+| | A-10..A-22/A-24/A-25 GameUI 簇 | `render/ui/{load,main,save,settings,statistics,statusBar,title,viewmap}.tsx` 各定义行 |
+| | A-23 `DEFAULT_FONT` | `shared.ts:105` ↔ `render/index.tsx:3,35` |
+| | A-31 完整性反查 `[证据行]` | `git grep -n -E "export const [A-Za-z0-9_]+ = new "` → 30 条，与 A-01..A-30 对齐 |
+| **E 目标映射** | E-01..E-08 | `IClientBaseExtended`（`client-base/src/types.ts:27`）/ `ICoreStateExtended`（`data-state/src/types.ts:45`）；先例 `client-base/src/material/types.ts:94,218,406,439`、`data-state/src/ins.ts:11` |
+| **F undetermined** | F-01..F-07 | 见台账 `## F` 一节 |
 
 ## 门禁实测结果（全部静态 — D-68 的延续）
 
-门禁按计划 `## Verification Runnability` 的指示，将每条 `<automated>` 的原样语义落到仓库外 `C:\Users\book\AppData\Local\Temp\opencode\04-15-gates-pre.cjs` 执行 `node <file>`（PowerShell 5.1 引号 / `$` / CJK 兼容；判据与 `<fails_when>` 一字不变）。
-
 | # | 门禁 | 结果（OK 行） |
 |---|---|---|
-| T1-1 | 台账骨架 + 12 小节 + tracer 行 `#04-15-A-01` | ✅ `OK structure + keys present` |
-| T1-2 | A–E 事实行 ≥2 锚点（≥1 行） | ✅ `OK anchor discipline: 60 table rows, 7 F entries` |
-| T1-3 | 生产树正向基线（` M` 行在场 + 无其它条目 + `git hash-object` 与台账标记一致） | ✅ `OK read-only baseline confirmed (user edit present, hash matches, no other changes)` |
-| T1-4 | CRLF | ✅ `OK CRLF .planning/phases/04-render-adaptation/04-RENDER-SINGLETON-AUDIT.md` |
-| T2-1 | client-modules 铺开（主单例 / renderer / scene / UI 控制器 / use.ts / weather / hotkey / F / 映射汇总） | ✅ `OK structure + keys present` |
-| T2-2 | 锚点纪律（行 ≥12）+ F ≥4 | ✅ `OK anchor discipline: 60 table rows, 7 F entries` |
-| T2-3 | 生产树正向基线 | ✅ `OK read-only baseline confirmed (user edit present, hash matches, no other changes)` |
-| T2-4 | CRLF | ✅ `OK CRLF ...` |
-| T3-1 | client-base 单例 + 两个目标接口 + 数据端先例 + 映射汇总 + 处置 | ✅ `OK structure + keys present` |
-| T3-2 | 最终纪律（行 ≥18 + F ≥5 + 映射汇总表头） | ✅ `OK anchor discipline: 60 table rows, 7 F entries` |
-| T3-3 | 范围门禁（`REQUIREMENTS.md` 零改动 + 用户 `combat/context.ts` 正向基线） | ✅ `OK scope: read-only, REQUIREMENTS untouched, user edit present + hash matches` |
-| T3-4 | CRLF | ✅ `OK CRLF ...` |
-| T4-1 | 台账结构 / 内容 / 全量关键锚点 | ✅ `OK structure + keys present` |
-| T4-2 | 最终纪律（F ≥5） | ✅ `OK anchor discipline: 60 table rows, 7 F entries` |
-| T4-3 | 范围门禁（`material/` / `packages/` / `src/` 空；`REQUIREMENTS.md` 零改动；用户改动保留 + 哈希一致） | ✅ `OK scope: material/packages/src clean; REQUIREMENTS untouched; user edit present + hash matches` |
+| T1-1 | 台账骨架（9 小节 A/E/F）+ tracer 行 `#04-15-A-01` + 哈希标记 | ✅ `OK ledger skeleton (A/E/F) + tracer row + hash marker` |
+| T1-2 | A 事实行 ≥2 锚点 | ✅ `OK anchor discipline: 1 A rows` |
+| T1-3 | 只读基线（用户 `combat/context.ts` 在场 + 哈希一致 + 无其它条目） | ✅ `OK read-only baseline confirmed (user edit present, hash matches, no other changes)` |
+| T1-4 | CRLF 台账 | ✅ `OK CRLF ledger` |
+| T2-1 | client-modules A 铺开 + F + 映射汇总在场 | ✅ `OK client-modules A expansion` |
+| T2-2 | 锚点纪律（A ≥10、F ≥3） | ✅ `OK anchor discipline: 25 A rows, 4 F entries` |
+| T2-3 | 只读基线 | ✅ `OK read-only baseline confirmed (user edit present, hash matches, no other changes)` |
+| T2-4 | CRLF | ✅ `OK CRLF ledger` |
+| T3-1 | client-base 单例 + 两目标接口 + 先例 + 映射汇总 + 处置 | ✅ `OK client-base + mapping coverage` |
+| T3-2 | 最终纪律（A ≥15、F ≥5、映射汇总表头） | ✅ `OK final: 31 A rows, 7 F entries, summary present` |
+| T3-3 | 范围门禁（`REQUIREMENTS.md` 零改动 + 用户改动正向基线） | ✅ `OK scope: read-only, REQUIREMENTS untouched, user edit present + hash matches` |
+| T3-4 | `git grep` 完整性反查（A 行 ≥ grep 条数） | ✅ `OK reverse-check: A rows=31 >= grep new-exports=30` |
+| T3-5 | CRLF | ✅ `OK CRLF ledger` |
+| T4-1 | 台账结构 / 内容 / 单例锚点（无 B/C/D） | ✅ `OK ledger structure + all singleton anchors` |
+| T4-2 | 最终纪律（A ≥15、F ≥5） | ✅ `OK final discipline: 31 A rows, 7 F entries` |
+| T4-3 | 范围门禁（`material/` / `packages/` / `src/` 空；`REQUIREMENTS.md` 零改动；用户改动正向基线） | ✅ `OK scope: material/packages/src clean; REQUIREMENTS untouched; user edit present + hash matches` |
 | T4-4 | 既有产物保护（`04-01`..`04-14` porcelain 空；无 `04-16+`） | ✅ `OK existing 04-01..04-14 artifacts untouched; no 04-16+ plan` |
-| T4-5 | ROADMAP 登记（Phase 4 段含 `04-15` / `Wave 14`） | ✅ `OK ROADMAP Phase 4 has 04-15 / Wave 14 registration` |
-| T4-6 | 台账 + SUMMARY CRLF 且 SUMMARY 在场 | ✅（见 Self-Check） |
-| T4-7 | `04-15-SUMMARY.md` 落盘且含 `04-15` / `去单例化` / `只读` / `Pending` / `04-16` | ✅（见 Self-Check） |
+| T4-5 | ROADMAP 登记（`04-15` / `Wave 14`） | ✅ `OK ROADMAP has 04-15 / Wave 14 registration` |
+| T4-6 | 台账 + SUMMARY CRLF 且在场 | ✅ `OK CRLF ledger + SUMMARY present` |
+| T4-7 | `04-15-SUMMARY.md` 落盘且含 `04-15` / `去单例化` / `只读` / `Pending` / `04-16` | ✅ `OK 04-15-SUMMARY.md present and keyed` |
 
-**门禁时刻 porcelain（`packages packages-user src`）：** 仅用户既有 ` M packages-user/data-system/src/combat/context.ts` 一条（本计划只读，生产树零改动）；该用户改动全程未触碰。
+**门禁时刻生产树 porcelain（`packages packages-user src`）：** **1** 条 —— ` M packages-user/data-system/src/combat/context.ts`（用户并发改动，原样保留）；台账 / SUMMARY 位于 `.planning/`，不属生产树。
 
 ## 人工复核结论（Task 4 步骤 8）
 
 逐条打开当日源码核对，**全部通过，无偏差**：
 
-- A 类锚点均指向真实声明：`texture`（`packages-user/client-base/src/elements/cache.ts:280` / 类 `:48`）、renderer 簇（`packages-user/client-modules/src/render/renderer.ts:18,20,35,43,45`）、`sceneController`（`packages-user/client-modules/src/render/scene.ts:3`）、UI 控制器（`packages-user/client-modules/src/render/ui/controller.tsx:11,29`）、全部 `GameUI` 实例定义行与组件定义行实读确认。
-- A-32 `[证据行]` 完整性反查命令 `git grep -n -E "export const [A-Za-z0-9_]+ = new "` 原样输出与 A-01..A-31 逐条对齐，**无遗漏**。
-- B 类锚点指向真实可变状态：`packages-user/client-modules/src/render/use.ts:34,35,287`、`packages-user/client-modules/src/action/hotkey.ts:5`、`packages-user/client-modules/src/render/weather/controller.ts:15,17`；B-09 `[证据行]` 复验 `client-base/src/elements` 面模块级 `let` 零命中。
-- C 类锚点指向真实全局访问 / 引用：`Mota.require`（`packages-user/client-base/src/elements/cache.ts:491` / `misc.ts:89,219`）、`window.*`、`core.*`（计数与 `git grep -c` 一致）；C 类全节明写「legacy 只报告，不修、不登记为待办」；C-07 `[证据行]` 复验 `client-base` 运行时 `window.*` 仅注释命中。
-- D 类锚点指向真实顶层语句：`packages-user/client-modules/src/action/hotkey.ts:9,470,471,523,526`、`packages-user/client-modules/src/render/use.ts:51`、`packages-user/client-modules/src/render/renderer.ts:22,26,32`；D-05 `[证据行]` 复验 `client-base/src/elements` 面顶层监听 / 定时器零命中。
-- E 类目标接口证据锚点指向真实声明：`packages-user/client-base/src/types.ts:27`（`IClientBaseExtended`）、`packages-user/data-state/src/types.ts:45`（`ICoreStateExtended`）、`packages-user/client-base/src/material/types.ts:94,218,406,439`（四处 `extends ICoreStateExtended`）、`packages-user/data-state/src/ins.ts:11`（数据端单例）实读确认。
-- F 类 7 条均未越过「只登记不判定」边界，逐条为「现象 + 为什么读不出来 + 需要用户裁决的点」，无「错配 / 缺失 / 残留 / 待办」措辞。
-- `packages-user/client-base/src/index.ts:1-9` / `packages-user/client-modules/src/index.ts:9-16` 及各子 barrel（`elements/index.ts:46-48` / `components/index.ts:1-12` / `render/index.tsx:38-44` / `render/ui/index.ts:7-14`）导出面实读确认，D-69 判定与事实一致。
+- A 类每条锚点指向真实存在的 `export const x = new X()` 及其消费者：`cache.ts:280`（类 `:48`）、`core.ts:6`（类 `client.ts:41`）、`render/renderer.ts:18,20,35,43`、`render/scene.ts:3`、`render/ui/controller.tsx:11,29`、各 `render/ui/*.tsx` 定义行、`shared.ts:105`、`client-base/components/{choices,input,misc}.tsx` 各定义行 —— 均实读 / `git grep` 确认。
+- A-31 `[证据行]` 的 `git grep -n -E "export const [A-Za-z0-9_]+ = new "` 原样结果 **30** 条，与 A-01..A-30 逐条对齐、**无遗漏、无多登**；`render/renderer.ts:45` 的解构导出 `createApp` / `render` / `tagManager` **未登记**（非 `new`）。
+- `[证据行]` 标记仅出现在 A-24 / A-25 / A-30（零消费者）与 A-31（完整性反查）四条；其余 A 事实行均 ≥2 个 `file:line` 锚点，无标记误用。
+- E 类目标接口证据的 `file:line` 指向真实声明：`IClientBaseExtended`（`client-base/src/types.ts:27`）、`ICoreStateExtended`（`data-state/src/types.ts:45`）、先例 `material/types.ts:94,218,406,439`、数据端 `ins.ts:11` 均实读确认。
+- F 类 7 条均未越过「只登记不判定」边界，**无**「错配 / 缺失 / 残留 / 待办」措辞；**无一条**涉及非单例（`window` / `core` / `Mota.require` / 静态注册表 / 顶层副作用）。
+- 台账**无** `## B` / `## C` / `## D` 小节；`## A` / `## E` 为固定列序表。
 
 ## Decisions Made
 
-- **只读收集小切片（用户 2026-10-01 去单例化第一步）**：唯一交付物为台账 + 本 SUMMARY；生产源码改动 0，`files_modified` 仅台账。
+- **只读单例清点小切片（用户 2026-10-01 裁定第一步）**：唯一交付物为台账 + 本 SUMMARY；生产源码改动 0，`files_modified` 仅台账。
+- **范围仅限单例**：只登记模块顶层实例化对象 `export const x = new X()`（30 条）；可变模块级状态 / 全局注册表 / 全局访问器 / 顶层副作用 / 非 `new` 导出一律 OUT（不设门禁、不写入台账）。
 - **单一白名单提交**：Task 1/2/3 不独立提交；Task 4 步骤 (10) 单次提交，仅暂存台账 + SUMMARY。
-- **undetermined 纪律**：目标接口取舍 / 外部框架级全局归属 / renderer 重复单例权威 / `GameUI` 实例是否纳入 一律进 F 类，不臆测、不裁定、不给挂载写法（新增命名须先获批）。
-- **未写其它 `.planning/` 文件**：按 orchestrator 指示与计划 prohibitions，除本 SUMMARY 外未写 `STATE.md` / `ROADMAP.md` / `WINDOWS.md` / `REQUIREMENTS.md`（`REND-01` / `REND-02` 保持 Pending；ROADMAP 的 `04-15` / `Wave 14` 登记由编排器在计划阶段完成）。
+- **undetermined 纪律**：所有单例的目标接口取舍一律 `undetermined`（`IClientBaseExtended` vs `ICoreStateExtended` 交用户裁决，F-05）；外部包单例 / 重复 renderer 实例 / `GameUI` 实例是否纳入 / 无消费者 UI 一律进 F 类，不臆测。
+- **覆盖先前错误范围产物**：先前 6 类范围（含 B/C/D）的台账与 SUMMARY 被本 run 重写为「仅单例」范围；同一白名单文件路径，单次提交覆盖。
+- **未写其它 `.planning/` 文件**：除本 SUMMARY 外未写 `STATE.md` / `ROADMAP.md` / `WINDOWS.md` / `REQUIREMENTS.md`（`REND-01` / `REND-02` 保持 Pending）。
 
 ## Deviations from Plan
 
-None - plan executed exactly as written（无 Rule 1–4 偏差）。
+### Auto-fixed Issues
 
-说明：Task 1/2/3/4 每条 `<automated>` 均按计划 `## Verification Runnability` 的指示，将原样语义落到仓库外临时 `.cjs` 后 `node <file>` 执行（判据与 `<fails_when>` 一字不变）；这是计划明示的既定做法（先例 04-12 / 04-14），**不构成偏差**。
+**1. [Rule 3 - Tooling] Task 1/2/3/4 内联 `node -e` 门禁在 PowerShell 5.1 下不可直跑**
+
+- **Found during:** Task 1 起（每条 `<automated>` 门禁）
+- **Issue:** 计划门禁为内联 `node -e "..."`，Windows PowerShell 5.1 会破坏其中的内嵌引号 / `$`（正则尾锚）/ CJK / `→`，使命令被 mangle 而非按语义失败。
+- **Fix:** 按计划 `<Verification Runnability>` 的强制要求，把每条门禁的**原样语义**落到仓库外临时 `.cjs` 文件（`%TEMP%\opencode\04-15-*.cjs`）后执行 `node <file>`；判据与 `<fails_when>` 一字不变，全部 18 条门禁实测通过。
+- **Files modified:** 无生产文件（临时工装，位于仓库外）
+- **Commit:** 不适用
+
+---
+
+**Total deviations:** 1（门禁执行方式，非判据放宽）——**均不涉及生产代码，所有实质判据全部通过**。
 
 ## Known Stubs (只报告不处置)
 
 | # | 余留 | 位置 | 说明 |
 |---|---|---|---|
-| 1 | 目标接口取舍未定 | `texture` / client-base `GameUI` / 模块级状态 | F-05 交用户裁决（`IClientBaseExtended` vs `ICoreStateExtended`） |
-| 2 | 外部框架级全局能否挂主类未定 | `mainRenderer` / `using` / `tagManager` / `gameKey` / `sceneController` / `mainUIController` | F-01 交用户裁决 |
-| 3 | renderer 重复单例权威归属未定 | `packages-user/client-modules/src/render/renderer.ts:18,20,35` ↔ `packages-user/client-modules/src/client.ts:90,91,108` | F-02 交用户裁决 |
-| 4 | `GameUI` / `UIController` 实例是否纳入未定 | 20 个 `GameUI` 实例 | F-03 交用户裁决 |
-| 5 | `window` 顶层副作用与无 DOM 约束关系未定 | `packages-user/client-modules/src/render/use.ts:51` | F-04 交用户裁决 |
-| 6 | `IClientBaseExtended` 现行实现情况未知 | `packages-user/client-base/src/types.ts:27` | F-06 交用户裁决 |
-| 7 | 状态栏 UI 无消费者 | `packages-user/client-modules/src/render/ui/statusBar.tsx:488,489` | F-07 交用户裁决 |
+| 1 | 目标接口取舍未定（全部 30 单例） | 台账 A / E / 映射汇总 | `IClientBaseExtended` vs `ICoreStateExtended` 交用户裁决（F-05） |
+| 2 | 外部包 A 单例能否挂主类未定 | `render/renderer.ts:35,43`、`render/scene.ts:3`、`render/ui/controller.tsx:11` | `@motajs/render` / `@motajs/render-vue` / `@motajs/system`（F-02） |
+| 3 | 重复 renderer 实例权威归属未定 | `render/renderer.ts:18,20,35` ↔ `client.ts:90,91,108` | F-03 |
+| 4 | `GameUI` / `UIController` 实例是否纳入未定 | `render/ui/*.tsx`、`client-base/components/*.tsx` | F-04 |
+| 5 | `IClientBaseExtended` 无实现类 | `client-base/src/types.ts:27` | F-06 |
+| 6 | 无消费者 UI 单例 | `statusBar.tsx:488,489`、`misc.tsx:592` | F-07 |
 
-> 依 orchestrator 指示与计划 Task 4 步骤 (11)，未写入 `.planning/WINDOWS.md` / `STATE.md` / `ROADMAP.md`（本步仅允许写台账与 SUMMARY）。
+> 依计划 prohibitions 与 Task 4 步骤 (11)，未写入 `.planning/WINDOWS.md` / `STATE.md` / `ROADMAP.md`（本步仅允许写台账与 SUMMARY）。
 
 ## Issues Encountered
 
-- 无。全部门禁一次通过；无 Rule 1–4 偏差。
+- 见「Deviations from Plan」的 1 处（门禁脚本 shell 兼容性），已按计划 `<Verification Runnability>` 的强制做法处置，无生产代码影响。
 
 ## 无运行时验证声明（D-68 的延续）
 
 - 本步**没有「保证能运行」的要求**：**未运行** `pnpm check:type` / `pnpm build`，**未使用** TS 诊断数（全仓或范围内）作为任何门禁或验收项。
-- 证明方式全部为**静态**：`git status --porcelain` 正向基线（含用户 `combat/context.ts` 行在场 + 无其它条目 + `git hash-object` 与台账标记一致）/ 台账结构与全量关键锚点 / 分类关键词 / 禁用路径 porcelain / 既有产物保护 / ROADMAP 登记 / CRLF，辅以人工代码复核。
+- 证明方式全部为**静态**：`git status --porcelain` 正向基线（用户 `combat/context.ts` 在场 + `git hash-object` 与台账标记一致 + 无其它条目）/ 台账结构与 `[证据行]` 纪律 / `git grep` 完整性反查 / 禁用路径 porcelain / CRLF / 既有产物保护 / ROADMAP 登记，辅以人工代码复核。
 
 ## User Setup Required
 
@@ -192,10 +200,10 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 
-- **第一步（只读收集）完成**：A 30 对象 / B 8 / C 6 / D 4 / E 7 条 + F 7 条 + 单例→目标映射汇总 41 行；可确定目标（如 `client` 即主类本身）与 undetermined 项（外部框架级全局 / 重复单例 / 接口取舍 / `GameUI` 实例）分离清晰。
-- **第二步（04-16：挂载 + 接口继承重构）未规划**，待用户审阅 `04-RENDER-SINGLETON-AUDIT.md` 后另行规划；本步不产出任何新 `*-PLAN.md`，第二步如确需新增命名（挂载字段 / 接口名）须先获用户批准（AGENTS.md）。
-- **D-69 与 legacy 边界遵守**：D 类 barrel 涉及只登记；C 类 `core.*` / `Mota.require` / `window.*` 一律只报告、不修、不登记为待办。
-- **范围零外溢**：`packages-user/client-base/src/material/**`（D-42 / D-48）、`packages/**`、`src/**`、测试文件全部零触碰；用户 `packages-user/data-system/src/combat/context.ts` 并发改动保留且未被提交。
+- **第一步（只读收集）完成**：A 30 单例（+1 完整性反查证据行）/ E 8 / F 7 / 映射汇总 30 行；`client` 主单例与其余单例、重复 renderer 实例、外部包单例、`GameUI` 实例簇均已定位，目标接口候选与先例齐备，undetermined 项分离清晰。
+- **第二步（04-16 挂载 + 接口继承重构）未规划**，待用户审阅 `04-RENDER-SINGLETON-AUDIT.md` 后另行规划；本步不产出任何新 `*-PLAN.md`。
+- **命名零变更**：未新增 / 改名 / 删除任何公共、受保护、私有成员、方法、字段、文件或目录。
+- **范围零外溢**：数据端（含用户未提交 `combat/context.ts`）/ `packages/` / `src/` / 其它 `package.json` / 测试文件全部零触碰；用户改动被保留且未被提交。
 - `REND-01` / `REND-02` 仍为 **Pending**；`.planning/REQUIREMENTS.md` 零改动。
 
 ---
@@ -204,9 +212,9 @@ None - no external service configuration required.
 
 ## Self-Check: PASSED
 
-- `.planning/phases/04-render-adaptation/04-RENDER-SINGLETON-AUDIT.md`: FOUND（12 小节 + A–E 60 行 + F 7 条 + 单例→目标映射汇总 41 行 + 处置）
+- `.planning/phases/04-render-adaptation/04-RENDER-SINGLETON-AUDIT.md`: FOUND（A 30 单例 + 1 证据行 / E 8 / F 7 / 映射汇总 30 行；无 B/C/D）
 - `.planning/phases/04-render-adaptation/04-15-SUMMARY.md`: FOUND
-- 生产源码改动: 0（`git status --porcelain -- packages packages-user src` 仅用户既有 ` M packages-user/data-system/src/combat/context.ts`）；`material/` / `packages/` / `src/` 零触碰
-- 用户并发改动 `packages-user/data-system/src/combat/context.ts`: PRESERVED（未提交、未触碰，哈希 `9982509d3d8ec4c58d5c71f37f1a576a13c3337f`）
+- 生产源码改动: 0（`git status --porcelain -- packages packages-user src` 仅用户既有 ` M .../combat/context.ts`）；`material/` / `packages/` / `src/` 零触碰
+- 用户并发改动 `combat/context.ts`: PRESERVED（未提交、未触碰、哈希一致）
 - `04-01`..`04-14` 既有产物: 零触碰；无 `04-16+`
-- commits measured from ledger (`2d32878..HEAD`): 1（白名单提交）
+- commits measured from ledger (`015a1993..HEAD`): 1
