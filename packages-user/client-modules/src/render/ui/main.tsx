@@ -6,7 +6,7 @@ import {
 } from '@motajs/render';
 // import { WeatherController } from '../weather';
 import { defineComponent, onUnmounted, reactive, ref } from 'vue';
-import { Textbox, TextboxProps, Tip } from '../components';
+import { Textbox, TextboxProps, Tip } from '@user/client-base';
 import { GameUI } from '@motajs/system';
 import {
     ENABLE_RIGHT_STATUS_BAR,
@@ -25,9 +25,7 @@ import {
     RightStatusBar
 } from './statusBar';
 import { ReplayingStatus } from './toolbar';
-// @ts-expect-error 需要重构
-import { getHeroStatusOn, state } from '@user/data-state';
-import { hook } from '@user/data-base';
+import { state } from '@user/data-state';
 import { mainUIController } from './controller';
 import { isNil } from 'lodash-es';
 import { using } from '../renderer';
@@ -101,15 +99,15 @@ const MainScene = defineComponent(() => {
         hideStatus.value = flags.getFieldValueDefaults('hideStatusBar', false);
 
         const hero = core.status.hero;
-        leftStatus.atk = getHeroStatusOn('atk');
-        leftStatus.hp = getHeroStatusOn('hp');
-        leftStatus.hpmax = getHeroStatusOn('hpmax');
-        leftStatus.mana = getHeroStatusOn('mana');
-        leftStatus.manamax = getHeroStatusOn('manamax');
-        leftStatus.def = getHeroStatusOn('def');
-        leftStatus.mdef = getHeroStatusOn('mdef');
-        leftStatus.money = getHeroStatusOn('money');
-        leftStatus.exp = getHeroStatusOn('exp');
+        leftStatus.atk = client.hero.attribute.getFinalAttribute('atk');
+        leftStatus.hp = client.hero.attribute.getFinalAttribute('hp');
+        leftStatus.hpmax = client.hero.attribute.getFinalAttribute('hpmax');
+        leftStatus.mana = client.hero.attribute.getFinalAttribute('mana');
+        leftStatus.manamax = client.hero.attribute.getFinalAttribute('manamax');
+        leftStatus.def = client.hero.attribute.getFinalAttribute('def');
+        leftStatus.mdef = client.hero.attribute.getFinalAttribute('mdef');
+        leftStatus.money = client.hero.attribute.getFinalAttribute('money');
+        leftStatus.exp = client.hero.attribute.getFinalAttribute('exp');
         leftStatus.up = core.getNextLvUpNeed() ?? 0;
         leftStatus.yellowKey = core.itemCount('yellowKey');
         leftStatus.blueKey = core.itemCount('blueKey');
@@ -140,12 +138,15 @@ const MainScene = defineComponent(() => {
     };
 
     // 监听状态栏更新事件
-    hook.on('statusBarUpdate', updateStatus);
-    hook.on('statusBarUpdate', updateDataFallback);
+    const attributeHook = client.hero.attribute.addHook({
+        onUpdateAttribute: () => {
+            updateStatus();
+            updateDataFallback();
+        }
+    });
 
     onUnmounted(() => {
-        hook.off('statusBarUpdate', updateStatus);
-        hook.off('statusBarUpdate', updateDataFallback);
+        attributeHook.unload();
     });
 
     //#region sprite 渲染

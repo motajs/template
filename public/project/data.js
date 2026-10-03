@@ -406,16 +406,14 @@ var data_a1e2fb4a_e986_4524_b0da_9b7ba7c0874d =
 		],
 		"flyNearStair": false,
 		"flyRecordPosition": true,
-		"itemFirstText": false,
-		"enableAddPoint": false,
+		"itemHint": true,
 		"enableNegativeDamage": false,
-		"betweenAttackMax": true,
-		"enableGentleClick": true,
-		"ignoreChangeFloor": true,
-		"canGoDeadZone": false,
-		"enableMoveDirectly": true,
+		"betweenDamageMax": true,
+		"enablePick": true,
+		"ignoreChangeFLoor": true,
+		"allowDeadZone": false,
+		"enableTeleport": true,
 		"enableRouteFolding": true,
-		"disableShopOnDamage": false,
-		"blurFg": true
+		"enableTeleportMerge": true
 	}
 }

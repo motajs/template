@@ -14,11 +14,11 @@ describe('MapLocIndexer', () => {
     it('agrees between the coordinate and locator forms', () => {
         const indexer = createIndexer(5);
 
-        expect(indexer.locToIndex(0, 0)).toBe(0);
-        expect(indexer.locToIndex(2, 3)).toBe(17);
-        expect(indexer.locaterToIndex({ x: 2, y: 3 })).toBe(17);
-        expect(indexer.locaterToIndex({ x: 2, y: 3 })).toBe(
-            indexer.locToIndex(2, 3)
+        expect(indexer.index(0, 0)).toBe(0);
+        expect(indexer.index(2, 3)).toBe(17);
+        expect(indexer.locatorToIndex({ x: 2, y: 3 })).toBe(17);
+        expect(indexer.locatorToIndex({ x: 2, y: 3 })).toBe(
+            indexer.index(2, 3)
         );
     });
 
@@ -27,9 +27,9 @@ describe('MapLocIndexer', () => {
         const indexer = createIndexer(5);
 
         for (let index = 0; index < 20; index++) {
-            const locator = indexer.indexToLocator(index);
-            expect(indexer.locToIndex(locator.x, locator.y)).toBe(index);
-            expect(indexer.locaterToIndex(locator)).toBe(index);
+            const locator = indexer.locator(index);
+            expect(indexer.index(locator.x, locator.y)).toBe(index);
+            expect(indexer.locatorToIndex(locator)).toBe(index);
         }
     });
 
@@ -37,21 +37,21 @@ describe('MapLocIndexer', () => {
     it('splits a flat index into its column and row', () => {
         const indexer = createIndexer(4);
 
-        expect(indexer.indexToLocator(0)).toEqual({ x: 0, y: 0 });
-        expect(indexer.indexToLocator(3)).toEqual({ x: 3, y: 0 });
-        expect(indexer.indexToLocator(4)).toEqual({ x: 0, y: 1 });
-        expect(indexer.indexToLocator(9)).toEqual({ x: 1, y: 2 });
+        expect(indexer.locator(0)).toEqual({ x: 0, y: 0 });
+        expect(indexer.locator(3)).toEqual({ x: 3, y: 0 });
+        expect(indexer.locator(4)).toEqual({ x: 0, y: 1 });
+        expect(indexer.locator(9)).toEqual({ x: 1, y: 2 });
     });
 
     // 验证 setWidth 改变行步长后，同一坐标映射到新索引
     it('changes the row stride after setWidth', () => {
         const indexer = createIndexer(4);
 
-        expect(indexer.locToIndex(1, 2)).toBe(9);
+        expect(indexer.index(1, 2)).toBe(9);
 
         indexer.setWidth(10);
 
-        expect(indexer.locToIndex(1, 2)).toBe(21);
-        expect(indexer.indexToLocator(21)).toEqual({ x: 1, y: 2 });
+        expect(indexer.index(1, 2)).toBe(21);
+        expect(indexer.locator(21)).toEqual({ x: 1, y: 2 });
     });
 });

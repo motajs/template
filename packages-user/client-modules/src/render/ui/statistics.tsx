@@ -5,7 +5,7 @@ import {
     UIComponentProps
 } from '@motajs/system';
 import { defineComponent } from 'vue';
-import { waitbox, ListPage, TextContent } from '../components';
+import { waitbox, ListPage, TextContent } from '@user/client-base';
 import { DefaultProps } from '@motajs/render-vue';
 // @ts-expect-error 需要重构
 import { ItemState } from '@user/data-state';

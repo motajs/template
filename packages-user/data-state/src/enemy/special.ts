@@ -126,7 +126,7 @@ export function registerSpecials(manager: IEnemyManager<IEnemyAttr>): void {
         defineCommonSerializableSpecial(7, 0, {
             getSpecialName: () => '破甲',
             getDescription: special =>
-                `战斗前，附加角色防御的${special.value || core.values.breakArmor}%作为伤害。`,
+                `战斗前，附加角色防御的${special.value}%作为伤害。`,
             fromLegacyEnemy: enemy => enemy.breakArmor ?? 0
         })
     );
@@ -137,7 +137,7 @@ export function registerSpecials(manager: IEnemyManager<IEnemyAttr>): void {
         defineCommonSerializableSpecial(8, 0, {
             getSpecialName: () => '反击',
             getDescription: special =>
-                `战斗时，怪物每回合附加角色攻击的${special.value || core.values.counterAttack}%作为伤害，无视角色防御。`,
+                `战斗时，怪物每回合附加角色攻击的${special.value}%作为伤害，无视角色防御。`,
             fromLegacyEnemy: enemy => enemy.counterAttack ?? 0
         })
     );
@@ -148,7 +148,7 @@ export function registerSpecials(manager: IEnemyManager<IEnemyAttr>): void {
         defineCommonSerializableSpecial(9, 0, {
             getSpecialName: () => '净化',
             getDescription: special =>
-                `战斗前，怪物附加角色护盾的${special.value || core.values.purify}倍作为伤害。`,
+                `战斗前，怪物附加角色护盾的${special.value}倍作为伤害。`,
             fromLegacyEnemy: enemy => enemy.purify ?? 0
         })
     );

@@ -23,10 +23,10 @@ import {
     shallowRef,
     watch
 } from 'vue';
-import { FloorSelector } from '../components';
+import { FloorSelector } from '@user/client-base';
 import { clamp, mean } from 'lodash-es';
 import { StatisticsDataOneFloor } from './statistics';
-import { Tip, TipExpose } from '../components';
+import { Tip, TipExpose } from '@user/client-base';
 import { useKey } from '../use';
 import {
     ENABLE_RIGHT_STATUS_BAR,

@@ -1,5 +1,5 @@
 import { isNil } from 'lodash-es';
-import { IDataCommon, ReplayCode } from '@user/data-common';
+import { IDataCommon, ReplayCode, shouldReplay } from '@user/data-common';
 import {
     EquipStatus,
     IEquipmentState,
@@ -150,6 +150,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         }
     }
 
+    @shouldReplay('Equiping equipment should be replayed.')
     equip(
         uid: number,
         slot: number | string,
@@ -197,6 +198,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         return curr;
     }
 
+    @shouldReplay('Unequiping equipment should be replayed.')
     unequip(slot: number): number | undefined {
         const uid = this.equips.get(slot);
         if (isNil(uid)) return void 0;

@@ -417,7 +417,7 @@ describe('replay playback error codes 2001-2008', () => {
 
         (mover as unknown as { moving: boolean }).moving = false;
         vi.spyOn(mover, 'start').mockReturnValueOnce(null);
-        await expect(move.notExecuted()).resolves.toBe(false);
+        await expect(move.finalize()).resolves.toBe(false);
         expect(error).toHaveBeenCalledWith(2004);
     });
 

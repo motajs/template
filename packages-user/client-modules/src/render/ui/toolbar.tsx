@@ -10,13 +10,13 @@ import {
     RollbackIcon,
     StepForward,
     ViewMapIcon
-} from '../components/icons';
+} from '@user/client-base';
 import { getVitualKeyOnce } from '@motajs/legacy-ui';
 import { gameKey, generateKeyboardEvent } from '@motajs/system';
 import { transitioned } from '../use';
 import { linear } from 'mutate-animate';
 import { KeyCode } from '@motajs/client-base';
-import { Progress } from '../components/misc';
+import { Progress } from '@user/client-base';
 import { generateBinary } from '@motajs/legacy-common';
 import { SetupComponentOptions } from '@motajs/system';
 import { saveSave, saveLoad } from './save';

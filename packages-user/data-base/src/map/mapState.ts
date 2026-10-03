@@ -1,6 +1,9 @@
-import { uniq } from 'lodash-es';
-import { IDataCommon, IMapRawData, SaveCompression } from '@user/data-common';
-import { ITileStore } from '@user/data-common';
+import {
+    IDataCommon,
+    IMapRawData,
+    SaveCompression,
+    shouldReplay
+} from '@user/data-common';
 import {
     IGameMap,
     IGameMapSave,
@@ -30,165 +33,11 @@ export class MapState implements IMapState {
     /** 自动分区激活器开关 */
     private autoActivitorEnabled: boolean = false;
 
-    constructor(
-        private readonly tileStore: ITileStore,
-        public readonly state: IDataCommon
-    ) {}
-
-    /**
-     * 判断原始数据中的值是否为可枚举的对象容器
-     * @param value 待判断的运行时值
-     */
-    private isRecord(value: unknown): value is Record<string, unknown> {
-        return !!value && typeof value === 'object' && !Array.isArray(value);
-    }
-
-    /**
-     * 判断字符串键是否能无歧义地转换为有限数字
-     * @param key 原始对象键
-     */
-    private isNumericKey(key: string): boolean {
-        return key.trim() !== '' && Number.isFinite(Number(key));
-    }
-
-    /**
-     * 在创建地图前验证外部原始地图及事件结构
-     * @param raw 待验证的楼层原始数据
-     */
-    private validateRaw(raw: IMapRawData): boolean {
-        const rawMap: unknown = raw.map;
-        const rawEvents: unknown = raw.events;
-        const rawAliases: unknown = raw.layerAlias;
-        if (!this.isRecord(rawMap)) {
-            logger.error(63, 'map', raw.floorId);
-            return false;
-        }
-        if (!this.isRecord(rawEvents)) {
-            logger.error(63, 'events', raw.floorId);
-            return false;
-        }
-        if (!this.isRecord(rawAliases)) {
-            logger.error(63, 'layerAlias', raw.floorId);
-            return false;
-        }
-        if (!Number.isInteger(raw.width) || raw.width <= 0) {
-            logger.error(64, 'width', raw.floorId);
-            return false;
-        }
-
-        let length = 0;
-        for (const [zIndex, map] of Object.entries(rawMap)) {
-            if (!this.isNumericKey(zIndex)) {
-                logger.error(
-                    62,
-                    'layer',
-                    raw.floorId,
-                    'IMapRawData.map',
-                    zIndex
-                );
-                return false;
-            }
-            if (!Array.isArray(map)) {
-                logger.error(64, 'map layer', raw.floorId);
-                return false;
-            }
-            if (
-                !map.every(
-                    value =>
-                        typeof value === 'number' &&
-                        Number.isFinite(value) &&
-                        Number.isInteger(value) &&
-                        value >= 0
-                )
-            ) {
-                logger.error(64, 'map value', raw.floorId);
-                return false;
-            }
-            if (length > 0 && map.length !== length) {
-                logger.error(
-                    60,
-                    map.length.toString(),
-                    length.toString(),
-                    raw.floorId
-                );
-                return false;
-            }
-            length = map.length;
-
-            const alias = rawAliases[zIndex];
-            if (typeof alias !== 'string') {
-                logger.error(64, 'layer alias', raw.floorId);
-                return false;
-            }
-            const events = rawEvents[zIndex];
-            if (!this.isRecord(events)) {
-                logger.error(63, `events layer ${zIndex}`, raw.floorId);
-                return false;
-            }
-            for (const [index, tileEvents] of Object.entries(events)) {
-                if (!this.isNumericKey(index)) {
-                    logger.error(
-                        62,
-                        'event',
-                        raw.floorId,
-                        'IMapRawData.events',
-                        index
-                    );
-                    return false;
-                }
-                const indexNum = Number(index);
-                if (
-                    !Number.isInteger(indexNum) ||
-                    indexNum < 0 ||
-                    indexNum >= length
-                ) {
-                    logger.error(64, 'event position', raw.floorId);
-                    return false;
-                }
-                if (!this.isRecord(tileEvents)) {
-                    logger.error(63, `events position ${index}`, raw.floorId);
-                    return false;
-                }
-                for (const [priority, id] of Object.entries(tileEvents)) {
-                    if (!this.isNumericKey(priority)) {
-                        logger.error(
-                            62,
-                            'event',
-                            raw.floorId,
-                            'IMapRawData.events',
-                            priority
-                        );
-                        return false;
-                    }
-                    if (typeof id !== 'string') {
-                        logger.error(64, 'event id', raw.floorId);
-                        return false;
-                    }
-                }
-            }
-        }
-        if (length % raw.width !== 0) {
-            logger.error(
-                61,
-                length.toString(),
-                raw.width.toString(),
-                raw.floorId
-            );
-            return false;
-        }
-        for (const zIndex of Object.keys(rawEvents)) {
-            if (!this.isNumericKey(zIndex) || !Object.hasOwn(rawMap, zIndex)) {
-                logger.error(64, 'event layer', raw.floorId);
-                return false;
-            }
-        }
-        return true;
-    }
+    constructor(readonly state: IDataCommon) {}
 
     //#region 楼层管理
 
     fromRaw(raw: IMapRawData): IGameMap | null {
-        if (!this.validateRaw(raw)) return null;
         let length = 0;
         const entries = Object.entries(raw.map);
         for (const [_, map] of Object.entries(raw.map)) {
@@ -219,11 +68,10 @@ export class MapState implements IMapState {
         const state = this.createMap(raw.floorId, raw.width, height);
         for (const [zIndex, map] of entries) {
             const z = Number(zIndex);
-            const layer = state.addLayer();
             const alias = raw.layerAlias[z];
+            const layer = state.addLayer(alias);
             layer.setMapRef(new Uint32Array(map));
             layer.setZIndex(z);
-            state.setLayerAlias(layer, alias);
 
             // 设置坐标点事件
             const events = raw.events[z];
@@ -246,14 +94,14 @@ export class MapState implements IMapState {
         return state;
     }
 
+    @shouldReplay('Creating map should be replayed.')
     createMap(id: string, width: number, height: number): IGameMap {
         if (this.mapData.has(id)) {
             logger.warn(121, id);
         } else {
             this.maps.push(id);
         }
-        const tile = this.tileStore;
-        const state = new GameMap(this.state, tile, id, width, height);
+        const state = new GameMap(this.state, id, width, height);
         // 若已设置参考基准，新楼层直接视为全脏
         if (this.compared) {
             state.markDirty(true);
@@ -262,9 +110,10 @@ export class MapState implements IMapState {
         return state;
     }
 
+    @shouldReplay('Setting map list should be replayed.')
     setMapList(maps: string[]): void {
         this.maps.length = 0;
-        this.maps.push(...uniq(maps));
+        this.maps.push(...maps);
     }
 
     getMap(id: string): IGameMap | null {
@@ -285,6 +134,7 @@ export class MapState implements IMapState {
         this.areaList = areas;
     }
 
+    @shouldReplay('Activating area should be replayed.')
     activeArea(id: string): void {
         const idx = this.maps.indexOf(id);
         if (idx === -1) return;
@@ -293,6 +143,7 @@ export class MapState implements IMapState {
         this.setAreaActive(area, true);
     }
 
+    @shouldReplay('Deactivating area should be replayed.')
     deactiveArea(id: string): void {
         const idx = this.maps.indexOf(id);
         if (idx === -1) return;
@@ -305,7 +156,7 @@ export class MapState implements IMapState {
         this.autoActivitorEnabled = enable;
     }
 
-    notifyEnterFloor(id: string): void {
+    autoActivateFloor(id: string): void {
         if (!this.autoActivitorEnabled) return;
         const idx = this.maps.indexOf(id);
         if (idx === -1) return;
@@ -357,6 +208,7 @@ export class MapState implements IMapState {
         return this.mapData.get(id)?.active ?? false;
     }
 
+    @shouldReplay('Setting map active status should be replayed.')
     setMapActiveStatus(id: string, active: boolean): void {
         this.mapData.get(id)?.setActiveStatus(active);
     }

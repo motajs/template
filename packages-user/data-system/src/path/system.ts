@@ -1,5 +1,5 @@
 import { ITileLocator, logger } from '@motajs/common';
-import { IObjectMovable, IObjectMover } from '@user/data-common';
+import { IObjectMovable, IObjectMover, shouldReplay } from '@user/data-common';
 import { IStateBase } from '@user/data-base';
 import { PathFinder } from './finder';
 import {
@@ -79,12 +79,14 @@ export class PathfindingSystem implements IPathfindingSystem {
         return result;
     }
 
+    @shouldReplay('Moving hero by path finding system should be replayed.')
     moveTo(target: ITileLocator): IPathfindingController | null {
         const path = this.getPath(target);
         if (path.status !== PathfindingStatus.Success) return null;
         return this.startMove(path, false);
     }
 
+    @shouldReplay('Teleporting hero by path finding system should be replayed.')
     teleportTo(target: ITileLocator): IPathfindingController | null {
         const path = this.getPath(target);
         if (path.status !== PathfindingStatus.Success) return null;

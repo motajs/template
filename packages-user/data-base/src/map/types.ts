@@ -35,6 +35,8 @@ export interface IDynamicBlockSave extends IMapBlockSaveBase {
 }
 
 export interface IReadonlyEventView {
+    [Symbol.iterator](): Iterator<[priority: number, event: string]>;
+
     /**
      * 获取所有的事件
      * @returns 键表示优先级，值表示事件在 `IGameEventStore` 的索引
@@ -65,6 +67,11 @@ export interface ILayerEventView extends IReadonlyEventView {
      * @param priority 事件优先级
      */
     delete(priority: number): void;
+
+    /**
+     * 将点事件重置为参考基准
+     */
+    reset(): void;
 
     /**
      * 清空所有事件
@@ -126,6 +133,12 @@ export interface ITileBase extends IReadonlyTileBase {
      * 获取此图块所在位置的点事件
      */
     pointEvent(): ILayerEventView | null;
+
+    /**
+     * 复制某个图块的图块事件至当前图块
+     * @param origin 要从哪个图块复制
+     */
+    syncTileEvent(origin: IReadonlyTileBase): void;
 }
 
 export interface IStaticTile
@@ -152,7 +165,7 @@ export interface IDynamicTile
         ISaveableContent<Readonly<IDynamicBlockSave>> {
     /** 该动态图块的移动器 */
     readonly mover: IObjectMover<IDynamicTile>;
-    /** 该动态图块所属的动态图层 */
+    /** 该动态图块所属的图层 */
     readonly layer: IMapLayer;
 
     /**
@@ -210,7 +223,7 @@ export interface IMapLayerHooks extends IHookBase {
      * @param width 地图宽度
      * @param height 地图高度
      */
-    onResize(width: number, height: number): void;
+    onResize?(width: number, height: number): void;
 
     /**
      * 当更新某个区域的图块时执行，对应于 `putMapData` 方法
@@ -219,7 +232,7 @@ export interface IMapLayerHooks extends IHookBase {
      * @param width 更新区域宽度
      * @param height 更新区域高度
      */
-    onUpdateArea(x: number, y: number, width: number, height: number): void;
+    onUpdateArea?(x: number, y: number, width: number, height: number): void;
 
     /**
      * 当更新某个点的图块时执行，如果设置的图块与原先一样，则不会触发此方法，对应于 `setBlock` 方法
@@ -227,14 +240,14 @@ export interface IMapLayerHooks extends IHookBase {
      * @param x 更新点横坐标
      * @param y 更新点纵坐标
      */
-    onUpdateBlock(block: number, x: number, y: number): void;
+    onUpdateBlock?(block: number, x: number, y: number): void;
 
     /**
      * 当开门时触发，返回一个 `Promise`，当相关动画执行完毕后兑现
      * @param x 门横坐标
      * @param y 门纵坐标
      */
-    onOpenDoor(x: number, y: number): Promise<void>;
+    onOpenDoor?(x: number, y: number): Promise<void>;
 
     /**
      * 当关门时触发，返回一个 `Promise`，当相关动画执行完毕后兑现
@@ -242,7 +255,7 @@ export interface IMapLayerHooks extends IHookBase {
      * @param x 门横坐标
      * @param y 门纵坐标
      */
-    onCloseDoor(num: number, x: number, y: number): Promise<void>;
+    onCloseDoor?(num: number, x: number, y: number): Promise<void>;
 
     /**
      * 当动态图块被创建时触发，包括从静态图块转换为动态图块
@@ -354,7 +367,7 @@ interface ILayerStatic {
     setStaticDirection(x: number, y: number, direction: FaceDirection): number;
 
     /**
-     * 迭代所有的图块
+     * 迭代所有的非空图块。非空定义为此格图块数字不为 0，因此哪怕有事件也会视为空图块
      */
     iterateBlocks(): Iterable<ILayerLocation>;
 }
@@ -419,14 +432,6 @@ interface ILayerDynamic {
     iterateDynamicTiles(): Iterable<IDynamicTile>;
 
     /**
-     * 设置动态图块的朝向
-     * @param tile 要设置朝向的动态图块
-     * @param direction 目标朝向
-     * @returns 更新朝向后该动态图块的图块数字
-     */
-    setDynamicDirection(tile: IDynamicTile, direction: FaceDirection): number;
-
-    /**
      * 更新动态图块位置，用于在图块发生移动时更新内部存储，一般不需要手动调用
      * @param tile 动态图块
      */
@@ -472,6 +477,9 @@ export interface IMapLayer
         ILayerStatic,
         ILayerDynamic,
         ISaveableContent<IMapLayerSave> {
+    /** 地图使用的坐标索引器 */
+    readonly indexer: ILocationHelper;
+
     /** 地图宽度 */
     readonly width: number;
     /** 地图高度 */
@@ -488,6 +496,9 @@ export interface IMapLayer
     readonly map: IGameMap;
     /** 该图层使用的朝向绑定器 */
     readonly faceBinder: IRoleFaceBinder;
+
+    /** 图层别名，可以用于从 `IGameMap` 获取图层实例 */
+    readonly alias: string;
 
     /**
      * 设置图层的参考基准，存档时会根据参考基准进行必要的压缩处理，仅可调用一次，多次调用无效
@@ -638,8 +649,9 @@ export interface IGameMap
 
     /**
      * 添加图层，使用楼层预设的宽高
+     * @param alias 图层别名，用于获取图层实例
      */
-    addLayer(): IMapLayer;
+    addLayer(alias: string): IMapLayer;
 
     /**
      * 移除指定图层
@@ -652,25 +664,6 @@ export interface IGameMap
      * @param layer 图层对象
      */
     hasLayer(layer: IMapLayer): boolean;
-
-    /**
-     * 设置图层别名
-     * @param layer 图层对象
-     * @param alias 图层别名
-     */
-    setLayerAlias(layer: IMapLayer, alias: string): void;
-
-    /**
-     * 根据图层别名获取图层对象
-     * @param alias 图层别名
-     */
-    getLayerByAlias(alias: string): IMapLayer | null;
-
-    /**
-     * 获取图层对象的别名
-     * @param layer 图层对象
-     */
-    getLayerAlias(layer: IMapLayer): string | undefined;
 
     /**
      * 设置地图的参考基准，存档时会根据参考基准进行必要的压缩，仅可调用一次，多次调用无效
@@ -841,7 +834,7 @@ export interface IMapState
      * 那么会自动取消激活当前分区，然后激活新进入的分区。此函数一般不需要手动调用。
      * @param id 楼层 id
      */
-    notifyEnterFloor(id: string): void;
+    autoActivateFloor(id: string): void;
 }
 
 //#endregion

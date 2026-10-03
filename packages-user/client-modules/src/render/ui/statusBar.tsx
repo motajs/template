@@ -1,6 +1,6 @@
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { computed, ComputedRef, defineComponent, shallowReactive } from 'vue';
-import { TextContent } from '../components';
+import { TextContent } from '@user/client-base';
 import { ElementLocator, Font, ITexture } from '@motajs/render';
 import { MixedToolbar, ReplayingStatus } from './toolbar';
 import { openViewMap } from './viewmap';

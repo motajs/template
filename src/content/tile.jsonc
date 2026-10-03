@@ -1,2 +1,12 @@
 // Type: packages-user/data-common/src/store/types ITileRawData
-{}
+// --- SYSTEM PREFIX END --- //
+[
+    {
+        "num": 1,
+        "id": "yellowWall",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": { "onlyEvents": true, "inPass": 0, "outPass": 0 }
+    }
+]

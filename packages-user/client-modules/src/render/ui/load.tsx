@@ -23,7 +23,6 @@ import { transitioned } from '../use';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { clamp } from 'lodash-es';
 import { sleep } from '@motajs/common';
-import { loading } from '@user/data-base';
 import { GameTitleUI } from './title';
 import { client } from '../../core';
 
@@ -62,7 +61,6 @@ export const LoadScene = defineComponent<ILoadProps>(props => {
     ];
 
     const loadEnd = async () => {
-        loading.emit('loaded');
         alpha.set(0);
         await sleep(400);
         props.controller.closeAll();
@@ -70,14 +68,11 @@ export const LoadScene = defineComponent<ILoadProps>(props => {
     };
 
     const startLoad = async () => {
-        loader.initSystemLoadTask();
-        loader.load().then(() => {
-            loadEnd();
-        });
-        for await (const _ of loader.progress) {
-            taskProgress.set(loader.progress.getLoadedTasks());
-            byteProgress.set(loader.progress.getLoadedByte());
+        for await (const _ of loader.start()) {
+            taskProgress.set(loader.manager.getLoadedTasks());
+            byteProgress.set(loader.manager.getLoadedByte());
         }
+        loadEnd();
     };
 
     // 开始加载
@@ -89,8 +84,8 @@ export const LoadScene = defineComponent<ILoadProps>(props => {
         ctx.lineCap = 'round';
         ctx.lineWidth = LOAD_TASK_LINE_WIDTH;
         ctx.font = taskFont.string();
-        const loaded = loader.progress.getLoadedTasks();
-        const total = loader.progress.getAddedTasks();
+        const loaded = loader.manager.getLoadedTasks();
+        const total = loader.manager.getAddedTasks();
         // 这里使用渐变参数，因为要有动画效果
         const progress = clamp(taskProgress.value / total, 0, 1);
         const cx = taskLoc[2]! / 2;
@@ -116,8 +111,8 @@ export const LoadScene = defineComponent<ILoadProps>(props => {
         ctx.lineCap = 'round';
         ctx.lineWidth = LOAD_BYTE_LINE_WIDTH;
         ctx.font = byteFont.string();
-        const total = loader.progress.getTotalByte();
-        const loaded = loader.progress.getLoadedByte();
+        const total = loader.manager.getTotalByte();
+        const loaded = loader.manager.getLoadedByte();
         // 这里使用渐变参数，因为要有动画效果
         const progress = clamp(byteProgress.value / total, 0, 1);
         const sx = LOAD_BYTE_LINE_WIDTH;
@@ -137,7 +132,7 @@ export const LoadScene = defineComponent<ILoadProps>(props => {
         ctx.fillStyle = LOAD_FONT_COLOR;
         const loadedMB = (loaded / 2 ** 20).toFixed(2);
         const totalMB = (total / 2 ** 20).toFixed(2);
-        const percent = loader.progress.getByteRatio() * 100;
+        const percent = loader.manager.getByteRatio() * 100;
         ctx.fillText(
             `${loadedMB}MB / ${totalMB}MB | ${percent.toFixed(2)}%`,
             byteLoc[2]! - LOAD_BYTE_LINE_WIDTH,

@@ -1,9 +1,10 @@
 import { ITileLocator, logger } from '@motajs/common';
 import {
-    getFaceMovement,
+    FaceGroup,
     ObjectMover,
     ObjectMoveStep,
-    ObjectMoveType
+    ObjectMoveType,
+    shouldReplay
 } from '@user/data-common';
 import { IDynamicTile } from './types';
 import { DYNAMIC_MOVER_FACE } from '../shared';
@@ -31,60 +32,45 @@ export class DynamicTileMover extends ObjectMover<IDynamicTile> {
         return Promise.resolve(DynamicMoveCode.Success);
     }
 
-    protected onStepEnd(
+    @shouldReplay('Dynamic tile moving step should be replayed.')
+    protected async onStepEnd(
         code: number,
         step: ObjectMoveStep,
         tile: IDynamicTile
     ): Promise<ITileLocator> {
         if (code !== DynamicMoveCode.Success) {
             logger.warn(126, 'DynamicMoveCode.Success (0)', code.toString());
-            return Promise.resolve({ x: tile.x, y: tile.y });
+            return { x: tile.x, y: tile.y };
         }
-        const locator: ITileLocator = {
-            x: tile.x,
-            y: tile.y
-        };
+        const handler = tile.state.faceManager.get(FaceGroup.Dir8);
+        if (!handler) {
+            logger.warn(192);
+            return { x: tile.x, y: tile.y };
+        }
         switch (step.type) {
-            case ObjectMoveType.Dir: {
-                const { x, y } = getFaceMovement(step.move);
-                tile.setFaceDirection(step.move);
-                locator.x += x;
-                locator.y += y;
-                break;
-            }
-            case ObjectMoveType.DirFace: {
-                const { x, y } = getFaceMovement(step.move);
-                tile.setFaceDirection(step.face);
-                locator.x += x;
-                locator.y += y;
-                break;
+            case ObjectMoveType.Dir:
+            case ObjectMoveType.DirFace:
+            case ObjectMoveType.Special: {
+                const { x, y } = handler.movement(this.moveDirection);
+                tile.setFaceDirection(this.faceDirection);
+                return { x: tile.x + x, y: tile.y + y };
             }
             case ObjectMoveType.Face: {
                 tile.setFaceDirection(step.value);
-                break;
-            }
-            case ObjectMoveType.Special: {
-                const { x, y } = getFaceMovement(this.moveDirection);
-                tile.setFaceDirection(this.faceDirection);
-                locator.x += x;
-                locator.y += y;
-                break;
+                return { x: tile.x, y: tile.y };
             }
             case ObjectMoveType.Teleport:
             case ObjectMoveType.Jump: {
                 const { x, y, rel } = step;
                 tile.setFaceDirection(this.faceDirection);
-                if (rel) {
-                    locator.x += x;
-                    locator.y += y;
-                } else {
-                    locator.x = x;
-                    locator.y = y;
-                }
-                break;
+                const nx = rel ? tile.x + x : x;
+                const ny = rel ? tile.y + y : y;
+                return { x: nx, y: ny };
+            }
+            default: {
+                return { x: tile.x, y: tile.y };
             }
         }
-        return Promise.resolve(locator);
     }
 
     protected onStepSettled(): Promise<void> {

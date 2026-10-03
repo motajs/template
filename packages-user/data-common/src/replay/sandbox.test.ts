@@ -27,7 +27,7 @@ function createCommand(
     execute: (step: IReplayStepHandler) => Promise<boolean>,
     notExecuted?: () => Promise<boolean>
 ): IReplayCommand {
-    return notExecuted ? { execute, notExecuted } : { execute };
+    return notExecuted ? { execute, finalize: notExecuted } : { execute };
 }
 
 // 用录像系统构造一个可手动驱动的录像沙箱

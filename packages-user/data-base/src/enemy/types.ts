@@ -56,12 +56,6 @@ export interface ISpecial<T = void> extends ISaveableContent<T> {
     getDescription(): string;
 
     /**
-     * 从旧样板的怪物对象中导入此特殊属性
-     * @param enemy 旧样板怪物对象
-     */
-    fromLegacyEnemy(enemy: Enemy): void;
-
-    /**
      * 深拷贝此特殊属性
      */
     clone(): ISpecial<T>;
@@ -162,14 +156,6 @@ export interface IEnemy<TAttr>
 
 export type SpecialCreation<T, TAttr> = (enemy: IEnemy<TAttr>) => ISpecial<T>;
 
-export interface IEnemyLegacyBridge<TAttr> {
-    /**
-     * 从旧样板的怪物对象中获取其属性
-     * @param enemy 旧样板怪物对象
-     */
-    fromLegacyEnemy(enemy: Enemy, defaultValue: Partial<TAttr>): TAttr;
-}
-
 export interface IEnemyManager<TAttr> extends ISaveableContent<
     IEnemyManagerSaveState<TAttr>
 > {
@@ -191,23 +177,10 @@ export interface IEnemyManager<TAttr> extends ISaveableContent<
     ): void;
 
     /**
-     * 根据旧样板怪物对象生成一个新的怪物对象
-     * @param code 怪物数字
-     * @param enemy 旧样板怪物对象
-     */
-    fromLegacyEnemy(code: number, enemy: Enemy): IEnemy<TAttr>;
-
-    /**
      * 创建怪物对象，如果对应数字的怪物不存在则会返回 `null`
-     * @param code 怪物图块数字
+     * @param token 怪物图块数字或 id
      */
-    createEnemy(code: number): IEnemy<TAttr> | null;
-
-    /**
-     * 根据怪物的 `id` 创建怪物对象，如果对应的怪物不存在则会返回 `null`
-     * @param id 怪物 `id`
-     */
-    createEnemyById(id: string): IEnemy<TAttr> | null;
+    createEnemy(token: number | string): IEnemy<TAttr> | null;
 
     /**
      * 添加怪物模板，如果 `id` 或 `code` 与已有的冲突，则不会做任何操作，
@@ -217,44 +190,30 @@ export interface IEnemyManager<TAttr> extends ISaveableContent<
     addPrefab(enemy: IEnemy<TAttr>): void;
 
     /**
-     * 从旧样板的怪物对象中添加怪物模板
-     * @param code 怪物对象对应的图块数字
-     * @param enemy 旧样板怪物对象
-     */
-    addPrefabFromLegacy(code: number, enemy: Enemy): void;
-
-    /**
      * 获取指定怪物的模板
-     * @param code 怪物图块数字
+     * @param token 怪物图块数字或id
      */
-    getPrefab(code: number): IReadonlyEnemy<TAttr> | null;
-
-    /**
-     * 根据怪物的 `id` 获取对应的怪物模板
-     * @param id 怪物 `id`
-     */
-    getPrefabById(id: string): IReadonlyEnemy<TAttr> | null;
+    getPrefab(token: number): IReadonlyEnemy<TAttr> | null;
 
     /**
      * 删除指定的怪物模板
-     * @param code 怪物的图块数字或 `id`
+     * @param token 怪物的图块数字或 `id`
      */
-    deletePrefab(code: number | string): void;
+    deletePrefab(token: number | string): void;
 
     /**
      * 修改一个已有的怪物模板，如果不存在则会新增
-     * @param code 怪物的图块数字或 `id`
+     * @param token 怪物的图块数字或 `id`
      * @param enemy 新的怪物模板
      */
-    changePrefab(code: number | string, enemy: IEnemy<TAttr>): void;
+    changePrefab(token: number | string, enemy: IEnemy<TAttr>): void;
 
     /**
      * 让指定的怪物数字和怪物 id 复用指定的模板
      * @param source 怪物模板源
-     * @param code 复用怪物数字
-     * @param id 复用怪物 id
+     * @param reuse 哪个怪物要复用此模板
      */
-    reusePrefab(source: number | string, code: number, id: string): void;
+    reusePrefab(source: number | string, reuse: number | string): void;
 
     /**
      * 设置参考快照，后续对模板的修改将与此比较以确定是否脏。
@@ -265,11 +224,11 @@ export interface IEnemyManager<TAttr> extends ISaveableContent<
 
     /**
      * 修改指定怪物模板的属性，修改完成后自动与参考模板比较并更新 dirty 集合
-     * @param code 怪物的图块数字或 `id`
+     * @param token 怪物的图块数字或 `id`
      * @param modify 修改函数，传入可写怪物对象，返回修改后的对象
      */
     modifyPrefabAttribute(
-        code: number | string,
+        token: number | string,
         modify: (prefab: IEnemy<TAttr>) => IEnemy<TAttr>
     ): void;
 

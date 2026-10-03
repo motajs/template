@@ -4,6 +4,8 @@ import { IGameEventStore, IItemStore, IMapStore, ITileStore } from './store';
 import { IReplaySystem } from './replay';
 
 export interface IEnemyAttr {
+    /** 怪物名称 */
+    name: string;
     /** 怪物生命值 */
     hp: number;
     /** 怪物攻击力 */
@@ -23,6 +25,8 @@ export interface IEnemyAttr {
 export interface IHeroAttr {
     /** 勇士名称 */
     name: string;
+    /** 勇士等级 */
+    level: number;
     /** 勇士生命值 */
     hp: number;
     /** 勇士生命值上限 */

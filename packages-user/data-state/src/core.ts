@@ -1,5 +1,5 @@
 import { logger } from '@motajs/common';
-import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
+import { ILoadManager, LoadManager } from '@motajs/loader';
 import {
     IRoleFaceBinder,
     IFaceManager,
@@ -33,8 +33,6 @@ import {
     IHeroState,
     IFlagSystem,
     FlagSystem,
-    IMotaDataLoader,
-    MotaDataLoader,
     IMapState,
     MapState
 } from '@user/data-base';
@@ -48,7 +46,7 @@ import {
     IPathfindingSystem,
     PathfindingSystem
 } from '@user/data-system';
-import { ICoreState, ISaveableExecutor } from './types';
+import { ICoreState, ICoreStateConfig, ISaveableExecutor } from './types';
 import {
     CommonAuraConverter,
     EnemyLegacyBridge,
@@ -62,7 +60,7 @@ import {
 } from './enemy';
 import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
 import { DefaultHeroMoveTopImpl, DefaultPassPredicateImpl } from './hero';
-import { createEventRegistrations } from './event/registrations';
+import { createEventRegistrations } from './event';
 import {
     ReplayEquip,
     ReplayMove,
@@ -70,6 +68,11 @@ import {
     ReplayUnequip,
     ReplayUseItem
 } from './replay';
+import {
+    IMotaDataLoader,
+    MotaDataLoader,
+    DefaultDataLoaderHook
+} from './loader';
 
 export class CoreState implements ICoreState {
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
@@ -93,8 +96,8 @@ export class CoreState implements ICoreState {
     readonly pathfinding: IPathfindingSystem;
 
     // Layer 3 用户层，也就是最顶层的内容，一般仅用于初始化以及仅供渲染端调用的顶层模块
-    readonly loadProgress: ILoadProgressTotal;
-    readonly dataLoader: IMotaDataLoader;
+    readonly loader: IMotaDataLoader;
+    readonly loadManager: ILoadManager;
 
     /** 可存档对象映射 */
     private readonly saveables: Map<string, ISaveableContent<any>> = new Map();
@@ -106,7 +109,7 @@ export class CoreState implements ICoreState {
         ISaveableExecutor<any>
     > = new Map();
 
-    constructor() {
+    constructor(config: Readonly<ICoreStateConfig>) {
         //#region L0 初始化
 
         // 朝向
@@ -122,7 +125,7 @@ export class CoreState implements ICoreState {
         // 图块
         this.tileStore = new TileStore();
         // 道具
-        this.itemStore = new ItemStore<IHeroAttr>();
+        this.itemStore = new ItemStore<IHeroAttr>(this.tileStore);
         // 地图
         this.mapStore = new MapStore();
         // 游戏事件
@@ -142,9 +145,6 @@ export class CoreState implements ICoreState {
         const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
         const heroState = new HeroState(this, dir8, heroAttribute);
         this.hero = heroState;
-
-        this.loadProgress = new LoadProgressTotal();
-        this.dataLoader = new MotaDataLoader(this.loadProgress);
 
         // 怪物管理器
         const comparer = new MainEnemyComparer();
@@ -200,6 +200,12 @@ export class CoreState implements ICoreState {
         //#endregion
 
         //#region L3 初始化
+
+        // 加载
+        this.loadManager = new LoadManager();
+        this.loader = new MotaDataLoader(this.loadManager, config.loadStarter);
+        this.loader.addHook(new DefaultDataLoaderHook());
+        this.loader.addCoreConfig('core', config.coreURL);
 
         // 存档内容
         this.addSaveableContent('@system/hero', this.hero);
@@ -322,8 +328,4 @@ export class CoreState implements ICoreState {
     }
 
     //#endregion
-}
-
-export function createCoreState(): CoreState {
-    return new CoreState();
 }

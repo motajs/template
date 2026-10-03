@@ -1,7 +1,18 @@
-import { IMotaDataLoader, IStateBase } from '@user/data-base';
-import { ILoadProgressTotal } from '@motajs/loader';
+import { IStateBase } from '@user/data-base';
+import { ILoadManager, ILoadTaskStarter } from '@motajs/loader';
 import { IStateSystem } from '@user/data-system';
 import { ISaveableContent } from '@user/data-common';
+import { IMotaDataLoader } from './loader/types';
+
+export interface ICoreStateConfig {
+    /**
+     * 加载启动器，用于适配不同加载环境。
+     * 例如网页端会使用 Web 加载器，而 node 端会使用专门的 node 加载器
+     */
+    readonly loadStarter: ILoadTaskStarter;
+    /** 核心配置文件的 URL 路径，也就是 `core.jsonc` 的文件路径 */
+    readonly coreURL: string;
+}
 
 export interface ISaveableExecutor<T> {
     /**
@@ -14,10 +25,10 @@ export interface ISaveableExecutor<T> {
 
 export interface ICoreState
     extends IStateSystem, ISaveableContent<ReadonlyMap<string, unknown>> {
-    /** 加载进度对象 */
-    readonly loadProgress: ILoadProgressTotal;
     /** 数据端加载对象 */
-    readonly dataLoader: IMotaDataLoader;
+    readonly loader: IMotaDataLoader;
+    /** 加载管理器 */
+    readonly loadManager: ILoadManager;
 
     /**
      * 将某个存档执行器绑定至指定的可存档对象，一个可存档对象只能绑定一个执行器，
@@ -29,4 +40,9 @@ export interface ICoreState
         content: ISaveableContent<T> | string,
         executor: ISaveableExecutor<T>
     ): void;
+}
+
+export interface ICoreStateExtended {
+    /** 当前对象对应的数据层主对象（Layer 3 对象） */
+    readonly state: ICoreState;
 }

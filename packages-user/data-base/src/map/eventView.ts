@@ -1,5 +1,6 @@
 import { logger } from '@motajs/common';
 import { ILayerEventView } from './types';
+import { shouldReplay } from '@user/data-common';
 
 export class LayerEventView implements ILayerEventView {
     /** 当前绑定的事件 */
@@ -8,6 +9,10 @@ export class LayerEventView implements ILayerEventView {
     private reference: Map<number, string> = new Map();
     /** 当前存储与参考基准不一致的条目数量 */
     private dirtyEntries: number = 0;
+
+    [Symbol.iterator]() {
+        return this.store.entries();
+    }
 
     get(): ReadonlyMap<number, string> {
         return this.store;
@@ -22,13 +27,9 @@ export class LayerEventView implements ILayerEventView {
      * @param priority 事件优先级
      */
     private isEntryDirty(priority: number): boolean {
-        const storeHas = this.store.has(priority);
-        const referenceHas = this.reference.has(priority);
-        return (
-            storeHas !== referenceHas ||
-            (storeHas &&
-                this.store.get(priority) !== this.reference.get(priority))
-        );
+        const stored = this.store.get(priority);
+        const ref = this.reference.get(priority);
+        return stored !== ref;
     }
 
     /**
@@ -43,6 +44,7 @@ export class LayerEventView implements ILayerEventView {
         }
     }
 
+    @shouldReplay('Setting layer event view should be replayed.')
     set(priority: number, event: string): void {
         if (this.store.has(priority)) {
             logger.warn(136, priority.toString());
@@ -52,10 +54,19 @@ export class LayerEventView implements ILayerEventView {
         this.updateDirtyEntry(priority, before);
     }
 
+    @shouldReplay('Deleting layer event view should be replayed.')
     delete(priority: number): void {
         const before = this.isEntryDirty(priority);
         this.store.delete(priority);
         this.updateDirtyEntry(priority, before);
+    }
+
+    @shouldReplay('Reseting layer event view should be replayed.')
+    reset(): void {
+        this.store.clear();
+        for (const [priority, id] of this.reference) {
+            this.store.set(priority, id);
+        }
     }
 
     clear(): void {

@@ -28,11 +28,11 @@ import {
     transitionedColor,
     useKey
 } from '../use';
-import { ExitFullscreen, Fullscreen, SoundVolume } from '../components';
+import { ExitFullscreen, Fullscreen, SoundVolume } from '@user/client-base';
 import { mainSetting, triggerFullscreen } from '@motajs/legacy-ui';
 import { saveLoad } from './save';
 import { MainSceneUI } from './main';
-import { adjustCover } from '../utils';
+import { adjustCover } from '@user/client-base';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { sleep } from '@motajs/common';
 import { client } from '../../core';

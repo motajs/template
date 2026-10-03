@@ -13,7 +13,7 @@ import {
     onMounted,
     shallowReactive
 } from 'vue';
-import { getConfirm, Page, PageExpose, Thumbnail } from '../components';
+import { getConfirm, Page, PageExpose, Thumbnail } from '@user/client-base';
 import { useKey } from '../use';
 import {
     HALF_HEIGHT,
@@ -28,7 +28,8 @@ import {
     SAVE_ITEM_TOP,
     SAVE_PAGES
 } from '../../shared';
-import { getSave, SaveData, adjustGrid, IGridLayoutData } from '../utils';
+import { adjustGrid, IGridLayoutData } from '@user/client-base';
+import { getSave, SaveData } from '../utils';
 
 export const enum SaveMode {
     Save,

@@ -48,10 +48,10 @@ export interface IRoleFaceBinder {
     getFaceOf(identifier: number, face: FaceDirection): IFaceData | null;
 
     /**
-     * 获取指定图块数字是哪个朝向
+     * 获取指定图块数字是哪个朝向，如果没有指定图块的数据，那么返回 `FaceDirection.Unknown`
      * @param identifier 图块数字
      */
-    getFaceDirection(identifier: number): FaceDirection | undefined;
+    getFaceDirection(identifier: number): FaceDirection;
 
     /**
      * 获取指定图块数字绑定至的主朝向

@@ -425,7 +425,7 @@ describe('EnemyContext registry and lookups', () => {
 
         expect(fixture.context.width).toBe(5);
         expect(fixture.context.height).toBe(2);
-        expect(fixture.context.indexer.locToIndex(3, 1)).toBe(8);
+        expect(fixture.context.indexer.index(3, 1)).toBe(8);
         expect(fixture.context.getEnemyByLocator({ x: 1, y: 0 })).toBeNull();
     });
 

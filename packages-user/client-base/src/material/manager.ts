@@ -2,7 +2,6 @@ import {
     ITexture,
     ITextureComposedData,
     ITextureRenderable,
-    ITextureSplitter,
     ITextureStore,
     SizedCanvasImageSource,
     Texture,
@@ -11,36 +10,38 @@ import {
     TextureStore
 } from '@motajs/render';
 import {
-    IBlockIdentifier,
     IMaterialData,
-    IMaterialManager,
+    ITextureManager,
     IIndexedIdentifier,
     IMaterialAssetData,
-    BlockCls,
-    IBigImageReturn,
     IAssetBuilder,
     IMaterialFramedData,
-    ITrackedAssetData
+    ITrackedAssetData,
+    IAutotileProcessor,
+    AutotileType
 } from './types';
+import { ICoreState } from '@user/data-state';
 import { logger } from '@motajs/common';
-import { getClsByString, getTextureFrame } from './utils';
 import { isNil } from 'lodash-es';
 import { AssetBuilder } from './builder';
 import { AutotileProcessor } from './autotile';
+import { ITileStore, TileType } from '@user/data-common';
 
-interface TilesetCache {
+interface ITilesetCache {
     /** 是否已经在贴图库中存在 */
     readonly existed: boolean;
     /** 贴图对象 */
     readonly texture: ITexture;
 }
 
-export class MaterialManager implements IMaterialManager {
+export class TextureManager implements ITextureManager {
+    readonly autotile: IAutotileProcessor;
+
+    readonly textures: ITextureStore = new TextureStore();
     readonly tileStore: ITextureStore = new TextureStore();
     readonly tilesetStore: ITextureStore = new TextureStore();
     readonly imageStore: ITextureStore = new TextureStore();
     readonly assetStore: ITextureStore = new TextureStore();
-    readonly bigImageStore: ITextureStore = new TextureStore();
 
     /** 自动元件图像源映射 */
     readonly autotileSource: Map<number, SizedCanvasImageSource> = new Map();
@@ -52,29 +53,27 @@ export class MaterialManager implements IMaterialManager {
     /** 带有脏标记追踪的图集对象 */
     readonly trackedAsset: ITrackedAssetData;
 
-    /** 大怪物数据 */
-    readonly bigImageData: Map<number, IMaterialFramedData> = new Map();
-    /** tileset 中 `Math.floor(id / 10000) + 1` 映射到 tileset 对应索引的映射，用于处理图块超出 10000 的 tileset */
+    /** tileset 中的偏移索引映射，可以处理超出 Tileset 图块数量单元的 Tileset */
     readonly tilesetOffsetMap: Map<number, number> = new Map();
     /** 图集打包器 */
     readonly assetBuilder: IAssetBuilder;
 
-    /** 图块 id 到图块数字的映射 */
-    readonly idNumMap: Map<string, number> = new Map();
-    /** 图块数字到图块 id 的映射 */
-    readonly numIdMap: Map<number, string> = new Map();
-    /** 图块数字到图块类型的映射 */
-    readonly clsMap: Map<number, BlockCls> = new Map();
     /** 图块的默认帧数 */
     readonly defaultFrames: Map<number, number> = new Map();
+    /** 每个图块的总帧数 */
+    readonly frames: Map<number, number> = new Map();
+    /** 每个图块的帧偏移量 */
+    readonly tileOffsets: Map<number, number> = new Map();
+    /** 每个 Tileset 的 tile 尺寸 */
+    readonly tilesetCells: Map<number, [number, number]> = new Map();
+    /** 自动元件类型映射 */
+    readonly autotileType: Map<number, AutotileType> = new Map();
 
     /** 网格切分器 */
     readonly gridSplitter: TextureGridSplitter = new TextureGridSplitter();
     /** 行切分器 */
     readonly rowSplitter: TextureRowSplitter = new TextureRowSplitter();
 
-    /** 大怪物贴图的标识符 */
-    private bigImageId: number = 0;
     /** 当前 tileset 索引 */
     private nowTilesetIndex: number = -1;
     /** 当前 tileset 偏移 */
@@ -82,120 +81,151 @@ export class MaterialManager implements IMaterialManager {
     /** 是否已经构建过素材 */
     private built: boolean = false;
 
-    constructor() {
-        this.assetBuilder = new AssetBuilder(this);
+    constructor(
+        readonly state: ICoreState,
+        readonly tiles: ITileStore,
+        readonly tilesetReserve: number,
+        readonly tilesetUnit: number
+    ) {
+        this.autotile = new AutotileProcessor(state);
+        this.assetBuilder = new AssetBuilder(this, state);
         this.assetBuilder.pipe(this.assetStore);
         this.trackedAsset = this.assetBuilder.tracked();
     }
 
     /**
-     * 添加由分割器和图块映射组成的图像源贴图
-     * @param source 图像源
-     * @param map 图块 id 与图块数字映射
-     * @param store 要添加至的贴图存储对象
-     * @param splitter 使用的分割器
-     * @param splitterData 传递给分割器的数据
-     * @param processTexture 对每个纹理进行处理
+     * 添加经由分割器分割的贴图素材
+     * @param splitted 分割器分割后的图像列表
+     * @param map 图块的图块数字映射数组
+     * @param frames 此素材中每一个贴图使用的帧率
+     * @param offsets 此素材中每一个贴图的帧偏移量
      */
-    private addMappedSource<T>(
-        source: SizedCanvasImageSource,
-        map: ArrayLike<IBlockIdentifier>,
-        store: ITextureStore,
-        splitter: ITextureSplitter<T>,
-        splitterData: T,
-        processTexture?: (tex: ITexture) => void
+    private addSplittedSource(
+        splitted: Iterable<ITexture>,
+        map: ArrayLike<number>,
+        frames: number,
+        offsets: number
     ): Iterable<IMaterialData> {
-        const tex = new Texture(source);
-        const textures = [...splitter.split(tex, splitterData)];
-        if (textures.length !== map.length) {
-            logger.warn(75, textures.length.toString(), map.length.toString());
-        }
-        const res: IMaterialData[] = textures.map((v, i) => {
-            if (!map[i]) {
+        return [...splitted].map((v, i) => {
+            if (isNil(map[i])) {
                 return {
-                    store,
+                    store: this.tileStore,
                     texture: v,
                     identifier: -1,
                     alias: '@internal-unknown'
                 };
             }
-            const { id, num, cls } = map[i];
-            store.addTexture(num, v);
-            store.alias(num, id);
-            this.clsMap.set(num, getClsByString(cls));
-            processTexture?.(v);
+            const num = map[i];
+            const id = this.tiles.id(num);
+            if (isNil(id)) {
+                logger.warn(184, num.toString());
+                return {
+                    store: this.tileStore,
+                    texture: v,
+                    identifier: -1,
+                    alias: '@internal-unknown'
+                };
+            }
+            this.tileStore.addTexture(num, v);
+            this.tileStore.alias(num, id);
+            this.frames.set(num, frames);
+            this.tileOffsets.set(num, offsets);
             const data: IMaterialData = {
-                store,
+                store: this.tileStore,
                 texture: v,
                 identifier: num,
                 alias: id
             };
             return data;
         });
-        return res;
     }
 
     addGrid(
         source: SizedCanvasImageSource,
-        map: ArrayLike<IBlockIdentifier>
+        map: ArrayLike<number>,
+        width: number,
+        height: number
     ): Iterable<IMaterialData> {
-        return this.addMappedSource(
-            source,
-            map,
-            this.tileStore,
-            this.gridSplitter,
-            [32, 32]
-        );
+        const tex = new Texture(source);
+        const textures = [...this.gridSplitter.split(tex, [width, height])];
+        if (textures.length !== map.length) {
+            logger.warn(75, textures.length.toString(), map.length.toString());
+        }
+        return this.addSplittedSource(textures, map, 1, width);
     }
 
     addRowAnimate(
         source: SizedCanvasImageSource,
-        map: ArrayLike<IBlockIdentifier>,
+        map: ArrayLike<number>,
+        width: number,
         height: number
     ): Iterable<IMaterialData> {
-        return this.addMappedSource(
-            source,
-            map,
-            this.tileStore,
-            this.rowSplitter,
-            height
-        );
+        if (source.width % width !== 0) {
+            logger.warn(185, source.width.toString(), width.toString());
+            return [];
+        }
+        const tex = new Texture(source);
+        const textures = [...this.rowSplitter.split(tex, height)];
+        if (textures.length !== map.length) {
+            logger.warn(75, textures.length.toString(), map.length.toString());
+        }
+        const frames = source.width / width;
+        return this.addSplittedSource(textures, map, frames, width);
     }
 
     addAutotile(
         source: SizedCanvasImageSource,
-        identifier: IBlockIdentifier
+        num: number,
+        type: AutotileType
     ): void {
-        this.autotileSource.set(identifier.num, source);
-        this.tileStore.alias(identifier.num, identifier.id);
-        this.clsMap.set(identifier.num, BlockCls.Autotile);
+        const id = this.tiles.id(num);
+        if (isNil(id)) {
+            logger.warn(184, num.toString());
+            return;
+        }
+        this.autotileSource.set(num, source);
+        this.tileStore.alias(num, id);
+        this.autotileType.set(num, type);
     }
 
     addTileset(
         source: SizedCanvasImageSource,
-        identifier: IIndexedIdentifier
+        identifier: IIndexedIdentifier,
+        cellWidth: number,
+        cellHeight: number
     ): IMaterialData | null {
         const tex = new Texture(source);
         this.tilesetStore.addTexture(identifier.index, tex);
         this.tilesetStore.alias(identifier.index, identifier.alias);
-        const width = Math.floor(source.width / 32);
-        const height = Math.floor(source.height / 32);
+        if (
+            source.width % cellWidth !== 0 ||
+            source.height % cellHeight !== 0
+        ) {
+            logger.warn(
+                186,
+                source.width.toString(),
+                source.height.toString(),
+                cellWidth.toString(),
+                cellHeight.toString()
+            );
+        }
+        // 计算 tile 数量，溢出部分不算
+        const width = Math.floor(source.width / cellWidth);
+        const height = Math.floor(source.height / cellHeight);
         const count = width * height;
-        const offset = Math.ceil(count / 10000);
+        // 一个 tileset 可能不止 tilesetUnit 个图块，需要计算偏移
+        const offset = Math.ceil(count / this.tilesetUnit);
         if (identifier.index === 0) {
             this.tilesetOffsetMap.set(0, 0);
             this.nowTilesetIndex = 0;
             this.nowTilesetOffset = offset;
         } else {
+            // 不允许不按顺序追加，因为这会导致图块数字难以维护
             if (identifier.index - 1 !== this.nowTilesetIndex) {
                 logger.warn(78);
                 return null;
             }
-            // 一个 tileset 可能不止 10000 个图块，需要计算偏移
-            const width = Math.floor(source.width / 32);
-            const height = Math.floor(source.height / 32);
-            const count = width * height;
-            const offset = Math.ceil(count / 10000);
+            // 这个 tileset 所包含的所有单位，都应该映射至当前 tileset，所以循环设置这期间的所有映射
             const end = this.nowTilesetOffset + offset;
             for (let i = this.nowTilesetOffset; i < end; i++) {
                 this.tilesetOffsetMap.set(i, identifier.index);
@@ -209,6 +239,7 @@ export class MaterialManager implements IMaterialManager {
             identifier: identifier.index,
             alias: identifier.alias
         };
+        this.tilesetCells.set(identifier.index, [cellWidth, cellHeight]);
         return data;
     }
 
@@ -230,41 +261,49 @@ export class MaterialManager implements IMaterialManager {
 
     setDefaultFrame(identifier: number, defaultFrame: number): void {
         this.defaultFrames.set(identifier, defaultFrame);
-        const bigImageData = this.bigImageData.get(identifier);
-        if (bigImageData) {
-            bigImageData.defaultFrame = defaultFrame;
-        }
     }
 
     getDefaultFrame(identifier: number): number {
         return this.defaultFrames.get(identifier) ?? -1;
     }
 
-    getTile(identifier: number): Readonly<IMaterialFramedData> | null {
-        if (identifier < 10000) {
-            const cls = this.clsMap.get(identifier) ?? BlockCls.Unknown;
-            if (
-                cls === BlockCls.Autotile &&
-                this.autotileSource.has(identifier)
-            ) {
-                this.cacheAutotile(identifier);
+    getFrameCount(num: number): number {
+        return this.frames.get(num) ?? 0;
+    }
+
+    getTile(num: number): Readonly<IMaterialFramedData> | null {
+        if (num < this.tilesetReserve) {
+            const type = this.tiles.getType(num);
+            if (type === TileType.Autotile && this.autotileSource.has(num)) {
+                this.cacheAutotile(num);
             }
-            const texture = this.tileStore.getTexture(identifier);
+
+            const texture = this.tileStore.getTexture(num);
             if (!texture) return null;
+
+            const frames = this.frames.get(num);
+            const offset = this.tileOffsets.get(num);
+
+            if (isNil(frames) || isNil(offset)) {
+                logger.warn(187);
+                return null;
+            }
+
             return {
                 texture,
-                cls,
-                offset: 32,
-                frames: getTextureFrame(cls, texture),
-                defaultFrame: this.defaultFrames.get(identifier) ?? -1
+                tileType: type,
+                offset,
+                frames,
+                defaultFrame: this.defaultFrames.get(num) ?? -1
             };
         } else {
-            const texture = this.cacheTileset(identifier);
+            const texture = this.cacheTileset(num);
             if (!texture) return null;
             return {
                 texture,
-                cls: BlockCls.Tileset,
-                offset: 32,
+                tileType: TileType.Tileset,
+                // Tileset 不需要偏移量
+                offset: 0,
                 frames: 1,
                 defaultFrame: -1
             };
@@ -297,28 +336,34 @@ export class MaterialManager implements IMaterialManager {
         return this.imageStore.fromAlias(alias);
     }
 
-    private getTilesetOwnTexture(identifier: number): TilesetCache | null {
-        const texture = this.tileStore.getTexture(identifier);
+    private getTilesetOwnTexture(num: number): ITilesetCache | null {
+        const texture = this.tileStore.getTexture(num);
         if (texture) return { existed: true, texture };
         // 如果 tileset 不存在，那么执行缓存操作
-        const offset = Math.floor(identifier / 10000);
-        const index = this.tilesetOffsetMap.get(offset - 1);
+        const adjustedNum = num - this.tilesetReserve;
+        const offset = Math.floor(adjustedNum / this.tilesetUnit);
+        const index = this.tilesetOffsetMap.get(offset);
         if (isNil(index)) return null;
         // 获取对应的 tileset 贴图
         const tileset = this.tilesetStore.getTexture(index);
-        if (!tileset) return null;
-        // 计算图块位置
-        const rest = identifier - offset * 10000;
+        const cell = this.tilesetCells.get(index);
+        if (!tileset || !cell) return null;
+        // 计算图块位置，首先计算没有偏移时图块的索引，即假如 Tileset 的左上角是 0，计算 num 的索引应该是什么
+        const unoffset = adjustedNum - offset * this.tilesetUnit;
         const { width, height } = tileset;
-        const tileWidth = Math.floor(width / 32);
-        const tileHeight = Math.floor(height / 32);
+        const [cellWidth, cellHeight] = cell;
+        const tileWidth = Math.floor(width / cellWidth);
+        const tileHeight = Math.floor(height / cellHeight);
         // 如果图块位置超出了贴图范围
-        if (rest > tileWidth * tileHeight) return null;
+        if (unoffset > tileWidth * tileHeight) {
+            logger.warn(188, num.toString());
+            return null;
+        }
         // 裁剪 tileset，生成贴图
-        const x = rest % tileWidth;
-        const y = Math.floor(rest / tileWidth);
+        const x = unoffset % tileWidth;
+        const y = Math.floor(unoffset / tileWidth);
         const newTexture = new Texture(tileset.source);
-        newTexture.clip(x * 32, y * 32, 32, 32);
+        newTexture.clip(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
         return { existed: false, texture: newTexture };
     }
 
@@ -364,8 +409,6 @@ export class MaterialManager implements IMaterialManager {
         if (existed) return texture;
         // 缓存贴图
         this.tileStore.addTexture(identifier, texture);
-        this.idNumMap.set(`X${identifier}`, identifier);
-        this.numIdMap.set(identifier, `X${identifier}`);
         const data = this.assetBuilder.addTexture(texture);
         texture.toAsset(data);
         this.checkAssetDirty(data);
@@ -385,8 +428,6 @@ export class MaterialManager implements IMaterialManager {
             if (existed) return;
             toAdd.push(texture);
             this.tileStore.addTexture(v, texture);
-            this.idNumMap.set(`X${v}`, v);
-            this.numIdMap.set(v, `X${v}`);
         });
 
         const data = this.assetBuilder.addTextureList(toAdd);
@@ -398,38 +439,41 @@ export class MaterialManager implements IMaterialManager {
 
     /**
      * 获取自动元件展开后的图片，如果图片不存在，或是已经展开并存储至了 `tileStore`，那么返回 `null`
-     * @param identifier 自动元件标识符
+     * @param num 自动元件数字
      */
-    private getFlattenedAutotile(
-        identifier: number
-    ): SizedCanvasImageSource | null {
-        const cls = this.clsMap.get(identifier);
-        if (cls !== BlockCls.Autotile) return null;
-        if (this.tileStore.getTexture(identifier)) return null;
-        const source = this.autotileSource.get(identifier);
+    private getFlattenedAutotile(num: number): SizedCanvasImageSource | null {
+        const type = this.tiles.getType(num);
+        if (type !== TileType.Autotile) return null;
+        if (this.tileStore.getTexture(num)) return null;
+        const source = this.autotileSource.get(num);
         if (!source) return null;
-        const frames = source.width === 96 ? 1 : 4;
-        const flattened = AutotileProcessor.flatten({ source, frames });
+        const autotileType = this.autotileType.get(num);
+        const frames = this.frames.get(num);
+        if (isNil(autotileType) || isNil(frames)) {
+            logger.warn(191);
+            return null;
+        }
+        const flattened = this.autotile.flatten(source, autotileType, frames);
         if (!flattened) return null;
         return flattened;
     }
 
-    cacheAutotile(identifier: number): ITexture | null {
-        const flattened = this.getFlattenedAutotile(identifier);
+    cacheAutotile(num: number): ITexture | null {
+        const existed = this.tileStore.getTexture(num);
+        if (existed) return existed;
+        const flattened = this.getFlattenedAutotile(num);
         if (!flattened) return null;
         const tex = new Texture(flattened);
-        this.tileStore.addTexture(identifier, tex);
+        this.tileStore.addTexture(num, tex);
         const data = this.assetBuilder.addTexture(tex);
         tex.toAsset(data);
-        this.autotileSource.delete(identifier);
+        this.autotileSource.delete(num);
         this.checkAssetDirty(data);
         return tex;
     }
 
-    cacheAutotileList(
-        identifierList: Iterable<number>
-    ): Iterable<ITexture | null> {
-        const arr = [...identifierList];
+    cacheAutotileList(list: Iterable<number>): Iterable<ITexture | null> {
+        const arr = [...list];
         const toAdd: ITexture[] = [];
 
         arr.forEach(v => {
@@ -508,88 +552,31 @@ export class MaterialManager implements IMaterialManager {
         return this.assetDataStore.get(id) ?? null;
     }
 
-    private getTextureOf(identifier: number, cls: BlockCls): ITexture | null {
-        if (cls === BlockCls.Unknown) return null;
-        if (cls !== BlockCls.Tileset) {
-            return this.tileStore.getTexture(identifier);
+    private getTextureOf(num: number): ITexture | null {
+        const existed = this.tileStore.getTexture(num);
+        if (existed) return existed;
+        if (num >= this.tilesetReserve) {
+            return this.cacheTileset(num);
+        } else {
+            const type = this.tiles.getType(num);
+            if (type === TileType.Autotile) {
+                return this.cacheAutotile(num);
+            } else {
+                return null;
+            }
         }
-        if (identifier < 10000) return null;
-        return this.cacheTileset(identifier);
     }
 
-    getRenderable(identifier: number): ITextureRenderable | null {
-        const cls = this.clsMap.get(identifier);
-        if (isNil(cls)) return null;
-        const texture = this.getTextureOf(identifier, cls);
+    getRenderable(num: number): ITextureRenderable | null {
+        const texture = this.getTextureOf(num);
         if (!texture) return null;
         return texture.render();
     }
 
     getRenderableByAlias(alias: string): ITextureRenderable | null {
-        const identifier = this.idNumMap.get(alias);
-        if (isNil(identifier)) return null;
-        return this.getRenderable(identifier);
-    }
-
-    getBlockCls(identifier: number): BlockCls {
-        return this.clsMap.get(identifier) ?? BlockCls.Unknown;
-    }
-
-    getBlockClsByAlias(alias: string): BlockCls {
-        const id = this.idNumMap.get(alias);
-        if (isNil(id)) return BlockCls.Unknown;
-        return this.clsMap.get(id) ?? BlockCls.Unknown;
-    }
-
-    getIdentifierByAlias(alias: string): number | undefined {
-        return this.idNumMap.get(alias);
-    }
-
-    getAliasByIdentifier(identifier: number): string | undefined {
-        return this.numIdMap.get(identifier);
-    }
-
-    setBigImage(
-        identifier: number,
-        image: ITexture,
-        frames: number
-    ): IBigImageReturn {
-        const bigImageId = this.bigImageId++;
-        this.bigImageStore.addTexture(bigImageId, image);
-        const cls = this.clsMap.get(identifier) ?? BlockCls.Unknown;
-        const store: IMaterialFramedData = {
-            texture: image,
-            cls,
-            offset: image.width / 4,
-            frames,
-            defaultFrame: this.defaultFrames.get(identifier) ?? -1
-        };
-        this.bigImageData.set(identifier, store);
-        const data: IBigImageReturn = {
-            identifier: bigImageId,
-            store: this.bigImageStore
-        };
-        return data;
-    }
-
-    isBigImage(identifier: number): boolean {
-        return this.bigImageData.has(identifier);
-    }
-
-    getBigImage(identifier: number): Readonly<IMaterialFramedData> | null {
-        return this.bigImageData.get(identifier) ?? null;
-    }
-
-    getBigImageByAlias(alias: string): Readonly<IMaterialFramedData> | null {
-        const identifier = this.idNumMap.get(alias);
-        if (isNil(identifier)) return null;
-        return this.bigImageData.get(identifier) ?? null;
-    }
-
-    getIfBigImage(identifier: number): Readonly<IMaterialFramedData> | null {
-        const bigImage = this.bigImageData.get(identifier);
-        if (bigImage) return bigImage;
-        else return this.getTile(identifier);
+        const num = this.tiles.num(alias);
+        if (isNil(num)) return null;
+        return this.getRenderable(num);
     }
 
     assetContainsTexture(texture: ITexture): boolean {
