@@ -71,6 +71,13 @@ export interface IEnemyView<TEnemy> {
     markDirty(): void;
 }
 
+export interface IComputingEnemyView<TEnemy> extends IEnemyView<TEnemy> {
+    /**
+     * 获取正在计算过程中的怪物对象，此方法理应只用于内部上下文的属性计算，外部不应调用
+     */
+    getComputingEnemy(): IEnemy<TEnemy>;
+}
+
 //#endregion
 
 //#region 光环与查询

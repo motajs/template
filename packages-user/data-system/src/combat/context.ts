@@ -2,6 +2,7 @@ import { IRange, ITileLocator, logger } from '@motajs/common';
 import {
     IAuraConverter,
     IAuraView,
+    IComputingEnemyView,
     IDamageSystem,
     IEnemyAuraView,
     IEnemyCommonQueryEffect,
@@ -23,13 +24,15 @@ import {
 } from '@user/data-base';
 import { EnemyView } from './enemy';
 import { ILocationIndexer, MapLocIndexer } from '@user/data-common';
+import { isNil } from 'lodash-es';
 
 export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     TEnemy,
     THero
 > {
     /** 坐标索引 -> 怪物视图 */
-    private readonly enemyViewMap: Map<number, EnemyView<TEnemy>> = new Map();
+    private readonly enemyViewMap: Map<number, IComputingEnemyView<TEnemy>> =
+        new Map();
     /** 坐标索引 -> 计算前怪物对象 */
     private readonly enemyMap: Map<number, IEnemy<TEnemy>> = new Map();
     /** 怪物视图 -> 坐标索引 */
@@ -40,7 +43,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     /** 计算后怪物对象 -> 怪物视图 */
     private readonly computedToView: Map<
         IReadonlyEnemy<TEnemy>,
-        EnemyView<TEnemy>
+        IComputingEnemyView<TEnemy>
     > = new Map();
 
     /** 当前已注册的光环转换器 */
@@ -203,29 +206,45 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
         return this.bindedHero;
     }
 
+    attachDamageSystem(system: IDamageSystem<TEnemy, THero> | null): void {
+        this.damageSystem = system;
+        if (system) {
+            system.bindHeroStatus(this.bindedHero);
+        }
+    }
+
+    getDamageSystem(): IDamageSystem<TEnemy, THero> | null {
+        return this.damageSystem;
+    }
+
+    attachMapDamage(damage: IMapDamage<TEnemy, THero> | null): void {
+        this.mapDamage = damage;
+        if (damage) {
+            damage.refreshAll();
+        }
+    }
+
+    getMapDamage(): IMapDamage<TEnemy, THero> | null {
+        return this.mapDamage;
+    }
+
+    addAura(aura: IAuraView<TEnemy>): void {
+        this.globalAuraList.add(aura);
+        this.needUpdate = true;
+    }
+
+    deleteAura(aura: IAuraView<TEnemy>): void {
+        this.globalAuraList.delete(aura);
+        this.needUpdate = true;
+    }
+
     //#endregion
 
-    /**
-     * 创建可修改信息对象
-     * @param enemy 怪物对象
-     * @param locator 怪物位置
-     */
-    private createHandler(
-        enemy: IEnemy<TEnemy>,
-        locator: ITileLocator
-    ): IEnemyHandler<TEnemy, THero> {
-        return {
-            enemy,
-            context: this,
-            locator,
-            hero: this.bindedHero!,
-            state: this.state
-        };
-    }
+    //#region 怪物操作
 
     getEnemyLocator(enemy: IEnemy<TEnemy>): Readonly<ITileLocator> | null {
         const index = this.locatorEnemyMap.get(enemy);
-        if (index === undefined) return null;
+        if (isNil(index)) return null;
         return this.indexer.locator(index);
     }
 
@@ -233,7 +252,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
         view: IEnemyView<TEnemy>
     ): Readonly<ITileLocator> | null {
         const index = this.locatorViewMap.get(view);
-        if (index === undefined) return null;
+        if (isNil(index)) return null;
         return this.indexer.locator(index);
     }
 
@@ -315,17 +334,15 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     private *internalScanRange<T>(
         range: IRange<T>,
         param: T
-    ): Iterable<[ITileLocator, EnemyView<TEnemy>]> {
+    ): Iterable<[ITileLocator, IComputingEnemyView<TEnemy>]> {
         range.bindHost(this);
         const keys = new Set(this.enemyViewMap.keys());
         const matched = range.autoDetect(keys, param);
         const viewMap = this.enemyViewMap;
         for (const index of matched) {
-            const view = viewMap.get(index);
-            if (view) {
-                const locator = this.indexer.locator(index);
-                yield [locator, view];
-            }
+            const view = viewMap.get(index)!;
+            const locator = this.indexer.locator(index);
+            yield [locator, view];
         }
     }
 
@@ -343,36 +360,26 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
         }
     }
 
-    addAura(aura: IAuraView<TEnemy>): void {
-        this.globalAuraList.add(aura);
-        this.needUpdate = true;
-    }
+    //#endregion
 
-    deleteAura(aura: IAuraView<TEnemy>): void {
-        this.globalAuraList.delete(aura);
-        this.needUpdate = true;
-    }
+    //#region 上下文构建
 
-    attachMapDamage(damage: IMapDamage<TEnemy, THero> | null): void {
-        this.mapDamage = damage;
-        if (damage) {
-            damage.refreshAll();
-        }
-    }
-
-    getMapDamage(): IMapDamage<TEnemy, THero> | null {
-        return this.mapDamage;
-    }
-
-    attachDamageSystem(system: IDamageSystem<TEnemy, THero> | null): void {
-        this.damageSystem = system;
-        if (system) {
-            system.bindHeroStatus(this.bindedHero);
-        }
-    }
-
-    getDamageSystem(): IDamageSystem<TEnemy, THero> | null {
-        return this.damageSystem;
+    /**
+     * 创建可修改信息对象
+     * @param enemy 怪物对象
+     * @param locator 怪物位置
+     */
+    private createHandler(
+        enemy: IEnemy<TEnemy>,
+        locator: ITileLocator
+    ): IEnemyHandler<TEnemy, THero> {
+        return {
+            enemy,
+            context: this,
+            locator,
+            hero: this.bindedHero!,
+            state: this.state
+        };
     }
 
     /**
@@ -389,6 +396,7 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
         for (const converter of this.auraConverter) {
             if (!this.converterStatus.get(converter)) continue;
             if (converter.shouldConvert(special, handler)) {
+                // 一个特殊属性只能对应一个转换器
                 if (matched) {
                     logger.warn(97, special.code.toString());
                     return null;
@@ -566,10 +574,12 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
      * 构建所有由特殊属性衍生出的光环与特殊查询结果
      */
     private buildupSpecials(): void {
+        // 首先把全局光环（无来源光环）加到排序列表中
         for (const aura of this.globalAuraList) {
             this.insertIntoSortedAura(aura);
         }
 
+        // 进行第一轮的特殊属性转换，生成可能的光环视图
         for (const [index, view] of this.enemyViewMap) {
             const enemy = view.getComputingEnemy();
             const locator = this.indexer.locator(index);
@@ -583,27 +593,31 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
             }
         }
 
+        // 其实大多数情况下并不存在光环，直接返回
+        if (this.sortedAura.size === 0) return;
+
         const processedPriorities = new Set<number>();
 
         // 由于期间可能会产生新优先级的光环，所以要用 while (true) 而不是直接遍历
+        // 直接使用 forEach 的话，会无法遍历到临时新增的那些优先级
         while (true) {
-            let maxPriority: number | null = null;
+            let maxPriority: number | undefined = undefined;
             for (const priority of this.sortedAura.keys()) {
                 if (!processedPriorities.has(priority)) {
-                    if (maxPriority === null || priority > maxPriority) {
+                    if (isNil(maxPriority) || priority > maxPriority) {
                         maxPriority = priority;
                     }
                 }
             }
             for (const priority of this.specialQueryEffects.keys()) {
                 if (!processedPriorities.has(priority)) {
-                    if (maxPriority === null || priority > maxPriority) {
+                    if (isNil(maxPriority) || priority > maxPriority) {
                         maxPriority = priority;
                     }
                 }
             }
 
-            if (maxPriority === null) break;
+            if (isNil(maxPriority)) break;
             processedPriorities.add(maxPriority);
 
             const auras = this.sortedAura.get(maxPriority);
@@ -722,6 +736,10 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
             this.mapDamage.refreshAll();
         }
     }
+
+    //#endregion
+
+    //#region 局部刷新
 
     markDirty(view: IEnemyView<TEnemy>): void {
         if (!this.locatorViewMap.has(view)) return;
@@ -897,6 +915,8 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
             this.refreshEnemy(requestedView as EnemyView<TEnemy>);
         }
     }
+
+    //#endregion
 
     clear(): void {
         this.enemyViewMap.clear();

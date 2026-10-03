@@ -75,6 +75,18 @@ export class TileStore implements ITileStore {
         }
     }
 
+    identity(token: number | string): [number, string] | [] {
+        if (typeof token === 'number') {
+            const id = this.numMap.get(token);
+            if (isNil(id)) return [];
+            else return [token, id];
+        } else {
+            const num = this.idMap.get(token);
+            if (isNil(num)) return [];
+            else return [num, token];
+        }
+    }
+
     /** 删除一组旧的图块定义及其双向索引 */
     private deleteBy(num: number, id: string): void {
         this.dataMap.delete(num);
