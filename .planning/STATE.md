@@ -236,6 +236,7 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 7 added: 数据端缺陷修复（仅数据端；修复 Phase 6 单元测试暴露的疑似缺陷，使正确预期用例转绿，不含渲染端）
+- Phase 8 added (2026-10-04): 测试重构与接口对齐（测试文件迁入 `__test__` + 按数据端当前接口重对齐 + 细节修复）；承接已 SUPERSEDED 的 07-16；需求 TEST-02
 
 ### Pending Todos
 

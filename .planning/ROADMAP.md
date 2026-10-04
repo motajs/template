@@ -350,7 +350,7 @@ Plans:
   3. pnpm test:ci 全绿且不新增跳过用例，数据范围 check:type / check:circular 门禁通过
   4. 改动仅限数据端（packages 与 packages-user/data-*），不改动渲染端 @user/client-* 与 legacy 渲染接线，双端分离约束保持
 
-**Plans**: 16 plans — 07-01..07-15 已执行（07-15 完成 4 条复审缺口修复）；**07-16 暂缓（DEFERRED）**：寻路重构后的测试对齐批次，待用户完成数据端手工修改后再执行（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`）
+**Plans**: 16 plans — 07-01..07-15 已执行（07-15 完成 4 条复审缺口修复）；**07-16 标记为 SUPERSEDED（2026-10-04）**：寻路重构后的测试对齐批次不再执行，其缺口清单转为 Phase 8 的对齐输入（按 D-02 一系统一计划；每个计划以 D-09 预执行汇报关卡开头，`autonomous: false`）
 
 > **阶段重开（2026-09-16）**：`07-LOADSTATE-AUDIT.md` 登记的同引用审计条目 `#06-17-1`（A）与 `#06-17-2`（B）在本阶段收口后追加为计划 `07-09`，Phase 7 因此由 `Complete` 回到未完成；执行 07-09 后 `07-VERIFICATION.md`（2026-09-16 结论仅覆盖 8/8 计划的工作树）**失效，必须重跑 `/gsd-verify-work`** 重新出具验证结论。
 
@@ -361,10 +361,11 @@ Plans:
 
 > **阶段四次追加（2026-09-17）**：用户完成寻路系统重构（`4aaea68`）后，数据端 **17 个测试文件 / 73 用例**因接口变动与形状变化失败（接口族：寻路 `useMapState`/`useDirGroup` 变更、录像 `route`→`array` 与 `onRecordCommand` 0-based 索引、`HeroLocation.setFloor(IGameMap)`、`CoreState.initMapState` 删除；另含 5 个疑似行为变化的文件）。经用户要求追加计划 `07-16`（**只改测试、不改生产代码**），已完成规划并登记缺口（`07-VERIFICATION.md` 的 `### Post-Refactor Test Breakage`）。
 > **该计划暂缓（DEFERRED）**：用户观察到数据端仍需大量手工修改、并将继续导致测试报错，故等数据端全部改完后再执行。恢复时该缺口清单（2026-09-17 快照）与 `07-16-PLAN.md` **须先重新核对（很可能需要重规划）**，再走 `/gsd-execute-phase 7 --gaps-only`；随后 `/gsd-verify-work 7` 重出验证。
+> **该计划 SUPERSEDED（2026-10-04）**：用户已完成数据端「系统性收尾」，接口再次变动，17 行快照与 `07-16-PLAN.md` 均已过期；该计划退役、不再执行，测试文件迁移与接口对齐整体转由 **Phase 8** 承接，`07-VERIFICATION.md` 的 `### Post-Refactor Test Breakage` 作为 Phase 8 的对齐输入。
 
 Plans:
 
-- [ ] 07-16-PLAN.md — **暂缓（DEFERRED）**：寻路重构后的测试对齐批次——把 17 个测试文件对齐到已发布接口（只改测试、不改生产代码），含 5 个疑似行为变化文件待用户 Task 0 逐行裁决。**待用户完成数据端手工修改后再执行**（恢复前须重新核对缺口清单与计划）
+- [x] 07-16-PLAN.md — **SUPERSEDED（2026-10-04）**：寻路重构后的测试对齐批次——原计划把 17 个测试文件对齐到 2026-09-17 快照的接口（只改测试、不改生产代码），含 5 个疑似行为变化文件待用户 Task 0 逐行裁决。因数据端「系统性收尾」再次变动接口，该快照与计划均已过期，**转由 Phase 8 承接**（缺口清单作为 Phase 8 输入）
 - [x] 07-15-PLAN.md — 复审缺陷批次：CR-01（`HeroEquipment.compareEquip` 对已装备项漏算）/ WR-01（`normalizeParam` 回退口径致字节偏移错位）/ WR-02（`checkBufferExpand` 乘数为 1 时自我递归）/ WR-03（`HeroAttribute.clone()` 绕过簿记）——**已执行**（`07-15-SUMMARY.md`）
 - [x] 07-10-PLAN.md — replay：CR-01（`set()` 索引数组损坏，与 `delete()` 对齐）/ 审计 H `#06-17-3`（`setReplayArray` 漏 `expireStreams`）/ WR-01（bigint 长度字节溢出）/ WR-02（参数计数用未截断长度）/ WR-03（编解码格式版本）/ WR-07（`insert`/`delete`/`set` 越界校验）
 - [x] 07-11-PLAN.md — 容器同引用：`#06-17-4`（`equipStore` 重建实例脱钩）/ `#06-17-5`（`flag/system` 字段脱钩）/ `#06-17-6`（followers 重建脱钩）
@@ -437,10 +438,41 @@ Plans:
 
 - [x] 07-14-PLAN.md — legacy hero 代理：经用户裁定 **WONTFIX**（`#06-17-7`；兼容层即将删除，零代码、零测试；计划原定的该包首个测试文件按裁决不产出）
 
+### Phase 8: 测试重构与接口对齐
+
+**Goal**: 将全部测试文件（`.test.ts` / `.perf.ts`）迁入 `__test__` 目录，并按数据端「系统性收尾」后的当前接口重对齐测试、修复重构遗漏的细节问题，使 `pnpm test:ci` / `test:perf` 重新全绿
+**Depends on**: Phase 7（数据端缺陷修复）
+**Requirements**: TEST-02
+**Success Criteria** (what must be TRUE):
+
+  1. 全部 `.test.ts` 与 `.perf.ts` 均位于各自源码目录下的 `__test__` 文件夹内，测试命令仍能发现并运行它们
+  2. 因数据端接口变动而失效的测试全部对齐到当前 shipped 接口，`pnpm test:ci` 0 失败
+  3. 重构遗漏的细节问题已修复（测试面或经用户确认的数据端细节），不弱化既有断言
+  4. `pnpm test:perf` 仍可运行；不新增跳过用例
+
+**Plans**: 11 planned（08-01..08-11；规划 2026-10-04，`gsd-plan-checker` 判 PASS / 0 blocker / 3 非阻塞 warning）——迁移 `08-01`（独立先行）→ 子系统对齐 `08-02..08-09` → 错误码与接口覆盖 `08-10` → 收口 `08-11`；每个计划 `autonomous: false`，以 blocking-human Task 0 汇报关卡开头
+
+Plans:
+
+- [ ] 08-01-PLAN.md — 全量目录迁移到 `__test__/`（Rule A/B 分流改相对导入 + `script/test-data-node.ts:67,122` 硬编码路径；门禁=文件数守恒 66/6、零配置/零生产改动）
+- [ ] 08-02-PLAN.md — data-common 对齐（`utils.test.ts` 去留、`DirectionMapper` 删除、`addHook().load()` 移除、158/175→72）
+- [ ] 08-03-PLAN.md — data-base enemy+flag 对齐（`EnemyManager` 单参构造、legacy bridge 类型）
+- [ ] 08-04-PLAN.md — data-base hero 对齐（录像桩 `route`→`array`、`getItem`→`addItem`、`setFloor(IGameMap)`）
+- [ ] 08-05-PLAN.md — data-base map 对齐（`addLayer(alias)`、`MapState(state)`；陈旧码 62/63/64/84/130/125 裁决）
+- [ ] 08-06-PLAN.md — data-system combat+event 对齐（`CombatFlow` 构造、`.load()` 移除、DEV 守卫码）
+- [ ] 08-07-PLAN.md — data-system path 对齐（`useMapState` 删除、`useFaceHandler` 注入）
+- [ ] 08-08-PLAN.md — data-state src 对齐（`createCoreState` 删除→`CoreState({loadStarter,coreURL})`；`coreEventLayer` A1/A2）
+- [ ] 08-09-PLAN.md — data-state 集成对齐（共享夹具 `closed-loop.ts`、`tileLegacy` 去留、寻路注入）
+- [ ] 08-10-PLAN.md — 错误码 21 缺口 + loader 公共接口覆盖盘点与补测
+- [ ] 08-11-PLAN.md — 收口（`test:ci`+`test:perf` 全绿、skipped=1、零生产改动终审、阶段 SUMMARY）
+
+**Scope note (2026-10-04)**: 由原 `07-16`（寻路重构后的测试对齐，已 SUPERSEDED）转来并扩展，加入「测试文件迁入 `__test__`」的组织重构要求。用户并发进行渲染端收尾，可能触及数据端内容但不改接口设计、不影响测试；AI 不得提交用户改动的文件，发生冲突须暂停汇报。
+**Input (2026-10-04)**: `07-VERIFICATION.md` 的 `### Post-Refactor Test Breakage`（2026-09-17 的 17 行快照）作为对齐起点，但**必须先重测当日失败清单**，不得直接沿用旧快照。
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -450,4 +482,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. 渲染适配与双布局 | 15/16 | In Progress|  |
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
-| 7. 数据端缺陷修复 | 15/16 | 暂缓 (Deferred) | - |
+| 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
+| 8. 测试重构与接口对齐 | 0/11 | Planned | - |
