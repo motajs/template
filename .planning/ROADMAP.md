@@ -455,7 +455,7 @@ Plans:
 Plans:
 
 - [ ] 08-01-PLAN.md — 全量目录迁移到 `__test__/`（Rule A/B 分流改相对导入 + `script/test-data-node.ts:67,122` 硬编码路径；门禁=文件数守恒 66/6、零配置/零生产改动）
-- [ ] 08-02-PLAN.md — data-common 对齐（`utils.test.ts` 去留、`DirectionMapper` 删除、`addHook().load()` 移除、158/175→72）
+- [x] 08-02-PLAN.md — data-common 对齐（`utils.test.ts` 退役、`DirectionMapper` 删除、`addHook().load()` 移除、158/175→72；含经确认的 sandbox 首步预读生产修复）
 - [ ] 08-03-PLAN.md — data-base enemy+flag 对齐（`EnemyManager` 单参构造、legacy bridge 类型）
 - [ ] 08-04-PLAN.md — data-base hero 对齐（录像桩 `route`→`array`、`getItem`→`addItem`、`setFloor(IGameMap)`）
 - [ ] 08-05-PLAN.md — data-base map 对齐（`addLayer(alias)`、`MapState(state)`；陈旧码 62/63/64/84/130/125 裁决）
@@ -483,4 +483,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
-| 8. 测试重构与接口对齐 | 0/11 | Planned | - |
+| 8. 测试重构与接口对齐 | 1/11 | In Progress | - |
