@@ -193,7 +193,7 @@ export interface IEnemyManager<TAttr> extends ISaveableContent<
      * 获取指定怪物的模板
      * @param token 怪物图块数字或id
      */
-    getPrefab(token: number): IReadonlyEnemy<TAttr> | null;
+    getPrefab(token: number | string): IReadonlyEnemy<TAttr> | null;
 
     /**
      * 删除指定的怪物模板

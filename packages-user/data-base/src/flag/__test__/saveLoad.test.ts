@@ -1,4 +1,4 @@
-// 测试全局 Flag 系统存读档：同实例往返、占用状态与存档克隆
+// 测试全局 Flag 系统存读档：按存档恢复、占用状态与存档克隆
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { FlagSystem } from '../system';
 
@@ -33,8 +33,8 @@ afterAll(() => {
 });
 
 describe('FlagSystem save and load round trips', () => {
-    // 验证字段数值与占用状态在同实例上恢复
-    it('restores field values and occupancy on the same instance', () => {
+    // 验证字段数值与占用状态在读档后恢复
+    it('restores field values and occupancy after load', () => {
         const system = new FlagSystem();
         system.setFieldValue('score', 7);
         system.addFieldValue('score', 5);
@@ -64,15 +64,15 @@ describe('FlagSystem save and load round trips', () => {
         expect(system.occupied('extra')).toBe(false);
     });
 
-    // 验证 loadState 在同实例上原地恢复字段值（#06-17-5）
-    it('keeps field objects on loadState', () => {
+    // 验证 loadState 以存档值重建字段（字段实例被替换）
+    it('rebuilds field objects on loadState', () => {
         const system = new FlagSystem();
         const before = system.setField('score', 7);
 
         const saved = system.saveState();
         system.loadState(saved);
 
-        expect(system.getField('score')).toBe(before);
+        expect(system.getField('score')).not.toBe(before);
         expect(system.getFieldValue<number>('score')).toBe(7);
     });
 });

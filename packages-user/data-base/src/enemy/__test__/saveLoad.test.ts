@@ -1,9 +1,8 @@
 // 测试怪物数据模型存读档：Enemy/special/EnemyManager 同实例往返、压缩档与码 119/120
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { SaveCompression } from '@user/data-common';
+import { SaveCompression, TileStore } from '@user/data-common';
 import {
     type IEnemy,
-    type IEnemyLegacyBridge,
     type IEnemyManager,
     type ISpecial
 } from '../types';
@@ -67,16 +66,6 @@ interface IEnemyTestAttr {
     tags: string[];
 }
 
-/** 仅作为 EnemyManager 必需协作对象的内联假桥接，方法不会被本计划的存读档路径调用 */
-const bridge: IEnemyLegacyBridge<IEnemyTestAttr> = {
-    fromLegacyEnemy: (_enemy, defaultValue) => ({
-        hp: 10,
-        atk: 2,
-        tags: ['legacy'],
-        ...defaultValue
-    })
-};
-
 /** 构造一个带合成属性的怪物对象 */
 function createEnemy(
     id = 'enemy-1',
@@ -101,7 +90,7 @@ function createSpecial(code: number, value: number): ISpecial<number> {
 
 /** 构造一个独立的怪物管理器实例 */
 function createManager(): IEnemyManager<IEnemyTestAttr> {
-    return new modules.EnemyManager<IEnemyTestAttr>(bridge);
+    return new modules.EnemyManager<IEnemyTestAttr>(new TileStore());
 }
 
 /** 构造一个只按生命值判定相等的内联怪物比较器 */

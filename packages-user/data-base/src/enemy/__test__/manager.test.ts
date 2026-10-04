@@ -1,9 +1,9 @@
 // 测试 EnemyManager 的注册表、模板增删改查、复用映射与比较器脏跟踪
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { ITileRawData, TileStore, TileType } from '@user/data-common';
 import {
     type IEnemy,
     type IEnemyComparer,
-    type IEnemyLegacyBridge,
     type IEnemyManager
 } from '../types';
 
@@ -54,21 +54,37 @@ interface IEnemyTestAttr {
     tags: string[];
 }
 
-/** 仅作为 EnemyManager 必需协作对象的内联假桥接，方法不会被本计划调用 */
-const bridge: IEnemyLegacyBridge<IEnemyTestAttr> = {
-    fromLegacyEnemy: (_enemy, defaultValue) => ({
-        hp: 10,
-        atk: 2,
-        tags: ['legacy'],
-        ...defaultValue
-    })
-};
+/** 构造一个最小的图块原始定义，仅用于注册 id ↔ num 映射 */
+function createRawTile(num: number, id: string): ITileRawData {
+    return {
+        num,
+        id,
+        events: {},
+        type: TileType.Unknown,
+        pass: { onlyEvents: false, outPass: 0, inPass: 0 },
+        eventPass: false
+    };
+}
+
+/** 构造一个已注册指定 (num, id) 图块的图块存储，供按 id 解析使用 */
+function createTileStore(
+    entries: ReadonlyArray<readonly [number, string]>
+): TileStore {
+    const store = new TileStore();
+    for (const [num, id] of entries) {
+        store.addTile(createRawTile(num, id));
+    }
+    return store;
+}
 
 /**
  * 构造一个独立的怪物管理器实例
+ * @param entries 需要注册进图块存储的 (num, id) 映射，用于按 id 解析
  */
-function createManager(): IEnemyManager<IEnemyTestAttr> {
-    return new modules.EnemyManager<IEnemyTestAttr>(bridge);
+function createManager(
+    entries: ReadonlyArray<readonly [number, string]> = []
+): IEnemyManager<IEnemyTestAttr> {
+    return new modules.EnemyManager<IEnemyTestAttr>(createTileStore(entries));
 }
 
 /**
@@ -155,13 +171,13 @@ describe('EnemyManager registry and attribute defaults', () => {
 describe('EnemyManager prefab CRUD', () => {
     // 验证 addPrefab 存储克隆且同时可按 code 与按 id 查询
     it('adds a prefab clone addressable by code and id', () => {
-        const manager = createManager();
+        const manager = createManager([[1, 'slime']]);
         const source = createPrefab(1, 'slime');
 
         manager.addPrefab(source);
 
         const byCode = manager.getPrefab(1);
-        const byId = manager.getPrefabById('slime');
+        const byId = manager.getPrefab('slime');
 
         expect(byCode).not.toBeNull();
         expect(byId).toBe(byCode);
@@ -172,27 +188,26 @@ describe('EnemyManager prefab CRUD', () => {
         expect(manager.getPrefab(1)!.getAttribute('hp')).toBe(20);
     });
 
-    // 验证 code 或 id 已存在时 addPrefab 不做任何操作
-    it('ignores a prefab whose code or id already exists', () => {
-        const manager = createManager();
+    // 验证仅按 code 去重：code 重复被忽略，不同 code 允许复用同一 id
+    it('deduplicates prefabs by code only', () => {
+        const manager = createManager([[1, 'slime']]);
         manager.addPrefab(createPrefab(1, 'slime'));
 
         manager.addPrefab(createPrefab(1, 'other'));
         manager.addPrefab(createPrefab(2, 'slime'));
 
         expect(manager.getPrefab(1)!.id).toBe('slime');
-        expect(manager.getPrefabById('slime')!.code).toBe(1);
-        expect(manager.getPrefab(2)).toBeNull();
-        expect(manager.getPrefabById('other')).toBeNull();
+        expect(manager.getPrefab('slime')!.code).toBe(1);
+        expect(manager.getPrefab(2)!.id).toBe('slime');
     });
 
-    // 验证 createEnemy 与 createEnemyById 返回互相独立、与模板独立的克隆，未知返回 null
+    // 验证 createEnemy 按 code 与 id 返回互相独立、与模板独立的克隆，未知返回 null
     it('creates independent enemy clones by code and id', () => {
-        const manager = createManager();
+        const manager = createManager([[1, 'slime']]);
         manager.addPrefab(createPrefab(1, 'slime'));
 
         const first = manager.createEnemy(1);
-        const second = manager.createEnemyById('slime');
+        const second = manager.createEnemy('slime');
 
         expect(first).not.toBeNull();
         expect(second).not.toBeNull();
@@ -203,31 +218,31 @@ describe('EnemyManager prefab CRUD', () => {
         expect(manager.createEnemy(1)!.getAttribute('hp')).toBe(20);
         expect(manager.getPrefab(1)!.getAttribute('hp')).toBe(20);
         expect(manager.createEnemy(99)).toBeNull();
-        expect(manager.createEnemyById('missing')).toBeNull();
+        expect(manager.createEnemy('missing')).toBeNull();
     });
 
-    // 验证 deletePrefab 按 code 与按 id 都会移除两个索引
-    it('deletes a prefab from both indexes by code or id', () => {
-        const manager = createManager();
+    // 验证 deletePrefab 按 code 与按 id 都会移除模板
+    it('deletes a prefab by code or id', () => {
+        const manager = createManager([[1, 'slime'], [2, 'bat']]);
         manager.addPrefab(createPrefab(1, 'slime'));
         manager.addPrefab(createPrefab(2, 'bat'));
 
         manager.deletePrefab(1);
 
         expect(manager.getPrefab(1)).toBeNull();
-        expect(manager.getPrefabById('slime')).toBeNull();
+        expect(manager.getPrefab('slime')).toBeNull();
         expect(manager.createEnemy(1)).toBeNull();
         expect(manager.getPrefab(2)).not.toBeNull();
 
         manager.deletePrefab('bat');
 
         expect(manager.getPrefab(2)).toBeNull();
-        expect(manager.getPrefabById('bat')).toBeNull();
+        expect(manager.getPrefab('bat')).toBeNull();
     });
 
-    // 验证 changePrefab 替换模板，并在 code 或 id 变化时重建索引
-    it('replaces a prefab and reindexes when its code or id changes', () => {
-        const manager = createManager();
+    // 验证 changePrefab 替换模板，并在 code 变化时重建索引
+    it('replaces a prefab and reindexes when its code changes', () => {
+        const manager = createManager([[1, 'slime'], [2, 'bat']]);
         manager.addPrefab(createPrefab(1, 'slime'));
 
         manager.changePrefab(1, createPrefab(1, 'slime', { hp: 50 }));
@@ -237,55 +252,61 @@ describe('EnemyManager prefab CRUD', () => {
         manager.changePrefab(1, createPrefab(2, 'bat', { hp: 70 }));
 
         expect(manager.getPrefab(1)).toBeNull();
-        expect(manager.getPrefabById('slime')).toBeNull();
+        expect(manager.getPrefab('slime')).toBeNull();
         expect(manager.getPrefab(2)!.getAttribute('hp')).toBe(70);
-        expect(manager.getPrefabById('bat')).not.toBeNull();
+        expect(manager.getPrefab('bat')).not.toBeNull();
     });
 });
 
 describe('EnemyManager reuse mapping', () => {
     // 验证复用注册后按复用 code 与复用 id 读取都解析到来源模板
     it('resolves reused codes and ids to the source prefab on reads', () => {
-        const manager = createManager();
+        const manager = createManager([[1, 'slime'], [100, 'slime-reuse']]);
         manager.addPrefab(createPrefab(1, 'slime'));
 
-        manager.reusePrefab(1, 100, 'slime-reuse');
+        manager.reusePrefab(1, 100);
 
         expect(manager.getPrefab(100)).toBe(manager.getPrefab(1));
-        expect(manager.getPrefabById('slime-reuse')).toBe(
-            manager.getPrefabById('slime')
+        expect(manager.getPrefab('slime-reuse')).toBe(
+            manager.getPrefab('slime')
         );
     });
 
     // 验证来源不存在时复用注册不产生任何映射
     it('ignores reuse registration for an unknown source', () => {
-        const manager = createManager();
+        const manager = createManager([[100, 'missing-reuse']]);
         manager.addPrefab(createPrefab(1, 'slime'));
 
-        manager.reusePrefab(999, 100, 'missing-reuse');
+        manager.reusePrefab(999, 100);
 
         expect(manager.getPrefab(100)).toBeNull();
-        expect(manager.getPrefabById('missing-reuse')).toBeNull();
+        expect(manager.getPrefab('missing-reuse')).toBeNull();
     });
 
-    // 验证 createEnemy 按复用 code 解析到来源模板并生成独立怪物
+    // 验证 createEnemy 按复用 code 与 id 解析到来源模板并生成独立怪物
     it('creates enemies for reused codes and ids through the reuse mapping', () => {
-        const manager = createManager();
+        const manager = createManager([[1, 'slime'], [100, 'slime-reuse']]);
         manager.addPrefab(createPrefab(1, 'slime'));
-        manager.reusePrefab(1, 100, 'slime-reuse');
+        manager.reusePrefab(1, 100);
 
         expect(manager.createEnemy(100)!.id).toBe('slime');
-        expect(manager.createEnemyById('slime-reuse')!.id).toBe('slime');
+        expect(manager.createEnemy('slime-reuse')!.id).toBe('slime');
     });
 
     // 验证同一模板经四个朝向 code 复用后，创建的怪物互相独立且不影响来源模板
     it('creates four independent enemies from one prefab reused by four facing codes', () => {
-        const manager = createManager();
+        const manager = createManager([
+            [1, 'slime'],
+            [100, 'slime-up'],
+            [101, 'slime-right'],
+            [102, 'slime-down'],
+            [103, 'slime-left']
+        ]);
         manager.addPrefab(createPrefab(1, 'slime'));
-        manager.reusePrefab(1, 100, 'slime-up');
-        manager.reusePrefab(1, 101, 'slime-right');
-        manager.reusePrefab(1, 102, 'slime-down');
-        manager.reusePrefab(1, 103, 'slime-left');
+        manager.reusePrefab(1, 100);
+        manager.reusePrefab(1, 101);
+        manager.reusePrefab(1, 102);
+        manager.reusePrefab(1, 103);
 
         const source = manager.getPrefab(1);
 
@@ -298,9 +319,7 @@ describe('EnemyManager reuse mapping', () => {
             'slime-down',
             'slime-left'
         ]) {
-            expect(manager.getPrefabById(id)).toBe(
-                manager.getPrefabById('slime')
-            );
+            expect(manager.getPrefab(id)).toBe(manager.getPrefab('slime'));
         }
 
         const created = [100, 101, 102, 103].map(code =>
@@ -329,7 +348,7 @@ describe('EnemyManager reuse mapping', () => {
             'slime-right',
             'slime-down',
             'slime-left'
-        ].map(id => manager.createEnemyById(id));
+        ].map(id => manager.createEnemy(id));
 
         expect(createdById.every(enemy => enemy !== null)).toBe(true);
         expect(createdById.every(enemy => enemy!.id === 'slime')).toBe(true);
@@ -357,9 +376,9 @@ describe('EnemyManager modifyPrefabAttribute', () => {
         expect(manager.getPrefab(1)!.getAttribute('hp')).toBe(30);
     });
 
-    // 验证回调返回新对象且 code 或 id 变化时重建两个索引
-    it('rebuilds the indexes when a modification changes code or id', () => {
-        const manager = createManager();
+    // 验证回调返回新对象且 code 变化时重建索引
+    it('rebuilds the indexes when a modification changes code', () => {
+        const manager = createManager([[1, 'slime'], [2, 'bat']]);
         manager.addPrefab(createPrefab(1, 'slime'));
 
         manager.modifyPrefabAttribute(1, () =>
@@ -367,9 +386,9 @@ describe('EnemyManager modifyPrefabAttribute', () => {
         );
 
         expect(manager.getPrefab(1)).toBeNull();
-        expect(manager.getPrefabById('slime')).toBeNull();
+        expect(manager.getPrefab('slime')).toBeNull();
         expect(manager.getPrefab(2)!.getAttribute('hp')).toBe(40);
-        expect(manager.getPrefabById('bat')).not.toBeNull();
+        expect(manager.getPrefab('bat')).not.toBeNull();
     });
 
     // 验证未知 code 的修改回调不会被调用
