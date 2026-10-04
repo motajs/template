@@ -264,6 +264,9 @@ export class ReplaySandbox
         if (this.playing || this.ended) return;
         this.pausing = false;
         this.playing = true;
+        if (!this.appendingStep && !this.reader.expired) {
+            this.appendingStep = this.reader.read();
+        }
         this.forEachHook(hook => hook.onStartReplay?.());
         this.startReplayLoop();
     }
@@ -292,6 +295,14 @@ export class ReplaySandbox
     }
 
     async step(): Promise<boolean> {
+        if (
+            this.playing &&
+            !this.appendingStep &&
+            !this.reader.expired &&
+            !this.ended
+        ) {
+            this.appendingStep = this.reader.read();
+        }
         const res = await this.replayStep();
         if (res.success) {
             await Promise.all(

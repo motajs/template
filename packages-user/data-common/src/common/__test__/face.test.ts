@@ -78,7 +78,7 @@ describe('RoleFaceBinder malloc and bind', () => {
 
         expect(result.info.map(info => info.code)).toContain(43);
         expect(binder.getMainFace(2)).toBeNull();
-        expect(binder.getFaceDirection(2)).toBeUndefined();
+        expect(binder.getFaceDirection(2)).toBe(FaceDirection.Unknown);
     });
 
     // 验证绑定与主朝向相同朝向时经 logger 观测错误码 44 且不建立绑定
@@ -92,7 +92,7 @@ describe('RoleFaceBinder malloc and bind', () => {
 
         expect(result.info.map(info => info.code)).toContain(44);
         expect(binder.getMainFace(2)).toBeNull();
-        expect(binder.getFaceDirection(2)).toBeUndefined();
+        expect(binder.getFaceDirection(2)).toBe(FaceDirection.Unknown);
     });
 });
 
@@ -106,11 +106,11 @@ describe('RoleFaceBinder queries', () => {
         expect(binder.getFaceOf(99, FaceDirection.Down)).toBeNull();
     });
 
-    // 验证 getFaceDirection 对未注册图块返回 undefined
-    it('returns undefined direction for an unknown block', () => {
+    // 验证 getFaceDirection 对未注册图块返回 FaceDirection.Unknown
+    it('returns Unknown direction for an unknown block', () => {
         const binder = createBinder();
 
-        expect(binder.getFaceDirection(42)).toBeUndefined();
+        expect(binder.getFaceDirection(42)).toBe(FaceDirection.Unknown);
     });
 
     // 验证 getMainFace 对未注册图块返回 null

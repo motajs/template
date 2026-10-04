@@ -2,7 +2,13 @@
 import { logger } from '@motajs/common';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { ReplaySystem } from '../system';
-import { IReplayCommand, IReplaySandbox, IReplayStepHandler } from '../types';
+import {
+    IReplayCommand,
+    IReplaySandbox,
+    IReplayStepHandler,
+    ReplayCommandResult,
+    ReplayCommandType
+} from '../types';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -22,12 +28,14 @@ interface IManualReplaySandbox extends IReplaySandbox {
     pausing: boolean;
 }
 
-// 构造一个可注入执行与收尾行为的录像命令
+// 构造一个可注入执行与收尾行为的主动录像命令
 function createCommand(
-    execute: (step: IReplayStepHandler) => Promise<boolean>,
-    notExecuted?: () => Promise<boolean>
+    execute: (step: IReplayStepHandler) => Promise<ReplayCommandResult>,
+    finalize?: () => Promise<ReplayCommandResult>
 ): IReplayCommand {
-    return notExecuted ? { execute, finalize: notExecuted } : { execute };
+    return finalize
+        ? { type: ReplayCommandType.Active, execute, finalize }
+        : { type: ReplayCommandType.Active, execute };
 }
 
 // 用录像系统构造一个可手动驱动的录像沙箱
@@ -53,7 +61,7 @@ async function waitForEnded(sandbox: IReplaySandbox): Promise<void> {
 
 // 生成一个可外部兑现的异步结果
 function createDeferred() {
-    return Promise.withResolvers<boolean>();
+    return Promise.withResolvers<ReplayCommandResult>();
 }
 
 describe('ReplaySandbox stepping', () => {
@@ -65,19 +73,17 @@ describe('ReplaySandbox stepping', () => {
             1,
             createCommand(async step => {
                 executed.push(step.index);
-                return true;
+                return ReplayCommandResult.Success;
             })
         );
         system.record(1, 5);
         const sandbox = createSandbox(system);
         const stepped: IReplayStepHandler[] = [];
-        sandbox
-            .addHook({
-                onStep: async step => {
-                    stepped.push(step);
-                }
-            })
-            .load();
+        sandbox.addHook({
+            onStep: async step => {
+                stepped.push(step);
+            }
+        });
         start(sandbox);
 
         await expect(sandbox.step()).resolves.toBe(true);
@@ -88,23 +94,23 @@ describe('ReplaySandbox stepping', () => {
         expect(sandbox.getReplayed()).toBe(1);
     });
 
-    // 验证执行失败的命令触发告警码 158 并停止后续步骤
-    it('warns code 158 and stops when a command returns false', async () => {
-        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    // 验证执行失败的命令触发错误码 72 并停止后续步骤
+    it('errors code 72 and stops when a command returns false', async () => {
+        const error = vi.spyOn(logger, 'error').mockImplementation(() => {});
         const executed: number[] = [];
         const system = new ReplaySystem();
         system.registerCommand(
             1,
             createCommand(async () => {
                 executed.push(1);
-                return false;
+                return ReplayCommandResult.Failed;
             })
         );
         system.registerCommand(
             2,
             createCommand(async () => {
                 executed.push(2);
-                return true;
+                return ReplayCommandResult.Success;
             })
         );
         system.record(1);
@@ -115,8 +121,8 @@ describe('ReplaySandbox stepping', () => {
         await expect(sandbox.step()).resolves.toBe(false);
 
         expect(executed).toEqual([1]);
-        expect(warn).toHaveBeenCalledWith(158, '1', '[]');
-        expect(sandbox.getReplayed()).toBe(1);
+        expect(error).toHaveBeenCalledWith(72, 'execute');
+        expect(sandbox.getReplayed()).toBe(2);
     });
 
     // 验证未知指令触发告警码 157 并返回 false
@@ -141,11 +147,11 @@ describe('ReplaySandbox stepping', () => {
             createCommand(
                 async () => {
                     order.push('exec1');
-                    return true;
+                    return ReplayCommandResult.Success;
                 },
                 async () => {
                     order.push('fin1');
-                    return true;
+                    return ReplayCommandResult.Success;
                 }
             )
         );
@@ -153,7 +159,7 @@ describe('ReplaySandbox stepping', () => {
             2,
             createCommand(async () => {
                 order.push('exec2');
-                return true;
+                return ReplayCommandResult.Success;
             })
         );
         system.record(1);
@@ -167,20 +173,20 @@ describe('ReplaySandbox stepping', () => {
         expect(order).toEqual(['exec1', 'fin1', 'exec2']);
     });
 
-    // 验证 notExecuted 收尾失败触发告警码 175 并停止
-    it('warns code 175 when notExecuted fails', async () => {
-        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    // 验证收尾失败触发错误码 72 并停止
+    it('errors code 72 when finalize fails', async () => {
+        const error = vi.spyOn(logger, 'error').mockImplementation(() => {});
         const system = new ReplaySystem();
         system.registerCommand(
             1,
             createCommand(
-                async () => true,
-                async () => false
+                async () => ReplayCommandResult.Success,
+                async () => ReplayCommandResult.Failed
             )
         );
         system.registerCommand(
             2,
-            createCommand(async () => true)
+            createCommand(async () => ReplayCommandResult.Success)
         );
         system.record(1);
         system.record(2);
@@ -190,7 +196,7 @@ describe('ReplaySandbox stepping', () => {
         await expect(sandbox.step()).resolves.toBe(true);
         await expect(sandbox.step()).resolves.toBe(false);
 
-        expect(warn).toHaveBeenCalledWith(175, '1');
+        expect(error).toHaveBeenCalledWith(72, 'finalize');
     });
 
     // 验证读取流过期时触发告警码 156 并返回 false
@@ -199,7 +205,7 @@ describe('ReplaySandbox stepping', () => {
         const system = new ReplaySystem();
         system.registerCommand(
             1,
-            createCommand(async () => true)
+            createCommand(async () => ReplayCommandResult.Success)
         );
         system.record(1);
         const sandbox = createSandbox(system);
@@ -219,7 +225,7 @@ describe('ReplaySandbox stepping', () => {
             1,
             createCommand(async step => {
                 executed.push(step.index);
-                return true;
+                return ReplayCommandResult.Success;
             })
         );
         system.record(1);
@@ -247,14 +253,14 @@ describe('ReplaySandbox playback control', () => {
             1,
             createCommand(async step => {
                 order.push(step.index);
-                return true;
+                return ReplayCommandResult.Success;
             })
         );
         system.record(1);
         system.record(1);
         const sandbox = createSandbox(system);
         const startHook = vi.fn();
-        sandbox.addHook({ onStartReplay: startHook }).load();
+        sandbox.addHook({ onStartReplay: startHook });
 
         sandbox.play();
         await waitForEnded(sandbox);
@@ -276,11 +282,11 @@ describe('ReplaySandbox playback control', () => {
         system.record(1);
         const sandbox = createSandbox(system);
         const startHook = vi.fn();
-        sandbox.addHook({ onStartReplay: startHook }).load();
+        sandbox.addHook({ onStartReplay: startHook });
 
         sandbox.play();
         sandbox.play();
-        deferred.resolve(true);
+        deferred.resolve(ReplayCommandResult.Success);
         await waitForEnded(sandbox);
 
         expect(startHook).toHaveBeenCalledTimes(1);
@@ -291,12 +297,12 @@ describe('ReplaySandbox playback control', () => {
         const system = new ReplaySystem();
         system.registerCommand(
             1,
-            createCommand(async () => true)
+            createCommand(async () => ReplayCommandResult.Success)
         );
         system.record(1);
         const sandbox = createSandbox(system);
         const startHook = vi.fn();
-        sandbox.addHook({ onStartReplay: startHook }).load();
+        sandbox.addHook({ onStartReplay: startHook });
 
         sandbox.play();
         await waitForEnded(sandbox);
@@ -315,7 +321,9 @@ describe('ReplaySandbox playback control', () => {
             1,
             createCommand(step => {
                 order.push(step.index);
-                return step.index === 1 ? first.promise : Promise.resolve(true);
+                return step.index === 1
+                    ? first.promise
+                    : Promise.resolve(ReplayCommandResult.Success);
             })
         );
         system.record(1);
@@ -323,16 +331,14 @@ describe('ReplaySandbox playback control', () => {
         const sandbox = createSandbox(system);
         const pauseHook = vi.fn();
         const resumeHook = vi.fn();
-        sandbox
-            .addHook({
-                onPauseReplay: pauseHook,
-                onResumeReplay: resumeHook
-            })
-            .load();
+        sandbox.addHook({
+            onPauseReplay: pauseHook,
+            onResumeReplay: resumeHook
+        });
 
         sandbox.play();
         const paused = sandbox.pause();
-        first.resolve(true);
+        first.resolve(ReplayCommandResult.Success);
         await paused;
 
         expect(pauseHook).toHaveBeenCalledTimes(1);
@@ -359,16 +365,14 @@ describe('ReplaySandbox playback control', () => {
         const sandbox = createSandbox(system);
         const pauseHook = vi.fn();
         const stopHook = vi.fn();
-        sandbox
-            .addHook({
-                onPauseReplay: pauseHook,
-                onStopReplay: stopHook
-            })
-            .load();
+        sandbox.addHook({
+            onPauseReplay: pauseHook,
+            onStopReplay: stopHook
+        });
 
         sandbox.play();
         const stopped = sandbox.stop();
-        first.resolve(true);
+        first.resolve(ReplayCommandResult.Success);
         await stopped;
 
         expect(pauseHook).toHaveBeenCalledTimes(1);
@@ -382,7 +386,7 @@ describe('ReplaySandbox playback control', () => {
         const system = new ReplaySystem();
         system.registerCommand(
             1,
-            createCommand(async () => true)
+            createCommand(async () => ReplayCommandResult.Success)
         );
         system.record(1);
         const sandbox = createSandbox(system);
@@ -400,7 +404,7 @@ describe('ReplaySandbox playback control', () => {
         const system = new ReplaySystem();
         const sandbox = createSandbox(system);
         const speedHook = vi.fn();
-        sandbox.addHook({ onSpeedSet: speedHook }).load();
+        sandbox.addHook({ onSpeedSet: speedHook });
 
         sandbox.setSpeed(2);
 

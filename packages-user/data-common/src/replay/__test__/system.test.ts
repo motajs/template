@@ -75,13 +75,11 @@ describe('ReplaySystem registration and recording', () => {
         const recorded: Array<
             readonly [number, number, readonly ReplayParamValue[]]
         > = [];
-        system
-            .addHook({
-                onRecordCommand: (code, index, params) => {
-                    recorded.push([code, index, params]);
-                }
-            })
-            .load();
+        system.addHook({
+            onRecordCommand: (code, index, params) => {
+                recorded.push([code, index, params]);
+            }
+        });
 
         system.record(5, 1, true);
 
@@ -91,7 +89,7 @@ describe('ReplaySystem registration and recording', () => {
             params: [1, true],
             index: 0
         });
-        expect(recorded).toEqual([[5, 1, [1, true]]]);
+        expect(recorded).toEqual([[5, 0, [1, true]]]);
     });
 
     // 验证每个 ReplaySystem 实例的注册与录像相互独立
@@ -113,13 +111,11 @@ describe('ReplaySystem sandbox lifecycle', () => {
         const system = new ReplaySystem();
         const { calls, reseter } = createReseter();
         const created: IReplaySandbox[] = [];
-        system
-            .addHook({
-                onCreateSandbox: sandbox => {
-                    created.push(sandbox);
-                }
-            })
-            .load();
+        system.addHook({
+            onCreateSandbox: sandbox => {
+                created.push(sandbox);
+            }
+        });
         const save = new Map<string, unknown>([['hp', 10]]);
 
         const sandbox = system.createReplaySandbox({

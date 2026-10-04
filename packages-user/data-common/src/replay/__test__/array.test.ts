@@ -572,13 +572,13 @@ describe('ReplayArray param codec', () => {
         ]);
     });
 
-    // 验证短字符串参数使用内联类型 token（长度 + 9）并读回一致
+    // 验证短字符串参数使用内联类型 token（长度 + 32）并读回一致
     it('round-trips a short string with an inline type token', () => {
         const array = createArray();
         array.add(0, ['hi']);
 
         expect(array.get(0).params).toEqual(['hi']);
-        expect(firstParamToken(array)).toBe(11);
+        expect(firstParamToken(array)).toBe(34);
     });
 
     // 验证超过内联长度的字符串参数使用 type 9 并读回一致
@@ -591,13 +591,13 @@ describe('ReplayArray param codec', () => {
         expect(firstParamToken(array)).toBe(9);
     });
 
-    // 验证空字符串参数回退到 type 9 并读回为空串
+    // 验证空字符串参数按内联类型码 32（长度 0）并读回为空串
     it('round-trips an empty string', () => {
         const array = createArray();
         array.add(0, ['']);
 
         expect(array.get(0).params).toEqual(['']);
-        expect(firstParamToken(array)).toBe(9);
+        expect(firstParamToken(array)).toBe(32);
     });
 
     // 验证单条录像步的多个不同类型参数按顺序完整读回
@@ -791,7 +791,7 @@ describe('ReplayArray param codec', () => {
 });
 
 describe('ReplayArray param type table', () => {
-    // 参数类型码表只增不改：锚定 float=6、非负 bigint=7、负 bigint=8、短字符串基址 9、负 int64=5
+    // 参数类型码表只增不改：锚定 float=6、非负 bigint=7、负 bigint=8、短字符串基址 32、负 int64=5
     it('keeps the param type code mapping stable', () => {
         const floatArray = createArray();
         floatArray.add(0, [1.5]);
@@ -811,7 +811,7 @@ describe('ReplayArray param type table', () => {
 
         const shortStringArray = createArray();
         shortStringArray.add(0, ['hi']);
-        expect(firstParamToken(shortStringArray)).toBe(11);
+        expect(firstParamToken(shortStringArray)).toBe(34);
 
         const longStringArray = createArray();
         longStringArray.add(0, ['a'.repeat(300)]);
