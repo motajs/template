@@ -276,6 +276,7 @@
         "191": "Cannot cache autotile since no its frame or type data stored.",
         "192": "A FaceGroup.Dir8 face handler registration is expected.",
         "193": "Cannot load item state since no item id registration for item num $1.",
+        "194": "Expected passive replay command executed during the last active replay command executing, but a passive command $1 was got after active replay command $2 executing. Replay will continue and ignore this issue.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }

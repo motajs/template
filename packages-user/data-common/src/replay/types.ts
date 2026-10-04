@@ -56,7 +56,7 @@ export interface IReplayPassiveHandler {
      * 本被动录像步执行完毕，进入下一个录像步
      * @param status 被动录像步执行情况
      */
-    next(status: ReplayCommandResult): void;
+    next(status: ReplayCommandResult): Promise<void>;
 }
 
 export interface IReplayCommand {
@@ -122,7 +122,8 @@ export interface IReplaySandbox extends IHookable<IReplaySandboxHooks> {
     readonly playing: boolean;
 
     /**
-     * 获取被动录像参数。如果下一步是被动录像，那么获取其参数，如果不是，返回 `null`
+     * 获取被动录像参数。如果下一步是被动录像，那么获取其参数，如果不是，返回 `null`。
+     * 当调用 `IReplayPassiveHandler` 后，才会进入下一个录像步，否则多次调用 `getPassive`，会得到相同的结果。
      */
     getPassive(): IReplayPassiveHandler | null;
 
@@ -159,7 +160,7 @@ export interface IReplaySandbox extends IHookable<IReplaySandboxHooks> {
 
     /**
      * 单步播放一步，返回的 Promise 在该步渲染完成后兑现
-     * @returns 当前步是否正常播放完成
+     * @returns 当前步的播放结果
      */
     step(): Promise<boolean>;
 }
@@ -188,8 +189,7 @@ export interface IReplayReadStream {
     expired: boolean;
 
     /**
-     * 读取当前指针位置的录像步并将指针推进到下一步
-     * 超出录像长度时返回 null
+     * 读取当前指针位置的录像步，并将录像指针推进到下一步，超出录像长度时返回 `null`
      */
     read(): IReplayStepHandler | null;
 
