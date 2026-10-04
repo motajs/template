@@ -66,9 +66,10 @@ interface TestEnv {
 
 /** 构造一个仅含图块与道具存储的公共层假对象 */
 function createState(): IDataCommon {
+    const tileStore = new TileStore();
     return {
-        tileStore: new TileStore(),
-        itemStore: new ItemStore()
+        tileStore,
+        itemStore: new ItemStore(tileStore)
     } as never;
 }
 
@@ -101,8 +102,8 @@ function createItem(
         equip: {
             slots: [0],
             animate: 'sword',
-            value: new Map(value),
-            percentage: new Map(percentage),
+            value: Object.fromEntries(value),
+            percentage: Object.fromEntries(percentage),
             loadEvent: null,
             unloadEvent: null
         }
@@ -242,9 +243,9 @@ function createValueSave(
     };
 }
 
-describe('HeroEquipsStore same-reference load (#06-17-4)', () => {
-    // 验证同 uid 装备实例在三档压缩读档前后为同一实例，且数值恢复到存档点
-    it('keeps the same instance and restores values across all compressions', () => {
+describe('HeroEquipsStore load semantics (#06-17-4 superseded)', () => {
+    // 验证同 uid 装备实例在三档压缩读档后按存档值重建，且数值恢复到存档点
+    it('rebuilds the instance and restores values across all compressions', () => {
         for (const compression of SAVE_COMPRESSIONS) {
             const env = createEnv();
             registerItem(env, createItem(10, 'sword', [['atk', 5]]));
@@ -263,8 +264,9 @@ describe('HeroEquipsStore same-reference load (#06-17-4)', () => {
 
             env.store.loadState(saved, compression);
 
-            expect(env.store.get(uid)).toBe(before);
-            expect([...before.getModifiers()][0][1].getValue()).toBe(9);
+            const after = env.store.get(uid)!;
+            expect(after).not.toBe(before);
+            expect([...after.getModifiers()][0][1].getValue()).toBe(9);
         }
     });
 
@@ -280,7 +282,8 @@ describe('HeroEquipsStore same-reference load (#06-17-4)', () => {
 
         env.store.loadState(saved, SaveCompression.NoCompression);
 
-        expect(env.store.get(kept)).toBe(before);
+        expect(env.store.get(kept)).not.toBe(before);
+        expect(env.store.get(kept)?.item.num).toBe(10);
         expect(env.store.get(extra)).toBeNull();
         expect(env.store.count(10)).toBe(1);
     });

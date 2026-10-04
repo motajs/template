@@ -1,6 +1,7 @@
 // 测试 HeroAttribute 构件：基础/最终属性、修饰器增删排序、存盘开关、克隆、自身存读档与告警码 108/109、克隆体修饰器簿记与存档开关
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { BaseHeroModifier, HeroAttribute } from '../attribute';
+import { HeroAttribute } from '../attribute';
+import { BaseHeroModifier } from '../modifier';
 import { logger } from '@motajs/common';
 import { SaveCompression } from '@user/data-common';
 import { type IHeroModifier } from '../types';

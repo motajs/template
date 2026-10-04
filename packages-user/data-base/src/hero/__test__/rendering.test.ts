@@ -36,9 +36,10 @@ afterAll(() => {
 
 /** 构造一个仅含图块与道具存储的公共层假对象 */
 function createState(): IDataCommon {
+    const tileStore = new TileStore();
     return {
-        tileStore: new TileStore(),
-        itemStore: new ItemStore()
+        tileStore,
+        itemStore: new ItemStore(tileStore)
     } as never;
 }
 
@@ -65,7 +66,7 @@ describe('HeroRendering alpha', () => {
     it('updates alpha and notifies the onSetAlpha hook', () => {
         const rendering = new HeroRendering(createState());
         const hook = new FakeRenderingHook();
-        rendering.addHook(hook).load();
+        rendering.addHook(hook);
 
         rendering.setAlpha(0.25);
 
@@ -78,7 +79,6 @@ describe('HeroRendering alpha', () => {
         const rendering = new HeroRendering(createState());
         const hook = new FakeRenderingHook();
         const controller = rendering.addHook(hook);
-        controller.load();
         rendering.setAlpha(0.5);
 
         controller.unload();

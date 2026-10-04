@@ -54,7 +54,7 @@ interface TestEnv {
 /** 构造一个注册了跟随者图块的公共层假对象 */
 function createState(): IDataCommon {
     const tileStore = new TileStore();
-    const itemStore = new ItemStore();
+    const itemStore = new ItemStore(tileStore);
     tileStore.addTile({
         num: 100,
         id: 'ghost',
@@ -63,8 +63,8 @@ function createState(): IDataCommon {
         pass: { onlyEvents: false, inPass: 15, outPass: 15 },
         eventPass: true
     });
-    // 录像系统桩，仅用于满足移动时的 route.add 记录
-    const replaySystem = { route: { add: vi.fn() } };
+    // 录像系统桩，仅用于满足移动时的 array.add 记录
+    const replaySystem = { array: { add: vi.fn() } };
     return { tileStore, itemStore, replaySystem } as never;
 }
 
@@ -121,8 +121,7 @@ describe('HeroFollowersController members', () => {
                 onAddFollower: (follower, index) => {
                     added.push([follower.num, index]);
                 }
-            })
-            .load();
+            });
         env.location.setPos(2, 3);
         env.location.mover.setFaceDir(FaceDirection.Up);
 
@@ -183,8 +182,7 @@ describe('HeroFollowersController members', () => {
                 onRemoveFollower: (_follower, index) => {
                     removed.push(index);
                 }
-            })
-            .load();
+            });
         env.controller.addFollower(100);
         const second = env.controller.addFollower(100);
 
@@ -211,8 +209,7 @@ describe('HeroFollowersController gathering', () => {
                 onGatherFollowers: sync => {
                     gathered.push(sync);
                 }
-            })
-            .load();
+            });
         const follower = env.controller.addFollower(100);
         env.location.setPos(5, 6);
         env.location.mover.setFaceDir(FaceDirection.Right);
@@ -237,8 +234,7 @@ describe('HeroFollowersController gathering', () => {
                 onGatherFollowers: sync => {
                     gathered.push(sync);
                 }
-            })
-            .load();
+            });
         env.location.mover.useTopImplementation(new FakeTopImpl());
         follower.location.mover.useTopImplementation(new FakeTopImpl());
 
@@ -278,8 +274,7 @@ describe('HeroFollowersController same-reference restore (#06-17-6)', () => {
             .addHook({
                 onAddFollower: (_follower, index) => added.push(index),
                 onRemoveFollower: (_follower, index) => removed.push(index)
-            })
-            .load();
+            });
         const follower = env.controller.addFollower(100);
         follower.location.setPos(2, 3);
         follower.rendering.setAlpha(0.5);
@@ -307,8 +302,7 @@ describe('HeroFollowersController same-reference restore (#06-17-6)', () => {
             .addHook({
                 onAddFollower: (_follower, index) => added.push(index),
                 onRemoveFollower: (_follower, index) => removed.push(index)
-            })
-            .load();
+            });
         const follower = env.controller.addFollower(100);
         const save = follower.saveState(SaveCompression.NoCompression);
 
@@ -330,8 +324,7 @@ describe('HeroFollowersController same-reference restore (#06-17-6)', () => {
         env.controller
             .addHook({
                 onRemoveFollower: (_follower, index) => removed.push(index)
-            })
-            .load();
+            });
         const first = env.controller.addFollower(100);
         env.controller.addFollower(100);
 
@@ -351,8 +344,7 @@ describe('HeroFollowersController same-reference restore (#06-17-6)', () => {
         env.controller
             .addHook({
                 onAddFollower: (_follower, index) => added.push(index)
-            })
-            .load();
+            });
         const first = env.controller.addFollower(100);
         const save = first.saveState(SaveCompression.NoCompression);
 

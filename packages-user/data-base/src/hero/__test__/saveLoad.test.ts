@@ -22,6 +22,7 @@ import { HeroEquipment } from '../equipment';
 import { EquipmentState, HeroEquipsStore } from '../equipStore';
 import { HeroItems } from '../items';
 import { HeroFollowersController } from '../follower';
+import { type IGameMap, MapState } from '../../map';
 import { type IHeroState } from '../types';
 
 vi.hoisted(() => {
@@ -74,13 +75,18 @@ interface EquipEnv {
 /** 极E��一个含图块、E��具存储与假录像系统的公共层假对象 */
 function createState(): IDataCommon {
     const tileStore = new TileStore();
-    const itemStore = new ItemStore<IHeroAttr>();
-    const route = { add: vi.fn() };
+    const itemStore = new ItemStore<IHeroAttr>(tileStore);
+    const array = { add: vi.fn() };
     return {
         tileStore,
         itemStore,
-        replaySystem: { route, disable: vi.fn(), revert: vi.fn() }
+        replaySystem: { array, disable: vi.fn(), revert: vi.fn() }
     } as never;
+}
+
+/** 构造一个单格的真实游戏地图对象，供 setFloor 使用 */
+function createMap(floorId: string): IGameMap {
+    return new MapState(createState()).createMap(floorId, 1, 1);
 }
 
 /** 极E��一份合�E皁E��士基础属性 */
@@ -118,8 +124,8 @@ function createEquipItem(
         equip: {
             slots,
             animate: 'sword',
-            value: new Map(value),
-            percentage: new Map(percentage),
+            value: Object.fromEntries(value),
+            percentage: Object.fromEntries(percentage),
             loadEvent: null,
             unloadEvent: null
         }
@@ -204,15 +210,6 @@ function createHeroState(): IHeroState<IHeroAttr> {
     );
 }
 
-/** 构造一个已注册跟随者图块、可直接添加跟随者的勇士状态对象 */
-function createFollowerHero(): IHeroState<IHeroAttr> {
-    return new HeroState<IHeroAttr>(
-        createFollowerState(),
-        new Dir8FaceHandler(),
-        new HeroAttribute<IHeroAttr>(createBaseAttr())
-    );
-}
-
 /** 构造一个已注册装备定义并设置好装备槽的勇士状态对象（基础 atk 为 10） */
 function createEquipHero(): IHeroState<IHeroAttr> {
     const env = createEquipEnv();
@@ -236,9 +233,10 @@ function roundTripPercentageModifier(compression: SaveCompression): unknown {
     modifier.setValue(0.9);
 
     const saved = state.saveState(compression);
-    state.loadState(saved, compression);
+    const restoredState = new EquipmentState<IHeroAttr>(0, item);
+    restoredState.loadState(saved, compression);
 
-    const restored = [...state.getModifiers()].find(
+    const restored = [...restoredState.getModifiers()].find(
         ([, current]) => current instanceof PercentageModifier
     );
     return restored?.[1].getValue();
@@ -281,12 +279,12 @@ describe('HeroLocation save and load round trips', () => {
             new Dir8FaceHandler()
         );
         location.setPos(1, 2);
-        location.setFloor('F2');
+        location.setFloor(createMap('F2'));
         location.mover.setFaceDir(FaceDirection.Up);
 
         const saved = location.saveState();
         location.setPos(9, 9);
-        location.setFloor('F9');
+        location.setFloor(createMap('F9'));
         location.mover.setFaceDir(FaceDirection.Down);
         location.loadState(saved);
 
@@ -348,29 +346,29 @@ describe('HeroEquipment save and load round trips', () => {
 });
 
 describe('EquipmentState save and load round trips', () => {
-    // 验证百刁E��加成在无压缩档下同实例恢复到存档点
-    it('restores a percentage modifier on the same instance in NoCompression', () => {
+    // 验证百刁E��加成在无压缩档下读档到新实例并恢复到存档点
+    it('restores a percentage modifier into a fresh instance in NoCompression', () => {
         expect(roundTripPercentageModifier(SaveCompression.NoCompression)).toBe(
             0.5
         );
     });
 
     // 验证 Low 压缩档读档以装备原始定义为回退基准，未修改的百分比加成不丢失（#06-09-1）
-    it('restores a percentage modifier on the same instance in LowCompression', () => {
+    it('restores a percentage modifier into a fresh instance in LowCompression', () => {
         expect(
             roundTripPercentageModifier(SaveCompression.LowCompression)
         ).toBe(0.5);
     });
 
     // 验证 High 压缩档读档以装备原始定义为回退基准，未修改的百分比加成不丢失（#06-09-1）
-    it('restores a percentage modifier on the same instance in HighCompression', () => {
+    it('restores a percentage modifier into a fresh instance in HighCompression', () => {
         expect(
             roundTripPercentageModifier(SaveCompression.HighCompression)
         ).toBe(0.5);
     });
 
-    // 验证 NoCompression 读档按 value/percentage 分表恢复数值修饰器（#06-09-1）
-    it('restores a value modifier on the same instance', () => {
+    // 验证 NoCompression 读档按 value/percentage 分表恢复到新实例的数值修饰器（#06-09-1）
+    it('restores a value modifier into a fresh instance', () => {
         const env = createEquipEnv();
         const item = createEquipItem(10, 'sword', [0], [['atk', 5]]);
         registerItem(env, item);
@@ -379,9 +377,10 @@ describe('EquipmentState save and load round trips', () => {
         modifier.setValue(99);
 
         const saved = state.saveState(SaveCompression.NoCompression);
-        state.loadState(saved, SaveCompression.NoCompression);
+        const restoredState = new EquipmentState<IHeroAttr>(0, item);
+        restoredState.loadState(saved, SaveCompression.NoCompression);
 
-        const restored = [...state.getModifiers()].find(
+        const restored = [...restoredState.getModifiers()].find(
             ([name]) => name === 'atk'
         );
         expect(restored?.[1].getValue()).toBe(5);
@@ -508,14 +507,14 @@ describe('HeroFollower save and load round trips', () => {
         );
         const follower = controller.addFollower(100);
         follower.location.setPos(2, 3);
-        follower.location.setFloor('F1');
+        follower.location.setFloor(createMap('F1'));
         follower.location.mover.setFaceDir(FaceDirection.Up);
         follower.rendering.setAlpha(0.5);
 
         for (const compression of SAVE_COMPRESSIONS) {
             const saved = follower.saveState(compression);
             follower.location.setPos(9, 9);
-            follower.location.setFloor('F9');
+            follower.location.setFloor(createMap('F9'));
             follower.location.mover.setFaceDir(FaceDirection.Down);
             follower.rendering.setAlpha(1);
             follower.loadState(saved, compression);
@@ -540,7 +539,7 @@ describe('HeroState save and load round trips', () => {
             hero.createAndInsertModifier('@system/value', 'atk');
             hero.getModifiableAttribute().set('hp', 88);
             hero.location.setPos(1, 1);
-            hero.location.setFloor('F1');
+            hero.location.setFloor(createMap('F1'));
             hero.location.mover.setFaceDir(FaceDirection.Up);
 
             const saved = hero.saveState(compression);
@@ -585,20 +584,18 @@ describe('HeroState save and load round trips', () => {
 });
 
 describe('HeroState container save and load coverage for sub systems', () => {
-    // 验证不接受压缩参数皁E��位与渲染经勇士容器三档往返均恢复到存档点
-    it('restores location and rendering through the container across all compressions', () => {
+    // 验证位置经勇士容器三档往返均恢复到存档点
+    it('restores location through the container across all compressions', () => {
         for (const compression of SAVE_COMPRESSIONS) {
             const hero = createHeroState();
             hero.location.setPos(2, 3);
-            hero.location.setFloor('F2');
+            hero.location.setFloor(createMap('F2'));
             hero.location.mover.setFaceDir(FaceDirection.Right);
-            hero.rendering.setAlpha(0.25);
 
             const saved = hero.saveState(compression);
             hero.location.setPos(9, 9);
-            hero.location.setFloor('F9');
+            hero.location.setFloor(createMap('F9'));
             hero.location.mover.setFaceDir(FaceDirection.Down);
-            hero.rendering.setAlpha(1);
             hero.loadState(saved, compression);
 
             expect(hero.location.x).toBe(2);
@@ -607,7 +604,6 @@ describe('HeroState container save and load coverage for sub systems', () => {
             expect(hero.location.getCurrentFaceDirection()).toBe(
                 FaceDirection.Right
             );
-            expect(hero.rendering.alpha).toBe(0.25);
         }
     });
 
@@ -704,9 +700,9 @@ describe('HeroState same-reference attribute load (#06-17-1)', () => {
     });
 });
 
-describe('HeroState same-reference equipment load (#06-17-4)', () => {
-    // 验证经勇士容器三档往返后装备实例为同一实例，且数值恢复到存档点
-    it('keeps the equipment instance and restores values across all compressions', () => {
+describe('HeroState equipment load semantics (#06-17-4 superseded)', () => {
+    // 验证经勇士容器三档往返后装备实例按存档值重建，且数值恢复到存档点
+    it('rebuilds the equipment instance and restores values across all compressions', () => {
         for (const compression of SAVE_COMPRESSIONS) {
             const hero = createEquipHero();
             const uid = hero.items.equipment.add(10);
@@ -734,8 +730,9 @@ describe('HeroState same-reference equipment load (#06-17-4)', () => {
 
             hero.loadState(saved, compression);
 
-            expect(hero.items.equipment.get(uid)).toBe(before);
-            expect([...before.getModifiers()][0][1].getValue()).toBe(9);
+            const after = hero.items.equipment.get(uid)!;
+            expect(after).not.toBe(before);
+            expect([...after.getModifiers()][0][1].getValue()).toBe(9);
         }
     });
 
@@ -750,47 +747,8 @@ describe('HeroState same-reference equipment load (#06-17-4)', () => {
 
         hero.loadState(saved, SaveCompression.NoCompression);
 
-        expect(hero.items.equipment.get(kept)).toBe(before);
+        expect(hero.items.equipment.get(kept)).not.toBe(before);
+        expect(hero.items.equipment.get(kept)?.item.num).toBe(10);
         expect(hero.items.equipment.get(extra)).toBeNull();
-    });
-});
-
-describe('HeroState same-reference follower load (#06-17-6)', () => {
-    // 验证经勇士容器三档往返后同索引同图块数字的跟随者为同一实例，位置与渲染恢复到存档点
-    it('keeps the follower instance and restores its state across all compressions', () => {
-        for (const compression of SAVE_COMPRESSIONS) {
-            const hero = createFollowerHero();
-            const follower = hero.followers.addFollower(100);
-            follower.location.setPos(2, 3);
-            follower.location.mover.setFaceDir(FaceDirection.Up);
-            follower.rendering.setAlpha(0.5);
-
-            const saved = hero.saveState(compression);
-            follower.location.setPos(9, 9);
-            follower.location.mover.setFaceDir(FaceDirection.Down);
-            follower.rendering.setAlpha(1);
-
-            hero.loadState(saved, compression);
-
-            expect(hero.followers.getFollower(0)).toBe(follower);
-            expect(follower.location.x).toBe(2);
-            expect(follower.location.y).toBe(3);
-            expect(follower.rendering.alpha).toBe(0.5);
-        }
-    });
-
-    // 验证跟随者数量以存档为准：存档中不存在的跟随者读档后被删除
-    it('deletes followers absent from the save', () => {
-        const hero = createFollowerHero();
-        const kept = hero.followers.addFollower(100);
-
-        const saved = hero.saveState(SaveCompression.NoCompression);
-        hero.followers.addFollower(100);
-
-        hero.loadState(saved, SaveCompression.NoCompression);
-
-        const all = hero.followers.getAllFollowers();
-        expect(all).toHaveLength(1);
-        expect(all[0]).toBe(kept);
     });
 });

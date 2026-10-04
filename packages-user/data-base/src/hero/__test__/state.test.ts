@@ -12,6 +12,7 @@ import { logger } from '@motajs/common';
 import { HeroAttribute } from '../attribute';
 import { ValueModifier } from '../modifier';
 import { HeroState } from '../state';
+import { type IGameMap, MapState } from '../../map';
 import { type IHeroAttribute, type IHeroState } from '../types';
 
 vi.hoisted(() => {
@@ -46,9 +47,10 @@ afterAll(() => {
 
 /** 构造一个仅包含图块与道具存储的公共层假对象 */
 function createState(): IDataCommon {
+    const tileStore = new TileStore();
     return {
-        tileStore: new TileStore(),
-        itemStore: new ItemStore()
+        tileStore,
+        itemStore: new ItemStore(tileStore)
     } as never;
 }
 
@@ -73,6 +75,11 @@ function createBaseAttr(): IHeroAttr {
     };
 }
 
+/** 构造一个单格的真实游戏地图对象，供 changeFloor 的楼层目标使用 */
+function createMap(floorId: string): IGameMap {
+    return new MapState(createState()).createMap(floorId, 1, 1);
+}
+
 /** 构造一个装配完成的勇士状态对象，可注入既有属性对象 */
 function createHeroState(
     attribute?: IHeroAttribute<IHeroAttr>
@@ -85,13 +92,11 @@ function createHeroState(
 }
 
 describe('HeroState assembly', () => {
-    // 验证构造器装配全部子系统并停在默认定位器
+    // 验证构造器装配数据端子系统并停在默认定位器
     it('assembles every subsystem at the default locator', () => {
         const hero = createHeroState();
 
         expect(hero.location).toBeDefined();
-        expect(hero.rendering.alpha).toBe(1);
-        expect(hero.followers.getAllFollowers()).toEqual([]);
         expect(hero.items.equipment).toBeDefined();
         expect(hero.equip.slots).toEqual([]);
         expect(hero.getLocation()).toEqual({
@@ -148,17 +153,15 @@ describe('HeroState changeFloor', () => {
             onAfterChangeFloor: async () => {
                 calls.push('after');
             }
-        }).load();
-        hero.location
-            .addHook({
-                onSetFloor: () => {
-                    calls.push('floor');
-                }
-            })
-            .load();
+        });
+        hero.location.addHook({
+            onSetFloor: () => {
+                calls.push('floor');
+            }
+        });
 
         await hero.changeFloor({
-            target: 'F2',
+            target: createMap('F2'),
             x: 5,
             y: 6,
             face: FaceDirection.Up

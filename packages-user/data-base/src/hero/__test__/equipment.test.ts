@@ -60,8 +60,8 @@ interface TestEnv {
     replaySystem: ReplaySystemStub;
 }
 
-/** 录像路由桩，只保留真正进入录像的指令，禁用窗口内的写入被丢弃 */
-interface ReplayRouteStub {
+/** 录像数组桩，只保留真正进入录像的指令，禁用窗口内的写入被丢弃 */
+interface ReplayArrayStub {
     /**
      * 写入一条录像指令
      * @param code 指令码
@@ -74,7 +74,7 @@ interface ReplayRouteStub {
 
 /** 录像系统桩，用禁用计数复现录像数组在禁用窗口内丢弃指令的行为 */
 interface ReplaySystemStub {
-    route: ReplayRouteStub;
+    array: ReplayArrayStub;
     disable: ReturnType<typeof vi.fn>;
     revert: ReturnType<typeof vi.fn>;
 }
@@ -83,7 +83,7 @@ interface ReplaySystemStub {
 function createReplaySystem(): ReplaySystemStub {
     let disabled = 0;
     const commands: [ReplayCode, unknown[]][] = [];
-    const route: ReplayRouteStub = {
+    const array: ReplayArrayStub = {
         add(code, params) {
             if (disabled > 0) return;
             commands.push([code, params]);
@@ -96,7 +96,7 @@ function createReplaySystem(): ReplaySystemStub {
     const revert = vi.fn(() => {
         if (disabled > 0) disabled--;
     });
-    return { route, disable, revert };
+    return { array, disable, revert };
 }
 
 /** 构造一份合成的勇士基础属性 */
@@ -134,8 +134,8 @@ function createItem(
         equip: {
             slots,
             animate: 'sword',
-            value: new Map(value),
-            percentage: new Map(percentage),
+            value: Object.fromEntries(value),
+            percentage: Object.fromEntries(percentage),
             loadEvent: null,
             unloadEvent: null
         }
@@ -145,8 +145,8 @@ function createItem(
 /** 构造一个装配勇士装备对象的测试环境 */
 function createEnv(): TestEnv {
     const tileStore = new TileStore();
-    const itemStore = new ItemStore<IHeroAttr>();
-    // 录像系统桩，用于满足装备/卸下时的 route.add 记录与临时禁用录像
+    const itemStore = new ItemStore<IHeroAttr>(tileStore);
+    // 录像系统桩，用于满足装备/卸下时的 array.add 记录与临时禁用录像
     const replaySystem = createReplaySystem();
     const state = { tileStore, itemStore, replaySystem } as never;
     const attribute = new HeroAttribute<IHeroAttr>(createBaseAttr());
@@ -374,7 +374,7 @@ describe('HeroEquipment replay isolation on load', () => {
         expect(env.attribute.getFinalAttribute('atk')).toBe(15);
 
         env.equipment.unequip(0);
-        env.replaySystem.route.commands.length = 0;
+        env.replaySystem.array.commands.length = 0;
         env.replaySystem.disable.mockClear();
         env.replaySystem.revert.mockClear();
 
@@ -382,7 +382,7 @@ describe('HeroEquipment replay isolation on load', () => {
 
         const disableCount = env.replaySystem.disable.mock.calls.length;
         const revertCount = env.replaySystem.revert.mock.calls.length;
-        expect(env.replaySystem.route.commands).toEqual([]);
+        expect(env.replaySystem.array.commands).toEqual([]);
         expect(disableCount).toBeGreaterThan(0);
         expect(revertCount).toBe(disableCount);
         expect(env.equipment.getEquipped(0)).toBe(uid);
@@ -400,14 +400,14 @@ describe('HeroEquipment replay isolation on load', () => {
         env.equipment.unequip(0);
         env.equipment.loadState(saved);
 
-        env.replaySystem.route.commands.length = 0;
+        env.replaySystem.array.commands.length = 0;
         env.equipment.unequip(0);
-        expect(env.replaySystem.route.commands).toEqual([
+        expect(env.replaySystem.array.commands).toEqual([
             [ReplayCode.Unequip, [0]]
         ]);
 
         env.equipment.equip(uid, 0);
-        expect(env.replaySystem.route.commands).toEqual([
+        expect(env.replaySystem.array.commands).toEqual([
             [ReplayCode.Unequip, [0]],
             [ReplayCode.Equip, [uid]]
         ]);

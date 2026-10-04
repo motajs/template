@@ -44,11 +44,12 @@ afterAll(() => {
 
 /** 构造一个仅含图块与道具存储的公共层假对象 */
 function createState(): IDataCommon {
-    // 录像系统桩，仅用于满足移动时的 route.add 记录
-    const replaySystem = { route: { add: vi.fn() } };
+    // 录像系统桩，仅用于满足移动时的 array.add 记录
+    const replaySystem = { array: { add: vi.fn() } };
+    const tileStore = new TileStore();
     return {
-        tileStore: new TileStore(),
-        itemStore: new ItemStore(),
+        tileStore,
+        itemStore: new ItemStore(tileStore),
         replaySystem
     } as never;
 }

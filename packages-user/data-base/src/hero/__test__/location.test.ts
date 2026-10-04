@@ -8,6 +8,7 @@ import {
     TileStore
 } from '@user/data-common';
 import { HeroLocation } from '../location';
+import { type IGameMap, MapState } from '../../map';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -41,9 +42,10 @@ afterAll(() => {
 
 /** 构造一个仅包含图块与道具存储的公共层假对象 */
 function createState(): IDataCommon {
+    const tileStore = new TileStore();
     return {
-        tileStore: new TileStore(),
-        itemStore: new ItemStore()
+        tileStore,
+        itemStore: new ItemStore(tileStore)
     } as never;
 }
 
@@ -59,6 +61,11 @@ function createLocation(): HeroLocation {
         { x: 3, y: 4, direction: FaceDirection.Right },
         createFaceHandler()
     );
+}
+
+/** 构造一个单格的真实游戏地图对象，供 setFloor 使用 */
+function createMap(floorId: string): IGameMap {
+    return new MapState(createState()).createMap(floorId, 1, 1);
 }
 
 describe('HeroLocation position and floor', () => {
@@ -82,8 +89,7 @@ describe('HeroLocation position and floor', () => {
                 onSetPos: (x, y) => {
                     calls.push([x, y]);
                 }
-            })
-            .load();
+            });
 
         location.setPos(7, 9);
 
@@ -92,24 +98,23 @@ describe('HeroLocation position and floor', () => {
         expect(calls).toEqual([[7, 9]]);
     });
 
-    // 验证 setFloor 更新楼层并触发 onSetFloor 钩子
+    // 验证 setFloor 更新楼层并触发 onSetFloor 钩子，且可传 null 清空
     it('updates the floor and notifies the onSetFloor hook', () => {
         const location = createLocation();
-        const floors: (string | undefined)[] = [];
-        location
-            .addHook({
-                onSetFloor: floorId => {
-                    floors.push(floorId);
-                }
-            })
-            .load();
+        const floors: (IGameMap | null)[] = [];
+        location.addHook({
+            onSetFloor: map => {
+                floors.push(map);
+            }
+        });
 
-        location.setFloor('F2');
+        const floor = createMap('F2');
+        location.setFloor(floor);
         expect(location.floorId).toBe('F2');
 
-        location.setFloor(undefined);
+        location.setFloor(null);
         expect(location.floorId).toBeUndefined();
-        expect(floors).toEqual(['F2', undefined]);
+        expect(floors).toEqual([floor, null]);
     });
 
     // 验证朝向经由共享移动器读写

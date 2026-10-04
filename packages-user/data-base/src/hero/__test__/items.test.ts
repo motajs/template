@@ -57,9 +57,9 @@ interface ItemFixture {
 /** 构造一个装配勇士道具对象的测试环境 */
 function createEnv(): TestEnv {
     const tileStore = new TileStore();
-    const itemStore = new ItemStore<IHeroAttr>();
-    // 录像系统桩，仅用于满足道具使用时的 route.add 记录
-    const replaySystem = { route: { add: vi.fn() } };
+    const itemStore = new ItemStore<IHeroAttr>(tileStore);
+    // 录像系统桩，仅用于满足道具使用时的 array.add 记录
+    const replaySystem = { array: { add: vi.fn() } };
     const state = { tileStore, itemStore, replaySystem } as never;
     return {
         state,
@@ -129,12 +129,12 @@ describe('HeroItems counting', () => {
         expect(env.items.getItemState(20)).toBeNull();
     });
 
-    // 验证 getItem 等价于增加一个道具并支持字符串 id
-    it('gets one item through getItem and string ids', () => {
+    // 验证 addItem 支持字符串 id 并增加计数
+    it('adds one item through addItem and string ids', () => {
         const env = createEnv();
         registerItem(env, createItem(20, 'key', ItemCategory.Constant).item);
 
-        env.items.getItem('key');
+        env.items.addItem('key');
 
         expect(env.items.itemCount(20)).toBe(1);
         expect(env.items.itemCount('key')).toBe(1);
@@ -176,7 +176,7 @@ describe('HeroItems counting', () => {
         });
 
         env.items.addItem(99);
-        env.items.getItem('missing');
+        env.items.addItem('missing');
         env.items.addItem(77, 3);
 
         expect(env.items.itemCount(99)).toBe(0);
