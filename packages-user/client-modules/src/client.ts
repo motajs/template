@@ -43,22 +43,20 @@ import { UIController } from '@motajs/system';
 export class ClientCore extends CoreState implements IClientCore {
     // Layer 4 渲染基础层
     readonly save: ISaveSystem;
-
-    // Layer 5 渲染顶层
-    readonly materials: ITextureManager;
-
+    readonly audioContext: IMotaAudioContext;
+    readonly soundPlayer: ISoundPlayer<SoundIds>;
+    readonly bgmPlayer: IBGMPlayer<BgmIds>;
     readonly rafExcitation: IExcitation<number>;
     readonly excitationDivider: IExcitationDivider<number>;
     readonly renderer: IRenderTreeRoot;
+    readonly materials: ITextureManager;
+
+    // Layer 5 渲染顶层
     readonly using: IRendererUsing;
     readonly mainMapRenderer: IMapRenderer;
     readonly mainMapExtension: IMapExtensionManager;
     readonly sceneController: UIController;
     readonly mainUIController: UIController;
-
-    readonly audioContext: IMotaAudioContext;
-    readonly soundPlayer: ISoundPlayer<SoundIds>;
-    readonly bgmPlayer: IBGMPlayer<BgmIds>;
 
     constructor(config: IClientCoreConfig) {
         super({
@@ -83,7 +81,6 @@ export class ClientCore extends CoreState implements IClientCore {
 
         this.materials = new TextureManager(
             this,
-            this.tileStore,
             config.tilesetReserve,
             config.tilesetUnit
         );

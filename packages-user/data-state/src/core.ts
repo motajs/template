@@ -49,7 +49,6 @@ import {
 import { ICoreState, ICoreStateConfig, ISaveableExecutor } from './types';
 import {
     CommonAuraConverter,
-    EnemyLegacyBridge,
     GuardAuraConverter,
     MainDamageCalculator,
     MainEnemyFinalEffect,
@@ -139,7 +138,7 @@ export class CoreState implements ICoreState {
         this.flags = new FlagSystem();
 
         // 地图
-        this.maps = new MapState(this.tileStore, this);
+        this.maps = new MapState(this);
 
         // 勇士
         const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
@@ -148,7 +147,7 @@ export class CoreState implements ICoreState {
 
         // 怪物管理器
         const comparer = new MainEnemyComparer();
-        const enemyManager = new EnemyManager(new EnemyLegacyBridge());
+        const enemyManager = new EnemyManager<IEnemyAttr>(this.tileStore);
         enemyManager.attachEnemyComparer(comparer);
         enemyManager.setAttributeDefaults('hp', 0);
         enemyManager.setAttributeDefaults('atk', 0);

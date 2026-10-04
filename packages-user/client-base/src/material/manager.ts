@@ -35,6 +35,7 @@ interface ITilesetCache {
 }
 
 export class TextureManager implements ITextureManager {
+    readonly tiles: ITileStore;
     readonly autotile: IAutotileProcessor;
 
     readonly textures: ITextureStore = new TextureStore();
@@ -83,10 +84,10 @@ export class TextureManager implements ITextureManager {
 
     constructor(
         readonly state: ICoreState,
-        readonly tiles: ITileStore,
         readonly tilesetReserve: number,
         readonly tilesetUnit: number
     ) {
+        this.tiles = state.tileStore;
         this.autotile = new AutotileProcessor(state);
         this.assetBuilder = new AssetBuilder(this, state);
         this.assetBuilder.pipe(this.assetStore);
