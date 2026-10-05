@@ -29,7 +29,6 @@ interface TestModules {
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
     FaceManager: typeof import('@user/data-common').FaceManager;
     Dir8FaceHandler: typeof import('@user/data-common').Dir8FaceHandler;
-    DirectionMapper: typeof import('@motajs/common').DirectionMapper;
 }
 
 let modules: TestModules;
@@ -39,14 +38,12 @@ beforeAll(async () => {
     vi.stubGlobal('location', { origin: 'http://localhost' });
     const mapModule = await import('../mapState');
     const commonModule = await import('@user/data-common');
-    const motaModule = await import('@motajs/common');
     modules = {
         MapState: mapModule.MapState,
         TileStore: commonModule.TileStore,
         RoleFaceBinder: commonModule.RoleFaceBinder,
         FaceManager: commonModule.FaceManager,
-        Dir8FaceHandler: commonModule.Dir8FaceHandler,
-        DirectionMapper: motaModule.DirectionMapper
+        Dir8FaceHandler: commonModule.Dir8FaceHandler
     };
 });
 
@@ -80,10 +77,9 @@ function createMapState(
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
-        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
-    const mapState = new modules.MapState(tileStore, state);
+    const mapState = new modules.MapState(state);
     const map = mapState.fromRaw({
         floorId: 'F1',
         width: 2,
@@ -93,7 +89,9 @@ function createMapState(
     });
     return {
         map: map!,
-        layer: map!.getLayerByAlias('event')! as IResizableMapLayer
+        layer: [...map!.layerList].find(
+            layer => layer.alias === 'event'
+        )! as IResizableMapLayer
     };
 }
 
@@ -156,6 +154,8 @@ describe('MapLayer tile defaults snapshots conversion and movement', () => {
         );
         expect(restoredStatic.tileEvent().dirty()).toBe(false);
 
+        // 先物化 (1, 0) 的静态图块，使转换时能保留其默认事件（与 StaticTile.toDynamic 用法一致）
+        layer.getTile(1, 0);
         const keptDynamic = layer.transferToDynamic(1, 0)!;
         keptDynamic.tileEvent().set(30, 'kept-event');
         const keptStatic = layer.transferToStatic(keptDynamic, true)!;

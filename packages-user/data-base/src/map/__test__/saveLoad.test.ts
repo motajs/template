@@ -10,7 +10,7 @@ import {
     TileStore,
     TileType
 } from '@user/data-common';
-import { DirectionMapper, logger } from '@motajs/common';
+import { logger } from '@motajs/common';
 import { type IGameMap, type IResizableMapLayer } from '../types';
 import { MapState } from '../mapState';
 
@@ -88,10 +88,9 @@ function createMapFixture(
         eventStore: {},
         roleFace: new RoleFaceBinder(),
         faceManager,
-        directionMapper: new DirectionMapper(),
         saveSystem: {}
     } as never;
-    const mapState = new MapState(tileStore, state);
+    const mapState = new MapState(state);
     const map = mapState.fromRaw({
         floorId: 'F1',
         width: 2,
@@ -102,7 +101,9 @@ function createMapFixture(
     return {
         mapState,
         map: map!,
-        layer: map!.getLayerByAlias('event')! as IResizableMapLayer
+        layer: [...map!.layerList].find(
+            layer => layer.alias === 'event'
+        )! as IResizableMapLayer
     };
 }
 

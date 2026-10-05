@@ -13,7 +13,7 @@ import {
     TileStore,
     TileType
 } from '@user/data-common';
-import { DirectionMapper, logger } from '@motajs/common';
+import { logger } from '@motajs/common';
 import {
     type IDynamicTile,
     type IGameMap,
@@ -101,10 +101,9 @@ function createFixture(blocks: number[] = [1, 2, 1, 2]): LayerFixture {
         eventStore: {},
         roleFace,
         faceManager,
-        directionMapper: new DirectionMapper(),
         saveSystem: {}
     } as never;
-    const mapState = new MapState(tileStore, state);
+    const mapState = new MapState(state);
     const map = mapState.fromRaw({
         floorId: 'F1',
         width: 2,
@@ -114,7 +113,9 @@ function createFixture(blocks: number[] = [1, 2, 1, 2]): LayerFixture {
     })!;
     return {
         map,
-        layer: map.getLayerByAlias('event')! as IResizableMapLayer,
+        layer: [...map.layerList].find(
+            layer => layer.alias === 'event'
+        )! as IResizableMapLayer,
         roleFace
     };
 }
@@ -140,13 +141,11 @@ describe('MapLayer static matrix', () => {
     it('marks dirty and fires the block hook only on an actual change', () => {
         const { layer } = createFixture();
         const updates: [number, number, number][] = [];
-        layer
-            .addHook({
-                onUpdateBlock: (block, x, y) => {
-                    updates.push([block, x, y]);
-                }
-            })
-            .load();
+        layer.addHook({
+            onUpdateBlock: (block, x, y) => {
+                updates.push([block, x, y]);
+            }
+        });
 
         expect(layer.dirty()).toBe(false);
 
@@ -317,11 +316,11 @@ describe('MapLayer directions and layer attributes', () => {
         roleFace.bind(2, 1, FaceDirection.Right);
         const tile = layer.createDynamic(1, 0, 0);
 
-        expect(layer.setDynamicDirection(tile, FaceDirection.Right)).toBe(2);
+        expect(tile.setFaceDirection(FaceDirection.Right)).toBe(2);
         expect(tile.num()).toBe(2);
 
         const fallback = layer.createDynamic(1, 1, 0);
-        expect(layer.setDynamicDirection(fallback, FaceDirection.Up)).toBe(1);
+        expect(fallback.setFaceDirection(FaceDirection.Up)).toBe(1);
     });
 
     // 验证 setZIndex 与 setFaceBinder 的写入与空值忽略
@@ -344,13 +343,11 @@ describe('MapLayer dynamic conversion', () => {
     it('creates dynamic tiles and notifies the create hook', () => {
         const { layer } = createFixture([0, 0, 0, 0]);
         const created: IDynamicTile[] = [];
-        layer
-            .addHook({
-                onCreateDynamic: tile => {
-                    created.push(tile);
-                }
-            })
-            .load();
+        layer.addHook({
+            onCreateDynamic: tile => {
+                created.push(tile);
+            }
+        });
 
         const tile = layer.createDynamic(1, 0, 0);
 
@@ -385,13 +382,13 @@ describe('MapLayer dynamic conversion', () => {
         expect(layer.getTile(0, 0)!.tileEvent().get()).toEqual(new Map());
     });
 
-    // 验证 transferToDynamic 在 keepEvent 为 false 时清空动态图块事件
-    it('clears dynamic events when transferToDynamic does not keep them', () => {
+    // 验证 transferToDynamic 在 keepEvent 为 false 时动态图块仅保留默认事件、静态图块事件被清空
+    it('keeps only default events when transferToDynamic does not keep them', () => {
         const { layer } = createFixture();
 
         const tile = layer.transferToDynamic(0, 0, false)!;
 
-        expect(tile.tileEvent().get()).toEqual(new Map());
+        expect(tile.tileEvent().get()).toEqual(new Map([[10, 'base-event']]));
         expect(layer.getTile(0, 0)!.tileEvent().get()).toEqual(new Map());
     });
 
@@ -565,13 +562,11 @@ describe('MapLayer dynamic conversion', () => {
     it('deletes a dynamic tile and notifies the delete hook', async () => {
         const { layer } = createFixture([0, 0, 0, 0]);
         const deleted: IDynamicTile[] = [];
-        layer
-            .addHook({
-                onDeleteDynamic: async tile => {
-                    deleted.push(tile);
-                }
-            })
-            .load();
+        layer.addHook({
+            onDeleteDynamic: async tile => {
+                deleted.push(tile);
+            }
+        });
         const tile = layer.createDynamic(1, 0, 0);
 
         await layer.deleteDynamic(tile);
@@ -580,15 +575,15 @@ describe('MapLayer dynamic conversion', () => {
         expect([...layer.iterateDynamicTiles()]).toEqual([]);
     });
 
-    // 验证 deleteDynamic 对非本层图块告警 130
-    it('warns code 130 for a tile not managed by the layer', async () => {
+    // 验证重复删除同一动态图块不再告警（旧码 130 已随删除校验移除）
+    it('ignores a tile no longer managed by the layer', async () => {
         const { layer } = createFixture([0, 0, 0, 0]);
         const tile = layer.createDynamic(1, 0, 0);
         await layer.deleteDynamic(tile);
 
         const result = logger.catch(() => layer.deleteDynamic(tile));
 
-        expect(result.info.map(info => info.code)).toContain(130);
+        expect(result.info.map(info => info.code)).not.toContain(130);
         await result.ret;
     });
 
@@ -596,13 +591,11 @@ describe('MapLayer dynamic conversion', () => {
     it('clears existing dynamic tiles before loading', () => {
         const { layer } = createFixture([0, 0, 0, 0]);
         const deleted: IDynamicTile[] = [];
-        layer
-            .addHook({
-                onDeleteDynamic: async tile => {
-                    deleted.push(tile);
-                }
-            })
-            .load();
+        layer.addHook({
+            onDeleteDynamic: async tile => {
+                deleted.push(tile);
+            }
+        });
         const first = layer.createDynamic(1, 0, 0);
         const second = layer.createDynamic(1, 1, 0);
         const saved = layer.saveState(SaveCompression.NoCompression);
@@ -651,13 +644,11 @@ describe('MapLayer dirty state and doors', () => {
     it('opens a door after awaiting the hook and ignores empty positions', async () => {
         const { layer } = createFixture([0, 0, 0, 0]);
         const opened: [number, number][] = [];
-        layer
-            .addHook({
-                onOpenDoor: async (x, y) => {
-                    opened.push([x, y]);
-                }
-            })
-            .load();
+        layer.addHook({
+            onOpenDoor: async (x, y) => {
+                opened.push([x, y]);
+            }
+        });
         layer.setBlock(1, 0, 0);
 
         await layer.openDoor(0, 0);
@@ -672,13 +663,11 @@ describe('MapLayer dirty state and doors', () => {
     it('closes a door on empty cells and warns 46 on occupied cells', async () => {
         const { layer } = createFixture([0, 0, 0, 0]);
         const closed: [number, number, number][] = [];
-        layer
-            .addHook({
-                onCloseDoor: async (num, x, y) => {
-                    closed.push([num, x, y]);
-                }
-            })
-            .load();
+        layer.addHook({
+            onCloseDoor: async (num, x, y) => {
+                closed.push([num, x, y]);
+            }
+        });
 
         await layer.closeDoor(3, 0, 0);
         expect(closed).toEqual([[3, 0, 0]]);

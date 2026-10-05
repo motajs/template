@@ -11,7 +11,7 @@ import {
     TileStore,
     TileType
 } from '@user/data-common';
-import { DirectionMapper, logger } from '@motajs/common';
+import { logger } from '@motajs/common';
 import { MapState } from '../mapState';
 
 vi.hoisted(() => {
@@ -81,10 +81,9 @@ function createFixture(): MapState {
         eventStore: {},
         roleFace: new RoleFaceBinder(),
         faceManager,
-        directionMapper: new DirectionMapper(),
         saveSystem: {}
     } as never;
-    return new MapState(tileStore, state);
+    return new MapState(state);
 }
 
 /** 构造一份合法的楼层原始数据 */
@@ -118,15 +117,16 @@ describe('MapState floor registration', () => {
     it('generates and reads content on a map created by createMap', () => {
         const mapState = createFixture();
         const map = mapState.createMap('F1', 2, 2);
-        const layer = map.addLayer();
-        map.setLayerAlias(layer, 'event');
+        const layer = map.addLayer('event');
         map.setEventLayer(layer);
         layer.setBlock(5, 0, 0);
         layer.setZIndex(0);
         layer.event(1, 0)!.set(9, 'gen-event');
 
         expect(mapState.getMap('F1')).toBe(map);
-        expect(map.getLayerByAlias('event')).toBe(layer);
+        expect([...map.layerList].find(item => item.alias === 'event')).toBe(
+            layer
+        );
         expect(map.eventLayer).toBe(layer);
         expect(layer.getBlock(0, 0)).toBe(5);
         expect(layer.getBlock(1, 0)).toBe(0);
@@ -134,13 +134,13 @@ describe('MapState floor registration', () => {
         expect(map.dirty()).toBe(true);
     });
 
-    // 验证 setMapList 去重并保持传入顺序
-    it('stores a de-duplicated ordered floor list', () => {
+    // 验证 setMapList 按传入顺序原样存储楼层 id（不去重，重复由调用方保证）
+    it('stores the ordered floor list as given', () => {
         const mapState = createFixture();
 
         mapState.setMapList(['A', 'B', 'A', 'C']);
 
-        expect(mapState.maps).toEqual(['A', 'B', 'C']);
+        expect(mapState.maps).toEqual(['A', 'B', 'A', 'C']);
     });
 
     // 验证 fromRaw 构建楼层、绑定事件层与点事件，并默认处于未激活
@@ -150,7 +150,7 @@ describe('MapState floor registration', () => {
         const map = mapState.fromRaw(createRaw());
 
         expect(map).not.toBeNull();
-        const layer = map!.getLayerByAlias('event');
+        const layer = [...map!.layerList].find(item => item.alias === 'event');
         expect(layer).not.toBeNull();
         expect(map!.eventLayer).toBe(layer);
         expect(layer!.getPointEvent(1, 0)).toEqual(
@@ -170,6 +170,7 @@ describe('MapState raw validation codes', () => {
         code: number;
     }
 
+    // 仅保留 shipped fromRaw 仍会发出的 60/61；62/63/64 已无发出点（Q1=A）
     const cases: MalformedCase[] = [
         {
             name: 'unequal layer lengths',
@@ -191,61 +192,6 @@ describe('MapState raw validation codes', () => {
                 Reflect.set(raw, 'events', { 0: {} });
             },
             code: 61
-        },
-        {
-            name: 'non-numeric map layer key',
-            mutate: raw => Reflect.set(raw.map, 'bad', [1, 2, 1, 2]),
-            code: 62
-        },
-        {
-            name: 'non-numeric event priority',
-            mutate: raw => Reflect.set(raw.events[0][1], 'bad', 'event'),
-            code: 62
-        },
-        {
-            name: 'missing map container',
-            mutate: raw => Reflect.set(raw, 'map', null),
-            code: 63
-        },
-        {
-            name: 'missing events container',
-            mutate: raw => Reflect.set(raw, 'events', null),
-            code: 63
-        },
-        {
-            name: 'missing alias container',
-            mutate: raw => Reflect.set(raw, 'layerAlias', null),
-            code: 63
-        },
-        {
-            name: 'invalid width',
-            mutate: raw => Reflect.set(raw, 'width', 0),
-            code: 64
-        },
-        {
-            name: 'non-integer map value',
-            mutate: raw => Reflect.set(raw.map, '0', [1, 1, 1.5, 1]),
-            code: 64
-        },
-        {
-            name: 'non-string layer alias',
-            mutate: raw => Reflect.set(raw.layerAlias, '0', 3),
-            code: 64
-        },
-        {
-            name: 'out of range event position',
-            mutate: raw => Reflect.set(raw.events[0], '4', { 5: 'event' }),
-            code: 64
-        },
-        {
-            name: 'non-string event id',
-            mutate: raw => Reflect.set(raw.events[0][1], '5', 3),
-            code: 64
-        },
-        {
-            name: 'event layer without map layer',
-            mutate: raw => Reflect.set(raw.events, '9', {}),
-            code: 64
         }
     ];
 

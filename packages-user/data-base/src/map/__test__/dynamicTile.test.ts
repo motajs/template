@@ -12,7 +12,7 @@ import {
     TileStore,
     TileType
 } from '@user/data-common';
-import { DirectionMapper, logger } from '@motajs/common';
+import { logger } from '@motajs/common';
 import { type IResizableMapLayer } from '../types';
 import { MapState } from '../mapState';
 import { DynamicTile } from '../dynamicTile';
@@ -90,10 +90,9 @@ function createFixture(blocks: number[] = [0, 0, 0, 0]): DynamicFixture {
         eventStore: {},
         roleFace,
         faceManager,
-        directionMapper: new DirectionMapper(),
         saveSystem: {}
     } as never;
-    const mapState = new MapState(tileStore, state);
+    const mapState = new MapState(state);
     const map = mapState.fromRaw({
         floorId: 'F1',
         width: 2,
@@ -102,7 +101,9 @@ function createFixture(blocks: number[] = [0, 0, 0, 0]): DynamicFixture {
         events: { 0: {} }
     })!;
     return {
-        layer: map.getLayerByAlias('event')! as IResizableMapLayer,
+        layer: [...map.layerList].find(
+            layer => layer.alias === 'event'
+        )! as IResizableMapLayer,
         roleFace
     };
 }

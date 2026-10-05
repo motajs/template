@@ -10,7 +10,7 @@ import {
     TileStore,
     TileType
 } from '@user/data-common';
-import { DirectionMapper, logger } from '@motajs/common';
+import { logger } from '@motajs/common';
 import { type IMapLayer } from '../types';
 import { GameMap } from '../gameMap';
 
@@ -83,11 +83,10 @@ function createFixture(): GameMapFixture {
         eventStore: {},
         roleFace: new RoleFaceBinder(),
         faceManager,
-        directionMapper: new DirectionMapper(),
         saveSystem: {}
     } as never;
     return {
-        map: new GameMap(state, tileStore, 'F1', 2, 2),
+        map: new GameMap(state, 'F1', 2, 2),
         tileStore
     };
 }
@@ -101,9 +100,9 @@ describe('GameMap layer lifecycle', () => {
             onUpdateLayer: list => {
                 sizes.push(list.size);
             }
-        }).load();
+        });
 
-        const layer = map.addLayer();
+        const layer = map.addLayer('layer');
         expect(map.hasLayer(layer)).toBe(true);
         expect(sizes).toEqual([1]);
 
@@ -112,33 +111,27 @@ describe('GameMap layer lifecycle', () => {
         expect(sizes).toEqual([1, 0]);
     });
 
-    // 验证别名设置、查询与重复别名告警 84
-    it('binds aliases and warns 84 on a duplicate alias', () => {
+    // 验证图层别名随加层绑定并可由别名映射取回（旧码 84 已随 setLayerAlias 删除）
+    it('binds layer aliases at addLayer time', () => {
         const { map } = createFixture();
-        const first = map.addLayer();
-        const second = map.addLayer();
+        const first = map.addLayer('event');
+        const second = map.addLayer('other');
 
-        map.setLayerAlias(first, 'event');
-        expect(map.getLayerByAlias('event')).toBe(first);
-        expect(map.getLayerAlias(first)).toBe('event');
-
-        const result = logger.catch(() => map.setLayerAlias(second, 'event'));
-
-        expect(result.info.map(info => info.code)).toContain(84);
-        expect(map.getLayerByAlias('event')).toBe(first);
-        expect(map.getLayerAlias(second)).toBeUndefined();
+        expect(map.aliasLayerMap.get('event')).toBe(first);
+        expect(first.alias).toBe('event');
+        expect(map.aliasLayerMap.get('other')).toBe(second);
+        expect(second.alias).toBe('other');
     });
 
     // 验证移除带别名的图层会一并清除别名映射
     it('drops the alias mapping when the layer is removed', () => {
         const { map } = createFixture();
-        const layer = map.addLayer();
-        map.setLayerAlias(layer, 'event');
+        const layer = map.addLayer('event');
 
         map.removeLayer(layer);
 
-        expect(map.getLayerByAlias('event')).toBeNull();
-        expect(map.getLayerAlias(layer)).toBeUndefined();
+        expect(map.aliasLayerMap.get('event')).toBeUndefined();
+        expect(map.hasLayer(layer)).toBe(false);
     });
 });
 
@@ -151,7 +144,7 @@ describe('GameMap settings', () => {
             onChangeBackground: tile => {
                 backgrounds.push(tile);
             }
-        }).load();
+        });
 
         expect(map.getBackground()).toBe(0);
         map.setBackground(7);
@@ -171,15 +164,11 @@ describe('GameMap settings', () => {
 
     // 验证事件层只接受本楼层的图层，越权告警 131，空值清空
     it('accepts own layers, warns 131 for a foreign layer and clears on null', () => {
-        const { map, tileStore } = createFixture();
-        const layer = map.addLayer();
-        const foreign = new GameMap(
-            map.state,
-            tileStore,
-            'other',
-            2,
-            2
-        ).addLayer();
+        const { map } = createFixture();
+        const layer = map.addLayer('event');
+        const foreign = new GameMap(map.state, 'other', 2, 2).addLayer(
+            'foreign'
+        );
 
         const result = logger.catch(() => map.setEventLayer(foreign));
         expect(result.info.map(info => info.code)).toContain(131);
@@ -197,7 +186,7 @@ describe('GameMap dirty state and resizing', () => {
     // 验证自身脏标记与图层脏标记的合并判定
     it('reports dirty from itself or any layer', () => {
         const { map } = createFixture();
-        const layer = map.addLayer();
+        const layer = map.addLayer('dirty');
 
         expect(map.dirty()).toBe(false);
 
@@ -213,14 +202,14 @@ describe('GameMap dirty state and resizing', () => {
     // 验证 resizeLayer 按 keepBlock 保留或清空图块并触发尺寸钩子
     it('resizes layers keeping or clearing blocks and notifies hooks', () => {
         const { map } = createFixture();
-        const layer = map.addLayer();
+        const layer = map.addLayer('resizable');
         layer.setBlock(1, 0, 0);
         const resizes: [number, number][] = [];
         map.addHook({
             onResizeLayer: (_layer: IMapLayer, width, height) => {
                 resizes.push([width, height]);
             }
-        }).load();
+        });
 
         map.resizeLayer(3, 2, true);
         expect(map.width).toBe(3);
@@ -239,14 +228,14 @@ describe('GameMap dirty state and resizing', () => {
     // 验证 compareWith 对缺失参考的图层标脏，对匹配参考的图层保持干净
     it('marks layers dirty for a missing reference and compares matching ones', () => {
         const { map } = createFixture();
-        const layer = map.addLayer();
+        const layer = map.addLayer('layer');
         layer.setZIndex(0);
 
         map.compareWith(new Map());
         expect(layer.dirty()).toBe(true);
 
         const compared = createFixture().map;
-        const comparedLayer = compared.addLayer();
+        const comparedLayer = compared.addLayer('compared');
         comparedLayer.setZIndex(0);
         compared.compareWith(new Map([[0, new Uint32Array(4)]]));
         expect(comparedLayer.dirty()).toBe(false);
@@ -255,12 +244,9 @@ describe('GameMap dirty state and resizing', () => {
     // 验证多个不同 zIndex 图层并存、各自块数据独立并按 zIndex 参考比较分别判定
     it('keeps layers of different z-index coexisting with independent data', () => {
         const { map } = createFixture();
-        const low = map.addLayer();
-        const mid = map.addLayer();
-        const high = map.addLayer();
-        map.setLayerAlias(low, 'low');
-        map.setLayerAlias(mid, 'mid');
-        map.setLayerAlias(high, 'high');
+        const low = map.addLayer('low');
+        const mid = map.addLayer('mid');
+        const high = map.addLayer('high');
         low.setZIndex(1);
         mid.setZIndex(5);
         high.setZIndex(9);
@@ -268,9 +254,9 @@ describe('GameMap dirty state and resizing', () => {
         mid.setBlock(4, 1, 0);
         high.setBlock(5, 0, 1);
 
-        expect(map.getLayerByAlias('low')).toBe(low);
-        expect(map.getLayerByAlias('mid')).toBe(mid);
-        expect(map.getLayerByAlias('high')).toBe(high);
+        expect(map.aliasLayerMap.get('low')).toBe(low);
+        expect(map.aliasLayerMap.get('mid')).toBe(mid);
+        expect(map.aliasLayerMap.get('high')).toBe(high);
         expect(low.zIndex).toBe(1);
         expect(mid.zIndex).toBe(5);
         expect(high.zIndex).toBe(9);

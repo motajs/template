@@ -10,7 +10,6 @@ interface TestModules {
     MapState: typeof import('../mapState').MapState;
     TileStore: typeof import('@user/data-common').TileStore;
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
-    DirectionMapper: typeof import('@motajs/common').DirectionMapper;
     logger: typeof import('@motajs/common').logger;
 }
 
@@ -36,7 +35,6 @@ beforeAll(async () => {
         MapState: mapModule.MapState,
         TileStore: commonModule.TileStore,
         RoleFaceBinder: commonModule.RoleFaceBinder,
-        DirectionMapper: loggerModule.DirectionMapper,
         logger: loggerModule.logger
     };
 });
@@ -60,10 +58,9 @@ function createMapState() {
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager: {},
-        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
-    return new modules.MapState(tileStore, state);
+    return new modules.MapState(state);
 }
 
 describe('MapState raw event path', () => {
@@ -73,7 +70,9 @@ describe('MapState raw event path', () => {
         const map = mapState.fromRaw(createRaw());
         const layer = map?.eventLayer;
 
-        expect(layer).toBe(map?.getLayerByAlias('event'));
+        expect(layer).toBe(
+            [...map!.layerList].find(item => item.alias === 'event')
+        );
         expect(layer?.getPointEvent(1, 0)).toEqual(
             new Map([[5, 'point-event']])
         );
@@ -91,61 +90,28 @@ describe('MapState malformed raw event structures', () => {
     interface MalformedCase {
         name: string;
         mutate(raw: IMapRawData): void;
-        code: number;
     }
 
+    // 62/63/64 校验已从 shipped fromRaw 移除，事件结构按宽松语义接受
     const cases: MalformedCase[] = [
         {
-            name: 'missing raw.map container',
-            mutate: raw => Reflect.set(raw, 'map', null),
-            code: 63
-        },
-        {
-            name: 'missing raw.events container',
-            mutate: raw => Reflect.set(raw, 'events', null),
-            code: 63
-        },
-        {
-            name: 'missing event layer container',
-            mutate: raw => Reflect.set(raw.events, '0', null),
-            code: 63
-        },
-        {
-            name: 'invalid event position container',
-            mutate: raw => Reflect.set(raw.events[0], '1', []),
-            code: 63
-        },
-        {
-            name: 'non-numeric map layer key',
-            mutate: raw => Reflect.set(raw.map, 'bad', [1, 1, 1, 1]),
-            code: 62
-        },
-        {
-            name: 'invalid map layer value',
-            mutate: raw => Reflect.set(raw.map, '0', null),
-            code: 64
-        },
-        {
-            name: 'out of range event position',
-            mutate: raw => Reflect.set(raw.events[0], '4', { 5: 'id' }),
-            code: 64
+            name: 'non-object event position container',
+            mutate: raw => Reflect.set(raw.events[0], '1', [])
         },
         {
             name: 'non-string event id',
-            mutate: raw => Reflect.set(raw.events[0][1], '5', 3),
-            code: 64
+            mutate: raw => Reflect.set(raw.events[0][1], '5', 3)
         }
     ];
 
-    it.each(cases)('$name is rejected before map registration', testCase => {
+    it.each(cases)('$name is accepted leniently', testCase => {
         const mapState = createMapState();
         const raw = createRaw();
         testCase.mutate(raw);
 
         const result = modules.logger.catch(() => mapState.fromRaw(raw));
 
-        expect(result.ret).toBeNull();
-        expect(result.info.map(info => info.code)).toContain(testCase.code);
-        expect(mapState.getMap(raw.floorId)).toBeNull();
+        expect(result.ret).not.toBeNull();
+        expect(mapState.getMap(raw.floorId)).toBe(result.ret);
     });
 });

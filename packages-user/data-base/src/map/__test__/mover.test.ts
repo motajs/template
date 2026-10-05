@@ -11,7 +11,7 @@ import {
     TileStore,
     TileType
 } from '@user/data-common';
-import { DirectionMapper, logger } from '@motajs/common';
+import { logger } from '@motajs/common';
 import { type IResizableMapLayer } from '../types';
 import { MapState } from '../mapState';
 import { DynamicTile } from '../dynamicTile';
@@ -86,10 +86,9 @@ function createMoverFixture(): MoverFixture {
         eventStore: {},
         roleFace: new RoleFaceBinder(),
         faceManager,
-        directionMapper: new DirectionMapper(),
         saveSystem: {}
     } as never;
-    const mapState = new MapState(tileStore, state);
+    const mapState = new MapState(state);
     const map = mapState.fromRaw({
         floorId: 'F1',
         width: 3,
@@ -97,7 +96,9 @@ function createMoverFixture(): MoverFixture {
         layerAlias: { 0: 'event' },
         events: { 0: {} }
     })!;
-    const layer = map.getLayerByAlias('event')! as IResizableMapLayer;
+    const layer = [...map.layerList].find(
+        layer => layer.alias === 'event'
+    )! as IResizableMapLayer;
     const tile = layer.createDynamic(1, 0, 0) as DynamicTile;
     return { layer, tile };
 }
@@ -162,22 +163,20 @@ describe('DynamicTileMover movement', () => {
     it('fires the movement lifecycle hooks in order', async () => {
         const { tile } = createMoverFixture();
         const calls: string[] = [];
-        tile.mover
-            .addHook({
-                onMoveStart: async () => {
-                    calls.push('moveStart');
-                },
-                onStepStart: async () => {
-                    calls.push('stepStart');
-                },
-                onStepEnd: async () => {
-                    calls.push('stepEnd');
-                },
-                onMoveEnd: async () => {
-                    calls.push('moveEnd');
-                }
-            })
-            .load();
+        tile.mover.addHook({
+            onMoveStart: async () => {
+                calls.push('moveStart');
+            },
+            onStepStart: async () => {
+                calls.push('stepStart');
+            },
+            onStepEnd: async () => {
+                calls.push('stepEnd');
+            },
+            onMoveEnd: async () => {
+                calls.push('moveEnd');
+            }
+        });
 
         tile.mover.step(FaceDirection.Down);
         await tile.mover.start()!.onEnd;
