@@ -139,6 +139,11 @@ export interface ITileBase extends IReadonlyTileBase {
      * @param origin 要从哪个图块复制
      */
     syncTileEvent(origin: IReadonlyTileBase): void;
+
+    /**
+     * 根据当前图块原始数据恢复默认事件并建立干净基准
+     */
+    restoreDefaultEvents(): void;
 }
 
 export interface IStaticTile

@@ -383,7 +383,7 @@ export class MapLayer
             staticTile.syncTileEvent(tile);
         } else {
             // 不保留事件时，将复用的静态图块重置为默认事件
-            staticTile.loadState({});
+            staticTile.restoreDefaultEvents();
         }
         this.removeDynamic(tile, tile.x, tile.y);
         this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
