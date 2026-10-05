@@ -55,11 +55,13 @@ export class MapGraphBuilder implements IMapGraphBuilder {
      * @param block 位置信息
      */
     private resolveCost(block: ILayerLocation): number {
-        if (this.cost) {
-            return this.cost(block);
-        } else {
+        const cost = this.cost ? this.cost(block) : 1;
+        // Infinity 是合法损失，仅 NaN 或负数视为非法并回退为单位损失
+        if (Number.isNaN(cost) || cost < 0) {
+            logger.warn(174);
             return 1;
         }
+        return cost;
     }
 
     build(start: ITileLocator): IMapGraph | null {
@@ -91,6 +93,8 @@ export class MapGraphBuilder implements IMapGraphBuilder {
         const mapped: Set<number> = new Set();
         const startIndex = indexer.locatorToIndex(start);
         adjacency.set(startIndex, []);
+        // 起始节点自身没有入边，须先登记进映射集否则会漏出图
+        mapped.add(startIndex);
 
         // 以起始位置为中心 BFS，仅沿可通行有向边扩展，不可达区域不入图
         const queue: ITileLocator[] = [start];

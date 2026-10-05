@@ -11,7 +11,6 @@ import {
     type IPassCheckHandler,
     type IPassPredicate
 } from '@user/data-base';
-import { InternalDirectionGroup } from '@motajs/common';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -34,9 +33,9 @@ interface TestModules {
     MapState: typeof import('@user/data-base').MapState;
     TileStore: typeof import('@user/data-common').TileStore;
     FaceManager: typeof import('@user/data-common').FaceManager;
+    Dir4FaceHandler: typeof import('@user/data-common').Dir4FaceHandler;
     Dir8FaceHandler: typeof import('@user/data-common').Dir8FaceHandler;
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
-    DirectionMapper: typeof import('@motajs/common').DirectionMapper;
     logger: typeof import('@motajs/common').logger;
 }
 
@@ -54,9 +53,9 @@ beforeAll(async () => {
         MapState: baseModule.MapState,
         TileStore: commonModule.TileStore,
         FaceManager: commonModule.FaceManager,
+        Dir4FaceHandler: commonModule.Dir4FaceHandler,
         Dir8FaceHandler: commonModule.Dir8FaceHandler,
         RoleFaceBinder: commonModule.RoleFaceBinder,
-        DirectionMapper: motaModule.DirectionMapper,
         logger: motaModule.logger
     };
 });
@@ -260,10 +259,9 @@ function createFixture(
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
-        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
-    const maps = new modules.MapState(tileStore, commonState);
+    const maps = new modules.MapState(commonState);
     const map = maps.fromRaw({
         floorId: 'F1',
         width,
@@ -271,10 +269,10 @@ function createFixture(
         layerAlias: { 0: 'event' },
         events: { 0: {} }
     });
-    const layer = map!.getLayerByAlias('event')!;
+    const layer = map!.eventLayer!;
     const builder = new modules.PathfindingGraphBuilder();
-    builder.useMapState(maps);
     builder.useMapLayer(layer);
+    builder.useFaceHandler(new modules.Dir4FaceHandler());
     if (predicate) {
         builder.usePassPredicate(predicate);
     }
@@ -282,43 +280,36 @@ function createFixture(
 }
 
 describe('pathfinding graph building', () => {
-    // 验证未注入谓词时无可通行边，BFS 仅包含起始位置自身且无损失告警
-    it('includes only the start node when no predicate is injected', () => {
-        const { map, builder } = createFixture(
+    // 验证仅注入方向处理器而未注入谓词时，构建入口告警缺失谓词守卫码 173 并返回 null
+    it('warns the missing-predicate guard code and returns null without a predicate', () => {
+        const { builder } = createFixture(
             [1, 1, 1, 1, 1, 1, 1, 1, 1],
             3,
             null
         );
-        builder.useMapLayer(map.getLayerByAlias('event'));
-        const graph = builder.build({ x: 1, y: 1 });
+        const result = modules.logger.catch(() =>
+            builder.build({ x: 1, y: 1 })
+        );
 
-        expect(graph.width).toBe(3);
-        expect(graph.height).toBe(3);
-        expect(graph.nodes.size).toBe(1);
-        const start = graph.nodes.get(1 * 3 + 1)!;
-        expect(start.edges).toHaveLength(0);
-        expect(start.terminal).toBe(false);
-        expect(start.cost).toBe(1);
+        expect(result.ret).toBeNull();
+        expect(result.info.map(info => info.code)).toContain(173);
     });
 
-    // 验证注入谓词后中心节点邻域方向数与 DirectionMapper 四正交组一致为 4
+    // 验证默认注入 Dir4FaceHandler 时中心节点拥有四条正交邻域边
     it('resolves four orthogonal neighbor edges for the center node', () => {
         const { map, builder } = createFixture(
             [1, 1, 1, 1, 1, 1, 1, 1, 1],
             3,
             null
         );
-        const mapper = new modules.DirectionMapper();
-        const expected = [...mapper.map(InternalDirectionGroup.Dir4)];
         const predicate = new FixturePredicate(
             map,
             new modules.Dir8FaceHandler()
         );
         builder.usePassPredicate(predicate);
-        const graph = builder.build({ x: 1, y: 1 });
+        const graph = builder.build({ x: 1, y: 1 })!;
 
         const center = graph.nodes.get(1 * 3 + 1)!;
-        expect(center.edges).toHaveLength(expected.length);
         expect(center.edges).toHaveLength(4);
         const dirs = new Set(center.edges.map(edge => edge.dir));
         expect(dirs).toEqual(
@@ -331,8 +322,8 @@ describe('pathfinding graph building', () => {
         );
     });
 
-    // 验证 useDirGroup 注入八方向组后中心节点拥有 8 条邻域边
-    it('expands neighbor edges to eight when Dir8 group is injected', () => {
+    // 验证注入 Dir8FaceHandler 后中心节点拥有 8 条邻域边
+    it('expands neighbor edges to eight when the Dir8 handler is injected', () => {
         const { map, builder } = createFixture(
             [1, 1, 1, 1, 1, 1, 1, 1, 1],
             3,
@@ -343,8 +334,8 @@ describe('pathfinding graph building', () => {
             new modules.Dir8FaceHandler()
         );
         builder.usePassPredicate(predicate);
-        builder.useFaceHandler(InternalDirectionGroup.Dir8);
-        const graph = builder.build({ x: 1, y: 1 });
+        builder.useFaceHandler(new modules.Dir8FaceHandler());
+        const graph = builder.build({ x: 1, y: 1 })!;
 
         const center = graph.nodes.get(1 * 3 + 1)!;
         expect(center.edges).toHaveLength(8);
@@ -358,7 +349,7 @@ describe('pathfinding graph building', () => {
             new modules.Dir8FaceHandler()
         );
         builder.usePassPredicate(predicate);
-        const graph = builder.build({ x: 0, y: 0 });
+        const graph = builder.build({ x: 0, y: 0 })!;
 
         const source = graph.nodes.get(0)!;
         const sink = graph.nodes.get(1)!;
@@ -375,7 +366,7 @@ describe('pathfinding graph building', () => {
             new modules.Dir8FaceHandler()
         );
         builder.usePassPredicate(predicate);
-        const graph = builder.build({ x: 0, y: 0 });
+        const graph = builder.build({ x: 0, y: 0 })!;
 
         const hit = graph.nodes.get(1)!;
         expect(hit.terminal).toBe(true);
@@ -387,8 +378,8 @@ describe('pathfinding graph building', () => {
         expect(graph.nodes.get(2)!.terminal).toBe(false);
     });
 
-    // 验证图层未绑定时构建入口告警新码 173 并返回空图而非异常
-    it('warns the registered code and returns an empty graph without layer', () => {
+    // 验证未绑定图层时构建入口告警守卫码 173 并返回 null
+    it('warns the registered code and returns null without layer', () => {
         const builder = new modules.PathfindingGraphBuilder();
         builder.useMapLayer(null);
 
@@ -396,21 +387,27 @@ describe('pathfinding graph building', () => {
             builder.build({ x: 0, y: 0 })
         );
 
-        expect(result.ret.nodes.size).toBe(0);
+        expect(result.ret).toBeNull();
         expect(result.info.map(info => info.code)).toContain(173);
     });
 
-    // 验证起始位置越界时构建入口同样告警新码 173 并返回空图
-    it('warns the registered code and returns an empty graph when start is out of map', () => {
-        const { builder } = createFixture([1, 1, 1, 1, 1, 1, 1, 1, 1], 3, null);
+    // 验证谓词与方向处理器齐备而起始位置越界时，构建入口告警越界守卫码 183 并返回 null
+    it('warns the out-of-map guard code and returns null when start is out of map', () => {
+        const { map, builder } = createFixture(
+            [1, 1, 1, 1, 1, 1, 1, 1, 1],
+            3,
+            null
+        );
+        builder.usePassPredicate(
+            new FixturePredicate(map, new modules.Dir8FaceHandler())
+        );
 
         const result = modules.logger.catch(() =>
             builder.build({ x: 3, y: 0 })
         );
 
-        expect(result.ret.nodes.size).toBe(0);
-        expect(result.ret.width).toBe(0);
-        expect(result.info.map(info => info.code)).toContain(173);
+        expect(result.ret).toBeNull();
+        expect(result.info.map(info => info.code)).toContain(183);
     });
 
     // 验证墙体隔断区域不进入有向图：图仅包含从起始位置沿可通行边可达的节点
@@ -423,7 +420,7 @@ describe('pathfinding graph building', () => {
         builder.usePassPredicate(
             new FixturePredicate(map, new modules.Dir8FaceHandler())
         );
-        const graph = builder.build({ x: 0, y: 0 });
+        const graph = builder.build({ x: 0, y: 0 })!;
 
         expect(graph.nodes.size).toBe(3);
         expect(graph.nodes.has(0)).toBe(true);
@@ -447,7 +444,7 @@ describe('pathfinding graph building', () => {
         builder.useCostFunction(block =>
             block.locator.x === 1 && block.locator.y === 1 ? 7 : 3
         );
-        const graph = builder.build({ x: 1, y: 1 });
+        const graph = builder.build({ x: 1, y: 1 })!;
 
         expect(graph.nodes.get(1 * 3 + 1)!.cost).toBe(7);
         expect(graph.nodes.get(0)!.cost).toBe(3);
@@ -475,7 +472,7 @@ describe('pathfinding graph building', () => {
         );
 
         expect(result.info.map(info => info.code)).not.toContain(174);
-        expect(result.ret.nodes.get(1 * 3 + 1)!.cost).toBe(
+        expect(result.ret!.nodes.get(1 * 3 + 1)!.cost).toBe(
             Number.POSITIVE_INFINITY
         );
     });
@@ -499,7 +496,7 @@ describe('pathfinding graph building', () => {
         );
 
         expect(result.info.filter(info => info.code === 174)).toHaveLength(1);
-        expect(result.ret.nodes.get(1 * 3 + 1)!.cost).toBe(1);
+        expect(result.ret!.nodes.get(1 * 3 + 1)!.cost).toBe(1);
     });
 
     // 验证负数损失同样在构建时告警新码 174 并回退为损失 1
@@ -521,6 +518,6 @@ describe('pathfinding graph building', () => {
         );
 
         expect(result.info.filter(info => info.code === 174)).toHaveLength(1);
-        expect(result.ret.nodes.get(1 * 3 + 1)!.cost).toBe(1);
+        expect(result.ret!.nodes.get(1 * 3 + 1)!.cost).toBe(1);
     });
 });

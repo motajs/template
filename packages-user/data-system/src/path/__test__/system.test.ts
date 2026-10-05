@@ -18,7 +18,11 @@ import {
     type IPassPredicate
 } from '@user/data-base';
 import { type PathfindingSystem } from '../system';
-import { type IPathfindingStep, type PathCostFunction } from '../types';
+import {
+    PathfindingStatus,
+    type IPathfindingStep,
+    type PathCostFunction
+} from '../types';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -42,8 +46,8 @@ interface TestModules {
     TileStore: typeof import('@user/data-common').TileStore;
     ObjectMover: typeof import('@user/data-common').ObjectMover;
     FaceManager: typeof import('@user/data-common').FaceManager;
+    Dir4FaceHandler: typeof import('@user/data-common').Dir4FaceHandler;
     Dir8FaceHandler: typeof import('@user/data-common').Dir8FaceHandler;
-    DirectionMapper: typeof import('@motajs/common').DirectionMapper;
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
     logger: typeof import('@motajs/common').logger;
 }
@@ -63,8 +67,8 @@ beforeAll(async () => {
         TileStore: commonModule.TileStore,
         ObjectMover: commonModule.ObjectMover,
         FaceManager: commonModule.FaceManager,
+        Dir4FaceHandler: commonModule.Dir4FaceHandler,
         Dir8FaceHandler: commonModule.Dir8FaceHandler,
-        DirectionMapper: motaModule.DirectionMapper,
         RoleFaceBinder: commonModule.RoleFaceBinder,
         logger: motaModule.logger
     };
@@ -321,10 +325,9 @@ function createSystem(rows: number[], width: number): SystemFixture {
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
-        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
-    const maps = new modules.MapState(tileStore, commonState);
+    const maps = new modules.MapState(commonState);
     const map = maps.fromRaw({
         floorId: 'F1',
         width,
@@ -332,12 +335,12 @@ function createSystem(rows: number[], width: number): SystemFixture {
         layerAlias: { 0: 'event' },
         events: { 0: {} }
     })!;
-    const layer = map.getLayerByAlias('event')!;
+    const layer = map.eventLayer!;
     const system = new modules.PathfindingSystem(commonState as never);
     const tile = createTestTile();
     system.useMover(tile.mover);
-    system.finder.useMapState(maps);
     system.finder.useMapLayer(layer);
+    system.finder.useFaceHandler(new modules.Dir4FaceHandler());
     return { map, layer, system, tile };
 }
 
@@ -359,12 +362,13 @@ describe('pathfinding system', () => {
         const fixture = createSystem([1, 1, 1, 1, 1, 1, 1, 1, 1], 3);
         injectPredicate(fixture);
 
-        const steps = fixture.system.finder.find(
+        const result = fixture.system.finder.find(
             { x: 0, y: 0 },
             { x: 2, y: 0 }
         );
 
-        expect(steps).toEqual([
+        expect(result.status).toBe(PathfindingStatus.Success);
+        expect(result.path).toEqual([
             {
                 dir: FaceDirection.Right,
                 from: { x: 0, y: 0 },
@@ -386,13 +390,14 @@ describe('pathfinding system', () => {
             block.locator.x === 1 && block.locator.y === 1 ? 10 : 1;
         fixture.system.finder.useCostFunction(cost);
 
-        const steps = fixture.system.finder.find(
+        const result = fixture.system.finder.find(
             { x: 0, y: 1 },
             { x: 2, y: 1 }
         );
 
-        expect(steps).toHaveLength(4);
-        for (const step of steps) {
+        expect(result.status).toBe(PathfindingStatus.Success);
+        expect(result.path).toHaveLength(4);
+        for (const step of result.path) {
             expect(step.to).not.toEqual({ x: 1, y: 1 });
         }
     });
@@ -410,7 +415,8 @@ describe('pathfinding system', () => {
         );
 
         expect(result.info.map(info => info.code)).toContain(174);
-        expect(result.ret).toHaveLength(2);
+        expect(result.ret.status).toBe(PathfindingStatus.Success);
+        expect(result.ret.path).toHaveLength(2);
     });
 
     // 验证 Infinity 是合法损失值：不告警且路径绕开高损失格
@@ -428,8 +434,9 @@ describe('pathfinding system', () => {
         );
 
         expect(result.info.map(info => info.code)).not.toContain(174);
-        expect(result.ret).toHaveLength(4);
-        for (const step of result.ret) {
+        expect(result.ret.status).toBe(PathfindingStatus.Success);
+        expect(result.ret.path).toHaveLength(4);
+        for (const step of result.ret.path) {
             expect(step.to).not.toEqual({ x: 1, y: 1 });
         }
     });
@@ -447,8 +454,10 @@ describe('pathfinding system', () => {
         );
         const path = fixture.system.getPath({ x: 2, y: 1 });
 
-        expect(steps).toEqual([]);
-        expect(path).toEqual([]);
+        expect(steps.status).toBe(PathfindingStatus.NoPath);
+        expect(steps.path).toEqual([]);
+        expect(path.status).toBe(PathfindingStatus.NoPath);
+        expect(path.path).toEqual([]);
         expect(fixture.tile.x).toBe(0);
         expect(fixture.tile.y).toBe(0);
         expect(fixture.tile.setPosCalls).toEqual([]);
@@ -463,8 +472,9 @@ describe('pathfinding system', () => {
             { x: 0, y: 0 },
             { x: 2, y: 0 }
         );
-        expect(detour).toHaveLength(4);
-        for (const step of detour) {
+        expect(detour.status).toBe(PathfindingStatus.Success);
+        expect(detour.path).toHaveLength(4);
+        for (const step of detour.path) {
             expect(step.to).not.toEqual({ x: 1, y: 0 });
         }
 
@@ -472,7 +482,8 @@ describe('pathfinding system', () => {
             { x: 0, y: 0 },
             { x: 1, y: 0 }
         );
-        expect(direct).toEqual([
+        expect(direct.status).toBe(PathfindingStatus.Success);
+        expect(direct.path).toEqual([
             {
                 dir: FaceDirection.Right,
                 from: { x: 0, y: 0 },
@@ -489,7 +500,8 @@ describe('pathfinding system', () => {
         const result = fixture.system.moveTo({ x: 2, y: 0 });
 
         expect(result).not.toBeNull();
-        expect(result!.path).toHaveLength(2);
+        expect(result!.path.status).toBe(PathfindingStatus.Success);
+        expect(result!.path.path).toHaveLength(2);
         await result!.controller.onEnd;
         expect(fixture.tile.x).toBe(2);
         expect(fixture.tile.y).toBe(0);
@@ -579,9 +591,11 @@ describe('pathfinding system', () => {
             system.getPath({ x: 1, y: 0 })
         );
 
-        expect(findResult.ret).toEqual([]);
+        expect(findResult.ret.status).toBe(PathfindingStatus.InvalidInput);
+        expect(findResult.ret.path).toEqual([]);
         expect(findResult.info.map(info => info.code)).toContain(173);
-        expect(pathResult.ret).toEqual([]);
+        expect(pathResult.ret.status).toBe(PathfindingStatus.InvalidInput);
+        expect(pathResult.ret.path).toEqual([]);
         expect(pathResult.info.map(info => info.code)).toContain(173);
     });
 
