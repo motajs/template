@@ -430,16 +430,14 @@ describe('CombatFlow async ordering', () => {
         const script = new FakeScript(1, 'script', fixture.calls, true);
         script.gate = gate;
         fixture.flow.addCombatScript(script);
-        fixture.flow
-            .addHook({
-                onBeforeCombat: async () => {
-                    fixture.calls.push('hooks.onBeforeCombat');
-                },
-                onAfterCombat: async () => {
-                    fixture.calls.push('hooks.onAfterCombat');
-                }
-            })
-            .load();
+        fixture.flow.addHook({
+            onBeforeCombat: async () => {
+                fixture.calls.push('hooks.onBeforeCombat');
+            },
+            onAfterCombat: async () => {
+                fixture.calls.push('hooks.onAfterCombat');
+            }
+        });
 
         const running = fixture.flow.battle(fixture.view);
         await Promise.resolve();
@@ -462,16 +460,14 @@ describe('CombatFlow async ordering', () => {
         bindAll(fixture);
         const script = new FakeScript(1, 'script', fixture.calls, true);
         fixture.flow.addCombatScript(script);
-        fixture.flow
-            .addHook({
-                onBeforeCombat: async () => {
-                    fixture.calls.push('hooks.onBeforeCombat');
-                },
-                onAfterCombat: async () => {
-                    fixture.calls.push('hooks.onAfterCombat');
-                }
-            })
-            .load();
+        fixture.flow.addHook({
+            onBeforeCombat: async () => {
+                fixture.calls.push('hooks.onBeforeCombat');
+            },
+            onAfterCombat: async () => {
+                fixture.calls.push('hooks.onAfterCombat');
+            }
+        });
 
         const info = await fixture.flow.battle(fixture.view);
 
@@ -490,13 +486,11 @@ describe('CombatFlow async ordering', () => {
         bindAll(fixture);
         const script = new FakeScript(1, 'script', fixture.calls, false);
         fixture.flow.addCombatScript(script);
-        fixture.flow
-            .addHook({
-                onBeforeCombat: async () => {
-                    fixture.calls.push('hooks.onBeforeCombat');
-                }
-            })
-            .load();
+        fixture.flow.addHook({
+            onBeforeCombat: async () => {
+                fixture.calls.push('hooks.onBeforeCombat');
+            }
+        });
 
         await fixture.flow.battle(fixture.view);
 

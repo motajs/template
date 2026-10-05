@@ -541,6 +541,15 @@ describe('EnemyContext converters and effect registrations', () => {
         const fixture = createContextFixture();
         fixture.context.bindHero(fixture.hero);
         fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('e1'));
+        // shipped 的 buildupSpecials 在无光环时会提前返回
+        // 故放置一个无副作用全局光环，使构建进入特殊查询阶段
+        fixture.context.addAura(
+            new FakeAura({
+                priority: 1,
+                range: new modules.FullRange(),
+                param: undefined
+            })
+        );
         const forCalls: number[] = [];
         const modifier = {
             add: () => [],
@@ -1421,6 +1430,15 @@ describe('EnemyContext refresh paths and DEV warnings', () => {
         const fixture = createContextFixture();
         fixture.context.bindHero(fixture.hero);
         fixture.context.setEnemyAt({ x: 0, y: 0 }, createEnemy('e1'));
+        // shipped 的 buildupSpecials 在无光环时会提前返回
+        // 故放置一个无副作用全局光环，使构建进入特殊查询阶段
+        fixture.context.addAura(
+            new FakeAura({
+                priority: 1,
+                range: new modules.FullRange(),
+                param: undefined
+            })
+        );
         const modifier = {
             add: () => [createSpecial(30) as never],
             delete: () => [createSpecial(31) as never],
