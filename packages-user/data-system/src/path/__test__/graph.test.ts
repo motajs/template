@@ -282,11 +282,7 @@ function createFixture(
 describe('pathfinding graph building', () => {
     // 验证仅注入方向处理器而未注入谓词时，构建入口告警缺失谓词守卫码 173 并返回 null
     it('warns the missing-predicate guard code and returns null without a predicate', () => {
-        const { builder } = createFixture(
-            [1, 1, 1, 1, 1, 1, 1, 1, 1],
-            3,
-            null
-        );
+        const { builder } = createFixture([1, 1, 1, 1, 1, 1, 1, 1, 1], 3, null);
         const result = modules.logger.catch(() =>
             builder.build({ x: 1, y: 1 })
         );

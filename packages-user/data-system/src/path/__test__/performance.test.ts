@@ -39,8 +39,8 @@ interface TestModules {
     TileStore: typeof import('@user/data-common').TileStore;
     ObjectMover: typeof import('@user/data-common').ObjectMover;
     FaceManager: typeof import('@user/data-common').FaceManager;
+    Dir4FaceHandler: typeof import('@user/data-common').Dir4FaceHandler;
     Dir8FaceHandler: typeof import('@user/data-common').Dir8FaceHandler;
-    DirectionMapper: typeof import('@motajs/common').DirectionMapper;
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
 }
 
@@ -52,16 +52,15 @@ beforeAll(async () => {
     const systemModule = await import('../system');
     const baseModule = await import('@user/data-base');
     const commonModule = await import('@user/data-common');
-    const motaModule = await import('@motajs/common');
     modules = {
         PathfindingSystem: systemModule.PathfindingSystem,
         MapState: baseModule.MapState,
         TileStore: commonModule.TileStore,
         ObjectMover: commonModule.ObjectMover,
         FaceManager: commonModule.FaceManager,
+        Dir4FaceHandler: commonModule.Dir4FaceHandler,
         Dir8FaceHandler: commonModule.Dir8FaceHandler,
-        RoleFaceBinder: commonModule.RoleFaceBinder,
-        DirectionMapper: motaModule.DirectionMapper
+        RoleFaceBinder: commonModule.RoleFaceBinder
     };
 });
 
@@ -292,10 +291,9 @@ function createPerformanceSystem(
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
-        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
-    const maps = new modules.MapState(tileStore, commonState);
+    const maps = new modules.MapState(commonState);
     const map = maps.fromRaw({
         floorId: 'PERF',
         width,
@@ -303,7 +301,7 @@ function createPerformanceSystem(
         layerAlias: { 0: 'event' },
         events: { 0: {} }
     })!;
-    const layer = map.getLayerByAlias('event')!;
+    const layer = map.eventLayer!;
     const predicate = new FixturePredicate(map, new modules.Dir8FaceHandler());
 
     class PerfMover
@@ -358,15 +356,15 @@ function createPerformanceSystem(
         commonState as never
     );
     system.useMover(tile.mover);
-    system.finder.useMapState(maps);
     system.finder.useMapLayer(layer);
+    system.finder.useFaceHandler(new modules.Dir4FaceHandler());
     system.finder.usePassPredicate(predicate);
     return {
         system,
         buildGraph: (): ReturnType<MapGraphBuilder['build']> => {
             const builder = new MapGraphBuilder();
-            builder.useMapState(maps);
             builder.useMapLayer(layer);
+            builder.useFaceHandler(new modules.Dir4FaceHandler());
             builder.usePassPredicate(predicate);
             return builder.build(start);
         }
@@ -550,10 +548,10 @@ describe('pathfinding performance', () => {
             // eslint-disable-next-line no-console
             console.log(
                 `[pathfinding-perf] map=${size}x${size} ` +
-                    `steps=${steps.length} elapsed=${elapsed.toFixed(2)}ms`
+                    `steps=${steps.path.length} elapsed=${elapsed.toFixed(2)}ms`
             );
 
-            expect(steps.length).toBeGreaterThan(0);
+            expect(steps.path.length).toBeGreaterThan(0);
             expect(elapsed).toBeLessThan(sanityLimit(size));
         }
     });
@@ -580,7 +578,7 @@ describe('pathfinding performance', () => {
                     fixture.system.getPath(target)
                 );
                 findTimes.push(find.duration);
-                steps = find.value.length;
+                steps = find.value.path.length;
             }
 
             // 审查要求输出结构化分段性能数据供汇报使用
@@ -635,7 +633,7 @@ describe('pathfinding performance', () => {
                     fixture.system.getPath(endpoints.target)
                 );
                 findTimes.push(find.duration);
-                steps = find.value.length;
+                steps = find.value.path.length;
             }
 
             const searchAvg =
