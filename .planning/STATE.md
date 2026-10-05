@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 08
 current_phase_name: 测试重构与接口对齐
 status: executing
-stopped_at: Completed 08-06-PLAN.md（combat 4 test + 2 perf 与 event 1 文件对齐 shipped 接口：删 addHook(...).load() 链、CombatFlow/EnemyContext/MapState 单参构造、删 DirectionMapper、事件层改 GameMap.eventLayer；聚焦 96/96 通过、perf 6/6、eslint 0；零生产改动）
-last_updated: "2026-10-05T09:30:06.601Z"
+stopped_at: Completed 08-07-PLAN.md（path 3 测试文件对齐 shipped 注入面 + 用户授权 B1/B2 生产修复与 F5 断言 183：聚焦 28/28、eslint 0）
+last_updated: "2026-10-05T10:54:20.389Z"
 last_activity: 2026-10-05
 last_activity_desc: Phase 08 execution started
-state_head: e024e2d2ea2ce610d6ca2e79236c074b9985fadb
+state_head: ba92f5291b19f3c6e3a55c52da76dceaf9d2b910
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 98
-  completed_plans: 92
+  completed_plans: 93
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 ## Current Position
 
 Phase: 08 (测试重构与接口对齐) — EXECUTING
-Plan: 2 of 11
+Plan: 3 of 11
 Status: Ready to execute
 Last activity: 2026-10-05 — Phase 08 execution started
 
@@ -102,6 +102,7 @@ Progress: [█████░░░░░] 50%
 | Phase 04 P4 | ~45min | 4 tasks | 3 files |
 | Phase 04 P7 | 35min | 3 tasks | 10 files |
 | Phase 08 P06 | 10min | 2 tasks | 3 files |
+| Phase 08 P07 | 40min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -236,6 +237,10 @@ Recent decisions affecting current work:
 - [Phase 08]: [Phase 08] 08-06 Q1：combat 测试沿用各文件既有 {} as IStateBase 最小桩装配 CombatFlow/EnemyContext 单参构造，不新建 Phase 6 风格夹具
 - [Phase 08]: [Phase 08] 08-06 Q2：eventDispatch 删除已废弃 DirectionMapper 注入与 import/module 条目、MapState 改单参 commonState；getLayerByAlias 已删故事件层改用 GameMap.eventLayer
 - [Phase 08]: [Phase 08] 08-06 Q3（用户授权偏离计划 must_haves）：不触发/不补测 DEV 守卫码 98/99/101、忽略无 emit 点错误码；保持 Vitest 默认 mode=test，不改配置；记录于 08-06-SUMMARY Deviations
+- [Phase 08]: [Phase 08] 08-07 Q1–Q3：path 注入面对齐——默认注入 Dir4FaceHandler、useMapState 在 builder/finder 两处删除、performance 规模参数与阈值逐字不变
+- [Phase 08]: [Phase 08] 08-07 B1（用户授权 D-10）：graph.build 补 mapped.add(startIndex)，修复单向门/死路起点漏出图导致 finder 恒返 NoPath
+- [Phase 08]: [Phase 08] 08-07 B2（用户授权 D-10）：resolveCost 恢复 174 守卫——NaN/负数告警并回退 1，Infinity 仍是合法损失
+- [Phase 08]: [Phase 08] 08-07 F5（用户授权）：越界起点用例注入谓词与处理器，走真实越界分支断言 183
 
 ### Roadmap Evolution
 
@@ -275,6 +280,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-05T09:30:06.319Z
-Stopped at: Completed 08-06-PLAN.md（combat 4 test + 2 perf 与 event 1 文件对齐 shipped 接口：删 addHook(...).load() 链、CombatFlow/EnemyContext/MapState 单参构造、删 DirectionMapper、事件层改 GameMap.eventLayer；聚焦 96/96 通过、perf 6/6、eslint 0；零生产改动）
+Last session: 2026-10-05T10:54:20.093Z
+Stopped at: Completed 08-07-PLAN.md（path 3 测试文件对齐 shipped 注入面 + 用户授权 B1/B2 生产修复与 F5 断言 183：聚焦 28/28、eslint 0）
 Resume file: None
