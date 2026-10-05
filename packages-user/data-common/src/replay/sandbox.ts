@@ -295,13 +295,12 @@ export class ReplaySandbox
     }
 
     async step(): Promise<boolean> {
-        if (
-            this.playing &&
-            !this.appendingStep &&
-            !this.reader.expired &&
-            !this.ended
-        ) {
-            this.appendingStep = this.reader.read();
+        if (!this.playing && !this.ended) {
+            if (!this.reader.expired && !this.appendingStep) {
+                this.playing = true;
+                this.pausing = true;
+                this.appendingStep = this.reader.read();
+            }
         }
         const res = await this.replayStep();
         if (res.success) {

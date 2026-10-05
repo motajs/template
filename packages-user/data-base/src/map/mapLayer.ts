@@ -17,8 +17,9 @@ import { Hookable, HookController, ITileLocator, logger } from '@motajs/common';
 import {
     FaceDirection,
     IDataCommon,
-    ILocationIndexer,
+    ILocationHelper,
     IRoleFaceBinder,
+    MapLocIndexer,
     SaveCompression,
     shouldReplay
 } from '@user/data-common';
@@ -31,7 +32,7 @@ export class MapLayer
     implements IResizableMapLayer
 {
     readonly state: IDataCommon;
-    readonly indexer: ILocationIndexer;
+    readonly indexer: ILocationHelper;
 
     width: number;
     height: number;
@@ -77,7 +78,7 @@ export class MapLayer
             expired: false,
             array: this.mapArray
         };
-        this.indexer = map.indexer as ILocationIndexer;
+        this.indexer = map.indexer;
     }
 
     protected createController(
@@ -528,20 +529,16 @@ export class MapLayer
     /**
      * 裁剪超出新图层范围的点事件，并按新宽度重建索引
      * @param oldWidth 变更前的图层宽度，用于解码旧索引
-     * @param width 新图层宽度
-     * @param height 新图层高度
      */
-    private cropPointEvents(
-        oldWidth: number,
-        width: number,
-        height: number
-    ): void {
+    private cropPointEvents(oldWidth: number): void {
+        const oldIndex = new MapLocIndexer();
+        oldIndex.setWidth(oldWidth);
         for (const [index, eventView] of [...this.pointEvents]) {
-            const x = index % oldWidth;
-            const y = Math.floor(index / oldWidth);
+            const { x, y } = oldIndex.locator(index);
             this.pointEvents.delete(index);
-            if (x < width && y < height) {
-                this.pointEvents.set(y * width + x, eventView);
+            if (this.inMap(x, y)) {
+                const index = this.indexer.index(x, y);
+                this.pointEvents.set(index, eventView);
             }
         }
     }
@@ -561,7 +558,6 @@ export class MapLayer
         const beforeArea = beforeWidth * beforeHeight;
         this.width = width;
         this.height = height;
-        this.indexer.setWidth(width);
         const area = width * height;
         const newArray = new Uint32Array(area);
         this.mapArray = newArray;
@@ -583,7 +579,7 @@ export class MapLayer
         };
 
         // 其他杂项清理
-        this.cropPointEvents(beforeWidth, width, height);
+        this.cropPointEvents(beforeWidth);
         this.staticTileCache.clear();
         this.forEachHook(hook => {
             hook.onResize?.(width, height);
@@ -605,7 +601,6 @@ export class MapLayer
         this.mapData.expired = true;
         this.width = width;
         this.height = height;
-        this.indexer.setWidth(width);
         this.mapArray = new Uint32Array(width * height);
         this.mapData = {
             expired: false,

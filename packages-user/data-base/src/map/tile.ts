@@ -40,9 +40,6 @@ export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
 
     abstract set(num: number): void;
 
-    /**
-     * 根据当前图块原始数据恢复默认事件并建立干净基准
-     */
     restoreDefaultEvents(): void {
         const eventView = this.tileEvent();
         eventView.clear();

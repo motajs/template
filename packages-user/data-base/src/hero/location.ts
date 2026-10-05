@@ -53,7 +53,7 @@ export class HeroLocation
 
     @shouldReplay('Setting hero floor should be replayed.')
     setFloor(map: IGameMap | null): void {
-        this.floorId = map ? map.floorId : undefined;
+        this.floorId = map?.floorId ?? void 0;
         this.map = map;
         this.forEachHook(hook => hook.onSetFloor?.(map));
     }

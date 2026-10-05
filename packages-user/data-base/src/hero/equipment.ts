@@ -353,7 +353,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         });
         // 由于装备修饰器不进存档，所以此时的勇士处于没有任何装备修饰器的状态，故可以安全清除
         this.equips.clear();
-        // 读档期间的重新装备不应写入录像，故用禁用窗口包裹
+
         const replay = this.state.replaySystem;
         replay.disable();
         for (const [index, uid] of state.equipped) {
