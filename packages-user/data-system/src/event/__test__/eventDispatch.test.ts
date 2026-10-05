@@ -66,7 +66,6 @@ interface TestModules {
     RoleFaceBinder: typeof import('@user/data-common').RoleFaceBinder;
     FaceManager: typeof import('@user/data-common').FaceManager;
     Dir8FaceHandler: typeof import('@user/data-common').Dir8FaceHandler;
-    DirectionMapper: typeof import('@motajs/common').DirectionMapper;
     EventTrigger: typeof eventTriggers;
     BlockEventType: typeof blockEventTypes;
     EventExecuteMode: typeof eventExecuteModes;
@@ -101,7 +100,6 @@ beforeAll(async () => {
         RoleFaceBinder: commonModule.RoleFaceBinder,
         FaceManager: commonModule.FaceManager,
         Dir8FaceHandler: commonModule.Dir8FaceHandler,
-        DirectionMapper: (await import('@motajs/common')).DirectionMapper,
         EventTrigger: eventTriggers,
         BlockEventType: blockEventTypes,
         EventExecuteMode: eventExecuteModes,
@@ -140,10 +138,9 @@ function createFixture(
         eventStore: {},
         roleFace: new modules.RoleFaceBinder(),
         faceManager,
-        directionMapper: new modules.DirectionMapper(),
         saveSystem: {}
     } as never;
-    const maps = new modules.MapState(tileStore, commonState);
+    const maps = new modules.MapState(commonState);
     const map = maps.fromRaw({
         floorId: 'F1',
         width: 3,
@@ -151,7 +148,7 @@ function createFixture(
         layerAlias: { 0: 'event' },
         events: { 0: pointEvents }
     });
-    const layer = map!.getLayerByAlias('event')!;
+    const layer = map!.eventLayer!;
     const dynamic = layer.createDynamic(2, 1, 0);
     dynamic.set(2);
     const events = new Map<string, object>();
