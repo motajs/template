@@ -67,6 +67,7 @@ export class LayerEventView implements ILayerEventView {
         for (const [priority, id] of this.reference) {
             this.store.set(priority, id);
         }
+        this.dirtyEntries = 0;
     }
 
     clear(): void {

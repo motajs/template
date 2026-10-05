@@ -17,7 +17,7 @@ import { Hookable, HookController, ITileLocator, logger } from '@motajs/common';
 import {
     FaceDirection,
     IDataCommon,
-    ILocationHelper,
+    ILocationIndexer,
     IRoleFaceBinder,
     SaveCompression,
     shouldReplay
@@ -31,7 +31,7 @@ export class MapLayer
     implements IResizableMapLayer
 {
     readonly state: IDataCommon;
-    readonly indexer: ILocationHelper;
+    readonly indexer: ILocationIndexer;
 
     width: number;
     height: number;
@@ -77,7 +77,7 @@ export class MapLayer
             expired: false,
             array: this.mapArray
         };
-        this.indexer = map.indexer;
+        this.indexer = map.indexer as ILocationIndexer;
     }
 
     protected createController(
@@ -249,13 +249,12 @@ export class MapLayer
         const nr = Math.min(r, w);
         const nb = Math.min(b, this.height);
         const nw = nr - nl;
-        const nh = nb - nt;
-        const res = new Uint32Array(nw * nh);
+        const res = new Uint32Array(width * height);
         const arr = this.mapArray;
         for (let ny = nt; ny < nb; ny++) {
             const lineStart = ny * w + nl;
             const dy = ny - y;
-            res.set(arr.subarray(lineStart, nr), dy * width);
+            res.set(arr.subarray(lineStart, lineStart + nw), dy * width);
         }
         return res;
     }
@@ -382,6 +381,9 @@ export class MapLayer
         if (!staticTile) return null;
         if (keepEvent) {
             staticTile.syncTileEvent(tile);
+        } else {
+            // 不保留事件时，将复用的静态图块重置为默认事件
+            staticTile.loadState({});
         }
         this.removeDynamic(tile, tile.x, tile.y);
         this.forEachHook(hook => hook.onDeleteDynamic?.(tile));
@@ -525,14 +527,21 @@ export class MapLayer
 
     /**
      * 裁剪超出新图层范围的点事件，并按新宽度重建索引
+     * @param oldWidth 变更前的图层宽度，用于解码旧索引
      * @param width 新图层宽度
      * @param height 新图层高度
      */
-    private cropPointEvents(width: number, height: number): void {
+    private cropPointEvents(
+        oldWidth: number,
+        width: number,
+        height: number
+    ): void {
         for (const [index, eventView] of [...this.pointEvents]) {
-            const { x, y } = this.indexer.locator(index);
+            const x = index % oldWidth;
+            const y = Math.floor(index / oldWidth);
+            this.pointEvents.delete(index);
             if (x < width && y < height) {
-                this.pointEvents.set(index, eventView);
+                this.pointEvents.set(y * width + x, eventView);
             }
         }
     }
@@ -552,6 +561,7 @@ export class MapLayer
         const beforeArea = beforeWidth * beforeHeight;
         this.width = width;
         this.height = height;
+        this.indexer.setWidth(width);
         const area = width * height;
         const newArray = new Uint32Array(area);
         this.mapArray = newArray;
@@ -573,7 +583,7 @@ export class MapLayer
         };
 
         // 其他杂项清理
-        this.cropPointEvents(width, height);
+        this.cropPointEvents(beforeWidth, width, height);
         this.staticTileCache.clear();
         this.forEachHook(hook => {
             hook.onResize?.(width, height);
@@ -586,6 +596,7 @@ export class MapLayer
         if (this.width === width && this.height === height) {
             this.empty = true;
             this.mapArray.fill(0);
+            this.pointEvents.clear();
             this.staticTileCache.clear();
             return;
         }
@@ -594,6 +605,7 @@ export class MapLayer
         this.mapData.expired = true;
         this.width = width;
         this.height = height;
+        this.indexer.setWidth(width);
         this.mapArray = new Uint32Array(width * height);
         this.mapData = {
             expired: false,
