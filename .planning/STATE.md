@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.0
-current_phase: 04
-current_phase_name: 渲染适配与双布局
+current_phase: 08
+current_phase_name: 测试重构与接口对齐
 status: executing
-stopped_at: Completed 04-14-PLAN.md（部分 UI 适配·第二步实施：main.tsx 状态栏改在勇士属性对象上 addHook({onUpdateAttribute})（D-78）；load.tsx 改接新加载系统 loader.start()/manager.get*（D-74/D-75）；删除 restart 注释块与 client.ts/entry-client 旧接线残留（D-76/D-77）；生产零外溢；REND-01/REND-02 保持 Pending）
-last_updated: "2026-09-30T09:10:00.000Z"
-last_activity: 2026-09-30
-last_activity_desc: Completed 04-14-PLAN.md（部分 UI 进一步接口适配·第二步适配实施）
-state_head: bc7d631
+stopped_at: Completed 08-06-PLAN.md（combat 4 test + 2 perf 与 event 1 文件对齐 shipped 接口：删 addHook(...).load() 链、CombatFlow/EnemyContext/MapState 单参构造、删 DirectionMapper、事件层改 GameMap.eventLayer；聚焦 96/96 通过、perf 6/6、eslint 0；零生产改动）
+last_updated: "2026-10-05T09:30:06.601Z"
+last_activity: 2026-10-05
+last_activity_desc: Phase 08 execution started
+state_head: e024e2d2ea2ce610d6ca2e79236c074b9985fadb
 progress:
-  total_phases: 7
-  completed_phases: 1
-  total_plans: 85
-  completed_plans: 84
+  total_phases: 8
+  completed_phases: 0
+  total_plans: 98
+  completed_plans: 92
 milestone_name: milestone
 ---
 
@@ -24,14 +24,14 @@ milestone_name: milestone
 See: .planning/PROJECT.md (updated 2026-09-17)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 04 — 渲染适配与双布局
+**Current focus:** Phase 08 — 测试重构与接口对齐
 
 ## Current Position
 
-Phase: 04 (渲染适配与双布局) — IN PROGRESS
-Plan: 14/14 已执行（04-01..04-14）
-Status: 04-14 完成（部分 UI 适配·第二步实施）；Phase 4 整体仍未完成 — REND-01/REND-02 保持 Pending
-Last activity: 2026-09-30 — Completed 04-14-PLAN.md（部分 UI 进一步接口适配·第二步适配实施）
+Phase: 08 (测试重构与接口对齐) — EXECUTING
+Plan: 2 of 11
+Status: Ready to execute
+Last activity: 2026-10-05 — Phase 08 execution started
 
 Progress: [█████░░░░░] 50%
 
@@ -101,6 +101,7 @@ Progress: [█████░░░░░] 50%
 | Phase 04 P3 | 40min | 4 tasks | 3 files |
 | Phase 04 P4 | ~45min | 4 tasks | 3 files |
 | Phase 04 P7 | 35min | 3 tasks | 10 files |
+| Phase 08 P06 | 10min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -232,6 +233,9 @@ Recent decisions affecting current work:
 - [Phase 04]: [Phase 04]: 04-04：hero.ts 弃用 mutate-animate 的 TimingFn<2>，改用 @motajs/animate 的 ExcitationCurve2D；D-28 存量 state.roleFace.getFaceOf 三处与 import 逐字保留；types.ts 单行 addHero 签名与 manager.ts 单行构造调用按仓库惯例加 // prettier-ignore 以同时满足计划的单行静态门禁与 prettier
 - [Phase 04]: [Phase 04]: 04-07：D-35 裁定 state 一律经构造器注入（ClientCore 传 this、renderer 从 manager.state 取），不取全局单例（D-23）；textures 由新建专用 TextureStore 承担（本次范围内无写入者）
 - [Phase 04]: [Phase 04]: 04-07：D-34 的 getIfBigImage ≡ getTile（bigImageData 唯一写入者 setBigImage 消费者调用点 0），7 处消费者改写行为保持；getOffsetPool 的 big-image 偏移收集删除、其余来源保留
+- [Phase 08]: [Phase 08] 08-06 Q1：combat 测试沿用各文件既有 {} as IStateBase 最小桩装配 CombatFlow/EnemyContext 单参构造，不新建 Phase 6 风格夹具
+- [Phase 08]: [Phase 08] 08-06 Q2：eventDispatch 删除已废弃 DirectionMapper 注入与 import/module 条目、MapState 改单参 commonState；getLayerByAlias 已删故事件层改用 GameMap.eventLayer
+- [Phase 08]: [Phase 08] 08-06 Q3（用户授权偏离计划 must_haves）：不触发/不补测 DEV 守卫码 98/99/101、忽略无 emit 点错误码；保持 Vitest 默认 mode=test，不改配置；记录于 08-06-SUMMARY Deviations
 
 ### Roadmap Evolution
 
@@ -271,6 +275,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-22T04:25:51.224Z
-Stopped at: Completed 04-07-PLAN.md（material 接口适应实施：big-image 全删、7 处改 getTile、四实现类构造器注入 state、cache.ts legacy 路径删除、补 @user/data-state 声明；material 诊断 19→0、总行数 199→180；REND-01/REND-02 保持 Pending）
+Last session: 2026-10-05T09:30:06.319Z
+Stopped at: Completed 08-06-PLAN.md（combat 4 test + 2 perf 与 event 1 文件对齐 shipped 接口：删 addHook(...).load() 链、CombatFlow/EnemyContext/MapState 单参构造、删 DirectionMapper、事件层改 GameMap.eventLayer；聚焦 96/96 通过、perf 6/6、eslint 0；零生产改动）
 Resume file: None

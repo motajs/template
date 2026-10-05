@@ -35,7 +35,7 @@ Requirements for the engine's completion. Each maps to roadmap phases.
 ### 测试（Testing）
 
 - [ ] **TEST-01**: 为核心系统（数据层等）补齐单元测试
-- [ ] **TEST-02**: 测试文件统一归入 `__test__` 目录，并按数据端当前接口对齐既有测试、修复重构遗漏导致的测试失效
+- [x] **TEST-02**: 测试文件统一归入 `__test__` 目录，并按数据端当前接口对齐既有测试、修复重构遗漏导致的测试失效
 
 ### 数据端缺陷修复（Fix）
 
@@ -68,7 +68,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LEGACY-01 | Phase 5 | Pending |
 | LEGACY-02 | Phase 5 | Pending |
 | TEST-01 | Phase 6 | In Progress |
-| TEST-02 | Phase 8 | Pending |
+| TEST-02 | Phase 8 | Complete |
 | FIX-01 | Phase 7 | Complete |
 
 **Coverage:**
