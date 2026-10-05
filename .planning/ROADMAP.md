@@ -458,7 +458,7 @@ Plans:
 - [x] 08-02-PLAN.md — data-common 对齐（`utils.test.ts` 退役、`DirectionMapper` 删除、`addHook().load()` 移除、158/175→72；含经确认的 sandbox 首步预读生产修复）
 - [x] 08-03-PLAN.md — data-base enemy+flag 对齐（真实 `TileStore` + 注册图块、删 legacy bridge、`getPrefab` 签名 `number|string` 类型修正、flag 读档重建语义对齐）
 - [x] 08-04-PLAN.md — data-base hero 对齐（录像桩 `array`、删 `.load()`、真实 `TileStore`/`ItemStore(tileStore)`、`setFloor(IGameMap|null)`、`getItem`→`addItem`；含经确认的 `equipment.loadState` 读档禁录修复）
-- [ ] 08-05-PLAN.md — data-base map 对齐（`addLayer(alias)`、`MapState(state)`；陈旧码 62/63/64/84/130/125 裁决）
+- [x] 08-05-PLAN.md — data-base map 对齐（`addLayer(alias)`、`MapState(state)`；陈旧码 62/63/64/84/130/125 裁决；含 D-10 生产修复，map 聚焦 108/108 通过）
 - [ ] 08-06-PLAN.md — data-system combat+event 对齐（`CombatFlow` 构造、`.load()` 移除、DEV 守卫码）
 - [ ] 08-07-PLAN.md — data-system path 对齐（`useMapState` 删除、`useFaceHandler` 注入）
 - [ ] 08-08-PLAN.md — data-state src 对齐（`createCoreState` 删除→`CoreState({loadStarter,coreURL})`；`coreEventLayer` A1/A2）
@@ -483,4 +483,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
-| 8. 测试重构与接口对齐 | 3/11 | In Progress | - |
+| 8. 测试重构与接口对齐 | 4/11 | In Progress | - |
