@@ -20,14 +20,14 @@ import {
     TITLE_STROKE_WIDTH,
     TITLE_X,
     TITLE_Y
-} from '../../shared';
+} from '../shared';
 import { ElementLocator, Font } from '@motajs/render';
 import {
     ITransitionedController,
     transitioned,
     transitionedColor,
     useKey
-} from '../use';
+} from '../render';
 import { ExitFullscreen, Fullscreen, SoundVolume } from '@user/client-base';
 import { mainSetting, triggerFullscreen } from '@motajs/legacy-ui';
 import { saveLoad } from './save';
@@ -35,7 +35,7 @@ import { MainSceneUI } from './main';
 import { adjustCover } from '@user/client-base';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { sleep } from '@motajs/common';
-import { client } from '../../core';
+import { IUIDefaultPropsBase } from './types';
 
 const enum TitleButton {
     StartGame,
@@ -60,11 +60,11 @@ interface ButtonOption {
 export interface GameTitleProps extends DefaultProps, IUIDefaultPropsBase {}
 
 const gameTitleProps = {
-    props: ['controller', 'instance']
+    props: ['controller', 'instance', 'state']
 } satisfies SetupComponentOptions<GameTitleProps>;
 
 export const GameTitle = defineComponent<GameTitleProps>(props => {
-    const materials = client.materials;
+    const materials = props.state.materials;
     const bg = materials.getImageByAlias(TITLE_BACKGROUND_IMAGE);
 
     //#region 计算背景图

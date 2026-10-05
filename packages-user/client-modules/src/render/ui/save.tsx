@@ -2,9 +2,9 @@ import { ElementLocator, IWheelEvent, Font } from '@motajs/render';
 import { DefaultProps } from '@motajs/render-vue';
 import {
     GameUI,
-    IUIMountable,
+    IUIController,
     SetupComponentOptions,
-    UIComponentProps
+    IUIDefaultPropsBase
 } from '@motajs/system';
 import {
     defineComponent,
@@ -37,7 +37,7 @@ export const enum SaveMode {
     Other
 }
 
-export interface SaveProps extends UIComponentProps, DefaultProps {
+export interface SaveProps extends IUIDefaultPropsBase, DefaultProps {
     loc: ElementLocator;
     mode: SaveMode;
 }
@@ -492,7 +492,7 @@ export type SaveValidationFunction = (
  * @returns 选择的存档索引
  */
 export function selectSave(
-    controller: IUIMountable,
+    controller: IUIController,
     loc: ElementLocator,
     mode: SaveMode,
     validate?: SaveValidationFunction,
@@ -542,7 +542,7 @@ export function selectSave(
 }
 
 export async function saveSave(
-    controller: IUIMountable,
+    controller: IUIController,
     loc: ElementLocator,
     props?: SaveProps
 ) {
@@ -566,7 +566,7 @@ export async function saveSave(
 }
 
 export async function saveLoad(
-    controller: IUIMountable,
+    controller: IUIController,
     loc: ElementLocator,
     props?: SaveProps
 ) {
@@ -590,7 +590,7 @@ export async function saveLoad(
 }
 
 export async function saveWithExist(
-    controller: IUIMountable,
+    controller: IUIController,
     loc: ElementLocator,
     props?: SaveProps
 ) {

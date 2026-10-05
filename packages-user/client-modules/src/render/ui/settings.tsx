@@ -1,9 +1,9 @@
 import { ElementLocator } from '@motajs/render';
 import {
     GameUI,
-    IUIMountable,
+    IUIController,
     SetupComponentOptions,
-    UIComponentProps
+    IUIDefaultPropsBase
 } from '@motajs/system';
 import { defineComponent } from 'vue';
 import {
@@ -28,7 +28,7 @@ import { useKey } from '../use';
 import { client } from '../../core';
 
 export interface MainSettingsProps
-    extends Partial<ChoicesProps>, UIComponentProps {
+    extends Partial<ChoicesProps>, IUIDefaultPropsBase {
     loc: ElementLocator;
 }
 
@@ -681,7 +681,7 @@ export const ClearSaveSelectUI = new GameUI(
 );
 
 export function openSettings(
-    controller: IUIMountable,
+    controller: IUIController,
     loc: ElementLocator,
     props?: MainSettingsProps
 ) {
@@ -692,7 +692,7 @@ export function openSettings(
 }
 
 export function openReplay(
-    controller: IUIMountable,
+    controller: IUIController,
     loc: ElementLocator,
     props?: MainSettingsProps
 ) {

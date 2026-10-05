@@ -9,9 +9,9 @@ import {
 import { BaseProps } from '@motajs/render-vue';
 import {
     GameUI,
-    IUIMountable,
+    IUIController,
     SetupComponentOptions,
-    UIComponentProps
+    IUIDefaultPropsBase
 } from '@motajs/system';
 import {
     computed,
@@ -41,7 +41,7 @@ import {
     STATUS_BAR_WIDTH
 } from '../../shared';
 
-export interface ViewMapProps extends UIComponentProps, BaseProps {
+export interface ViewMapProps extends IUIDefaultPropsBase, BaseProps {
     loc: ElementLocator;
     floorId?: FloorIds;
 }
@@ -556,7 +556,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
 export const ViewMapUI = new GameUI('view-map', ViewMap);
 
 export function openViewMap(
-    controller: IUIMountable,
+    controller: IUIController,
     loc: ElementLocator,
     props?: ViewMapProps
 ) {

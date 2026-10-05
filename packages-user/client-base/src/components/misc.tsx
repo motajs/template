@@ -10,7 +10,7 @@ import { Scroll, ScrollExpose, ScrollProps } from './scroll';
 // @ts-expect-error render/use.ts 按 D-54 留在实现层，本文件已移入系统层，按 D-68 暂以标注记录，不反向引用、不解耦
 import { transitioned } from '../use';
 import { logger } from '@motajs/common';
-import { GameUI, IUIMountable, SetupComponentOptions } from '@motajs/system';
+import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 import { clamp } from 'lodash-es';
 // @ts-expect-error render/renderer 按 D-54 留在实现层，本文件已移入系统层，按 D-59 暂以标注记录，不反向引用、不解耦
 import { using } from '../renderer';
@@ -568,7 +568,7 @@ export const WaitBox = defineComponent<
  * @param props 额外的 props，参考 {@link WaitBoxProps}
  */
 export function waitbox<T>(
-    controller: IUIMountable,
+    controller: IUIController,
     loc: ElementLocator,
     width: number,
     promise: Promise<T>,

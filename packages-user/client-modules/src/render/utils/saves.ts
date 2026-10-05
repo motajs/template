@@ -1,6 +1,6 @@
 import { compressToBase64, decompressFromBase64 } from 'lz-string';
 import { getConfirm, waitbox } from '@user/client-base';
-import { IUIMountable } from '@motajs/system';
+import { IUIController } from '@motajs/system';
 import { SyncSaveFromServerResponse } from '@motajs/client-base';
 import { CENTER_LOC, POP_BOX_WIDTH } from '../../shared';
 
@@ -122,7 +122,7 @@ async function syncLoad(id: string, password: string) {
 }
 
 export async function syncFromServer(
-    controller: IUIMountable,
+    controller: IUIController,
     identifier: string
 ): Promise<void> {
     if (!/^\d{6}\w{4}$/.test(identifier) && !/^\d{4}\w{3}$/.test(identifier)) {

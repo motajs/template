@@ -1,22 +1,23 @@
 import { defineComponent, VNode } from 'vue';
-import { IUIMountable } from './shared';
+import { IUIController } from './types';
 import { SetupComponentOptions } from './types';
 
-export interface UIContainerProps {
-    controller: IUIMountable;
+export interface IUIContainerProps {
+    /** 当前 UI 容器组件所属的控制器 */
+    readonly controller: IUIController<any>;
 }
 
 const containerConfig = {
     props: ['controller']
-} satisfies SetupComponentOptions<UIContainerProps>;
+} satisfies SetupComponentOptions<IUIContainerProps>;
 
-export const UIContainer = defineComponent<UIContainerProps>(props => {
+export const UIContainer = defineComponent<IUIContainerProps>(props => {
     const data = props.controller;
     const back = data.backIns;
     return (): VNode[] => {
         const elements: VNode[] = [];
         const b = back.value;
-        if (b && data.showBack.value && !b.hidden) {
+        if (data.showBack.value && b && !b.hidden) {
             elements.push(
                 <b.ui.component
                     {...b.vBind}
@@ -35,7 +36,7 @@ export const UIContainer = defineComponent<UIContainerProps>(props => {
                     key={v.key}
                     controller={data}
                     instance={v}
-                    hidden={v.hidden && !v.alwaysShow}
+                    hidden={v.hidden.value}
                     zIndex={i * 5}
                 ></v.ui.component>
             ))

@@ -1,8 +1,8 @@
 import {
     GameUI,
-    IUIMountable,
+    IUIController,
     SetupComponentOptions,
-    UIComponentProps
+    IUIDefaultPropsBase
 } from '@motajs/system';
 import { defineComponent } from 'vue';
 import { waitbox, ListPage, TextContent } from '@user/client-base';
@@ -38,7 +38,7 @@ export interface StatisticsData {
     potionGem: StatisticsDataPotionGem;
 }
 
-export interface StatisticsProps extends UIComponentProps, DefaultProps {
+export interface StatisticsProps extends IUIDefaultPropsBase, DefaultProps {
     data: StatisticsData;
 }
 
@@ -280,7 +280,7 @@ export function calculateStatistics(): StatisticsData {
  * 打开数据统计界面
  * @param controller 要在哪个 UI 控制器上打开
  */
-export async function openStatistics(controller: IUIMountable) {
+export async function openStatistics(controller: IUIController) {
     const cal = Promise.resolve().then<StatisticsData>(() => {
         return new Promise(res => {
             const data = calculateStatistics();

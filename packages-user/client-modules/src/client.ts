@@ -39,6 +39,8 @@ import {
 import { WebLoadStarter } from '@motajs/loader';
 import { IRendererUsing, RendererUsing } from '@motajs/render-vue';
 import { UIController } from '@motajs/system';
+import { createApp } from './render';
+import { LoadSceneUI } from './render/ui/load';
 
 export class ClientCore extends CoreState implements IClientCore {
     // Layer 4 渲染基础层
@@ -50,13 +52,14 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly excitationDivider: IExcitationDivider<number>;
     readonly renderer: IRenderTreeRoot;
     readonly materials: ITextureManager;
-
-    // Layer 5 渲染顶层
     readonly using: IRendererUsing;
     readonly mainMapRenderer: IMapRenderer;
+    readonly expandMapRenderer: IMapRenderer;
     readonly mainMapExtension: IMapExtensionManager;
     readonly sceneController: UIController;
     readonly mainUIController: UIController;
+
+    // Layer 5 渲染顶层
 
     constructor(config: IClientCoreConfig) {
         super({
@@ -91,6 +94,8 @@ export class ClientCore extends CoreState implements IClientCore {
 
         const rafExcitation = new RafExcitation();
         const excitationDivider = new ExcitationDivider<number>();
+        this.rafExcitation = rafExcitation;
+        this.excitationDivider = excitationDivider;
 
         if (DEBUG_VARIATOR) {
             const variator = new ExcitationVariator();
@@ -105,8 +110,6 @@ export class ClientCore extends CoreState implements IClientCore {
             excitationDivider.setDivider(DIVIDER_DEBUG_DIVIDER);
         }
 
-        this.rafExcitation = rafExcitation;
-        this.excitationDivider = excitationDivider;
         this.renderer = new MotaRenderer({
             canvas: '#render-main',
             width: MAIN_WIDTH,
@@ -117,12 +120,20 @@ export class ClientCore extends CoreState implements IClientCore {
         this.using = new RendererUsing(this.renderer);
         this.mainMapRenderer = new MapRenderer(this.materials);
         this.mainMapExtension = new MapExtensionManager(this.mainMapRenderer);
+        this.expandMapRenderer = new MapRenderer(this.materials);
         this.sceneController = new UIController('main-scene');
         this.mainUIController = new UIController('main-ui');
 
         //#endregion
 
         this.loader.addCoreConfig('client', config.clientURL);
+
+        this.init();
+    }
+
+    private async init() {
+        createApp(this.sceneController.render()).mount(this.renderer);
+        this.sceneController.open(LoadSceneUI, {});
     }
 
     /**

@@ -4,7 +4,7 @@ import { Background, Selection } from './misc';
 import { TextContent, TextContentProps } from './textbox';
 import { TextAlign } from './textboxTyper';
 import { Page, PageExpose } from './page';
-import { GameUI, IUIMountable, SetupComponentOptions } from '@motajs/system';
+import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 // @ts-expect-error render/use.ts 按 D-54 留在实现层，本文件已移入系统层，按 D-68 暂以标注记录，不反向引用、不解耦
 import { useKey } from '../use';
 import { sleep } from 'mutate-animate';
@@ -595,7 +595,7 @@ export const Choices = defineComponent<
  * @param props 额外的 props，参考 {@link ConfirmBoxProps}
  */
 export function getConfirm(
-    controller: IUIMountable,
+    controller: IUIController,
     text: string,
     loc: ElementLocator,
     width: number,
@@ -648,7 +648,7 @@ export function getConfirm(
  * @param props 额外的 props，参考 {@link ChoicesProps}
  */
 export function getChoice<T extends ChoiceKey = ChoiceKey>(
-    controller: IUIMountable,
+    controller: IUIController,
     choices: ChoiceItem<T>[],
     loc: ElementLocator,
     width: number,
@@ -707,7 +707,7 @@ function getChoiceRoute(defaults: number) {
  * @param props 额外的 props，参考 {@link ConfirmBoxProps}
  */
 export async function routedConfirm(
-    controller: IUIMountable,
+    controller: IUIController,
     text: string,
     loc: ElementLocator,
     width: number,
@@ -762,7 +762,7 @@ export async function routedConfirm(
  * @param props 额外的 props，参考 {@link ChoicesProps}
  */
 export async function routedChoices<T extends ChoiceKey>(
-    controller: IUIMountable,
+    controller: IUIController,
     choices: ChoiceItem<T>[],
     loc: ElementLocator,
     width: number,

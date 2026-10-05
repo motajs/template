@@ -15,7 +15,7 @@ import {
 import { transitionedColor, useKey } from '../use';
 import { linear } from 'mutate-animate';
 import { Background, Selection } from './misc';
-import { GameUI, IUIMountable, SetupComponentOptions } from '@motajs/system';
+import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 import { KeyCode } from '@motajs/client-base';
 
 export interface InputProps extends DefaultProps, Partial<TextContentProps> {
@@ -544,7 +544,7 @@ export const InputBox = defineComponent<
  * @param props 额外的 props，参考 {@link ConfirmBoxProps}
  */
 export function getInput(
-    controller: IUIMountable,
+    controller: IUIController,
     text: string,
     loc: ElementLocator,
     width: number,
@@ -581,7 +581,7 @@ export function getInput(
  * @param props 额外的 props，参考 {@link ConfirmBoxProps}
  */
 export async function getInputNumber(
-    controller: IUIMountable,
+    controller: IUIController,
     text: string,
     loc: ElementLocator,
     width: number,

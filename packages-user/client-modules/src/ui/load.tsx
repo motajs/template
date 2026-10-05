@@ -1,9 +1,5 @@
 import { DefaultProps } from '@motajs/render-vue';
-import {
-    GameUI,
-    SetupComponentOptions,
-    IUIDefaultPropsBase
-} from '@motajs/system';
+import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { defineComponent } from 'vue';
 import {
     FULL_LOC,
@@ -17,23 +13,23 @@ import {
     LOAD_TASK_RADIUS,
     LOAD_UNLOADED_COLOR,
     MAIN_WIDTH
-} from '../../shared';
+} from '../shared';
 import { ElementLocator, Font, MotaOffscreenCanvas2D } from '@motajs/render';
-import { transitioned } from '../use';
+import { transitioned } from '../render';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { clamp } from 'lodash-es';
 import { sleep } from '@motajs/common';
 import { GameTitleUI } from './title';
-import { client } from '../../core';
+import { IUIDefaultPropsBase } from './types';
 
 export interface ILoadProps extends IUIDefaultPropsBase, DefaultProps {}
 
 const loadSceneProps = {
-    props: ['controller', 'instance']
+    props: ['controller', 'instance', 'state']
 } satisfies SetupComponentOptions<ILoadProps>;
 
 export const LoadScene = defineComponent<ILoadProps>(props => {
-    const loader = client.loader;
+    const loader = props.state.loader;
     const taskFont = new Font('Verdana', 24);
     const byteFont = new Font('Verdana', 12);
 
