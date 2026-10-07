@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 08
 current_phase_name: 测试重构与接口对齐
 status: executing
-stopped_at: Completed 08-07-PLAN.md（path 3 测试文件对齐 shipped 注入面 + 用户授权 B1/B2 生产修复与 F5 断言 183：聚焦 28/28、eslint 0）
-last_updated: "2026-10-05T10:54:20.389Z"
+stopped_at: Completed 08-08-PLAN.md（data-state src 9 文件对齐 CoreState 装配约定 + commands 结果对齐 ReplayCommandResult；聚焦 98/98、eslint 0）
+last_updated: "2026-10-07T10:06:52.893Z"
 last_activity: 2026-10-05
 last_activity_desc: Phase 08 execution started
-state_head: ba92f5291b19f3c6e3a55c52da76dceaf9d2b910
+state_head: 1ef95cd36baaa3084839ed26da212ada0af08618
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 98
-  completed_plans: 93
+  completed_plans: 94
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 ## Current Position
 
 Phase: 08 (测试重构与接口对齐) — EXECUTING
-Plan: 3 of 11
+Plan: 4 of 11
 Status: Ready to execute
 Last activity: 2026-10-05 — Phase 08 execution started
 
@@ -103,6 +103,7 @@ Progress: [█████░░░░░] 50%
 | Phase 04 P7 | 35min | 3 tasks | 10 files |
 | Phase 08 P06 | 10min | 2 tasks | 3 files |
 | Phase 08 P07 | 40min | 2 tasks | 4 files |
+| Phase 08 P08 | 30min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -241,6 +242,8 @@ Recent decisions affecting current work:
 - [Phase 08]: [Phase 08] 08-07 B1（用户授权 D-10）：graph.build 补 mapped.add(startIndex)，修复单向门/死路起点漏出图导致 finder 恒返 NoPath
 - [Phase 08]: [Phase 08] 08-07 B2（用户授权 D-10）：resolveCost 恢复 174 守卫——NaN/负数告警并回退 1，Infinity 仍是合法损失
 - [Phase 08]: [Phase 08] 08-07 F5（用户授权）：越界起点用例注入谓词与处理器，走真实越界分支断言 183
+- [Phase 08]: [Phase 08] 08-08 Q1=(a)/Q2=A1/Q3/Q4：CoreState 统一用 new CoreState({ loadStarter: new WebLoadStarter(), coreURL: 'placeholder' })；coreEventLayer.test.ts 重定向到 MapState.fromRaw（不退役）；删除 legacy/enemy mock 与 Object.create 骨架。
+- [Phase 08]: [Phase 08] 08-08 生产漂移（用户已修复+授权提交）：commands.ts assertParameter 返回布尔、ReplayEquip.paramTypes[2]='boolean'；commands.test.ts 期望对齐 ReplayCommandResult.Success/Failed；4 处 // Parameter: 注释改为 JS typeof 语义。D1：enemy 6 文件零改动。
 
 ### Roadmap Evolution
 
@@ -280,6 +283,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-05T10:54:20.093Z
-Stopped at: Completed 08-07-PLAN.md（path 3 测试文件对齐 shipped 注入面 + 用户授权 B1/B2 生产修复与 F5 断言 183：聚焦 28/28、eslint 0）
+Last session: 2026-10-07T10:06:52.690Z
+Stopped at: Completed 08-08-PLAN.md（data-state src 9 文件对齐 CoreState 装配约定 + commands 结果对齐 ReplayCommandResult；聚焦 98/98、eslint 0）
 Resume file: None
