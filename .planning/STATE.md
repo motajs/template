@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 08
 current_phase_name: 测试重构与接口对齐
 status: executing
-stopped_at: Completed 08-08-PLAN.md（data-state src 9 文件对齐 CoreState 装配约定 + commands 结果对齐 ReplayCommandResult；聚焦 98/98、eslint 0）
-last_updated: "2026-10-07T10:06:52.893Z"
+stopped_at: Completed 08-09-PLAN.md（data-state 集成层对齐：夹具根因 + 寻路注入 + 录像契约 + equip.value Record + tileLegacy 退役；__test__ 54/54、__test__+src 152/152、perf 45/45、eslint 0）
+last_updated: "2026-10-07T11:16:41.386Z"
 last_activity: 2026-10-05
 last_activity_desc: Phase 08 execution started
-state_head: 1ef95cd36baaa3084839ed26da212ada0af08618
+state_head: 551e63de9af6b6674d35d9cabc0a6a3006710b0f
 progress:
   total_phases: 8
-  completed_phases: 0
+  completed_phases: 2
   total_plans: 98
-  completed_plans: 94
+  completed_plans: 95
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 ## Current Position
 
 Phase: 08 (测试重构与接口对齐) — EXECUTING
-Plan: 4 of 11
+Plan: 5 of 11
 Status: Ready to execute
 Last activity: 2026-10-05 — Phase 08 execution started
 
@@ -104,6 +104,7 @@ Progress: [█████░░░░░] 50%
 | Phase 08 P06 | 10min | 2 tasks | 3 files |
 | Phase 08 P07 | 40min | 2 tasks | 4 files |
 | Phase 08 P08 | 30min | 2 tasks | 4 files |
+| Phase 08 P09 | 25min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -244,6 +245,9 @@ Recent decisions affecting current work:
 - [Phase 08]: [Phase 08] 08-07 F5（用户授权）：越界起点用例注入谓词与处理器，走真实越界分支断言 183
 - [Phase 08]: [Phase 08] 08-08 Q1=(a)/Q2=A1/Q3/Q4：CoreState 统一用 new CoreState({ loadStarter: new WebLoadStarter(), coreURL: 'placeholder' })；coreEventLayer.test.ts 重定向到 MapState.fromRaw（不退役）；删除 legacy/enemy mock 与 Object.create 骨架。
 - [Phase 08]: [Phase 08] 08-08 生产漂移（用户已修复+授权提交）：commands.ts assertParameter 返回布尔、ReplayEquip.paramTypes[2]='boolean'；commands.test.ts 期望对齐 ReplayCommandResult.Success/Failed；4 处 // Parameter: 注释改为 JS typeof 语义。D1：enemy 6 文件零改动。
+- [Phase 08]: [Phase 08] 08-09 Q1（STRICT）：tileLegacy.test.ts 授权退役删除（被测 data-state/src/legacy/tile 已整体删除），不重定向、不伪造替代测试
+- [Phase 08]: [Phase 08] 08-09 Q2–Q4：CoreState 延续 08-08 装配；closed-loop setFloor(真实 IGameMap)；finder 删 useMapState、DefaultPassPredicateImpl(state)、注入 Dir4FaceHandler
+- [Phase 08]: [Phase 08] 08-09 追加对齐：录像命令结果用 ReplayCommandResult + Active；sandbox 走 shipped 自然预读（getReplayed 计预读位）；equip.value 由 Map 改 Record；装备/flag 同引用契约移除后改校验值/uid 恢复；addHook 后不再调 .load()
 
 ### Roadmap Evolution
 
@@ -283,6 +287,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-07T10:06:52.690Z
-Stopped at: Completed 08-08-PLAN.md（data-state src 9 文件对齐 CoreState 装配约定 + commands 结果对齐 ReplayCommandResult；聚焦 98/98、eslint 0）
+Last session: 2026-10-07T11:16:41.103Z
+Stopped at: Completed 08-09-PLAN.md（data-state 集成层对齐：夹具根因 + 寻路注入 + 录像契约 + equip.value Record + tileLegacy 退役；__test__ 54/54、__test__+src 152/152、perf 45/45、eslint 0）
 Resume file: None
