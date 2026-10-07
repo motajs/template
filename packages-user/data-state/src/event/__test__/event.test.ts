@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { WebLoadStarter } from '@motajs/loader';
 import { Statement, StatementType } from '@motajs/anon-tokyo';
 import {
     FaceDirection,
@@ -23,6 +24,30 @@ import {
 import { EventSetBlock as MapEventSetBlock } from '../map';
 import { EventInsertEvent as ControlEventInsertEvent } from '../event';
 import * as dataStateRoot from '../../index';
+
+vi.hoisted(() => {
+    Map.prototype.getOrInsertComputed ??= function <K, V>(
+        this: Map<K, V>,
+        key: K,
+        callback: (key: K) => V
+    ): V {
+        const existing = this.get(key);
+        if (existing !== undefined) return existing;
+        const value = callback(key);
+        this.set(key, value);
+        return value;
+    };
+    Map.prototype.getOrInsert ??= function <K, V>(
+        this: Map<K, V>,
+        key: K,
+        defaultValue: V
+    ): V {
+        const existing = this.get(key);
+        if (existing !== undefined) return existing;
+        this.set(key, defaultValue);
+        return defaultValue;
+    };
+});
 
 interface EventFixture {
     readonly state: CoreState;
@@ -52,7 +77,10 @@ function getRegistration(name: string): RegisteredBuiltin {
 }
 
 function createFixture(): EventFixture {
-    const state = new CoreState();
+    const state = new CoreState({
+        loadStarter: new WebLoadStarter(),
+        coreURL: 'placeholder'
+    });
     state.tileStore.addTile({
         num: 1,
         id: 'floor',
@@ -70,10 +98,10 @@ function createFixture(): EventFixture {
         eventPass: true
     });
     const map = state.maps.createMap('F1', 4, 1);
-    const layer = map.addLayer();
+    const layer = map.addLayer('event');
     layer.setMapRef(new Uint32Array([1, 1, 1, 1]));
     map.setEventLayer(layer);
-    state.hero.location.setFloor('F1');
+    state.hero.location.setFloor(map);
     state.hero.location.setPos(0, 0);
     state.hero.location.mover.setFaceDir(FaceDirection.Right);
     const env: IBlockEventEnv = {

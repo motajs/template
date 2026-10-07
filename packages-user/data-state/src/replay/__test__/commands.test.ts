@@ -2,17 +2,18 @@ import { logger } from '@motajs/common';
 import {
     FaceDirection,
     IReplayStepHandler,
-    IReplaySandbox,
     IMoverController,
     beginReplaySafetyCollection,
     endReplaySafetyCollection,
     logReplaySafetyDetail,
     shouldReplay,
-    ReplayCode
+    ReplayCode,
+    ReplayCommandResult
 } from '@user/data-common';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import { createCoreState } from '../../core';
+import { WebLoadStarter } from '@motajs/loader';
+import { CoreState } from '../../core';
 import { ReplaySystem } from '../../../../data-common/src/replay/system';
 import {
     ReplayEquip,
@@ -34,6 +35,13 @@ export const REPLAY_COMMAND_ORDER: readonly ReplayCode[] = [
     ReplayCode.Unequip
 ];
 
+function createCoreState(): CoreState {
+    return new CoreState({
+        loadStarter: new WebLoadStarter(),
+        coreURL: 'placeholder'
+    });
+}
+
 function step(
     command: number,
     params: IReplayStepHandler['params']
@@ -49,11 +57,6 @@ function controller(onEnd: Promise<void>): Readonly<IMoverController> {
         insert: () => {},
         stop: () => onEnd
     };
-}
-
-interface IManualReplaySandbox extends IReplaySandbox {
-    playing: boolean;
-    pausing: boolean;
 }
 
 describe('replay commands', () => {
@@ -116,12 +119,12 @@ describe('replay commands', () => {
         const command = new ReplayMove(state, FaceDirection.Right);
 
         await expect(command.execute(step(ReplayCode.Right, []))).resolves.toBe(
-            true
+            ReplayCommandResult.Success
         );
         expect(move).toHaveBeenCalledWith(FaceDirection.Right);
         expect(start).not.toHaveBeenCalled();
 
-        let result: boolean | undefined;
+        let result: ReplayCommandResult | undefined;
         const pending = command.finalize().then(value => {
             result = value;
         });
@@ -130,7 +133,7 @@ describe('replay commands', () => {
         expect(result).toBeUndefined();
         first.resolve();
         await pending;
-        expect(result).toBe(true);
+        expect(result).toBe(ReplayCommandResult.Success);
     });
 
     // 验证移动已在进行中或无法启动时返回 false 并记录错误码
@@ -141,13 +144,15 @@ describe('replay commands', () => {
         (mover as unknown as { moving: boolean }).moving = true;
         const command = new ReplayMove(state, FaceDirection.Up);
         await expect(command.execute(step(ReplayCode.Up, []))).resolves.toBe(
-            false
+            ReplayCommandResult.Failed
         );
         expect(error).toHaveBeenCalledWith(2003);
 
         (mover as unknown as { moving: boolean }).moving = false;
         vi.spyOn(mover, 'start').mockReturnValueOnce(null);
-        await expect(command.finalize()).resolves.toBe(false);
+        await expect(command.finalize()).resolves.toBe(
+            ReplayCommandResult.Failed
+        );
         expect(error).toHaveBeenCalledWith(2004);
         error.mockRestore();
     });
@@ -164,7 +169,7 @@ describe('replay commands', () => {
             });
         const command = new ReplayTeleport(state);
 
-        let result: boolean | undefined;
+        let result: ReplayCommandResult | undefined;
         const pending = command
             .execute(step(ReplayCode.Teleport, [2, 3]))
             .then(value => {
@@ -175,13 +180,13 @@ describe('replay commands', () => {
         expect(result).toBeUndefined();
         first.resolve();
         await pending;
-        expect(result).toBe(true);
+        expect(result).toBe(ReplayCommandResult.Success);
 
         const error = vi.spyOn(logger, 'error');
         teleport.mockReturnValueOnce(null);
         await expect(
             command.execute(step(ReplayCode.Teleport, [4, 5]))
-        ).resolves.toBe(false);
+        ).resolves.toBe(ReplayCommandResult.Failed);
         expect(error).toHaveBeenCalledWith(2005, '4', '5');
         error.mockRestore();
     });
@@ -198,10 +203,10 @@ describe('replay commands', () => {
 
         await expect(
             command.execute(step(ReplayCode.UseItem, [12]))
-        ).resolves.toBe(true);
+        ).resolves.toBe(ReplayCommandResult.Success);
         await expect(
             command.execute(step(ReplayCode.UseItem, [34]))
-        ).resolves.toBe(false);
+        ).resolves.toBe(ReplayCommandResult.Failed);
         expect(useItem).toHaveBeenNthCalledWith(1, 12);
         expect(error).toHaveBeenCalledWith(2006, '34');
         error.mockRestore();
@@ -223,14 +228,14 @@ describe('replay commands', () => {
         getEquipped.mockReturnValueOnce(99);
         await expect(
             command.execute(step(ReplayCode.Equip, [99, 0, true]))
-        ).resolves.toBe(true);
+        ).resolves.toBe(ReplayCommandResult.Success);
         expect(equip).toHaveBeenCalledWith(99, 0, true);
 
         // 装备后槽位未变为指定 uid
         getEquipped.mockReturnValueOnce(undefined);
         await expect(
             command.execute(step(ReplayCode.Equip, [99, 1, false]))
-        ).resolves.toBe(false);
+        ).resolves.toBe(ReplayCommandResult.Failed);
         expect(error).toHaveBeenCalledWith(2007, '99', '1');
 
         error.mockRestore();
@@ -251,14 +256,14 @@ describe('replay commands', () => {
         getEquipped.mockReturnValueOnce(undefined);
         await expect(
             command.execute(step(ReplayCode.Unequip, [0]))
-        ).resolves.toBe(true);
+        ).resolves.toBe(ReplayCommandResult.Success);
         expect(unequip).toHaveBeenCalledWith(0);
 
         // 卸下后槽位仍有装备
         getEquipped.mockReturnValueOnce(88);
         await expect(
             command.execute(step(ReplayCode.Unequip, [1]))
-        ).resolves.toBe(false);
+        ).resolves.toBe(ReplayCommandResult.Failed);
         expect(error).toHaveBeenCalledWith(2008, '1');
 
         error.mockRestore();
@@ -282,9 +287,7 @@ describe('replay commands', () => {
         const sandbox = replay.createReplaySandbox({
             route: replay.array,
             reseter: { reset: () => {} }
-        }) as IManualReplaySandbox;
-        sandbox.playing = true;
-        sandbox.pausing = false;
+        });
 
         await expect(sandbox.step()).resolves.toBe(true);
         expect(move).toHaveBeenCalledWith(FaceDirection.Right);
@@ -318,14 +321,14 @@ describe('replay commands', () => {
             unequip.execute(step(ReplayCode.Unequip, ['slot']))
         ];
         await expect(Promise.all(invalid)).resolves.toEqual([
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false
+            ReplayCommandResult.Failed,
+            ReplayCommandResult.Failed,
+            ReplayCommandResult.Failed,
+            ReplayCommandResult.Failed,
+            ReplayCommandResult.Failed,
+            ReplayCommandResult.Failed,
+            ReplayCommandResult.Failed,
+            ReplayCommandResult.Failed
         ]);
     });
 
@@ -426,8 +429,8 @@ describe('replay safety decorators', () => {
         warning.mockRestore();
     });
 
-    // 验证用户拥有的勇士属性方法未增加 replay decorator
-    it('does not change user-owned attribute decorator placement', () => {
+    // 验证用户拥有的勇士属性变更方法带有 replay decorator 标注
+    it('annotates user-owned attribute mutations with replay decorators', () => {
         const source = readFileSync(
             new URL(
                 '../../../../data-base/src/hero/attribute.ts',
@@ -435,6 +438,6 @@ describe('replay safety decorators', () => {
             ),
             'utf8'
         );
-        expect(source).not.toContain('shouldReplay');
+        expect(source).toContain('@shouldReplay');
     });
 });

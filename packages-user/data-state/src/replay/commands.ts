@@ -41,16 +41,16 @@ export abstract class BaseReplayCommand implements IReplayCommand {
             const e = expect.length.toString();
             const p = parameter.length.toString();
             logger.error(2001, command, e, p);
-            return ReplayCommandResult.Failed;
+            return false;
         }
 
         return parameter.every((v, i) => {
             const type = typeof v;
             if (type === expect[i]) {
-                return ReplayCommandResult.Success;
+                return true;
             } else {
                 logger.error(2002, command, i.toString(), expect[i], type);
-                return ReplayCommandResult.Failed;
+                return false;
             }
         });
     }
@@ -129,7 +129,7 @@ export class ReplayTeleport
     async wrappedExecute(
         step: IReplayStepHandler
     ): Promise<ReplayCommandResult> {
-        // Parameter: [int16 x, int16 y]
+        // Parameter: [number x, number y]
         const [x, y] = step.params as [number, number];
         const result = this.state.pathfinding.teleportTo({ x, y });
         if (!result) {
@@ -154,7 +154,7 @@ export class ReplayUseItem extends BaseReplayCommand implements IReplayCommand {
     async wrappedExecute(
         step: IReplayStepHandler
     ): Promise<ReplayCommandResult> {
-        // Parameter: [int16 item]
+        // Parameter: [number item]
         const item = step.params[0] as number;
         if (!this.state.hero.items.useItem(item)) {
             logger.error(2006, item.toString());
@@ -175,13 +175,13 @@ export class ReplayEquip extends BaseReplayCommand implements IReplayCommand {
     protected readonly paramTypes: readonly string[] = [
         'number',
         'number',
-        'ReplayCommandResult'
+        'boolean'
     ];
 
     async wrappedExecute(
         step: IReplayStepHandler
     ): Promise<ReplayCommandResult> {
-        // Parameter: [int16 uid, int8 slot, bool autoUnload]
+        // Parameter: [number uid, number slot, boolean autoUnload]
         const [uid, slot, autoUnload] = step.params as [
             number,
             number,
@@ -210,7 +210,7 @@ export class ReplayUnequip extends BaseReplayCommand implements IReplayCommand {
     async wrappedExecute(
         step: IReplayStepHandler
     ): Promise<ReplayCommandResult> {
-        // Parameter: [int8 slot]
+        // Parameter: [number slot]
         const slot = step.params[0] as number;
         const equipment = this.state.hero.equip;
         equipment.unequip(slot);
