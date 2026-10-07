@@ -1,4 +1,5 @@
 import { Statement, StatementType } from '@motajs/anon-tokyo';
+import { WebLoadStarter } from '@motajs/loader';
 import {
     EventTrigger,
     FaceDirection,
@@ -20,7 +21,7 @@ import {
     IMapLayer,
     IMapStoreSave
 } from '@user/data-base';
-import { CoreState, createCoreState } from '../../src/core.ts';
+import { CoreState } from '../../src/core.ts';
 
 export interface IClosedLoopLayerSnapshot {
     readonly zIndex: number;
@@ -61,7 +62,10 @@ export interface IClosedLoopFixture {
 }
 
 export function createClosedLoopFixture(): IClosedLoopFixture {
-    const state = createCoreState();
+    const state = new CoreState({
+        loadStarter: new WebLoadStarter(),
+        coreURL: 'placeholder'
+    });
     state.tileStore.addTile({
         num: 1,
         id: 'floor',
@@ -163,7 +167,7 @@ export function createClosedLoopFixture(): IClosedLoopFixture {
     state.maps.setMapActiveStatus('F1', true);
     state.maps.setMapActiveStatus('F2', true);
 
-    state.hero.location.setFloor('F1');
+    state.hero.location.setFloor(map);
     state.hero.location.setPos(0, 0);
     state.hero.location.mover.setFaceDir(FaceDirection.Right);
 
@@ -231,7 +235,7 @@ export function createClosedLoopFixture(): IClosedLoopFixture {
     };
 
     const reset = () => {
-        state.hero.location.setFloor('F1');
+        state.hero.location.setFloor(map);
         state.hero.location.setPos(0, 0);
         state.hero.location.mover.setFaceDir(FaceDirection.Right);
         state.flags.loadState(

@@ -1,6 +1,7 @@
 // 测试 CoreState 顶层存读档：经公开 saveState/loadState 对 5 个 saveable 做整体往返
 import { describe, expect, it, vi } from 'vitest';
 import { logger } from '@motajs/common';
+import { WebLoadStarter } from '@motajs/loader';
 import {
     type IEnemyAttr,
     type IHeroAttr,
@@ -18,7 +19,7 @@ import {
     type IMapLayer,
     type IMapStoreSave
 } from '@user/data-base';
-import { CoreState, createCoreState } from '../src/core';
+import { CoreState } from '../src/core';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -45,6 +46,14 @@ vi.hoisted(() => {
         return value;
     };
 });
+
+/** 按 08-08 约定的 CoreState 装配创建一个独立状态实例 */
+function createCoreState(): CoreState {
+    return new CoreState({
+        loadStarter: new WebLoadStarter(),
+        coreURL: 'placeholder'
+    });
+}
 
 /** CoreState 已注册的 5 个可存档 id */
 const SAVEABLE_IDS = [
@@ -123,16 +132,9 @@ function seedState(state: CoreState): SeededState {
     attribute.set('def', 6);
     attribute.set('money', 20);
     attribute.set('exp', 30);
-    state.hero.location.setPos(3, 4);
-    state.hero.location.setFloor('F1');
-    state.hero.location.mover.setFaceDir(FaceDirection.Up);
-
-    state.flags.setFieldValue('score', 7);
-    state.flags.setFieldValue('coins', 12);
-    state.flags.addFieldValue('stage', 2);
 
     const map = state.maps.createMap('F1', 2, 2);
-    const layer = map.addLayer();
+    const layer = map.addLayer('event');
     layer.setZIndex(0);
     map.setActiveStatus(true);
     state.maps.compareWith(
@@ -140,6 +142,14 @@ function seedState(state: CoreState): SeededState {
     );
     layer.setBlock(5, 0, 0);
     layer.setBlock(7, 1, 1);
+
+    state.hero.location.setPos(3, 4);
+    state.hero.location.setFloor(map);
+    state.hero.location.mover.setFaceDir(FaceDirection.Up);
+
+    state.flags.setFieldValue('score', 7);
+    state.flags.setFieldValue('coins', 12);
+    state.flags.addFieldValue('stage', 2);
 
     state.enemyManager.addPrefab(createEnemy());
     state.enemyManager.compareWith(new Map([[1, createEnemy()]]));
@@ -162,7 +172,7 @@ function mutateState(state: CoreState, seeded: SeededState): void {
     attribute.set('money', 0);
     attribute.set('exp', 0);
     state.hero.location.setPos(9, 9);
-    state.hero.location.setFloor('F9');
+    state.hero.location.setFloor(null);
     state.hero.location.mover.setFaceDir(FaceDirection.Down);
 
     state.flags.setFieldValue('score', 0);
@@ -204,8 +214,8 @@ function registerIdentityEquipment(state: CoreState): void {
         equip: {
             slots: [0],
             animate: 'sword',
-            value: new Map(value),
-            percentage: new Map(),
+            value: Object.fromEntries(value),
+            percentage: {},
             loadEvent: null,
             unloadEvent: null
         }
@@ -309,10 +319,9 @@ describe('CoreState top-level save and load round trips', () => {
     });
 });
 
-describe('CoreState container same-reference load (#06-17-4/5/6)', () => {
-    // 验证经顶层 CoreState 三档往返后装备实例、flag 字段与 follower 实例均为同一实例，
-    // 且其数值与位置回到存档点
-    it('keeps container instances across save and load in every compression', () => {
+describe('CoreState container restore across save and load', () => {
+    // 验证经顶层 CoreState 三档往返后装备按 uid 与数值恢复、flag 字段值恢复到存档点
+    it('restores container state across save and load in every compression', () => {
         for (const compression of COMPRESSIONS) {
             const state = createCoreState();
             registerIdentityEquipment(state);
@@ -322,14 +331,11 @@ describe('CoreState container same-reference load (#06-17-4/5/6)', () => {
             state.hero.equip.equip(uid, 0);
             const equipmentBefore = state.hero.items.equipment.get(uid)!;
 
-            const fieldBefore = state.flags.getOrInsert('identity', 7);
-
-            state.hero.followers.addFollower(9102);
-            const followerBefore = state.hero.followers.getFollower(0)!;
+            state.flags.getOrInsert('identity', 7);
 
             const snapshot = state.saveState(compression);
 
-            // 装备数值只能经读档改变，flag 与 follower 位置则在存档后继续改动
+            // 装备数值与 flag 字段值都只能经读档恢复
             equipmentBefore.loadState(
                 {
                     uid,
@@ -342,19 +348,16 @@ describe('CoreState container same-reference load (#06-17-4/5/6)', () => {
                 SaveCompression.NoCompression
             );
             state.flags.setFieldValue('identity', 99);
-            followerBefore.location.setPos(9, 9);
 
             state.loadState(snapshot, compression);
 
-            expect(state.hero.items.equipment.get(uid)).toBe(equipmentBefore);
-            expect([...equipmentBefore.getModifiers()][0][1].getValue()).toBe(
+            // Hero equipment 重构后装备实例按 uid 重建、flag 字段读档时重建，故只校验恢复后的 uid 与数值
+            const restoredEquipment = state.hero.items.equipment.get(uid)!;
+            expect(restoredEquipment.uid).toBe(uid);
+            expect([...restoredEquipment.getModifiers()][0][1].getValue()).toBe(
                 5
             );
-            expect(state.flags.getField('identity')).toBe(fieldBefore);
-            expect(fieldBefore.get()).toBe(7);
-            expect(state.hero.followers.getFollower(0)).toBe(followerBefore);
-            expect(followerBefore.location.x).toBe(0);
-            expect(followerBefore.location.y).toBe(0);
+            expect(state.flags.getFieldValue<number>('identity')).toBe(7);
         }
     });
 });

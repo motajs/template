@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { WebLoadStarter } from '@motajs/loader';
 import { SaveCompression } from '@user/data-common';
-import { createCoreState } from '../src/core';
+import { CoreState } from '../src/core';
+
+/** 按 08-08 约定的 CoreState 装配创建一个独立状态实例 */
+function createCoreState(): CoreState {
+    return new CoreState({
+        loadStarter: new WebLoadStarter(),
+        coreURL: 'placeholder'
+    });
+}
 
 describe('Node CoreState factory', () => {
     // 验证无参数工厂创建的状态实例不会共享勇士、地图、事件存储和存档系统
@@ -18,7 +27,7 @@ describe('Node CoreState factory', () => {
 
         const map = first.maps.createMap('isolated-floor', 1, 1);
         map.setActiveStatus(true);
-        const layer = map.addLayer();
+        const layer = map.addLayer('event');
         layer.setMapRef(new Uint32Array([7]));
         expect(second.maps.getMap('isolated-floor')).toBeNull();
 

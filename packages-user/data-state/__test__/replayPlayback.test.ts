@@ -1,9 +1,12 @@
 // 测试录像完整播放与二次录制比对：小地图场景、逐条相等判定、176 与 error 2001-2008
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { logger } from '@motajs/common';
+import { WebLoadStarter } from '@motajs/loader';
 import {
+    Dir4FaceHandler,
     FaceDirection,
     ReplayCode,
+    ReplayCommandResult,
     SaveCompression,
     TileType,
     type IReplayArray,
@@ -11,7 +14,7 @@ import {
     type IReplayStepHandler,
     type ReplayParamValue
 } from '@user/data-common';
-import { type CoreState, createCoreState } from '../src/core';
+import { CoreState } from '../src/core';
 import { DefaultPassPredicateImpl } from '../src/hero/predicate';
 import {
     ReplayEquip,
@@ -48,6 +51,14 @@ vi.hoisted(() => {
 afterEach(() => {
     vi.restoreAllMocks();
 });
+
+/** 按 08-08 约定的 CoreState 装配创建一个独立状态实例 */
+function createCoreState(): CoreState {
+    return new CoreState({
+        loadStarter: new WebLoadStarter(),
+        coreURL: 'placeholder'
+    });
+}
 
 interface IRecordedParam {
     /** 参数运行时类型 */
@@ -106,10 +117,10 @@ function createSmallMapScene(state: CoreState, wireFinder: boolean = true) {
     }
     state.maps.setMapActiveStatus('F1', true);
     if (wireFinder) {
-        state.pathfinding.finder.useMapState(state.maps);
         state.pathfinding.finder.useMapLayer(map.eventLayer);
+        state.pathfinding.finder.useFaceHandler(new Dir4FaceHandler());
         state.pathfinding.finder.usePassPredicate(
-            new DefaultPassPredicateImpl(state.maps)
+            new DefaultPassPredicateImpl(state)
         );
     }
     resetHero(state);
@@ -121,7 +132,7 @@ function createSmallMapScene(state: CoreState, wireFinder: boolean = true) {
  * @param state 顶层状态对象
  */
 function resetHero(state: CoreState): void {
-    state.hero.location.setFloor('F1');
+    state.hero.location.setFloor(state.maps.getMap('F1'));
     state.hero.location.setPos(0, 0);
     state.hero.location.mover.clear();
     state.hero.location.mover.setFaceDir(FaceDirection.Right);
@@ -367,6 +378,7 @@ describe('small-map replay playback and second recording', () => {
             createSmallMapScene(state, false)
         );
         state.pathfinding.finder.useMapLayer(map.eventLayer);
+        state.pathfinding.finder.useFaceHandler(new Dir4FaceHandler());
         await runHeroStep(state, FaceDirection.Right);
         replay.record(ReplayCode.Teleport, 2, 0);
 
@@ -386,13 +398,13 @@ describe('replay playback error codes 2001-2008', () => {
         const teleport = new ReplayTeleport(state);
 
         await expect(move.execute(step(ReplayCode.Up, [1]))).resolves.toBe(
-            false
+            ReplayCommandResult.Failed
         );
         expect(error).toHaveBeenCalledWith(2001, 'move', '0', '1');
 
         await expect(
             teleport.execute(step(ReplayCode.Teleport, ['x', 1]))
-        ).resolves.toBe(false);
+        ).resolves.toBe(ReplayCommandResult.Failed);
         expect(error).toHaveBeenCalledWith(
             2002,
             'teleport',
@@ -411,13 +423,13 @@ describe('replay playback error codes 2001-2008', () => {
         (mover as unknown as { moving: boolean }).moving = true;
 
         await expect(move.execute(step(ReplayCode.Up, []))).resolves.toBe(
-            false
+            ReplayCommandResult.Failed
         );
         expect(error).toHaveBeenCalledWith(2003);
 
         (mover as unknown as { moving: boolean }).moving = false;
         vi.spyOn(mover, 'start').mockReturnValueOnce(null);
-        await expect(move.finalize()).resolves.toBe(false);
+        await expect(move.finalize()).resolves.toBe(ReplayCommandResult.Failed);
         expect(error).toHaveBeenCalledWith(2004);
     });
 
@@ -430,7 +442,7 @@ describe('replay playback error codes 2001-2008', () => {
 
         await expect(
             teleport.execute(step(ReplayCode.Teleport, [4, 5]))
-        ).resolves.toBe(false);
+        ).resolves.toBe(ReplayCommandResult.Failed);
         expect(error).toHaveBeenCalledWith(2005, '4', '5');
     });
 
@@ -443,7 +455,7 @@ describe('replay playback error codes 2001-2008', () => {
 
         await expect(
             useItem.execute(step(ReplayCode.UseItem, [34]))
-        ).resolves.toBe(false);
+        ).resolves.toBe(ReplayCommandResult.Failed);
         expect(error).toHaveBeenCalledWith(2006, '34');
     });
 
@@ -458,7 +470,7 @@ describe('replay playback error codes 2001-2008', () => {
 
         await expect(
             equip.execute(step(ReplayCode.Equip, [99, 1, false]))
-        ).resolves.toBe(false);
+        ).resolves.toBe(ReplayCommandResult.Failed);
         expect(error).toHaveBeenCalledWith(2007, '99', '1');
     });
 
@@ -473,7 +485,7 @@ describe('replay playback error codes 2001-2008', () => {
 
         await expect(
             unequip.execute(step(ReplayCode.Unequip, [1]))
-        ).resolves.toBe(false);
+        ).resolves.toBe(ReplayCommandResult.Failed);
         expect(error).toHaveBeenCalledWith(2008, '1');
     });
 
