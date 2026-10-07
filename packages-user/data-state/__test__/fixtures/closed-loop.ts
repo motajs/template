@@ -150,14 +150,13 @@ export function createClosedLoopFixture(): IClosedLoopFixture {
     }
     const eventLayer = map.eventLayer;
     const eventCompletion = Promise.withResolvers<void>();
-    const eventHook = eventLayer.addHook({
+    eventLayer.addHook({
         onUpdateBlock: (block, x, y) => {
             if (block === 2 && x === 1 && y === 0) {
                 eventCompletion.resolve();
             }
         }
     });
-    eventHook.load();
     const event = new GameEvent(
         state.eventSystem.executor.interpreter,
         rawEvent
