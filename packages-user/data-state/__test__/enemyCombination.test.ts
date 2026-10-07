@@ -1,6 +1,7 @@
 // 测试顶层伤害组合：单特殊属性 / 单光环基线，以及多特殊属性与系统层光环效果组合
 import { describe, expect, it, vi } from 'vitest';
 import { FullRange, logger, type ITileLocator } from '@motajs/common';
+import { WebLoadStarter } from '@motajs/loader';
 import { type IEnemyAttr, type IHeroAttr } from '@user/data-common';
 import {
     Enemy,
@@ -17,11 +18,19 @@ import {
     type IEnemySpecialQueryEffect,
     type IReadonlyEnemyHandler
 } from '@user/data-system';
-import { createCoreState, type CoreState } from '../src/core';
+import { CoreState } from '../src/core';
 import { MainDamageCalculator } from '../src/enemy/calculator';
 import { CommonAuraConverter, GuardAuraConverter } from '../src/enemy/aura';
 import { MainEnemyFinalEffect } from '../src/enemy/final';
 import { type IHaloValue, type IVampireValue } from '../src/enemy/special';
+
+/** 按 08-08 约定的 CoreState 装配创建一个独立状态实例 */
+function createCoreState(): CoreState {
+    return new CoreState({
+        loadStarter: new WebLoadStarter(),
+        coreURL: 'placeholder'
+    });
+}
 
 vi.hoisted(() => {
     Map.prototype.getOrInsert ??= function <K, V>(

@@ -1,5 +1,6 @@
 // 性能测量：CoreState 整体存读档随件数与压缩档的耗时，只记录不断言
 import { afterAll, describe, it, vi } from 'vitest';
+import { WebLoadStarter } from '@motajs/loader';
 import {
     type IEnemyAttr,
     type IHeroAttr,
@@ -9,7 +10,15 @@ import {
     TileType
 } from '@user/data-common';
 import { Enemy } from '@user/data-base';
-import { CoreState, createCoreState } from '../src/core';
+import { CoreState } from '../src/core';
+
+/** 按 08-08 约定的 CoreState 装配创建一个独立状态实例 */
+function createCoreState(): CoreState {
+    return new CoreState({
+        loadStarter: new WebLoadStarter(),
+        coreURL: 'placeholder'
+    });
+}
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -161,8 +170,8 @@ function createItemRaw(
         equip: {
             slots: [0],
             animate: 'sword',
-            value: new Map(),
-            percentage: new Map(),
+            value: {},
+            percentage: {},
             loadEvent: null,
             unloadEvent: null
         }
@@ -195,7 +204,7 @@ function registerItem(state: CoreState, item: IItemRawData<IHeroAttr>): void {
 function createSaveablesFixture(count: number): CoreState {
     const state = createCoreState();
     const map = state.maps.createMap('F1', 2, 2);
-    map.addLayer();
+    map.addLayer('event');
     state.maps.compareWith(
         new Map([['F1', new Map([[0, new Uint32Array(4)]])]])
     );

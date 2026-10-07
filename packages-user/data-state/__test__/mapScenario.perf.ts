@@ -1,5 +1,6 @@
 // 性能测量：13 张真实地图拼接的单一大图下怪物上下文构建与地图伤害构建耗时，只记录不断言
 import { afterAll, describe, it, vi } from 'vitest';
+import { WebLoadStarter } from '@motajs/loader';
 import {
     type IEnemyAttr,
     type IHeroAttr,
@@ -13,9 +14,17 @@ import {
     type ISpecial
 } from '@user/data-base';
 import { type IDamageSystem, type IMapDamage } from '@user/data-system';
-import { CoreState, createCoreState } from '../src/core';
+import { CoreState } from '../src/core';
 import { type IHaloValue, type IZoneValue } from '../src/enemy/special';
 import floorDataset from './fixtures/floors.json';
+
+/** 按 08-08 约定的 CoreState 装配创建一个独立状态实例 */
+function createCoreState(): CoreState {
+    return new CoreState({
+        loadStarter: new WebLoadStarter(),
+        coreURL: 'placeholder'
+    });
+}
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });

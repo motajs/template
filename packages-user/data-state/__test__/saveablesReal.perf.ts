@@ -1,5 +1,6 @@
 // 性能测量：真实 13×13 魔塔地图下 CoreState 存读档耗时，只记录不断言
 import { afterAll, describe, it, vi } from 'vitest';
+import { WebLoadStarter } from '@motajs/loader';
 import {
     type IEnemyAttr,
     type IHeroAttr,
@@ -10,8 +11,16 @@ import {
     TileType
 } from '@user/data-common';
 import { Enemy, ValueModifier } from '@user/data-base';
-import { CoreState, createCoreState } from '../src/core';
+import { CoreState } from '../src/core';
 import floorDataset from './fixtures/floors.json';
+
+/** 按 08-08 约定的 CoreState 装配创建一个独立状态实例 */
+function createCoreState(): CoreState {
+    return new CoreState({
+        loadStarter: new WebLoadStarter(),
+        coreURL: 'placeholder'
+    });
+}
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -267,8 +276,8 @@ function createItemRaw(
         equip: {
             slots: [...EQUIPPED_SLOTS],
             animate: 'sword',
-            value: new Map(value),
-            percentage: new Map(),
+            value: Object.fromEntries(value),
+            percentage: {},
             loadEvent: null,
             unloadEvent: null
         }

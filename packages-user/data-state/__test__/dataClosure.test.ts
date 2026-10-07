@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { WebLoadStarter } from '@motajs/loader';
 import {
     IEnemyAttr,
     IReplaySandbox,
@@ -6,15 +7,25 @@ import {
     IItemRawData,
     ItemCategory,
     ReplaySystem,
+    ReplayCommandResult,
+    ReplayCommandType,
     SaveCompression,
     ReplayCode,
     TileType
 } from '@user/data-common';
 import { IEnemy, IReadonlyHeroAttribute } from '@user/data-base';
 import { IReadonlyEnemyHandler } from '@user/data-system';
-import { createCoreState, CoreState } from '../src/core';
+import { CoreState } from '../src/core';
 import { MainDamageCalculator } from '../src/enemy/calculator';
 import { createClosedLoopFixture } from './fixtures/closed-loop';
+
+/** 按 08-08 约定的 CoreState 装配创建一个独立状态实例 */
+function createCoreState(): CoreState {
+    return new CoreState({
+        loadStarter: new WebLoadStarter(),
+        coreURL: 'placeholder'
+    });
+}
 
 /** 供测试读取的稳定指令码顺序 */
 export const REPLAY_COMMAND_ORDER: readonly ReplayCode[] = [
@@ -51,11 +62,6 @@ vi.hoisted(() => {
         return value;
     };
 });
-
-interface IManualReplaySandbox extends IReplaySandbox {
-    pausing: boolean;
-    playing: boolean;
-}
 
 function createEnemy(): IEnemy<IEnemyAttr> {
     let attrs: IEnemyAttr = {
@@ -138,8 +144,8 @@ function equipAtkItem(state: CoreState): number {
         equip: {
             slots: [0],
             animate: 'sword',
-            value: new Map(value),
-            percentage: new Map(),
+            value: Object.fromEntries(value),
+            percentage: {},
             loadEvent: null,
             unloadEvent: null
         }
@@ -281,11 +287,15 @@ describe('DATA-01 closure', () => {
 
         const replay = new ReplaySystem();
         let laterExecuted = false;
-        replay.registerCommand(0, { execute: async () => false });
+        replay.registerCommand(0, {
+            type: ReplayCommandType.Active,
+            execute: async () => ReplayCommandResult.Failed
+        });
         replay.registerCommand(1, {
+            type: ReplayCommandType.Active,
             execute: async () => {
                 laterExecuted = true;
-                return true;
+                return ReplayCommandResult.Success;
             }
         });
         replay.record(0);
@@ -293,12 +303,10 @@ describe('DATA-01 closure', () => {
         const sandbox = replay.createReplaySandbox({
             route: replay.array,
             reseter: { reset: () => {} }
-        }) as IManualReplaySandbox;
-        sandbox.pausing = false;
-        sandbox.playing = true;
+        });
 
         await expect(sandbox.step()).resolves.toBe(false);
-        expect(sandbox.getReplayed()).toBe(1);
+        expect(sandbox.getReplayed()).toBe(2);
         expect(laterExecuted).toBe(false);
     });
 });
