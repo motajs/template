@@ -10,7 +10,7 @@ last_activity: 2026-10-08
 last_activity_desc: Phase 08 complete, transitioned to Phase 1
 state_head: a39470deeeb38065030757d028c510f16e1e4f04
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 3
   total_plans: 98
   completed_plans: 97
@@ -264,6 +264,8 @@ Recent decisions affecting current work:
 
 - Phase 7 added: 数据端缺陷修复（仅数据端；修复 Phase 6 单元测试暴露的疑似缺陷，使正确预期用例转绿，不含渲染端）
 - Phase 8 added (2026-10-04): 测试重构与接口对齐（测试文件迁入 `__test__` + 按数据端当前接口重对齐 + 细节修复）；承接已 SUPERSEDED 的 07-16；需求 TEST-02
+- Phases 4/5/6 marked obsolete (2026-10-08): 渲染适配与双布局 / Legacy 移植 / 单元测试 的原规划不再合理，由 Phase 9 承接；仅文本标注，未删除阶段目录、已执行 PLAN/SUMMARY 或代码
+- Phase 9 added (2026-10-08): 最小浏览器可运行版本（在已完成且 Node 可运行/回放验证的数据端之上完成渲染端框架，并验证可在浏览器上运行）；Depends on Phase 8
 
 ### Pending Todos
 

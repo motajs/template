@@ -37,12 +37,17 @@
       "number": "7",
       "name": "数据端缺陷修复",
       "status": "pending"
+    },
+    {
+      "number": "8",
+      "name": "测试重构与接口对齐",
+      "status": "complete"
     }
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step",
-    "reason": "Phase 04 of 7 · executing"
+    "label": "Advance to the next step (plan phase 1)",
+    "reason": "Phase 1 of 8 — needs a plan"
   },
-  "updated_at": "2026-09-30T08:10:04.411Z"
+  "updated_at": "2026-10-08T11:12:43.807Z"
 }

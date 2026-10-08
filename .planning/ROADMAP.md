@@ -16,9 +16,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: 事件系统** - blockly 式低代码事件定义，驱动简单场景事件流程（验证已通过，待完成阶段收尾）
 - [ ] **Phase 2: 寻路系统** - 自动寻路与移动端点击地图触发移动
 - [x] **Phase 3: 数据端完成** - 数据端 L0–L3 接口全部落地，可在 Node 环境独立跑回放验证 (completed 2026-09-10)
-- [ ] **Phase 4: 渲染适配与双布局** - 新数据层 ↔ 已重构渲染端对接，支持移动端与桌面端双布局
-- [ ] **Phase 5: Legacy 移植** - 删除被新接口覆盖的旧系统，迁移仍需要的内容
-- [ ] **Phase 6: 单元测试** - 为核心系统补齐单元测试
+- [ ] **Phase 4: 渲染适配与双布局**（已过时） - 新数据层 ↔ 已重构渲染端对接，支持移动端与桌面端双布局
+- [ ] **Phase 5: Legacy 移植**（已过时） - 删除被新接口覆盖的旧系统，迁移仍需要的内容
+- [ ] **Phase 6: 单元测试**（已过时） - 为核心系统补齐单元测试
+- [ ] **Phase 9: 最小浏览器可运行版本** - 在已完成的数据端（Node 可运行）之上完成渲染端框架，并验证可在浏览器上运行
 
 ## Phase Details
 
@@ -169,7 +170,9 @@ Plans:
 
 - [x] 03-05-PLAN.md — DATA-01 focused closure 与四包 type/circular 最终门禁
 
-### Phase 4: 渲染适配与双布局
+### Phase 4: 渲染适配与双布局（已过时）
+
+> **已过时（2026-10-08）**：原规划不再合理，由 Phase 9「最小浏览器可运行版本」承接；保留历史记录，不再据此推进。
 
 **Goal**: 渲染端通过新数据层接口驱动，并同时支持移动端与桌面端布局
 **Depends on**: Phase 3
@@ -256,7 +259,9 @@ Plans:
 
 **UI hint**: yes
 
-### Phase 5: Legacy 移植
+### Phase 5: Legacy 移植（已过时）
+
+> **已过时（2026-10-08）**：原规划不再合理，由 Phase 9「最小浏览器可运行版本」承接；保留历史记录，不再据此推进。
 
 **Goal**: 删除被新接口覆盖的 legacy 系统，迁移仍需要的内容
 **Depends on**: Phases 1-4
@@ -270,7 +275,9 @@ Plans:
 
 **Plans**: TBD
 
-### Phase 6: 单元测试
+### Phase 6: 单元测试（已过时）
+
+> **已过时（2026-10-08）**：原规划不再合理，由 Phase 9「最小浏览器可运行版本」承接；保留历史记录，不再据此推进。
 
 **Goal**: 为核心系统（数据层等）补齐单元测试
 **Depends on**: Phases 1-5
@@ -469,18 +476,30 @@ Plans:
 **Scope note (2026-10-04)**: 由原 `07-16`（寻路重构后的测试对齐，已 SUPERSEDED）转来并扩展，加入「测试文件迁入 `__test__`」的组织重构要求。用户并发进行渲染端收尾，可能触及数据端内容但不改接口设计、不影响测试；AI 不得提交用户改动的文件，发生冲突须暂停汇报。
 **Input (2026-10-04)**: `07-VERIFICATION.md` 的 `### Post-Refactor Test Breakage`（2026-09-17 的 17 行快照）作为对齐起点，但**必须先重测当日失败清单**，不得直接沿用旧快照。
 
+### Phase 9: 最小浏览器可运行版本
+
+**Goal**: 在已完成的数据端（可在 Node 环境独立运行/回放验证）之上完成渲染端框架，产出可在浏览器中运行并验证的最小版本
+**Requirements**: TBD
+**Depends on**: Phase 8
+**Plans**: TBD
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 9 to break down)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9（4/5/6 已过时，实际推进 1 → 2 → 3 → 7 → 8 → 9）
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. 事件系统 | 13/13 | In Progress|  |
 | 2. 寻路系统 | 5/5 | In Progress|  |
 | 3. 数据端完成 | 19/19 | Complete    | 2026-09-12 |
-| 4. 渲染适配与双布局 | 15/16 | In Progress|  |
-| 5. Legacy 移植 | 0/TBD | Not started | - |
-| 6. 单元测试 | 18/18 | In Progress|  |
+| 4. 渲染适配与双布局 | 15/16 | Obsolete（由 Phase 9 承接） | - |
+| 5. Legacy 移植 | 0/TBD | Obsolete（由 Phase 9 承接） | - |
+| 6. 单元测试 | 18/18 | Obsolete（由 Phase 9 承接） | - |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
+| 9. 最小浏览器可运行版本 | 0/TBD | Not started | - |
