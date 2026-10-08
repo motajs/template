@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 08
 current_phase_name: 测试重构与接口对齐
 status: executing
-stopped_at: Completed 08-09-PLAN.md（data-state 集成层对齐：夹具根因 + 寻路注入 + 录像契约 + equip.value Record + tileLegacy 退役；__test__ 54/54、__test__+src 152/152、perf 45/45、eslint 0）
-last_updated: "2026-10-07T11:16:41.386Z"
+stopped_at: "Completed 08-10-PLAN.md（覆盖补测与接口对齐收口：14 缺口码新增断言 + loader.test.ts + 基线测试侧对齐；test:ci 65 文件 727 passed/1 skipped、test:perf 6 文件 54 passed、触达文件 eslint 0）"
+last_updated: "2026-10-08T07:55:18.148Z"
 last_activity: 2026-10-05
 last_activity_desc: Phase 08 execution started
-state_head: 551e63de9af6b6674d35d9cabc0a6a3006710b0f
+state_head: "0b23ff52c077b9917eefb98eb881ebbeae2d958d"
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 98
-  completed_plans: 95
+  completed_plans: 96
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 ## Current Position
 
 Phase: 08 (测试重构与接口对齐) — EXECUTING
-Plan: 5 of 11
+Plan: 10 of 11
 Status: Ready to execute
 Last activity: 2026-10-05 — Phase 08 execution started
 
@@ -105,6 +105,7 @@ Progress: [█████░░░░░] 50%
 | Phase 08 P07 | 40min | 2 tasks | 4 files |
 | Phase 08 P08 | 30min | 2 tasks | 4 files |
 | Phase 08 P09 | 25min | 2 tasks | 10 files |
+| Phase 08 P10 | 80min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -248,6 +249,10 @@ Recent decisions affecting current work:
 - [Phase 08]: [Phase 08] 08-09 Q1（STRICT）：tileLegacy.test.ts 授权退役删除（被测 data-state/src/legacy/tile 已整体删除），不重定向、不伪造替代测试
 - [Phase 08]: [Phase 08] 08-09 Q2–Q4：CoreState 延续 08-08 装配；closed-loop setFloor(真实 IGameMap)；finder 删 useMapState、DefaultPassPredicateImpl(state)、注入 Dir4FaceHandler
 - [Phase 08]: [Phase 08] 08-09 追加对齐：录像命令结果用 ReplayCommandResult + Active；sandbox 走 shipped 自然预读（getReplayed 计预读位）；equip.value 由 Map 改 Record；装备/flag 同引用契约移除后改校验值/uid 恢复；addHook 后不再调 .load()
+- [Phase 08]: 08-10：§9.1 21 缺口码处置=14 码新增 logger.catch 断言 + 5 码（72/170/173/179/183）仅登记既有覆盖 + 2 码（70/68）记为不可达（不写 it.skip）
+- [Phase 08]: 08-10：码 68 为死代码——extraConfigs 为 Map 键去重且 loading/dataLoaded 自始未赋值，同 id 双任务不可能；记录不可达并 surface，不伪造测试
+- [Phase 08]: 08-10：基线 test:ci 测试侧失败按 shipped 对齐——sandbox.test.ts 删 playing=true 预读绕过、mapLifecycle.test.ts 改经 GameMap.resizeLayer；E4 attribute.perf.ts 的 BaseHeroModifier 改自 ../modifier；零生产改动
+- [Phase 08]: 08-10：域外既有 prettier eslint 报错（46 errors/7 文件，含生产 replay/func.ts）存在于 HEAD，未修复，登记 deferred-items
 
 ### Roadmap Evolution
 
@@ -287,6 +292,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-07T11:16:41.103Z
-Stopped at: Completed 08-09-PLAN.md（data-state 集成层对齐：夹具根因 + 寻路注入 + 录像契约 + equip.value Record + tileLegacy 退役；__test__ 54/54、__test__+src 152/152、perf 45/45、eslint 0）
+Last session: 2026-10-08T07:54:51.167Z
+Stopped at: Completed 08-10-PLAN.md（覆盖补测与接口对齐收口：14 缺口码新增断言 + loader.test.ts + 基线测试侧对齐；test:ci 65 文件 727 passed/1 skipped、test:perf 6 文件 54 passed、触达文件 eslint 0）
 Resume file: None

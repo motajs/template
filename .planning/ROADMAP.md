@@ -450,7 +450,7 @@ Plans:
   3. 重构遗漏的细节问题已修复（测试面或经用户确认的数据端细节），不弱化既有断言
   4. `pnpm test:perf` 仍可运行；不新增跳过用例
 
-**Plans**: 9/11 plans executedned（08-01..08-11；规划 2026-10-04，`gsd-plan-checker` 判 PASS / 0 blocker / 3 非阻塞 warning）——迁移 `08-01`（独立先行）→ 子系统对齐 `08-02..08-09` → 错误码与接口覆盖 `08-10` → 收口 `08-11`；每个计划 `autonomous: false`，以 blocking-human Task 0 汇报关卡开头
+**Plans**: 10/11 plans executedned（08-01..08-11；规划 2026-10-04，`gsd-plan-checker` 判 PASS / 0 blocker / 3 非阻塞 warning）——迁移 `08-01`（独立先行）→ 子系统对齐 `08-02..08-09` → 错误码与接口覆盖 `08-10` → 收口 `08-11`；每个计划 `autonomous: false`，以 blocking-human Task 0 汇报关卡开头
 
 Plans:
 
@@ -463,7 +463,7 @@ Plans:
 - [x] 08-07-PLAN.md — data-system path 对齐（`useMapState` 删除、`useFaceHandler` 注入）
 - [x] 08-08-PLAN.md — data-state src 对齐（`createCoreState` 删除→`CoreState({loadStarter,coreURL})`；`coreEventLayer` A1/A2）
 - [x] 08-09-PLAN.md — data-state 集成对齐（共享夹具 `closed-loop.ts`、`tileLegacy` 去留、寻路注入）
-- [ ] 08-10-PLAN.md — 错误码 21 缺口 + loader 公共接口覆盖盘点与补测
+- [x] 08-10-PLAN.md — 错误码 21 缺口 + loader 公共接口覆盖盘点与补测
 - [ ] 08-11-PLAN.md — 收口（`test:ci`+`test:perf` 全绿、skipped=1、零生产改动终审、阶段 SUMMARY）
 
 **Scope note (2026-10-04)**: 由原 `07-16`（寻路重构后的测试对齐，已 SUPERSEDED）转来并扩展，加入「测试文件迁入 `__test__`」的组织重构要求。用户并发进行渲染端收尾，可能触及数据端内容但不改接口设计、不影响测试；AI 不得提交用户改动的文件，发生冲突须暂停汇报。
@@ -483,4 +483,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
-| 8. 测试重构与接口对齐 | 9/11 | In Progress|  |
+| 8. 测试重构与接口对齐 | 10/11 | In Progress|  |
