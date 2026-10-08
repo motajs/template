@@ -4,16 +4,16 @@ milestone: v1.0
 current_phase: 08
 current_phase_name: 测试重构与接口对齐
 status: executing
-stopped_at: "Completed 08-10-PLAN.md（覆盖补测与接口对齐收口：14 缺口码新增断言 + loader.test.ts + 基线测试侧对齐；test:ci 65 文件 727 passed/1 skipped、test:perf 6 文件 54 passed、触达文件 eslint 0）"
-last_updated: "2026-10-08T07:55:18.148Z"
+stopped_at: "Completed 08-11-PLAN.md（Phase 8 收口：test:ci 65 文件 727 passed/1 skipped、test:perf 6 文件 54 passed、四包 eslint 0 errors；4 测试文件纯格式修复 + 10 文件 D-10 台账）"
+last_updated: "2026-10-08T08:35:16.289Z"
 last_activity: 2026-10-05
 last_activity_desc: Phase 08 execution started
-state_head: "0b23ff52c077b9917eefb98eb881ebbeae2d958d"
+state_head: d4cbc514f7f0d198684c602a36d66adb3e4f988e
 progress:
   total_phases: 8
-  completed_phases: 2
+  completed_phases: 0
   total_plans: 98
-  completed_plans: 96
+  completed_plans: 97
 milestone_name: milestone
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 ## Current Position
 
 Phase: 08 (测试重构与接口对齐) — EXECUTING
-Plan: 10 of 11
+Plan: 11 of 11
 Status: Ready to execute
 Last activity: 2026-10-05 — Phase 08 execution started
 
@@ -106,6 +106,7 @@ Progress: [█████░░░░░] 50%
 | Phase 08 P08 | 30min | 2 tasks | 4 files |
 | Phase 08 P09 | 25min | 2 tasks | 10 files |
 | Phase 08 P10 | 80min | 3 tasks | 10 files |
+| Phase 08 P11 | 全绿门禁+纯格式+收口摘要 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -253,6 +254,9 @@ Recent decisions affecting current work:
 - [Phase 08]: 08-10：码 68 为死代码——extraConfigs 为 Map 键去重且 loading/dataLoaded 自始未赋值，同 id 双任务不可能；记录不可达并 surface，不伪造测试
 - [Phase 08]: 08-10：基线 test:ci 测试侧失败按 shipped 对齐——sandbox.test.ts 删 playing=true 预读绕过、mapLifecycle.test.ts 改经 GameMap.resizeLayer；E4 attribute.perf.ts 的 BaseHeroModifier 改自 ../modifier；零生产改动
 - [Phase 08]: 08-10：域外既有 prettier eslint 报错（46 errors/7 文件，含生产 replay/func.ts）存在于 HEAD，未修复，登记 deferred-items
+- [Phase 08]: [Phase 08]: 08-11 Q1：收口验收口径更正为 test:ci 65 文件（数据 64 + script 1）/727 passed/1 skipped/0 failed、test:perf 6 文件/54 passed/0 failed；65 = 66 − 2 退役（common/utils.test.ts、tileLegacy.test.ts）+ 1 新增（loader.test.ts）
+- [Phase 08]: [Phase 08]: 08-11 Q2=(a)：授权对 4 个测试文件（enemy/__test__/{manager,saveLoad}.test.ts、hero/__test__/{follower,location}.test.ts）做纯格式修复，style(08-11) 提交；不改断言/不删 it/不加 skip/不碰生产
+- [Phase 08]: [Phase 08]: 08-11 Q3：收口生产终审为 10 文件 D-10 台账对账（replay/sandbox.ts、enemy/types.ts、hero/location.ts、hero/equipment.ts、map/{eventView,mapLayer,tile,types}.ts、path/graph.ts、replay/commands.ts），不宣称零生产改动；未决清单含 68/70 不可达、transferToDynamic 未物化覆盖、no-console 警告、setFloor(null) 已闭合
 
 ### Roadmap Evolution
 
@@ -292,6 +296,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-08T07:54:51.167Z
-Stopped at: Completed 08-10-PLAN.md（覆盖补测与接口对齐收口：14 缺口码新增断言 + loader.test.ts + 基线测试侧对齐；test:ci 65 文件 727 passed/1 skipped、test:perf 6 文件 54 passed、触达文件 eslint 0）
+Last session: 2026-10-08T08:35:16.088Z
+Stopped at: Completed 08-11-PLAN.md（Phase 8 收口：test:ci 65 文件 727 passed/1 skipped、test:perf 6 文件 54 passed、四包 eslint 0 errors；4 测试文件纯格式修复 + 10 文件 D-10 台账）
 Resume file: None
