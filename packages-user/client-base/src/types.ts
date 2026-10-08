@@ -1,12 +1,22 @@
 import { IExcitation, IExcitationDivider } from '@motajs/animate';
 import { IRenderTreeRoot } from '@motajs/render';
 import { IRendererUsing } from '@motajs/render-vue';
-import { UIController } from '@motajs/system';
+import {
+    IUIController,
+    IUIDefaultPropsBase,
+    UIComponent
+} from '@motajs/system';
 import { IBGMPlayer, IMotaAudioContext, ISoundPlayer } from '@motajs/audio';
 import { ICoreState } from '@user/data-state';
 import { ISaveSystem } from './save';
 import { ITextureManager } from './material';
 import { IMapRenderer, IMapExtensionManager } from './map';
+
+export interface IGameUIPropsBase<
+    T extends UIComponent = UIComponent
+> extends IUIDefaultPropsBase<T> {
+    readonly state: IClientBase;
+}
 
 export interface IClientBase extends ICoreState {
     /** 存档系统 */
@@ -34,9 +44,9 @@ export interface IClientBase extends ICoreState {
     /** 渲染器使用对象，供组件内注册渲染激励与事件监听 */
     readonly using: IRendererUsing;
     /** 主场景的 UI 控制器，管理游戏主场景的 UI 显示 */
-    readonly sceneController: UIController;
+    readonly sceneController: IUIController<IGameUIPropsBase>;
     /** 主界面的 UI 控制器，管理游戏主界面的 UI 显示 */
-    readonly mainUIController: UIController;
+    readonly mainUIController: IUIController<IGameUIPropsBase>;
 }
 
 export interface IClientBaseExtended {

@@ -6,7 +6,8 @@ import {
     UIComponent,
     IUIDefaultPropsBase,
     IUICustomStrategy,
-    UIRawProps
+    UIRawProps,
+    UIPropsBaseCreator
 } from './types';
 import { UIInstance } from './instance';
 import {
@@ -20,6 +21,7 @@ import {
     VNode
 } from 'vue';
 import { UIContainer } from './container';
+import { logger } from '@motajs/common';
 
 export class UIController<
     PB extends IUIDefaultPropsBase<any>
@@ -34,6 +36,8 @@ export class UIController<
 
     /** 当前的自定义 UI 控制策略 */
     private strategy: IUICustomStrategy<PB>;
+    /** UI 基础参数的构造函数 */
+    private creator: UIPropsBaseCreator<PB> | null = null;
 
     /** 是否维持背景 UI */
     private keepBack: boolean = false;
@@ -50,6 +54,20 @@ export class UIController<
             () => this.userShowBack.value && this.sysShowBack.value
         );
         this.strategy = new UILastOnlyStrategy();
+    }
+
+    setPropsBaseCreator(creator: UIPropsBaseCreator<PB> | null): void {
+        this.creator = creator;
+    }
+
+    createPropsBase(instance: IUIInstance<UIComponent, PB>): PB {
+        if (!this.creator) {
+            logger.error(74);
+            // @ts-expect-error 不存在构造函数时的
+            return { instance, controller: this } as PB;
+        } else {
+            return this.creator(instance, this);
+        }
     }
 
     setBackground<C extends UIComponent>(

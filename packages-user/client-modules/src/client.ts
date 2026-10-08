@@ -13,7 +13,8 @@ import {
     ITextureManager,
     TextureManager,
     ISaveSystem,
-    SaveSystem
+    SaveSystem,
+    IGameUIPropsBase
 } from '@user/client-base';
 import {
     IMapRenderer,
@@ -38,9 +39,10 @@ import {
 } from './shared';
 import { WebLoadStarter } from '@motajs/loader';
 import { IRendererUsing, RendererUsing } from '@motajs/render-vue';
-import { UIController } from '@motajs/system';
+import { IUIController, UIController } from '@motajs/system';
 import { createApp } from './render';
 import { LoadSceneUI } from './render/ui/load';
+import { createUIPropsBase } from './ui/func';
 
 export class ClientCore extends CoreState implements IClientCore {
     // Layer 4 渲染基础层
@@ -56,8 +58,8 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly mainMapRenderer: IMapRenderer;
     readonly expandMapRenderer: IMapRenderer;
     readonly mainMapExtension: IMapExtensionManager;
-    readonly sceneController: UIController;
-    readonly mainUIController: UIController;
+    readonly sceneController: IUIController<IGameUIPropsBase>;
+    readonly mainUIController: IUIController<IGameUIPropsBase>;
 
     // Layer 5 渲染顶层
 
@@ -121,8 +123,11 @@ export class ClientCore extends CoreState implements IClientCore {
         this.mainMapRenderer = new MapRenderer(this.materials);
         this.mainMapExtension = new MapExtensionManager(this.mainMapRenderer);
         this.expandMapRenderer = new MapRenderer(this.materials);
-        this.sceneController = new UIController('main-scene');
-        this.mainUIController = new UIController('main-ui');
+        this.sceneController = new UIController<IGameUIPropsBase>();
+        this.mainUIController = new UIController<IGameUIPropsBase>();
+        const pbCreator = createUIPropsBase(this);
+        this.sceneController.setPropsBaseCreator(pbCreator);
+        this.mainUIController.setPropsBaseCreator(pbCreator);
 
         //#endregion
 
@@ -131,6 +136,9 @@ export class ClientCore extends CoreState implements IClientCore {
         this.init();
     }
 
+    /**
+     * 初始化渲染端主对象
+     */
     private async init() {
         createApp(this.sceneController.render()).mount(this.renderer);
         this.sceneController.open(LoadSceneUI, {});

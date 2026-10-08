@@ -112,6 +112,14 @@ export type UIRawProps<
     PB extends IUIDefaultPropsBase<any>
 > = Omit<Props<C>, keyof PB>;
 
+/**
+ * UI 基础 Props 参数的构造函数
+ */
+export type UIPropsBaseCreator<PB extends IUIDefaultPropsBase<any>> = (
+    instance: IUIInstance<UIComponent, PB>,
+    controller: IUIController<PB>
+) => PB;
+
 export interface IUIController<PB extends IUIDefaultPropsBase<any>> {
     /** 当前的 UI 栈 */
     readonly stack: IUIInstance[];
@@ -124,6 +132,18 @@ export interface IUIController<PB extends IUIDefaultPropsBase<any>> {
     readonly active: Ref<boolean>;
     /** 当前是否显示背景的响应式对象，用于容器响应式判断是否需要显示背景 */
     readonly showBack: Ref<boolean>;
+
+    /**
+     * 设置基础参数的构造函数
+     * @param creator UI 基础 Props 参数的构造函数
+     */
+    setPropsBaseCreator(creator: UIPropsBaseCreator<PB> | null): void;
+
+    /**
+     * 创建对应 UI 实例对象的基础参数
+     * @param instance UI 实例对象
+     */
+    createPropsBase(instance: IUIInstance<UIComponent, PB>): PB;
 
     /**
      * 设置控制器的背景 UI

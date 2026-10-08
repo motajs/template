@@ -30,16 +30,18 @@ export const UIContainer = defineComponent<IUIContainerProps>(props => {
             );
         }
         return elements.concat(
-            data.stack.map((v, i) => (
-                <v.ui.component
-                    {...v.vBind}
-                    key={v.key}
-                    controller={data}
-                    instance={v}
-                    hidden={v.hidden.value}
-                    zIndex={i * 5}
-                ></v.ui.component>
-            ))
+            data.stack.map((v, i) => {
+                const pb = data.createPropsBase(v);
+                return (
+                    <v.ui.component
+                        {...v.vBind}
+                        {...pb}
+                        key={v.key}
+                        hidden={v.hidden.value}
+                        zIndex={i * 5}
+                    ></v.ui.component>
+                );
+            })
         );
     };
 }, containerConfig);
