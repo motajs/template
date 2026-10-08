@@ -167,16 +167,6 @@ export interface IEnemyManager<TAttr> extends ISaveableContent<
     registerSpecial(code: number, cons: SpecialCreation<any, TAttr>): void;
 
     /**
-     * 注册一个怪物属性
-     * @param name 属性名称
-     * @param defaultValue 属性默认值
-     */
-    setAttributeDefaults<K extends keyof TAttr>(
-        name: K,
-        defaultValue: TAttr[K]
-    ): void;
-
-    /**
      * 创建怪物对象，如果对应数字的怪物不存在则会返回 `null`
      * @param token 怪物图块数字或 id
      */

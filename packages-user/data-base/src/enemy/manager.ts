@@ -17,8 +17,6 @@ export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
         number,
         SpecialCreation<any, TEnemy>
     > = new Map();
-    /** 自定义怪物属性注册表，name -> 默认值 */
-    private readonly attributeRegistry: Map<keyof TEnemy, any> = new Map();
     /** 怪物模板表，code -> IEnemy */
     private readonly prefabByCode: Map<number, IEnemy<TEnemy>> = new Map();
     /** 复用映射，reusedCode -> sourceCode */
@@ -36,22 +34,6 @@ export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
 
     registerSpecial(code: number, cons: SpecialCreation<any, TEnemy>): void {
         this.specialRegistry.set(code, cons);
-    }
-
-    setAttributeDefaults<K extends keyof TEnemy>(
-        name: K,
-        defaultValue: TEnemy[K]
-    ): void {
-        if (
-            typeof defaultValue === 'function' ||
-            typeof defaultValue === 'symbol' ||
-            typeof defaultValue === 'bigint' ||
-            typeof defaultValue === 'undefined'
-        ) {
-            logger.error(53);
-            return;
-        }
-        this.attributeRegistry.set(name, defaultValue);
     }
 
     /**

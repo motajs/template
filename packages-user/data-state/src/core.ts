@@ -149,12 +149,6 @@ export class CoreState implements ICoreState {
         const comparer = new MainEnemyComparer();
         const enemyManager = new EnemyManager<IEnemyAttr>(this.tileStore);
         enemyManager.attachEnemyComparer(comparer);
-        enemyManager.setAttributeDefaults('hp', 0);
-        enemyManager.setAttributeDefaults('atk', 0);
-        enemyManager.setAttributeDefaults('def', 0);
-        enemyManager.setAttributeDefaults('exp', 0);
-        enemyManager.setAttributeDefaults('money', 0);
-        enemyManager.setAttributeDefaults('point', 0);
         registerSpecials(enemyManager);
         this.enemyManager = enemyManager;
 
