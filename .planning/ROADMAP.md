@@ -450,7 +450,7 @@ Plans:
   3. 重构遗漏的细节问题已修复（测试面或经用户确认的数据端细节），不弱化既有断言
   4. `pnpm test:perf` 仍可运行；不新增跳过用例
 
-**Plans**: 11/11 plans executedned（08-01..08-11；规划 2026-10-04，`gsd-plan-checker` 判 PASS / 0 blocker / 3 非阻塞 warning）——迁移 `08-01`（独立先行）→ 子系统对齐 `08-02..08-09` → 错误码与接口覆盖 `08-10` → 收口 `08-11`；每个计划 `autonomous: false`，以 blocking-human Task 0 汇报关卡开头
+**Plans**: 11/11 plans completened（08-01..08-11；规划 2026-10-04，`gsd-plan-checker` 判 PASS / 0 blocker / 3 非阻塞 warning）——迁移 `08-01`（独立先行）→ 子系统对齐 `08-02..08-09` → 错误码与接口覆盖 `08-10` → 收口 `08-11`；每个计划 `autonomous: false`，以 blocking-human Task 0 汇报关卡开头
 
 Plans:
 
@@ -483,4 +483,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Legacy 移植 | 0/TBD | Not started | - |
 | 6. 单元测试 | 18/18 | In Progress|  |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
-| 8. 测试重构与接口对齐 | 11/11 | In Progress|  |
+| 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
