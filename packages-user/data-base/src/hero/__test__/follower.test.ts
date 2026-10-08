@@ -116,12 +116,11 @@ describe('HeroFollowersController members', () => {
     it('appends followers at the hero locator and notifies the add hook', () => {
         const env = createController();
         const added: [number, number][] = [];
-        env.controller
-            .addHook({
-                onAddFollower: (follower, index) => {
-                    added.push([follower.num, index]);
-                }
-            });
+        env.controller.addHook({
+            onAddFollower: (follower, index) => {
+                added.push([follower.num, index]);
+            }
+        });
         env.location.setPos(2, 3);
         env.location.mover.setFaceDir(FaceDirection.Up);
 
@@ -177,12 +176,11 @@ describe('HeroFollowersController members', () => {
     it('removes one or all followers and notifies the remove hook', async () => {
         const env = createController();
         const removed: number[] = [];
-        env.controller
-            .addHook({
-                onRemoveFollower: (_follower, index) => {
-                    removed.push(index);
-                }
-            });
+        env.controller.addHook({
+            onRemoveFollower: (_follower, index) => {
+                removed.push(index);
+            }
+        });
         env.controller.addFollower(100);
         const second = env.controller.addFollower(100);
 
@@ -204,12 +202,11 @@ describe('HeroFollowersController gathering', () => {
     it('gathers followers synchronously onto the hero', () => {
         const env = createController();
         const gathered: boolean[] = [];
-        env.controller
-            .addHook({
-                onGatherFollowers: sync => {
-                    gathered.push(sync);
-                }
-            });
+        env.controller.addHook({
+            onGatherFollowers: sync => {
+                gathered.push(sync);
+            }
+        });
         const follower = env.controller.addFollower(100);
         env.location.setPos(5, 6);
         env.location.mover.setFaceDir(FaceDirection.Right);
@@ -229,12 +226,11 @@ describe('HeroFollowersController gathering', () => {
         const env = createController();
         const follower = env.controller.addFollower(100);
         const gathered: boolean[] = [];
-        env.controller
-            .addHook({
-                onGatherFollowers: sync => {
-                    gathered.push(sync);
-                }
-            });
+        env.controller.addHook({
+            onGatherFollowers: sync => {
+                gathered.push(sync);
+            }
+        });
         env.location.mover.useTopImplementation(new FakeTopImpl());
         follower.location.mover.useTopImplementation(new FakeTopImpl());
 
@@ -270,11 +266,10 @@ describe('HeroFollowersController same-reference restore (#06-17-6)', () => {
         const env = createController();
         const added: number[] = [];
         const removed: number[] = [];
-        env.controller
-            .addHook({
-                onAddFollower: (_follower, index) => added.push(index),
-                onRemoveFollower: (_follower, index) => removed.push(index)
-            });
+        env.controller.addHook({
+            onAddFollower: (_follower, index) => added.push(index),
+            onRemoveFollower: (_follower, index) => removed.push(index)
+        });
         const follower = env.controller.addFollower(100);
         follower.location.setPos(2, 3);
         follower.rendering.setAlpha(0.5);
@@ -298,11 +293,10 @@ describe('HeroFollowersController same-reference restore (#06-17-6)', () => {
         const env = createController();
         const added: number[] = [];
         const removed: number[] = [];
-        env.controller
-            .addHook({
-                onAddFollower: (_follower, index) => added.push(index),
-                onRemoveFollower: (_follower, index) => removed.push(index)
-            });
+        env.controller.addHook({
+            onAddFollower: (_follower, index) => added.push(index),
+            onRemoveFollower: (_follower, index) => removed.push(index)
+        });
         const follower = env.controller.addFollower(100);
         const save = follower.saveState(SaveCompression.NoCompression);
 
@@ -321,10 +315,9 @@ describe('HeroFollowersController same-reference restore (#06-17-6)', () => {
     it('deletes trailing followers absent from the save', () => {
         const env = createController();
         const removed: number[] = [];
-        env.controller
-            .addHook({
-                onRemoveFollower: (_follower, index) => removed.push(index)
-            });
+        env.controller.addHook({
+            onRemoveFollower: (_follower, index) => removed.push(index)
+        });
         const first = env.controller.addFollower(100);
         env.controller.addFollower(100);
 
@@ -341,10 +334,9 @@ describe('HeroFollowersController same-reference restore (#06-17-6)', () => {
     it('appends followers missing from the live list', () => {
         const env = createController();
         const added: number[] = [];
-        env.controller
-            .addHook({
-                onAddFollower: (_follower, index) => added.push(index)
-            });
+        env.controller.addHook({
+            onAddFollower: (_follower, index) => added.push(index)
+        });
         const first = env.controller.addFollower(100);
         const save = first.saveState(SaveCompression.NoCompression);
 

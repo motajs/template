@@ -1,11 +1,7 @@
 // 测试怪物数据模型存读档：Enemy/special/EnemyManager 同实例往返、压缩档与码 119/120
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { SaveCompression, TileStore } from '@user/data-common';
-import {
-    type IEnemy,
-    type IEnemyManager,
-    type ISpecial
-} from '../types';
+import { type IEnemy, type IEnemyManager, type ISpecial } from '../types';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });

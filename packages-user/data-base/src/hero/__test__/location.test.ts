@@ -84,12 +84,11 @@ describe('HeroLocation position and floor', () => {
     it('updates the position and notifies the onSetPos hook', () => {
         const location = createLocation();
         const calls: [number, number][] = [];
-        location
-            .addHook({
-                onSetPos: (x, y) => {
-                    calls.push([x, y]);
-                }
-            });
+        location.addHook({
+            onSetPos: (x, y) => {
+                calls.push([x, y]);
+            }
+        });
 
         location.setPos(7, 9);
 

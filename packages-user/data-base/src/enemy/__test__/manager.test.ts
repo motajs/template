@@ -1,11 +1,7 @@
 // 测试 EnemyManager 的注册表、模板增删改查、复用映射与比较器脏跟踪
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ITileRawData, TileStore, TileType } from '@user/data-common';
-import {
-    type IEnemy,
-    type IEnemyComparer,
-    type IEnemyManager
-} from '../types';
+import { type IEnemy, type IEnemyComparer, type IEnemyManager } from '../types';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -223,7 +219,10 @@ describe('EnemyManager prefab CRUD', () => {
 
     // 验证 deletePrefab 按 code 与按 id 都会移除模板
     it('deletes a prefab by code or id', () => {
-        const manager = createManager([[1, 'slime'], [2, 'bat']]);
+        const manager = createManager([
+            [1, 'slime'],
+            [2, 'bat']
+        ]);
         manager.addPrefab(createPrefab(1, 'slime'));
         manager.addPrefab(createPrefab(2, 'bat'));
 
@@ -242,7 +241,10 @@ describe('EnemyManager prefab CRUD', () => {
 
     // 验证 changePrefab 替换模板，并在 code 变化时重建索引
     it('replaces a prefab and reindexes when its code changes', () => {
-        const manager = createManager([[1, 'slime'], [2, 'bat']]);
+        const manager = createManager([
+            [1, 'slime'],
+            [2, 'bat']
+        ]);
         manager.addPrefab(createPrefab(1, 'slime'));
 
         manager.changePrefab(1, createPrefab(1, 'slime', { hp: 50 }));
@@ -261,7 +263,10 @@ describe('EnemyManager prefab CRUD', () => {
 describe('EnemyManager reuse mapping', () => {
     // 验证复用注册后按复用 code 与复用 id 读取都解析到来源模板
     it('resolves reused codes and ids to the source prefab on reads', () => {
-        const manager = createManager([[1, 'slime'], [100, 'slime-reuse']]);
+        const manager = createManager([
+            [1, 'slime'],
+            [100, 'slime-reuse']
+        ]);
         manager.addPrefab(createPrefab(1, 'slime'));
 
         manager.reusePrefab(1, 100);
@@ -285,7 +290,10 @@ describe('EnemyManager reuse mapping', () => {
 
     // 验证 createEnemy 按复用 code 与 id 解析到来源模板并生成独立怪物
     it('creates enemies for reused codes and ids through the reuse mapping', () => {
-        const manager = createManager([[1, 'slime'], [100, 'slime-reuse']]);
+        const manager = createManager([
+            [1, 'slime'],
+            [100, 'slime-reuse']
+        ]);
         manager.addPrefab(createPrefab(1, 'slime'));
         manager.reusePrefab(1, 100);
 
@@ -378,7 +386,10 @@ describe('EnemyManager modifyPrefabAttribute', () => {
 
     // 验证回调返回新对象且 code 变化时重建索引
     it('rebuilds the indexes when a modification changes code', () => {
-        const manager = createManager([[1, 'slime'], [2, 'bat']]);
+        const manager = createManager([
+            [1, 'slime'],
+            [2, 'bat']
+        ]);
         manager.addPrefab(createPrefab(1, 'slime'));
 
         manager.modifyPrefabAttribute(1, () =>
