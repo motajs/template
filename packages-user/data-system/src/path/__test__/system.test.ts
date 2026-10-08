@@ -610,4 +610,16 @@ describe('pathfinding system', () => {
         await result!.controller.onEnd;
         expect(result!.controller.done).toBe(true);
     });
+
+    // 验证向求解器绑定属于其他 CoreState 的图层时告警码 182 并不建立绑定
+    it('warns code 182 when binding a layer from another CoreState', () => {
+        const a = createSystem([1, 1, 1], 3);
+        const b = createSystem([1, 1, 1], 3);
+
+        const result = modules.logger.catch(() =>
+            a.system.finder.useMapLayer(b.layer)
+        );
+
+        expect(result.info.map(info => info.code)).toContain(182);
+    });
 });

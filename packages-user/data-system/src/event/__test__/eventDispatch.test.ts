@@ -16,6 +16,7 @@ import {
     type IGameEventInvocation
 } from '../types';
 import { AnonTokyoInterpreter } from '@motajs/anon-tokyo';
+import { logger } from '@motajs/common';
 import { IStateBase } from '@user/data-base';
 
 vi.hoisted(() => {
@@ -523,6 +524,37 @@ describe('event execute modes and reductions', () => {
             )
         ).resolves.toEqual([true]);
         expect(calls).toEqual(['valid']);
+    });
+
+    // 验证事件 id 不在事件存储时告警码 171 并跳过该事件
+    it('warns code 171 for an event id missing from the store', async () => {
+        const fixture = createFixture();
+        const warn = vi.spyOn(logger, 'warn');
+
+        await fixture.executor.execute(
+            [invocation('missing', modules.EventTrigger.OnEnter)],
+            { custom: {} }
+        );
+
+        expect(warn).toHaveBeenCalledWith(171, 'missing');
+    });
+
+    // 验证折叠时事件返回非布尔值告警码 172 并按短路语义继续
+    it('warns code 172 for a non-boolean event result during reduction', async () => {
+        const fixture = createFixture();
+        const warn = vi.spyOn(logger, 'warn');
+        fixture.events.set('non-bool', {
+            trigger: modules.EventTrigger.OnEnter,
+            execute: async () => 5
+        });
+        fixture.executor.setReduce(modules.EventReduceMode.OrReduce);
+
+        await fixture.executor.execute(
+            [invocation('non-bool', modules.EventTrigger.OnEnter)],
+            { custom: {} }
+        );
+
+        expect(warn).toHaveBeenCalledWith(172, '5');
     });
 });
 

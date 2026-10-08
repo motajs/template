@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { WebLoadStarter } from '@motajs/loader';
+import { logger } from '@motajs/common';
 import { Statement, StatementType } from '@motajs/anon-tokyo';
 import {
     FaceDirection,
@@ -153,6 +154,20 @@ describe('event built-ins', () => {
             fixture.env
         );
         expect(fixture.layer.getBlock(1, 0)).toBe(2);
+    });
+
+    // 验证 setBlock 遇到未注册图块时告警码 1001 并跳过
+    it('warns code 1001 when setBlock receives an unknown tile', async () => {
+        const fixture = createFixture();
+        const warn = vi.spyOn(logger, 'warn');
+
+        await invokeBuiltin(
+            getRegistration('setBlock'),
+            { x: 1, y: 0, tile: 'missing' },
+            fixture.env
+        );
+
+        expect(warn).toHaveBeenCalledWith(1001);
     });
 
     // 验证真实注册项移动动态图块并按 safe 分支还原
