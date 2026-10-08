@@ -1,6 +1,7 @@
 // 性能测量：勇士属性修饰器重算随修饰器数量的耗时，只记录不断言
 import { afterAll, describe, it, vi } from 'vitest';
-import { BaseHeroModifier, HeroAttribute } from '../attribute';
+import { HeroAttribute } from '../attribute';
+import { BaseHeroModifier } from '../modifier';
 import { type IHeroModifier } from '../types';
 
 vi.hoisted(() => {
