@@ -23,11 +23,6 @@ afterAll(() => {
     vi.unstubAllGlobals();
 });
 
-interface IManualReplaySandbox extends IReplaySandbox {
-    playing: boolean;
-    pausing: boolean;
-}
-
 // 构造一个可注入执行与收尾行为的主动录像命令
 function createCommand(
     execute: (step: IReplayStepHandler) => Promise<ReplayCommandResult>,
@@ -38,18 +33,12 @@ function createCommand(
         : { type: ReplayCommandType.Active, execute };
 }
 
-// 用录像系统构造一个可手动驱动的录像沙箱
-function createSandbox(system: ReplaySystem): IManualReplaySandbox {
+// 用录像系统构造一个可单步驱动的录像沙箱
+function createSandbox(system: ReplaySystem): IReplaySandbox {
     return system.createReplaySandbox({
         route: system.array,
         reseter: { reset: () => {} }
-    }) as IManualReplaySandbox;
-}
-
-// 将沙箱置为手动步进的播放状态
-function start(sandbox: IManualReplaySandbox): void {
-    sandbox.playing = true;
-    sandbox.pausing = false;
+    });
 }
 
 // 有界等待播放结束，避免不终止的播放循环挂起测试
@@ -84,7 +73,6 @@ describe('ReplaySandbox stepping', () => {
                 stepped.push(step);
             }
         });
-        start(sandbox);
 
         await expect(sandbox.step()).resolves.toBe(true);
 
@@ -116,7 +104,6 @@ describe('ReplaySandbox stepping', () => {
         system.record(1);
         system.record(2);
         const sandbox = createSandbox(system);
-        start(sandbox);
 
         await expect(sandbox.step()).resolves.toBe(false);
 
@@ -131,7 +118,6 @@ describe('ReplaySandbox stepping', () => {
         const system = new ReplaySystem();
         system.record(9);
         const sandbox = createSandbox(system);
-        start(sandbox);
 
         await expect(sandbox.step()).resolves.toBe(false);
 
@@ -165,7 +151,6 @@ describe('ReplaySandbox stepping', () => {
         system.record(1);
         system.record(2);
         const sandbox = createSandbox(system);
-        start(sandbox);
 
         await expect(sandbox.step()).resolves.toBe(true);
         await expect(sandbox.step()).resolves.toBe(true);
@@ -191,7 +176,6 @@ describe('ReplaySandbox stepping', () => {
         system.record(1);
         system.record(2);
         const sandbox = createSandbox(system);
-        start(sandbox);
 
         await expect(sandbox.step()).resolves.toBe(true);
         await expect(sandbox.step()).resolves.toBe(false);
@@ -209,7 +193,8 @@ describe('ReplaySandbox stepping', () => {
         );
         system.record(1);
         const sandbox = createSandbox(system);
-        start(sandbox);
+        // 先自然步进一次使沙箱进入播放态，再使读取流过期
+        await expect(sandbox.step()).resolves.toBe(true);
         system.array.add(1, []);
 
         await expect(sandbox.step()).resolves.toBe(false);
@@ -235,12 +220,43 @@ describe('ReplaySandbox stepping', () => {
             route: system.array,
             reseter: { reset: () => {} },
             startIndex: 2
-        }) as IManualReplaySandbox;
-        start(sandbox);
+        });
 
         expect(sandbox.getReplayed()).toBe(2);
         await expect(sandbox.step()).resolves.toBe(true);
         expect(executed).toEqual([3]);
+    });
+
+    // 验证无待播被动步时调用 getPassive 触发错误码 73 并返回 null
+    it('errors code 73 when getPassive is called with no pending passive step', () => {
+        const error = vi.spyOn(logger, 'error').mockImplementation(() => {});
+        const system = new ReplaySystem();
+        const sandbox = createSandbox(system);
+
+        expect(sandbox.getPassive()).toBeNull();
+        expect(error).toHaveBeenCalledWith(73);
+    });
+
+    // 验证主动步之后出现被动步时告警码 194 并继续忽略该被动步
+    it('warns code 194 when a passive step follows an active step', async () => {
+        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+        const system = new ReplaySystem();
+        system.registerCommand(
+            1,
+            createCommand(async () => ReplayCommandResult.Success)
+        );
+        system.registerCommand(2, {
+            type: ReplayCommandType.Passive,
+            execute: async () => ReplayCommandResult.Success
+        });
+        system.record(1);
+        system.record(2);
+        const sandbox = createSandbox(system);
+
+        await expect(sandbox.step()).resolves.toBe(true);
+        await expect(sandbox.step()).resolves.toBe(true);
+
+        expect(warn).toHaveBeenCalledWith(194, '2', '1');
     });
 });
 

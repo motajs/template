@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { logger } from '@motajs/common';
 import { TileStore } from '../tileStore';
+import { ItemStore } from '../itemStore';
+import { EnemyStore } from '../enemyStore';
 import { ITileRawData, TileType } from '../types';
 
 function createTile(
@@ -84,5 +87,48 @@ describe('TileStore events-map contract', () => {
 
         expect(store.getEvent(3)).toEqual(new Map([[4, 'original']]));
         expect(store.getEvent(3)).not.toBe(events);
+    });
+
+    // 验证按数字或 id 重复注册时分别告警码 133 与 134
+    it('warns code 133 and 134 on number or id conflicts', () => {
+        const store = new TileStore();
+        const warn = vi.spyOn(logger, 'warn');
+
+        store.addTile(createTile(1, 'first', { 1: 'first-event' }));
+        store.addTile(createTile(1, 'second', { 2: 'second-event' }));
+        store.addTile(createTile(2, 'second', { 3: 'moved-event' }));
+
+        expect(warn).toHaveBeenCalledWith(133, '1', 'first');
+        expect(warn).toHaveBeenCalledWith(134, 'second', '1');
+    });
+});
+
+describe('ItemStore and EnemyStore duplicate registration', () => {
+    // 验证道具存储重复注册同一图块数字时告警码 181 并由后写入覆盖
+    it('warns code 181 when an item number is registered twice', () => {
+        const store = new ItemStore<never>(new TileStore());
+        const warn = vi.spyOn(logger, 'warn');
+        const first = { num: 5 } as never;
+        const second = { num: 5 } as never;
+
+        store.addItem(first);
+        store.addItem(second);
+
+        expect(warn).toHaveBeenCalledWith(181, '5', 'item');
+        expect(store.getData(5)).toBe(second);
+    });
+
+    // 验证怪物存储重复注册同一图块数字时告警码 181 并由后写入覆盖
+    it('warns code 181 when an enemy number is registered twice', () => {
+        const store = new EnemyStore<never>(new TileStore());
+        const warn = vi.spyOn(logger, 'warn');
+        const first = { num: 7, attribute: {}, special: {} } as never;
+        const second = { num: 7, attribute: {}, special: {} } as never;
+
+        store.addEnemy(first);
+        store.addEnemy(second);
+
+        expect(warn).toHaveBeenCalledWith(181, '7', 'enemy');
+        expect(store.getEnemy(7)).toBe(second);
     });
 });

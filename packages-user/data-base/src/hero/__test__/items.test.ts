@@ -6,9 +6,11 @@ import {
     type IItemRawData,
     ItemCategory,
     ItemStore,
+    SaveCompression,
     TileStore,
     TileType
 } from '@user/data-common';
+import { logger } from '@motajs/common';
 import { HeroItems } from '../items';
 
 vi.hoisted(() => {
@@ -181,6 +183,25 @@ describe('HeroItems counting', () => {
 
         expect(env.items.itemCount(99)).toBe(0);
         expect(env.items.itemCount(77)).toBe(0);
+    });
+
+    // 验证读档时道具无图块 id 注册告警码 193 并跳过该道具
+    it('warns code 193 when a saved item has no tile id registration', () => {
+        const env = createEnv();
+        const warn = vi.spyOn(logger, 'warn');
+        // 仅向道具存储注册定义，不向图块存储注册 id
+        env.itemStore.addItem(
+            createItem(50, 'orphan', ItemCategory.Constant).item
+        );
+        const save = env.items.saveState(SaveCompression.NoCompression);
+
+        env.items.loadState(
+            { items: [{ num: 50, count: 1 }], equipStore: save.equipStore },
+            SaveCompression.NoCompression
+        );
+
+        expect(warn).toHaveBeenCalledWith(193, '50');
+        expect(env.items.itemCount(50)).toBe(0);
     });
 });
 

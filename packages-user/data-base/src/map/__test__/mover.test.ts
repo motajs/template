@@ -72,13 +72,15 @@ interface MoverFixture {
     tile: DynamicTile;
 }
 
-/** 构造一个绑定动态图块的移动器宿主 */
-function createMoverFixture(): MoverFixture {
+/** 构造一个绑定动态图块的移动器宿主，可选择性跳过 Dir8 处理器注册 */
+function createMoverFixture(registerDir8: boolean = true): MoverFixture {
     const tileStore = new TileStore();
     tileStore.addTile(createTileData(1, 'base'));
     tileStore.addTile(createTileData(2, 'alternate'));
     const faceManager = new FaceManager();
-    faceManager.register(FaceGroup.Dir8, new Dir8FaceHandler());
+    if (registerDir8) {
+        faceManager.register(FaceGroup.Dir8, new Dir8FaceHandler());
+    }
     const state: IDataCommon = {
         tileStore,
         itemStore: {},
@@ -155,6 +157,19 @@ describe('DynamicTileMover movement', () => {
         await mover.start()!.onEnd;
 
         expect(warn.mock.calls.some(call => call[0] === 126)).toBe(true);
+        expect(tile.x).toBe(0);
+        expect(tile.y).toBe(0);
+    });
+
+    // 验证缺失 Dir8 朝向处理器时移动结束告警码 192 且图块停在原地
+    it('warns code 192 when the Dir8 face handler is missing', async () => {
+        const { tile } = createMoverFixture(false);
+        const warn = vi.spyOn(logger, 'warn');
+
+        tile.mover.step(FaceDirection.Right);
+        await tile.mover.start()!.onEnd;
+
+        expect(warn).toHaveBeenCalledWith(192);
         expect(tile.x).toBe(0);
         expect(tile.y).toBe(0);
     });

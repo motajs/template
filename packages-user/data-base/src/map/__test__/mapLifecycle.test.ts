@@ -290,12 +290,13 @@ describe('MapLayer point event lifecycle', () => {
 
     // 验证改变图层宽度后，保留的点事件会使用新索引继续查询
     it('reindexes preserved point events when the layer width changes', () => {
-        const { layer } = createMapState({
+        const { map, layer } = createMapState({
             1: { 1: 'top-right' },
             3: { 1: 'bottom-right' }
         });
 
-        layer.resize(3, 2);
+        // 经 GameMap.resizeLayer 变更尺寸，使共享索引器宽度与图层同步后重建点事件索引
+        map.resizeLayer(3, 2, true);
 
         expect(layer.getPointEvent(1, 0)).toEqual(new Map([[1, 'top-right']]));
         expect(layer.getPointEvent(1, 1)).toEqual(
