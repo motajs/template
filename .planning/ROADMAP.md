@@ -481,12 +481,12 @@ Plans:
 **Goal**: 在已完成的数据端（可在 Node 环境独立运行/回放验证）之上完成渲染端框架，产出可在浏览器中运行并验证的最小版本
 **Requirements**: TBD
 **Depends on**: Phase 8
-**Plans**: 4 plans (任务 1·UI 接口适配，D-10..D-14；本阶段增量派发，其余任务待用户再派发)
+**Plans**: 1/4 plans executed (任务 1·UI 接口适配，D-10..D-14；本阶段增量派发，其余任务待用户再派发)
 
 Plans:
 **Wave 1**
 
-- [ ] 09-01-PLAN.md — 任务 1·D-10（上）：`render/ui/` → `src/ui/` 迁移叶子/基础模块（save/statistics/viewmap/controller 去重）+ barrel 骨架 + `load.tsx`/`title.tsx` props 基类型修正
+- [x] 09-01-PLAN.md — 任务 1·D-10（上）：`render/ui/` → `src/ui/` 迁移叶子/基础模块（save/statistics/viewmap/controller 去重）+ barrel 骨架 + `load.tsx`/`title.tsx` props 基类型修正
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -515,4 +515,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. 单元测试 | 18/18 | Obsolete（由 Phase 9 承接） | - |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
-| 9. 最小浏览器可运行版本 | 0/4 | Not started | - |
+| 9. 最小浏览器可运行版本 | 1/4 | In Progress|  |
