@@ -498,7 +498,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 09-04-PLAN.md — 任务 1·D-12：响应式勇士属性对象（命名待用户批准；`IHeroAttr` 不可用）+ 接入 `main.tsx`
+- [ ] 09-04-PLAN.md — 任务 1·D-12（定向重设计）：把 `leftStatus` / `rightStatus` 迁入 `statusBar.tsx` 由状态栏组件自持 + 属性 9 字段与 `lv` 走 `hero.attribute` 钩子、`floor` 走 `hero.location` 钩子、无钩子字段 `// TODO` + 清理 `main.tsx`
 
 ## Progress
 
