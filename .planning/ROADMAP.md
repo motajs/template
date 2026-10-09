@@ -481,7 +481,7 @@ Plans:
 **Goal**: 在已完成的数据端（可在 Node 环境独立运行/回放验证）之上完成渲染端框架，产出可在浏览器中运行并验证的最小版本
 **Requirements**: TBD
 **Depends on**: Phase 8
-**Plans**: 2/4 plans executed (任务 1·UI 接口适配，D-10..D-14；本阶段增量派发，其余任务待用户再派发)
+**Plans**: 3/4 plans executed (任务 1·UI 接口适配，D-10..D-14；本阶段增量派发，其余任务待用户再派发)
 
 Plans:
 **Wave 1**
@@ -494,7 +494,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 09-03-PLAN.md — 任务 1·D-11 + D-13：`client` 单例消除（改经 `props.state`）+ 旧→新映射表落地 + 嵌套 `state` 透传 + flags `// TODO`（模块单例 `using`/`mainUIController`/`sceneController` 与 `state`(data-state) 列为阻断项待裁定）
+- [x] 09-03-PLAN.md — 任务 1·D-11 + D-13：`client` 单例消除（改经 `props.state`）+ 旧→新映射表落地 + 嵌套 `state` 透传 + flags `// TODO`（模块单例 `using`/`mainUIController`/`sceneController` 与 `state`(data-state) 列为阻断项待裁定）
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -515,4 +515,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. 单元测试 | 18/18 | Obsolete（由 Phase 9 承接） | - |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
-| 9. 最小浏览器可运行版本 | 2/4 | In Progress|  |
+| 9. 最小浏览器可运行版本 | 3/4 | In Progress|  |
