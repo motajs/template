@@ -481,7 +481,7 @@ Plans:
 **Goal**: 在已完成的数据端（可在 Node 环境独立运行/回放验证）之上完成渲染端框架，产出可在浏览器中运行并验证的最小版本
 **Requirements**: TBD
 **Depends on**: Phase 8
-**Plans**: 3/4 plans executed (任务 1·UI 接口适配，D-10..D-14；本阶段增量派发，其余任务待用户再派发)
+**Plans**: 4/4 plans executed (任务 1·UI 接口适配，D-10..D-14；本阶段增量派发，其余任务待用户再派发)
 
 Plans:
 **Wave 1**
@@ -498,7 +498,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 09-04-PLAN.md — 任务 1·D-12（定向重设计）：把 `leftStatus` / `rightStatus` 迁入 `statusBar.tsx` 由状态栏组件自持 + 属性 9 字段与 `lv` 走 `hero.attribute` 钩子、`floor` 走 `hero.location` 钩子、无钩子字段 `// TODO` + 清理 `main.tsx`
+- [x] 09-04-PLAN.md — 任务 1·D-12（定向重设计）：把 `leftStatus` / `rightStatus` 迁入 `statusBar.tsx` 由状态栏组件自持 + 属性 9 字段与 `lv` 走 `hero.attribute` 钩子、`floor` 走 `hero.location` 钩子、无钩子字段 `// TODO` + 清理 `main.tsx`
 
 ## Progress
 
@@ -515,4 +515,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. 单元测试 | 18/18 | Obsolete（由 Phase 9 承接） | - |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
-| 9. 最小浏览器可运行版本 | 3/4 | In Progress|  |
+| 9. 最小浏览器可运行版本 | 4/4 | In Progress|  |
