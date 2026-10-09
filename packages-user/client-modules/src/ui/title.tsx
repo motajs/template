@@ -1,9 +1,5 @@
 import { DefaultProps } from '@motajs/render-vue';
-import {
-    GameUI,
-    SetupComponentOptions,
-    IUIDefaultPropsBase
-} from '@motajs/system';
+import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { defineComponent, nextTick, onMounted, ref } from 'vue';
 import {
     BUTTONS_HEIGHT,
@@ -27,7 +23,7 @@ import {
     transitioned,
     transitionedColor,
     useKey
-} from '../render';
+} from '../render/use';
 import { ExitFullscreen, Fullscreen, SoundVolume } from '@user/client-base';
 import { mainSetting, triggerFullscreen } from '@motajs/legacy-ui';
 import { saveLoad } from './save';
@@ -35,7 +31,7 @@ import { MainSceneUI } from './main';
 import { adjustCover } from '@user/client-base';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { sleep } from '@motajs/common';
-import { IUIDefaultPropsBase } from './types';
+import { IUIPropsBase } from './types';
 
 const enum TitleButton {
     StartGame,
@@ -57,7 +53,7 @@ interface ButtonOption {
     colorTrans: ITransitionedController<string>;
 }
 
-export interface GameTitleProps extends DefaultProps, IUIDefaultPropsBase {}
+export interface GameTitleProps extends DefaultProps, IUIPropsBase {}
 
 const gameTitleProps = {
     props: ['controller', 'instance', 'state']

@@ -15,14 +15,14 @@ import {
     MAIN_WIDTH
 } from '../shared';
 import { ElementLocator, Font, MotaOffscreenCanvas2D } from '@motajs/render';
-import { transitioned } from '../render';
+import { transitioned } from '../render/use';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { clamp } from 'lodash-es';
 import { sleep } from '@motajs/common';
 import { GameTitleUI } from './title';
-import { IUIDefaultPropsBase } from './types';
+import { IUIPropsBase } from './types';
 
-export interface ILoadProps extends IUIDefaultPropsBase, DefaultProps {}
+export interface ILoadProps extends IUIPropsBase, DefaultProps {}
 
 const loadSceneProps = {
     props: ['controller', 'instance', 'state']

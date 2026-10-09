@@ -1,7 +1,10 @@
-import { GameUI, SetupComponentOptions } from '@motajs/system';
+import { GameUI, SetupComponentOptions, IUIDefaultPropsBase } from '@motajs/system';
+import { DefaultProps } from '@motajs/render-vue';
 import { defineComponent } from 'vue';
-import { MainBackgroundProps } from '../render';
 import { MAIN_WIDTH, MAIN_HEIGHT } from '../shared';
+
+export interface MainBackgroundProps
+    extends DefaultProps, IUIDefaultPropsBase {}
 
 const mainBackgroundProps = {
     props: ['controller', 'instance']
