@@ -1,5 +1,12 @@
 import { GameUI, SetupComponentOptions } from '@motajs/system';
-import { computed, ComputedRef, defineComponent, shallowReactive } from 'vue';
+import {
+    computed,
+    ComputedRef,
+    defineComponent,
+    onUnmounted,
+    reactive,
+    shallowReactive
+} from 'vue';
 import { TextContent } from '@user/client-base';
 import { ElementLocator, Font, ITexture } from '@motajs/render';
 import { MixedToolbar, ReplayingStatus } from './toolbar';
@@ -93,17 +100,16 @@ interface KeyLikeInfo {
     readonly items: KeyLikeItem[];
 }
 
-interface StatusBarProps<T> extends DefaultProps, IUIPropsBase {
+interface StatusBarProps extends DefaultProps, IUIPropsBase {
     loc: ElementLocator;
-    status: T;
     hidden: boolean;
 }
 
 const statusBarProps = {
-    props: ['loc', 'status', 'hidden', 'state']
-} satisfies SetupComponentOptions<StatusBarProps<unknown>>;
+    props: ['loc', 'hidden', 'state']
+} satisfies SetupComponentOptions<StatusBarProps>;
 
-export const LeftStatusBar = defineComponent<StatusBarProps<ILeftHeroStatus>>(
+export const LeftStatusBar = defineComponent<StatusBarProps>(
     p => {
         //#region 参数定义
 
@@ -128,7 +134,72 @@ export const LeftStatusBar = defineComponent<StatusBarProps<ILeftHeroStatus>>(
         const manaIcon = materials.getImageByAlias('icon-mana');
         const lvIcon = materials.getImageByAlias('icon-lv');
 
-        const s = p.status;
+        const leftStatus: ILeftHeroStatus = reactive({
+            hp: 0,
+            hpmax: 0,
+            mana: 0,
+            manamax: 0,
+            atk: 0,
+            def: 0,
+            mdef: 0,
+            money: 0,
+            exp: 0,
+            // TODO: 缺少「距升级所需经验」钩子（legacy core.getNextLvUpNeed 无新对应）
+            up: 0,
+            // TODO: 缺少道具数量变更钩子（IHeroItems 未实现 IHookable）
+            yellowKey: 0,
+            blueKey: 0,
+            redKey: 0,
+            greenKey: 0,
+            pickaxe: 0,
+            bomb: 0,
+            centerFly: 0,
+            // TODO: flags 更新未接（当前无监听系统）
+            poison: false,
+            weak: false,
+            curse: false,
+            floor: 'MT0',
+            lv: '',
+            // TODO: 缺少聚合录像状态钩子（replaySystem 仅提供沙箱级钩子 onCreateSandbox/onStartReplay 等）；原值来源 legacy core.status.replay
+            replay: reactive<ReplayingStatus>({
+                replaying: false,
+                playing: false,
+                speed: 1,
+                played: 0,
+                total: 0
+            })
+        });
+
+        const s = leftStatus;
+
+        const refreshAttribute = () => {
+            s.atk = p.state.hero.attribute.getFinalAttribute('atk');
+            s.hp = p.state.hero.attribute.getFinalAttribute('hp');
+            s.hpmax = p.state.hero.attribute.getFinalAttribute('hpmax');
+            s.mana = p.state.hero.attribute.getFinalAttribute('mana');
+            s.manamax = p.state.hero.attribute.getFinalAttribute('manamax');
+            s.def = p.state.hero.attribute.getFinalAttribute('def');
+            s.mdef = p.state.hero.attribute.getFinalAttribute('mdef');
+            s.money = p.state.hero.attribute.getFinalAttribute('money');
+            s.exp = p.state.hero.attribute.getFinalAttribute('exp');
+            s.lv = core.getLvName(
+                p.state.hero.attribute.getFinalAttribute('level')
+            );
+        };
+
+        const attributeHook = p.state.hero.attribute.addHook({
+            onUpdateAttribute: () => refreshAttribute()
+        });
+        const locationHook = p.state.hero.location.addHook({
+            onSetFloor: map => {
+                if (map) s.floor = core.status.floorId;
+            }
+        });
+
+        onUnmounted(() => {
+            attributeHook.unload();
+            locationHook.unload();
+        });
 
         /** 常规字体 */
         const font1 = Font.defaults({ size: 18 });
@@ -458,9 +529,12 @@ export const LeftStatusBar = defineComponent<StatusBarProps<ILeftHeroStatus>>(
     statusBarProps
 );
 
-export const RightStatusBar = defineComponent<StatusBarProps<IRightHeroStatus>>(
+export const RightStatusBar = defineComponent<StatusBarProps>(
     p => {
         // p.status 就是你在 main.tsx 中传入的属性内容，用法与左侧状态栏完全一致
+
+        // TODO: flags 更新未接（当前无监听系统）
+        const rightStatus: IRightHeroStatus = reactive({ exampleHard: 0 });
 
         const text = `这里是右侧状态栏，如果左侧状态栏不够用可以在 \\r[gold]statusBar.tsx\\r 中编写内容，如果不需要此状态栏，可以在 \\r[gold]shared.ts\\r 中关闭此状态栏。`;
 
@@ -477,7 +551,7 @@ export const RightStatusBar = defineComponent<StatusBarProps<IRightHeroStatus>>(
                     <text loc={[8, 270]} text="示例内容" />
                     <text
                         loc={[8, 300]}
-                        text={`游戏难度：${p.status.exampleHard}`}
+                        text={`游戏难度：${rightStatus.exampleHard}`}
                     />
                 </container>
             );
