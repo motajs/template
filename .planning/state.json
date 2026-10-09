@@ -21,7 +21,7 @@
     {
       "number": "4",
       "name": "渲染适配与双布局",
-      "status": "in_progress"
+      "status": "pending"
     },
     {
       "number": "5",
@@ -31,7 +31,7 @@
     {
       "number": "6",
       "name": "单元测试",
-      "status": "in_progress"
+      "status": "pending"
     },
     {
       "number": "7",
@@ -42,12 +42,17 @@
       "number": "8",
       "name": "测试重构与接口对齐",
       "status": "complete"
+    },
+    {
+      "number": "9",
+      "name": "最小浏览器可运行版本",
+      "status": "pending"
     }
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step (plan phase 1)",
-    "reason": "Phase 1 of 8 — needs a plan"
+    "label": "Advance to the next step",
+    "reason": "Phase 9 of 9 · executing"
   },
-  "updated_at": "2026-10-08T11:12:43.807Z"
+  "updated_at": "2026-10-09T06:58:38.764Z"
 }

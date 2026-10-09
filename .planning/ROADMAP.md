@@ -484,10 +484,20 @@ Plans:
 **Plans**: 4 plans (任务 1·UI 接口适配，D-10..D-14；本阶段增量派发，其余任务待用户再派发)
 
 Plans:
+**Wave 1**
 
 - [ ] 09-01-PLAN.md — 任务 1·D-10（上）：`render/ui/` → `src/ui/` 迁移叶子/基础模块（save/statistics/viewmap/controller 去重）+ barrel 骨架 + `load.tsx`/`title.tsx` props 基类型修正
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 09-02-PLAN.md — 任务 1·D-10（收口）：剩余模块（main/settings/statusBar/toolbar）迁移 + 跨目录引用改写 + 删尽 `render/ui/` + D-69 桶收口（公共面经包根 `./ui` 承接）+ `pnpm test:ci` 回归
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 09-03-PLAN.md — 任务 1·D-11 + D-13：`client` 单例消除（改经 `props.state`）+ 旧→新映射表落地 + 嵌套 `state` 透传 + flags `// TODO`（模块单例 `using`/`mainUIController`/`sceneController` 与 `state`(data-state) 列为阻断项待裁定）
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 09-04-PLAN.md — 任务 1·D-12：响应式勇士属性对象（命名待用户批准；`IHeroAttr` 不可用）+ 接入 `main.tsx`
 
 ## Progress
