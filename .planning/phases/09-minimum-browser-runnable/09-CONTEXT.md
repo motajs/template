@@ -38,6 +38,16 @@
 - **D-08（拆分）:** 收尾 `client-modules` → `client-base` / `client-modules` 的依赖拆分。已有部分完成，需按实际依赖关系盘点剩余未拆内容，再逐任务迁移。
 - **D-09（对齐）:** 实现层与架构层接口对齐——含 UI 系统重构后的 UI 实现对齐，以及 `@motajs/legacy-ui` 等 legacy 实现向新接口的移植。
 
+### 任务 1（当前规划单元：UI 接口适配）
+
+> 本节界定**本次规划运行**的范围：仅规划任务 1，不规划 Phase 9 的其余内容；后续任务由用户再派发时追加计划。
+
+- **D-10（目录移动）:** 将 `packages-user/client-modules/src/render/ui/` 移动到 `packages-user/client-modules/src/ui/`（减少包内嵌套），并同步改写所有引用该路径的导入。纯移动 + 引用改写，不改变行为。
+- **D-11（接口对齐）:** 将移动后的 UI 实现对齐到新 UI 系统（`packages/system/src/ui`）：组件通过系统提供的「经 props 获取主对象 `IClientBase`」机制获取主对象，不得使用 `client` 单例。把旧的 `client` 相关操作逐一替换为 `IClientBase` 上可用的新接口；**计划必须给出「旧接口 → 新接口」映射表**。凡 `client` 上不存在对应接口的操作，先向用户反馈，不得自造接口。
+- **D-12（勇士属性）:** 单独实现一个 `IHeroAttr` 响应式对象，监听勇士属性变化并据此更新（命名待用户批准；注意与既有 `IHeroAttribute` 一族区分）。
+- **D-13（flags）:** flags 尚无监听系统，本任务不处理 flags 的更新，仅在代码中标注 `TODO`。
+- **D-14（纯适配）:** 本任务不引入 UI 形态/视觉改动；不做 `@motajs/legacy-ui` 移植（属后续任务）。
+
 ### the agent's Discretion
 
 - 无。用户明确未授权 AI 自行决定 UI 形态或任务范围。
