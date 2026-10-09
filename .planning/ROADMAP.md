@@ -481,11 +481,14 @@ Plans:
 **Goal**: 在已完成的数据端（可在 Node 环境独立运行/回放验证）之上完成渲染端框架，产出可在浏览器中运行并验证的最小版本
 **Requirements**: TBD
 **Depends on**: Phase 8
-**Plans**: TBD
+**Plans**: 4 plans (任务 1·UI 接口适配，D-10..D-14；本阶段增量派发，其余任务待用户再派发)
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 9 to break down)
+- [ ] 09-01-PLAN.md — 任务 1·D-10（上）：`render/ui/` → `src/ui/` 迁移叶子/基础模块（save/statistics/viewmap/controller 去重）+ barrel 骨架 + `load.tsx`/`title.tsx` props 基类型修正
+- [ ] 09-02-PLAN.md — 任务 1·D-10（收口）：剩余模块（main/settings/statusBar/toolbar）迁移 + 跨目录引用改写 + 删尽 `render/ui/` + D-69 桶收口（公共面经包根 `./ui` 承接）+ `pnpm test:ci` 回归
+- [ ] 09-03-PLAN.md — 任务 1·D-11 + D-13：`client` 单例消除（改经 `props.state`）+ 旧→新映射表落地 + 嵌套 `state` 透传 + flags `// TODO`（模块单例 `using`/`mainUIController`/`sceneController` 与 `state`(data-state) 列为阻断项待裁定）
+- [ ] 09-04-PLAN.md — 任务 1·D-12：响应式勇士属性对象（命名待用户批准；`IHeroAttr` 不可用）+ 接入 `main.tsx`
 
 ## Progress
 
@@ -502,4 +505,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. 单元测试 | 18/18 | Obsolete（由 Phase 9 承接） | - |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
-| 9. 最小浏览器可运行版本 | 0/TBD | Not started | - |
+| 9. 最小浏览器可运行版本 | 0/4 | Not started | - |
