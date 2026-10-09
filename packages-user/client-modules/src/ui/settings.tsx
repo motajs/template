@@ -1,10 +1,5 @@
 import { ElementLocator } from '@motajs/render';
-import {
-    GameUI,
-    IUIController,
-    SetupComponentOptions,
-    IUIDefaultPropsBase
-} from '@motajs/system';
+import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 import { defineComponent } from 'vue';
 import {
     ChoiceItem,
@@ -25,15 +20,14 @@ import { compressToBase64 } from 'lz-string';
 import { ViewMapUI } from './viewmap';
 import { CENTER_LOC, FULL_LOC, MAIN_HEIGHT, POP_BOX_WIDTH } from '../shared';
 import { useKey } from '../render/use';
-import { client } from '../core';
+import { IUIPropsBase } from './types';
 
-export interface MainSettingsProps
-    extends Partial<ChoicesProps>, IUIDefaultPropsBase {
+export interface MainSettingsProps extends Partial<ChoicesProps>, IUIPropsBase {
     loc: ElementLocator;
 }
 
 const mainSettingsProps = {
-    props: ['loc', 'controller', 'instance']
+    props: ['loc', 'controller', 'instance', 'state']
 } satisfies SetupComponentOptions<MainSettingsProps>;
 
 const enum MainChoice {
@@ -163,7 +157,8 @@ export const ReplaySettings = defineComponent<MainSettingsProps>(props => {
                 props.controller.closeAll();
                 core.ui.closePanel();
                 const route = core.status.route.slice();
-                const flags = client.flags;
+                // TODO: flags 更新未接（当前无监听系统）
+                const flags = props.state.flags;
                 const seed = flags.getFieldValue<number>('__seed__');
                 core.startGame(core.status.hard, seed, route);
                 break;
@@ -218,7 +213,8 @@ export const ReplaySettings = defineComponent<MainSettingsProps>(props => {
                 break;
             }
             case ReplayChoice.Download: {
-                const flags = client.flags;
+                // TODO: flags 更新未接（当前无监听系统）
+                const flags = props.state.flags;
                 const seed = flags.getFieldValue<number>('__seed__');
                 core.download(
                     core.firstData.name + '_' + core.formatDate2() + '.h5route',
