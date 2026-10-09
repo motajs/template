@@ -12,7 +12,7 @@ import {
     STATUS_BAR_WIDTH
 } from '../shared';
 import { DefaultProps } from '@motajs/render-vue';
-import { client } from '../core';
+import { IUIPropsBase } from './types';
 
 export interface ILeftHeroStatus {
     /** 楼层 id */
@@ -93,14 +93,14 @@ interface KeyLikeInfo {
     readonly items: KeyLikeItem[];
 }
 
-interface StatusBarProps<T> extends DefaultProps {
+interface StatusBarProps<T> extends DefaultProps, IUIPropsBase {
     loc: ElementLocator;
     status: T;
     hidden: boolean;
 }
 
 const statusBarProps = {
-    props: ['loc', 'status', 'hidden']
+    props: ['loc', 'status', 'hidden', 'state']
 } satisfies SetupComponentOptions<StatusBarProps<unknown>>;
 
 export const LeftStatusBar = defineComponent<StatusBarProps<ILeftHeroStatus>>(
@@ -116,7 +116,7 @@ export const LeftStatusBar = defineComponent<StatusBarProps<ILeftHeroStatus>>(
         /** 状态属性的开始纵坐标 */
         const STATUS_Y = TITLE_HEIGHT + STATUS_PAD;
 
-        const materials = client.materials;
+        const materials = p.state.materials;
 
         // 可以换成 materials.getImageByAlias('xxx.png') 来使用全塔属性注册的图片
         const hpIcon = materials.getImageByAlias('icon-hp');
@@ -450,6 +450,7 @@ export const LeftStatusBar = defineComponent<StatusBarProps<ILeftHeroStatus>>(
                 <MixedToolbar
                     loc={[0, MAIN_HEIGHT - 113, STATUS_BAR_WIDTH, 113]}
                     status={s.replay}
+                    state={p.state}
                 />
             </container>
         );

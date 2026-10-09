@@ -7,7 +7,7 @@ import {
 // import { WeatherController } from '../weather';
 import { defineComponent, onUnmounted, reactive, ref } from 'vue';
 import { Textbox, TextboxProps, Tip } from '@user/client-base';
-import { GameUI } from '@motajs/system';
+import { GameUI, SetupComponentOptions } from '@motajs/system';
 import {
     ENABLE_RIGHT_STATUS_BAR,
     MAIN_HEIGHT,
@@ -29,10 +29,17 @@ import { state } from '@user/data-state';
 import { mainUIController } from './controller';
 import { isNil } from 'lodash-es';
 import { using } from '../render/renderer';
-import { client } from '../core';
+import { IUIPropsBase } from './types';
 
-const MainScene = defineComponent(() => {
-    const { mainMapRenderer, mainMapExtension } = client;
+interface MainSceneProps extends IUIPropsBase {}
+
+const mainSceneProps = {
+    props: ['controller', 'instance', 'state']
+} satisfies SetupComponentOptions<MainSceneProps>;
+
+const MainScene = defineComponent<MainSceneProps>(props => {
+    const mainMapRenderer = props.state.mainMapRenderer;
+    const mainMapExtension = props.state.mainMapExtension;
 
     //#region 基本定义
 
@@ -95,19 +102,23 @@ const MainScene = defineComponent(() => {
     //#region 状态更新
     const updateStatus = () => {
         if (!core.status || !core.status.hero || !core.status.floorId) return;
-        const flags = client.flags;
+        // TODO: flags 更新未接（当前无监听系统）
+        const flags = props.state.flags;
         hideStatus.value = flags.getFieldValueDefaults('hideStatusBar', false);
 
         const hero = core.status.hero;
-        leftStatus.atk = client.hero.attribute.getFinalAttribute('atk');
-        leftStatus.hp = client.hero.attribute.getFinalAttribute('hp');
-        leftStatus.hpmax = client.hero.attribute.getFinalAttribute('hpmax');
-        leftStatus.mana = client.hero.attribute.getFinalAttribute('mana');
-        leftStatus.manamax = client.hero.attribute.getFinalAttribute('manamax');
-        leftStatus.def = client.hero.attribute.getFinalAttribute('def');
-        leftStatus.mdef = client.hero.attribute.getFinalAttribute('mdef');
-        leftStatus.money = client.hero.attribute.getFinalAttribute('money');
-        leftStatus.exp = client.hero.attribute.getFinalAttribute('exp');
+        leftStatus.atk = props.state.hero.attribute.getFinalAttribute('atk');
+        leftStatus.hp = props.state.hero.attribute.getFinalAttribute('hp');
+        leftStatus.hpmax =
+            props.state.hero.attribute.getFinalAttribute('hpmax');
+        leftStatus.mana = props.state.hero.attribute.getFinalAttribute('mana');
+        leftStatus.manamax =
+            props.state.hero.attribute.getFinalAttribute('manamax');
+        leftStatus.def = props.state.hero.attribute.getFinalAttribute('def');
+        leftStatus.mdef = props.state.hero.attribute.getFinalAttribute('mdef');
+        leftStatus.money =
+            props.state.hero.attribute.getFinalAttribute('money');
+        leftStatus.exp = props.state.hero.attribute.getFinalAttribute('exp');
         leftStatus.up = core.getNextLvUpNeed() ?? 0;
         leftStatus.yellowKey = core.itemCount('yellowKey');
         leftStatus.blueKey = core.itemCount('blueKey');
@@ -116,6 +127,7 @@ const MainScene = defineComponent(() => {
         leftStatus.pickaxe = core.itemCount('pickaxe');
         leftStatus.bomb = core.itemCount('bomb');
         leftStatus.centerFly = core.itemCount('centerFly');
+        // TODO: flags 更新未接（当前无监听系统）
         leftStatus.poison = flags.getFieldValueDefaults('poison', true);
         leftStatus.weak = flags.getFieldValueDefaults('weak', true);
         leftStatus.curse = flags.getFieldValueDefaults('curse', true);
@@ -129,6 +141,7 @@ const MainScene = defineComponent(() => {
         replayStatus.played = totalList.length - toReplay.length;
         replayStatus.total = totalList.length;
 
+        // TODO: flags 更新未接（当前无监听系统）
         rightStatus.exampleHard = flags.getFieldValueDefaults('hard', 0);
     };
 
@@ -138,7 +151,7 @@ const MainScene = defineComponent(() => {
     };
 
     // 监听状态栏更新事件
-    const attributeHook = client.hero.attribute.addHook({
+    const attributeHook = props.state.hero.attribute.addHook({
         onUpdateAttribute: () => {
             updateStatus();
             updateDataFallback();
@@ -229,6 +242,7 @@ const MainScene = defineComponent(() => {
                 loc={[0, 0, STATUS_BAR_WIDTH, STATUS_BAR_HEIGHT]}
                 status={leftStatus}
                 hidden={hideStatus.value}
+                state={props.state}
             ></LeftStatusBar>
             <g-line
                 line={[STATUS_BAR_WIDTH, 0, STATUS_BAR_WIDTH, MAIN_HEIGHT]}
@@ -275,6 +289,7 @@ const MainScene = defineComponent(() => {
                 loc={[RIGHT_STATUS_POS, 0, STATUS_BAR_WIDTH, STATUS_BAR_HEIGHT]}
                 status={rightStatus}
                 hidden={hideStatus.value && ENABLE_RIGHT_STATUS_BAR}
+                state={props.state}
             ></RightStatusBar>
             <container
                 loc={[0, 0, MAIN_WIDTH, MAIN_HEIGHT]}
@@ -307,6 +322,6 @@ const MainScene = defineComponent(() => {
             />
         </container>
     );
-});
+}, mainSceneProps);
 
 export const MainSceneUI = new GameUI('main-scene', MainScene);

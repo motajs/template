@@ -25,9 +25,9 @@ import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '../shared';
 import { openReplay, openSettings } from './settings';
 import { openViewMap } from './viewmap';
 import { DefaultProps } from '@motajs/render-vue';
-import { client } from '../core';
+import { IUIPropsBase } from './types';
 
-interface ToolbarProps extends DefaultProps {
+interface ToolbarProps extends DefaultProps, IUIPropsBase {
     loc?: ElementLocator;
 }
 
@@ -36,7 +36,7 @@ type ToolbarEmits = {
 };
 
 const toolbarProps = {
-    props: ['loc'],
+    props: ['loc', 'state'],
     emits: ['numpad']
 } satisfies SetupComponentOptions<
     ToolbarProps,
@@ -74,7 +74,7 @@ export const PlayingToolbar = defineComponent<
     ToolbarEmits,
     keyof ToolbarEmits
 >((props, { emit }) => {
-    const materials = client.materials;
+    const materials = props.state.materials;
     const bookIcon = materials.getImageByAlias('icon-book');
     const flyIcon = materials.getImageByAlias('icon-fly');
     const toolIcon = materials.getImageByAlias('icon-toolbox');
@@ -166,13 +166,13 @@ export interface ReplayingProps extends ToolbarProps {
 }
 
 const replayingProps = {
-    props: ['status', 'loc']
+    props: ['status', 'loc', 'state']
 } satisfies SetupComponentOptions<ReplayingProps>;
 
 export const ReplayingToolbar = defineComponent<ReplayingProps>(props => {
     const status = props.status;
 
-    const materials = client.materials;
+    const materials = props.state.materials;
     const bookIcon = materials.getImageByAlias('icon-book');
     const saveIcon = materials.getImageByAlias('icon-save');
     const font1 = Font.defaults({ size: 16 });
@@ -394,10 +394,22 @@ export const MixedToolbar = defineComponent<ReplayingProps>(props => {
 
     return () =>
         inNumpad.value ? (
-            <NumpadToolbar loc={props.loc} onNumpad={onNumpad} />
+            <NumpadToolbar
+                loc={props.loc}
+                onNumpad={onNumpad}
+                state={props.state}
+            />
         ) : props.status.replaying ? (
-            <ReplayingToolbar loc={props.loc} status={props.status} />
+            <ReplayingToolbar
+                loc={props.loc}
+                status={props.status}
+                state={props.state}
+            />
         ) : (
-            <PlayingToolbar loc={props.loc} onNumpad={onNumpad} />
+            <PlayingToolbar
+                loc={props.loc}
+                onNumpad={onNumpad}
+                state={props.state}
+            />
         );
 }, replayingProps);
