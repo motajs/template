@@ -5,7 +5,7 @@ import {
     CustomRenderItem
 } from '@motajs/render';
 // import { WeatherController } from '../weather';
-import { defineComponent, onUnmounted, reactive, ref } from 'vue';
+import { defineComponent, ref } from 'vue';
 import { Textbox, TextboxProps, Tip } from '@user/client-base';
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import {
@@ -18,13 +18,7 @@ import {
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
 } from '../shared';
-import {
-    ILeftHeroStatus,
-    IRightHeroStatus,
-    LeftStatusBar,
-    RightStatusBar
-} from './statusBar';
-import { ReplayingStatus } from './toolbar';
+import { LeftStatusBar, RightStatusBar } from './statusBar';
 import { state } from '@user/data-state';
 import { mainUIController } from './controller';
 import { isNil } from 'lodash-es';
@@ -58,109 +52,12 @@ const MainScene = defineComponent<MainSceneProps>(props => {
         width: MAP_WIDTH
     };
 
-    const hideStatus = ref(false);
-    const locked = ref(false);
+    const hideStatus = ref(
+        p.state.flags.getFieldValueDefaults('hideStatusBar', false)
+    );
+    // TODO: flags 更新未接（当前无监听系统）
     // const weather = new WeatherController();
     // weather.extern('main');
-
-    const replayStatus: ReplayingStatus = reactive({
-        replaying: false,
-        playing: false,
-        speed: 1,
-        played: 0,
-        total: 0
-    });
-    const leftStatus: ILeftHeroStatus = reactive({
-        hp: 0,
-        hpmax: 0,
-        mana: 0,
-        manamax: 0,
-        atk: 0,
-        def: 0,
-        mdef: 0,
-        money: 0,
-        exp: 0,
-        up: 0,
-        yellowKey: 0,
-        blueKey: 0,
-        redKey: 0,
-        greenKey: 0,
-        pickaxe: 0,
-        bomb: 0,
-        centerFly: 0,
-        poison: false,
-        weak: false,
-        curse: false,
-        floor: 'MT0',
-        lv: '',
-        replay: replayStatus
-    });
-    const rightStatus: IRightHeroStatus = reactive({
-        exampleHard: 0
-    });
-
-    //#region 状态更新
-    const updateStatus = () => {
-        if (!core.status || !core.status.hero || !core.status.floorId) return;
-        // TODO: flags 更新未接（当前无监听系统）
-        const flags = props.state.flags;
-        hideStatus.value = flags.getFieldValueDefaults('hideStatusBar', false);
-
-        const hero = core.status.hero;
-        leftStatus.atk = props.state.hero.attribute.getFinalAttribute('atk');
-        leftStatus.hp = props.state.hero.attribute.getFinalAttribute('hp');
-        leftStatus.hpmax =
-            props.state.hero.attribute.getFinalAttribute('hpmax');
-        leftStatus.mana = props.state.hero.attribute.getFinalAttribute('mana');
-        leftStatus.manamax =
-            props.state.hero.attribute.getFinalAttribute('manamax');
-        leftStatus.def = props.state.hero.attribute.getFinalAttribute('def');
-        leftStatus.mdef = props.state.hero.attribute.getFinalAttribute('mdef');
-        leftStatus.money =
-            props.state.hero.attribute.getFinalAttribute('money');
-        leftStatus.exp = props.state.hero.attribute.getFinalAttribute('exp');
-        leftStatus.up = core.getNextLvUpNeed() ?? 0;
-        leftStatus.yellowKey = core.itemCount('yellowKey');
-        leftStatus.blueKey = core.itemCount('blueKey');
-        leftStatus.redKey = core.itemCount('redKey');
-        leftStatus.greenKey = core.itemCount('greenKey');
-        leftStatus.pickaxe = core.itemCount('pickaxe');
-        leftStatus.bomb = core.itemCount('bomb');
-        leftStatus.centerFly = core.itemCount('centerFly');
-        // TODO: flags 更新未接（当前无监听系统）
-        leftStatus.poison = flags.getFieldValueDefaults('poison', true);
-        leftStatus.weak = flags.getFieldValueDefaults('weak', true);
-        leftStatus.curse = flags.getFieldValueDefaults('curse', true);
-        leftStatus.floor = core.status.floorId;
-        leftStatus.lv = core.getLvName(hero.lv);
-
-        const { pausing, speed, toReplay, totalList } = core.status.replay;
-        replayStatus.replaying = core.isReplaying();
-        replayStatus.playing = !pausing;
-        replayStatus.speed = speed;
-        replayStatus.played = totalList.length - toReplay.length;
-        replayStatus.total = totalList.length;
-
-        // TODO: flags 更新未接（当前无监听系统）
-        rightStatus.exampleHard = flags.getFieldValueDefaults('hard', 0);
-    };
-
-    const updateDataFallback = () => {
-        // 更新 locked 状态
-        locked.value = core.status.lockControl;
-    };
-
-    // 监听状态栏更新事件
-    const attributeHook = props.state.hero.attribute.addHook({
-        onUpdateAttribute: () => {
-            updateStatus();
-            updateDataFallback();
-        }
-    });
-
-    onUnmounted(() => {
-        attributeHook.unload();
-    });
 
     //#region sprite 渲染
 
@@ -240,7 +137,6 @@ const MainScene = defineComponent<MainSceneProps>(props => {
         >
             <LeftStatusBar
                 loc={[0, 0, STATUS_BAR_WIDTH, STATUS_BAR_HEIGHT]}
-                status={leftStatus}
                 hidden={hideStatus.value}
                 state={props.state}
             ></LeftStatusBar>
@@ -287,7 +183,6 @@ const MainScene = defineComponent<MainSceneProps>(props => {
             />
             <RightStatusBar
                 loc={[RIGHT_STATUS_POS, 0, STATUS_BAR_WIDTH, STATUS_BAR_HEIGHT]}
-                status={rightStatus}
                 hidden={hideStatus.value && ENABLE_RIGHT_STATUS_BAR}
                 state={props.state}
             ></RightStatusBar>
