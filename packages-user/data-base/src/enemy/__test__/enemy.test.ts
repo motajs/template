@@ -74,8 +74,8 @@ function createEnemy(
  */
 function createSpecial(code: number, value: number): ISpecial<number> {
     return new modules.CommonSerializableSpecial<number>(code, value, {
-        getSpecialName: () => `special-${code}`,
-        getDescription: () => `description-${code}`,
+        name: () => `special-${code}`,
+        desc: () => `description-${code}`,
         fromLegacyEnemy: () => value
     });
 }

@@ -13,7 +13,7 @@ import {
     type IReadonlyEnemy,
     type ISpecial
 } from '@user/data-base';
-import { type IHaloValue } from '../special';
+import { type ISpecial23Value } from '../special';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -180,7 +180,7 @@ function createWritableHandler(
  * 构造一个完整的光环数值
  * @param overrides 覆盖的光环字段
  */
-function createHalo(overrides: Partial<IHaloValue> = {}): IHaloValue {
+function createHalo(overrides: Partial<ISpecial23Value> = {}): ISpecial23Value {
     return {
         haloRange: 0,
         haloSquare: false,

@@ -46,8 +46,8 @@ afterAll(() => {
  */
 function makeCommonConfig(): ICommonSpecialConfig<number> {
     return {
-        getSpecialName: special => `连击${special.getValue()}`,
-        getDescription: special => `怪物每回合攻击${special.getValue()}次。`,
+        name: special => `连击${special.getValue()}`,
+        desc: special => `怪物每回合攻击${special.getValue()}次。`,
         fromLegacyEnemy: () => 0
     };
 }
@@ -57,8 +57,8 @@ function makeCommonConfig(): ICommonSpecialConfig<number> {
  */
 function makeNoneConfig(): ICommonSpecialConfig<void> {
     return {
-        getSpecialName: () => '先攻',
-        getDescription: () => '怪物首先攻击。',
+        name: () => '先攻',
+        desc: () => '怪物首先攻击。',
         fromLegacyEnemy: () => undefined
     };
 }

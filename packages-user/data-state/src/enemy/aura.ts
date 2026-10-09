@@ -17,7 +17,7 @@ import {
     IReadonlyEnemyHandler
 } from '@user/data-system';
 import { IReadonlyEnemy, ISpecial } from '@user/data-base';
-import { IHaloValue } from './special';
+import { ISpecial23Value } from './special';
 import { IHeroAttr, IEnemyAttr } from '@user/data-common';
 
 const FULL_RANGE = new FullRange();
@@ -35,7 +35,7 @@ export class CommonAuraConverter implements IAuraConverter<
     }
 
     convert(
-        special: ISpecial<IHaloValue>,
+        special: ISpecial<ISpecial23Value>,
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
     ): CommonAura {
         return new CommonAura(handler.enemy, special, handler.locator);
@@ -45,7 +45,7 @@ export class CommonAuraConverter implements IAuraConverter<
 export class CommonAura implements IEnemyAuraView<
     IEnemyAttr,
     IRectRangeParam | IManhattanRangeParam | void,
-    IHaloValue
+    ISpecial23Value
 > {
     readonly priority: number = 25;
     readonly couldApplyBase: boolean = true;
@@ -54,7 +54,7 @@ export class CommonAura implements IEnemyAuraView<
 
     constructor(
         readonly enemy: IReadonlyEnemy<IEnemyAttr>,
-        readonly special: ISpecial<IHaloValue>,
+        readonly special: ISpecial<ISpecial23Value>,
         readonly locator: ITileLocator
     ) {
         this.range = this.createRange();

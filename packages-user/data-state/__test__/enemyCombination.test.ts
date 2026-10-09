@@ -22,7 +22,7 @@ import { CoreState } from '../src/core';
 import { MainDamageCalculator } from '../src/enemy/calculator';
 import { CommonAuraConverter, GuardAuraConverter } from '../src/enemy/aura';
 import { MainEnemyFinalEffect } from '../src/enemy/final';
-import { type IHaloValue, type IVampireValue } from '../src/enemy/special';
+import { type ISpecial23Value, type IVampireValue } from '../src/enemy/special';
 
 /** 按 08-08 约定的 CoreState 装配创建一个独立状态实例 */
 function createCoreState(): CoreState {
@@ -203,7 +203,7 @@ function createPipelineSpecials(haloAtkBuff: number): ISpecial<any>[] {
         createSpecial<IVampireValue>(11, { vampire: 10, add: true }),
         createSpecial<void>(17, undefined),
         createSpecial<number>(22, 7),
-        createSpecial<IHaloValue>(25, {
+        createSpecial<ISpecial23Value>(25, {
             haloRange: 0,
             haloSquare: false,
             hpBuff: 0,
@@ -255,7 +255,7 @@ describe('enemy combination stage 1 - component baselines', () => {
             code: 25,
             attrs: { atk: 20 },
             specials: [
-                createSpecial<IHaloValue>(25, {
+                createSpecial<ISpecial23Value>(25, {
                     haloRange: 0,
                     haloSquare: false,
                     hpBuff: 0,
@@ -489,7 +489,7 @@ describe('enemy combination stage 2 - multi-special and system pipelines', () =>
             id: 'query-target',
             code: 25,
             specials: [
-                createSpecial<IHaloValue>(25, {
+                createSpecial<ISpecial23Value>(25, {
                     haloRange: 0,
                     haloSquare: false,
                     hpBuff: 0,

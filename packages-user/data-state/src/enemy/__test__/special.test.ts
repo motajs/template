@@ -1,7 +1,7 @@
 // 测试怪物特殊属性注册：代码 0-27 全量注册、守卫默认值、名称与描述生成
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { type ISpecial } from '@user/data-base';
-import { type IHaloValue } from '../special';
+import { type ISpecial23Value } from '../special';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -30,7 +30,7 @@ vi.hoisted(() => {
 });
 
 interface TestModules {
-    registerSpecials: typeof import('../special').registerSpecials;
+    registerSpecials: typeof import('../special').createSpecials;
 }
 
 let modules: TestModules;
@@ -39,7 +39,7 @@ beforeAll(async () => {
     vi.stubGlobal('main', { replayChecking: true });
     vi.stubGlobal('location', { origin: 'http://localhost' });
     const specialModule = await import('../special');
-    modules = { registerSpecials: specialModule.registerSpecials };
+    modules = { registerSpecials: specialModule.createSpecials };
 });
 
 type SpecialCreation = (enemy: unknown) => ISpecial<any>;
@@ -146,7 +146,7 @@ describe('registerSpecials', () => {
         expect(halo.getDescription()).toContain('同楼层所有怪物');
         expect(halo.getDescription()).toContain('线性叠加。');
 
-        const value: IHaloValue = {
+        const value: ISpecial23Value = {
             haloRange: 2,
             haloSquare: true,
             hpBuff: 10,

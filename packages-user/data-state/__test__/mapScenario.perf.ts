@@ -15,7 +15,10 @@ import {
 } from '@user/data-base';
 import { type IDamageSystem, type IMapDamage } from '@user/data-system';
 import { CoreState } from '../src/core';
-import { type IHaloValue, type IZoneValue } from '../src/enemy/special';
+import {
+    type ISpecial23Value,
+    type ISpecial13Value
+} from '../src/enemy/special';
 import floorDataset from './fixtures/floors.json';
 
 /** 按 08-08 约定的 CoreState 装配创建一个独立状态实例 */
@@ -153,7 +156,7 @@ const MONSTER_PORTFOLIO: readonly IMonsterPrefab[] = [
         attrs: { hp: 120, atk: 12, def: 3, money: 5, exp: 7, point: 1 },
         specials: [
             // haloRange 为 0 时 25 会落到 FullRange，即同楼层全体光环
-            createSpecial<IHaloValue>(25, {
+            createSpecial<ISpecial23Value>(25, {
                 haloRange: 0,
                 haloSquare: false,
                 hpBuff: 0,
@@ -168,7 +171,7 @@ const MONSTER_PORTFOLIO: readonly IMonsterPrefab[] = [
         attrs: { hp: 90, atk: 9, def: 2, money: 4, exp: 6, point: 1 },
         specials: [
             // 十字范围光环，让光环拓扑随怪物坐标变化而非全图连通
-            createSpecial<IHaloValue>(25, {
+            createSpecial<ISpecial23Value>(25, {
                 haloRange: 3,
                 haloSquare: false,
                 hpBuff: 20,
@@ -183,7 +186,7 @@ const MONSTER_PORTFOLIO: readonly IMonsterPrefab[] = [
         attrs: { hp: 150, atk: 15, def: 5, money: 8, exp: 12, point: 2 },
         specials: [
             // 九宫格范围光环，与十字范围共用同一转换器但走不同 range 实现
-            createSpecial<IHaloValue>(25, {
+            createSpecial<ISpecial23Value>(25, {
                 haloRange: 2,
                 haloSquare: true,
                 hpBuff: 0,
@@ -207,7 +210,7 @@ const MONSTER_PORTFOLIO: readonly IMonsterPrefab[] = [
         code: 104,
         attrs: { hp: 60, atk: 6, def: 1, money: 2, exp: 3, point: 1 },
         specials: [
-            createSpecial<IZoneValue>(15, {
+            createSpecial<ISpecial13Value>(15, {
                 zone: 5,
                 zoneSquare: false,
                 range: 2
@@ -219,7 +222,7 @@ const MONSTER_PORTFOLIO: readonly IMonsterPrefab[] = [
         code: 105,
         attrs: { hp: 70, atk: 7, def: 2, money: 3, exp: 4, point: 1 },
         specials: [
-            createSpecial<IZoneValue>(15, {
+            createSpecial<ISpecial13Value>(15, {
                 zone: 8,
                 zoneSquare: true,
                 range: 1

@@ -24,7 +24,7 @@ import {
     IReadonlyHeroAttribute,
     IReadonlyEnemy
 } from '@user/data-base';
-import { IZoneValue } from './special';
+import { ISpecial13Value } from './special';
 import { MapDamageType } from './types';
 import { IHeroAttr, IEnemyAttr } from '@user/data-common';
 import { FaceGroup } from '@user/data-common';
@@ -87,7 +87,7 @@ export class ZoneDamageView extends BaseMapDamageView<
     constructor(
         context: IEnemyContext<IEnemyAttr, IHeroAttr>,
         private readonly locator: Readonly<ITileLocator>,
-        private readonly special: Readonly<ISpecial<IZoneValue>>
+        private readonly special: Readonly<ISpecial<ISpecial13Value>>
     ) {
         super(context);
     }
@@ -296,7 +296,7 @@ export class MainMapDamageConverter implements IMapDamageConverter<
         const views: IMapDamageView<any>[] = [];
         const { enemy, locator, hero } = handler;
 
-        const zone = enemy.getSpecial<IZoneValue>(15);
+        const zone = enemy.getSpecial<ISpecial13Value>(15);
         if (zone) {
             views.push(new ZoneDamageView(context, locator, zone));
         }

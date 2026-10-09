@@ -13,7 +13,7 @@ import {
     type IReadonlyHeroAttribute,
     type ISpecial
 } from '@user/data-base';
-import { type IZoneValue } from '../special';
+import { type ISpecial13Value } from '../special';
 
 const testGlobals = vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -215,7 +215,7 @@ function createInfo(
 describe('ZoneDamageView', () => {
     // 验证十字领域使用曼哈顿范围参数并输出领域伤害
     it('builds a manhattan range and zone damage for a cross zone', () => {
-        const special = createSpecial<IZoneValue>(15, {
+        const special = createSpecial<ISpecial13Value>(15, {
             zone: 7,
             zoneSquare: false,
             range: 1
@@ -235,7 +235,7 @@ describe('ZoneDamageView', () => {
 
     // 验证九宫格领域使用矩形范围参数并输出领域伤害
     it('builds a rect range and zone damage for a square zone', () => {
-        const special = createSpecial<IZoneValue>(15, {
+        const special = createSpecial<ISpecial13Value>(15, {
             zone: 4,
             zoneSquare: true,
             range: 2
@@ -255,7 +255,7 @@ describe('ZoneDamageView', () => {
 
     // 验证领域范围判定命中范围内的坐标并忽略范围外坐标
     it('checks coordinates against the zone range', () => {
-        const special = createSpecial<IZoneValue>(15, {
+        const special = createSpecial<ISpecial13Value>(15, {
             zone: 7,
             zoneSquare: false,
             range: 1

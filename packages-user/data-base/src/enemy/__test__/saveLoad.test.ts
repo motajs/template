@@ -78,8 +78,8 @@ function createEnemy(
 /** 构造一个可序列化的数值特殊属性 */
 function createSpecial(code: number, value: number): ISpecial<number> {
     return new modules.CommonSerializableSpecial<number>(code, value, {
-        getSpecialName: () => `special-${code}`,
-        getDescription: () => `description-${code}`,
+        name: () => `special-${code}`,
+        desc: () => `description-${code}`,
         fromLegacyEnemy: () => value
     });
 }

@@ -55,6 +55,13 @@ export interface ISpecial<T = void> extends ISaveableContent<T> {
      */
     getDescription(): string;
 
+    // TODO: 后续需要改进渲染端的文字渲染，颜色使用内嵌方式写入到字符串里面，而不是单独指定
+
+    /**
+     * 获取此特殊属性的名称颜色
+     */
+    getNameColor(): string;
+
     /**
      * 深拷贝此特殊属性
      */

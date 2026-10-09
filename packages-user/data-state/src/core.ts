@@ -54,10 +54,10 @@ import {
     MainEnemyFinalEffect,
     MainMapDamageConverter,
     MainMapDamageReducer,
-    registerSpecials,
+    createSpecials,
     MainEnemyComparer
 } from './enemy';
-import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
+import { HERO_DEFAULT_ATTRIBUTE } from './shared';
 import { DefaultHeroMoveTopImpl, DefaultPassPredicateImpl } from './hero';
 import { createEventRegistrations } from './event';
 import {
@@ -109,120 +109,145 @@ export class CoreState implements ICoreState {
     > = new Map();
 
     constructor(config: Readonly<ICoreStateConfig>) {
-        //#region L0 初始化
+        //#region L0 定义
 
-        // 朝向
         this.roleFace = new RoleFaceBinder();
         this.faceManager = new FaceManager();
+        this.tileStore = new TileStore();
+        this.itemStore = new ItemStore<IHeroAttr>(this.tileStore);
+        this.mapStore = new MapStore();
+        this.eventStore = new GameEventStore();
+
+        this.initializeL0();
+
+        //#endregion
+
+        //#region L1 定义
+
+        this.flags = new FlagSystem();
+        this.maps = new MapState(this);
+        const dir8 = this.faceManager.get(FaceGroup.Dir8)!;
+        const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
+        this.hero = new HeroState(this, dir8, heroAttribute);
+        this.enemyManager = new EnemyManager<IEnemyAttr>(this.tileStore);
+
+        this.initializeL1();
+
+        //#endregion
+
+        //#region L2 定义
+
+        this.enemyContext = new EnemyContext<IEnemyAttr, IHeroAttr>(this);
+        const events = createEventRegistrations();
+        this.eventSystem = new GameEventSystem(this, events);
+        this.replaySystem = new ReplaySystem();
+        this.pathfinding = new PathfindingSystem(this);
+
+        this.initializeL2();
+
+        //#endregion
+
+        //#region L3 定义
+
+        this.loadManager = new LoadManager();
+        this.loader = new MotaDataLoader(this.loadManager, config.loadStarter);
+
+        this.initializeL3(config);
+
+        //#endregion
+    }
+
+    //#region 初始化方法
+
+    /**
+     * 初始化数据端 L0
+     */
+    private initializeL0() {
         const dir4 = new Dir4FaceHandler();
         const dir8 = new Dir8FaceHandler();
         this.faceManager.register(FaceGroup.Dir4, dir4);
         this.faceManager.registerById('dir4', dir4);
         this.faceManager.register(FaceGroup.Dir8, dir8);
         this.faceManager.registerById('dir8', dir8);
+    }
 
-        // 图块
-        this.tileStore = new TileStore();
-        // 道具
-        this.itemStore = new ItemStore<IHeroAttr>(this.tileStore);
-        // 地图
-        this.mapStore = new MapStore();
-        // 游戏事件
-        this.eventStore = new GameEventStore();
-
-        //#endregion
-
-        //#region L1 初始化
-
-        // Flag 系统
-        this.flags = new FlagSystem();
-
-        // 地图
-        this.maps = new MapState(this);
-
-        // 勇士
-        const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
-        const heroState = new HeroState(this, dir8, heroAttribute);
-        this.hero = heroState;
-
-        // 怪物管理器
+    /**
+     * 初始化数据端 L1
+     */
+    private initializeL1() {
         const comparer = new MainEnemyComparer();
-        const enemyManager = new EnemyManager<IEnemyAttr>(this.tileStore);
-        enemyManager.attachEnemyComparer(comparer);
-        registerSpecials(enemyManager);
-        this.enemyManager = enemyManager;
+        this.enemyManager.attachEnemyComparer(comparer);
 
-        //#endregion
+        const specials = createSpecials(this);
+        for (const [code, cons] of specials) {
+            this.enemyManager.registerSpecial(code, cons);
+        }
+    }
 
-        //#region L2 初始化
-
-        // 怪物上下文
-        const enemyContext = new EnemyContext<IEnemyAttr, IHeroAttr>(this);
-        const damageSystem = new DamageSystem(enemyContext);
-        const mapDamage = new MapDamage(enemyContext);
-        damageSystem.useCalculator(new MainDamageCalculator());
-        mapDamage.useReducer(new MainMapDamageReducer());
-        mapDamage.useConverter(new MainMapDamageConverter());
-        enemyContext.attachDamageSystem(damageSystem);
-        enemyContext.attachMapDamage(mapDamage);
-        enemyContext.registerAuraConverter(new CommonAuraConverter());
-        enemyContext.registerAuraConverter(new GuardAuraConverter());
-        enemyContext.registerFinalEffect(new MainEnemyFinalEffect());
-        enemyContext.resize(TILE_WIDTH, TILE_HEIGHT);
-        enemyContext.bindHero(heroAttribute);
-        this.enemyContext = enemyContext;
-
-        // 游戏事件系统
-        const eventSystem = new GameEventSystem(
-            this,
-            createEventRegistrations()
-        );
-        this.eventSystem = eventSystem;
-
-        // 录像系统
-        this.replaySystem = new ReplaySystem();
-
-        // 寻路系统
-        this.pathfinding = new PathfindingSystem(this);
-        this.pathfinding.useMover(this.hero.location.mover);
-        // 初始状态下勇士不在任何楼层，切换楼层后再具体设置
-        this.pathfinding.finder.useMapLayer(null);
+    /**
+     * 初始化数据端 L2
+     */
+    private initializeL2() {
         const predicate = new DefaultPassPredicateImpl(this);
         this.pathfinding.finder.usePassPredicate(predicate);
+        // 初始状态下勇士不在任何楼层，切换楼层后再具体设置
+        this.pathfinding.finder.useMapLayer(null);
+        this.pathfinding.useMover(this.hero.location.mover);
 
-        //#endregion
+        this.initializeEnemy();
+    }
 
-        //#region L3 初始化
+    private initializeL3(config: Readonly<ICoreStateConfig>) {
+        // 勇士顶层初始化
+        const heroMoveTopImpl = new DefaultHeroMoveTopImpl(this);
+        this.hero.location.mover.useTopImplementation(heroMoveTopImpl);
 
         // 加载
-        this.loadManager = new LoadManager();
-        this.loader = new MotaDataLoader(this.loadManager, config.loadStarter);
         this.loader.addHook(new DefaultDataLoaderHook());
         this.loader.addCoreConfig('core', config.coreURL);
 
-        // 存档内容
+        this.initializeSave();
+        this.initializeReplay();
+    }
+
+    /**
+     * 初始化怪物信息
+     */
+    private initializeEnemy() {
+        // 初始化怪物上下文
+        const ctx = this.enemyContext;
+        const damageSystem = new DamageSystem(ctx);
+        const mapDamage = new MapDamage(ctx);
+        damageSystem.useCalculator(new MainDamageCalculator());
+        mapDamage.useReducer(new MainMapDamageReducer());
+        mapDamage.useConverter(new MainMapDamageConverter());
+        ctx.attachDamageSystem(damageSystem);
+        ctx.attachMapDamage(mapDamage);
+        ctx.bindHero(this.hero.getAttribute());
+
+        // 注册光环转换器
+        ctx.registerAuraConverter(new CommonAuraConverter());
+        ctx.registerAuraConverter(new GuardAuraConverter());
+
+        // 注册怪物最终效果
+        ctx.registerFinalEffect(new MainEnemyFinalEffect());
+    }
+
+    /**
+     * 初始化存档内容
+     */
+    private initializeSave() {
         this.addSaveableContent('@system/hero', this.hero);
         this.addSaveableContent('@system/flags', this.flags);
         this.addSaveableContent('@system/maps', this.maps);
         this.addSaveableContent('@system/enemy', this.enemyManager);
         this.addSaveableContent('@system/replay', this.replaySystem);
-
-        // 勇士顶层初始化
-        const heroMoveTopImpl = new DefaultHeroMoveTopImpl(this);
-        this.hero.location.mover.useTopImplementation(heroMoveTopImpl);
-
-        // 录像系统初始化注册
-        this.registerReplayCommands();
-
-        //#endregion
     }
-
-    //#region 私有方法
 
     /**
      * 注册全部录像指令
      */
-    private registerReplayCommands() {
+    private initializeReplay() {
         const replay = this.replaySystem;
 
         const up = new ReplayMove(this, FaceDirection.Up);

@@ -2,13 +2,13 @@ import { isEqual } from 'lodash-es';
 import { SaveCompression } from '@user/data-common';
 import { ISpecial, SpecialCreation } from './types';
 
-// TODO: 颜色参数
-
 export interface ICommonSpecialConfig<T> {
     /** 获取特殊属性的名称 */
-    getSpecialName: (special: ISpecial<T>) => string;
+    name: string | ((special: ISpecial<T>) => string);
     /** 获取特殊属性的描述 */
-    getDescription: (special: ISpecial<T>) => string;
+    desc: string | ((special: ISpecial<T>) => string);
+    /** 获取特殊属性的名称显示颜色 */
+    color: string | ((special: ISpecial<T>) => string);
 }
 
 export class CommonSerializableSpecial<T> implements ISpecial<T> {
@@ -26,12 +26,30 @@ export class CommonSerializableSpecial<T> implements ISpecial<T> {
         return this.value;
     }
 
+    /**
+     * 获取配置数据的值，是字面量则直接返回，是函数则返回其调用结果
+     * @param config 配置源数据
+     */
+    private getConfigValue(
+        config: string | ((special: ISpecial<T>) => string)
+    ) {
+        if (typeof config === 'string') {
+            return config;
+        } else {
+            return config(this);
+        }
+    }
+
     getSpecialName(): string {
-        return this.config.getSpecialName(this);
+        return this.getConfigValue(this.config.name);
     }
 
     getDescription(): string {
-        return this.config.getDescription(this);
+        return this.getConfigValue(this.config.desc);
+    }
+
+    getNameColor(): string {
+        return this.getConfigValue(this.config.color);
     }
 
     clone(): ISpecial<T> {
@@ -72,12 +90,30 @@ export class NonePropertySpecial implements ISpecial<void> {
         return void 0;
     }
 
+    /**
+     * 获取配置数据的值，是字面量则直接返回，是函数则返回其调用结果
+     * @param config 配置源数据
+     */
+    private getConfigValue(
+        config: string | ((special: ISpecial<void>) => string)
+    ) {
+        if (typeof config === 'string') {
+            return config;
+        } else {
+            return config(this);
+        }
+    }
+
     getSpecialName(): string {
-        return this.config.getSpecialName(this);
+        return this.getConfigValue(this.config.name);
     }
 
     getDescription(): string {
-        return this.config.getDescription(this);
+        return this.getConfigValue(this.config.desc);
+    }
+
+    getNameColor(): string {
+        return this.getConfigValue(this.config.color);
     }
 
     clone(): ISpecial<void> {
