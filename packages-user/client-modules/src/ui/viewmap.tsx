@@ -27,7 +27,7 @@ import { FloorSelector } from '@user/client-base';
 import { clamp, mean } from 'lodash-es';
 import { StatisticsDataOneFloor } from './statistics';
 import { Tip, TipExpose } from '@user/client-base';
-import { useKey } from '../use';
+import { useKey } from '../render/use';
 import {
     ENABLE_RIGHT_STATUS_BAR,
     FULL_LOC,
@@ -39,7 +39,7 @@ import {
     RIGHT_STATUS_POS,
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
-} from '../../shared';
+} from '../shared';
 
 export interface ViewMapProps extends IUIDefaultPropsBase, BaseProps {
     loc: ElementLocator;
