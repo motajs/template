@@ -10,9 +10,9 @@ import {
     MAIN_WIDTH,
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
-} from '../../shared';
+} from '../shared';
 import { DefaultProps } from '@motajs/render-vue';
-import { client } from '../../core';
+import { client } from '../core';
 
 export interface ILeftHeroStatus {
     /** 楼层 id */

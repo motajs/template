@@ -17,15 +17,15 @@ import {
 import { mainUi } from '@motajs/legacy-ui';
 import { gameKey, generateKeyboardEvent } from '@motajs/system';
 import { getVitualKeyOnce } from '@motajs/legacy-ui';
-import { getAllSavesData, getSaveData, syncFromServer } from '../utils';
+import { getAllSavesData, getSaveData, syncFromServer } from '../render/utils';
 import { getInput } from '@user/client-base';
 import { openStatistics } from './statistics';
 import { saveWithExist } from './save';
 import { compressToBase64 } from 'lz-string';
 import { ViewMapUI } from './viewmap';
-import { CENTER_LOC, FULL_LOC, MAIN_HEIGHT, POP_BOX_WIDTH } from '../../shared';
-import { useKey } from '../use';
-import { client } from '../../core';
+import { CENTER_LOC, FULL_LOC, MAIN_HEIGHT, POP_BOX_WIDTH } from '../shared';
+import { useKey } from '../render/use';
+import { client } from '../core';
 
 export interface MainSettingsProps
     extends Partial<ChoicesProps>, IUIDefaultPropsBase {

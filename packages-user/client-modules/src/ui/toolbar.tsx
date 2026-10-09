@@ -13,7 +13,7 @@ import {
 } from '@user/client-base';
 import { getVitualKeyOnce } from '@motajs/legacy-ui';
 import { gameKey, generateKeyboardEvent } from '@motajs/system';
-import { transitioned } from '../use';
+import { transitioned } from '../render/use';
 import { linear } from 'mutate-animate';
 import { KeyCode } from '@motajs/client-base';
 import { Progress } from '@user/client-base';
@@ -21,11 +21,11 @@ import { generateBinary } from '@motajs/legacy-common';
 import { SetupComponentOptions } from '@motajs/system';
 import { saveSave, saveLoad } from './save';
 import { mainUIController } from './controller';
-import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '../../shared';
+import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '../shared';
 import { openReplay, openSettings } from './settings';
 import { openViewMap } from './viewmap';
 import { DefaultProps } from '@motajs/render-vue';
-import { client } from '../../core';
+import { client } from '../core';
 
 interface ToolbarProps extends DefaultProps {
     loc?: ElementLocator;
