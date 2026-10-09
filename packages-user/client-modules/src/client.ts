@@ -41,7 +41,7 @@ import { WebLoadStarter } from '@motajs/loader';
 import { IRendererUsing, RendererUsing } from '@motajs/render-vue';
 import { IUIController, UIController } from '@motajs/system';
 import { createApp } from './render';
-import { LoadSceneUI } from './render/ui/load';
+import { LoadSceneUI } from './ui/load';
 import { createUIPropsBase } from './ui/func';
 
 export class ClientCore extends CoreState implements IClientCore {

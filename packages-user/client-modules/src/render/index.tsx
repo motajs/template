@@ -3,12 +3,12 @@ import { defineComponent } from 'vue';
 import { DEFAULT_FONT, MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
 import { createElements } from '@user/client-base';
 import { mainRenderer } from './renderer';
-import { createUI } from './ui';
+import { createUI } from '../ui';
 import { createAction } from './action';
 import { sceneController } from './scene';
 import { createWeather } from './weather';
 import { createApp } from './renderer';
-import { LoadSceneUI } from './ui/load';
+import { LoadSceneUI } from '../ui/load';
 
 export function createGameRenderer() {
     const App = defineComponent(_props => {
@@ -36,7 +36,6 @@ export function createRender() {
 }
 
 export * from './fx';
-export * from './ui';
 export * from './utils';
 export * from './weather';
 export * from './renderer';

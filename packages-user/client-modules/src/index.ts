@@ -9,6 +9,7 @@ export function create() {
 export * from './action';
 export * from './fallback';
 export * from './render';
+export * from './ui';
 
 export * from './client';
 export * from './core';
