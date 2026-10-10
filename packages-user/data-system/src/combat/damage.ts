@@ -10,7 +10,8 @@ import {
     IEnemyDamageInfo,
     IReadonlyEnemyHandler,
     IEnemyView,
-    IEnemyDamageInfoBase
+    IEnemyDamageInfoBase,
+    IReadonlyDamageHandler
 } from './types';
 import {
     IHeroAttribute,
@@ -57,9 +58,9 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
      */
     private createReadonlyHandler(
         enemy: IReadonlyEnemy<TEnemy>,
-        locator: ITileLocator,
+        locator: ITileLocator | null,
         hero: IReadonlyHeroAttribute<THero>
-    ): IReadonlyEnemyHandler<TEnemy, THero> {
+    ): IReadonlyDamageHandler<TEnemy, THero> {
         return {
             enemy,
             context: this.context,
@@ -144,7 +145,7 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
      * @param maxIterations 最大迭代数量
      */
     private findNextCritical(
-        handler: IReadonlyEnemyHandler<TEnemy, THero>,
+        handler: IReadonlyDamageHandler<TEnemy, THero>,
         hero: IHeroAttribute<THero>,
         attribute: CriticalableHeroStatus<THero>,
         currentValue: number,
@@ -181,7 +182,7 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
         };
     }
 
-    *calculateCritical(
+    *calculateViewCritical(
         view: IEnemyView<TEnemy>,
         attribute: CriticalableHeroStatus<THero>,
         precision: number = 12
@@ -196,9 +197,31 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
         }
 
         const locator = this.context.getEnemyLocatorByView(view);
-        if (!locator) return;
-
         const enemy = view.getComputedEnemy();
+
+        yield* this.calculateEnemyCritical(
+            enemy,
+            attribute,
+            locator,
+            precision
+        );
+    }
+
+    *calculateEnemyCritical(
+        enemy: IReadonlyEnemy<TEnemy>,
+        attribute: CriticalableHeroStatus<THero>,
+        locator: ITileLocator | null,
+        precision: number = 12
+    ): Generator<IEnemyCritical, void, void> {
+        if (!this.heroStatus) {
+            logger.warn(107);
+            return;
+        }
+        if (!this.calculator) {
+            logger.warn(106);
+            return;
+        }
+
         const hero = this.heroStatus.getModifiableClone();
         const handler = this.createReadonlyHandler(enemy, locator, hero);
 

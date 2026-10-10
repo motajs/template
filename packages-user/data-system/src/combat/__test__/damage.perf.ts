@@ -253,7 +253,7 @@ describe('临界计算性能', () => {
 
         measureCase('临界计算', String(count), () => {
             for (let i = 0; i < count; i++) {
-                for (const _ of damageContext.calculateCritical(
+                for (const _ of damageContext.calculateViewCritical(
                     fixture.view,
                     'atk'
                 )) {
@@ -275,7 +275,7 @@ describe('临界计算性能', () => {
 
         measureCase('临界计算', String(count), () => {
             for (let i = 0; i < count; i++) {
-                for (const _ of damageContext.calculateCritical(
+                for (const _ of damageContext.calculateViewCritical(
                     fixture.view,
                     'atk'
                 )) {
@@ -297,7 +297,7 @@ describe('临界计算性能', () => {
 
         measureCase('临界计算', String(count), () => {
             for (let i = 0; i < count; i++) {
-                for (const _ of damageContext.calculateCritical(
+                for (const _ of damageContext.calculateViewCritical(
                     fixture.view,
                     'atk'
                 )) {

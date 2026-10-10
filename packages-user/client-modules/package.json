@@ -14,6 +14,7 @@
         "@user/client-system": "workspace:*",
         "@user/data-common": "workspace:*",
         "@user/data-base": "workspace:*",
+        "@user/data-system": "workspace:*",
         "@user/data-state": "workspace:*"
     }
 }

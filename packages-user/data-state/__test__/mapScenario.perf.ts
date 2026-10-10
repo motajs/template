@@ -677,7 +677,7 @@ describe('真实大地图战斗场景性能', () => {
             const record = measureCase('全图怪物单次临界计算', label, () => {
                 for (const entry of fixture.state.enemyContext.iterateEnemy()) {
                     const view = entry[1];
-                    for (const _critical of fixture.damageSystem.calculateCritical(
+                    for (const _critical of fixture.damageSystem.calculateViewCritical(
                         view,
                         'atk'
                     )) {

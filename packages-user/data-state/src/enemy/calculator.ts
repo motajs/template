@@ -5,8 +5,8 @@ import {
     IReadonlyEnemyHandler
 } from '@user/data-system';
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import { IVampireValue } from './special';
 import { logger } from '@motajs/common';
+import { ISpecial9Value } from './special';
 
 export class MainDamageCalculator implements IDamageCalculator<
     IEnemyAttr,
@@ -51,7 +51,7 @@ export class MainDamageCalculator implements IDamageCalculator<
         }
 
         // 吸血
-        const vampire = enemy.getSpecial<IVampireValue>(11);
+        const vampire = enemy.getSpecial<ISpecial9Value>(11);
         if (vampire) {
             const value = (vampire.value.vampire / 100) * hp;
             damage += value;

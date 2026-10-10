@@ -514,7 +514,7 @@ describe('DamageContext critical generation', () => {
         );
 
         const first = context
-            .calculateCritical(fixture.view, 'atk')
+            .calculateViewCritical(fixture.view, 'atk')
             .next().value!;
 
         expect(first.baseValue).toBe(0);
@@ -533,7 +533,7 @@ describe('DamageContext critical generation', () => {
             fixture.hero
         );
 
-        const results = [...context.calculateCritical(fixture.view, 'atk')];
+        const results = [...context.calculateViewCritical(fixture.view, 'atk')];
 
         expect(results).toEqual([]);
     });
@@ -558,13 +558,16 @@ describe('DamageContext critical generation', () => {
         );
 
         const heroResult = modules.logger.catch(() => [
-            ...noHero.calculateCritical(fixture.view, 'atk')
+            ...noHero.calculateViewCritical(fixture.view, 'atk')
         ]);
         const calculatorResult = modules.logger.catch(() => [
-            ...noCalculator.calculateCritical(fixture.view, 'atk')
+            ...noCalculator.calculateViewCritical(fixture.view, 'atk')
         ]);
         const locatorResult = modules.logger.catch(() => [
-            ...withLocator.calculateCritical(createUnknownView(fixture), 'atk')
+            ...withLocator.calculateViewCritical(
+                createUnknownView(fixture),
+                'atk'
+            )
         ]);
 
         expect(heroResult.ret).toEqual([]);
@@ -585,7 +588,7 @@ describe('DamageContext critical generation', () => {
         );
 
         const first = context
-            .calculateCritical(fixture.view, 'atk')
+            .calculateViewCritical(fixture.view, 'atk')
             .next().value!;
 
         expect(first.nextValue).toBe(1);
