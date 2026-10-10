@@ -43,6 +43,10 @@ export class HeroItems<THero> implements IHeroItems<THero> {
         return this.internalGetItemState(item);
     }
 
+    iterateItems(): Iterable<[num: number, item: IHeroItemState<THero>]> {
+        return this.items;
+    }
+
     itemCount(item: number | string): number {
         return this.getItemState(item)?.count ?? 0;
     }

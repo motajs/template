@@ -627,6 +627,11 @@ export interface IHeroItems<THero>
     getItemState(item: number | string): Readonly<IHeroItemState<THero>> | null;
 
     /**
+     * 迭代勇士所拥有的所有道具，键表示道具的图块数字，值表示道具状态
+     */
+    iterateItems(): Iterable<[num: number, item: IHeroItemState<THero>]>;
+
+    /**
      * 使用道具，仅对 Constant 与 Consumable 类型生效。Consumable 类型使用后数量减一。
      * @param item 道具图块数字或字符串 id
      * @returns 道具是否使用成功
