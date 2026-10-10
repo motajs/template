@@ -63,7 +63,7 @@ export class CommonAura implements IEnemyAuraView<
     private createRange(): IRange<
         IRectRangeParam | IManhattanRangeParam | void
     > {
-        const { haloRange, haloSquare } = this.special.value;
+        const { range: haloRange, square: haloSquare } = this.special.value;
         if (haloRange <= 0) {
             return FULL_RANGE;
         }
@@ -71,7 +71,7 @@ export class CommonAura implements IEnemyAuraView<
     }
 
     getRangeParam(): IRectRangeParam | IManhattanRangeParam | void {
-        const { haloRange, haloSquare } = this.special.value;
+        const { range: haloRange, square: haloSquare } = this.special.value;
         if (haloRange <= 0) {
             return undefined;
         }

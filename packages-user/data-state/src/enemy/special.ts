@@ -3,7 +3,6 @@ import {
     defineNonePropertySpecial,
     SpecialCreation
 } from '@user/data-base';
-import { IEnemyAttr } from '@user/data-common';
 import { IStateSystem } from '@user/data-system';
 
 // 重要！！！下面这一行的注释不要删
@@ -25,7 +24,7 @@ export interface ISpecial13Value {
     /** 领域伤害值 */
     zone: number;
     /** 矩形领域（true）还是十字形领域（false），当范围大于 1 时，十字型领域采用曼哈顿距离计算 */
-    zoneSquare: boolean;
+    square: boolean;
     /** 领域范围值 */
     range: number;
 }
@@ -38,17 +37,30 @@ export interface ISpecial21Value {
     defValue: number;
 }
 
+/** 23 - 光环 */
 export interface ISpecial23Value {
     /** 光环范围值 */
-    haloRange: number;
+    range: number;
     /** 光环是矩形范围（true）还是十字型范围（false），当范围大于 1 时，十字型范围采用曼哈顿距离计算 */
-    haloSquare: boolean;
+    square: boolean;
     /** 生命值增加比例 */
     hpBuff: number;
     /** 攻击力增加比例 */
     atkBuff: number;
     /** 防御力增加比例 */
     defBuff: number;
+}
+
+/** 26 - 特殊光环 */
+export interface ISpecial26Value {
+    /** 光环范围值 */
+    range: number;
+    /** 光环是矩形范围（true）还是十字型范围（false），当范围大于 1 时，十字型范围采用曼哈顿距离计算 */
+    square: boolean;
+    /** 当怪物受到多个特殊光环加成时，是乘算叠加（true），还是加算叠加（false） */
+    mulAdd: boolean;
+    /** 增加的特殊属性列表 */
+    specials: [number, any][];
 }
 
 // 重要！！！下面这一行的注释不要删
@@ -69,10 +81,10 @@ export interface ISpecial23Value {
  */
 export function createSpecials(
     state: IStateSystem
-): ReadonlyMap<number, SpecialCreation<any, IEnemyAttr>> {
+): ReadonlyMap<number, SpecialCreation<any>> {
     const hero = state.hero;
 
-    const map = new Map<number, SpecialCreation<any, IEnemyAttr>>();
+    const map = new Map<number, SpecialCreation<any>>();
 
     // 注意，不需要参数的特殊属性，如先攻、魔攻、坚固这些纯机制，
     // 不需要一个数值来描述的特殊属性，使用 defineNonePropertySpecial 定义。
@@ -250,11 +262,11 @@ export function createSpecials(
         13,
         defineCommonSerializableSpecial<ISpecial13Value>(
             13,
-            { zone: 0, zoneSquare: false, range: 1 },
+            { zone: 0, square: false, range: 1 },
             {
                 name: '领域',
                 desc: special => {
-                    const { zone, zoneSquare, range } = special.value;
+                    const { zone, square: zoneSquare, range } = special.value;
                     return `经过怪物周围${zoneSquare ? '九宫格' : '十字'}范围内${range}格时自动减生命${zone}点。`;
                 },
                 color: '#C677DD'
@@ -368,8 +380,8 @@ export function createSpecials(
         defineCommonSerializableSpecial<ISpecial23Value>(
             23,
             {
-                haloRange: 0,
-                haloSquare: false,
+                range: 0,
+                square: false,
                 hpBuff: 0,
                 atkBuff: 0,
                 defBuff: 0
@@ -377,8 +389,13 @@ export function createSpecials(
             {
                 name: '光环',
                 desc: special => {
-                    const { haloRange, haloSquare, hpBuff, atkBuff, defBuff } =
-                        special.value;
+                    const {
+                        range: haloRange,
+                        square: haloSquare,
+                        hpBuff,
+                        atkBuff,
+                        defBuff
+                    } = special.value;
                     let str = '';
                     if (haloRange > 0) {
                         if (haloSquare) {
@@ -420,14 +437,46 @@ export function createSpecials(
     // 25 - 捕捉
     map.set(
         25,
-        defineNonePropertySpecial(27, {
+        defineNonePropertySpecial(25, {
             name: '捕捉',
             desc: '当走到怪物十字范围内时会进行强制战斗。',
             color: '#C0DDBB'
         })
     );
 
-    // TODO: 26 - 特殊光环
+    // 26 - 特殊光环
+    map.set(
+        26,
+        defineCommonSerializableSpecial<ISpecial26Value>(
+            26,
+            {
+                range: 0,
+                square: false,
+                mulAdd: false,
+                specials: []
+            },
+            {
+                name: '特殊光环',
+                desc: special => {
+                    const { range, square, specials, mulAdd } = special.value;
+                    const prefix = `在怪物周围${square ? '正方形' : '十字'} ${range} 格范围内的怪物获得如下特殊属性，${mulAdd ? '乘算' : '加算'}叠加：\n`;
+                    const list: string[] = [];
+                    for (const [code, param] of specials) {
+                        const special = state.enemyManager.getSpecial(code)?.();
+                        if (!special) continue;
+                        special.setValue(param);
+                        const name = special.getSpecialName();
+                        const color = special.getNameColor();
+                        const desc = special.getDescription();
+                        const item = `  ${list.length + 1}. \\r[${color}]${name}\\r: ${desc}`;
+                        list.push(item);
+                    }
+                    return prefix + list.join('\n');
+                },
+                color: '#e945ff'
+            }
+        )
+    );
 
     // 重要！！！下面这一行的注释不要删
     //#endregion

@@ -204,8 +204,8 @@ function createPipelineSpecials(haloAtkBuff: number): ISpecial<any>[] {
         createSpecial<void>(17, undefined),
         createSpecial<number>(22, 7),
         createSpecial<ISpecial23Value>(25, {
-            haloRange: 0,
-            haloSquare: false,
+            range: 0,
+            square: false,
             hpBuff: 0,
             atkBuff: haloAtkBuff,
             defBuff: 0
@@ -256,8 +256,8 @@ describe('enemy combination stage 1 - component baselines', () => {
             attrs: { atk: 20 },
             specials: [
                 createSpecial<ISpecial23Value>(25, {
-                    haloRange: 0,
-                    haloSquare: false,
+                    range: 0,
+                    square: false,
                     hpBuff: 0,
                     atkBuff: 50,
                     defBuff: 0
@@ -490,8 +490,8 @@ describe('enemy combination stage 2 - multi-special and system pipelines', () =>
             code: 25,
             specials: [
                 createSpecial<ISpecial23Value>(25, {
-                    haloRange: 0,
-                    haloSquare: false,
+                    range: 0,
+                    square: false,
                     hpBuff: 0,
                     atkBuff: 50,
                     defBuff: 0

@@ -182,8 +182,8 @@ function createWritableHandler(
  */
 function createHalo(overrides: Partial<ISpecial23Value> = {}): ISpecial23Value {
     return {
-        haloRange: 0,
-        haloSquare: false,
+        range: 0,
+        square: false,
         hpBuff: 0,
         atkBuff: 0,
         defBuff: 0,
@@ -227,7 +227,7 @@ describe('CommonAura range', () => {
         const { enemy } = createEnemy();
         const aura = new modules.CommonAura(
             enemy,
-            createSpecial(25, createHalo({ haloRange: 0 })),
+            createSpecial(25, createHalo({ range: 0 })),
             { x: 3, y: 4 }
         );
 
@@ -240,7 +240,7 @@ describe('CommonAura range', () => {
         const { enemy } = createEnemy();
         const aura = new modules.CommonAura(
             enemy,
-            createSpecial(25, createHalo({ haloRange: 2, haloSquare: true })),
+            createSpecial(25, createHalo({ range: 2, square: true })),
             { x: 3, y: 4 }
         );
 
@@ -253,7 +253,7 @@ describe('CommonAura range', () => {
         const { enemy } = createEnemy();
         const aura = new modules.CommonAura(
             enemy,
-            createSpecial(25, createHalo({ haloRange: 2, haloSquare: false })),
+            createSpecial(25, createHalo({ range: 2, square: false })),
             { x: 3, y: 4 }
         );
 

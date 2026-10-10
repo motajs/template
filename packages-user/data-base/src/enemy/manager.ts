@@ -13,10 +13,8 @@ import { isNil } from 'lodash-es';
 
 export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
     /** 特殊属性注册表，code -> 创建函数 */
-    private readonly specialRegistry: Map<
-        number,
-        SpecialCreation<any, TEnemy>
-    > = new Map();
+    private readonly specialRegistry: Map<number, SpecialCreation<any>> =
+        new Map();
     /** 怪物模板表，code -> IEnemy */
     private readonly prefabByCode: Map<number, IEnemy<TEnemy>> = new Map();
     /** 复用映射，reusedCode -> sourceCode */
@@ -32,8 +30,12 @@ export class EnemyManager<TEnemy> implements IEnemyManager<TEnemy> {
 
     constructor(private readonly tileStore: ITileStore) {}
 
-    registerSpecial(code: number, cons: SpecialCreation<any, TEnemy>): void {
+    registerSpecial(code: number, cons: SpecialCreation<any>): void {
         this.specialRegistry.set(code, cons);
+    }
+
+    getSpecial(code: number): SpecialCreation<any> | null {
+        return this.specialRegistry.get(code) ?? null;
     }
 
     /**

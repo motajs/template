@@ -157,8 +157,8 @@ const MONSTER_PORTFOLIO: readonly IMonsterPrefab[] = [
         specials: [
             // haloRange 为 0 时 25 会落到 FullRange，即同楼层全体光环
             createSpecial<ISpecial23Value>(25, {
-                haloRange: 0,
-                haloSquare: false,
+                range: 0,
+                square: false,
                 hpBuff: 0,
                 atkBuff: 30,
                 defBuff: 0
@@ -172,8 +172,8 @@ const MONSTER_PORTFOLIO: readonly IMonsterPrefab[] = [
         specials: [
             // 十字范围光环，让光环拓扑随怪物坐标变化而非全图连通
             createSpecial<ISpecial23Value>(25, {
-                haloRange: 3,
-                haloSquare: false,
+                range: 3,
+                square: false,
                 hpBuff: 20,
                 atkBuff: 0,
                 defBuff: 0
@@ -187,8 +187,8 @@ const MONSTER_PORTFOLIO: readonly IMonsterPrefab[] = [
         specials: [
             // 九宫格范围光环，与十字范围共用同一转换器但走不同 range 实现
             createSpecial<ISpecial23Value>(25, {
-                haloRange: 2,
-                haloSquare: true,
+                range: 2,
+                square: true,
                 hpBuff: 0,
                 atkBuff: 0,
                 defBuff: 25
@@ -212,7 +212,7 @@ const MONSTER_PORTFOLIO: readonly IMonsterPrefab[] = [
         specials: [
             createSpecial<ISpecial13Value>(15, {
                 zone: 5,
-                zoneSquare: false,
+                square: false,
                 range: 2
             })
         ]
@@ -224,7 +224,7 @@ const MONSTER_PORTFOLIO: readonly IMonsterPrefab[] = [
         specials: [
             createSpecial<ISpecial13Value>(15, {
                 zone: 8,
-                zoneSquare: true,
+                square: true,
                 range: 1
             }),
             createSpecial<void>(2, undefined)

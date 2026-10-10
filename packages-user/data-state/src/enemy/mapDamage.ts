@@ -93,11 +93,11 @@ export class ZoneDamageView extends BaseMapDamageView<
     }
 
     getRange(): IRange<IRectRangeParam | IManhattanRangeParam> {
-        return this.special.value.zoneSquare ? RECT_RANGE : MANHATTAN_RANGE;
+        return this.special.value.square ? RECT_RANGE : MANHATTAN_RANGE;
     }
 
     getRangeParam(): IRectRangeParam | IManhattanRangeParam {
-        if (this.special.value.zoneSquare) {
+        if (this.special.value.square) {
             return {
                 h: this.special.value.range * 2 + 1,
                 w: this.special.value.range * 2 + 1,

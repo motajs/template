@@ -161,7 +161,7 @@ export interface IEnemy<TAttr>
 
 //#region 怪物管理器
 
-export type SpecialCreation<T, TAttr> = (enemy: IEnemy<TAttr>) => ISpecial<T>;
+export type SpecialCreation<T> = () => ISpecial<T>;
 
 export interface IEnemyManager<TAttr> extends ISaveableContent<
     IEnemyManagerSaveState<TAttr>
@@ -171,7 +171,13 @@ export interface IEnemyManager<TAttr> extends ISaveableContent<
      * @param code 特殊属性代码
      * @param cons 特殊属性创建函数
      */
-    registerSpecial(code: number, cons: SpecialCreation<any, TAttr>): void;
+    registerSpecial(code: number, cons: SpecialCreation<any>): void;
+
+    /**
+     * 获取一个特殊属性的注册函数
+     * @param code 特殊属性代码
+     */
+    getSpecial(code: number): SpecialCreation<any> | null;
 
     /**
      * 创建怪物对象，如果对应数字的怪物不存在则会返回 `null`

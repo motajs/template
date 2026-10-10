@@ -147,8 +147,8 @@ describe('registerSpecials', () => {
         expect(halo.getDescription()).toContain('线性叠加。');
 
         const value: ISpecial23Value = {
-            haloRange: 2,
-            haloSquare: true,
+            range: 2,
+            square: true,
             hpBuff: 10,
             atkBuff: 0,
             defBuff: 0

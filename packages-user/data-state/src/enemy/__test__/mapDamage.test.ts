@@ -217,7 +217,7 @@ describe('ZoneDamageView', () => {
     it('builds a manhattan range and zone damage for a cross zone', () => {
         const special = createSpecial<ISpecial13Value>(15, {
             zone: 7,
-            zoneSquare: false,
+            square: false,
             range: 1
         });
         const view = new modules.ZoneDamageView(
@@ -237,7 +237,7 @@ describe('ZoneDamageView', () => {
     it('builds a rect range and zone damage for a square zone', () => {
         const special = createSpecial<ISpecial13Value>(15, {
             zone: 4,
-            zoneSquare: true,
+            square: true,
             range: 2
         });
         const view = new modules.ZoneDamageView(
@@ -257,7 +257,7 @@ describe('ZoneDamageView', () => {
     it('checks coordinates against the zone range', () => {
         const special = createSpecial<ISpecial13Value>(15, {
             zone: 7,
-            zoneSquare: false,
+            square: false,
             range: 1
         });
         const view = new modules.ZoneDamageView(
