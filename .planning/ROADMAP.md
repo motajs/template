@@ -481,7 +481,7 @@ Plans:
 **Goal**: 在已完成的数据端（可在 Node 环境独立运行/回放验证）之上完成渲染端框架，产出可在浏览器中运行并验证的最小版本
 **Requirements**: TBD
 **Depends on**: Phase 8
-**Plans**: 4/4 plans executed (任务 1·UI 接口适配，D-10..D-14；本阶段增量派发，其余任务待用户再派发)
+**Plans**: 5/5 plans executed (任务 1·UI 接口适配，D-10..D-14 已闭环；任务 2·迁移后 UI 修复，D-15..D-17，09-05 待执行；本阶段增量派发，其余任务待用户再派发)
 
 Plans:
 **Wave 1**
@@ -500,6 +500,10 @@ Plans:
 
 - [x] 09-04-PLAN.md — 任务 1·D-12（定向重设计）：把 `leftStatus` / `rightStatus` 迁入 `statusBar.tsx` 由状态栏组件自持 + 属性 9 字段与 `lv` 走 `hero.attribute` 钩子、`floor` 走 `hero.location` 钩子、无钩子字段 `// TODO` + 清理 `main.tsx`
 
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 09-05-PLAN.md — 任务 2·A + B + C：prettier 格式化 `background.tsx`/`statusBar.tsx`（D-15）+ `IUIController`/`UIController` 补 `<IGameUIPropsBase>`（14 处调用点 + 2 构造点，D-16）+ `src/ui/**` 迁移遗留类型错误修复（`main.tsx` `p`→`props`；`statusBar.tsx`/`toolbar.tsx` props 基类型归位；`settings.tsx` `loc` 窄化，D-17）+ 定向 `vue-tsc`/prettier 门禁
+
 ## Progress
 
 **Execution Order:**
@@ -515,4 +519,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. 单元测试 | 18/18 | Obsolete（由 Phase 9 承接） | - |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
-| 9. 最小浏览器可运行版本 | 4/4 | In Progress|  |
+| 9. 最小浏览器可运行版本 | 5/5 | In Progress|  |

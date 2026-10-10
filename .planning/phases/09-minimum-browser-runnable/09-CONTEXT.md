@@ -48,6 +48,14 @@
 - **D-13（flags）:** flags 尚无监听系统，本任务不处理 flags 的更新，仅在代码中标注 `TODO`。
 - **D-14（纯适配）:** 本任务不引入 UI 形态/视觉改动；不做 `@motajs/legacy-ui` 移植（属后续任务）。
 
+### 任务 2（当前规划单元：迁移后 UI 修复）
+
+> 本节界定**本次规划运行**的范围：仅规划任务 2，不规划 Phase 9 的其余内容。
+
+- **D-15（prettier 修复）:** 对本次迁移后未格式化的 UI 文件运行 prettier 修复格式：`packages-user/client-modules/src/ui/background.tsx`、`packages-user/client-modules/src/ui/statusBar.tsx`。纯格式改动，不改逻辑。
+- **D-16（IUIController 泛型适配）:** `@motajs/system` 的 `IUIController<PB>` / `UIController<PB>` 现为必填泛型；为所有未适配的使用点补上类型实参（`IGameUIPropsBase`）。范围：`client-modules` 侧 `ui/save.tsx`(495/545/569/593)、`ui/settings.tsx`(680/691)、`ui/statistics.tsx`(283)、`ui/viewmap.tsx`(559)、`render/utils/saves.ts`(125)、`render/scene.ts`(3 构造)、`ui/controller.tsx`(4 构造)；`client-base` 侧 `components/choices.tsx`(598/651/710/765)、`components/input.tsx`(547/584)、`components/misc.tsx`(571)。
+- **D-17（UI 实现迁移遗留类型错误）:** 修复 `packages-user/client-modules/src/ui/**` 的类型错误：`main.tsx`(56 `p` 未定义；138/184 props 不匹配)、`settings.tsx`(81/86/90/94/371/385/393 `loc` 不存在)、`statusBar.tsx`(521)、`toolbar.tsx`(397/403/409)。**不含** `client-base` 其余错误、渲染系统（`render/`、`client-base/map`）、数据端、legacy。
+
 ### the agent's Discretion
 
 - 无。用户明确未授权 AI 自行决定 UI 形态或任务范围。
