@@ -44,11 +44,22 @@ export interface ICoreStateHeroInitConfig<T> {
     readonly attribute: Readonly<T>;
 }
 
+export interface ICoreStateShopInitConfig {
+    /** 该商店的 id */
+    readonly id: string;
+    /** 初始状态下该商店是否启用 */
+    readonly enabled: boolean;
+    /** 商店初始状态下拥有的库存 */
+    readonly items: [number, number][];
+}
+
 export interface ICoreStateInitConfig {
     /** 初始事件 id，游戏开始时将在执行完毕此事件后正式开始 */
     readonly startEvent: string;
     /** 勇士初始状态，包含起始位置、初始属性等 */
     readonly hero: ICoreStateHeroInitConfig<IHeroAttr>;
+    /** 商店初始状态 */
+    readonly shop: ICoreStateShopInitConfig[];
 }
 
 export interface ICoreStateFlagConfig {

@@ -38,7 +38,17 @@
                 "money": 0,
                 "exp": 0
             }
-        }
+        },
+        "shop": [
+            {
+                "id": "test-shop",
+                "enabled": false,
+                "items": [
+                    [100, 2],
+                    [101, 3]
+                ]
+            }
+        ]
     },
     "flag": {
         "flyNearStair": false,
