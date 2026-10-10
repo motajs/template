@@ -261,12 +261,8 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
     ): Readonly<Partial<THero>> {
         const stateA = this.store.get(equipA);
         const stateB = this.store.get(equipB);
-        if (!stateA) {
-            logger.warn(146, equipA.toString());
-            return {} as Partial<THero>;
-        }
-        if (!stateB) {
-            logger.warn(146, equipB.toString());
+        if (!stateA && !stateB) {
+            logger.warn(195, equipA.toString(), equipB.toString());
             return {} as Partial<THero>;
         }
 
@@ -296,7 +292,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         const attrB: Partial<THero> = {};
         const keys = new Set<SelectKey<THero, number>>();
 
-        const modifiersA = [...stateA.getModifiers()];
+        const modifiersA = stateA ? [...stateA.getModifiers()] : [];
         const addedA: typeof modifiersA = [];
         for (const [name, modifier] of modifiersA) {
             const copy = modifier.clone();
@@ -304,7 +300,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
             clone.addModifier(name, copy);
             addedA.push([name, copy]);
         }
-        for (const [name] of stateA.getModifiers()) {
+        for (const [name] of modifiersA) {
             attrA[name] = clone.getFinalAttribute(name);
             keys.add(name);
         }
@@ -313,12 +309,13 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
             clone.deleteModifier(name, copy);
         }
 
-        for (const [name, modifier] of stateB.getModifiers()) {
+        const modifiersB = stateB ? [...stateB.getModifiers()] : [];
+        for (const [name, modifier] of modifiersB) {
             const copy = modifier.clone();
             // @ts-expect-error 泛型无法推导
             clone.addModifier(name, copy);
         }
-        for (const [name] of stateB.getModifiers()) {
+        for (const [name] of modifiersB) {
             attrB[name] = clone.getFinalAttribute(name);
             keys.add(name);
         }

@@ -865,8 +865,8 @@ export interface IHeroEquipment<THero>
 
     /**
      * 比较两个装备在指定槽位的表现，输出装备 A 时的属性减装备 B 时的属性
-     * @param equipA 要比较的装备 A 的 uid
-     * @param equipB 要比较的装备 B 的 uid
+     * @param equipA 要比较的装备 A 的 uid，填写 -1 表示无装备
+     * @param equipB 要比较的装备 B 的 uid，填写 -1 表示无装备
      * @param slot 要比较的装备槽索引
      */
     compareEquip(
