@@ -7,6 +7,8 @@ export interface IShopStateSave {
     readonly enabled: boolean;
     /** 商店拥有的库存 */
     readonly items: ReadonlyMap<number, number>;
+    /** 商店道具的买入价与售出价 */
+    readonly prices: ReadonlyMap<number, [buy: number, sell: number]>;
 }
 
 export interface IShopState extends ISaveableContent<IShopStateSave> {
@@ -30,6 +32,20 @@ export interface IShopState extends ISaveableContent<IShopStateSave> {
      * 迭代商店拥有的所有道具
      */
     iterateItems(): Iterable<[number, number]>;
+
+    /**
+     * 设置道具价格
+     * @param item 道具数字或 id
+     * @param buy 道具买入价格
+     * @param sell 道具卖出价格
+     */
+    setPrice(item: number | string, buy: number, sell: number): void;
+
+    /**
+     * 获取道具价格
+     * @param item 道具数字或 id
+     */
+    getPrice(item: number | string): [buy: number, sell: number];
 
     /**
      * 启用该商店
@@ -65,6 +81,12 @@ export interface IShopManager extends ISaveableContent<IShopManagerSave> {
      * @param id 商店 id
      */
     getShop(id: string): IShopState | null;
+
+    /**
+     * 判断指定商店是否属于当前管理器
+     * @param shop 商店 id 或其状态对象
+     */
+    hasShop(shop: string | IShopState): boolean;
 
     /**
      * 迭代当前的所有商店，包括未启用的
