@@ -13,7 +13,13 @@ import {
     onMounted,
     shallowReactive
 } from 'vue';
-import { getConfirm, Page, PageExpose, Thumbnail, IGameUIPropsBase } from '@user/client-base';
+import {
+    getConfirm,
+    Page,
+    PageExpose,
+    Thumbnail,
+    IGameUIPropsBase
+} from '@user/client-base';
 import { useKey } from '../render/use';
 import {
     HALF_HEIGHT,
