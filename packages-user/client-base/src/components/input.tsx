@@ -17,6 +17,7 @@ import { linear } from 'mutate-animate';
 import { Background, Selection } from './misc';
 import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 import { KeyCode } from '@motajs/client-base';
+import { IGameUIPropsBase } from '../types';
 
 export interface InputProps extends DefaultProps, Partial<TextContentProps> {
     /** 输入框的提示内容 */
@@ -544,7 +545,7 @@ export const InputBox = defineComponent<
  * @param props 额外的 props，参考 {@link ConfirmBoxProps}
  */
 export function getInput(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     text: string,
     loc: ElementLocator,
     width: number,
@@ -581,7 +582,7 @@ export function getInput(
  * @param props 额外的 props，参考 {@link ConfirmBoxProps}
  */
 export async function getInputNumber(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     text: string,
     loc: ElementLocator,
     width: number,

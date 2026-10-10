@@ -13,7 +13,7 @@ import {
     onMounted,
     shallowReactive
 } from 'vue';
-import { getConfirm, Page, PageExpose, Thumbnail } from '@user/client-base';
+import { getConfirm, Page, PageExpose, Thumbnail, IGameUIPropsBase } from '@user/client-base';
 import { useKey } from '../render/use';
 import {
     HALF_HEIGHT,
@@ -492,7 +492,7 @@ export type SaveValidationFunction = (
  * @returns 选择的存档索引
  */
 export function selectSave(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     loc: ElementLocator,
     mode: SaveMode,
     validate?: SaveValidationFunction,
@@ -542,7 +542,7 @@ export function selectSave(
 }
 
 export async function saveSave(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     loc: ElementLocator,
     props?: SaveProps
 ) {
@@ -566,7 +566,7 @@ export async function saveSave(
 }
 
 export async function saveLoad(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     loc: ElementLocator,
     props?: SaveProps
 ) {
@@ -590,7 +590,7 @@ export async function saveLoad(
 }
 
 export async function saveWithExist(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     loc: ElementLocator,
     props?: SaveProps
 ) {

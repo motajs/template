@@ -26,7 +26,7 @@ import {
 import { FloorSelector } from '@user/client-base';
 import { clamp, mean } from 'lodash-es';
 import { StatisticsDataOneFloor } from './statistics';
-import { Tip, TipExpose } from '@user/client-base';
+import { Tip, TipExpose, IGameUIPropsBase } from '@user/client-base';
 import { useKey } from '../render/use';
 import {
     ENABLE_RIGHT_STATUS_BAR,
@@ -556,7 +556,7 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
 export const ViewMapUI = new GameUI('view-map', ViewMap);
 
 export function openViewMap(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     loc: ElementLocator,
     props?: ViewMapProps
 ) {

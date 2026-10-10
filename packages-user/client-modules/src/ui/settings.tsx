@@ -7,7 +7,8 @@ import {
     Choices,
     ChoicesProps,
     getConfirm,
-    waitbox
+    waitbox,
+    IGameUIPropsBase
 } from '@user/client-base';
 import { mainUi } from '@motajs/legacy-ui';
 import { gameKey, generateKeyboardEvent } from '@motajs/system';
@@ -677,7 +678,7 @@ export const ClearSaveSelectUI = new GameUI(
 );
 
 export function openSettings(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     loc: ElementLocator,
     props?: MainSettingsProps
 ) {
@@ -688,7 +689,7 @@ export function openSettings(
 }
 
 export function openReplay(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     loc: ElementLocator,
     props?: MainSettingsProps
 ) {

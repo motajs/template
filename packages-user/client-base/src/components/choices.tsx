@@ -9,6 +9,7 @@ import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 import { useKey } from '../use';
 import { sleep } from 'mutate-animate';
 import { DefaultProps } from '@motajs/render-vue';
+import { IGameUIPropsBase } from '../types';
 
 export interface ConfirmBoxProps extends DefaultProps, TextContentProps {
     /** 确认框的提示文本内容 */
@@ -595,7 +596,7 @@ export const Choices = defineComponent<
  * @param props 额外的 props，参考 {@link ConfirmBoxProps}
  */
 export function getConfirm(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     text: string,
     loc: ElementLocator,
     width: number,
@@ -648,7 +649,7 @@ export function getConfirm(
  * @param props 额外的 props，参考 {@link ChoicesProps}
  */
 export function getChoice<T extends ChoiceKey = ChoiceKey>(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     choices: ChoiceItem<T>[],
     loc: ElementLocator,
     width: number,
@@ -707,7 +708,7 @@ function getChoiceRoute(defaults: number) {
  * @param props 额外的 props，参考 {@link ConfirmBoxProps}
  */
 export async function routedConfirm(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     text: string,
     loc: ElementLocator,
     width: number,
@@ -762,7 +763,7 @@ export async function routedConfirm(
  * @param props 额外的 props，参考 {@link ChoicesProps}
  */
 export async function routedChoices<T extends ChoiceKey>(
-    controller: IUIController,
+    controller: IUIController<IGameUIPropsBase>,
     choices: ChoiceItem<T>[],
     loc: ElementLocator,
     width: number,

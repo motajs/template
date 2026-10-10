@@ -5,7 +5,7 @@ import {
     IUIDefaultPropsBase
 } from '@motajs/system';
 import { defineComponent } from 'vue';
-import { waitbox, ListPage, TextContent } from '@user/client-base';
+import { waitbox, ListPage, TextContent, IGameUIPropsBase } from '@user/client-base';
 import { DefaultProps } from '@motajs/render-vue';
 // @ts-expect-error 需要重构
 import { ItemState } from '@user/data-state';
@@ -280,7 +280,7 @@ export function calculateStatistics(): StatisticsData {
  * 打开数据统计界面
  * @param controller 要在哪个 UI 控制器上打开
  */
-export async function openStatistics(controller: IUIController) {
+export async function openStatistics(controller: IUIController<IGameUIPropsBase>) {
     const cal = Promise.resolve().then<StatisticsData>(() => {
         return new Promise(res => {
             const data = calculateStatistics();
