@@ -1,8 +1,7 @@
 export * from './enemy';
 export * from './flag';
 export * from './hero';
-export * from './load';
 export * from './map';
+export * from './shop';
 
-export * from './game';
 export * from './types';

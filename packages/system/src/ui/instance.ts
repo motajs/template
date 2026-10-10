@@ -1,40 +1,40 @@
-import { Props } from '@motajs/render';
-import { IGameUI, IUIInstance, UIComponent, UIProps } from './shared';
-import { markRaw, mergeProps } from 'vue';
+import { Reactive, reactive, Ref, ref } from 'vue';
+import {
+    IGameUI,
+    IUIDefaultPropsBase,
+    IUIInstance,
+    UIComponent,
+    UIRawProps
+} from './types';
 
-export class UIInstance<C extends UIComponent> implements IUIInstance<C> {
-    private static counter: number = 0;
+/** 自增 UI 实例计数器 */
+let counter = 0;
 
-    readonly key: number = UIInstance.counter++;
+export class UIInstance<
+    C extends UIComponent,
+    PB extends IUIDefaultPropsBase<C>
+> implements IUIInstance<C, PB> {
+    readonly key: number = counter++;
     readonly ui: IGameUI<C>;
-    hidden: boolean = false;
+    readonly hidden: Ref<boolean> = ref(false);
+    readonly vBind: Reactive<UIRawProps<C, PB>>;
+    readonly alwaysShow: boolean;
 
     constructor(
         ui: IGameUI<C>,
-        public vBind: UIProps<C>,
-        public readonly alwaysShow: boolean = false
+        vBind: UIRawProps<C, PB>,
+        alwaysShow: boolean = false
     ) {
-        this.ui = markRaw(ui);
-    }
-
-    /**
-     * 设置这个 UI 实例的响应式数据的值
-     * @param data 要设置的值
-     * @param merge 是将传入的值与原先的值合并（true），还是将当前值覆盖掉原先的值（false），默认合并
-     */
-    setVBind(data: Partial<Props<C>>, merge: boolean = true) {
-        if (merge) {
-            this.vBind = mergeProps(this.vBind, data) as UIProps<C>;
-        } else {
-            this.vBind = data as UIProps<C>;
-        }
+        this.ui = ui;
+        this.vBind = reactive(vBind);
+        this.alwaysShow = alwaysShow;
     }
 
     hide(): void {
-        this.hidden = true;
+        if (!this.alwaysShow) this.hidden.value = true;
     }
 
     show(): void {
-        this.hidden = false;
+        this.hidden.value = false;
     }
 }

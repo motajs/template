@@ -36,6 +36,20 @@ export interface IReadonlyEnemyHandler<
     readonly hero: IReadonlyHeroAttribute<THero>;
 }
 
+export interface IReadonlyDamageHandler<
+    TEnemy,
+    THero
+> extends IDataBaseExtended {
+    /** 怪物属性信息 */
+    readonly enemy: IReadonlyEnemy<TEnemy>;
+    /** 怪物上下文 */
+    readonly context: IReadonlyEnemyContext<TEnemy, THero>;
+    /** 怪物定位符 */
+    readonly locator: ITileLocator | null;
+    /** 勇士属性信息 */
+    readonly hero: IReadonlyHeroAttribute<THero>;
+}
+
 //#endregion
 
 //#region 怪物对象
@@ -69,6 +83,13 @@ export interface IEnemyView<TEnemy> {
      * 将此怪物标记为脏，需要更新
      */
     markDirty(): void;
+}
+
+export interface IComputingEnemyView<TEnemy> extends IEnemyView<TEnemy> {
+    /**
+     * 获取正在计算过程中的怪物对象，此方法理应只用于内部上下文的属性计算，外部不应调用
+     */
+    getComputingEnemy(): IEnemy<TEnemy>;
 }
 
 //#endregion
@@ -362,7 +383,7 @@ export interface IEnemyDamageInfoBase {
 
 export interface IEnemyDamageInfo<TEnemy, THero> extends IEnemyDamageInfoBase {
     /** 信息对象 */
-    readonly handler: IReadonlyEnemyHandler<TEnemy, THero>;
+    readonly handler: IReadonlyDamageHandler<TEnemy, THero>;
 }
 
 export interface IEnemyCritical {
@@ -390,7 +411,7 @@ export interface IDamageCalculator<TEnemy, THero> {
      * @param handler 信息对象
      */
     calculate(
-        handler: IReadonlyEnemyHandler<TEnemy, THero>
+        handler: IReadonlyDamageHandler<TEnemy, THero>
     ): IEnemyDamageInfoBase;
 
     /**
@@ -399,7 +420,7 @@ export interface IDamageCalculator<TEnemy, THero> {
      * @param attribute 勇士的临界属性
      */
     getCriticalLimit(
-        handler: IReadonlyEnemyHandler<TEnemy, THero>,
+        handler: IReadonlyDamageHandler<TEnemy, THero>,
         attribute: CriticalableHeroStatus<THero>
     ): number;
 }
@@ -435,9 +456,23 @@ export interface IDamageContext<TEnemy, THero> extends IDataBaseExtended {
      * @param attribute 计算临界的目标勇士属性，比如计算攻击临界、自定义属性的临界等等
      * @param precision 临界计算精度，表示会进行多少次二分计算，一般填写 `12-16` 之间的数即可，默认是 12
      */
-    calculateCritical(
+    calculateViewCritical(
         enemy: IEnemyView<TEnemy>,
         attribute: CriticalableHeroStatus<THero>,
+        precision?: number
+    ): Generator<IEnemyCritical, void, void>;
+
+    /**
+     * 计算怪物在指定勇士属性下的临界
+     * @param enemy 怪物只读对象
+     * @param attribute 计算临界的目标勇士属性，比如计算攻击临界、自定义属性的临界等等
+     * @param locator 怪物所在位置
+     * @param precision 临界计算精度，表示会进行多少次二分计算，一般填写 `12-16` 之间的数即可，默认是 12
+     */
+    calculateEnemyCritical(
+        enemy: IReadonlyEnemy<TEnemy>,
+        attribute: CriticalableHeroStatus<THero>,
+        locator: ITileLocator | null,
         precision?: number
     ): Generator<IEnemyCritical, void, void>;
 }
@@ -743,7 +778,7 @@ export interface ICombatFlowHandler<TEnemy, THero> extends IDataBaseExtended {
     /** 可修改勇士对象 */
     readonly hero: IHeroAttribute<THero>;
     /** 可修改怪物对象 */
-    readonly enemy: IEnemy<TEnemy>;
+    readonly enemy: IReadonlyEnemy<TEnemy>;
     /** 怪物上下文 */
     readonly context: IEnemyContext<TEnemy, THero>;
     /** 怪物位置 */

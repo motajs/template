@@ -92,7 +92,18 @@ export interface IHeroAttributeCloneOption {
     cloneModifier: boolean;
 }
 
-export interface IReadonlyHeroAttribute<THero> {
+export interface IHeroAttributeHooks<THero> extends IHookBase {
+    /**
+     * 当勇士的某个属性发生变化时触发
+     * @param name 属性名称
+     * @param value 属性值
+     */
+    onUpdateAttribute?<K extends keyof THero>(name: K, value: THero[K]): void;
+}
+
+export interface IReadonlyHeroAttribute<THero> extends IHookable<
+    IHeroAttributeHooks<THero>
+> {
     /**
      * 获取勇士的基础属性，即未经过任何 Buff 或装备等加成的属性
      * @param name 属性名称
@@ -579,9 +590,7 @@ export interface IHeroItemSave {
 
 export interface IHeroItemsSave<THero> {
     /** 永久道具存档 */
-    readonly constants: readonly IHeroItemSave[];
-    /** 消耗道具存档 */
-    readonly consumables: readonly IHeroItemSave[];
+    readonly items: readonly IHeroItemSave[];
     /** 装备实例仓库存档 */
     readonly equipStore: IHeroEquipsStoreSave<THero>;
 }
@@ -593,6 +602,8 @@ export interface IHeroItemState<THero> {
     readonly num: number;
     /** 道具原始定义数据引用 */
     readonly raw: IItemRawData<THero>;
+    /** 是否为可消耗道具 */
+    readonly consumable: boolean;
     /** 道具持有数量 */
     count: number;
 }
@@ -610,17 +621,15 @@ export interface IHeroItems<THero>
     addItem(item: number | string, count?: number): void;
 
     /**
-     * 勇士获取指定道具，当道具为 `Pick` 类型时会立刻执行其效果，否则使背包中的数量加一。
-     * 是 `addItem(item, 1)` 的另一种写法。
-     * @param item 带锯图块数字或 id
-     */
-    getItem(item: number | string): void;
-
-    /**
      * 获取指定道具的状态
      * @param item 道具图块数字或字符串 id
      */
     getItemState(item: number | string): Readonly<IHeroItemState<THero>> | null;
+
+    /**
+     * 迭代勇士所拥有的所有道具，键表示道具的图块数字，值表示道具状态
+     */
+    iterateItems(): Iterable<[num: number, item: IHeroItemState<THero>]>;
 
     /**
      * 使用道具，仅对 Constant 与 Consumable 类型生效。Consumable 类型使用后数量减一。
@@ -640,12 +649,6 @@ export interface IHeroItems<THero>
 
 //#region 勇士装备
 
-/**
- * 装备实例的存档。装备自身的数值与百分比加成是加成的唯一事实源，
- * 存档持久化的正是这两个表：无压缩档全量存储、压缩档只存与原始定义的差异；
- * 读档也由它们重建装备修饰器。故运行时要改变装备加成，必须改装备自身属性，
- * 而不是修改它的修饰器
- */
 export interface IEquipmentStateSave<THero> {
     /** 装备实例 uid */
     readonly uid: number;
@@ -662,17 +665,55 @@ export interface IHeroEquipsStoreSave<THero> {
     readonly equipments: readonly IEquipmentStateSave<THero>[];
 }
 
-/**
- * 装备实例。其修饰器由装备自身加成重建而来，是派生视图：
- * 跨读档不保留旧的修饰器对象引用属预期行为，读档后它们会被重新创建
- */
-export interface IEquipmentState<THero> extends ISaveableContent<
-    IEquipmentStateSave<THero>
-> {
+export interface IEquipmentStateHooks<THero> extends IHookBase {
+    /**
+     * 当装备的修饰器发生变化时执行，当发生修饰器增加、减少、数值修改时都会触发
+     * @param modifiers 当前装备所拥有的所有修饰器
+     */
+    onChangeModifier?(
+        modifiers: Iterable<[SelectKey<THero, number>, IHeroModifier<number>]>
+    ): void;
+}
+
+export interface IEquipmentState<THero>
+    extends
+        ISaveableContent<IEquipmentStateSave<THero>>,
+        IHookable<IEquipmentStateHooks<THero>> {
     /** 装备实例 uid */
     readonly uid: number;
     /** 装备的定义数据引用 */
     readonly item: IItemRawData<THero>;
+
+    /**
+     * 设置此装备对指定勇士属性值的增加量
+     * @param name 勇士属性名
+     * @param value 要将装备的此属性增量设置为的值
+     */
+    setValue(name: SelectKey<THero, number>, value: number): void;
+
+    /**
+     * 设置此装备对指定勇士属性值的百分比增加量
+     * @param name 勇士属性名
+     * @param value 要将装备的此属性百分比增量设置为的值
+     */
+    setPercentage(name: SelectKey<THero, number>, value: number): void;
+
+    /**
+     * 获取装备对指定勇士属性值的增加量，若装备不增加对应属性，则返回 `0`
+     * @param name 勇士属性名
+     */
+    getValue(name: SelectKey<THero, number>): number;
+
+    /**
+     * 获取装备对指定勇士属性值的百分比增加量，若装备不增加对应属性，则返回 `0`
+     * @param name 勇士属性名
+     */
+    getPercentage(name: SelectKey<THero, number>): number;
+
+    /**
+     * 构建所有的修饰器，每个装备实例只需要进行一次构建
+     */
+    buildModifiers(): void;
 
     /**
      * 获取装备产生的所有修饰器，每个元素为 [属性名, 修饰器]
@@ -829,8 +870,8 @@ export interface IHeroEquipment<THero>
 
     /**
      * 比较两个装备在指定槽位的表现，输出装备 A 时的属性减装备 B 时的属性
-     * @param equipA 要比较的装备 A 的 uid
-     * @param equipB 要比较的装备 B 的 uid
+     * @param equipA 要比较的装备 A 的 uid，填写 -1 表示无装备
+     * @param equipB 要比较的装备 B 的 uid，填写 -1 表示无装备
      * @param slot 要比较的装备槽索引
      */
     compareEquip(
@@ -876,10 +917,6 @@ export interface IHeroStateSave<THero> {
     readonly attribute: IHeroAttributeSave<THero>;
     /** 勇士当前位置 */
     readonly location: IHeroLocationSave;
-    /** 勇士渲染状态 */
-    readonly rendering: IHeroRenderingSave;
-    /** 勇士当前的跟随者 */
-    readonly followers: readonly IHeroFollowerSave[];
     /** 勇士道具背包状态 */
     readonly items: IHeroItemsSave<THero>;
     /** 勇士装备状态 */
@@ -894,10 +931,6 @@ export interface IHeroState<THero>
     readonly location: IHeroLocation;
     /** 勇士属性对象 */
     readonly attribute: IReadonlyHeroAttribute<THero>;
-    /** 勇士跟随者对象 */
-    readonly followers: IHeroFollowersController;
-    /** 勇士的渲染对象，包含一些必要渲染信息，存在于数据端，并非渲染端 */
-    readonly rendering: IHeroRendering;
     /** 勇士道具背包 */
     readonly items: IHeroItems<THero>;
     /** 勇士装备系统 */

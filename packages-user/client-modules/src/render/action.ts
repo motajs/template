@@ -8,7 +8,7 @@ import {
     openViewMap,
     openReplay,
     openStatistics
-} from './ui';
+} from '../ui';
 import { ElementLocator } from '@motajs/render';
 
 export function createAction() {

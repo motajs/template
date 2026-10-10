@@ -1,5 +1,5 @@
 import { Patch, PatchClass } from '@motajs/legacy-common';
-import { TipStore } from '../render/components/tip';
+import { TipStore } from '@user/client-base';
 
 export function patchUI() {
     const patch = new Patch(PatchClass.UI);

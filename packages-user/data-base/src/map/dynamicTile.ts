@@ -1,9 +1,9 @@
-import { isNil } from 'lodash-es';
 import {
     FaceDirection,
     IMoverController,
     IObjectMover,
-    ITileRawData
+    ITileRawData,
+    shouldReplay
 } from '@user/data-common';
 import {
     IDynamicBlockSave,
@@ -53,6 +53,7 @@ export class DynamicTile
         return this.tileRaw;
     }
 
+    @shouldReplay('Setting dynamic block num should be replayed.')
     set(num: number): void {
         this.tileNum = num;
         const data = this.state.tileStore.getData(num);
@@ -65,6 +66,7 @@ export class DynamicTile
         this.restoreDefaultEvents();
     }
 
+    @shouldReplay('Setting dynamic block position should be replayed.')
     setPos(x: number, y: number): void {
         this.x = x;
         this.y = y;
@@ -73,18 +75,15 @@ export class DynamicTile
     }
 
     getCurrentFaceDirection(): FaceDirection {
-        const curr = this.layer.faceBinder.getFaceDirection(this.tileNum);
-        if (isNil(curr)) {
-            return FaceDirection.Unknown;
-        } else {
-            return curr;
-        }
+        return this.layer.faceBinder.getFaceDirection(this.tileNum);
     }
 
+    @shouldReplay('Transfering dynamic tile to static should be replayed.')
     toStatic(): IStaticTile | null {
         return this.layer.transferToStatic(this);
     }
 
+    @shouldReplay('Transfering dynamic tile to static should be replayed.')
     toStaticIfSafe(): IStaticTile | null {
         return this.layer.transferToStaticIfSafe(this);
     }
@@ -115,17 +114,22 @@ export class DynamicTile
         return save;
     }
 
-    /**
-     * 从存档恢复动态图块：先经 `set` 还原图块数字（同时重取原始图块并重建默认事件），
-     * 再按存档逐条覆盖事件；`num` 与 `events` 即 `IDynamicBlockSave` 的全部字段。
-     */
     loadState(save: Readonly<IDynamicBlockSave>): void {
         this.set(save.num);
+        const eventView = this.tileEvent();
+        eventView.clear();
         if (save.events) {
-            const eventView = this.tileEvent();
-            eventView.clear();
+            // 包含事件存档，那么需要读取
             for (const [priority, id] of save.events) {
                 eventView.set(priority, id);
+            }
+        } else {
+            // 不包含事件存档，那么需要从原始数据中重建
+            const raw = this.raw();
+            if (!raw) return;
+            for (const [priority, id] of Object.entries(raw.events)) {
+                const p = Number(priority);
+                eventView.set(p, id);
             }
         }
     }

@@ -17,12 +17,12 @@ import {
     IReadonlyEnemyHandler
 } from './types';
 import {
-    Enemy,
     IEnemy,
     IHeroAttribute,
     IReadonlyEnemy,
     IStateBase
 } from '@user/data-base';
+import { shouldReplay } from '@user/data-common';
 
 export class CombatFlow<TEnemy, THero>
     extends Hookable<ICombatFlowHooks<TEnemy, THero>>
@@ -77,8 +77,13 @@ export class CombatFlow<TEnemy, THero>
         }
     }
 
+    /**
+     * 创建战斗流程信息对象
+     * @param enemy 怪物对象
+     * @param locator 怪物所在位置
+     */
     private createHandler(
-        enemy: IEnemy<TEnemy>,
+        enemy: IReadonlyEnemy<TEnemy>,
         locator: ITileLocator | null
     ): ICombatFlowHandler<TEnemy, THero> {
         return {
@@ -91,6 +96,11 @@ export class CombatFlow<TEnemy, THero>
         };
     }
 
+    /**
+     * 创建只读怪物信息对象
+     * @param enemy 只读怪物对象
+     * @param locator 怪物所在位置
+     */
     private createEnemyHandler(
         enemy: IReadonlyEnemy<TEnemy>,
         locator: ITileLocator | null
@@ -193,6 +203,7 @@ export class CombatFlow<TEnemy, THero>
         return damage;
     }
 
+    @shouldReplay('Battle with enemy should be replayed.')
     battle(
         enemy: IEnemyView<TEnemy>
     ): Promise<IEnemyDamageInfo<TEnemy, THero> | null> {
@@ -214,6 +225,7 @@ export class CombatFlow<TEnemy, THero>
         return this.combatFlow(handler, eHandler);
     }
 
+    @shouldReplay('Battle with enemy should be replayed.')
     battleComputed(
         enemy: IReadonlyEnemy<TEnemy>
     ): Promise<IEnemyDamageInfo<TEnemy, THero> | null> {
@@ -231,11 +243,8 @@ export class CombatFlow<TEnemy, THero>
         if (view) return this.battle(view);
         else {
             // 否则走单独的流程
-            const locator = { x: -1, y: -1 };
-            const attr = enemy.cloneAttributes();
-            const writableEnemy = new Enemy(enemy.id, enemy.code, attr);
-            const handler = this.createHandler(writableEnemy, locator);
-            const eHandler = this.createEnemyHandler(enemy, locator);
+            const handler = this.createHandler(enemy, null);
+            const eHandler = this.createEnemyHandler(enemy, null);
             return this.combatFlow(handler, eHandler);
         }
     }

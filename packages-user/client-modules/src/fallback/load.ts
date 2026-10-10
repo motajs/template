@@ -1,7 +1,7 @@
 import { ITexture } from '@motajs/render';
 import {
     IBlockIdentifier,
-    IMaterialManager,
+    ITextureManager,
     IIndexedIdentifier
 } from '@user/client-base';
 import { isNil } from 'lodash-es';
@@ -50,7 +50,7 @@ function addAutotile(set: Set<number>, map?: readonly (readonly number[])[]) {
 /**
  * 兼容旧版加载
  */
-export function fallbackLoad(materials: IMaterialManager) {
+export function fallbackLoad(materials: ITextureManager) {
     // 基本素材
     const icons = core.icons.icons;
     const images = core.material.images;

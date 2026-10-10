@@ -31,18 +31,28 @@
     {
       "number": "6",
       "name": "单元测试",
-      "status": "in_progress"
+      "status": "pending"
     },
     {
       "number": "7",
       "name": "数据端缺陷修复",
+      "status": "pending"
+    },
+    {
+      "number": "8",
+      "name": "测试重构与接口对齐",
       "status": "complete"
+    },
+    {
+      "number": "9",
+      "name": "最小浏览器可运行版本",
+      "status": "pending"
     }
   ],
   "next": {
     "command": "/gsd:progress --next",
     "label": "Advance to the next step",
-    "reason": "Phase 07 of 7 · executing"
+    "reason": "Phase 9 of 9 · executing"
   },
-  "updated_at": "2026-09-17T12:32:39.429Z"
+  "updated_at": "2026-10-09T06:58:38.764Z"
 }

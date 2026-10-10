@@ -64,7 +64,7 @@ interface IManualReplaySandbox extends IReplaySandbox {
 
 const require = createRequire(import.meta.url);
 const verifierModule =
-    require('../packages-user/data-state/test/replayVerifier.ts') as IVerifierModule;
+    require('../packages-user/data-state/__test__/replayVerifier.ts') as IVerifierModule;
 
 function captureMaps(
     state: CoreState
@@ -119,7 +119,7 @@ function createRuntime(fixture: IClosedLoopFixture): IReplayVerifierRuntime {
 
 export async function runNodeReplayVerifier(): Promise<void> {
     const closedLoopModule =
-        require('../packages-user/data-state/test/fixtures/closed-loop.ts') as IClosedLoopModule;
+        require('../packages-user/data-state/__test__/fixtures/closed-loop.ts') as IClosedLoopModule;
     const fixture = closedLoopModule.createClosedLoopFixture();
     await verifierModule.verifyReplay(createRuntime(fixture));
 }

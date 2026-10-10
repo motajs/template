@@ -1,5 +1,5 @@
 import { CoreState } from '@user/data-state';
-import { IClientCore } from './types';
+import { IClientCore, IClientCoreConfig } from './types';
 import {
     IMotaAudioContext,
     ISoundPlayer,
@@ -10,21 +10,18 @@ import {
 } from '@motajs/audio';
 import { IRenderTreeRoot, MotaRenderer } from '@motajs/render';
 import {
-    IMotaAssetsLoader,
-    IMaterialManager,
-    IAutotileProcessor,
-    MotaAssetsLoader,
-    MaterialManager,
-    AutotileProcessor,
+    ITextureManager,
+    TextureManager,
     ISaveSystem,
-    SaveSystem
+    SaveSystem,
+    IGameUIPropsBase
 } from '@user/client-base';
 import {
     IMapRenderer,
     IMapExtensionManager,
     MapRenderer,
     MapExtensionManager
-} from './render/map';
+} from '@user/client-base';
 import {
     ExcitationDivider,
     ExcitationVariator,
@@ -40,30 +37,37 @@ import {
     MAIN_WIDTH,
     VARIATOR_DEBUG_SPEED
 } from './shared';
-import { loading } from '@user/data-base';
-import { fallbackLoad } from './fallback/load';
+import { WebLoadStarter } from '@motajs/loader';
+import { IRendererUsing, RendererUsing } from '@motajs/render-vue';
+import { IUIController, UIController } from '@motajs/system';
+import { createApp } from './render';
+import { LoadSceneUI } from './ui/load';
+import { createUIPropsBase } from './ui/func';
 
 export class ClientCore extends CoreState implements IClientCore {
     // Layer 4 渲染基础层
     readonly save: ISaveSystem;
-
-    // Layer 5 渲染顶层
-    readonly loader: IMotaAssetsLoader;
-    readonly materials: IMaterialManager;
-    readonly autotile: IAutotileProcessor;
-
-    readonly rafExcitation: IExcitation<number>;
-    readonly excitationDivider: IExcitationDivider<number>;
-    readonly renderer: IRenderTreeRoot;
-    readonly mainMapRenderer: IMapRenderer;
-    readonly mainMapExtension: IMapExtensionManager;
-
     readonly audioContext: IMotaAudioContext;
     readonly soundPlayer: ISoundPlayer<SoundIds>;
     readonly bgmPlayer: IBGMPlayer<BgmIds>;
+    readonly rafExcitation: IExcitation<number>;
+    readonly excitationDivider: IExcitationDivider<number>;
+    readonly renderer: IRenderTreeRoot;
+    readonly materials: ITextureManager;
+    readonly using: IRendererUsing;
+    readonly mainMapRenderer: IMapRenderer;
+    readonly expandMapRenderer: IMapRenderer;
+    readonly mainMapExtension: IMapExtensionManager;
+    readonly sceneController: IUIController<IGameUIPropsBase>;
+    readonly mainUIController: IUIController<IGameUIPropsBase>;
 
-    constructor() {
-        super();
+    // Layer 5 渲染顶层
+
+    constructor(config: IClientCoreConfig) {
+        super({
+            loadStarter: new WebLoadStarter(),
+            coreURL: 'placeholder'
+        });
 
         //#region Layer 4
 
@@ -80,29 +84,20 @@ export class ClientCore extends CoreState implements IClientCore {
 
         //#region 素材系统
 
-        this.materials = new MaterialManager();
-        this.autotile = new AutotileProcessor(this.materials);
-
-        //#endregion
-
-        this.loader = new MotaAssetsLoader(
-            this.loadProgress,
-            this.dataLoader,
-            this.audioContext,
-            this.soundPlayer,
-            this.materials
+        this.materials = new TextureManager(
+            this,
+            config.tilesetReserve,
+            config.tilesetUnit
         );
 
-        // 兼容层
-        loading.once('loaded', () => {
-            fallbackLoad(this.materials);
-            loading.emit('assetBuilt');
-        });
+        //#endregion
 
         //#region 渲染系统
 
         const rafExcitation = new RafExcitation();
         const excitationDivider = new ExcitationDivider<number>();
+        this.rafExcitation = rafExcitation;
+        this.excitationDivider = excitationDivider;
 
         if (DEBUG_VARIATOR) {
             const variator = new ExcitationVariator();
@@ -117,8 +112,6 @@ export class ClientCore extends CoreState implements IClientCore {
             excitationDivider.setDivider(DIVIDER_DEBUG_DIVIDER);
         }
 
-        this.rafExcitation = rafExcitation;
-        this.excitationDivider = excitationDivider;
         this.renderer = new MotaRenderer({
             canvas: '#render-main',
             width: MAIN_WIDTH,
@@ -126,15 +119,29 @@ export class ClientCore extends CoreState implements IClientCore {
             // 使用分频器，用户可以在设置中调整，如果设备性能较差调高分频有助于提高性能表现
             excitaion: excitationDivider
         });
+        this.using = new RendererUsing(this.renderer);
         this.mainMapRenderer = new MapRenderer(this.materials);
         this.mainMapExtension = new MapExtensionManager(this.mainMapRenderer);
-
-        // 兼容层
-        loading.once('assetBuilt', () => {
-            this.initMapExtensions();
-        });
+        this.expandMapRenderer = new MapRenderer(this.materials);
+        this.sceneController = new UIController<IGameUIPropsBase>();
+        this.mainUIController = new UIController<IGameUIPropsBase>();
+        const pbCreator = createUIPropsBase(this);
+        this.sceneController.setPropsBaseCreator(pbCreator);
+        this.mainUIController.setPropsBaseCreator(pbCreator);
 
         //#endregion
+
+        this.loader.addCoreConfig('client', config.clientURL);
+
+        this.init();
+    }
+
+    /**
+     * 初始化渲染端主对象
+     */
+    private async init() {
+        createApp(this.sceneController.render()).mount(this.renderer);
+        this.sceneController.open(LoadSceneUI, {});
     }
 
     /**
