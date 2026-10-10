@@ -57,6 +57,7 @@ export const MainSettings = defineComponent<MainSettingsProps>(props => {
         [MainChoice.Back, '返回游戏']
     ];
 
+    const controller: IUIController<IGameUIPropsBase> = props.controller;
     const [key, scope] = useKey();
     key.realize('exit', () => props.controller.close(props.instance));
 
@@ -78,21 +79,21 @@ export const MainSettings = defineComponent<MainSettingsProps>(props => {
                 break;
             }
             case MainChoice.ViewMap: {
-                props.controller.open(ViewMapUI, {
+                controller.open(ViewMapUI, {
                     loc: FULL_LOC
                 });
                 break;
             }
             case MainChoice.Replay: {
-                props.controller.open(ReplaySettingsUI, { loc: props.loc });
+                controller.open(ReplaySettingsUI, { loc: props.loc });
                 break;
             }
             case MainChoice.SyncSave: {
-                props.controller.open(SyncSaveUI, { loc: props.loc });
+                controller.open(SyncSaveUI, { loc: props.loc });
                 break;
             }
             case MainChoice.GameInfo: {
-                props.controller.open(GameInfoUI, { loc: props.loc });
+                controller.open(GameInfoUI, { loc: props.loc });
                 break;
             }
             case MainChoice.Restart: {
@@ -363,13 +364,14 @@ export const SyncSave = defineComponent<MainSettingsProps>(props => {
         [SyncSaveChoice.Back, '返回上一级']
     ];
 
+    const controller: IUIController<IGameUIPropsBase> = props.controller;
     const [key, scope] = useKey();
     key.realize('exit', () => props.controller.close(props.instance));
 
     const choose = async (key: ChoiceKey) => {
         switch (key) {
             case SyncSaveChoice.ToServer: {
-                props.controller.open(SyncSaveSelectUI, { loc: props.loc });
+                controller.open(SyncSaveSelectUI, { loc: props.loc });
                 break;
             }
             case SyncSaveChoice.FromServer: {
@@ -383,7 +385,7 @@ export const SyncSave = defineComponent<MainSettingsProps>(props => {
                 break;
             }
             case SyncSaveChoice.ToLocal: {
-                props.controller.open(DownloadSaveSelectUI, { loc: props.loc });
+                controller.open(DownloadSaveSelectUI, { loc: props.loc });
                 break;
             }
             case SyncSaveChoice.FromLocal: {
@@ -391,7 +393,7 @@ export const SyncSave = defineComponent<MainSettingsProps>(props => {
                 break;
             }
             case SyncSaveChoice.ClearLocal: {
-                props.controller.open(ClearSaveSelectUI, { loc: props.loc });
+                controller.open(ClearSaveSelectUI, { loc: props.loc });
                 break;
             }
             case SyncSaveChoice.Back: {

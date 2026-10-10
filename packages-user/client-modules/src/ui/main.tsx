@@ -53,7 +53,7 @@ const MainScene = defineComponent<MainSceneProps>(props => {
     };
 
     const hideStatus = ref(
-        p.state.flags.getFieldValueDefaults('hideStatusBar', false)
+        props.state.flags.getFieldValueDefaults('hideStatusBar', false)
     );
     // TODO: flags 更新未接（当前无监听系统）
     // const weather = new WeatherController();
