@@ -481,7 +481,7 @@ Plans:
 **Goal**: 在已完成的数据端（可在 Node 环境独立运行/回放验证）之上完成渲染端框架，产出可在浏览器中运行并验证的最小版本
 **Requirements**: TBD
 **Depends on**: Phase 8
-**Plans**: 5/5 plans executed (任务 1·UI 接口适配，D-10..D-14 已闭环；任务 2·迁移后 UI 修复，D-15..D-17，09-05 待执行；本阶段增量派发，其余任务待用户再派发)
+**Plans**: 5/8 plans executed (任务 1·UI 接口适配，D-10..D-14 已闭环；任务 2·迁移后 UI 修复，D-15..D-17 已闭环；任务 3·legacy UI 移植，book/equipbox/toolbox 已规划（09-06..09-08），shop 暂缓待 `ShopState`；本阶段增量派发，其余任务待用户再派发)
 
 Plans:
 **Wave 1**
@@ -504,6 +504,12 @@ Plans:
 
 - [x] 09-05-PLAN.md — 任务 2·A + B + C：prettier 格式化 `background.tsx`/`statusBar.tsx`（D-15）+ `IUIController`/`UIController` 补 `<IGameUIPropsBase>`（14 处调用点 + 2 构造点，D-16）+ `src/ui/**` 迁移遗留类型错误修复（`main.tsx` `p`→`props`；`statusBar.tsx`/`toolbar.tsx` props 基类型归位；`settings.tsx` `loc` 窄化，D-17）+ 定向 `vue-tsc`/prettier 门禁
 
+**Wave 6** *(blocked on Wave 5 completion · 三个界面互相独立、可并行)*
+
+- [ ] 09-06-PLAN.md — 任务 3·book 怪物手册（D-23..D-27）：列表 `book.tsx`（绑定 `props.state.enemyContext`、按 `code` 去重、`baseAttribute`、9 项数值含「1 防」、滚动、点击开详情）+ 独立详情 `bookDetail.tsx`（`IEnemy|IEnemyView`、基础↔计算后切换、仅特殊列表、临界走系统二分法接口、左下切换/右下返回）
+- [ ] 09-07-PLAN.md — 任务 3·equipbox 装备界面（D-28..D-32）：`equipbox.tsx`（左列状态区域 + 右侧 装备描述/装备槽横滚/拥有装备纵滚；选中增减；点击选中/再点穿上/拖拽装脱/右下退出；入参 `IHeroState<IHeroAttr>` + 属性 id+中文名列表）
+- [ ] 09-08-PLAN.md — 任务 3·toolbox 道具栏（D-34..D-36）：`toolbox.tsx`（三列 永久/可消耗/名称+说明；数量降序同数量按 id；单击选中/再点使用 `useItem`；无丢弃拖拽；入参 `IHeroState<IHeroAttr>`）
+
 ## Progress
 
 **Execution Order:**
@@ -519,4 +525,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. 单元测试 | 18/18 | Obsolete（由 Phase 9 承接） | - |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
-| 9. 最小浏览器可运行版本 | 5/5 | In Progress|  |
+| 9. 最小浏览器可运行版本 | 5/8 | In Progress|  |
