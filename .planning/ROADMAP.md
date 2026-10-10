@@ -481,7 +481,7 @@ Plans:
 **Goal**: 在已完成的数据端（可在 Node 环境独立运行/回放验证）之上完成渲染端框架，产出可在浏览器中运行并验证的最小版本
 **Requirements**: TBD
 **Depends on**: Phase 8
-**Plans**: 5/8 plans executed (任务 1·UI 接口适配，D-10..D-14 已闭环；任务 2·迁移后 UI 修复，D-15..D-17 已闭环；任务 3·legacy UI 移植，book/equipbox/toolbox 已规划（09-06..09-08），shop 暂缓待 `ShopState`；本阶段增量派发，其余任务待用户再派发)
+**Plans**: 5/8 plans executed (任务 1·UI 接口适配，D-10..D-14 已闭环；任务 2·迁移后 UI 修复，D-15..D-17 已闭环；任务 3·legacy UI 移植，book/equipbox/toolbox 已规划（09-06..09-08）并已按用户补齐的数据端接口修订——裸怪物临界 `calculateEnemyCritical`、与空装备对比 `compareEquip(-1)`、道具枚举 `iterateItems`、`@user/data-system` 依赖已声明；shop 暂缓待 `ShopState`；本阶段增量派发，其余任务待用户再派发)
 
 Plans:
 **Wave 1**
