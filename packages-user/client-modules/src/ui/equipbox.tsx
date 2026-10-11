@@ -57,6 +57,10 @@ const OWNED_HEADER = 22;
 const OWNED_ROW_HEIGHT = 50;
 /** 拥有装备行内图标的尺寸 */
 const OWNED_ICON_SIZE = 40;
+/** 拖拽浮层图标的尺寸 */
+const DRAG_ICON_SIZE = 44;
+/** 判定为拖拽所需的最小移动距离（像素） */
+const DRAG_THRESHOLD = 8;
 
 /** 区域标题字体 */
 const titleFont = Font.defaults({ size: 15, weight: 700 });
@@ -68,6 +72,22 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
 
     /** 当前选中的装备实例 uid，-1 表示未选中 */
     const selected = ref(-1);
+    /** 被拖拽的装备实例 uid，-1 表示当前没有拖拽 */
+    const dragUid = ref(-1);
+    /** 拖拽来源的装备槽索引，-1 表示来自拥有装备列表 */
+    const dragFromSlot = ref(-1);
+    /** 拖拽起点的绝对横坐标 */
+    const dragStartX = ref(0);
+    /** 拖拽起点的绝对纵坐标 */
+    const dragStartY = ref(0);
+    /** 指针当前的绝对横坐标 */
+    const dragX = ref(0);
+    /** 指针当前的绝对纵坐标 */
+    const dragY = ref(0);
+    /** 本次按下是否已越过阈值进入拖拽 */
+    const dragging = ref(false);
+    /** 指针当前悬停的装备槽索引，-1 表示未悬停在任何槽 */
+    const hoverSlot = ref(-1);
 
     /**
      * 获取装备可装备至的同类型第一个槽位索引，找不到时返回 -1
@@ -126,11 +146,97 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
         return hero.equip.compareEquip(selected.value, another, target);
     });
 
+    /** 被拖拽装备的图块数字，未拖拽时为 -1 */
+    const dragNum = computed(() => {
+        if (dragUid.value < 0) return -1;
+        const equip = hero.items.equipment.get(dragUid.value);
+        return equip === null ? -1 : equip.item.num;
+    });
+
+    /**
+     * 开始跟踪一次装备按下，记录起点并按来源区分装备槽与拥有装备
+     * @param uid 装备实例 uid
+     * @param fromSlot 装备所处的装备槽索引，来自拥有装备列表时为 -1
+     * @param x 按下点的绝对横坐标
+     * @param y 按下点的绝对纵坐标
+     */
+    const startPress = (
+        uid: number,
+        fromSlot: number,
+        x: number,
+        y: number
+    ) => {
+        dragUid.value = uid;
+        dragFromSlot.value = fromSlot;
+        dragStartX.value = x;
+        dragStartY.value = y;
+        dragX.value = x;
+        dragY.value = y;
+        dragging.value = false;
+        hoverSlot.value = -1;
+    };
+
+    /**
+     * 跟踪指针移动，越过阈值后进入拖拽态并更新浮层位置
+     * @param x 指针当前的绝对横坐标
+     * @param y 指针当前的绝对纵坐标
+     */
+    const movePress = (x: number, y: number) => {
+        if (dragUid.value < 0) return;
+        dragX.value = x;
+        dragY.value = y;
+        const dx = x - dragStartX.value;
+        const dy = y - dragStartY.value;
+        if (dx * dx + dy * dy > DRAG_THRESHOLD * DRAG_THRESHOLD) {
+            dragging.value = true;
+        }
+    };
+
+    // 释放指针：未越过阈值视为点击选中；越过阈值则按来源执行穿脱
+    const endPress = () => {
+        if (dragUid.value < 0) return;
+        const uid = dragUid.value;
+        const fromSlot = dragFromSlot.value;
+        const target = hoverSlot.value;
+        const wasDragging = dragging.value;
+        dragUid.value = -1;
+        dragFromSlot.value = -1;
+        dragging.value = false;
+        hoverSlot.value = -1;
+        if (!wasDragging) {
+            // 再次点击同一件未装备的装备，将它穿到同类型第一个槽位
+            if (fromSlot < 0 && selected.value === uid) {
+                const slot = getTargetSlot(uid);
+                if (slot >= 0) hero.equip.equip(uid, slot, true);
+            }
+            selected.value = uid;
+            return;
+        }
+        if (fromSlot >= 0) {
+            // 拖拽已装备的装备，释放时卸下
+            hero.equip.unequip(fromSlot);
+            return;
+        }
+        if (
+            target >= 0 &&
+            hero.equip.canEquipTo(uid, target) !== EquipStatus.CannotEquip
+        ) {
+            hero.equip.equip(uid, target, true);
+        }
+    };
+
+    /** 关闭当前装备界面 */
+    const exit = () => props.controller.close(props.instance);
+
     return () => {
         const equip = selectedEquip.value;
         const d = diff.value;
         return (
-            <container loc={FULL_LOC}>
+            <container
+                loc={FULL_LOC}
+                onMove={ev => movePress(ev.absoluteX, ev.absoluteY)}
+                onUp={endPress}
+            >
                 <text
                     text="状态"
                     loc={[8, 8]}
@@ -268,6 +374,14 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                                         SLOT_HEIGHT
                                     ]}
                                     cursor="pointer"
+                                    onEnter={() => {
+                                        hoverSlot.value = i;
+                                    }}
+                                    onLeave={() => {
+                                        if (hoverSlot.value === i) {
+                                            hoverSlot.value = -1;
+                                        }
+                                    }}
                                 >
                                     <g-rectr
                                         loc={[
@@ -297,6 +411,14 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                                                 SLOT_ICON_SIZE
                                             ]}
                                             cursor="pointer"
+                                            onDown={ev =>
+                                                startPress(
+                                                    slotEquip.uid,
+                                                    i,
+                                                    ev.absoluteX,
+                                                    ev.absoluteY
+                                                )
+                                            }
                                         />
                                     )}
                                     <text
@@ -346,6 +468,14 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                                         OWNED_ROW_HEIGHT
                                     ]}
                                     cursor="pointer"
+                                    onDown={ev =>
+                                        startPress(
+                                            item.uid,
+                                            -1,
+                                            ev.absoluteX,
+                                            ev.absoluteY
+                                        )
+                                    }
                                 >
                                     <g-rectr
                                         loc={[
@@ -394,7 +524,22 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                     font={titleFont}
                     cursor="pointer"
                     fillStyle="#ffffff"
+                    onClick={exit}
                 />
+
+                {dragging.value && (
+                    <icon
+                        icon={dragNum.value}
+                        loc={[
+                            dragX.value - DRAG_ICON_SIZE / 2,
+                            dragY.value - DRAG_ICON_SIZE / 2,
+                            DRAG_ICON_SIZE,
+                            DRAG_ICON_SIZE
+                        ]}
+                        noevent
+                        zIndex={100}
+                    />
+                )}
             </container>
         );
     };
