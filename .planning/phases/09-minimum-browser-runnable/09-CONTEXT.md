@@ -124,6 +124,9 @@
 - **R-3（顶层定义的 jsDoc）:** 为组件**顶层定义的每个变量 / 常量 / 函数**添加 **jsDoc 注释**。
 - **R-4（JSX 分段注释）:** 可给组件的 **JSX 部分添加注释**，标明每段负责的内容。
 - **R-5（按需导出）:** **不需要导出的类型不要导出**（例如 `IShopItemEntry` 应不导出）。
+- **R-6（非空判断约定）:** 非空判断中，**字面量用 `isNil`**、**对象用 `!`**；**不要写 `=== undefined` 或 `=== null`**。
+- **R-7（组件顶层无副作用）:** 组件**顶层不得有副作用**；如「打开商店」这类应放到 **`onMounted`**。
+- **R-8（IEnemy / IEnemyView 判别，待进一步考虑）:** 区分 `IEnemy` 与 `IEnemyView` 时，**考虑改用 `instanceof EnemyView`** 替代 `'getBaseEnemy' in ...`（用户认为 `in` 不符合其风格；**此项待定**）。
 
 ### the agent's Discretion
 
