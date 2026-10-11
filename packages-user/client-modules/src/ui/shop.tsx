@@ -1,0 +1,328 @@
+import { GameUI, SetupComponentOptions } from '@motajs/system';
+import { computed, defineComponent, ref } from 'vue';
+import { Font } from '@motajs/render';
+import { Scroll } from '@user/client-base';
+import { IHeroState, IShopState } from '@user/data-base';
+import { IShopSystem } from '@user/data-system';
+import { IHeroAttr } from '@user/data-common';
+import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
+import { IUIPropsBase } from './types';
+
+export interface ShopProps extends IUIPropsBase {
+    /** 商店状态对象 */
+    shop: IShopState;
+    /** 勇士状态对象 */
+    heroState: IHeroState<IHeroAttr>;
+    /** 商店系统对象，负责执行购买与售出交易 */
+    shopSystem: IShopSystem;
+}
+
+const shopProps = {
+    props: [
+        'controller',
+        'instance',
+        'state',
+        'shop',
+        'heroState',
+        'shopSystem'
+    ]
+} satisfies SetupComponentOptions<ShopProps>;
+
+export interface IShopItemEntry {
+    /** 道具图块数字 */
+    readonly num: number;
+    /** 道具字符串 id */
+    readonly id: string;
+    /** 道具名称 */
+    readonly name: string;
+    /** 道具描述 */
+    readonly text: string;
+    /** 商店库存 */
+    readonly stock: number;
+    /** 玩家拥有数量 */
+    readonly owned: number;
+    /** 道具买入价 */
+    readonly buyPrice: number;
+    /** 道具卖出价 */
+    readonly sellPrice: number;
+}
+
+/** 顶部购买 / 售出切换栏的高度 */
+const MODE_BAR_HEIGHT = 36;
+/** 左侧商店列表的宽度 */
+const LIST_WIDTH = 250;
+/** 左侧商店列表的顶部纵坐标 */
+const LIST_TOP = MODE_BAR_HEIGHT + 4;
+/** 左侧商店列表的高度，底部为退出按钮留出空间 */
+const LIST_HEIGHT = MAIN_HEIGHT - LIST_TOP - 16;
+/** 商店列表中每一行的高度 */
+const ROW_HEIGHT = 40;
+/** 行内图标的尺寸 */
+const ROW_ICON_SIZE = 28;
+/** 右侧信息区域的起始横坐标 */
+const INFO_LEFT = LIST_WIDTH;
+/** 右侧信息区域的宽度 */
+const INFO_WIDTH = MAIN_WIDTH - INFO_LEFT;
+/** 道具名称的纵坐标 */
+const NAME_TOP = MODE_BAR_HEIGHT + 10;
+/** 道具描述区域的顶部纵坐标 */
+const DESC_TOP = NAME_TOP + 26;
+/** 道具描述区域的高度 */
+const DESC_HEIGHT = 116;
+/** 价格信息区域每行的高度 */
+const INFO_ROW_HEIGHT = 20;
+/** 价格信息区域的顶部纵坐标 */
+const PRICE_TOP = DESC_TOP + DESC_HEIGHT + 6;
+
+/** 标题与按钮字体 */
+const titleFont = Font.defaults({ size: 14, weight: 700 });
+/** 列表与信息字体 */
+const textFont = Font.defaults({ size: 12 });
+
+export const Shop = defineComponent<ShopProps>(props => {
+    const shop = props.shop;
+    const hero = props.heroState;
+
+    /** 当前的购买 / 售出模式 */
+    const mode = ref<'buy' | 'sell'>('buy');
+    /** 当前选中的道具图块数字，-1 表示未选中 */
+    const selected = ref(-1);
+
+    /** 商店道具列表，按图块数字升序排列 */
+    const entries = computed<IShopItemEntry[]>(() => {
+        const list: IShopItemEntry[] = [];
+        for (const pair of shop.iterateItems()) {
+            const num = pair[0];
+            const data = props.state.itemStore.getData(num);
+            if (data === null) continue;
+            const id = props.state.tileStore.id(num);
+            const price = shop.getPrice(num);
+            list.push({
+                num,
+                id: id ?? '',
+                name: data.name,
+                text: data.text,
+                stock: shop.getCount(num),
+                owned: hero.items.itemCount(num),
+                buyPrice: price[0],
+                sellPrice: price[1]
+            });
+        }
+        return list.sort((a, b) => a.num - b.num);
+    });
+
+    /** 当前选中的道具条目，未选中时为 null */
+    const current = computed<IShopItemEntry | null>(() => {
+        for (const entry of entries.value) {
+            if (entry.num === selected.value) return entry;
+        }
+        return null;
+    });
+
+    /**
+     * 选中一个道具
+     * @param num 被选中道具的图块数字
+     */
+    const selectItem = (num: number) => {
+        selected.value = num;
+    };
+
+    /**
+     * 切换购买 / 售出模式
+     * @param next 切换到的模式
+     */
+    const changeMode = (next: 'buy' | 'sell') => {
+        mode.value = next;
+    };
+
+    return () => {
+        const entry = current.value;
+        return (
+            <container loc={FULL_LOC}>
+                <container loc={[0, 0, MAIN_WIDTH, MODE_BAR_HEIGHT]}>
+                    <text
+                        text="购买选项"
+                        loc={[MAIN_WIDTH / 2 - 70, MODE_BAR_HEIGHT / 2]}
+                        anc={[0.5, 0.5]}
+                        font={titleFont}
+                        cursor="pointer"
+                        fillStyle={mode.value === 'buy' ? 'gold' : '#888888'}
+                        onClick={() => changeMode('buy')}
+                    />
+                    <text
+                        text="售出选项"
+                        loc={[MAIN_WIDTH / 2 + 70, MODE_BAR_HEIGHT / 2]}
+                        anc={[0.5, 0.5]}
+                        font={titleFont}
+                        cursor="pointer"
+                        fillStyle={mode.value === 'sell' ? 'gold' : '#888888'}
+                        onClick={() => changeMode('sell')}
+                    />
+                </container>
+                <Scroll loc={[0, LIST_TOP, LIST_WIDTH, LIST_HEIGHT]}>
+                    {entries.value.map((item, i) => {
+                        const isSelected = item.num === selected.value;
+                        return (
+                            <container
+                                key={item.num}
+                                loc={[
+                                    0,
+                                    i * ROW_HEIGHT,
+                                    LIST_WIDTH,
+                                    ROW_HEIGHT
+                                ]}
+                                cursor="pointer"
+                                onClick={() => selectItem(item.num)}
+                            >
+                                <g-rectr
+                                    loc={[4, 2, LIST_WIDTH - 8, ROW_HEIGHT - 4]}
+                                    circle={[4]}
+                                    fill
+                                    fillStyle={
+                                        isSelected
+                                            ? 'rgba(255, 204, 0, 0.28)'
+                                            : 'rgba(255, 255, 255, 0.05)'
+                                    }
+                                />
+                                <icon
+                                    icon={item.num}
+                                    loc={[10, 6, ROW_ICON_SIZE, ROW_ICON_SIZE]}
+                                />
+                                <text
+                                    text={item.name}
+                                    loc={[46, ROW_HEIGHT / 2]}
+                                    anc={[0, 0.5]}
+                                    font={textFont}
+                                    fillStyle="#eeeeee"
+                                />
+                                <text
+                                    text={core.formatBigNumber(item.stock)}
+                                    loc={[LIST_WIDTH - 10, ROW_HEIGHT / 2]}
+                                    anc={[1, 0.5]}
+                                    font={textFont}
+                                    fillStyle="#cccccc"
+                                />
+                            </container>
+                        );
+                    })}
+                </Scroll>
+                <text
+                    text={entry === null ? '未选择道具' : entry.name}
+                    loc={[INFO_LEFT + 14, NAME_TOP + 13]}
+                    anc={[0, 0.5]}
+                    font={titleFont}
+                    fillStyle="gold"
+                />
+                <Scroll
+                    noscroll
+                    loc={[INFO_LEFT, DESC_TOP, INFO_WIDTH, DESC_HEIGHT]}
+                >
+                    <text
+                        text={entry === null ? '' : entry.text}
+                        loc={[14, 4]}
+                        anc={[0, 0]}
+                        font={textFont}
+                        fillStyle="#dddddd"
+                    />
+                </Scroll>
+                <container
+                    loc={[
+                        INFO_LEFT,
+                        PRICE_TOP,
+                        INFO_WIDTH,
+                        INFO_ROW_HEIGHT * 5
+                    ]}
+                >
+                    <text
+                        text="买价"
+                        loc={[14, 10]}
+                        anc={[0, 0.5]}
+                        font={textFont}
+                        fillStyle="#dddddd"
+                    />
+                    <text
+                        text={
+                            entry === null
+                                ? '-'
+                                : core.formatBigNumber(entry.buyPrice)
+                        }
+                        loc={[INFO_WIDTH - 14, 10]}
+                        anc={[1, 0.5]}
+                        font={textFont}
+                        fillStyle="lightgreen"
+                    />
+                    <text
+                        text="卖价"
+                        loc={[14, 30]}
+                        anc={[0, 0.5]}
+                        font={textFont}
+                        fillStyle="#dddddd"
+                    />
+                    <text
+                        text={
+                            entry === null
+                                ? '-'
+                                : core.formatBigNumber(entry.sellPrice)
+                        }
+                        loc={[INFO_WIDTH - 14, 30]}
+                        anc={[1, 0.5]}
+                        font={textFont}
+                        fillStyle="lightcoral"
+                    />
+                    <text
+                        text="存货"
+                        loc={[14, 50]}
+                        anc={[0, 0.5]}
+                        font={textFont}
+                        fillStyle="#dddddd"
+                    />
+                    <text
+                        text={
+                            entry === null
+                                ? '-'
+                                : core.formatBigNumber(entry.stock)
+                        }
+                        loc={[INFO_WIDTH - 14, 50]}
+                        anc={[1, 0.5]}
+                        font={textFont}
+                        fillStyle="#cccccc"
+                    />
+                    <text
+                        text="拥有"
+                        loc={[14, 70]}
+                        anc={[0, 0.5]}
+                        font={textFont}
+                        fillStyle="#dddddd"
+                    />
+                    <text
+                        text={
+                            entry === null
+                                ? '-'
+                                : core.formatBigNumber(entry.owned)
+                        }
+                        loc={[INFO_WIDTH - 14, 70]}
+                        anc={[1, 0.5]}
+                        font={textFont}
+                        fillStyle="#cccccc"
+                    />
+                    <text
+                        text="总价"
+                        loc={[14, 90]}
+                        anc={[0, 0.5]}
+                        font={textFont}
+                        fillStyle="#dddddd"
+                    />
+                    <text
+                        text="-"
+                        loc={[INFO_WIDTH - 14, 90]}
+                        anc={[1, 0.5]}
+                        font={textFont}
+                        fillStyle="gold"
+                    />
+                </container>
+            </container>
+        );
+    };
+}, shopProps);
+
+export const ShopUI = new GameUI('shop', Shop);
