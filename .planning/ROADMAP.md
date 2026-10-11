@@ -481,7 +481,7 @@ Plans:
 **Goal**: 在已完成的数据端（可在 Node 环境独立运行/回放验证）之上完成渲染端框架，产出可在浏览器中运行并验证的最小版本
 **Requirements**: TBD
 **Depends on**: Phase 8
-**Plans**: 9/9 plans executed (任务 1·UI 接口适配，D-10..D-14 已闭环；任务 2·迁移后 UI 修复，D-15..D-17 已闭环；任务 3·legacy UI 移植，book/equipbox/toolbox 已规划（09-06..09-08）并已按用户补齐的数据端接口修订——裸怪物临界 `calculateEnemyCritical`、与空装备对比 `compareEquip(-1)`、道具枚举 `iterateItems`、`@user/data-system` 依赖已声明；shop 已规划（09-09，D-38..D-41）并已按用户补齐的接口修订——价格 `IShopState.getPrice`/`setPrice`（GAP-S1 闭合）、交易 `IShopSystem.buyItem`/`sellItem`（GAP-S2 闭合）、支付资源 `money`（GAP-S3 闭合）、`IShopState` 已从 `@user/data-base` 导出（GAP-S0 闭合），**GAP-S4 已闭合（用户补齐 `@user/data-system` 的 `shop` 导出：`data-system/src/index.ts` `export * from './shop'` + `data-system/src/shop/index.ts`，`IShopSystem` / `IShopHeroAttr` 现可导入）**；本阶段增量派发，其余任务待用户再派发)
+**Plans**: 10/10 plans executed (任务 1·UI 接口适配，D-10..D-14 已闭环；任务 2·迁移后 UI 修复，D-15..D-17 已闭环；任务 3·legacy UI 移植，book/equipbox/toolbox 已规划（09-06..09-08）并已按用户补齐的数据端接口修订——裸怪物临界 `calculateEnemyCritical`、与空装备对比 `compareEquip(-1)`、道具枚举 `iterateItems`、`@user/data-system` 依赖已声明；shop 已规划（09-09，D-38..D-41）并已按用户补齐的接口修订——价格 `IShopState.getPrice`/`setPrice`（GAP-S1 闭合）、交易 `IShopSystem.buyItem`/`sellItem`（GAP-S2 闭合）、支付资源 `money`（GAP-S3 闭合）、`IShopState` 已从 `@user/data-base` 导出（GAP-S0 闭合），**GAP-S4 已闭合（用户补齐 `@user/data-system` 的 `shop` 导出：`data-system/src/index.ts` `export * from './shop'` + `data-system/src/shop/index.ts`，`IShopSystem` / `IShopHeroAttr` 现可导入）**；本阶段增量派发，其余任务待用户再派发)
 
 Plans:
 **Wave 1**
@@ -510,6 +510,10 @@ Plans:
 - [x] 09-07-PLAN.md — 任务 3·equipbox 装备界面（D-28..D-32）：`equipbox.tsx`（左列状态区域 + 右侧 装备描述/装备槽横滚/拥有装备纵滚；选中增减；点击选中/再点穿上/拖拽装脱/右下退出；入参 `IHeroState<IHeroAttr>` + 属性 id+中文名列表）
 - [x] 09-08-PLAN.md — 任务 3·toolbox 道具栏（D-34..D-36）：`toolbox.tsx`（三列 永久/可消耗/名称+说明；数量降序同数量按 id；单击选中/再点使用 `useItem`；无丢弃拖拽；入参 `IHeroState<IHeroAttr>`）
 - [x] 09-09-PLAN.md — 任务 4·shop 商店界面（D-38..D-41，已按用户补齐接口修订）：`shop.tsx`（顶部 购买/售出 切换；左 商店列表 id 排序/库存右对齐/显滚动条；右 名称·描述·购入量选择（按钮上方 买价/卖价/存货/拥有/总价，买价/卖价经 `IShopState.getPrice`）·购买/售出按钮；四按钮 `<< < {量} > >` ±10/±1、按物品分别记忆；右下退出；入参 `IShopState` + `IHeroState<IHeroAttr>` + `IShopSystem`（交易经 `buyItem`/`sellItem`）；**GAP-S4 已闭合：`IShopSystem` / `IShopHeroAttr` 已从 `@user/data-system` 公共面导出**）
+
+**Wave 7** *(blocked on Wave 6 completion · 对四个界面（五文件）的复查修正，R-1..R-8)*
+
+- [ ] 09-10-PLAN.md — 任务 3·复查修正（R-1..R-8）：对 `book.tsx`/`bookDetail.tsx`/`equipbox.tsx`/`toolbox.tsx`/`shop.tsx` 统一应用——R-1 移除自绘背景、R-2 长文本改 `TextContent`、R-3 顶层 jsDoc、R-4 JSX 分段注释、R-5 取消 `IShopItemEntry`/`IHeroAttrItem` 导出、R-6 非空判断（字面量 `isNil`/对象 `!`，去 `=== null`/`=== undefined`）、R-7 `shop` 的 `openShop` 移入 `onMounted`、R-8 `bookDetail` 改 `instanceof EnemyView`（已核实 `EnemyView` 为运行期类）
 
 ## Progress
 
