@@ -83,12 +83,19 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
     });
 
     /**
-     * 点击道具行，将点击的道具设为当前选中项
+     * 点击道具行：未选中时仅选中，再次点击已选中的道具时使用该道具
      * @param item 被点击的道具状态
      */
     const clickItem = (item: IHeroItemState<IHeroAttr>) => {
+        if (selected.value === item.num) {
+            hero.items.useItem(item.num);
+            return;
+        }
         selected.value = item.num;
     };
+
+    /** 关闭当前道具栏界面 */
+    const exit = () => props.controller.close(props.instance);
 
     return () => {
         const current = selectedItem.value;
@@ -252,6 +259,7 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                     font={titleFont}
                     cursor="pointer"
                     fillStyle="#ffffff"
+                    onClick={exit}
                 />
             </container>
         );
