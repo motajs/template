@@ -12,6 +12,7 @@ import { IUIPropsBase } from './types';
 
 export interface BookProps extends IUIPropsBase {}
 
+/** 怪物手册组件的 props 声明 */
 const bookProps = {
     props: ['controller', 'instance', 'state']
 } satisfies SetupComponentOptions<BookProps>;
@@ -34,7 +35,9 @@ const nameFont = Font.defaults({ size: 15, weight: 700 });
 /** 特殊名与属性字体 */
 const statFont = Font.defaults({ size: 12 });
 
+/** 怪物手册列表组件 */
 export const Book = defineComponent<BookProps>(props => {
+    /** 当前地图的怪物上下文 */
     const ctx = props.state.enemyContext;
 
     // 按怪物图块数字去重，每个数字保留一个代表视图
@@ -47,6 +50,7 @@ export const Book = defineComponent<BookProps>(props => {
         return Array.from(map.values());
     });
 
+    /** 将数值按大数规则格式化为展示字符串 */
     const format = (value: number) => {
         return core.formatBigNumber(value);
     };
@@ -87,6 +91,7 @@ export const Book = defineComponent<BookProps>(props => {
         return first.value;
     };
 
+    /** 拼接怪物全部特殊属性的名称，以空格分隔 */
     const specialText = (base: IReadonlyEnemy<IEnemyAttr>) => {
         const names: string[] = [];
         for (const special of base.iterateSpecials()) {
@@ -95,19 +100,22 @@ export const Book = defineComponent<BookProps>(props => {
         return names.join(' ');
     };
 
+    /** 计算第 index 个数值列的中心横坐标 */
     const statX = (index: number) => {
         return STAT_LEFT + (index * (MAIN_WIDTH - STAT_LEFT)) / 5;
     };
 
+    /** 打开指定怪物视图的详细信息界面 */
     const openDetail = (view: IEnemyView<IEnemyAttr>) => {
         props.controller.open(BookDetailUI, { enemy: view });
     };
 
+    /** 关闭当前怪物手册界面 */
     const exit = () => props.controller.close(props.instance);
 
     return () => (
         <container loc={FULL_LOC}>
-            <g-rect fill fillStyle="black" loc={FULL_LOC} />
+            {/* 标题 */}
             <text
                 text="怪物手册"
                 loc={[24, 22]}
@@ -115,6 +123,7 @@ export const Book = defineComponent<BookProps>(props => {
                 font={nameFont}
                 fillStyle="gold"
             />
+            {/* 怪物列表区 */}
             <Scroll noscroll loc={[LIST_LEFT, LIST_TOP, LIST_WIDTH, LIST_HEIGHT]}>
                 {enemies.value.map((view, i) => {
                     const base = view.getBaseEnemy();
@@ -144,6 +153,7 @@ export const Book = defineComponent<BookProps>(props => {
                                 font={statFont}
                                 fillStyle="#ffd27f"
                             />
+                            {/* 数值列表区 */}
                             <text
                                 text={`生命 ${format(base.getAttribute('hp'))}`}
                                 loc={[statX(0), 22]}
@@ -179,7 +189,8 @@ export const Book = defineComponent<BookProps>(props => {
                                 font={statFont}
                                 fillStyle="lawngreen"
                             />
-                            {critical !== null && (
+                            {/* 临界信息区 */}
+                            {critical && (
                                 <text
                                     text={`伤害 ${format(critical.baseInfo.damage)}`}
                                     loc={[statX(0), 52]}
@@ -188,7 +199,7 @@ export const Book = defineComponent<BookProps>(props => {
                                     fillStyle="#ffffff"
                                 />
                             )}
-                            {critical !== null && (
+                            {critical && (
                                 <text
                                     text={`临界 ${format(critical.nextDiff)}`}
                                     loc={[statX(1), 52]}
@@ -197,7 +208,7 @@ export const Book = defineComponent<BookProps>(props => {
                                     fillStyle="lightsalmon"
                                 />
                             )}
-                            {critical !== null && (
+                            {critical && (
                                 <text
                                     text={`减伤 ${format(-critical.damageDiff)}`}
                                     loc={[statX(2), 52]}
@@ -206,7 +217,7 @@ export const Book = defineComponent<BookProps>(props => {
                                     fillStyle="lightpink"
                                 />
                             )}
-                            {critical !== null && def1 !== null && (
+                            {critical && def1 && (
                                 <text
                                     text={`1 防 ${format(critical.baseInfo.damage - def1.baseInfo.damage)}`}
                                     loc={[statX(3), 52]}
@@ -219,6 +230,7 @@ export const Book = defineComponent<BookProps>(props => {
                     );
                 })}
             </Scroll>
+            {/* 右下角退出按钮 */}
             <text
                 text="退出"
                 loc={[MAIN_WIDTH - 16, MAIN_HEIGHT - 16]}
@@ -232,4 +244,5 @@ export const Book = defineComponent<BookProps>(props => {
     );
 }, bookProps);
 
+/** 怪物手册列表的 UI 控制器 */
 export const BookUI = new GameUI('book', Book);

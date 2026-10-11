@@ -2,8 +2,8 @@ import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { computed, defineComponent, ref } from 'vue';
 import { Font } from '@motajs/render';
 import { ITileLocator } from '@motajs/common';
-import { Scroll } from '@user/client-base';
-import { IEnemyCritical, IEnemyView } from '@user/data-system';
+import { Scroll, TextContent } from '@user/client-base';
+import { IEnemyCritical, IEnemyView, EnemyView } from '@user/data-system';
 import { IEnemy, IReadonlyEnemy } from '@user/data-base';
 import { IEnemyAttr } from '@user/data-common';
 import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
@@ -21,6 +21,7 @@ export interface BookDetailProps extends IUIPropsBase {
     enemy: IEnemy<IEnemyAttr> | IEnemyView<IEnemyAttr>;
 }
 
+/** 怪物详情组件的 props 声明 */
 const bookDetailProps = {
     props: ['controller', 'instance', 'state', 'enemy']
 } satisfies SetupComponentOptions<BookDetailProps>;
@@ -32,21 +33,27 @@ const statFont = Font.defaults({ size: 15 });
 /** 特殊属性字体 */
 const specialFont = Font.defaults({ size: 14 });
 
+/** 怪物详细信息组件 */
 export const BookDetail = defineComponent<BookDetailProps>(props => {
+    /** 当前展示的属性模式 */
     const mode = ref(DetailMode.Base);
 
+    /** 若入参为怪物视图则返回该视图，否则返回 null */
     const getView = (): IEnemyView<IEnemyAttr> | null => {
-        if ('getBaseEnemy' in props.enemy) return props.enemy;
+        if (props.enemy instanceof EnemyView) return props.enemy;
         return null;
     };
 
+    /** 获取基础属性，视图取基础怪物，否则取入参本身 */
     const getBase = (): IReadonlyEnemy<IEnemyAttr> => {
-        if ('getBaseEnemy' in props.enemy) return props.enemy.getBaseEnemy();
+        if (props.enemy instanceof EnemyView) return props.enemy.getBaseEnemy();
         return props.enemy;
     };
 
+    /** 获取计算后属性，视图走计算接口，否则取入参本身 */
     const getComputed = (): IReadonlyEnemy<IEnemyAttr> => {
-        if ('getBaseEnemy' in props.enemy) return props.enemy.getComputedEnemy();
+        if (props.enemy instanceof EnemyView)
+            return props.enemy.getComputedEnemy();
         return props.enemy;
     };
 
@@ -57,6 +64,7 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
         return view.context.getEnemyLocatorByView(view);
     };
 
+    /** 当前模式对应的怪物数据 */
     const current = computed(() =>
         mode.value === DetailMode.Base ? getBase() : getComputed()
     );
@@ -85,20 +93,25 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
         return first.done ? null : first.value;
     });
 
+    /** 将数值按大数规则格式化为展示字符串 */
     const format = (value: number) => core.formatBigNumber(value);
 
+    /** 计算第 index 个数值列的中心横坐标 */
     const statX = (index: number) => 24 + (index * (MAIN_WIDTH - 48)) / 5;
 
+    /** 在基础属性与计算后属性之间切换 */
     const toggleMode = () => {
-        if (!('getBaseEnemy' in props.enemy)) return;
+        if (!(props.enemy instanceof EnemyView)) return;
         mode.value =
             mode.value === DetailMode.Base
                 ? DetailMode.Computed
                 : DetailMode.Base;
     };
 
+    /** 关闭当前怪物详情界面 */
     const close = () => props.controller.close(props.instance);
 
+    /** 左下角切换按钮的显示文本 */
     const toggleText = computed(() =>
         mode.value === DetailMode.Base ? '切换至计算后属性' : '切换至基础属性'
     );
@@ -107,7 +120,7 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
         const enemy = current.value;
         return (
             <container loc={FULL_LOC}>
-                <g-rect fill fillStyle="black" loc={FULL_LOC} />
+                {/* 标题 */}
                 <text
                     text={enemy.getAttribute('name')}
                     loc={[24, 22]}
@@ -115,6 +128,7 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
                     font={nameFont}
                     fillStyle="gold"
                 />
+                {/* 属性数值区 */}
                 <text
                     text={`生命 ${format(enemy.getAttribute('hp'))}`}
                     loc={[statX(0), 64]}
@@ -150,6 +164,7 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
                     font={statFont}
                     fillStyle="lawngreen"
                 />
+                {/* 特殊属性列表区 */}
                 <Scroll noscroll loc={[24, 92, MAIN_WIDTH - 48, 150]}>
                     {specials.value.map((special, i) => {
                         const y = i * 44;
@@ -165,10 +180,10 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
                                     font={specialFont}
                                     fillStyle={special.getNameColor()}
                                 />
-                                <text
+                                <TextContent
                                     text={special.getDescription()}
-                                    loc={[0, 24]}
-                                    anc={[0, 0]}
+                                    width={MAIN_WIDTH - 48}
+                                    loc={[0, 24, MAIN_WIDTH - 48, 20]}
                                     font={specialFont}
                                     fillStyle="#dddddd"
                                 />
@@ -183,7 +198,8 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
                     font={specialFont}
                     fillStyle="#fffa9e"
                 />
-                {critical.value !== null && (
+                {/* 临界信息区 */}
+                {critical.value && (
                     <text
                         text={`加攻 ${format(critical.value.nextDiff)}`}
                         loc={[24, 282]}
@@ -192,7 +208,7 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
                         fillStyle="lightsalmon"
                     />
                 )}
-                {critical.value !== null && (
+                {critical.value && (
                     <text
                         text={`减伤 ${format(-critical.value.damageDiff)}`}
                         loc={[160, 282]}
@@ -201,6 +217,7 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
                         fillStyle="lightpink"
                     />
                 )}
+                {/* 左下切换按钮 / 右下返回按钮 */}
                 <text
                     text={toggleText.value}
                     loc={[24, MAIN_HEIGHT - 18]}
@@ -224,4 +241,5 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
     };
 }, bookDetailProps);
 
+/** 怪物详细信息的 UI 控制器 */
 export const BookDetailUI = new GameUI('book-detail', BookDetail);
