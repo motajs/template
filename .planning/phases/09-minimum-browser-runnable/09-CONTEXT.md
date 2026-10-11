@@ -128,6 +128,15 @@
 - **R-7（组件顶层无副作用）:** 组件**顶层不得有副作用**；如「打开商店」这类应放到 **`onMounted`**。
 - **R-8（IEnemy / IEnemyView 判别，待进一步考虑）:** 区分 `IEnemy` 与 `IEnemyView` 时，**考虑改用 `instanceof EnemyView`** 替代 `'getBaseEnemy' in ...`（用户认为 `in` 不符合其风格；**此项待定**）。
 
+### 任务 5（当前规划单元：legacy 接口只读统计）
+
+> 本节界定**本次规划运行**的范围：仅规划任务 5。后续改造另行规划。
+
+- **D-42（范围）:** 只统计 **`packages-user/client-base`** 与 **`packages-user/client-modules`** 两个包。
+- **D-43（统计对象）:** ① 残余的 **legacy 接口**；② **标注 `@deprecated` 的接口**；③ **所有经 `core.*` 调用的接口**。
+- **D-44（产出）:** 形成一份**统计文档**（文档路径 / 文件名待 Task 0 批准）。
+- **D-45（只读）:** **只读统计**，**不进行任何改造工作**（改造在下一步另行规划）。
+
 ### the agent's Discretion
 
 - 无。用户明确未授权 AI 自行决定 UI 形态或任务范围。
