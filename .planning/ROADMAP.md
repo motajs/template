@@ -513,7 +513,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion · 对四个界面（五文件）的复查修正，R-1..R-8)*
 
-- [ ] 09-10-PLAN.md — 任务 3·复查修正（R-1..R-8）：对 `book.tsx`/`bookDetail.tsx`/`equipbox.tsx`/`toolbox.tsx`/`shop.tsx` 统一应用——R-1 移除自绘背景、R-2 长文本改 `TextContent`、R-3 顶层 jsDoc、R-4 JSX 分段注释、R-5 取消 `IShopItemEntry`/`IHeroAttrItem` 导出、R-6 非空判断（字面量 `isNil`/对象 `!`，去 `=== null`/`=== undefined`）、R-7 `shop` 的 `openShop` 移入 `onMounted`、R-8 `bookDetail` 改 `instanceof EnemyView`（已核实 `EnemyView` 为运行期类）
+- [x] 09-10-PLAN.md — 任务 3·复查修正（R-1..R-8）：对 `book.tsx`/`bookDetail.tsx`/`equipbox.tsx`/`toolbox.tsx`/`shop.tsx` 统一应用——R-1 移除自绘背景、R-2 长文本改 `TextContent`、R-3 顶层 jsDoc、R-4 JSX 分段注释、R-5 取消 `IShopItemEntry`/`IHeroAttrItem` 导出、R-6 非空判断（字面量 `isNil`/对象 `!`，去 `=== null`/`=== undefined`）、R-7 `shop` 的 `openShop` 移入 `onMounted`、R-8 `bookDetail` 改 `instanceof EnemyView`（已核实 `EnemyView` 为运行期类）
 
 ## Progress
 
@@ -530,4 +530,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. 单元测试 | 18/18 | Obsolete（由 Phase 9 承接） | - |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
-| 9. 最小浏览器可运行版本 | 9/9 | In Progress|  |
+| 9. 最小浏览器可运行版本 | 10/10 | In Progress|  |
