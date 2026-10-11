@@ -73,6 +73,14 @@ const DESC_HEIGHT = 116;
 const INFO_ROW_HEIGHT = 20;
 /** 价格信息区域的顶部纵坐标 */
 const PRICE_TOP = DESC_TOP + DESC_HEIGHT + 6;
+/** 购买数量标题的纵坐标 */
+const COUNT_LABEL_Y = PRICE_TOP + INFO_ROW_HEIGHT * 5 + 10;
+/** 数量按钮所在行的纵坐标 */
+const COUNT_ROW_Y = COUNT_LABEL_Y + 24;
+/** 确认按钮的纵坐标 */
+const CONFIRM_Y = COUNT_ROW_Y + 42;
+/** 数量按钮每次大步进的数量 */
+const COUNT_STEP = 10;
 
 /** 标题与按钮字体 */
 const titleFont = Font.defaults({ size: 14, weight: 700 });
@@ -83,10 +91,19 @@ export const Shop = defineComponent<ShopProps>(props => {
     const shop = props.shop;
     const hero = props.heroState;
 
+    // 打开数据端当前商店，使其成为购买 / 售出交易的作用对象
+    props.shopSystem.openShop(shop);
+
     /** 当前的购买 / 售出模式 */
     const mode = ref<'buy' | 'sell'>('buy');
     /** 当前选中的道具图块数字，-1 表示未选中 */
     const selected = ref(-1);
+    /** 当前购买 / 售出数量 */
+    const count = ref(0);
+    /** 按道具图块数字分别记忆的购买数量 */
+    const buyCounts = new Map<number, number>();
+    /** 按道具图块数字分别记忆的售出数量 */
+    const sellCounts = new Map<number, number>();
 
     /** 商店道具列表，按图块数字升序排列 */
     const entries = computed<IShopItemEntry[]>(() => {
@@ -119,24 +136,90 @@ export const Shop = defineComponent<ShopProps>(props => {
         return null;
     });
 
+    /** 当前模式下可调整的数量上限 */
+    const countLimit = () => {
+        if (selected.value < 0) return 0;
+        if (mode.value === 'buy') {
+            const stock = shop.getCount(selected.value);
+            return stock < 0 ? 0 : stock;
+        }
+        return hero.items.itemCount(selected.value);
+    };
+
+    /** 将当前数量限制在上限与 0 之间 */
+    const clampCount = () => {
+        const limit = countLimit();
+        if (count.value < 0) count.value = 0;
+        if (count.value > limit) count.value = limit;
+    };
+
+    /** 保存当前选中道具在当前模式下记忆的数量 */
+    const saveCount = () => {
+        if (selected.value < 0) return;
+        const map = mode.value === 'buy' ? buyCounts : sellCounts;
+        map.set(selected.value, count.value);
+    };
+
+    /** 载入选中道具在当前模式下记忆的数量并限制在合法范围 */
+    const loadCount = () => {
+        const map = mode.value === 'buy' ? buyCounts : sellCounts;
+        const stored = selected.value < 0 ? undefined : map.get(selected.value);
+        count.value = stored ?? 0;
+        clampCount();
+    };
+
     /**
-     * 选中一个道具
+     * 选中一个道具，保存原选中道具的数量并恢复新选中道具的数量
      * @param num 被选中道具的图块数字
      */
     const selectItem = (num: number) => {
+        saveCount();
         selected.value = num;
+        loadCount();
     };
 
     /**
-     * 切换购买 / 售出模式
+     * 切换购买 / 售出模式，两种模式的数量分别记忆
      * @param next 切换到的模式
      */
     const changeMode = (next: 'buy' | 'sell') => {
+        saveCount();
         mode.value = next;
+        loadCount();
     };
+
+    /**
+     * 调整数量，按步进上下调整后限制在合法范围
+     * @param delta 数量的变化量
+     */
+    const adjustCount = (delta: number) => {
+        count.value += delta;
+        clampCount();
+    };
+
+    /** 执行当前模式下的交易，数量为 0 时不执行 */
+    const confirm = () => {
+        if (selected.value < 0 || count.value === 0) return;
+        if (mode.value === 'buy') {
+            props.shopSystem.buyItem(selected.value, count.value);
+        } else {
+            props.shopSystem.sellItem(selected.value, count.value);
+        }
+        count.value = 0;
+        saveCount();
+    };
+
+    /** 关闭当前商店界面 */
+    const exit = () => props.controller.close(props.instance);
 
     return () => {
         const entry = current.value;
+        let total = 0;
+        if (entry !== null) {
+            const price =
+                mode.value === 'buy' ? entry.buyPrice : entry.sellPrice;
+            total = count.value * price;
+        }
         return (
             <container loc={FULL_LOC}>
                 <container loc={[0, 0, MAIN_WIDTH, MODE_BAR_HEIGHT]}>
@@ -313,13 +396,92 @@ export const Shop = defineComponent<ShopProps>(props => {
                         fillStyle="#dddddd"
                     />
                     <text
-                        text="-"
+                        text={core.formatBigNumber(total)}
                         loc={[INFO_WIDTH - 14, 90]}
                         anc={[1, 0.5]}
                         font={textFont}
                         fillStyle="gold"
                     />
                 </container>
+                <text
+                    text={mode.value === 'buy' ? '购买数量' : '售出数量'}
+                    loc={[INFO_LEFT + INFO_WIDTH / 2, COUNT_LABEL_Y]}
+                    anc={[0.5, 0.5]}
+                    font={textFont}
+                    fillStyle="#cccccc"
+                />
+                <text
+                    text="<<"
+                    loc={[INFO_LEFT + INFO_WIDTH / 2 - 70, COUNT_ROW_Y]}
+                    anc={[0.5, 0.5]}
+                    font={titleFont}
+                    cursor="pointer"
+                    fillStyle="#ffffff"
+                    onClick={() => adjustCount(-COUNT_STEP)}
+                />
+                <text
+                    text="<"
+                    loc={[INFO_LEFT + INFO_WIDTH / 2 - 40, COUNT_ROW_Y]}
+                    anc={[0.5, 0.5]}
+                    font={titleFont}
+                    cursor="pointer"
+                    fillStyle="#ffffff"
+                    onClick={() => adjustCount(-1)}
+                />
+                <text
+                    text={String(count.value)}
+                    loc={[INFO_LEFT + INFO_WIDTH / 2, COUNT_ROW_Y]}
+                    anc={[0.5, 0.5]}
+                    font={titleFont}
+                    fillStyle="gold"
+                />
+                <text
+                    text=">"
+                    loc={[INFO_LEFT + INFO_WIDTH / 2 + 40, COUNT_ROW_Y]}
+                    anc={[0.5, 0.5]}
+                    font={titleFont}
+                    cursor="pointer"
+                    fillStyle="#ffffff"
+                    onClick={() => adjustCount(1)}
+                />
+                <text
+                    text=">>"
+                    loc={[INFO_LEFT + INFO_WIDTH / 2 + 70, COUNT_ROW_Y]}
+                    anc={[0.5, 0.5]}
+                    font={titleFont}
+                    cursor="pointer"
+                    fillStyle="#ffffff"
+                    onClick={() => adjustCount(COUNT_STEP)}
+                />
+                <container loc={[INFO_LEFT, CONFIRM_Y, INFO_WIDTH, 30]}>
+                    <g-rectr
+                        loc={[14, 0, INFO_WIDTH - 28, 30]}
+                        circle={[15]}
+                        fill
+                        stroke
+                        fillStyle="rgba(50, 54, 159, 0.7)"
+                        strokeStyle="gold"
+                        lineWidth={2}
+                    />
+                    <text
+                        text={mode.value === 'buy' ? '确认购买' : '确认售出'}
+                        loc={[INFO_WIDTH / 2, 15]}
+                        anc={[0.5, 0.5]}
+                        font={titleFont}
+                        cursor="pointer"
+                        fillStyle="#ffffff"
+                        onClick={confirm}
+                    />
+                </container>
+                <text
+                    text="退出"
+                    loc={[MAIN_WIDTH - 12, MAIN_HEIGHT - 10]}
+                    anc={[1, 1]}
+                    font={titleFont}
+                    cursor="pointer"
+                    fillStyle="#ffffff"
+                    onClick={exit}
+                />
             </container>
         );
     };
