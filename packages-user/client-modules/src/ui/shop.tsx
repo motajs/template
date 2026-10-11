@@ -1,7 +1,7 @@
 import { GameUI, SetupComponentOptions } from '@motajs/system';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineComponent, onMounted, ref } from 'vue';
 import { Font } from '@motajs/render';
-import { Scroll } from '@user/client-base';
+import { Scroll, TextContent } from '@user/client-base';
 import { IHeroState, IShopState } from '@user/data-base';
 import { IShopSystem } from '@user/data-system';
 import { IHeroAttr } from '@user/data-common';
@@ -17,6 +17,7 @@ export interface ShopProps extends IUIPropsBase {
     shopSystem: IShopSystem;
 }
 
+/** 商店界面组件的 props 声明 */
 const shopProps = {
     props: [
         'controller',
@@ -28,7 +29,7 @@ const shopProps = {
     ]
 } satisfies SetupComponentOptions<ShopProps>;
 
-export interface IShopItemEntry {
+interface IShopItemEntry {
     /** 道具图块数字 */
     readonly num: number;
     /** 道具字符串 id */
@@ -87,12 +88,15 @@ const titleFont = Font.defaults({ size: 14, weight: 700 });
 /** 列表与信息字体 */
 const textFont = Font.defaults({ size: 12 });
 
+/** 商店界面组件 */
 export const Shop = defineComponent<ShopProps>(props => {
+    /** 商店状态对象 */
     const shop = props.shop;
+    /** 勇士状态对象 */
     const hero = props.heroState;
 
     // 打开数据端当前商店，使其成为购买 / 售出交易的作用对象
-    props.shopSystem.openShop(shop);
+    onMounted(() => props.shopSystem.openShop(shop));
 
     /** 当前的购买 / 售出模式 */
     const mode = ref<'buy' | 'sell'>('buy');
@@ -111,7 +115,7 @@ export const Shop = defineComponent<ShopProps>(props => {
         for (const pair of shop.iterateItems()) {
             const num = pair[0];
             const data = props.state.itemStore.getData(num);
-            if (data === null) continue;
+            if (!data) continue;
             const id = props.state.tileStore.id(num);
             const price = shop.getPrice(num);
             list.push({
@@ -215,13 +219,14 @@ export const Shop = defineComponent<ShopProps>(props => {
     return () => {
         const entry = current.value;
         let total = 0;
-        if (entry !== null) {
+        if (entry) {
             const price =
                 mode.value === 'buy' ? entry.buyPrice : entry.sellPrice;
             total = count.value * price;
         }
         return (
             <container loc={FULL_LOC}>
+                {/* 顶部购买 / 售出切换栏 */}
                 <container loc={[0, 0, MAIN_WIDTH, MODE_BAR_HEIGHT]}>
                     <text
                         text="购买选项"
@@ -242,6 +247,7 @@ export const Shop = defineComponent<ShopProps>(props => {
                         onClick={() => changeMode('sell')}
                     />
                 </container>
+                {/* 商店列表 */}
                 <Scroll loc={[0, LIST_TOP, LIST_WIDTH, LIST_HEIGHT]}>
                     {entries.value.map((item, i) => {
                         const isSelected = item.num === selected.value;
@@ -289,25 +295,28 @@ export const Shop = defineComponent<ShopProps>(props => {
                         );
                     })}
                 </Scroll>
+                {/* 选中道具名称 */}
                 <text
-                    text={entry === null ? '未选择道具' : entry.name}
+                    text={entry ? entry.name : '未选择道具'}
                     loc={[INFO_LEFT + 14, NAME_TOP + 13]}
                     anc={[0, 0.5]}
                     font={titleFont}
                     fillStyle="gold"
                 />
+                {/* 选中道具描述 */}
                 <Scroll
                     noscroll
                     loc={[INFO_LEFT, DESC_TOP, INFO_WIDTH, DESC_HEIGHT]}
                 >
-                    <text
-                        text={entry === null ? '' : entry.text}
-                        loc={[14, 4]}
-                        anc={[0, 0]}
+                    <TextContent
+                        text={entry ? entry.text : ''}
+                        width={INFO_WIDTH - 28}
+                        loc={[14, 4, INFO_WIDTH - 28, DESC_HEIGHT - 8]}
                         font={textFont}
                         fillStyle="#dddddd"
                     />
                 </Scroll>
+                {/* 价格信息 */}
                 <container
                     loc={[
                         INFO_LEFT,
@@ -325,9 +334,9 @@ export const Shop = defineComponent<ShopProps>(props => {
                     />
                     <text
                         text={
-                            entry === null
-                                ? '-'
-                                : core.formatBigNumber(entry.buyPrice)
+                            entry
+                                ? core.formatBigNumber(entry.buyPrice)
+                                : '-'
                         }
                         loc={[INFO_WIDTH - 14, 10]}
                         anc={[1, 0.5]}
@@ -343,9 +352,9 @@ export const Shop = defineComponent<ShopProps>(props => {
                     />
                     <text
                         text={
-                            entry === null
-                                ? '-'
-                                : core.formatBigNumber(entry.sellPrice)
+                            entry
+                                ? core.formatBigNumber(entry.sellPrice)
+                                : '-'
                         }
                         loc={[INFO_WIDTH - 14, 30]}
                         anc={[1, 0.5]}
@@ -361,9 +370,9 @@ export const Shop = defineComponent<ShopProps>(props => {
                     />
                     <text
                         text={
-                            entry === null
-                                ? '-'
-                                : core.formatBigNumber(entry.stock)
+                            entry
+                                ? core.formatBigNumber(entry.stock)
+                                : '-'
                         }
                         loc={[INFO_WIDTH - 14, 50]}
                         anc={[1, 0.5]}
@@ -379,9 +388,9 @@ export const Shop = defineComponent<ShopProps>(props => {
                     />
                     <text
                         text={
-                            entry === null
-                                ? '-'
-                                : core.formatBigNumber(entry.owned)
+                            entry
+                                ? core.formatBigNumber(entry.owned)
+                                : '-'
                         }
                         loc={[INFO_WIDTH - 14, 70]}
                         anc={[1, 0.5]}
@@ -403,6 +412,7 @@ export const Shop = defineComponent<ShopProps>(props => {
                         fillStyle="gold"
                     />
                 </container>
+                {/* 数量选择 */}
                 <text
                     text={mode.value === 'buy' ? '购买数量' : '售出数量'}
                     loc={[INFO_LEFT + INFO_WIDTH / 2, COUNT_LABEL_Y]}
@@ -453,6 +463,7 @@ export const Shop = defineComponent<ShopProps>(props => {
                     fillStyle="#ffffff"
                     onClick={() => adjustCount(COUNT_STEP)}
                 />
+                {/* 购买 / 售出确认按钮 */}
                 <container loc={[INFO_LEFT, CONFIRM_Y, INFO_WIDTH, 30]}>
                     <g-rectr
                         loc={[14, 0, INFO_WIDTH - 28, 30]}
@@ -473,6 +484,7 @@ export const Shop = defineComponent<ShopProps>(props => {
                         onClick={confirm}
                     />
                 </container>
+                {/* 右下角退出按钮 */}
                 <text
                     text="退出"
                     loc={[MAIN_WIDTH - 12, MAIN_HEIGHT - 10]}
@@ -487,4 +499,5 @@ export const Shop = defineComponent<ShopProps>(props => {
     };
 }, shopProps);
 
+/** 商店界面的 UI 控制器 */
 export const ShopUI = new GameUI('shop', Shop);

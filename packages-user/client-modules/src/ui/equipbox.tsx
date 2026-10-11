@@ -1,13 +1,14 @@
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { computed, defineComponent, ref } from 'vue';
+import { isNil } from 'lodash-es';
 import { Font } from '@motajs/render';
-import { Scroll } from '@user/client-base';
+import { Scroll, TextContent } from '@user/client-base';
 import { EquipStatus, IHeroState } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
 import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
 import { IUIPropsBase } from './types';
 
-export interface IHeroAttrItem {
+interface IHeroAttrItem {
     /** 勇士属性的键名 */
     readonly id: keyof IHeroAttr;
     /** 该属性在状态区域显示的中文名 */
@@ -21,6 +22,7 @@ export interface EquipBoxProps extends IUIPropsBase {
     attributes: readonly IHeroAttrItem[];
 }
 
+/** 装备界面组件的 props 声明 */
 const equipBoxProps = {
     props: ['controller', 'instance', 'state', 'heroState', 'attributes']
 } satisfies SetupComponentOptions<EquipBoxProps>;
@@ -67,7 +69,9 @@ const titleFont = Font.defaults({ size: 15, weight: 700 });
 /** 属性名与描述文本字体 */
 const labelFont = Font.defaults({ size: 13 });
 
+/** 装备界面组件 */
 export const EquipBox = defineComponent<EquipBoxProps>(props => {
+    /** 勇士状态对象 */
     const hero = props.heroState;
 
     /** 当前选中的装备实例 uid，-1 表示未选中 */
@@ -112,7 +116,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
     const equippedList = computed(() => {
         return hero.equip.slots.map((_, i) => {
             const uid = hero.equip.getEquipped(i);
-            if (uid === undefined) return null;
+            if (isNil(uid)) return null;
             return hero.items.equipment.get(uid);
         });
     });
@@ -142,7 +146,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
         const target = getTargetSlot(selected.value);
         if (target < 0) return null;
         const existing = hero.equip.getEquipped(target);
-        const another = existing === undefined ? -1 : existing;
+        const another = isNil(existing) ? -1 : existing;
         return hero.equip.compareEquip(selected.value, another, target);
     });
 
@@ -150,7 +154,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
     const dragNum = computed(() => {
         if (dragUid.value < 0) return -1;
         const equip = hero.items.equipment.get(dragUid.value);
-        return equip === null ? -1 : equip.item.num;
+        return equip ? equip.item.num : -1;
     });
 
     /**
@@ -237,6 +241,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                 onMove={ev => movePress(ev.absoluteX, ev.absoluteY)}
                 onUp={endPress}
             >
+                {/* 状态区 */}
                 <text
                     text="状态"
                     loc={[8, 8]}
@@ -305,10 +310,11 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                     })}
                 </Scroll>
 
+                {/* 描述区 */}
                 <container
                     loc={[RIGHT_LEFT, DESC_TOP, RIGHT_WIDTH, DESC_HEIGHT]}
                 >
-                    {equip === null && (
+                    {!equip && (
                         <text
                             text="未选择装备"
                             loc={[8, 12]}
@@ -317,7 +323,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                             fillStyle="#888888"
                         />
                     )}
-                    {equip !== null && (
+                    {equip && (
                         <text
                             text={equip.item.name}
                             loc={[8, 12]}
@@ -326,7 +332,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                             fillStyle="gold"
                         />
                     )}
-                    {equip !== null && (
+                    {equip && (
                         <text
                             text={`装备孔：${equip.item.equip.slots.join(' / ')}`}
                             loc={[8, 36]}
@@ -335,15 +341,15 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                             fillStyle="#bbbbbb"
                         />
                     )}
-                    {equip !== null && (
+                    {equip && (
                         <Scroll
                             noscroll
                             loc={[0, 56, RIGHT_WIDTH, DESC_HEIGHT - 56]}
                         >
-                            <text
+                            <TextContent
                                 text={equip.item.text}
-                                loc={[8, 4]}
-                                anc={[0, 0]}
+                                width={RIGHT_WIDTH - 16}
+                                loc={[8, 4, RIGHT_WIDTH - 16, DESC_HEIGHT - 60]}
                                 font={labelFont}
                                 fillStyle="#dddddd"
                             />
@@ -351,6 +357,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                     )}
                 </container>
 
+                {/* 装备槽区 */}
                 <container
                     loc={[RIGHT_LEFT, SLOT_TOP, RIGHT_WIDTH, SLOT_HEIGHT]}
                 >
@@ -362,7 +369,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                         {hero.equip.slots.map((name, i) => {
                             const slotEquip = equippedList.value[i];
                             const isSelected =
-                                slotEquip !== null &&
+                                !!slotEquip &&
                                 slotEquip.uid === selected.value;
                             return (
                                 <container
@@ -399,7 +406,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                                         }
                                         lineWidth={isSelected ? 2 : 1}
                                     />
-                                    {slotEquip !== null && (
+                                    {slotEquip && (
                                         <icon
                                             icon={slotEquip.item.num}
                                             loc={[
@@ -437,6 +444,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                     </Scroll>
                 </container>
 
+                {/* 拥有装备区 */}
                 <container
                     loc={[RIGHT_LEFT, OWNED_TOP, RIGHT_WIDTH, OWNED_HEIGHT]}
                 >
@@ -517,6 +525,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                     </Scroll>
                 </container>
 
+                {/* 右下角退出按钮 */}
                 <text
                     text="退出"
                     loc={[MAIN_WIDTH - 12, MAIN_HEIGHT - 10]}
@@ -527,6 +536,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                     onClick={exit}
                 />
 
+                {/* 拖拽浮层 */}
                 {dragging.value && (
                     <icon
                         icon={dragNum.value}
@@ -545,4 +555,5 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
     };
 }, equipBoxProps);
 
+/** 装备界面的 UI 控制器 */
 export const EquipBoxUI = new GameUI('equipbox', EquipBox);

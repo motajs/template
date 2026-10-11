@@ -1,7 +1,7 @@
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { computed, defineComponent, ref } from 'vue';
 import { Font } from '@motajs/render';
-import { Scroll } from '@user/client-base';
+import { Scroll, TextContent } from '@user/client-base';
 import { IHeroItemState, IHeroState } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
 import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
@@ -12,6 +12,7 @@ export interface ToolBoxProps extends IUIPropsBase {
     heroState: IHeroState<IHeroAttr>;
 }
 
+/** 道具栏组件的 props 声明 */
 const toolBoxProps = {
     props: ['controller', 'instance', 'state', 'heroState']
 } satisfies SetupComponentOptions<ToolBoxProps>;
@@ -42,7 +43,9 @@ const itemFont = Font.defaults({ size: 13 });
 /** 道具说明字体 */
 const descFont = Font.defaults({ size: 12 });
 
+/** 道具栏组件 */
 export const ToolBox = defineComponent<ToolBoxProps>(props => {
+    /** 勇士状态对象 */
     const hero = props.heroState;
 
     /** 当前选中的道具图块数字，-1 表示未选中 */
@@ -101,6 +104,7 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
         const current = selectedItem.value;
         return (
             <container loc={FULL_LOC}>
+                {/* 永久道具列 */}
                 <text
                     text="永久道具"
                     loc={[8, HEADER_HEIGHT / 2]}
@@ -108,6 +112,7 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                     font={titleFont}
                     fillStyle="gold"
                 />
+                {/* 可消耗道具列 */}
                 <text
                     text="可消耗道具"
                     loc={[COLUMN_WIDTH + 8, HEADER_HEIGHT / 2]}
@@ -222,18 +227,20 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                         );
                     })}
                 </Scroll>
+                {/* 道具名称 */}
                 <text
-                    text={current === null ? '未选择道具' : current.raw.name}
+                    text={current ? current.raw.name : '未选择道具'}
                     loc={[INFO_LEFT + 8, 14]}
                     anc={[0, 0]}
                     font={titleFont}
                     fillStyle="gold"
                 />
+                {/* 道具说明 */}
                 <Scroll
                     noscroll
                     loc={[INFO_LEFT, DESC_TOP, COLUMN_WIDTH, DESC_HEIGHT]}
                 >
-                    {current === null && (
+                    {!current && (
                         <text
                             text="未选择道具"
                             loc={[8, 4]}
@@ -242,16 +249,17 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                             fillStyle="#888888"
                         />
                     )}
-                    {current !== null && (
-                        <text
+                    {current && (
+                        <TextContent
                             text={current.raw.text}
-                            loc={[8, 4]}
-                            anc={[0, 0]}
+                            width={COLUMN_WIDTH - 16}
+                            loc={[8, 4, COLUMN_WIDTH - 16, DESC_HEIGHT - 8]}
                             font={descFont}
                             fillStyle="#dddddd"
                         />
                     )}
                 </Scroll>
+                {/* 右下角退出按钮 */}
                 <text
                     text="退出"
                     loc={[MAIN_WIDTH - 12, MAIN_HEIGHT - 10]}
@@ -266,4 +274,5 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
     };
 }, toolBoxProps);
 
+/** 道具栏的 UI 控制器 */
 export const ToolBoxUI = new GameUI('toolbox', ToolBox);
