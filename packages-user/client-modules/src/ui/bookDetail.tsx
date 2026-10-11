@@ -47,14 +47,16 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
     /** 获取基础属性，视图取基础怪物，否则取入参本身 */
     const getBase = (): IReadonlyEnemy<IEnemyAttr> => {
         if (props.enemy instanceof EnemyView) return props.enemy.getBaseEnemy();
-        return props.enemy;
+        else return props.enemy as IReadonlyEnemy<IEnemyAttr>;
     };
 
     /** 获取计算后属性，视图走计算接口，否则取入参本身 */
     const getComputed = (): IReadonlyEnemy<IEnemyAttr> => {
-        if (props.enemy instanceof EnemyView)
+        if (props.enemy instanceof EnemyView) {
             return props.enemy.getComputedEnemy();
-        return props.enemy;
+        } else {
+            return props.enemy as IReadonlyEnemy<IEnemyAttr>;
+        }
     };
 
     // TODO: 后续支持「在地图中打开指定 View 详情」时，locator 需按实际位置补全

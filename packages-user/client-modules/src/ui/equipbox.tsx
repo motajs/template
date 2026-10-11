@@ -361,16 +361,11 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                 <container
                     loc={[RIGHT_LEFT, SLOT_TOP, RIGHT_WIDTH, SLOT_HEIGHT]}
                 >
-                    <Scroll
-                        hor
-                        noscroll
-                        loc={[0, 0, RIGHT_WIDTH, SLOT_HEIGHT]}
-                    >
+                    <Scroll hor noscroll loc={[0, 0, RIGHT_WIDTH, SLOT_HEIGHT]}>
                         {hero.equip.slots.map((name, i) => {
                             const slotEquip = equippedList.value[i];
                             const isSelected =
-                                !!slotEquip &&
-                                slotEquip.uid === selected.value;
+                                !!slotEquip && slotEquip.uid === selected.value;
                             return (
                                 <container
                                     key={i}
@@ -511,10 +506,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                                     />
                                     <text
                                         text={item.item.name}
-                                        loc={[
-                                            58,
-                                            OWNED_ROW_HEIGHT / 2
-                                        ]}
+                                        loc={[58, OWNED_ROW_HEIGHT / 2]}
                                         anc={[0, 0.5]}
                                         font={labelFont}
                                         fillStyle="#eeeeee"

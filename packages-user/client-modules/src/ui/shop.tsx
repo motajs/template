@@ -334,9 +334,7 @@ export const Shop = defineComponent<ShopProps>(props => {
                     />
                     <text
                         text={
-                            entry
-                                ? core.formatBigNumber(entry.buyPrice)
-                                : '-'
+                            entry ? core.formatBigNumber(entry.buyPrice) : '-'
                         }
                         loc={[INFO_WIDTH - 14, 10]}
                         anc={[1, 0.5]}
@@ -352,9 +350,7 @@ export const Shop = defineComponent<ShopProps>(props => {
                     />
                     <text
                         text={
-                            entry
-                                ? core.formatBigNumber(entry.sellPrice)
-                                : '-'
+                            entry ? core.formatBigNumber(entry.sellPrice) : '-'
                         }
                         loc={[INFO_WIDTH - 14, 30]}
                         anc={[1, 0.5]}
@@ -369,11 +365,7 @@ export const Shop = defineComponent<ShopProps>(props => {
                         fillStyle="#dddddd"
                     />
                     <text
-                        text={
-                            entry
-                                ? core.formatBigNumber(entry.stock)
-                                : '-'
-                        }
+                        text={entry ? core.formatBigNumber(entry.stock) : '-'}
                         loc={[INFO_WIDTH - 14, 50]}
                         anc={[1, 0.5]}
                         font={textFont}
@@ -387,11 +379,7 @@ export const Shop = defineComponent<ShopProps>(props => {
                         fillStyle="#dddddd"
                     />
                     <text
-                        text={
-                            entry
-                                ? core.formatBigNumber(entry.owned)
-                                : '-'
-                        }
+                        text={entry ? core.formatBigNumber(entry.owned) : '-'}
                         loc={[INFO_WIDTH - 14, 70]}
                         anc={[1, 0.5]}
                         font={textFont}

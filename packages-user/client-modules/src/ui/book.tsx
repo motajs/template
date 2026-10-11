@@ -124,7 +124,10 @@ export const Book = defineComponent<BookProps>(props => {
                 fillStyle="gold"
             />
             {/* 怪物列表区 */}
-            <Scroll noscroll loc={[LIST_LEFT, LIST_TOP, LIST_WIDTH, LIST_HEIGHT]}>
+            <Scroll
+                noscroll
+                loc={[LIST_LEFT, LIST_TOP, LIST_WIDTH, LIST_HEIGHT]}
+            >
                 {enemies.value.map((view, i) => {
                     const base = view.getBaseEnemy();
                     const locator = ctx.getEnemyLocatorByView(view);
