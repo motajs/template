@@ -279,6 +279,11 @@
         "193": "Cannot load item state since no item id registration for item num $1.",
         "194": "Expected passive replay command executed during the last active replay command executing, but a passive command $1 was got after active replay command $2 executing. Replay will continue and ignore this issue.",
         "195": "Cannot compare equipments since both equipments not exists. Equip A: $1, Equip B: $2.",
+        "196": "Cannot change item $1 info in shop since the item does not exist.",
+        "197": "Cannot load shop state since id mismatch: '$1' vs '$2'.",
+        "198": "Duplicate shop id '$1', old shop will be overwritten.",
+        "199": "A shop state instance and a hero state instance binding is needed before buy or sell items.",
+        "200": "Cannot buy or sell item since target item '$1' does not exist.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }

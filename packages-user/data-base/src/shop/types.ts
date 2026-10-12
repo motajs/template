@@ -1,4 +1,4 @@
-import { ISaveableContent } from '@user/data-common';
+import { IDataCommonExtended, ISaveableContent } from '@user/data-common';
 
 export interface IShopStateSave {
     /** 商店 id */
@@ -7,13 +7,18 @@ export interface IShopStateSave {
     readonly enabled: boolean;
     /** 商店拥有的库存 */
     readonly items: ReadonlyMap<number, number>;
-    /** 商店道具的买入价与售出价 */
-    readonly prices: ReadonlyMap<number, [buy: number, sell: number]>;
+    /** 商店道具的买入价 */
+    readonly buyPrice: ReadonlyMap<number, number>;
+    /** 商店道具的售出价 */
+    readonly sellPrice: ReadonlyMap<number, number>;
 }
 
-export interface IShopState extends ISaveableContent<IShopStateSave> {
+export interface IShopState
+    extends IDataCommonExtended, ISaveableContent<IShopStateSave> {
     /** 当前商店是否已经启用 */
     readonly enabled: boolean;
+    /** 当前商店的标识符 */
+    readonly id: string;
 
     /**
      * 向此商店添加或减少道具库存，会与原本的库存叠加
@@ -29,7 +34,7 @@ export interface IShopState extends ISaveableContent<IShopStateSave> {
     getCount(token: number | string): number;
 
     /**
-     * 迭代商店拥有的所有道具
+     * 迭代商店拥有的所有道具，键表示道具的图块数字，值表示数量
      */
     iterateItems(): Iterable<[number, number]>;
 
@@ -42,7 +47,7 @@ export interface IShopState extends ISaveableContent<IShopStateSave> {
     setPrice(item: number | string, buy: number, sell: number): void;
 
     /**
-     * 获取道具价格
+     * 获取道具价格，如果道具不存在则返回 -1
      * @param item 道具数字或 id
      */
     getPrice(item: number | string): [buy: number, sell: number];
@@ -63,7 +68,8 @@ export interface IShopManagerSave {
     readonly list: IShopStateSave[];
 }
 
-export interface IShopManager extends ISaveableContent<IShopManagerSave> {
+export interface IShopManager
+    extends IDataCommonExtended, ISaveableContent<IShopManagerSave> {
     /**
      * 添加新的商店
      * @param shop 商店状态对象
