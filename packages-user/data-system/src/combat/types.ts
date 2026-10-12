@@ -99,19 +99,19 @@ export interface IComputingEnemyView<TEnemy> extends IEnemyView<TEnemy> {
 export interface IEnemySpecialModifier<TEnemy> {
     /**
      * 获取要添加到指定怪物身上的特殊属性
-     * @param handler 信息对象
+     * @param handler 目标怪物信息对象
      */
     add(handler: IReadonlyEnemyHandler<TEnemy, any>): ISpecial<any>[];
 
     /**
      * 获取制定怪物身上要删除的特殊属性
-     * @param handler 信息对象
+     * @param handler 目标怪物信息对象
      */
     delete(handler: IReadonlyEnemyHandler<TEnemy, any>): ISpecial<any>[];
 
     /**
      * 修改一个怪物的特殊属性，如果真正进行了修改则返回 true，否则返回 false
-     * @param handler 信息对象
+     * @param handler 目标怪物信息对象
      * @param special 要修改的怪物特殊属性
      */
     modify(
@@ -138,7 +138,7 @@ export interface IAuraView<TEnemy, TRange = any> {
 
     /**
      * 对指定怪物对象施加修饰器
-     * @param handler 信息对象
+     * @param handler 目标怪物信息对象
      * @param baseEnemy 原始怪物对象，即未进行任何修改的怪物对象
      */
     apply(
@@ -148,7 +148,7 @@ export interface IAuraView<TEnemy, TRange = any> {
 
     /**
      * 对指定怪物对象添加特殊属性修饰器
-     * @param handler 信息对象
+     * @param handler 目标怪物信息对象
      * @param baseEnemy 原始怪物对象，即未进行任何修改的怪物对象
      */
     applySpecial(

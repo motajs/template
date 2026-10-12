@@ -31,7 +31,7 @@ export class MainDamageCalculator implements IDamageCalculator<
         // 无敌
         if (
             enemy.hasSpecial(20) &&
-            (handler.state.hero.items.getItemState('cross')?.count ?? 0) < 1
+            handler.state.hero.items.itemCount('cross') < 1
         ) {
             return { damage: Infinity, turn: 0 };
         }
@@ -51,7 +51,7 @@ export class MainDamageCalculator implements IDamageCalculator<
         }
 
         // 吸血
-        const vampire = enemy.getSpecial<ISpecial9Value>(11);
+        const vampire = enemy.getSpecial<ISpecial9Value>(9);
         if (vampire) {
             const value = (vampire.value.vampire / 100) * hp;
             damage += value;
@@ -68,11 +68,7 @@ export class MainDamageCalculator implements IDamageCalculator<
             enemyPerDamage = monAtk - def;
         }
 
-        // 连击
-        if (enemy.hasSpecial(4)) enemyPerDamage *= 2;
-        if (enemy.hasSpecial(5)) enemyPerDamage *= 3;
-
-        const multiHit = enemy.getSpecial<number>(6);
+        const multiHit = enemy.getSpecial<number>(4);
         if (multiHit) {
             enemyPerDamage *= multiHit.value;
         }
@@ -113,20 +109,20 @@ export class MainDamageCalculator implements IDamageCalculator<
         }
 
         // 破甲
-        const breakArmor = enemy.getSpecial<number>(7);
+        const breakArmor = enemy.getSpecial<number>(5);
         if (breakArmor) {
             damage += (breakArmor.value / 100) * def;
         }
 
         // 反击
-        const counterAttack = enemy.getSpecial<number>(8);
+        const counterAttack = enemy.getSpecial<number>(6);
         if (counterAttack) {
             // 反击是每回合生效，因此加到 enemyPerDamage 上
             enemyPerDamage += (counterAttack.value / 100) * atk;
         }
 
         // 净化
-        const purify = enemy.getSpecial<number>(9);
+        const purify = enemy.getSpecial<number>(7);
         if (purify) {
             damage += purify.value * mdef;
         }
@@ -148,13 +144,13 @@ export class MainDamageCalculator implements IDamageCalculator<
         }
 
         // 固伤，无法被魔防减伤
-        const fixedDamage = enemy.getSpecial<number>(22);
+        const fixedDamage = enemy.getSpecial<number>(20);
         if (fixedDamage) {
             damage += fixedDamage.value;
         }
 
         // 仇恨，无法被魔防减伤
-        if (enemy.hasSpecial(17)) {
+        if (enemy.hasSpecial(15)) {
             damage += handler.state.flags.getFieldValueDefaults('hatred', 0);
         }
 

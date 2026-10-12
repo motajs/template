@@ -71,13 +71,14 @@ export interface ISpecial26Value {
  * 注册所有怪物特殊属性到 enemyManager
  *
  * 属性实现位置一览（'./'表示当前文件夹  '../'表示上一级文件夹）：
- * 1. 调参类属性 | 仅影响战斗过程的属性：./damage.ts calDamageWithTurn 函数
- * 2. 地图伤害：./damage.ts DamageEnemy.calMapDamage 方法
- * 3. 光环属性：./damage.ts DamageEnemy.provideHalo 方法
- * 4. 中毒的每步效果：../state/move.ts HeroMover.onStepEnd 方法
- * 5. 中毒的瞬移效果：还在脚本编辑的 moveDirectly
- * 6. 衰弱效果：../state/hero.ts getHeroStatusOf 方法
- * 7. 重生属性：还在脚本编辑的 changingFloor
+ * 1. 调参类属性 | 仅影响战斗过程的属性：./calculator.ts, MainDamageCalculator.calculate 方法
+ * 2. 坚固、模仿等仅影响自身基础属性的属性：./final.ts, MainEnemyFinalEffect.apply 方法
+ * 3. 地图伤害：./mapDamage.ts，具体写法参考文档
+ * 4. 光环属性：./aura.ts 具体写法参考文档
+ * 5. 中毒的每步效果：在插件系统中，目前暂未实装
+ * 6. 中毒的瞬移效果：在插件系统中，目前暂未实装
+ * 7. 衰弱效果：在插件系统中，目前尚未实装
+ * 8. 重生属性：在插件系统中，目前尚未实装
  */
 export function createSpecials(
     state: IStateSystem

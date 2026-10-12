@@ -12,14 +12,14 @@ export class MainEnemyFinalEffect implements IEnemyFinalEffect<
         const heroAtk = handler.hero.getFinalAttribute('atk');
         const heroDef = handler.hero.getFinalAttribute('def');
 
-        // 3-坚固
+        // 3 - 坚固
         if (enemy.hasSpecial(3)) {
             const target = Math.max(enemy.getAttribute('def'), heroAtk - 1);
             enemy.setAttribute('def', target);
         }
 
-        // 10-模仿
-        if (enemy.hasSpecial(10)) {
+        // 8 - 模仿
+        if (enemy.hasSpecial(8)) {
             enemy.setAttribute('atk', heroAtk);
             enemy.setAttribute('def', heroDef);
         }
