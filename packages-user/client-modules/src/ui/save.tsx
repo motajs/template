@@ -18,6 +18,7 @@ import {
     Page,
     PageExpose,
     Thumbnail,
+    TipStore,
     IGameUIPropsBase
 } from '@user/client-base';
 import { useKey } from '../render/use';
@@ -528,7 +529,7 @@ export function selectSave(
                     controller.close(instance);
                     res(index);
                 } else {
-                    core.drawTip(validation.message);
+                    TipStore.get('main-tip')?.drawTip(validation.message);
                 }
             },
             onDelete: (index: number, exist: boolean) => {
@@ -537,7 +538,7 @@ export function selectSave(
                 if (validation.valid) {
                     core.removeSave(index);
                 } else {
-                    core.drawTip(validation.message);
+                    TipStore.get('main-tip')?.drawTip(validation.message);
                 }
             },
             onExit: () => {

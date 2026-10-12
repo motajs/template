@@ -428,7 +428,7 @@ export const SyncSaveSelect = defineComponent<MainSettingsProps>(props => {
     const choose = async (key: ChoiceKey) => {
         switch (key) {
             case SyncSaveChoice.AllSaves: {
-                core.playSound('confirm.opus');
+                props.state.soundPlayer.play('confirm.opus');
                 const confirm = await getConfirm(
                     props.controller,
                     '你确定要同步全部存档么？这可能在存档较多的时候比较慢。',
@@ -441,7 +441,7 @@ export const SyncSaveSelect = defineComponent<MainSettingsProps>(props => {
                 break;
             }
             case SyncSaveChoice.NowSave: {
-                core.playSound('confirm.opus');
+                props.state.soundPlayer.play('confirm.opus');
                 const confirm = await getConfirm(
                     props.controller,
                     '确定要同步当前存档吗？',
