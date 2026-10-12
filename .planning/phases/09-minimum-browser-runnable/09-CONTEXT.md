@@ -154,6 +154,7 @@
 - **D-51（文件清单）:** 计划与执行中**务必准确记录涉及的源文件清单**（改动了哪些文件 / 位置），便于后续审阅。
 - **D-52（依据）:** 依据 `09-LEGACY-REPLACEMENT-AUDIT.md` 的 ALT 条目及其替代方案 / `file:line` 锚点；不 invent 替代方案。
 - **D-53（其它分类不在本批）:** `可直接替换` / `有替代但需适配` / `无替代` / `待定` 均**不在**第一批。
+- **D-54（存档相关适配延后）:** 新存档系统与旧设计**完全不同**、适配难度大，故 **存档相关**的 legacy 适配**暂时忽略 / 延后**——含 `GameStorage`、`SaveSystem`、`localForage` 及 `core.saves` / `core.getSave` / `core.getAllSaves` / `core.setLocalForage` / `core.removeLocalForage` / `core.removeSave` / `core.clearLocalForage` 等**存档条目**（如 `A-1-1` 与 09-15 的存档簇）。后续另行规划。
 
 ### the agent's Discretion
 
