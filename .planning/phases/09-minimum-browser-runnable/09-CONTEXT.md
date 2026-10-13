@@ -156,6 +156,8 @@
 - **D-53（其它分类不在本批）:** `可直接替换` / `有替代但需适配` / `无替代` / `待定` 均**不在**第一批。
 - **D-54（存档相关适配延后）:** 新存档系统与旧设计**完全不同**、适配难度大，故 **存档相关**的 legacy 适配**暂时忽略 / 延后**——含 `GameStorage`、`SaveSystem`、`localForage` 及 `core.saves` / `core.getSave` / `core.getAllSaves` / `core.setLocalForage` / `core.removeLocalForage` / `core.removeSave` / `core.clearLocalForage` 等**存档条目**（如 `A-1-1` 与 09-15 的存档簇）。后续另行规划。
 
+- **D-55（任务 7 阻断标记）:** `09-14` / `09-15` / `09-16` 标记为**暂时无法执行（BLOCKED）**。共同根因：相关调用点在**模块级文件**（无法经 props 取主对象、且禁 `client` 单例）或依赖**未导出类型 / 主对象缺失接口 / 无等价物 API**。完成情况：仅 `09-13`（回退层去除 + 调用点）已落地；`A-6`（loading）由用户自行处理；存档相关（`A-1-1` + 7 条）按 D-54 延后。**待用户提供/调整注入路径与缺失接口后另行规划。**
+
 ### the agent's Discretion
 
 - 无。用户明确未授权 AI 自行决定 UI 形态或任务范围。
