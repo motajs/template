@@ -158,6 +158,17 @@
 
 - **D-55（任务 7 阻断标记）:** `09-14` / `09-15` / `09-16` 标记为**暂时无法执行（BLOCKED）**。共同根因：相关调用点在**模块级文件**（无法经 props 取主对象、且禁 `client` 单例）或依赖**未导出类型 / 主对象缺失接口 / 无等价物 API**。完成情况：仅 `09-13`（回退层去除 + 调用点）已落地；`A-6`（loading）由用户自行处理；存档相关（`A-1-1` + 7 条）按 D-54 延后。**待用户提供/调整注入路径与缺失接口后另行规划。**
 
+### 任务 8（当前规划单元：旧引擎数据迁移）
+
+> 本节界定**本次规划运行**的范围：仅规划任务 8 的**只读盘点**计划；实际迁移在盘点执行后由用户再派发时另行规划。旧数据位于 `public/project`（素材 `materials/*.png`、`animates/*.animate`、`images/`、`tilesets/`、`autotiles/`、`sounds/`、`bgms/`，逻辑数据 `maps.js` 的 `blocksInfo`、`items.js`、`enemys.js`、`events.js`、`functions.js`、`floors/*.js`）；新引擎数据存储落点为 `src/content`（`client.jsonc`/`core.jsonc`/`tile.jsonc`/`enemy.jsonc`/`item.jsonc`/`maps/`/`texture/.list.jsonc`/`animation/.list.jsonc` 及 `defaults/*`）。
+
+- **D-70（落点与接线边界）:** 迁移目标为 `src/content`（jsonc 数据 + 素材文件）。把配置写入 store、把贴图列表写入 `TextureManager` 的**消费接线由用户后续单独提供**，本次不实现接线。
+- **D-71（范围）:** 本次迁移覆盖 **图块定义 tile、地图 maps、贴图素材 textures、怪物 enemy、道具 items、NPC** 六类；`animation` 素材**暂不挪**（不处理 `animates/*.animate`）。`images/sounds/bgms/fonts` 不在本次迁移范围。`public/project/autotiles/*.png` 与 `public/project/tilesets/*.png` 归入「贴图素材 textures」维度，**纳入**本次盘点与迁移（2026-10-13 用户裁定）。
+- **D-72（合并 / 分图规则）:** ① `npc` 与 `npc48`、`enemy` 与 `enemy48` 均**合并**（不再有 48 变体）；② `terrains`/`items`/`enemy`/`npc` **分别存储**，不得混入同一张图片；③ `animates` **合并入 `terrains`**；④ **不同帧数**的素材不得放入同一张图片；⑤ 单帧素材按 **4×4** 规格拆分，多帧素材按「**帧数列 × 4 行**」拆分。
+- **D-73（贴图列表 schema 与命名）:** `texture/.list.jsonc`（及 `animation/.list.jsonc`）的字段结构由 AI 依据 `TextureManager` 的 `addGrid`/`addRowAnimate`/`addAutotile`/`addTileset` 能力反向设计；**新增或修改的任何公共 / 受保护 / 私有方法、字段等命名，必须先向用户报备并获批准后方可使用**（符合 `AGENTS.md`）。
+- **D-74（本次规划单元 = 只读盘点）:** 本规划运行只产出**只读盘点**计划，盘点产物文档为 `.planning/phases/09-minimum-browser-runnable/09-DATA-MIGRATION-AUDIT.md`；**全程只读**——零生产代码改动、零数据文件改动、零 PNG 生成。盘点内容须为后续“迁移计划”提供可直接消费的映射台账（含字段映射候选与待报备命名候选）。实际迁移计划在盘点执行后由用户再派发。
+- **D-75（素材生成归属）:** 迁移阶段将由 AI **用脚本生成**符合 D-72 规则的 PNG 素材文件；本盘点阶段**不生成**任何素材。
+
 ### the agent's Discretion
 
 - 无。用户明确未授权 AI 自行决定 UI 形态或任务范围。
