@@ -481,13 +481,13 @@ Plans:
 **Goal**: 在已完成的数据端（可在 Node 环境独立运行/回放验证）之上完成渲染端框架，产出可在浏览器中运行并验证的最小版本
 **Requirements**: TBD
 **Depends on**: Phase 8
-**Plans**: 14/16 plans executed (任务 1·UI 接口适配，D-10..D-14 已闭环；任务 2·迁移后 UI 修复，D-15..D-17 已闭环；任务 3·legacy UI 移植，book/equipbox/toolbox 已规划（09-06..09-08）并已按用户补齐的数据端接口修订——裸怪物临界 `calculateEnemyCritical`、与空装备对比 `compareEquip(-1)`、道具枚举 `iterateItems`、`@user/data-system` 依赖已声明；shop 已规划（09-09，D-38..D-41）并已按用户补齐的接口修订——价格 `IShopState.getPrice`/`setPrice`（GAP-S1 闭合）、交易 `IShopSystem.buyItem`/`sellItem`（GAP-S2 闭合）、支付资源 `money`（GAP-S3 闭合）、`IShopState` 已从 `@user/data-base` 导出（GAP-S0 闭合），**GAP-S4 已闭合（用户补齐 `@user/data-system` 的 `shop` 导出：`data-system/src/index.ts` `export * from './shop'` + `data-system/src/shop/index.ts`，`IShopSystem` / `IShopHeroAttr` 现可导入）**；本阶段增量派发，其余任务待用户再派发；**任务 5（09-11·legacy 接口只读统计）已规划、待用户派发后执行（只读产物，wave 8）**；**任务 6（09-12·legacy 接口可替代性统计）已规划、待用户派发后执行（只读产物，wave 9，依赖 09-11）**)
+**Plans**: 15/16 plans executed (任务 1·UI 接口适配，D-10..D-14 已闭环；任务 2·迁移后 UI 修复，D-15..D-17 已闭环；任务 3·legacy UI 移植，book/equipbox/toolbox 已规划（09-06..09-08）并已按用户补齐的数据端接口修订——裸怪物临界 `calculateEnemyCritical`、与空装备对比 `compareEquip(-1)`、道具枚举 `iterateItems`、`@user/data-system` 依赖已声明；shop 已规划（09-09，D-38..D-41）并已按用户补齐的接口修订——价格 `IShopState.getPrice`/`setPrice`（GAP-S1 闭合）、交易 `IShopSystem.buyItem`/`sellItem`（GAP-S2 闭合）、支付资源 `money`（GAP-S3 闭合）、`IShopState` 已从 `@user/data-base` 导出（GAP-S0 闭合），**GAP-S4 已闭合（用户补齐 `@user/data-system` 的 `shop` 导出：`data-system/src/index.ts` `export * from './shop'` + `data-system/src/shop/index.ts`，`IShopSystem` / `IShopHeroAttr` 现可导入）**；本阶段增量派发，其余任务待用户再派发；**任务 5（09-11·legacy 接口只读统计）已规划、待用户派发后执行（只读产物，wave 8）**；**任务 6（09-12·legacy 接口可替代性统计）已规划、待用户派发后执行（只读产物，wave 9，依赖 09-11）**)
 
 Plans:
 
 - [x] 09-13-PLAN.md
 - [x] 09-14-PLAN.md
-- [ ] 09-15-PLAN.md
+- [x] 09-15-PLAN.md
 - [ ] 09-16-PLAN.md
 
 **Wave 1**
@@ -544,4 +544,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. 单元测试 | 18/18 | Obsolete（由 Phase 9 承接） | - |
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
-| 9. 最小浏览器可运行版本 | 14/16 | In Progress|  |
+| 9. 最小浏览器可运行版本 | 15/16 | In Progress|  |
