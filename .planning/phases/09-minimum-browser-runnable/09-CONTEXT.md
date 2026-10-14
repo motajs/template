@@ -185,6 +185,18 @@
 
 - **D-85（OI-3 裁定 = A · 按尺寸分组；修订 D-81 的 npc 计数）:** **不同尺寸的素材必须用不同图片**——NPC 素材按尺寸分组：32×32 组与 64×48 组**各自成图**，**不放一块、不留白、不重采样**。`npc` = `npc0..6`（**7 张**：32px 组 4×64×128 + 48px 组 3×128×192），`SPLIT-COUNT` = **43**。D-81 中 `npc0..5` / 42 的 **npc 计数部分由本条取代**（enemy 不受影响，仍 `enemy0..20`=21）。禁止以「统一帧尺寸 + 透明留白」的方式把不同尺寸混入同一张图。（2026-10-13 用户裁定）
 
+### 任务 10（当前规划单元：数据端 + 渲染端插件系统）
+
+> 本节界定**本次规划运行**的范围：任务 10 = 实现**数据端插件驱动**，并在**渲染端镜像一套一样的插件系统**并实现。输入 = `packages-user/data-state/src/types.ts`（用户新增的数据端插件类型）。仅引擎侧，**不接入口配置**（用户最后自行接线）。
+
+- **D-86（本次规划单元 = 插件系统）:** 实现数据端插件系统驱动（用户新增的 `IDataPluginDefine` / `IDataPlugin` / `PluginStatus` / `getDataPlugin` / `load()`），并在渲染端镜像一套一样的系统（`IClientPluginDefine` / `IClientPlugin` / `getClientPlugin` / `clientPlugins`）并实现。**仅引擎侧**：不改 `src/` 入口与配置接线（用户最后自行接线）；不动用户其它并发改动（D-56）。
+- **D-87（数据端驱动 = 四段式 load）:** `CoreState.load()` 驱动流程 = ① `awake`（同步，主对象创建后、初始化前）→ ② `initialize`（异步、阻塞，加载开始前）→ ③ 执行 loader 加载 → ④ `afterLoad`（异步、阻塞，加载完毕后）。各阶段**按依赖拓扑序**执行；**依赖环**时抛错/告警且环上插件不初始化。`getDataPlugin(id)` 从注册表读取。
+- **D-88（渲染端镜像命名与落点）:** 命名用 **`IClient*` 系列**——`IClientPlugin` / `IClientPluginDefine` / `getClientPlugin`，配置字段 **`clientPlugins`**；类型放 **`packages-user/client-modules/src/types.ts`（顶层，与数据端对齐）**；**复用数据端 `PluginStatus`**（不自建枚举）。实现放 `ClientCore`。
+- **D-89（生命周期）:** 渲染端 `awake` / `initialize` / `afterLoad` 的时机与语义**与数据端一致**（D-87 的四段式）。
+- **D-90（驱动顺序）:** **数据插件先、渲染插件后**，在**统一 `load()`** 中按同一四段式驱动：数据端阶段（L0-L3）先执行，渲染端阶段（L4-L5）后执行。
+- **D-91（范围边界）:** 仅实现插件系统机制本身；不改入口/接线；不改 `initializeL0..L3` 等 config 字段口径（用户自行处理）；不新增依赖；遵循 `dev.md`（无循环引用、命名、jsDoc、无副作用模块）。
+- **D-92（插件错误处理与日志码，修订 D-87）:** 插件系统用**新错误码**（`packages/common/src/logger.json` error 段新增）：**循环依赖 → 76**；**依赖不存在的插件 → 77**；**重复 id → 78**。**重复 id 不覆盖原插件**（保留先注册者，重复者不注册）。**报错的插件全部不进入加载流程**（`awake`/`initialize`/`afterLoad` 均不执行；其下游依赖者亦不加载）。取代 D-87 中「复用 error 75」的口径；错误消息文本待用户批准。（2026-10-14 用户裁定）
+
 ### the agent's Discretion
 
 - 无。用户明确未授权 AI 自行决定 UI 形态或任务范围。

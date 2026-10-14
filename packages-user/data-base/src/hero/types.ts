@@ -179,6 +179,10 @@ export interface IReadonlyHeroAttribute<THero> extends IHookable<
     getModifierSaveEnabled(modifier: IHeroModifier): boolean;
 }
 
+export type HeroModifierCreator<THero> = <
+    K extends keyof THero
+>() => IHeroModifier<THero[K]>;
+
 export interface IHeroAttribute<THero>
     extends
         IReadonlyHeroAttribute<THero>,
@@ -259,10 +263,7 @@ export interface IHeroAttribute<THero>
      * @param type 修饰器类型
      * @param cons 工厂函数
      */
-    registerModifier(
-        type: string,
-        cons: <K extends keyof THero>() => IHeroModifier<THero[K]>
-    ): void;
+    registerModifier(type: string, cons: HeroModifierCreator<THero>): void;
 
     /**
      * 创建指定类型的修饰器实例
@@ -926,8 +927,9 @@ export interface IHeroStateSave<THero> {
 export interface IHeroState<THero>
     extends
         ISaveableContent<IHeroStateSave<THero>>,
-        IHookable<IHeroStateHooks> {
-    /** 勇士移动对象 */
+        IHookable<IHeroStateHooks>,
+        IDataCommonExtended {
+    /** 勇士移动位置对象 */
     readonly location: IHeroLocation;
     /** 勇士属性对象 */
     readonly attribute: IReadonlyHeroAttribute<THero>;
@@ -935,6 +937,24 @@ export interface IHeroState<THero>
     readonly items: IHeroItems<THero>;
     /** 勇士装备系统 */
     readonly equip: IHeroEquipment<THero>;
+
+    /**
+     * 创建勇士移动位置对象，在创建前不可使用 `this.location`，但为避免频繁判空，类型表示为必选。
+     * 仅能调用一次，多次调用无效。
+     * @param location 勇士的初始位置
+     * @param faceHandler 朝向处理器
+     */
+    createLocation(
+        location: IFacedTileLocator,
+        faceHandler: IFaceHandler<FaceDirection>
+    ): void;
+
+    /**
+     * 绑定勇士属性对象，在绑定前不可使用 `this.attribute`，但为避免频繁判空，类型表示为必选。
+     * 仅能调用一次，多次调用无效
+     * @param attribute 勇士属性对象
+     */
+    createAttribute(attribute: THero): void;
 
     /**
      * 获取勇士当前的位置

@@ -1,5 +1,16 @@
-import { CoreState } from '@user/data-state';
-import { IClientCore, IClientCoreConfig } from './types';
+import {
+    CoreState,
+    IPluginOrderResult,
+    orderPlugins,
+    PluginStatus
+} from '@user/data-state';
+import {
+    IClientCore,
+    IClientCoreConfig,
+    IClientPlugin,
+    IClientPluginDefine
+} from './types';
+import { logger } from '@motajs/common';
 import {
     IMotaAudioContext,
     ISoundPlayer,
@@ -37,7 +48,6 @@ import {
     MAIN_WIDTH,
     VARIATOR_DEBUG_SPEED
 } from './shared';
-import { WebLoadStarter } from '@motajs/loader';
 import { IRendererUsing, RendererUsing } from '@motajs/render-vue';
 import { IUIController, UIController } from '@motajs/system';
 import { createApp } from './render';
@@ -63,36 +73,30 @@ export class ClientCore extends CoreState implements IClientCore {
 
     // Layer 5 渲染顶层
 
+    /** 已注册的渲染端插件 */
+    private readonly clientPlugins: Map<
+        string,
+        IClientPlugin<IClientPluginDefine>
+    > = new Map();
+    private readonly orderedClientPlugins: IPluginOrderResult<
+        IClientPlugin<IClientPluginDefine>
+    >;
+
     constructor(config: IClientCoreConfig) {
-        super({
-            loadStarter: new WebLoadStarter(),
-            coreURL: 'placeholder'
-        });
+        super(config);
 
         //#region Layer 4
 
         this.save = new SaveSystem();
-        this.save.init(`@game/${core.firstData.name}`);
-
-        //#region 音频系统
-
+        this.save.init('');
         this.audioContext = new MotaAudioContext();
         this.soundPlayer = new SoundPlayer(this.audioContext);
         this.bgmPlayer = new BGMPlayer(this.audioContext);
-
-        //#endregion
-
-        //#region 素材系统
-
         this.materials = new TextureManager(
             this,
             config.tilesetReserve,
             config.tilesetUnit
         );
-
-        //#endregion
-
-        //#region 渲染系统
 
         const rafExcitation = new RafExcitation();
         const excitationDivider = new ExcitationDivider<number>();
@@ -133,8 +137,91 @@ export class ClientCore extends CoreState implements IClientCore {
 
         this.loader.addCoreConfig('client', config.clientURL);
 
-        this.init();
+        // 渲染端插件注册表
+        for (const define of config.clientPlugins) {
+            if (this.clientPlugins.has(define.id)) {
+                logger.error(78, define.id);
+                continue;
+            }
+            this.clientPlugins.set(define.id, {
+                status: PluginStatus.NotAwakened,
+                plugin: define
+            });
+        }
+        this.orderedClientPlugins = orderPlugins(this.clientPlugins);
     }
+
+    //#region 插件方法
+
+    getClientPlugin<T extends IClientPluginDefine>(
+        id: string
+    ): Readonly<IClientPlugin<T>> | null {
+        return (this.clientPlugins.get(id) as IClientPlugin<T>) ?? null;
+    }
+
+    /**
+     * 插件同步初始化
+     */
+    protected awake(): void {
+        super.awake();
+        const result = this.orderedClientPlugins;
+        if (result.cyclic.size > 0) {
+            logger.error(76, [...result.cyclic].join(', '));
+        }
+        for (const [pluginId, lacked] of result.missing) {
+            for (const dependency of lacked) {
+                logger.error(77, pluginId, dependency);
+            }
+        }
+        for (const holder of result.order) {
+            if (holder.status !== PluginStatus.NotAwakened) continue;
+            const dependencies: IClientPlugin<IClientPluginDefine>[] = [];
+            for (const dependency of holder.plugin.dependencies) {
+                const plugin = this.clientPlugins.get(dependency);
+                if (plugin) dependencies.push(plugin);
+            }
+            holder.plugin.awake(this, dependencies);
+            holder.status = PluginStatus.Awakened;
+        }
+    }
+
+    /**
+     * 插件异步初始化
+     */
+    protected async initialize(): Promise<void> {
+        await super.initialize();
+        const result = this.orderedClientPlugins;
+        for (const holder of result.order) {
+            if (holder.status !== PluginStatus.Awakened) continue;
+            const dependencies: IClientPlugin<IClientPluginDefine>[] = [];
+            for (const dependency of holder.plugin.dependencies) {
+                const plugin = this.clientPlugins.get(dependency);
+                if (plugin) dependencies.push(plugin);
+            }
+            await holder.plugin.initialize(this, dependencies);
+            holder.status = PluginStatus.Initialized;
+        }
+    }
+
+    /**
+     * 插件加载初始化
+     */
+    protected async afterLoad(): Promise<void> {
+        await super.afterLoad();
+        const result = this.orderedClientPlugins;
+        for (const holder of result.order) {
+            if (holder.status !== PluginStatus.Initialized) continue;
+            const dependencies: IClientPlugin<IClientPluginDefine>[] = [];
+            for (const dependency of holder.plugin.dependencies) {
+                const plugin = this.clientPlugins.get(dependency);
+                if (plugin) dependencies.push(plugin);
+            }
+            await holder.plugin.afterLoad(this, dependencies);
+            holder.status = PluginStatus.Loaded;
+        }
+    }
+
+    //#endregion
 
     /**
      * 初始化渲染端主对象

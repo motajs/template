@@ -89,7 +89,7 @@ beforeAll(async () => {
     vi.stubGlobal('location', { origin: 'http://localhost' });
     const executorModule = await import('../executor');
     const systemModule = await import('../system');
-    const stateModule = await import('../../../../data-state/src/hero');
+    const stateModule = await import('../../../../../src/data/hero');
     const baseModule = await import('@user/data-base');
     const commonModule = await import('@user/data-common');
     modules = {

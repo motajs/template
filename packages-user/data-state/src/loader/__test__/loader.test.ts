@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ILoadTask, LoadDataType } from '@motajs/loader';
 import { logger } from '@motajs/common';
 import { PrefixedJSONCProcessor } from '../jsoncProcessor';
-import { DefaultDataLoaderHook } from '../hook';
+import { DefaultDataLoaderHook } from '../../../../../src/data/loader/hook';
 import { MotaDataLoader } from '../loader';
 
 /** 与生产 loader 一致的 jsonc 前缀分隔串 */

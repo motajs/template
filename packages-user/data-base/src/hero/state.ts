@@ -22,30 +22,22 @@ import {
 import {
     Hookable,
     HookController,
-    IHookController,
-    IFaceHandler
+    IFaceHandler,
+    IHookController
 } from '@motajs/common';
+import { HeroAttribute } from './attribute';
 
 export class HeroState<THero>
     extends Hookable<IHeroStateHooks>
     implements IHeroState<THero>
 {
-    readonly location: IHeroLocation;
+    location!: IHeroLocation;
+    attribute!: IHeroAttribute<THero>;
     readonly items: IHeroItems<THero>;
     readonly equip: IHeroEquipment<THero>;
 
-    constructor(
-        state: IDataCommon,
-        faceHandler: IFaceHandler<FaceDirection>,
-        public readonly attribute: IHeroAttribute<THero>
-    ) {
+    constructor(readonly state: IDataCommon) {
         super();
-        const defaultLoc: IFacedTileLocator = {
-            x: 0,
-            y: 0,
-            direction: FaceDirection.Down
-        };
-        this.location = new HeroLocation(state, defaultLoc, faceHandler);
         this.items = new HeroItems(state);
         this.equip = new HeroEquipment(this.items.equipment, this.attribute);
     }
@@ -54,6 +46,19 @@ export class HeroState<THero>
         hook: Partial<IHeroStateHooks>
     ): IHookController<IHeroStateHooks> {
         return new HookController(this, hook);
+    }
+
+    createLocation(
+        location: IFacedTileLocator,
+        faceHandler: IFaceHandler<FaceDirection>
+    ): void {
+        if (this.location) return;
+        this.location = new HeroLocation(this.state, location, faceHandler);
+    }
+
+    createAttribute(attribute: THero): void {
+        if (this.attribute) return;
+        this.attribute = new HeroAttribute(attribute);
     }
 
     getLocation(): IFacedTileLocator {

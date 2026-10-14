@@ -6,6 +6,7 @@ import {
 } from '@motajs/common';
 import { SaveCompression, shouldReplay } from '@user/data-common';
 import {
+    HeroModifierCreator,
     IHeroAttribute,
     IHeroAttributeCloneOption,
     IHeroAttributeHooks,
@@ -20,7 +21,9 @@ export class HeroAttribute<THero>
     implements IHeroAttribute<THero>
 {
     /** 当前的勇士基础属性 */
-    private attribute: THero;
+    private attribute!: THero;
+    /** 当前勇士最终属性 */
+    private finalAttribute!: THero;
 
     /** 当前勇士属性修饰器 */
     private readonly modifier: Map<keyof THero, IHeroModifier[]> = new Map();
@@ -29,16 +32,11 @@ export class HeroAttribute<THero>
     /** 当前标记为不存档的修饰器集合 */
     private readonly modifierNosave: Set<IHeroModifier> = new Set();
     /** 修饰器工厂函数注册表 */
-    private readonly registry: Map<
-        string,
-        <K extends keyof THero>() => IHeroModifier<THero[K]>
-    > = new Map();
-    /** 当前勇士最终属性 */
-    private readonly finalAttribute: THero;
+    private readonly registry: Map<string, HeroModifierCreator<THero>> =
+        new Map();
 
     constructor(attribute: THero) {
         super();
-        // 克隆入参，避免调用方传入的共享基础属性对象被本实例改写
         this.attribute = structuredClone(attribute);
         this.finalAttribute = structuredClone(attribute);
     }

@@ -15,14 +15,14 @@ import {
     type ReplayParamValue
 } from '@user/data-common';
 import { CoreState } from '../src/core';
-import { DefaultPassPredicateImpl } from '../src/hero/predicate';
+import { DefaultPassPredicateImpl } from '../../../src/data/hero/predicate';
 import {
     ReplayEquip,
     ReplayMove,
     ReplayTeleport,
     ReplayUnequip,
     ReplayUseItem
-} from '../src/replay/commands';
+} from '../../../src/data/replay/commands';
 
 vi.hoisted(() => {
     Map.prototype.getOrInsert ??= function <K, V>(
