@@ -107,7 +107,7 @@ export interface ICoreState
     /**
      * 执行数据端主对象的加载行为，并进行必要的初始化
      */
-    load(): AsyncIterator<number, void>;
+    load(): AsyncGenerator<number, void>;
 
     /**
      * 将某个存档执行器绑定至指定的可存档对象，一个可存档对象只能绑定一个执行器，

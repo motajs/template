@@ -204,7 +204,7 @@ export class CoreState implements ICoreState {
 
     //#region 初始化方法
 
-    async *load(): AsyncIterator<number, void> {
+    async *load(): AsyncGenerator<number, void> {
         await this.initialize();
         yield* this.loader.start();
         await this.afterLoad();

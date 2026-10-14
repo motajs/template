@@ -22,14 +22,11 @@ export function createCoreStateConfig(
 }
 
 /**
- * 创建数据端主对象，返回经过初始化的主对象实例
+ * 创建数据端主对象，返回未经过初始化的主对象实例，需要手动调用 `state.load` 初始化
  * @param starter 加载启动器
  */
-export async function createCoreState(
-    starter: ILoadTaskStarter
-): Promise<ICoreState> {
+export function createCoreState(starter: ILoadTaskStarter): ICoreState {
     const config = createCoreStateConfig(starter);
     const state = new CoreState(config);
-    await state.load();
     return state;
 }
