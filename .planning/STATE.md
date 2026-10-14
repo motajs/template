@@ -265,6 +265,7 @@ Recent decisions affecting current work:
 - Phase 8 added (2026-10-04): 测试重构与接口对齐（测试文件迁入 `__test__` + 按数据端当前接口重对齐 + 细节修复）；承接已 SUPERSEDED 的 07-16；需求 TEST-02
 - Phases 4/5/6 marked obsolete (2026-10-08): 渲染适配与双布局 / Legacy 移植 / 单元测试 的原规划不再合理，由 Phase 9 承接；仅文本标注，未删除阶段目录、已执行 PLAN/SUMMARY 或代码
 - Phase 9 added (2026-10-08): 最小浏览器可运行版本（在已完成且 Node 可运行/回放验证的数据端之上完成渲染端框架，并验证可在浏览器上运行）；Depends on Phase 8
+- Phase 10 added (2026-10-14): 文档重构（重构过老、结构不佳、新人难懂的项目文档，面向新人/不懂代码的作者/有基础作者等多背景读者提供分层指南，并专门为 AI Agent 编写参考文档）；Depends on Phase 9
 
 ### Pending Todos
 
