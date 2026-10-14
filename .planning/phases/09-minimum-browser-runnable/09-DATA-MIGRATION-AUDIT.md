@@ -1,6 +1,6 @@
 # Phase 9 · 任务 8：旧引擎数据迁移只读盘点台账（09-DATA-MIGRATION-AUDIT）
 
-> 本文件是 Phase 9 任务 8 的**只读盘点产物**（`09-17-PLAN.md`，D-74）。**全程只读**：未修改 / 删除 / 新增任何生产 `.ts` / `.tsx` 源码，未改动任何 `public/project/**` 与 `src/content/**` 数据文件，未生成任何 `.png` 素材（D-75）。本文件唯一用途是为后续「旧引擎数据迁移」计划提供可消费的映射台账。所有 `file:line` 锚点取自执行日实测，指向真实存在且行号在范围内的行；无法确定者一律收入 §8，不猜测编造。文档使用裸 LF 行尾（随仓库既有 phase 文档约定）。
+> 本文件是 Phase 9 任务 8 的**只读盘点产物**（`09-17-PLAN.md`，D-74）。**本文件于 2026-10-13 经用户更正 48px 素材事实（4 帧 / 单元格 32×48）。** **全程只读**：未修改 / 删除 / 新增任何生产 `.ts` / `.tsx` 源码，未改动任何 `public/project/**` 与 `src/content/**` 数据文件，未生成任何 `.png` 素材（D-75）。本文件唯一用途是为后续「旧引擎数据迁移」计划提供可消费的映射台账。所有 `file:line` 锚点取自执行日实测，指向真实存在且行号在范围内的行；无法确定者一律收入 §8，不猜测编造。文档使用裸 LF 行尾（随仓库既有 phase 文档约定）。
 
 ## 0. 盘点口径与范围
 
@@ -48,6 +48,11 @@
 上句特指**素材 / 分图分组**层面的合并 —— `animates` 各图块的贴图与 `terrain` 归入**同一** `terrains` 素材组（受规则④约束：`animates` 为多帧，与单帧 `terrains` 分开成图，见 §2.4）。
 
 **不得**与**逻辑类型映射**混淆：§1.1 中旧 `cls: animates` → `TileType.Animate` 的映射**保留不变**（`TileType` 枚举中 `Terrain` 与 `Animate` 并存，见 `packages-user/data-common/src/store/types.ts:6`）。即「逻辑类型仍区分 `Terrain` / `Animate`」与「素材 / 分图分组并入 `terrains`」是**两件独立的事**（消歧见 §1.1 与 OI-4）。
+
+### 0.5.2 修订口径（D-84 / D-85，2026-10-13）
+
+- **D-84（贴图布局放宽，修订 D-72⑤）：** D-72⑤ 的行数规则由 **D-84** 放宽 —— 拆分图**列数固定**（单帧 4 列 / 多帧 = 帧数列），**行数 ≤4 且按每图实际块数裁剪**（素材不足时裁到 1–3 行）；每张图 `width = 列数 × 帧宽`、`height = 行数 × 帧高`（`1 ≤ 行数 ≤ 4`）。故 §2「严格 4 行」的描述由 D-84 取代（见 §2.4）。
+- **D-85（48px 素材分组裁定）：** 48px 素材按**尺寸与帧数**分组；帧数权威 = `FrameNumbers`（`src/types/declaration/source.d.ts:81-91`）：`enemys` / `npcs` = 2 帧、`enemy48` / `npc48` = **4 帧**。§2.1 的 48px 行更正为 **4 帧 / 单元格 32×48 / 行数 8、10**；§2.4 的 D / E 组按帧数与尺寸拆分；§2.5 的 `npc` 命名扩为 `npc0..6`（7 图）。
 
 ### 0.6 命名待报备说明（D-73）
 
@@ -412,9 +417,9 @@
 | `public/project/materials/terrains.png:1` | 32×1120 | `terrains`（35 单帧图块，1 列 × 35 行） |
 | `public/project/materials/items.png:1` | 32×1984 | `items`（62 单帧图块，1 列 × 62 行） |
 | `public/project/materials/enemys.png:1` | 64×2336 | `enemys`（73 怪物，2 列 × 73 行，每怪 2 帧） |
-| `public/project/materials/enemy48.png:1` | 128×384 | `enemy48`（8 怪物，2 列 × 8 行，每怪 2 帧） |
+| `public/project/materials/enemy48.png:1` | 128×384 | `enemy48`（8 怪物，**4 帧列 × 8 行**，每怪 **4 帧**，单元格 **32×48**；D-84 / D-85 更正） |
 | `public/project/materials/npcs.png:1` | 64×448 | `npcs`（14 NPC，2 列 × 14 行，每 NPC 2 帧） |
-| `public/project/materials/npc48.png:1` | 128×480 | `npc48`（10 NPC，2 列 × 10 行，每 NPC 2 帧） |
+| `public/project/materials/npc48.png:1` | 128×480 | `npc48`（10 NPC，**4 帧列 × 10 行**，每 NPC **4 帧**，单元格 **32×48**；D-84 / D-85 更正） |
 | `public/project/materials/animates.png:1` | 128×928 | `animates`（29 动画图块，4 帧列 × 29 行）—— **素材分组并入 `terrains`，不设独立 `animates` 素材组**（D-72③，见 §0.5.1） |
 | `public/project/materials/ground.png:1` | 32×32 | 单帧素材（归类**待确认**，§8） |
 | `public/project/materials/airwall.png:1` | 32×32 | 单帧素材（归类**待确认**，§8） |
@@ -456,17 +461,20 @@
 | A | `terrains.png` | `terrains` 单帧 | 1 | 35 | `4×4`（16 格/图，`addGrid`） | 3 |
 | B | `animates.png` | 并入 `terrains`（D-72③）多帧 | 4 | 29 | `帧数列(4) × 4 行`（4 块/图，`addRowAnimate`） | 8 |
 | C | `items.png` | `items` 单帧 | 1 | 62 | `4×4`（16 格/图，`addGrid`） | 4 |
-| D | `enemys.png` + `enemy48.png` | `enemy` 合并（D-72①）多帧 | 2 | 81 | `帧数列(2) × 4 行`（4 块/图，`addRowAnimate`） | 21 |
-| E | `npcs.png` + `npc48.png` | `npc` 合并（D-72①）多帧 | 2 | 24 | `帧数列(2) × 4 行`（4 块/图，`addRowAnimate`） | 6 |
+| D1 | `enemys.png` | `enemy` 合并（D-72①）多帧 | **2** | 73 | `帧数列(2) × ≤4 行`（4 块/图，`addRowAnimate`；D-84） | **19** |
+| D2 | `enemy48.png` | `enemy` 合并（D-72①）多帧 | **4** | 8 | `帧数列(4) × ≤4 行`（4 块/图，`addRowAnimate`；D-84） | **2** |
+| E1 | `npcs.png` | `npc` 合并（D-72①）多帧 | **2** | 14 | `帧数列(2) × ≤4 行`（4 块/图，`addRowAnimate`；D-84） | **4** |
+| E2 | `npc48.png` | `npc` 合并（D-72①）多帧 | **4** | 10 | `帧数列(4) × ≤4 行`（4 块/图，`addRowAnimate`；D-84） | **3** |
 
 - 落实规则②：`terrains` / `items` / `enemy` / `npc` 各自成图，不混入同一张。
 - 落实规则③：**`animates` 并入 `terrains`，不设独立 `animates` 素材组**（因帧数不同，按规则④与 A 组分开成图，D-72③）。
-- 落实规则④：单帧（A/C）与多帧（B/D/E）分图；B 为 4 帧、D/E 为 2 帧，亦分图。
-- 落实规则⑤：A/C 为单帧 → 4×4；B/D/E 为多帧 → 帧数列 × 4 行。
+- 落实规则④：单帧（A / C）与多帧（B / D / E）分图；**多帧素材按帧数分图** —— B 为 4 帧、`enemys` / `npcs` 为 2 帧、`enemy48` / `npc48` 为 4 帧，**故 D 组拆为 `enemys`(2f) / `enemy48`(4f)，E 组拆为 `npcs`(2f) / `npc48`(4f)**（原 D / E 各 2 帧系误读，D-84 / D-85 更正）。
+- 落实规则⑤（受 D-84 放宽）：A / C 为单帧 → 列数固定 4、每图 16 格（4 行）；B / D / E 为多帧 → 列数 = 帧数列、行数 ≤4 且按每图实际块数裁剪。
+- **计数复算（D-84 / D-85）：** **`enemy = ceil(73/4)+ceil(8/4) = 19+2 = 21`；`npc = ceil(14/4)+ceil(10/4) = 4+3 = 7`**；布局受 **D-84**（列数固定、行数 ≤4 且按需裁剪）约束。
 - `materials` 中 `ground` / `airwall` / `keyboard` / `icons` / `icons_old` 的 D-72 归类**待确认**（§8），未计入本表。
 - 每图「帧数 × 4 行」按 `addRowAnimate`「每一行的帧数一致」的能力（`packages-user/client-base/src/material/types.ts:275`）设计。
 
-**SPLIT-COUNT: 42**（= A 3 + B 8 + C 4 + D 21 + E 6；即按 D-72 五规则推导的 materials 目标图数量，仅计 `terrains` / `items` / `enemy` / `npc` 四类）
+**SPLIT-COUNT: 43**（= A 3 + B 8 + C 4 + D 21 + E 7；即按 D-72 五规则（行数受 D-84 放宽）推导的 materials 目标图数量，仅计 `terrains` / `items` / `enemy` / `npc` 四类）
 
 ### 2.5 命名候选（待报备）
 
@@ -478,12 +486,14 @@
 | materials 拆分图（`animates` 并入 `terrains`） | `terrainsAnim0.png` … `terrainsAnim7.png` | B 组 8 图；**不设独立 `animates` 素材组**（D-72③） | 待用户报备批准 |
 | materials 拆分图（`items`） | `items0.png` … `items3.png` | C 组 4 图 | 待用户报备批准 |
 | materials 拆分图（`enemy`） | `enemy0.png` … `enemy20.png` | D 组 21 图 | 待用户报备批准 |
-| materials 拆分图（`npc`） | `npc0.png` … `npc5.png` | E 组 6 图 | 待用户报备批准 |
+| materials 拆分图（`npc`） | `npc0.png` … `npc6.png` | E 组 **7 图**（按尺寸与帧数分组，D-85：32px 组 `npc0..3` + 48px 组 `npc4..6`） | 待用户报备批准 |
 | autotile `identifier` 参数 | `20` / `151` / `152` / `153` | 对应 §2.2，取自 §1 图块 num | 待用户报备批准 |
 | autotile `type` 参数 | `AutoTileType.Big3x4` | `autotile.png` / `autotile2.png` / `autotile3.png` | 待用户报备批准 |
 | tileset `identifier.alias` | `magictower` | 对应 §2.3 | 待用户报备批准 |
 | tileset `cellWidth` / `cellHeight` | `32` / `32` | 待确认（§8） | 待用户报备批准 |
 | `.list.jsonc` 承载字段名 | `grid` / `rowAnimate` / `autotile` / `tileset` | 见 §7 草案 | 待用户报备批准 |
+
+> **取代说明（D-85）：** D-81 的 `npc0..5`（6 图）与总图数 42 中的 **npc 计数部分已由 D-85 取代**（现为 `npc0..6` = 7 图，总图数 43）；**enemy 不受影响**，仍 `enemy0..20` = 21 图。
 
 ## 3. 怪物 enemy
 
@@ -747,7 +757,7 @@
 
 ### 5.2 贴图归属候选
 
-`public/project/materials/npcs.png:1`（64×448，14 NPC × 2 帧）与 `public/project/materials/npc48.png:1`（128×480，10 NPC × 2 帧）按 D-72① **合并**为一张 `npc`（多帧，2 帧），归属 §2.4 的 E 组（目标图 6 张，`npc0.png` … `npc5.png`）。**注意：** `npc48` 中的 6 个高门（319–324）虽归 `npc` 图块类，但其 48px 高度与 32px NPC 的帧尺寸不同——是否与 32px NPC 混入同一目标图，受 D-72④「不同帧数不得同图」约束需进一步确认（§8）。
+`public/project/materials/npcs.png:1`（64×448，14 NPC × 2 帧，单元格 32×32）与 `public/project/materials/npc48.png:1`（128×480，10 NPC × **4 帧**，单元格 **32×48**）按 D-72① **合并**为 `npc`，归属 §2.4 的 E 组（目标图 **7 张**，`npc0.png` … `npc6.png`，**按尺寸与帧数分组**）。**注意（已由 D-85 裁定）：** `npc48` 中的 6 个高门（319–324）虽归 `npc` 图块类，但其 48px 单元格（32×48，4 帧）与 32px NPC（32×32，2 帧）的尺寸 / 帧数不同，依 **D-85** 各自成图、**不混图**（32px 组 `npc0..3`、48px 组 `npc4..6`）。
 
 **NPC-COUNT: 24**（= `npcs` 14 + `npc48` 10）
 
@@ -945,13 +955,13 @@ interface ITextureListConfig {
 
 | 编号 | 观察 / 未确定项 | 缺什么才能确定 |
 | --- | --- | --- |
-| U-1 | D-72⑤ 读法：本盘点将「单帧按 4×4 / 多帧按帧数列 × 4 行」理解为「单帧目标图 = 4×4 网格（16 格）；多帧目标图 = 帧数列 × 4 行（4 块）」，并据此得 SPLIT-COUNT = 42（§2.4）。 | 用户确认该读法，或给出目标图每图格数的确切约定 |
+| U-1 | D-72⑤ 读法：本盘点曾将「单帧按 4×4 / 多帧按帧数列 × 4 行」理解为每图满 4 行；更正后按 D/E 组**按帧数与尺寸分组**（D-85）推导得 SPLIT-COUNT = 43（§2.4：A 3 + B 8 + C 4 + D 21 + E 7）。该「严格 4 行」读法（D-72⑤ 的 4×4 / 帧数列 × 4 行）**已由 D-84 取代**（列数固定、行数 ≤4 且按每图实际块数裁剪，见 §2.4）。 | 用户确认逐图裁剪口径，或给出目标图每图格数的确切约定 |
 | U-6 | `ground.png` / `airwall.png` / `keyboard.png` / `icons.png` / `icons_old.png` 是否属于 D-72 四类拆分范围及其归属（§2.1）。 | 用户确认其是否纳入 tile 素材及归入哪一类 |
 | U-7 | `autotile1.png`（384×128）的自动元件类型无法由尺寸唯一判定为 2×3 `Small2x3` 或 3×4 `Big3x4`（§2.2）。 | 该素材的原始自动元件规格 |
 | U-8 | `magictower.png`（256×1216）的 `cellWidth` / `cellHeight` 切格尺寸与 `identifier.index`（§2.3）。 | 该 tileset 的切格尺寸与索引约定 |
-| U-9 | `enemy48.png` / `npc48.png` 的每格像素与帧布局：本盘点按「2 帧列、128px 宽」推导（§2.1），但 48px 高度下的单元格尺寸未由数据唯一确定。 | 高 48px 素材的单元格尺寸与帧布局 |
+| U-9 | 48px 素材的每格像素与帧布局：本盘点原按「2 帧列、128px 宽」推导（§2.1）有误；已更正为 **4 帧列**、单元格 **32×48**（`enemy48.png` 128×384、`npc48.png` 128×480；帧数权威 `FrameNumbers`）—— **由 D-84 / D-85 裁定**。 | 已由 D-84 / D-85 裁定 |
 | U-11 | 道具 `category` 细分：`cls: items` 且带 `equip` 的剑盾（`sword1..5` / `shield1..5`）应取 `Consumable` 还是 `Equipment`（§4.1）。 | 用户确认其分类口径 |
-| U-17 | `npc48` 中的 6 个高门（319–324，48px 高）与 32px NPC 是否可混入同一目标图（受 D-72④「不同帧数不得同图」约束，§5.2）。 | 用户确认高门是否单独成图 |
+| U-17 | `npc48` 中的 6 个高门（319–324，48px 高）与 32px NPC 是否可混入同一目标图（受 D-72④「不同帧数不得同图」约束，§5.2）。 | **已由 D-85 裁定**：按尺寸与帧数分组，`npc48` 与 32px NPC 各自成图、**不混图**（`npc0..3` = 32px 组、`npc4..6` = 48px 组） |
 | U-18 | `blocksInfo` 中无 `None` / `Tileset` 类图块定义（§1.1）；空图块（num 0）在 `map` 中大量出现但不在 `blocksInfo`。 | 新引擎对空图块 / tileset 图块的定义方式 |
 | U-19 | §7.1 中 `autotile` 条目的 `AutotileType` 参数与条目判别字段 `type` **同名**，无法同时以 `type` 承载二者（§7.1）。 | 用户确认该参数字段的最终命名（候选名 `autotileType`，待用户报备批准）（OI-2 的一部分） |
 
@@ -963,7 +973,7 @@ interface ITextureListConfig {
 | --- | --- | --- |
 | 图块 tile | 235 | `public/project/maps.js` 的 `blocksInfo`（8 个 `cls`） |
 | 贴图素材 textures | 17 | materials 12 + autotiles 4 + tilesets 1 |
-| 素材拆分目标图 split | 42 | D-72 四类推导（terrains/items/enemy/npc）；**`animates` 并入 `terrains`，不设独立 `animates` 素材组**（D-72③） |
+| 素材拆分目标图 split | 43 | D-72 四类推导（terrains/items/enemy/npc）；**`animates` 并入 `terrains`，不设独立 `animates` 素材组**（D-72③）；并按 **D-84**（列数固定、行数 ≤4 裁剪）与 **D-85**（按尺寸与帧数分组，`npc0..6` = 7） |
 | 怪物 enemy | 81 | `public/project/enemys.js`（与 `enemys` 73 + `enemy48` 8 图块一一对应） |
 | 道具 items | 62 | `public/project/items.js`（`tools` 20 / `items` 32 / `equips` 2 / `constants` 8） |
 | NPC | 24 | `npcs` 14 + `npc48` 10（合并为 `npc`） |
@@ -974,7 +984,7 @@ interface ITextureListConfig {
 ```
 TILE-COUNT: 235
 MATERIAL-COUNT: 17
-SPLIT-COUNT: 42
+SPLIT-COUNT: 43
 ENEMY-COUNT: 81
 ITEM-COUNT: 62
 NPC-COUNT: 24

@@ -169,6 +169,22 @@
 - **D-74（本次规划单元 = 只读盘点）:** 本规划运行只产出**只读盘点**计划，盘点产物文档为 `.planning/phases/09-minimum-browser-runnable/09-DATA-MIGRATION-AUDIT.md`；**全程只读**——零生产代码改动、零数据文件改动、零 PNG 生成。盘点内容须为后续“迁移计划”提供可直接消费的映射台账（含字段映射候选与待报备命名候选）。实际迁移计划在盘点执行后由用户再派发。
 - **D-75（素材生成归属）:** 迁移阶段将由 AI **用脚本生成**符合 D-72 规则的 PNG 素材文件；本盘点阶段**不生成**任何素材。
 
+### 任务 9（当前规划单元：旧引擎数据基础移植）
+
+> 本节界定**本次规划运行**的范围：任务 9 = 旧引擎数据的**基础字段移植**。输入 = `09-DATA-MIGRATION-AUDIT.md`（任务 8 盘点台账）。实际复杂字段（无对应目标字段者）本增量不移植，另行成文档由用户后续补充。
+
+- **D-76（本次规划单元 = 基础移植）:** 任务 9 把**基础字段与数据**从 `public/project` 移植到 `src/content`。**无法对应的字段**（新接口 `ITileRawData`/`ITilePassData`/`IEnemyRawData`/`IItemRawData`/`IMapRawData` **无对应字段**，即盘点文档 §8.1「只记录、不移植」）**本增量不移植**，单独形成一个说明文档（见 D-78），由用户后续补充。
+- **D-77（产出形态）:** 写入 `src/content` 的 `tile.jsonc` / `enemy.jsonc` / `item.jsonc` / `maps/*.jsonc`（**替换现有样例**）；按 D-72 生成 PNG 素材到 `src/content/texture/`；写 `src/content/texture/.list.jsonc`。六类（tile/maps/textures/enemy/items/NPC）**基础字段全量**。
+- **D-78（无法对应字段说明文档）:** 仅「**新接口无对应字段**（§8.1 只记录、不移植）」的字段进该文档；文档路径/命名**待批准**（提议 `.planning/phases/09-minimum-browser-runnable/09-DATA-MIGRATION-UNMAPPED.md`，供用户后续补充）。`§8.2 待定`（有目标字段但映射不定）**不**进该文档，本增量亦不移植，保留在盘点文档待后续裁定。
+- **D-79（num 分配策略 = A）:** 图块 `num` 采用 **A · 按 `TileType` 分段**（同类型连续编号，唯一约束 `id` ↔ `num` 一致），不沿用旧引擎顺序。
+- **D-80（命名批准）:** `src/content/texture/.list.jsonc` 的类型/字段命名照 09-18 §7.1 提议**批准**：`TextureListSource`、`ITextureListGridEntry`、`ITextureListRowAnimateEntry`、`ITextureListAutotileEntry`、`ITextureListTilesetEntry`、`TextureListEntry`、`ITextureListConfig`；字段 `type`/`source`/`map`/`width`/`height`/`identifier`/`autotileType`/`cellWidth`/`cellHeight`/`textures`（autotile 的 `AutotileType` 参数用 `autotileType` 以避开判别字段 `type`）。
+- **D-81（素材落点与命名）:** 迁移生成的 PNG 放 `src/content/texture/`，采用盘点候选名：`terrains0..2.png` / `terrainsAnim0..7.png` / `enemy0..20.png` / `npc0..5.png` / `items0..3.png`（以盘点 §2 与 `SPLIT-COUNT` 实测为准）。
+- **D-82（地图范围）:** 迁移**全部 5 个楼层**：`empty` / `MT0` / `sample0` / `sample1` / `sample2`。
+- **D-83（消费接线与 animates/events 边界）:** 消费接线（把配置写入 store、把 list 写入 `TextureManager`）仍由**用户后续单独提供**，本增量不实现。沿用 D-72③（`animates` 素材并入 `terrains`）与用户指令 2（旧 `events`/`trigger` 等无对应目标字段者不移植）。
+- **D-84（贴图布局放宽，修订 D-72⑤）:** 贴图布局**不必严格「单帧 4×4 / 多帧 帧数列×4 行」**；当素材不足以填满时，可**合理裁剪**（例如裁剪为 **3 行或 2 行**）。**列数**仍按「单帧 4 列 / 多帧 = 帧数列」（若用户对列数另有口径，按其指定）。本增量生成贴图与相关门禁须按实际行数（≤4）与裁剪后的尺寸断言，不得硬编码 4 行尺寸。（2026-10-13 用户裁定）
+
+- **D-85（OI-3 裁定 = A · 按尺寸分组；修订 D-81 的 npc 计数）:** **不同尺寸的素材必须用不同图片**——NPC 素材按尺寸分组：32×32 组与 64×48 组**各自成图**，**不放一块、不留白、不重采样**。`npc` = `npc0..6`（**7 张**：32px 组 4×64×128 + 48px 组 3×128×192），`SPLIT-COUNT` = **43**。D-81 中 `npc0..5` / 42 的 **npc 计数部分由本条取代**（enemy 不受影响，仍 `enemy0..20`=21）。禁止以「统一帧尺寸 + 透明留白」的方式把不同尺寸混入同一张图。（2026-10-13 用户裁定）
+
 ### the agent's Discretion
 
 - 无。用户明确未授权 AI 自行决定 UI 形态或任务范围。

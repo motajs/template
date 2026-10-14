@@ -3,10 +3,437 @@
 // --- SYSTEM PREFIX END --- //
 [
     {
-        "num": 200,
+        "num": 65,
+        "category": 2,
+        "name": "黄钥匙",
+        "text": "可以打开一扇黄门",
+        "hideInToolbox": true
+    },
+    {
+        "num": 66,
+        "category": 2,
+        "name": "蓝钥匙",
+        "text": "可以打开一扇蓝门",
+        "hideInToolbox": true
+    },
+    {
+        "num": 67,
+        "category": 2,
+        "name": "红钥匙",
+        "text": "可以打开一扇红门",
+        "hideInToolbox": true
+    },
+    {
+        "num": 68,
+        "category": 2,
+        "name": "绿钥匙",
+        "text": "可以打开一扇绿门",
+        "hideInToolbox": false
+    },
+    {
+        "num": 69,
+        "category": 2,
+        "name": "铁门钥匙",
+        "text": "可以打开一扇铁门",
+        "hideInToolbox": false
+    },
+    {
+        "num": 70,
+        "category": 2,
+        "name": "大黄门钥匙",
+        "text": "可以开启当前层所有黄门",
+        "hideInToolbox": false
+    },
+    {
+        "num": 71,
+        "category": 2,
+        "name": "红宝石",
+        "text": "攻击+${core.values.redGem}",
+        "hideInToolbox": false
+    },
+    {
+        "num": 72,
+        "category": 2,
+        "name": "蓝宝石",
+        "text": "，防御+${core.values.blueGem}",
+        "hideInToolbox": false
+    },
+    {
+        "num": 73,
+        "category": 2,
+        "name": "绿宝石",
+        "text": "，护盾+${core.values.greenGem}",
+        "hideInToolbox": false
+    },
+    {
+        "num": 74,
+        "category": 2,
+        "name": "黄宝石",
+        "text": "可以进行加点",
+        "hideInToolbox": false
+    },
+    {
+        "num": 75,
+        "category": 2,
+        "name": "红血瓶",
+        "text": "，生命+${core.values.redPotion}",
+        "hideInToolbox": false
+    },
+    {
+        "num": 76,
+        "category": 2,
+        "name": "蓝血瓶",
+        "text": "，生命+${core.values.bluePotion}",
+        "hideInToolbox": false
+    },
+    {
+        "num": 77,
+        "category": 2,
+        "name": "绿血瓶",
+        "text": "，生命+${core.values.greenPotion}",
+        "hideInToolbox": false
+    },
+    {
+        "num": 78,
+        "category": 2,
+        "name": "黄血瓶",
+        "text": "，生命+${core.values.yellowPotion}",
+        "hideInToolbox": false
+    },
+    {
+        "num": 79,
+        "category": 2,
+        "name": "铁剑",
+        "text": "一把很普通的铁剑",
+        "hideInToolbox": false
+    },
+    {
+        "num": 80,
+        "category": 2,
+        "name": "铁盾",
+        "text": "一个很普通的铁盾",
+        "hideInToolbox": false
+    },
+    {
+        "num": 81,
+        "category": 2,
+        "name": "银剑",
+        "text": "一把很普通的银剑",
+        "hideInToolbox": false
+    },
+    {
+        "num": 82,
+        "category": 2,
+        "name": "银盾",
+        "text": "一个很普通的银盾",
+        "hideInToolbox": false
+    },
+    {
+        "num": 83,
+        "category": 2,
+        "name": "骑士剑",
+        "text": "一把很普通的骑士剑",
+        "hideInToolbox": false
+    },
+    {
+        "num": 84,
+        "category": 2,
+        "name": "骑士盾",
+        "text": "一个很普通的骑士盾",
+        "hideInToolbox": false
+    },
+    {
+        "num": 85,
+        "category": 2,
+        "name": "圣剑",
+        "text": "一把很普通的圣剑",
+        "hideInToolbox": false
+    },
+    {
+        "num": 86,
+        "category": 2,
+        "name": "圣盾",
+        "text": "一个很普通的圣盾",
+        "hideInToolbox": false
+    },
+    {
+        "num": 87,
+        "category": 2,
+        "name": "神圣剑",
+        "text": "一把很普通的神圣剑",
+        "hideInToolbox": false
+    },
+    {
+        "num": 88,
+        "category": 2,
+        "name": "神圣盾",
+        "text": "一个很普通的神圣盾",
+        "hideInToolbox": false
+    },
+    {
+        "num": 89,
         "category": 1,
         "name": "怪物手册",
-        "text": "蕴含着魔塔中所有怪物的详细信息",
+        "text": "可以查看当前楼层各怪物属性",
+        "hideInToolbox": true
+    },
+    {
+        "num": 90,
+        "category": 1,
+        "name": "楼层传送器",
+        "text": "可以自由往来去过的楼层",
+        "hideInToolbox": true
+    },
+    {
+        "num": 91,
+        "category": 2,
+        "name": "破墙镐",
+        "text": "可以破坏勇士面前的墙",
+        "hideInToolbox": false
+    },
+    {
+        "num": 92,
+        "category": 2,
+        "name": "破冰镐",
+        "text": "可以破坏勇士面前的一堵冰墙",
+        "hideInToolbox": false
+    },
+    {
+        "num": 93,
+        "category": 2,
+        "name": "炸弹",
+        "text": "可以炸掉勇士面前的怪物",
+        "hideInToolbox": false
+    },
+    {
+        "num": 94,
+        "category": 2,
+        "name": "中心对称飞行器",
+        "text": "可以飞向当前楼层中心对称的位置",
+        "hideInToolbox": false
+    },
+    {
+        "num": 95,
+        "category": 2,
+        "name": "上楼器",
+        "text": "可以飞往楼上的相同位置",
+        "hideInToolbox": false
+    },
+    {
+        "num": 96,
+        "category": 2,
+        "name": "下楼器",
+        "text": "可以飞往楼下的相同位置",
+        "hideInToolbox": false
+    },
+    {
+        "num": 97,
+        "category": 1,
+        "name": "幸运金币",
+        "text": "持有时打败怪物可得双倍金币",
+        "hideInToolbox": false
+    },
+    {
+        "num": 98,
+        "category": 1,
+        "name": "冰冻徽章",
+        "text": "可以将面前的熔岩变成平地",
+        "hideInToolbox": false
+    },
+    {
+        "num": 99,
+        "category": 1,
+        "name": "十字架",
+        "text": "持有后无视怪物的无敌属性",
+        "hideInToolbox": false
+    },
+    {
+        "num": 100,
+        "category": 2,
+        "name": "圣水",
+        "text": "生命值翻倍",
+        "hideInToolbox": false
+    },
+    {
+        "num": 101,
+        "category": 2,
+        "name": "地震卷轴",
+        "text": "可以破坏当前层的所有墙",
+        "hideInToolbox": false
+    },
+    {
+        "num": 102,
+        "category": 2,
+        "name": "解毒药水",
+        "text": "可以解除中毒状态",
+        "hideInToolbox": false
+    },
+    {
+        "num": 103,
+        "category": 2,
+        "name": "解衰药水",
+        "text": "可以解除衰弱状态",
+        "hideInToolbox": false
+    },
+    {
+        "num": 104,
+        "category": 2,
+        "name": "解咒药水",
+        "text": "可以解除诅咒状态",
+        "hideInToolbox": false
+    },
+    {
+        "num": 105,
+        "category": 2,
+        "name": "万能药水",
+        "text": "可以解除所有不良状态",
+        "hideInToolbox": false
+    },
+    {
+        "num": 106,
+        "category": 1,
+        "name": "屠龙匕首",
+        "text": "该道具尚未被定义",
+        "hideInToolbox": false
+    },
+    {
+        "num": 107,
+        "category": 2,
+        "name": "钱袋",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 108,
+        "category": 1,
+        "name": "护符",
+        "text": "持有时无视负面地形",
+        "hideInToolbox": false
+    },
+    {
+        "num": 109,
+        "category": 2,
+        "name": "圣锤",
+        "text": "该道具尚未被定义",
+        "hideInToolbox": false
+    },
+    {
+        "num": 110,
+        "category": 2,
+        "name": "生命魔杖",
+        "text": "可以恢复100点生命值",
+        "hideInToolbox": false
+    },
+    {
+        "num": 111,
+        "category": 2,
+        "name": "跳跃靴",
+        "text": "能跳跃到前方两格处",
+        "hideInToolbox": false
+    },
+    {
+        "num": 112,
+        "category": 4,
+        "name": "破旧的剑",
+        "text": "可装备道具，记得至少留一个可装备道具，不然会构建失败。",
+        "hideInToolbox": false
+    },
+    {
+        "num": 113,
+        "category": 4,
+        "name": "破旧的盾",
+        "text": "可装备道具，记得至少留一个可装备道具，不然会构建失败。",
+        "hideInToolbox": false
+    },
+    {
+        "num": 114,
+        "category": 1,
+        "name": "技能：二倍斩",
+        "text": "可以打开或关闭主动技能二倍斩",
+        "hideInToolbox": false
+    },
+    {
+        "num": 115,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 116,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 117,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 118,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 119,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 120,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 121,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 122,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 123,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 124,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 125,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
+        "hideInToolbox": false
+    },
+    {
+        "num": 126,
+        "category": 2,
+        "name": "新物品",
+        "text": "",
         "hideInToolbox": false
     }
 ]
