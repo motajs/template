@@ -1,28 +1,11 @@
-// Type: type define required
+// Type: packages-user/client-modules/src/common.ts IClientTextureListConfig
 // --- SYSTEM PREFIX END --- //
 {
     "textures": [
         {
             "type": "grid",
             "source": "terrains0.png",
-            "map": [
-                17,
-                22,
-                25,
-                28,
-                30,
-                6,
-                5,
-                1,
-                3,
-                2,
-                4,
-                7,
-                8,
-                9,
-                10,
-                11
-            ],
+            "map": [17, 22, 25, 28, 30, 6, 5, 1, 3, 2, 4, 7, 8, 9, 10, 11],
             "width": 32,
             "height": 32
         },
@@ -30,22 +13,7 @@
             "type": "grid",
             "source": "terrains1.png",
             "map": [
-                12,
-                13,
-                14,
-                15,
-                16,
-                18,
-                19,
-                20,
-                21,
-                23,
-                24,
-                26,
-                27,
-                29,
-                31,
-                32
+                12, 13, 14, 15, 16, 18, 19, 20, 21, 23, 24, 26, 27, 29, 31, 32
             ],
             "width": 32,
             "height": 32
@@ -53,104 +21,63 @@
         {
             "type": "grid",
             "source": "terrains2.png",
-            "map": [
-                33,
-                34,
-                35
-            ],
+            "map": [33, 34, 35],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "terrainsAnim0.png",
-            "map": [
-                39,
-                40,
-                46,
-                47
-            ],
+            "map": [39, 40, 46, 47],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "terrainsAnim1.png",
-            "map": [
-                48,
-                49,
-                50,
-                51
-            ],
+            "map": [48, 49, 50, 51],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "terrainsAnim2.png",
-            "map": [
-                52,
-                53,
-                36,
-                37
-            ],
+            "map": [52, 53, 36, 37],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "terrainsAnim3.png",
-            "map": [
-                38,
-                60,
-                61,
-                55
-            ],
+            "map": [38, 60, 61, 55],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "terrainsAnim4.png",
-            "map": [
-                62,
-                54,
-                63,
-                42
-            ],
+            "map": [62, 54, 63, 42],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "terrainsAnim5.png",
-            "map": [
-                43,
-                44,
-                45,
-                58
-            ],
+            "map": [43, 44, 45, 58],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "terrainsAnim6.png",
-            "map": [
-                57,
-                59,
-                56,
-                41
-            ],
+            "map": [57, 59, 56, 41],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "terrainsAnim7.png",
-            "map": [
-                64
-            ],
+            "map": [64],
             "width": 32,
             "height": 32
         },
@@ -158,21 +85,7 @@
             "type": "grid",
             "source": "items0.png",
             "map": [
-                65,
-                66,
-                67,
-                68,
-                69,
-                116,
-                70,
-                117,
-                101,
-                89,
-                115,
-                97,
-                90,
-                94,
-                96,
+                65, 66, 67, 68, 69, 116, 70, 117, 101, 89, 115, 97, 90, 94, 96,
                 95
             ],
             "width": 32,
@@ -182,22 +95,8 @@
             "type": "grid",
             "source": "items1.png",
             "map": [
-                71,
-                72,
-                73,
-                74,
-                75,
-                76,
-                77,
-                78,
-                102,
-                103,
-                118,
-                104,
-                105,
-                100,
-                114,
-                119
+                71, 72, 73, 74, 75, 76, 77, 78, 102, 103, 118, 104, 105, 100,
+                114, 119
             ],
             "width": 32,
             "height": 32
@@ -206,22 +105,8 @@
             "type": "grid",
             "source": "items2.png",
             "map": [
-                120,
-                110,
-                121,
-                122,
-                123,
-                124,
-                125,
-                126,
-                99,
-                98,
-                106,
-                93,
-                92,
-                91,
-                107,
-                108
+                120, 110, 121, 122, 123, 124, 125, 126, 99, 98, 106, 93, 92, 91,
+                107, 108
             ],
             "width": 32,
             "height": 32
@@ -229,351 +114,203 @@
         {
             "type": "grid",
             "source": "items3.png",
-            "map": [
-                109,
-                111,
-                79,
-                81,
-                83,
-                85,
-                87,
-                80,
-                82,
-                84,
-                86,
-                88,
-                112,
-                113
-            ],
+            "map": [109, 111, 79, 81, 83, 85, 87, 80, 82, 84, 86, 88, 112, 113],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy0.png",
-            "map": [
-                127,
-                128,
-                129,
-                130
-            ],
+            "map": [127, 128, 129, 130],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy1.png",
-            "map": [
-                131,
-                132,
-                133,
-                134
-            ],
+            "map": [131, 132, 133, 134],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy2.png",
-            "map": [
-                135,
-                136,
-                137,
-                138
-            ],
+            "map": [135, 136, 137, 138],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy3.png",
-            "map": [
-                139,
-                140,
-                141,
-                142
-            ],
+            "map": [139, 140, 141, 142],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy4.png",
-            "map": [
-                143,
-                144,
-                145,
-                146
-            ],
+            "map": [143, 144, 145, 146],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy5.png",
-            "map": [
-                147,
-                148,
-                149,
-                150
-            ],
+            "map": [147, 148, 149, 150],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy6.png",
-            "map": [
-                151,
-                152,
-                153,
-                154
-            ],
+            "map": [151, 152, 153, 154],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy7.png",
-            "map": [
-                155,
-                156,
-                157,
-                158
-            ],
+            "map": [155, 156, 157, 158],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy8.png",
-            "map": [
-                159,
-                160,
-                161,
-                162
-            ],
+            "map": [159, 160, 161, 162],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy9.png",
-            "map": [
-                163,
-                164,
-                165,
-                166
-            ],
+            "map": [163, 164, 165, 166],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy10.png",
-            "map": [
-                167,
-                168,
-                169,
-                170
-            ],
+            "map": [167, 168, 169, 170],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy11.png",
-            "map": [
-                171,
-                172,
-                173,
-                174
-            ],
+            "map": [171, 172, 173, 174],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy12.png",
-            "map": [
-                175,
-                176,
-                177,
-                178
-            ],
+            "map": [175, 176, 177, 178],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy13.png",
-            "map": [
-                179,
-                180,
-                181,
-                182
-            ],
+            "map": [179, 180, 181, 182],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy14.png",
-            "map": [
-                183,
-                184,
-                185,
-                186
-            ],
+            "map": [183, 184, 185, 186],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy15.png",
-            "map": [
-                191,
-                192,
-                193,
-                194
-            ],
+            "map": [191, 192, 193, 194],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy16.png",
-            "map": [
-                195,
-                196,
-                197,
-                198
-            ],
+            "map": [195, 196, 197, 198],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy17.png",
-            "map": [
-                199,
-                200,
-                201,
-                202
-            ],
+            "map": [199, 200, 201, 202],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy18.png",
-            "map": [
-                203
-            ],
+            "map": [203],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "enemy19.png",
-            "map": [
-                187,
-                188,
-                189,
-                190
-            ],
+            "map": [187, 188, 189, 190],
             "width": 32,
             "height": 48
         },
         {
             "type": "rowAnimate",
             "source": "enemy20.png",
-            "map": [
-                204,
-                205,
-                206,
-                207
-            ],
+            "map": [204, 205, 206, 207],
             "width": 32,
             "height": 48
         },
         {
             "type": "rowAnimate",
             "source": "npc0.png",
-            "map": [
-                208,
-                209,
-                210,
-                211
-            ],
+            "map": [208, 209, 210, 211],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "npc1.png",
-            "map": [
-                212,
-                213,
-                214,
-                215
-            ],
+            "map": [212, 213, 214, 215],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "npc2.png",
-            "map": [
-                216,
-                217,
-                218,
-                219
-            ],
+            "map": [216, 217, 218, 219],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "npc3.png",
-            "map": [
-                224,
-                225
-            ],
+            "map": [224, 225],
             "width": 32,
             "height": 32
         },
         {
             "type": "rowAnimate",
             "source": "npc4.png",
-            "map": [
-                220,
-                221,
-                222,
-                223
-            ],
+            "map": [220, 221, 222, 223],
             "width": 32,
             "height": 48
         },
         {
             "type": "rowAnimate",
             "source": "npc5.png",
-            "map": [
-                226,
-                227,
-                228,
-                229
-            ],
+            "map": [226, 227, 228, 229],
             "width": 32,
             "height": 48
         },
         {
             "type": "rowAnimate",
             "source": "npc6.png",
-            "map": [
-                230,
-                231
-            ],
+            "map": [230, 231],
             "width": 32,
             "height": 48
         },
@@ -613,3 +350,4 @@
         }
     ]
 }
+
