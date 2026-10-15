@@ -35,19 +35,10 @@ import {
 } from '@user/client-base';
 import {
     ExcitationDivider,
-    ExcitationVariator,
     IExcitation,
     IExcitationDivider,
     RafExcitation
 } from '@motajs/animate';
-import {
-    DEBUG_DIVIDER,
-    DEBUG_VARIATOR,
-    DIVIDER_DEBUG_DIVIDER,
-    MAIN_HEIGHT,
-    MAIN_WIDTH,
-    VARIATOR_DEBUG_SPEED
-} from './shared';
 import { IRendererUsing, RendererUsing } from '@motajs/render-vue';
 import { IUIController, UIController } from '@motajs/system';
 import { createApp } from './render';
@@ -71,7 +62,7 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly sceneController: IUIController<IGameUIPropsBase>;
     readonly mainUIController: IUIController<IGameUIPropsBase>;
 
-    // Layer 5 渲染顶层
+    // Layer 5 渲染顶层 - 目前没东西
 
     /** 已注册的渲染端插件 */
     private readonly clientPlugins: Map<
@@ -85,10 +76,7 @@ export class ClientCore extends CoreState implements IClientCore {
     constructor(config: IClientCoreConfig) {
         super(config);
 
-        //#region Layer 4
-
         this.save = new SaveSystem();
-        this.save.init('');
         this.audioContext = new MotaAudioContext();
         this.soundPlayer = new SoundPlayer(this.audioContext);
         this.bgmPlayer = new BGMPlayer(this.audioContext);
@@ -98,30 +86,15 @@ export class ClientCore extends CoreState implements IClientCore {
             config.tilesetUnit
         );
 
-        const rafExcitation = new RafExcitation();
-        const excitationDivider = new ExcitationDivider<number>();
-        this.rafExcitation = rafExcitation;
-        this.excitationDivider = excitationDivider;
-
-        if (DEBUG_VARIATOR) {
-            const variator = new ExcitationVariator();
-            variator.bindExcitation(rafExcitation);
-            variator.setSpeed(VARIATOR_DEBUG_SPEED);
-            excitationDivider.bindExcitation(variator);
-        } else {
-            excitationDivider.bindExcitation(rafExcitation);
-        }
-
-        if (DEBUG_DIVIDER) {
-            excitationDivider.setDivider(DIVIDER_DEBUG_DIVIDER);
-        }
+        this.rafExcitation = new RafExcitation();
+        this.excitationDivider = new ExcitationDivider<number>();
 
         this.renderer = new MotaRenderer({
             canvas: '#render-main',
-            width: MAIN_WIDTH,
-            height: MAIN_HEIGHT,
+            width: config.renderWidth,
+            height: config.renderHeight,
             // 使用分频器，用户可以在设置中调整，如果设备性能较差调高分频有助于提高性能表现
-            excitaion: excitationDivider
+            excitaion: this.excitationDivider
         });
         this.using = new RendererUsing(this.renderer);
         this.mainMapRenderer = new MapRenderer(this.materials);
@@ -132,8 +105,6 @@ export class ClientCore extends CoreState implements IClientCore {
         const pbCreator = createUIPropsBase(this);
         this.sceneController.setPropsBaseCreator(pbCreator);
         this.mainUIController.setPropsBaseCreator(pbCreator);
-
-        //#endregion
 
         this.loader.addCoreConfig('client', config.clientURL);
 

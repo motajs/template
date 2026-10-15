@@ -78,7 +78,7 @@
         "76": "Plugin dependency cycle detected: $1. Cyclic plugins will not be initialized.",
         "77": "Plugin $1 depends on a non-existent plugin: $2. Related plugins will not be initialized.",
         "78": "Duplicate plugin id: $1. The duplicate will not be registered.",
-        "79": "Hero attribute initialize failed since no core config loaded.",
+        "79": "$1 side initialize failed since no core config loaded.",
         "2001": "Replay($1): Replay parameter count mismatch: expected $2, got $3.",
         "2002": "Replay($1): Replay parameter type mismatch: index $2, expected $3, got $4.",
         "2003": "Replay(move): Expected hero to be stopped before execute moving step.",

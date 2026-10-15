@@ -60,6 +60,10 @@ export interface IClientCoreConfig extends ICoreStateConfig {
     readonly tilesetUnit: number;
     /** 渲染器挂载至的画布元素 */
     readonly rendererCanvas: string;
+    /** 渲染器的渲染宽度 */
+    readonly renderWidth: number;
+    /** 渲染器的渲染高度 */
+    readonly renderHeight: number;
     /** 渲染端插件列表 */
     readonly clientPlugins: IClientPluginDefine[];
 }

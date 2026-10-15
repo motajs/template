@@ -22,7 +22,7 @@ export function createCoreStateConfig(
 }
 
 /**
- * 创建数据端主对象，返回未经过初始化的主对象实例，需要手动调用 `state.load` 初始化
+ * 创建数据端主对象，返回未经过异步初始化的主对象实例，需要手动调用 `state.load` 初始化
  * @param starter 加载启动器
  */
 export function createCoreState(starter: ILoadTaskStarter): ICoreState {

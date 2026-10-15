@@ -63,7 +63,7 @@ export class MainDataPlugin implements IDataPluginDefine {
         // 进行勇士的加载后初始化
         const coreConfig = state.loader.getConfig<ICoreStateCoreConfig>('core');
         if (!coreConfig) {
-            logger.error(79);
+            logger.error(79, 'Data');
             return;
         }
         const dir = state.faceManager.get(this.heroFace);
