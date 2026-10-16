@@ -537,6 +537,8 @@ export interface IReadonlyEnemyContext<
     readonly width: number;
     /** 怪物上下文高度 */
     readonly height: number;
+    /** 怪物上下文对应的楼层 */
+    readonly floor: string | undefined;
     /** 此上下文使用的索引对象 */
     readonly indexer: ILocationHelper;
 
@@ -612,8 +614,15 @@ export interface IEnemyContext<TEnemy, THero> extends IReadonlyEnemyContext<
     readonly width: number;
     /** 怪物上下文高度 */
     readonly height: number;
+
     /** 此上下文使用的索引对象 */
     readonly indexer: ILocationHelper;
+
+    /**
+     * 设置怪物上下文对应的楼层
+     * @param floor 上下文对应的楼层
+     */
+    setFloor(floor: string | undefined): void;
 
     /**
      * 调整上下文尺寸，并清空当前上下文中的所有怪物与状态
@@ -775,6 +784,8 @@ export interface IEnemyContext<TEnemy, THero> extends IReadonlyEnemyContext<
 export interface ICombatFlowHandler<TEnemy, THero> extends IDataBaseExtended {
     /** 战斗的怪物是否在地图上 */
     readonly onMap: boolean;
+    /** 是否为强制战斗 */
+    readonly force: boolean;
     /** 可修改勇士对象 */
     readonly hero: IHeroAttribute<THero>;
     /** 可修改怪物对象 */
@@ -863,9 +874,11 @@ export interface ICombatFlow<TEnemy, THero>
     /**
      * 与指定怪物战斗
      * @param enemy 怪物视图对象
+     * @param force 是否为强制战斗，默认为 `false`。强制战斗下，不再有战败保护
      */
     battle(
-        enemy: IEnemyView<TEnemy>
+        enemy: IEnemyView<TEnemy>,
+        force?: boolean
     ): Promise<IEnemyDamageInfo<TEnemy, THero> | null>;
 
     /**
@@ -879,8 +892,12 @@ export interface ICombatFlow<TEnemy, THero>
     /**
      * 添加战前战后脚本
      * @param script 战前战后脚本
+     * @param force 是否为强制战斗，默认为 `false`。强制战斗下，不再有战败保护
      */
-    addCombatScript(script: ICombatScript<TEnemy, THero>): void;
+    addCombatScript(
+        script: ICombatScript<TEnemy, THero>,
+        force?: boolean
+    ): void;
 }
 
 //#endregion

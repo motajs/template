@@ -77,10 +77,10 @@ export interface ISpecial26Value {
  * 2. 坚固、模仿等仅影响自身基础属性的属性：./final.ts, MainEnemyFinalEffect.apply 方法
  * 3. 地图伤害：./mapDamage.ts，具体写法参考文档
  * 4. 光环属性：./aura.ts 具体写法参考文档
- * 5. 中毒的每步效果：在插件系统中，目前暂未实装
- * 6. 中毒的瞬移效果：在插件系统中，目前暂未实装
- * 7. 衰弱效果：在插件系统中，目前尚未实装
- * 8. 重生属性：在插件系统中，目前尚未实装
+ * 5. 中毒的每步效果：./hook.ts EnemyMoveHooks.handlePoison 方法
+ * 6. 中毒的瞬移效果：./hook.ts EnemyPathfindingHooks.handlePoison 方法
+ * 7. 衰弱效果：./hook.ts EnemyCombatHooks.onAfterCombat 方法
+ * 8. 重生属性：./hook.ts EnemyCombatHooks.onAfterCombat 和 EnemyChangeFloorHooks.onSetFloor 方法
  */
 export function createSpecials(
     state: ICoreState
@@ -233,18 +233,7 @@ export function createSpecials(
             name: '衰弱',
             desc: special => {
                 const weak = special.value;
-                const suffix = '，多次触发时取最高值。';
-                if (weak < 1) {
-                    return (
-                        `战斗后，角色陷入衰弱状态，攻防暂时下降${Math.floor(weak * 100)}%` +
-                        suffix
-                    );
-                } else {
-                    return (
-                        `战斗后，角色陷入衰弱状态，攻防暂时下降${weak}点` +
-                        suffix
-                    );
-                }
+                return `战斗后，角色陷入衰弱状态，攻防暂时下降${Math.floor(weak * 100)}%，多次触发时取最高值。`;
             },
             color: '#F0BBCC'
         })

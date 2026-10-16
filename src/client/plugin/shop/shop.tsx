@@ -2,13 +2,13 @@ import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { computed, defineComponent, onMounted, ref } from 'vue';
 import { Font } from '@motajs/render';
 import { Scroll, TextContent } from '@user/client-base';
-import { IHeroState, IShopState } from '@user/data-base';
-import { IShopSystem } from '@user/data-system';
+import { IHeroState } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
-import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
-import { IUIPropsBase } from './types';
+import { FULL_LOC, IUIPropsBase, MAIN_WIDTH } from '@user/client-modules';
+import { IShopState, IShopSystem } from '@dp/shop';
+import { RENDER_WIDTH } from '@/constant';
 
-export interface ShopProps extends IUIPropsBase {
+export interface IShopProps extends IUIPropsBase {
     /** 商店状态对象 */
     shop: IShopState;
     /** 勇士状态对象 */
@@ -27,7 +27,7 @@ const shopProps = {
         'heroState',
         'shopSystem'
     ]
-} satisfies SetupComponentOptions<ShopProps>;
+} satisfies SetupComponentOptions<IShopProps>;
 
 interface IShopItemEntry {
     /** 道具图块数字 */
@@ -55,7 +55,7 @@ const LIST_WIDTH = 250;
 /** 左侧商店列表的顶部纵坐标 */
 const LIST_TOP = MODE_BAR_HEIGHT + 4;
 /** 左侧商店列表的高度，底部为退出按钮留出空间 */
-const LIST_HEIGHT = MAIN_HEIGHT - LIST_TOP - 16;
+const LIST_HEIGHT = RENDER_WIDTH - LIST_TOP - 16;
 /** 商店列表中每一行的高度 */
 const ROW_HEIGHT = 40;
 /** 行内图标的尺寸 */
@@ -63,7 +63,7 @@ const ROW_ICON_SIZE = 28;
 /** 右侧信息区域的起始横坐标 */
 const INFO_LEFT = LIST_WIDTH;
 /** 右侧信息区域的宽度 */
-const INFO_WIDTH = MAIN_WIDTH - INFO_LEFT;
+const INFO_WIDTH = RENDER_WIDTH - INFO_LEFT;
 /** 道具名称的纵坐标 */
 const NAME_TOP = MODE_BAR_HEIGHT + 10;
 /** 道具描述区域的顶部纵坐标 */
@@ -89,7 +89,7 @@ const titleFont = Font.defaults({ size: 14, weight: 700 });
 const textFont = Font.defaults({ size: 12 });
 
 /** 商店界面组件 */
-export const Shop = defineComponent<ShopProps>(props => {
+export const Shop = defineComponent<IShopProps>(props => {
     /** 商店状态对象 */
     const shop = props.shop;
     /** 勇士状态对象 */

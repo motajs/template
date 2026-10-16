@@ -5,20 +5,20 @@ import {
     FaceGroup,
     IFacedTileLocator
 } from '@user/data-common';
-import {
-    ICoreState,
-    ICoreStateCoreConfig,
-    IDataPluginDefine
-} from '@user/data-state';
-import { initializeEnemy } from './enemy';
+import { ICoreState, ICoreStateCoreConfig } from '@user/data-state';
+import { ICombatWeakHandler, initializeEnemy } from './enemy';
 import { initializeReplay } from './replay';
 import { logger } from '@motajs/common';
 import { DefaultHeroMoveTopImpl, DefaultPassPredicateImpl } from './hero';
 import { DefaultDataLoaderHook } from './loader';
+import { IDataMainPlugin } from './types';
+import { initializeHooks } from './hook';
 
-export class MainDataPlugin implements IDataPluginDefine {
+export class MainDataPlugin implements IDataMainPlugin {
     readonly id: string = 'main-data-plugin';
     readonly dependencies: string[] = [];
+
+    weak!: ICombatWeakHandler;
 
     constructor(readonly heroFace: FaceGroup) {}
 
@@ -46,8 +46,11 @@ export class MainDataPlugin implements IDataPluginDefine {
         state.loader.addHook(new DefaultDataLoaderHook());
 
         // 其他复杂初始化
-        initializeEnemy(state);
+        const enemyReturns = initializeEnemy(state);
         initializeReplay(state);
+        initializeHooks(state);
+
+        this.weak = enemyReturns.weak;
 
         // 存档初始化
         state.addSaveableContent('@system/hero', state.hero);

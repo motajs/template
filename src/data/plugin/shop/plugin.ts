@@ -4,8 +4,8 @@ import { ShopManager } from './manager';
 import { ShopState } from './state';
 import { ShopSystem } from './system';
 
-export class ShopPlugin implements IShopPlugin {
-    id: string = 'shop-plugin';
+export class DataShopPlugin implements IShopPlugin {
+    id: string = 'data-shop-plugin';
     dependencies: string[] = [];
 
     shop!: IShopSystem;

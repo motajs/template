@@ -175,7 +175,7 @@ export class GuardAura implements IEnemyAuraView<
         if (locator.x === this.locator.x && locator.y === this.locator.y) {
             return;
         }
-        enemy.getAttribute('guard').add(this.locator);
+        enemy.getAttribute('guard').add(this.sourceView);
     }
 
     applySpecial(): IEnemySpecialModifier<IEnemyAttr> | null {

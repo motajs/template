@@ -5,7 +5,6 @@ import {
     IReadonlyEnemyHandler
 } from '@user/data-system';
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import { logger } from '@motajs/common';
 import { ISpecial9Value } from './special';
 
 export class MainDamageCalculator implements IDamageCalculator<
@@ -83,13 +82,8 @@ export class MainDamageCalculator implements IDamageCalculator<
             this.inGuard = true;
             // 计算支援怪的伤害，同时把打支援怪花费的回合数加到当前怪物上，因为打支援怪的时候当前怪物也会打你
             // 因此回合数需要加上打支援怪的回合数
-            for (const guard of guards) {
+            for (const view of guards) {
                 // 直接把 enemy 传过去，因此支援的 enemy 会吃到其原本所在位置的光环加成
-                const view = handler.context.getEnemyByLocator(guard);
-                if (!view) {
-                    logger.warn(137, guard.x.toString(), guard.y.toString());
-                    continue;
-                }
                 const extraInfo = this.calculate({
                     enemy: view.getComputedEnemy(),
                     context: handler.context,

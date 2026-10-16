@@ -84,10 +84,12 @@ export class CombatFlow<TEnemy, THero>
      */
     private createHandler(
         enemy: IReadonlyEnemy<TEnemy>,
-        locator: ITileLocator | null
+        locator: ITileLocator | null,
+        force: boolean
     ): ICombatFlowHandler<TEnemy, THero> {
         return {
             onMap: locator !== null,
+            force,
             hero: this.hero!,
             enemy,
             context: this.context!,
@@ -205,7 +207,8 @@ export class CombatFlow<TEnemy, THero>
 
     @shouldReplay('Battle with enemy should be replayed.')
     battle(
-        enemy: IEnemyView<TEnemy>
+        enemy: IEnemyView<TEnemy>,
+        force: boolean = false
     ): Promise<IEnemyDamageInfo<TEnemy, THero> | null> {
         if (!this.context) {
             logger.warn(139, 'an enemy context object');
@@ -219,7 +222,7 @@ export class CombatFlow<TEnemy, THero>
         const computed = enemy.getComputedEnemy();
         const origin = enemy.getModifiableEnemy();
         const locator = this.tryGetEnemyLocator(enemy, computed, origin);
-        const handler = this.createHandler(origin, locator);
+        const handler = this.createHandler(origin, locator, force);
         const eHandler = this.createEnemyHandler(computed, locator);
 
         return this.combatFlow(handler, eHandler);
@@ -227,7 +230,8 @@ export class CombatFlow<TEnemy, THero>
 
     @shouldReplay('Battle with enemy should be replayed.')
     battleComputed(
-        enemy: IReadonlyEnemy<TEnemy>
+        enemy: IReadonlyEnemy<TEnemy>,
+        force: boolean = false
     ): Promise<IEnemyDamageInfo<TEnemy, THero> | null> {
         if (!this.context) {
             logger.warn(139, 'an enemy context object');
@@ -243,7 +247,7 @@ export class CombatFlow<TEnemy, THero>
         if (view) return this.battle(view);
         else {
             // 否则走单独的流程
-            const handler = this.createHandler(enemy, null);
+            const handler = this.createHandler(enemy, null, force);
             const eHandler = this.createEnemyHandler(enemy, null);
             return this.combatFlow(handler, eHandler);
         }

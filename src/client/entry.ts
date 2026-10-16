@@ -41,9 +41,7 @@ export function createClientCoreConfig(
  * 创建渲染端主对象，返回未经过异步初始化的主对象实例，需要手动调用 `state.load` 初始化
  * @param starter 加载启动器
  */
-export async function createClientCore(
-    starter: ILoadTaskStarter
-): Promise<IClientCore> {
+export function createClientCore(starter: ILoadTaskStarter): IClientCore {
     const config = createClientCoreConfig(starter);
     const state = new ClientCore(config);
     return state;

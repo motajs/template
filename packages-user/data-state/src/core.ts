@@ -1,4 +1,9 @@
-import { logger } from '@motajs/common';
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    logger
+} from '@motajs/common';
 import { ILoadManager, LoadManager } from '@motajs/loader';
 import {
     IRoleFaceBinder,
@@ -18,7 +23,8 @@ import {
     IMapStore,
     MapStore,
     IReplaySystem,
-    ReplaySystem
+    ReplaySystem,
+    IDataCommonHooks
 } from '@user/data-common';
 import {
     EnemyManager,
@@ -31,8 +37,10 @@ import {
     MapState
 } from '@user/data-base';
 import {
+    CombatFlow,
     EnemyContext,
     GameEventSystem,
+    ICombatFlow,
     IEnemyContext,
     IGameEventSystem,
     IPathfindingSystem,
@@ -49,7 +57,10 @@ import {
 import { IPluginOrderResult, orderPlugins } from './plugin';
 import { IMotaDataLoader, MotaDataLoader } from './loader';
 
-export class CoreState implements ICoreState {
+export class CoreState
+    extends Hookable<IDataCommonHooks>
+    implements ICoreState
+{
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
@@ -67,6 +78,7 @@ export class CoreState implements ICoreState {
 
     // Layer 2 执行层，游戏逻辑对象都在这，包括一些需要操作数据层的逻辑系统等
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
+    readonly combat: ICombatFlow<IEnemyAttr, IHeroAttr>;
     readonly eventSystem: IGameEventSystem;
     readonly pathfinding: IPathfindingSystem;
 
@@ -92,6 +104,7 @@ export class CoreState implements ICoreState {
     >;
 
     constructor(config: Readonly<ICoreStateConfig>) {
+        super();
         // L0 定义
         this.roleFace = new RoleFaceBinder();
         this.faceManager = new FaceManager();
@@ -99,6 +112,7 @@ export class CoreState implements ICoreState {
         this.itemStore = new ItemStore<IHeroAttr>(this.tileStore);
         this.mapStore = new MapStore();
         this.eventStore = new GameEventStore();
+        this.replaySystem = new ReplaySystem();
 
         // L1 定义
         this.flags = new FlagSystem();
@@ -108,8 +122,8 @@ export class CoreState implements ICoreState {
 
         // L2 定义
         this.enemyContext = new EnemyContext<IEnemyAttr, IHeroAttr>(this);
+        this.combat = new CombatFlow(this);
         this.eventSystem = new GameEventSystem(this, config.events);
-        this.replaySystem = new ReplaySystem();
         this.pathfinding = new PathfindingSystem(this);
 
         // L3 定义
@@ -131,6 +145,16 @@ export class CoreState implements ICoreState {
         }
         this.orderedDataPlugins = orderPlugins(this.plugins);
         this.awake();
+    }
+
+    protected createController(
+        hook: Partial<IDataCommonHooks>
+    ): IHookController<IDataCommonHooks> {
+        return new HookController(this, hook);
+    }
+
+    emitTip(tip: string, icon: number): void {
+        this.forEachHook(hook => hook.onTip?.(tip, icon));
     }
 
     //#region 插件方法

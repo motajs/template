@@ -102,8 +102,13 @@ export class EnemyContext<TEnemy, THero> implements IEnemyContext<
     built: boolean = false;
     width: number = 0;
     height: number = 0;
+    floor: string | undefined;
 
     constructor(readonly state: IStateBase) {}
+
+    setFloor(floor: string | undefined): void {
+        this.floor = floor;
+    }
 
     resize(width: number, height: number): void {
         this.clear();
