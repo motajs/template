@@ -68,7 +68,6 @@ export interface ISpecial26Value {
 // 重要！！！下面这一行的注释不要删
 //#endregion
 
-// TODO: 注释需要更新
 /**
  * 注册所有怪物特殊属性到 enemyManager
  *
