@@ -32,7 +32,7 @@ export interface ISpecial13Value {
 }
 
 /** 21 - 退化 */
-export interface ISpecial21Value {
+export interface ISpecial19Value {
     /** 攻击下降值 */
     atkValue: number;
     /** 防御下降值 */
@@ -320,7 +320,7 @@ export function createSpecials(
     // 19 - 退化
     map.set(
         19,
-        defineCommonSerializableSpecial<ISpecial21Value>(
+        defineCommonSerializableSpecial<ISpecial19Value>(
             19,
             { atkValue: 0, defValue: 0 },
             {

@@ -54,7 +54,7 @@ export interface IDataCommonHooks extends IHookBase {
      * @param tip 提示内容
      * @param icon 提示图标
      */
-    onTip?(tip: string, icon: number): void;
+    onTip?(tip: string, icon?: number): void;
 }
 
 export interface IDataCommon extends IHookable<IDataCommonHooks> {
@@ -78,7 +78,7 @@ export interface IDataCommon extends IHookable<IDataCommonHooks> {
      * @param tip 提示文本
      * @param icon 提示图标
      */
-    emitTip(tip: string, icon: number): void;
+    emitTip(tip: string, icon?: number): void;
 }
 
 export interface IDataCommonExtended {

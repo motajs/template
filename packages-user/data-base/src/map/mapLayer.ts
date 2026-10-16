@@ -450,6 +450,21 @@ export class MapLayer
         this.forEachHook(hook => hook.onUpdateDynamicPosition?.(tile));
     }
 
+    async moveBlock(
+        x: number,
+        y: number,
+        direction: FaceDirection,
+        count: number = 1,
+        time: number = 500,
+        keepEvent: boolean = true
+    ): Promise<void> {
+        const dynamic = this.transferToDynamic(x, y, keepEvent);
+        if (!dynamic) return;
+        dynamic.mover.speed(time).step(direction, count);
+        await dynamic.mover.start()?.onEnd;
+        this.transferToStatic(dynamic, keepEvent);
+    }
+
     //#endregion
 
     //#region 开关门

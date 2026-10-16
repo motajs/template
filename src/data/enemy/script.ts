@@ -47,9 +47,11 @@ export class MainCombatScript implements ICombatScript<IEnemyAttr, IHeroAttr> {
         const totalExp = baseExp + guardExp;
         const totalMoney = baseMoney + guardMoney;
 
-        // 给勇士添加经验和金币
-        hero.add('exp', totalExp);
-        hero.add('money', totalMoney);
+        // 给勇士添加经验和金币，诅咒不加
+        if (!handler.state.flags.getFieldValueDefaults('curse', false)) {
+            hero.add('exp', totalExp);
+            hero.add('money', totalMoney);
+        }
 
         // 进行全局提示
         handler.state.emitTip(

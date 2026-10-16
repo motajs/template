@@ -148,6 +148,11 @@ export class MainDamageCalculator implements IDamageCalculator<
             damage += handler.state.flags.getFieldValueDefaults('hatred', 0);
         }
 
+        // 自爆
+        if (enemy.hasSpecial(17)) {
+            damage = Math.max(damage, hp - 1);
+        }
+
         return {
             damage: Math.floor(damage),
             turn

@@ -7,6 +7,7 @@ import {
     PercentageModifier
 } from '@user/data-base';
 import {
+    FaceGroup,
     IEnemyAttr,
     IHeroAttr,
     IObjectMover,
@@ -22,8 +23,17 @@ import {
     IPathfindingSystem,
     IPathfindingSystemHooks
 } from '@user/data-system';
-import { ICombatWeakHandler } from './types';
+import { ICombatWeakHandler, MapDamageType } from './types';
 import { isNil } from 'lodash-es';
+import { ISpecial19Value } from './special';
+
+const mapDamageTypeString: Record<number, string> = {
+    [MapDamageType.Between]: '夹击',
+    [MapDamageType.Layer]: '激光',
+    [MapDamageType.Repulse]: '阻击',
+    [MapDamageType.Zone]: '领域',
+    [MapDamageType.Unknown]: '地图'
+};
 
 export class EnemyMoveHooks implements IObjectMoverHooks<IHeroLocation> {
     constructor(readonly state: ICoreState) {}
@@ -57,6 +67,71 @@ export class EnemyMoveHooks implements IObjectMoverHooks<IHeroLocation> {
         }
     }
 
+    /**
+     * 处理地图伤害
+     * @param location 勇士位置对象
+     */
+    private async handleMapDamage(location: IHeroLocation) {
+        if (isNil(location.floorId)) return;
+
+        const context = this.state.enemyContext;
+        const mapDamage = context.getMapDamage();
+        if (!mapDamage) return;
+        const damage = mapDamage.getReducedDamage(location);
+        if (!damage) return;
+        const hero = this.state.hero.getModifiableAttribute();
+        // 首先掉血
+        hero.add('hp', -damage.damage);
+        this.state.emitTip(
+            `玩家受到${mapDamageTypeString[damage.type]}伤害${damage.damage}点`
+        );
+
+        // 获取朝向处理工具，用于处理位移技能
+        const handler = this.state.faceManager.get(FaceGroup.Dir8);
+        if (!handler) return;
+        // 获取当前地图事件层
+        const map = this.state.maps.getMap(location.floorId);
+        if (!map) return;
+        const event = map.eventLayer;
+        if (!event) return;
+
+        const movings: Promise<unknown>[] = [];
+
+        // 阻击效果
+        for (const repulse of damage.extra.repulse) {
+            const dx = location.x - repulse.x;
+            const dy = location.y - repulse.y;
+            const dir = handler.dirOf(-dx, -dy);
+            const next = event.getTile(
+                location.x + dx * 2,
+                location.y + dy * 2
+            );
+            // 身后有东西就无法后退无法后退
+            if (next) continue;
+            movings.push(
+                event.moveBlock(repulse.x, repulse.y, dir, 1, 200, true)
+            );
+        }
+
+        // 捕捉效果
+        for (const cat of damage.extra.catch) {
+            const view = context.getEnemyByLocator(cat);
+            if (!view) continue;
+            const computed = view.getComputedEnemy();
+            const dx = location.x - cat.x;
+            const dy = location.y - cat.y;
+            const dir = handler.dirOf(dx, dy);
+            const moving = event
+                .moveBlock(cat.x, cat.y, dir, 1, 200, true)
+                .then(() => {
+                    return this.state.combat.battleComputed(computed);
+                });
+            movings.push(moving);
+        }
+
+        await Promise.all(movings);
+    }
+
     async onStepEnd(
         _code: number,
         step: Readonly<ObjectMoveStep>,
@@ -70,6 +145,8 @@ export class EnemyMoveHooks implements IObjectMoverHooks<IHeroLocation> {
 
         // 处理中毒
         this.handlePoison(step, mover as IHeroMover<IHeroLocation>);
+
+        await this.handleMapDamage(tile);
     }
 }
 
@@ -160,6 +237,28 @@ export class EnemyCombatHooks
         if (weak) {
             const max = Math.max(this.weakValue, weak.value);
             this.setWeakValue(max);
+        }
+
+        // 处理诅咒属性
+        if (info.handler.enemy.hasSpecial(12)) {
+            this.state.flags.setFieldValue('curse', true);
+        }
+
+        // 处理仇恨属性
+        const currHatred = this.state.flags.getOrInsert('currHatred', 0);
+        if (info.handler.enemy.hasSpecial(15)) {
+            currHatred.set(Math.floor(currHatred.get() / 2));
+        } else {
+            const hatred = this.state.flags.getFieldValueDefaults('hatred', 1);
+            currHatred.add(hatred);
+        }
+
+        // 处理退化属性
+        const degrade = info.handler.enemy.getSpecial<ISpecial19Value>(19);
+        if (degrade) {
+            const hero = this.state.hero.getModifiableAttribute();
+            hero.add('atk', -degrade.value.atkValue);
+            hero.add('def', -degrade.value.defValue);
         }
 
         // 处理重生属性

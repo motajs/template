@@ -153,7 +153,7 @@ export class CoreState
         return new HookController(this, hook);
     }
 
-    emitTip(tip: string, icon: number): void {
+    emitTip(tip: string, icon?: number): void {
         this.forEachHook(hook => hook.onTip?.(tip, icon));
     }
 

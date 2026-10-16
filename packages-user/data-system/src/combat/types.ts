@@ -241,9 +241,9 @@ export interface IEnemyFinalEffect<TEnemy, THero> {
 //#region 地图伤害
 
 export interface IMapDamageInfoExtra {
-    /** 捕捉怪物信息 */
+    /** 捕捉怪物信息，每一项为怪物所在绝对位置而非相对位置 */
     catch: Set<ITileLocator>;
-    /** 阻击怪物信息 */
+    /** 阻击怪物信息，每一项为怪物所在绝对位置而非相对位置 */
     repulse: Set<ITileLocator>;
 }
 

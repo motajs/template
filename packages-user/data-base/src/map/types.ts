@@ -553,6 +553,24 @@ export interface IMapLayer
     closeDoor(num: number, x: number, y: number): Promise<void>;
 
     /**
+     * 朝一个方向移动图块，是先转换成动态图块，再移动，再转换回静态图块的简写，无法进行高级配置
+     * @param x 图块原始横坐标
+     * @param y 图块原始纵坐标
+     * @param direction 图块的移动方向
+     * @param count 图块朝指定方向移动多少步
+     * @param time 每步的移动时长
+     * @param keepEvent 是否维持图块事件
+     */
+    moveBlock(
+        x: number,
+        y: number,
+        direction: FaceDirection,
+        count?: number,
+        time?: number,
+        keepEvent?: boolean
+    ): Promise<void>;
+
+    /**
      * 获取指定点的点事件视图
      * @param x 横坐标
      * @param y 纵坐标
