@@ -547,14 +547,14 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
 | 9. 最小浏览器可运行版本 | 15/16 | In Progress|  |
-| 10. 文档重构 | 0/6 | Planned | - |
+| 10. 文档重构 | 0/12 | Planned | - |
 
 ### Phase 10: 文档重构
 
 **Goal:** 重构过老、结构不佳、新人难懂的项目文档，面向多背景读者（完全新手 / 不懂代码的作者 / 有基础的作者 / AI Agent）提供分层指南。本阶段采用「伞阶段 + 增量派发」：每次只规划执行一个已派发的具体小任务。**第一批已派发 = 中级教程（`docs/intermediate/`，24 篇中文 markdown）+ 在 VitePress 站点注册它们 + 旧内容清空（D-04 并入本批）**（D-01..D-44）。
 **Requirements**: （无专属需求 ID；以 `10-CONTEXT.md` 的 D-01..D-44 为需求基线，验收锚在 D-09：用户人工审阅 + 链接全部有效 + 构建通过）
 **Depends on:** Phase 9
-**Plans:** 6 plans（第一批：中级教程 24 篇 + 站点注册）
+**Plans:** 12 plans（第一批：中级教程 24 篇 + 站点注册 + D-09 复审修订）
 
 Plans:
 - [ ] 10-01-PLAN.md — Wave 0：旧内容清空 + 站点注册（删除 `docs/guide`、`docs/dev`、`docs/logger`、`docs/api` 与首页 `docs/index.md`；清理 `config.ts` 旧 nav/sidebar 键并解除 apiSidebar/api 依赖；`api.ts` 加缺失目录守卫；新增 nav 入口 + `sidebar['/intermediate/']` 4 组/24 条；报告并等待 checkpoint）
@@ -563,5 +563,11 @@ Plans:
 - [ ] 10-04-PLAN.md — 战斗 9 篇（`combat-overview` + 8 篇子系统；N-1/N-2/N-3/N-7 留余地）
 - [ ] 10-05-PLAN.md — 其他 3 篇（`events` / `replay-commands` / `data-plugins`）
 - [ ] 10-06-PLAN.md — 全批验收（构建通过 + 链接有效 + 交付 D-09 人工审阅）
+- [ ] 10-07-PLAN.md — 目标性修正：D-09 复审 finding 1/3/4（讲清 `state` 获取、清除 legacy 泄漏 + 全批扫描、纠正修饰器定位；仅改 4 篇）
+- [ ] 10-08-PLAN.md — 战斗组引导式·入门友好重写 finding 2/5（`combat-overview` 讲清「计算后怪物 / 为什么要 buildup / 为什么分阶段」+ 7 篇子系统；8 篇）
+- [ ] 10-09-PLAN.md — 概念组 + 「其他」组引导式重写 finding 5（`src-tour`/`code-basics`/`hooks`/`events`/`replay-commands`/`data-plugins`；6 篇）
+- [ ] 10-10-PLAN.md — 基础接口组引导式重写 finding 5（`hero-items`/`hero-equipment`/`hero-location`/`map-structure`/`map-tiles`/`flags`；6 篇）
+- [ ] 10-11-PLAN.md — 读者视角审阅（persona 子代理）→ 问题清单 → 迭代修正（≤3 轮）→ 复审清零
+- [ ] 10-12-PLAN.md — 最终验收：修订后重跑全批验收 + D-09 复审（重跑 10-06 Task 2 门禁）
 
 **说明：** 每篇中级教程遵循 `10-CONTEXT.md` D-21..D-44 的逐篇要点与阅读顺序（4/8/9/3）。**旧内容删除已并入本批（D-04，Wave 0 / 10-01）**：删除 `docs/guide/*`、`docs/dev/*`、`docs/logger/*`、`docs/api/*` 与首页 `docs/index.md`，并清理 `docs/.vitepress/config.ts` 的旧 `nav`/`sidebar` 键。文档改动为 `docs/intermediate/*.md`（新增）、`docs/.vitepress/config.ts` 与 `docs/.vitepress/api.ts`（缺失目录守卫，保留按包生成机制）。构建命令 `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`；`init.ts` 在 `docs/api/` 缺失时安全跳过。本机 PowerShell 禁止 `pnpm.ps1`，命令经 `cmd /c "..."` 执行。
