@@ -1,6 +1,8 @@
 # 伤害计算
 
-伤害计算器决定一次战斗的伤害与回合数。它实现的是 `f(enemy, hero)`：输入计算后的怪物与勇士属性，输出 `{ damage, turn }`。本篇导读内置公式，并说明要改公式时应该动哪里。整体流程见[战斗总览](./combat-overview.md)。
+属性算准之后，战斗还差最后一步换算：这些 `hp`、`atk`、`def` 到底意味着勇士会掉多少血、要打几回合？负责这件事的就是伤害计算器。
+
+它实现的是 `f(enemy, hero)`：输入计算后的怪物与勇士属性，输出 `{ damage, turn }`。本篇导读内置公式，并说明要改公式时应该动哪里。整体流程见[战斗总览](./combat-overview.md)。
 
 ## 接口
 
@@ -27,7 +29,7 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 
 ## 内置公式逐段导读
 
-`MainDamageCalculator.calculate`（`src/data/enemy/calculator.ts`）按以下顺序计算：
+与其一次背下整条公式，不如按顺序看每一段在算什么。`MainDamageCalculator.calculate`（`src/data/enemy/calculator.ts`）按以下顺序计算：
 
 1. **读取属性**：从 `hero` 读 `hp`、`atk`、`def`、`mdef`，从 `enemy` 读 `atk`、`def`、`hp`。
 2. **无敌分支**：满足条件时直接返回 `{ damage: Infinity, turn: 0 }`，表示无法击败。
@@ -52,6 +54,8 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 支援怪部分的递归计算较绕：计算当前怪物时，会把每个支援者的回合数与伤害也加进来。初次阅读可以暂时跳过这一段，不影响自定义普通怪物的公式；等需要处理支援组合时再回来看。
 
 ## 示例：等差数列属性
+
+有时公式本身要随回合变化，而光环、查询、最终效果都做不到这一点——它们改的是一次计算里的固定属性。这时就该动计算器。
 
 「等差数列属性」指怪物攻击每回合按固定值递增。属性本身在一次计算中是常量，所以不能靠给 `atk` 加值实现；要在 `calculate` 里把「每回合伤害」按等差数列求和：
 
