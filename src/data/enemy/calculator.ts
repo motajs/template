@@ -29,7 +29,7 @@ export class MainDamageCalculator implements IDamageCalculator<
 
         // 无敌
         if (
-            enemy.hasSpecial(20) &&
+            enemy.hasSpecial(18) &&
             handler.state.hero.items.itemCount('cross') < 1
         ) {
             return { damage: Infinity, turn: 0 };

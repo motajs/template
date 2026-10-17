@@ -230,7 +230,7 @@ export class BetweenDamageView extends BaseMapDamageView<IManhattanRangeParam> {
             return null;
         }
         const otherEnemy = other.getComputedEnemy();
-        if (!otherEnemy.hasSpecial(16)) {
+        if (!otherEnemy.hasSpecial(14)) {
             return null;
         }
 
@@ -296,27 +296,27 @@ export class MainMapDamageConverter implements IMapDamageConverter<
         const views: IMapDamageView<any>[] = [];
         const { enemy, locator, hero } = handler;
 
-        const zone = enemy.getSpecial<ISpecial13Value>(15);
+        const zone = enemy.getSpecial<ISpecial13Value>(13);
         if (zone) {
             views.push(new ZoneDamageView(context, locator, zone));
         }
 
-        if (enemy.hasSpecial(16)) {
+        if (enemy.hasSpecial(14)) {
             views.push(new BetweenDamageView(context, enemy, locator, hero));
         }
 
-        const repulse = enemy.getSpecial<number>(18);
+        const repulse = enemy.getSpecial<number>(16);
         if (repulse) {
             views.push(new RepulseDamageView(context, locator, repulse));
         }
 
-        const laser = enemy.getSpecial<number>(24);
+        const laser = enemy.getSpecial<number>(22);
         if (laser) {
             const face = handler.state.faceManager.get(FaceGroup.Dir4)!;
             views.push(new LaserDamageView(context, locator, laser, face));
         }
 
-        if (enemy.hasSpecial(27)) {
+        if (enemy.hasSpecial(25)) {
             views.push(new AmbushDamageView(context, locator));
         }
 
