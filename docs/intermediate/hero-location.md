@@ -1,8 +1,10 @@
 # 勇士位置
 
-勇士位置（`state.hero.location`）记录当前坐标、朝向与所在楼层。本篇只讲如何**获取**这些信息。
+很多逻辑都要先知道一件事：勇士此刻站在哪一层、哪一格、朝哪个方向。比如「进门前朝向对不对」「这只怪离勇士多远」「当前在哪一层」。勇士位置（`state.hero.location`）记录的就是这些信息。本篇只讲如何**获取**它们；如何移动、如何切换楼层属于更底层的内容，留到高级教程。
 
 ## 当前坐标
+
+勇士站在哪一格，读 `x`、`y` 即可：
 
 ```ts
 const x = state.hero.location.x;
@@ -19,7 +21,7 @@ const y = state.hero.location.y;
 const dir = state.hero.location.getCurrentFaceDirection();
 ```
 
-`state.hero.getLocation()` 会返回一个包含 `x`、`y`、`direction` 的位置对象（`IFacedTileLocator`），适合一次性取走当前坐标与朝向：
+如果坐标和朝向要一起用，`state.hero.getLocation()` 会返回一个包含 `x`、`y`、`direction` 的位置对象（`IFacedTileLocator`），一次取走更省事：
 
 ```ts
 const loc = state.hero.getLocation();

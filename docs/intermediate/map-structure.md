@@ -1,6 +1,10 @@
 # 地图结构
 
-地图在数据端分成三层：**楼层集合**（`state.maps`）、**楼层**（`IGameMap`）与**图层**（`IMapLayer`）。本篇说明这三层的关系与常用接口。
+地图并不是一张铺开的大图，而是分层的。要从代码里找到「某一层的某一块图块」，得先顺着它的层次往下走。地图在数据端分成三层：**楼层集合**（`state.maps`）、**楼层**（`IGameMap`）与**图层**（`IMapLayer`）。本篇说明这三层的关系与常用接口。
+
+## 三层结构
+
+可以把三层想成一棵树：`state.maps` 是「所有楼层的总目录」，里面每个条目是一个楼层；每个楼层里又有一组图层，图块就摆在图层上。日常查地图，大多是从第一层往下逐级找。
 
 ## 楼层集合（IMapState）
 
@@ -22,7 +26,7 @@ for (const [id, map] of state.maps.iterateAllMaps()) {
 
 ## 楼层激活（active）
 
-每个楼层（`IGameMap`）都有 `active` 表示是否激活。**只有已激活的楼层才会进入存档**——`IMapState` 的存档仅包含已激活楼层。`getActiveMap(id)` 只返回已激活的楼层，迭代可用 `iterateActiveMaps()` / `iterateInactiveMaps()`。
+每个楼层（`IGameMap`）都有 `active` 表示是否激活。**只有已激活的楼层才会进入存档**——`IMapState` 的存档仅包含已激活楼层。因此如果一处楼层改动要跟着存档走，记得先把它激活。`getActiveMap(id)` 只返回已激活的楼层，迭代可用 `iterateActiveMaps()` / `iterateInactiveMaps()`。
 
 ```ts
 state.maps.setMapActiveStatus('floor-1', true);
