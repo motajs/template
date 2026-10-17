@@ -1,10 +1,10 @@
 # 勇士装备
 
-勇士的装备系统分两部分：`state.hero.equip` 管理**装备槽**（哪件装备穿在哪一栏），`state.hero.items.equipment` 是**装备实例仓库**（管理所有已获得的装备实例）。本篇介绍如何用这两组接口。
+装备是一种特殊的道具：它要穿到某个槽位上，并给属性加成。为了把「穿在哪」和「拥有哪些」分开管，装备系统分成了两部分——`state.hero.equip` 管理**装备槽**（哪件装备穿在哪一栏），`state.hero.items.equipment` 是**装备实例仓库**（管理所有已获得的装备实例）。本篇介绍如何用这两组接口。
 
 ## 装备槽（IHeroEquipment）
 
-`state.hero.equip` 提供：
+`state.hero.equip` 管的是「穿在身上的装备」，它提供：
 
 - `slots`：装备槽位数组，每一项是这一栏的名称；
 - `setSlots(slots)`：设置装备槽；
@@ -28,7 +28,7 @@ const off = state.hero.equip.unequip(0);
 
 ## 装备实例仓库（IHeroEquipsStore）
 
-`state.hero.items.equipment` 提供：
+`state.hero.items.equipment` 管的是「背包里所有的装备实例」——同一件装备可以有多件，各自独立，所以这里存的是**实例**而非装备本身。它提供：
 
 - `add(item)`：获得一件装备道具、创建实例，返回新实例的 uid；
 - `delete(uid)`：移除指定装备实例；
