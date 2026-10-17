@@ -34,9 +34,9 @@ attr.mul('money', 2); // 金币翻倍
 
 只读访问（只想读取、不加修改）可用 `state.hero.attribute`；需要修改时统一走 `getModifiableAttribute()`。
 
-## 修饰器：临时的加减与百分比
+## 修饰器：数值与百分比加成
 
-直接改基础属性会永久改变勇士数值。如果只想施加一段**临时**的加成，应使用**修饰器**。属性包内置了两种：
+直接改基础属性的效果是永久的，它会直接改变勇士数值；而**修饰器**把加成从基础值里独立出来，既可以用于永久加成，也可以用于临时加成——是否临时，取决于你什么时候把它移除。属性包内置了两种：
 
 - `ValueModifier`（type `@system/value`）：数值加减，最终值 = 原值 + 修饰值；
 - `PercentageModifier`（type `@system/percentage`）：按**基础值**计算百分比，最终值 = 原值 + 基础值 × 修饰值。
@@ -58,6 +58,8 @@ attr.addModifier('def', defDown);
 // 需要移除时，传回同一个修饰器对象
 attr.deleteModifier('def', defDown);
 ```
+
+想要一段**临时**加成时，就先 `addModifier(...)` 挂上修饰器，在不再需要时用 `deleteModifier(...)` 把它移除，加成随即消失；反之，只要一直不移除，它就是永久加成。
 
 `PercentageModifier` 的百分比以**基础值**为基数，而非当前最终值，因此多个百分比修饰器不会彼此叠乘。装备产生的加成走的也是同一套修饰器机制，见[勇士装备](./hero-equipment.md)。
 
