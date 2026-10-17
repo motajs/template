@@ -34,13 +34,13 @@ mapDamage?.useConverter(new MainMapDamageConverter());
 
 `MapDamageType` 定义了 `Unknown`、`Zone`、`Layer`、`Repulse`、`Between` 五种类型。内置视图与转换器在 `src/data/enemy/mapDamage.ts`：
 
-| 类型 | 视图类 | 内置特殊属性 code | 说明 |
-|------|--------|-------------------|------|
-| 领域 | `ZoneDamageView` | 13（`ISpecial13Value`） | 范围内自动减血 |
-| 夹击 | `BetweenDamageView` | 14 | 两只怪物夹住勇士时扣半血 |
-| 阻击 | `RepulseDamageView` | 16 | 经过时怪物后退并造成伤害 |
-| 激光 | `LaserDamageView` | 22 | 同行或同列时造成伤害 |
-| 捕捉 | `AmbushDamageView` | 25 | 触发强制战斗，本身不造成伤害 |
+| 类型 | 视图类              | 内置特殊属性 code       | 说明                         |
+| ---- | ------------------- | ----------------------- | ---------------------------- |
+| 领域 | `ZoneDamageView`    | 13（`ISpecial13Value`） | 范围内自动减血               |
+| 夹击 | `BetweenDamageView` | 14                      | 两只怪物夹住勇士时扣半血     |
+| 阻击 | `RepulseDamageView` | 16                      | 经过时怪物后退并造成伤害     |
+| 激光 | `LaserDamageView`   | 22                      | 同行或同列时造成伤害         |
+| 捕捉 | `AmbushDamageView`  | 25                      | 触发强制战斗，本身不造成伤害 |
 
 表中的 code 就是 `src/data/enemy/special.ts` 里同名内置属性注册的编号，转换器读取的也是同一组编号。要启用某类地图伤害，给怪物挂上对应的内置特殊属性即可，不需要再换算编号或修改转换器。
 
@@ -71,7 +71,8 @@ map.set(
         { damage: 50 },
         {
             name: '遮挡激光',
-            desc: special => `同行或同列时造成${special.value.damage}点伤害，被地形遮挡则无效。`,
+            desc: special =>
+                `同行或同列时造成${special.value.damage}点伤害，被地形遮挡则无效。`,
             color: '#D0A0DD'
         }
     )
@@ -182,7 +183,9 @@ export class BlockedLaserConverter implements IMapDamageConverter<
         const special = handler.enemy.getSpecial<ISpecial43Value>(43);
         if (!special) return [];
         const face = handler.state.faceManager.get(FaceGroup.Dir4)!;
-        return [new BlockedLaserDamageView(context, handler.locator, special, face)];
+        return [
+            new BlockedLaserDamageView(context, handler.locator, special, face)
+        ];
     }
 }
 

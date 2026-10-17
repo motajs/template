@@ -6,13 +6,13 @@
 
 一个插件实现 `IDataPluginDefine` 接口：
 
-| 成员 | 说明 |
-| --- | --- |
-| `id` | 插件标识符，全局唯一 |
-| `dependencies` | 依赖的其它插件 **id 字符串数组**，不允许循环依赖 |
-| `awake(state, dependencies)` | 同步初始化 |
-| `initialize(state, dependencies)` | 异步初始化 |
-| `afterLoad(state, dependencies)` | 加载完成后初始化 |
+| 成员                              | 说明                                             |
+| --------------------------------- | ------------------------------------------------ |
+| `id`                              | 插件标识符，全局唯一                             |
+| `dependencies`                    | 依赖的其它插件 **id 字符串数组**，不允许循环依赖 |
+| `awake(state, dependencies)`      | 同步初始化                                       |
+| `initialize(state, dependencies)` | 异步初始化                                       |
+| `afterLoad(state, dependencies)`  | 加载完成后初始化                                 |
 
 三个时机方法都会收到数据端主对象 `state`，你对数据端的操作都从这里展开（`state` 的获取方式与含义见[数据端总览](./data-state-overview.md)）。
 

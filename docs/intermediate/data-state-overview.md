@@ -55,27 +55,27 @@ class MySystem {
 
 下表把最常用的对象与接口列在一起——只要拿到了 `state`，就能按表中的方式访问它们：
 
-| 对象 | 获取方式 | 用途 | 分层 |
-| --- | --- | --- | --- |
-| `hero` | `state.hero` | 勇士状态（属性、道具、装备、位置） | L1 |
-| `maps` | `state.maps` | 楼层集合与楼层激活 | L1 |
-| `flags` | `state.flags` | 全局可存档变量 | L1 |
-| `enemyManager` | `state.enemyManager` | 怪物创建与查询 | L1 |
-| `enemyContext` | `state.enemyContext` | 怪物属性构建与光环 | L2 |
-| `combat` | `state.combat` | 战斗流程 | L2 |
-| `eventSystem` | `state.eventSystem` | 地图事件执行 | L2 |
-| `pathfinding` | `state.pathfinding` | 勇士寻路 | L2 |
-| `tileStore` | `state.tileStore` | 图块定义存储 | L0 |
-| `itemStore` | `state.itemStore` | 道具定义存储 | L0 |
-| `mapStore` | `state.mapStore` | 地图定义存储 | L0 |
-| `eventStore` | `state.eventStore` | 游戏事件存储 | L0 |
-| `faceManager` | `state.faceManager` | 朝向管理 | L0 |
-| `roleFace` | `state.roleFace` | 朝向绑定 | L0 |
-| `replaySystem` | `state.replaySystem` | 录像系统 | L0 |
-| `loader` | `state.loader` | 数据端加载对象 | L3 |
-| `loadManager` | `state.loadManager` | 加载管理器 | L3 |
-| `getDataPlugin(id)` | `state.getDataPlugin('xxx')` | 取得已加装的插件 | L3 |
-| `emitTip(...)` | `state.emitTip('提示')` | 通知渲染端提示 | L0 |
+| 对象                | 获取方式                     | 用途                               | 分层 |
+| ------------------- | ---------------------------- | ---------------------------------- | ---- |
+| `hero`              | `state.hero`                 | 勇士状态（属性、道具、装备、位置） | L1   |
+| `maps`              | `state.maps`                 | 楼层集合与楼层激活                 | L1   |
+| `flags`             | `state.flags`                | 全局可存档变量                     | L1   |
+| `enemyManager`      | `state.enemyManager`         | 怪物创建与查询                     | L1   |
+| `enemyContext`      | `state.enemyContext`         | 怪物属性构建与光环                 | L2   |
+| `combat`            | `state.combat`               | 战斗流程                           | L2   |
+| `eventSystem`       | `state.eventSystem`          | 地图事件执行                       | L2   |
+| `pathfinding`       | `state.pathfinding`          | 勇士寻路                           | L2   |
+| `tileStore`         | `state.tileStore`            | 图块定义存储                       | L0   |
+| `itemStore`         | `state.itemStore`            | 道具定义存储                       | L0   |
+| `mapStore`          | `state.mapStore`             | 地图定义存储                       | L0   |
+| `eventStore`        | `state.eventStore`           | 游戏事件存储                       | L0   |
+| `faceManager`       | `state.faceManager`          | 朝向管理                           | L0   |
+| `roleFace`          | `state.roleFace`             | 朝向绑定                           | L0   |
+| `replaySystem`      | `state.replaySystem`         | 录像系统                           | L0   |
+| `loader`            | `state.loader`               | 数据端加载对象                     | L3   |
+| `loadManager`       | `state.loadManager`          | 加载管理器                         | L3   |
+| `getDataPlugin(id)` | `state.getDataPlugin('xxx')` | 取得已加装的插件                   | L3   |
+| `emitTip(...)`      | `state.emitTip('提示')`      | 通知渲染端提示                     | L0   |
 
 ```ts
 const plugin = state.getDataPlugin('main');

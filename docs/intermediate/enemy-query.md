@@ -121,14 +121,18 @@ const effect: IEnemySpecialQueryEffect<IEnemyAttr, IHeroAttr> = {
             add(handler) {
                 const result: ISpecial<any>[] = [];
                 const others = [...ctx.iterateEnemy()]
-                    .filter(([, view]) => view.getComputedEnemy() !== handler.enemy)
+                    .filter(
+                        ([, view]) => view.getComputedEnemy() !== handler.enemy
+                    )
                     .sort(
                         ([a], [b]) =>
                             ctx.indexer.index(a.x, a.y) -
                             ctx.indexer.index(b.x, b.y)
                     );
                 for (const [, view] of others) {
-                    for (const special of view.getComputedEnemy().iterateSpecials()) {
+                    for (const special of view
+                        .getComputedEnemy()
+                        .iterateSpecials()) {
                         if (special.code === 41) continue;
                         if (handler.enemy.hasSpecial(special.code)) continue;
                         result.push(special.clone());

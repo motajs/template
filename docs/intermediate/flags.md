@@ -10,17 +10,17 @@ Flag 中的每一项是一个**字段**（`IFlagCommonField`），字段名与�
 
 `IFlagSystem` 提供如下接口：
 
-| 接口 | 说明 |
-| --- | --- |
-| `occupied(field)` | 判断字段是否被占用 |
-| `setField(field, value)` | 以指定值插入字段，返回字段对象 |
-| `getField(field)` | 取字段对象，不存在返回 `null` |
-| `getOrInsert(field, defaultValue)` | 取字段，不存在则以默认值创建 |
-| `getOrInsertComputed(field, defaultValue)` | 同上，但默认值由函数惰性计算 |
-| `deleteField(field)` | 删除字段 |
-| `setFieldValue(field, value)` | 设置字段的值 |
-| `addFieldValue(field, value)` | 对数字字段增减 |
-| `getFieldValue(field)` | 取字段的值，不存在返回 `undefined` |
+| 接口                                         | 说明                                   |
+| -------------------------------------------- | -------------------------------------- |
+| `occupied(field)`                            | 判断字段是否被占用                     |
+| `setField(field, value)`                     | 以指定值插入字段，返回字段对象         |
+| `getField(field)`                            | 取字段对象，不存在返回 `null`          |
+| `getOrInsert(field, defaultValue)`           | 取字段，不存在则以默认值创建           |
+| `getOrInsertComputed(field, defaultValue)`   | 同上，但默认值由函数惰性计算           |
+| `deleteField(field)`                         | 删除字段                               |
+| `setFieldValue(field, value)`                | 设置字段的值                           |
+| `addFieldValue(field, value)`                | 对数字字段增减                         |
+| `getFieldValue(field)`                       | 取字段的值，不存在返回 `undefined`     |
 | `getFieldValueDefaults(field, defaultValue)` | 取字段的值，不存在则以默认值创建并返回 |
 
 `getOrInsertComputed` 只在字段确实不存在时才执行默认值函数，适合默认值计算量较大的场景。`getFieldValue` 没有默认值，需要默认值时用 `getFieldValueDefaults`。

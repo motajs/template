@@ -15,11 +15,11 @@
 
 ## 三类内置状态
 
-| 状态 | 使用的钩子 | 实现位置 | 行为 |
-|------|------------|----------|------|
-| 中毒 | `onStepEnd` + `onAfterTeleportTo` | `EnemyMoveHooks` / `EnemyPathfindingHooks` | 读取 `poison` flag，按移动扣血；瞬移时按路径长度处理 |
-| 衰弱 | `onAfterCombat` + 修饰器 | `EnemyCombatHooks` | 战后取最高虚弱值，用 `PercentageModifier` 降低攻防 |
-| 重生 | `onAfterCombat` + `onSetFloor` | `EnemyCombatHooks` / `EnemyChangeFloorHooks` | 战后记录 `rebirth` flag；切层时把记录的事件块放回 |
+| 状态 | 使用的钩子                        | 实现位置                                     | 行为                                                 |
+| ---- | --------------------------------- | -------------------------------------------- | ---------------------------------------------------- |
+| 中毒 | `onStepEnd` + `onAfterTeleportTo` | `EnemyMoveHooks` / `EnemyPathfindingHooks`   | 读取 `poison` flag，按移动扣血；瞬移时按路径长度处理 |
+| 衰弱 | `onAfterCombat` + 修饰器          | `EnemyCombatHooks`                           | 战后取最高虚弱值，用 `PercentageModifier` 降低攻防   |
+| 重生 | `onAfterCombat` + `onSetFloor`    | `EnemyCombatHooks` / `EnemyChangeFloorHooks` | 战后记录 `rebirth` flag；切层时把记录的事件块放回    |
 
 补充说明：
 

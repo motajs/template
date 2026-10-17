@@ -22,23 +22,23 @@
 
 引擎内置了三类光环，分别处理不同的需求：
 
-| 光环 | code | 视图类 | priority | 行为 |
-|------|------|--------|----------|------|
-| 普通光环 | 23 | `CommonAura` | 10 | 按范围给怪物加 `hp` / `atk` / `def` 百分比 |
-| 支援 | 24 | `GuardAura` | 5 | 把范围内的怪物登记为支援者，战斗时一起结算 |
-| 特殊光环 | 26 | `SpecialAura` | 20 | 通过 `SpecialAuraModifier` 给目标添加或修改特殊属性 |
+| 光环     | code | 视图类        | priority | 行为                                                |
+| -------- | ---- | ------------- | -------- | --------------------------------------------------- |
+| 普通光环 | 23   | `CommonAura`  | 10       | 按范围给怪物加 `hp` / `atk` / `def` 百分比          |
+| 支援     | 24   | `GuardAura`   | 5        | 把范围内的怪物登记为支援者，战斗时一起结算          |
+| 特殊光环 | 26   | `SpecialAura` | 20       | 通过 `SpecialAuraModifier` 给目标添加或修改特殊属性 |
 
 这三类都在 `src/data/enemy/aura.ts` 中实现，并在 `initializeEnemy` 里通过 `ctx.registerAuraConverter(...)` 注册（`initializeEnemy` 是 `src/data/enemy/initialize.ts` 中集中注册内置怪物功能的入口函数；内置的光环转换器与你自己新增的转换器都从这里注册）。
 
 普通光环（code 23）的参数接口是 `ISpecial23Value`，下文示例里 `setValue({...})` 传入的就是这几个字段：
 
-| 字段 | 含义 |
-|------|------|
-| `range` | 光环范围值；为 0 时作用于同楼层所有怪物 |
-| `square` | `true` 为矩形范围，`false` 为十字范围（范围大于 1 时按曼哈顿距离计算） |
-| `hpBuff` | 目标生命值提升百分比 |
-| `atkBuff` | 目标攻击力提升百分比 |
-| `defBuff` | 目标防御力提升百分比 |
+| 字段      | 含义                                                                   |
+| --------- | ---------------------------------------------------------------------- |
+| `range`   | 光环范围值；为 0 时作用于同楼层所有怪物                                |
+| `square`  | `true` 为矩形范围，`false` 为十字范围（范围大于 1 时按曼哈顿距离计算） |
+| `hpBuff`  | 目标生命值提升百分比                                                   |
+| `atkBuff` | 目标攻击力提升百分比                                                   |
+| `defBuff` | 目标防御力提升百分比                                                   |
 
 ## 运作方式
 
@@ -120,7 +120,10 @@ import { ISpecial30Value } from './special';
 const MANHATTAN_RANGE = new ManhattanRange();
 const RECT_RANGE = new RectRange();
 
-export class WeakAuraConverter implements IAuraConverter<IEnemyAttr, IHeroAttr> {
+export class WeakAuraConverter implements IAuraConverter<
+    IEnemyAttr,
+    IHeroAttr
+> {
     shouldConvert(special: ISpecial<any>): boolean {
         return special.code === 30;
     }
@@ -251,7 +254,10 @@ export class ChainAuraModifier implements IEnemySpecialModifier<IEnemyAttr> {
     }
 }
 
-export class ChainAuraConverter implements IAuraConverter<IEnemyAttr, IHeroAttr> {
+export class ChainAuraConverter implements IAuraConverter<
+    IEnemyAttr,
+    IHeroAttr
+> {
     shouldConvert(special: ISpecial<any>): boolean {
         return special.code === 31;
     }

@@ -12,35 +12,35 @@
 
 下表是 `src/data/enemy/special.ts` 里 `map.set(code, ...)` 当前注册的全部内置属性，code 与名称一一对应。判断「某个数字代表哪种机制」时以本表为准：
 
-| code | 名称 | 参数 |
-|------|------|------|
-| 0 | 空 | 无 |
-| 1 | 先攻 | 无 |
-| 2 | 魔攻 | 无 |
-| 3 | 坚固 | 无 |
-| 4 | n连击 | 每回合攻击次数 |
-| 5 | 破甲 | 附加伤害百分比 |
-| 6 | 反击 | 附加伤害百分比 |
-| 7 | 净化 | 附加伤害倍数 |
-| 8 | 模仿 | 无 |
-| 9 | 吸血 | `ISpecial9Value`（比例与是否加到自身） |
-| 10 | 中毒 | 每步损失生命值 |
-| 11 | 衰弱 | 攻防下降比例 |
-| 12 | 诅咒 | 无 |
-| 13 | 领域 | `ISpecial13Value` |
-| 14 | 夹击 | 无 |
-| 15 | 仇恨 | 无 |
-| 16 | 阻击 | 伤害值 |
-| 17 | 自爆 | 无 |
-| 18 | 无敌 | 无 |
-| 19 | 退化 | `ISpecial19Value`（攻防下降值） |
-| 20 | 固伤 | 固定伤害值 |
-| 21 | 重生 | 无 |
-| 22 | 激光 | 伤害值 |
-| 23 | 光环 | `ISpecial23Value` |
-| 24 | 支援 | 无 |
-| 25 | 捕捉 | 无 |
-| 26 | 特殊光环 | `ISpecial26Value` |
+| code | 名称     | 参数                                   |
+| ---- | -------- | -------------------------------------- |
+| 0    | 空       | 无                                     |
+| 1    | 先攻     | 无                                     |
+| 2    | 魔攻     | 无                                     |
+| 3    | 坚固     | 无                                     |
+| 4    | n连击    | 每回合攻击次数                         |
+| 5    | 破甲     | 附加伤害百分比                         |
+| 6    | 反击     | 附加伤害百分比                         |
+| 7    | 净化     | 附加伤害倍数                           |
+| 8    | 模仿     | 无                                     |
+| 9    | 吸血     | `ISpecial9Value`（比例与是否加到自身） |
+| 10   | 中毒     | 每步损失生命值                         |
+| 11   | 衰弱     | 攻防下降比例                           |
+| 12   | 诅咒     | 无                                     |
+| 13   | 领域     | `ISpecial13Value`                      |
+| 14   | 夹击     | 无                                     |
+| 15   | 仇恨     | 无                                     |
+| 16   | 阻击     | 伤害值                                 |
+| 17   | 自爆     | 无                                     |
+| 18   | 无敌     | 无                                     |
+| 19   | 退化     | `ISpecial19Value`（攻防下降值）        |
+| 20   | 固伤     | 固定伤害值                             |
+| 21   | 重生     | 无                                     |
+| 22   | 激光     | 伤害值                                 |
+| 23   | 光环     | `ISpecial23Value`                      |
+| 24   | 支援     | 无                                     |
+| 25   | 捕捉     | 无                                     |
+| 26   | 特殊光环 | `ISpecial26Value`                      |
 
 地图伤害使用的也是上表的编号：转换器读取领域 13、夹击 14、阻击 16、激光 22、捕捉 25，挂上对应的内置属性就会生效（详见[地图伤害](./enemy-map-damage.md)）。
 
@@ -154,16 +154,16 @@ map.set(
 
 注册只是让引擎认识这条属性，真正让它生效的代码在别处。`special.ts` 顶部的注释给出了内置属性的实现分工。新增属性时按这张表找落点：
 
-| 属性类型 | 实现位置 | 说明 |
-|----------|----------|------|
-| 调参类（先攻、魔攻、连击、破甲、反击、净化、固伤、仇恨、自爆等） | `src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate` | 只改变伤害公式的结果 |
-| 坚固、模仿 | `src/data/enemy/final.ts` 的 `MainEnemyFinalEffect.apply` | 只修改怪物自身基础属性 |
-| 领域、夹击、阻击、激光、捕捉 | `src/data/enemy/mapDamage.ts` | 伤害视图 + 转换器 |
-| 光环、支援、特殊光环 | `src/data/enemy/aura.ts` | 光环视图 + 转换器 |
-| 中毒的每步效果 | `src/data/enemy/hook.ts` 的 `EnemyMoveHooks.handlePoison` | 移动钩子 |
-| 中毒的瞬移效果 | `src/data/enemy/hook.ts` 的 `EnemyPathfindingHooks.handlePoison` | 寻路钩子 |
-| 衰弱 | `src/data/enemy/hook.ts` 的 `EnemyCombatHooks.onAfterCombat` | 战后钩子 + 修饰器 |
-| 重生 | `src/data/enemy/hook.ts` 的 `EnemyCombatHooks.onAfterCombat` 与 `EnemyChangeFloorHooks.onSetFloor` | 两个钩子协同 |
+| 属性类型                                                         | 实现位置                                                                                           | 说明                   |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------- |
+| 调参类（先攻、魔攻、连击、破甲、反击、净化、固伤、仇恨、自爆等） | `src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate`                                 | 只改变伤害公式的结果   |
+| 坚固、模仿                                                       | `src/data/enemy/final.ts` 的 `MainEnemyFinalEffect.apply`                                          | 只修改怪物自身基础属性 |
+| 领域、夹击、阻击、激光、捕捉                                     | `src/data/enemy/mapDamage.ts`                                                                      | 伤害视图 + 转换器      |
+| 光环、支援、特殊光环                                             | `src/data/enemy/aura.ts`                                                                           | 光环视图 + 转换器      |
+| 中毒的每步效果                                                   | `src/data/enemy/hook.ts` 的 `EnemyMoveHooks.handlePoison`                                          | 移动钩子               |
+| 中毒的瞬移效果                                                   | `src/data/enemy/hook.ts` 的 `EnemyPathfindingHooks.handlePoison`                                   | 寻路钩子               |
+| 衰弱                                                             | `src/data/enemy/hook.ts` 的 `EnemyCombatHooks.onAfterCombat`                                       | 战后钩子 + 修饰器      |
+| 重生                                                             | `src/data/enemy/hook.ts` 的 `EnemyCombatHooks.onAfterCombat` 与 `EnemyChangeFloorHooks.onSetFloor` | 两个钩子协同           |
 
 具体实现方式分别见[怪物光环](./enemy-aura.md)、[伤害计算](./enemy-calculator.md)、[地图伤害](./enemy-map-damage.md)与[状态钩子](./enemy-status-hooks.md)。
 

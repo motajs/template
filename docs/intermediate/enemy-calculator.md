@@ -78,7 +78,8 @@ export class ArithmeticCalculator implements IDamageCalculator<
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
     ): IEnemyDamageInfoBase {
         const { enemy, hero } = handler;
-        const heroPerDamage = hero.getFinalAttribute('atk') - enemy.getAttribute('def');
+        const heroPerDamage =
+            hero.getFinalAttribute('atk') - enemy.getAttribute('def');
         if (heroPerDamage <= 0) {
             return { damage: Infinity, turn: 0 };
         }

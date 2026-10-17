@@ -20,43 +20,43 @@ const hook = {
 
 「钩子族」是同一类钩子方法的集合（一个 `interface`）。常用的几族如下，方法名以源码为准：
 
-| 钩子族 | 所属主对象 | 主要方法 |
-| --- | --- | --- |
-| `IDataCommonHooks` | 数据端公共对象 | `onTip` |
-| `IHeroAttributeHooks` | 勇士属性 | `onUpdateAttribute` |
-| `IHeroLocationHooks` | 勇士位置 | `onSetPos`、`onSetFloor` |
-| `IHeroStateHooks` | 勇士状态 | `onBeforeChangeFloor`、`onAfterChangeFloor` |
-| `IEquipmentStateHooks` | 装备 | `onChangeModifier` |
-| `IHeroFollowersControllerHooks` | 勇士跟随者 | `onAddFollower`、`onRemoveFollower`、`onGatherFollowers` |
-| `IObjectMoverHooks` | 移动器 | `onMoveStart`、`onMoveEnd`、`onStepStart`、`onStepEnd`、`onSetPos`、`onSetFaceDir`、`onSetMoveDir` |
-| `ICombatFlowHooks` | 战斗流程 | `onBeforeCombat`、`onAfterCombat` |
-| `IGameEventExecutorHooks` | 事件执行器 | `onBeforeExecuteEvent`、`onAfterExecuteEvent` |
-| `IPathfindingSystemHooks` | 寻路系统 | `onBeforeTeleportTo`、`onAfterTeleportTo` |
-| `IMapLayerHooks` | 地图图层 | `onResize`、`onUpdateArea`、`onUpdateBlock`、`onOpenDoor`、`onCloseDoor`、`onCreateDynamic`、`onDeleteDynamic`、`onUpdateDynamicPosition` |
-| `IGameMapHooks` | 地图 | `onChangeBackground`、`onUpdateLayer`、`onResizeLayer` |
-| `IReplaySystemHooks` | 录像系统 | `onCreateSandbox`、`onRecordCommand` |
-| `IReplaySandboxHooks` | 录像沙盒 | `onStep`、`onSpeedSet`、`onStartReplay`、`onStopReplay`、`onPauseReplay`、`onResumeReplay` |
+| 钩子族                          | 所属主对象     | 主要方法                                                                                                                                  |
+| ------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `IDataCommonHooks`              | 数据端公共对象 | `onTip`                                                                                                                                   |
+| `IHeroAttributeHooks`           | 勇士属性       | `onUpdateAttribute`                                                                                                                       |
+| `IHeroLocationHooks`            | 勇士位置       | `onSetPos`、`onSetFloor`                                                                                                                  |
+| `IHeroStateHooks`               | 勇士状态       | `onBeforeChangeFloor`、`onAfterChangeFloor`                                                                                               |
+| `IEquipmentStateHooks`          | 装备           | `onChangeModifier`                                                                                                                        |
+| `IHeroFollowersControllerHooks` | 勇士跟随者     | `onAddFollower`、`onRemoveFollower`、`onGatherFollowers`                                                                                  |
+| `IObjectMoverHooks`             | 移动器         | `onMoveStart`、`onMoveEnd`、`onStepStart`、`onStepEnd`、`onSetPos`、`onSetFaceDir`、`onSetMoveDir`                                        |
+| `ICombatFlowHooks`              | 战斗流程       | `onBeforeCombat`、`onAfterCombat`                                                                                                         |
+| `IGameEventExecutorHooks`       | 事件执行器     | `onBeforeExecuteEvent`、`onAfterExecuteEvent`                                                                                             |
+| `IPathfindingSystemHooks`       | 寻路系统       | `onBeforeTeleportTo`、`onAfterTeleportTo`                                                                                                 |
+| `IMapLayerHooks`                | 地图图层       | `onResize`、`onUpdateArea`、`onUpdateBlock`、`onOpenDoor`、`onCloseDoor`、`onCreateDynamic`、`onDeleteDynamic`、`onUpdateDynamicPosition` |
+| `IGameMapHooks`                 | 地图           | `onChangeBackground`、`onUpdateLayer`、`onResizeLayer`                                                                                    |
+| `IReplaySystemHooks`            | 录像系统       | `onCreateSandbox`、`onRecordCommand`                                                                                                      |
+| `IReplaySandboxHooks`           | 录像沙盒       | `onStep`、`onSpeedSet`、`onStartReplay`、`onStopReplay`、`onPauseReplay`、`onResumeReplay`                                                |
 
 ## 需求 → 钩子对照表
 
 真要动手时，多半是先有一个需求、再去找它对应哪个钩子。下表把常见需求和对应的钩子方法列在一起，照着找即可：
 
-| 需求 | 对应钩子 |
-| --- | --- |
-| 勇士属性变化时做点事 | `IHeroAttributeHooks.onUpdateAttribute` |
-| 勇士被设置坐标或切换楼层 | `IHeroLocationHooks.onSetPos` / `onSetFloor` |
+| 需求                         | 对应钩子                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------- |
+| 勇士属性变化时做点事         | `IHeroAttributeHooks.onUpdateAttribute`                                     |
+| 勇士被设置坐标或切换楼层     | `IHeroLocationHooks.onSetPos` / `onSetFloor`                                |
 | 勇士移动开始、结束或每走一步 | `IObjectMoverHooks.onMoveStart` / `onMoveEnd` / `onStepStart` / `onStepEnd` |
-| 切换楼层前后做过渡处理 | `IHeroStateHooks.onBeforeChangeFloor` / `onAfterChangeFloor` |
-| 战斗前或战斗后介入 | `ICombatFlowHooks.onBeforeCombat` / `onAfterCombat` |
-| 事件执行前后介入 | `IGameEventExecutorHooks.onBeforeExecuteEvent` / `onAfterExecuteEvent` |
-| 地图图块被修改、区域被更新 | `IMapLayerHooks.onUpdateBlock` / `onUpdateArea` |
-| 开门或关门时做点什么 | `IMapLayerHooks.onOpenDoor` / `onCloseDoor` |
-| 动态图块被创建或删除 | `IMapLayerHooks.onCreateDynamic` / `onDeleteDynamic` |
-| 装备的修饰器发生变化 | `IEquipmentStateHooks.onChangeModifier` |
-| 瞬移寻路前后介入 | `IPathfindingSystemHooks.onBeforeTeleportTo` / `onAfterTeleportTo` |
-| 录像播放到某一步 | `IReplaySandboxHooks.onStep` |
-| 录像记录新指令 | `IReplaySystemHooks.onRecordCommand` |
-| 通知渲染端进行一次提示 | `IDataCommonHooks.onTip` |
+| 切换楼层前后做过渡处理       | `IHeroStateHooks.onBeforeChangeFloor` / `onAfterChangeFloor`                |
+| 战斗前或战斗后介入           | `ICombatFlowHooks.onBeforeCombat` / `onAfterCombat`                         |
+| 事件执行前后介入             | `IGameEventExecutorHooks.onBeforeExecuteEvent` / `onAfterExecuteEvent`      |
+| 地图图块被修改、区域被更新   | `IMapLayerHooks.onUpdateBlock` / `onUpdateArea`                             |
+| 开门或关门时做点什么         | `IMapLayerHooks.onOpenDoor` / `onCloseDoor`                                 |
+| 动态图块被创建或删除         | `IMapLayerHooks.onCreateDynamic` / `onDeleteDynamic`                        |
+| 装备的修饰器发生变化         | `IEquipmentStateHooks.onChangeModifier`                                     |
+| 瞬移寻路前后介入             | `IPathfindingSystemHooks.onBeforeTeleportTo` / `onAfterTeleportTo`          |
+| 录像播放到某一步             | `IReplaySandboxHooks.onStep`                                                |
+| 录像记录新指令               | `IReplaySystemHooks.onRecordCommand`                                        |
+| 通知渲染端进行一次提示       | `IDataCommonHooks.onTip`                                                    |
 
 注意区分「切换楼层」相关的两族钩子，它们挂在不同的主对象上：`onSetFloor` 属于 `IHeroLocationHooks`，挂在 `state.hero.location` 上；`onBeforeChangeFloor` / `onAfterChangeFloor` 属于 `IHeroStateHooks`，挂在 `state.hero` 上。
 
