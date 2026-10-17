@@ -1,7 +1,7 @@
 # Phase 10: 文档重构 - Context
 
 **Gathered:** 2026-10-14
-**Updated:** 2026-10-14（改为增量派发；补录中级教程第一批讨论结果）
+**Updated:** 2026-10-17（旧内容删除并入本批 Wave 0 / 10-01）
 **Status:** Incremental dispatch — 可先行部分先规划执行，其余待引擎完工
 
 <domain>
@@ -22,6 +22,8 @@
 
 **第一批已派发内容 = 中级教程（`docs/intermediate`，24 篇）**，详见下方 `### 中级教程（第一批派发内容）`。
 
+**旧内容删除并入本批（Wave 0 / 10-01）：** 本批除注册 24 篇外，还执行 D-04 的旧内容清空——删除 `docs/guide`、`docs/dev`、`docs/logger`、`docs/api` 与首页 `docs/index.md`；同时清理 `docs/.vitepress/config.ts` 中指向这些内容的旧 `nav`/`sidebar` 键、保留 `docs/api/` 的生成机制（`api.ts`）并在目录缺失时安全跳过。删除后站点不再有既有 dead link，构建应转绿。
+
 </domain>
 
 <decisions>
@@ -35,17 +37,17 @@
   - `docs/beginner`（初级文档）
   - `docs/intermediate`（中级教程）
   - `docs/advanced`（高级教程）
-  - `docs/api`（API 参考，已存在）
+  - `docs/api`（API 参考；旧内容已随本批删除，生成机制保留，正文待后续重建）
   - `docs/agent`（Agent 参考）
   - 按 `dev.md`，目录 / 文件名一律使用连字符英文命名。
 
 ### API 参考（第 5 部分）
 
-- **D-03:** 继续按包生成 API 列表（保留 `docs/api/` 现有生成机制），但**正文讲解由人手写**，不是自动生成；对**重点接口额外详细讲解**。
+- **D-03:** 继续按包生成 API 列表（保留 `docs/api/` 现有生成机制），但**正文讲解由人手写**，不是自动生成；对**重点接口额外详细讲解**。（本批先删除 `docs/api/` 旧内容，生成机制 `docs/.vitepress/api.ts` 保留并向「目录缺失」场景加固，新的 API 正文待后续派发重建。）
 
 ### 旧内容处置
 
-- **D-04:** 现有旧文档内容**全部删除、重写**，不保留——旧接口设计与当前实现差距较大。范围包括 `docs/guide/*`、`docs/dev/*`、`docs/logger/*` 等既有旧内容。
+- **D-04:** 现有旧文档内容**全部删除、重写**，不保留——旧接口设计与当前实现差距较大。**删除已并入本批执行（Wave 0 / 10-01）**，范围包括 `docs/guide/*`、`docs/dev/*`、`docs/logger/*`、`docs/api/*` 及首页 `docs/index.md`；同时清理 `docs/.vitepress/config.ts` 中指向这些内容的旧 `nav`/`sidebar` 键，并让 `docs/api/` 侧边栏生成机制在目录缺失时安全跳过（保留 `docs/.vitepress/api.ts` 生成机制，供后续 API 参考重建）。
 
 ### 范围界定
 
@@ -182,7 +184,7 @@
 - **总览**（第 1 部分）—— 待文档整体做完后最后写。
 - **Agent 参考**（第 6 部分）——「游戏数值设计、游戏地图设计」的具体内涵与内容来源。
 - 中级教程中标注「占位 / 待提供」的示例（`data-plugins` 的简单插件示例）。
-- 旧内容删除的具体时机与清单核对。
+- **API 参考（第 5 部分）正文重建** —— `docs/api/` 旧内容已随本批（Wave 0 / 10-01）删除，生成机制 `docs/.vitepress/api.ts` 保留；新的按包 API 正文待后续派发重建。
 
 </deferred>
 
@@ -190,4 +192,4 @@
 
 *Phase: 10-docs-restructure*
 *Context gathered: 2026-10-14*
-*Context updated: 2026-10-14（增量派发 + 中级教程第一批 24 篇讨论结果）*
+*Context updated: 2026-10-17（旧内容删除并入本批 Wave 0 / 10-01；中级教程第一批 24 篇讨论结果沿用）*
