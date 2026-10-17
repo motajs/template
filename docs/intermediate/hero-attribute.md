@@ -41,7 +41,7 @@ attr.mul('money', 2); // 金币翻倍
 - `ValueModifier`（type `@system/value`）：数值加减，最终值 = 原值 + 修饰值；
 - `PercentageModifier`（type `@system/percentage`）：按**基础值**计算百分比，最终值 = 原值 + 基础值 × 修饰值。
 
-用 `addModifier(name, modifier, save?)` 挂上修饰器，用 `deleteModifier(name, modifier)` 移除：
+用 `addModifier(name, modifier, save?)` 挂上修饰器，用 `deleteModifier(name, modifier)` 移除（示例里的 `@user/*`、`@motajs/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
 
 ```ts
 import { ValueModifier, PercentageModifier } from '@user/data-base';

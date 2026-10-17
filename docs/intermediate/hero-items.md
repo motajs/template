@@ -25,7 +25,7 @@
 - `useItem(item)`：使用道具，**仅对 `Constant` 与 `Consumable` 生效**，`Consumable` 使用后数量减一；
 - `itemCount(item)`：获取指定道具的持有数量。
 
-`item` 参数可以传道具的图块数字或字符串 id。
+`item` 参数可以传道具的图块数字或字符串 id（图块数字的含义见[地图图块](./map-tiles.md)）。
 
 ```ts
 // 发一把黄钥匙（+1）

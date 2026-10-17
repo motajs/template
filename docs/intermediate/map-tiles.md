@@ -1,6 +1,10 @@
 # 地图图块
 
-想在地图上摆一格、擦掉一格，或者整片地读写图块，该找谁？答案是**图层**——地图图块存放在图层（`IMapLayer`）上，图块的读取、写入、批量操作与迭代都由图层负责。这些接口都定义在图层的静态部分（`ILayerStatic`）。
+想在地图上摆一格、擦掉一格，或者整片地读写图块，该找谁？答案是**图层**——地图图块存放在图层（`IMapLayer`）上。
+
+图层的接口分成两半：一半管**静态图块**（`ILayerStatic`，负责单点与批量读写、迭代），一半管**动态图块**（`ILayerDynamic`，负责创建、删除、移动）。本篇只讲静态图块那半，也就是 `ILayerStatic` 上的方法。
+
+先明确一个词：**图块数字**（tile number）是每个图块的整数编号，以内容层 `src/content/tile.jsonc` 中每个条目的 `num` 字段为准（同一条目还有字符串名 `id`）。图层上存取的都是这个编号；想用 `id` 换编号可以用 `state.tileStore.num(id)`，反过来用 `state.tileStore.id(num)`。
 
 ## 取到图层
 
@@ -33,7 +37,7 @@ layer.removeBlock(3, 5);
 
 要一次处理一片区域，用批量接口：
 
-- `putMapData(array, x, y, width)`：把一维数组写入地图，数组第一项对应 `(x, y)`，`width` 为矩形范围的宽度；
+- `putMapData(array, x, y, width)`：把一维数组写入地图，数组第一项对应 `(x, y)`，`width` 为矩形范围的宽度。数组按行排列（先是第一行、再是第二行……）；高度不用传，由数组长度推出：高度 = `array.length / width`（数组长度不是 `width` 的整数倍时引擎会告警）；
 - `getMapData()`：取整张地图的图块数组；
 - `getMapData(x, y, width, height)`：取指定矩形区域的图块数组。
 

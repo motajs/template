@@ -4,6 +4,8 @@
 
 每个特殊属性就是一个数字 `code` 加一份可选参数 `value`。`code` 说明这是哪一种机制，`value` 保存它的参数；没有参数的属性，`value` 为空。先攻、连击、坚固、光环、中毒都是这样挂到怪物身上的。
 
+内置属性都已由 `src/data/enemy/special.ts` 用 `map.set(code, ...)` 注册（当前占用 0–26 这段连续编号）；文档示例里出现的 30 及以上的 code（如 30、31、32、40–43、45、50）都是示例自选的**未占用编号**，不是内置编号。要新增属性时，先按下文步骤确认这个号没有被内置属性或你自己已有的属性占用。
+
 访问怪物特殊属性的入口见[战斗总览](./combat-overview.md)。
 
 ## 在数据里的样子
@@ -34,7 +36,7 @@ if (enemy.hasSpecial(3)) {
 
 写一条特殊属性时，先问自己一个问题：这个机制需要参数吗？答案不同，使用的工厂函数也不同。
 
-内置特殊属性在 `src/data/enemy/special.ts` 的 `createSpecials(state)` 中定义，使用两个工厂函数：
+内置特殊属性在 `src/data/enemy/special.ts` 的 `createSpecials(state)` 中定义，使用两个工厂函数（下文反复出现的 `map` 就是 `createSpecials(state)` 里创建的那张属性表：`map.set(code, ...)` 即往表里登记一条属性）：
 
 - `defineNonePropertySpecial(code, config)`：无参数，`value` 为 `void`，适合先攻、魔攻、坚固、模仿这类纯机制；
 - `defineCommonSerializableSpecial<T>(code, defaultValue, config)`：有参数，参数会进入存档，适合连击、破甲、光环这类需要数值描述的效果。

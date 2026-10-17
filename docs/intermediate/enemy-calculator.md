@@ -59,6 +59,8 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 
 「等差数列属性」指怪物攻击每回合按固定值递增。属性本身在一次计算中是常量，所以不能靠给 `atk` 加值实现；要在 `calculate` 里把「每回合伤害」按等差数列求和：
 
+示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。
+
 ```ts
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import {

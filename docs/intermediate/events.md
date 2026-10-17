@@ -54,7 +54,7 @@ interface ISetBlockEventParam {
 }
 ```
 
-自定义事件的参数接口也建议放在这个文件里，与内置参数放在一起。
+自定义事件的参数接口也建议放在这个文件里，与内置参数放在一起；事件函数**类**本身则放在 `src/data/event/` 目录下的文件里——可以新建文件，也可以放进与该功能相关的现有文件（例如图块相关的放进 `map.ts`）。`registrations.ts` 通过 `import` 把这些类引入后再注册。
 
 ## 注册事件
 
@@ -93,7 +93,7 @@ export function createEventRegistrations(): BuiltInFunction[] {
 
 ## 示例：设置 Flag
 
-下面这个事件函数把参数里的 Flag 名与值写进 Flag 系统：
+下面这个事件函数把参数里的 Flag 名与值写进 Flag 系统（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
 
 ```ts
 import { BuiltInFunction } from '@motajs/anon-tokyo';

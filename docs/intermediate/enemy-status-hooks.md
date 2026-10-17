@@ -45,7 +45,7 @@ state.hero.location.addHook(new EnemyChangeFloorHooks(state));
 - 勇士移动器：处理正常移动；
 - 寻路系统：处理瞬移；
 - 战斗流程：处理战前/战后；
-- 勇士位置：处理切换楼层。
+- 勇士位置：处理切换楼层。这里的 `onSetFloor` 属于 `IHeroLocationHooks`，挂在 `state.hero.location` 上；它和[钩子](./hooks.md)里「切换楼层前后」的 `IHeroStateHooks.onBeforeChangeFloor` / `onAfterChangeFloor`（挂在 `state.hero` 上）是两族不同的钩子，别混用。
 
 ## 战斗流程中的时序
 
@@ -74,7 +74,7 @@ map.set(
 );
 ```
 
-再写一个战斗钩子。它不修改内置的 `EnemyCombatHooks`，而是作为另一个钩子并存：
+再写一个战斗钩子。它不修改内置的 `EnemyCombatHooks`，而是作为另一个钩子并存（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
 
 ```ts
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';

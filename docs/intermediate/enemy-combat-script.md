@@ -52,7 +52,7 @@ state.combat.addCombatScript(new MainCombatScript());
 
 ## 战前示例：拥有某特殊属性时无法战斗
 
-下面的脚本检查怪物是否拥有 code 18 的特殊属性（无敌），有则直接放弃战斗：
+下面的脚本检查怪物是否拥有 code 18 的特殊属性（无敌），有则直接放弃战斗（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
 
 ```ts
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';

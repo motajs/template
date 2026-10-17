@@ -9,7 +9,7 @@
 | 成员 | 说明 |
 | --- | --- |
 | `id` | 插件标识符，全局唯一 |
-| `dependencies` | 依赖的其它插件 id 数组，不允许循环依赖 |
+| `dependencies` | 依赖的其它插件 **id 字符串数组**，不允许循环依赖 |
 | `awake(state, dependencies)` | 同步初始化 |
 | `initialize(state, dependencies)` | 异步初始化 |
 | `afterLoad(state, dependencies)` | 加载完成后初始化 |
@@ -28,11 +28,11 @@ awake（装配）→ initialize（加载前）→ afterLoad（加载后）
 - **`initialize`**：加载开始**前**调用。返回 `Promise`，可以阻塞加载——它不兑现，依赖它的插件就不会开始初始化，游戏加载也不会开始；
 - **`afterLoad`**：主对象加载**完毕后**调用。返回 `Promise`，同样可阻塞。适合做依赖加载内容（地图、数据等）的初始化。
 
-三个阶段都按依赖顺序执行：被依赖的插件先完成同一阶段，才轮到依赖它的一方。`dependencies` 里传入的正是这些依赖插件的对象。
+三个阶段都按依赖顺序执行：被依赖的插件先完成同一阶段，才轮到依赖它的一方。注意区分两处的 `dependencies`：定义插件时写的 `dependencies` 是依赖插件的 **id 字符串数组**；而 `awake` / `initialize` / `afterLoad` 三个方法收到的 `dependencies` 参数，是这些 id 解析后的**插件对象数组**（`IDataPlugin`，含 `plugin` 与 `status`），可以直接操作依赖插件本身。
 
 ## 注册插件
 
-插件在 `src/data/plugin/list.ts` 的 `dataPlugins` 数组中登记：
+插件在 `src/data/plugin/list.ts` 的 `dataPlugins` 数组中登记（示例里的 `@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
 
 ```ts
 import { IDataPluginDefine } from '@user/data-state';

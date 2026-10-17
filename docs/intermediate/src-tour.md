@@ -4,6 +4,16 @@
 
 如果还不清楚数据端与渲染端的分工，先看一眼[数据端与渲染端](./data-vs-render.md)。
 
+## 包从哪来：src、packages-user 与 packages
+
+本项目的代码分三层，示例里 `import` 语句用的包名与这三层一一对应：
+
+- `src/`：你的**游戏本体**，入口代码与游戏内容都放这里。它对应的包名是 `@user/main`，但教程几乎不会在 `import` 里写出它；
+- `packages-user/`：**用户工程包**，包名以 `@user/` 开头（如 `@user/data-base`、`@user/data-system`）。它是引擎面向游戏的二次封装，改动这里相当于扩展引擎；
+- `packages/`：**核心引擎包**，包名以 `@motajs/` 开头（如 `@motajs/common`）。它由引擎作者维护，一般不需要改。
+
+依赖方向是单向的：`src` → `packages-user` → `packages`。也就是说，`src` 可以引用 `@user/*` 与 `@motajs/*`，`packages-user` 只能引用 `@motajs/*`，反过来不行。所以看到示例里 `import ... from '@user/xxx'` 或 `'@motajs/xxx'`，照抄即可——这些包都已随项目安装好，不需要你手动创建。
+
 ## src/data：数据端
 
 凡是「游戏世界里发生了什么」——勇士剩多少血、怪物怎么被打、地图如何读取——都由 `src/data` 里的代码决定。它是本教程后续的重点，常见子目录：

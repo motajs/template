@@ -36,7 +36,9 @@ state.enemyContext.registerFinalEffect(effect);
 
 ## 示例：仿攻
 
-「仿攻」让怪物的攻击力等于勇士的最终攻击力。仿攻与内置的模仿类似，区别是只改攻击、不改防御：
+「仿攻」让怪物的攻击力等于勇士的最终攻击力。仿攻与内置的模仿类似，区别是只改攻击、不改防御（这里的 code 32 是示例自选的未占用编号；内置的最终效果是坚固 code 3、模仿 code 8，内置编号见[特殊属性](./enemy-specials.md)）：
+
+示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。
 
 ```ts
 // special.ts：32 - 仿攻

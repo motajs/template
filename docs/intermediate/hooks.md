@@ -58,6 +58,8 @@ const hook = {
 | 录像记录新指令 | `IReplaySystemHooks.onRecordCommand` |
 | 通知渲染端进行一次提示 | `IDataCommonHooks.onTip` |
 
+注意区分「切换楼层」相关的两族钩子，它们挂在不同的主对象上：`onSetFloor` 属于 `IHeroLocationHooks`，挂在 `state.hero.location` 上；`onBeforeChangeFloor` / `onAfterChangeFloor` 属于 `IHeroStateHooks`，挂在 `state.hero` 上。
+
 若某类需求暂未在表中找到，可以在对应主对象的 `IHookable` 接口处查看它支持的全部钩子方法（例如 `hero-attribute`、`enemy-status-hooks` 等篇会进一步说明相关钩子的用法）。
 
 ## 注册与移除钩子
