@@ -1,4 +1,4 @@
-import { ITileLocator } from '@motajs/common';
+import { IHookable, IHookBase, ITileLocator } from '@motajs/common';
 import {
     IDataBaseExtended,
     IGameMap,
@@ -105,7 +105,31 @@ export interface IGameEventInit {
     addBuiltinFunction(name: string, func: GameEventBuiltinFunction): void;
 }
 
-export interface IGameEventExecutor {
+export interface IGameEventExecutorHooks extends IHookBase {
+    /**
+     * 当事件执行前触发
+     * @param events 要执行的事件列表，可以直接修改此列表
+     * @param param 要传递给事件的参数，可以直接修改此参数
+     */
+    onBeforeExecuteEvent(
+        events: IGameEventInvocation[],
+        param: IBlockEventParam
+    ): void;
+
+    /**
+     * 当一个事件执行完毕后触发
+     * @param events 执行的事件列表
+     * @param param 事件的执行参数
+     * @param returns 事件的执行返回值
+     */
+    onAfterExecuteEvent(
+        events: IGameEventInvocation[],
+        param: IBlockEventParam,
+        returns: unknown
+    ): void;
+}
+
+export interface IGameEventExecutor extends IHookable<IGameEventExecutorHooks> {
     /** 当前的执行器执行模式 */
     readonly mode: EventExecuteMode;
     /** 当前的执行器返回值折叠方式 */

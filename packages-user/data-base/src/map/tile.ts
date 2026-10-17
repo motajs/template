@@ -1,16 +1,19 @@
 import { ITileLocator } from '@motajs/common';
 import {
     FaceDirection,
+    FaceGroup,
     IDataCommon,
     IDataCommonExtended,
     ISaveableContent,
-    ITileRawData
+    ITileRawData,
+    shouldReplay
 } from '@user/data-common';
 import { LayerEventView } from './eventView';
 import {
     ILayerEventView,
     IMapBlockSaveBase,
     IMapLayer,
+    IReadonlyTileBase,
     ITileBase
 } from './types';
 
@@ -37,10 +40,7 @@ export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
 
     abstract set(num: number): void;
 
-    /**
-     * 根据当前图块原始数据恢复默认事件并建立干净基准
-     */
-    protected restoreDefaultEvents(): void {
+    restoreDefaultEvents(): void {
         const eventView = this.tileEvent();
         eventView.clear();
         const data = this.raw();
@@ -52,14 +52,22 @@ export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
         eventView.markPure();
     }
 
+    @shouldReplay('Setting map tile face direction should be replayed.')
     setFaceDirection(direction: FaceDirection): number {
         const cur = this.num();
         const next = this.layer.faceBinder.getFaceOf(cur, direction);
         if (next) {
+            // 先尝试在 dir8 中寻找
             this.set(next.identifier);
             return next.identifier;
         } else {
-            return cur;
+            // 找不到则降级到 dir4
+            const handler = this.state.faceManager.get(FaceGroup.Dir4);
+            if (!handler) return cur;
+            const degraded = handler.degrade(direction);
+            const next = this.layer.faceBinder.getFaceOf(cur, degraded);
+            if (next) return next.identifier;
+            else return cur;
         }
     }
 
@@ -69,6 +77,14 @@ export abstract class MapTileBase<TSave extends IMapBlockSaveBase>
 
     pointEvent(): ILayerEventView | null {
         return this.layer.event(this.locator.x, this.locator.y);
+    }
+
+    syncTileEvent(origin: IReadonlyTileBase): void {
+        const ev = this.tileEvents;
+        ev.clear();
+        for (const [priority, id] of origin.tileEvent()) {
+            ev.set(priority, id);
+        }
     }
 
     abstract saveState(): Readonly<TSave>;

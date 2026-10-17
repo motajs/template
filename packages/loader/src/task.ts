@@ -2,25 +2,38 @@ import { sumBy } from 'lodash-es';
 import {
     ILoadDataTypeMap,
     ILoadTask,
+    ILoadTaskHooks,
     ILoadTaskInit,
     ILoadTaskProcessor,
-    ILoadTaskProgress,
+    ILoadTaskStarter,
+    IResponseLike,
+    IResponseReaderLike,
     LoadDataType,
     RequestMethod
 } from './types';
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    logger
+} from '@motajs/common';
 
 /** 文字解码 */
 const loadTextDecoder = new TextDecoder();
 
-export class LoadTask<T extends LoadDataType, R> implements ILoadTask<T, R> {
+export class LoadTask<T extends LoadDataType, R>
+    extends Hookable<ILoadTaskHooks<T, R>>
+    implements ILoadTask<T, R>
+{
     readonly dataType: T;
     readonly identifier: string;
-    readonly url: string | URL;
-    readonly processor: ILoadTaskProcessor<T, R>;
-    readonly progress: ILoadTaskProgress<T, R>;
+    readonly url: string;
     readonly method?: RequestMethod;
     readonly body?: BodyInit;
     readonly headers?: HeadersInit;
+
+    processor: ILoadTaskProcessor<T, R> | null = null;
+    starter: ILoadTaskStarter | null = null;
 
     contentLoaded: boolean = false;
     loadedByte: number = 0;
@@ -34,12 +47,12 @@ export class LoadTask<T extends LoadDataType, R> implements ILoadTask<T, R> {
     /** 加载结果 */
     private loadedData: R | null = null;
 
-    constructor(init: ILoadTaskInit<T, R>) {
+    constructor(init: ILoadTaskInit<T>) {
+        super();
+
         this.dataType = init.dataType;
         this.identifier = init.identifier;
-        this.url = this.resolveURL(init.url);
-        this.processor = init.processor;
-        this.progress = init.progress;
+        this.url = init.url;
         this.method = init.method;
         this.body = init.body;
         this.headers = init.headers;
@@ -49,16 +62,26 @@ export class LoadTask<T extends LoadDataType, R> implements ILoadTask<T, R> {
         this.loadResolve = resolve;
     }
 
-    private resolveURL(url: string | URL) {
-        if (typeof url === 'string') {
-            return `${import.meta.env.BASE_URL}${url}`;
-        } else {
-            return url;
-        }
+    protected createController(
+        hook: Partial<ILoadTaskHooks<T, R>>
+    ): IHookController<ILoadTaskHooks<T, R>> {
+        return new HookController(this, hook);
     }
 
+    setProcessor(processor: ILoadTaskProcessor<T, R> | null): void {
+        this.processor = processor;
+    }
+
+    setStarter(starter: ILoadTaskStarter): void {
+        this.starter = starter;
+    }
+
+    /**
+     * 当不使用流加载时，使用此方法直接处理响应对象
+     * @param response 响应体对象
+     */
     private processUnstreamableResponse(
-        response: Response
+        response: IResponseLike
     ): Promise<ILoadDataTypeMap[T]> {
         switch (this.dataType) {
             case LoadDataType.ArrayBuffer:
@@ -74,6 +97,10 @@ export class LoadTask<T extends LoadDataType, R> implements ILoadTask<T, R> {
         }
     }
 
+    /**
+     * 当使用流加载时，处理每次流加载的分块
+     * @param chunks 流式加载的二进制分块
+     */
     private processStreamChunkResponse(
         chunks: Uint8Array<ArrayBuffer>[]
     ): ILoadDataTypeMap[T] {
@@ -102,23 +129,44 @@ export class LoadTask<T extends LoadDataType, R> implements ILoadTask<T, R> {
         }
     }
 
-    private async processResponse(response: Response) {
-        const reader = response.body?.getReader();
-        const contentLength = response.headers.get('Content-Length') ?? '0';
-        const total = parseInt(contentLength, 10);
-        this.loadedByte = 0;
-        this.totalByte = total;
-        this.progress.onProgress(this, 0, total);
-        if (!reader) {
-            const data = await this.processUnstreamableResponse(response);
-            this.loadedByte = this.totalByte;
-            this.contentLoaded = true;
-            this.progress.onProgress(this, this.loadedByte, this.totalByte);
-            const processed = await this.processor.process(data, this);
-            this.loadedData = processed;
-            this.loadResolve(processed);
-            return;
+    /**
+     * 处理加载数据
+     * @param data 加载获取的原始数据
+     */
+    private processData(data: ILoadDataTypeMap[T]): Promise<R> {
+        if (this.processor) {
+            return this.processor.process(data, this);
+        } else {
+            return Promise.resolve(data as R);
         }
+    }
+
+    /**
+     * 使用非流式加载方式进行加载
+     * @param response 响应体
+     * @param total 加载总字节数
+     */
+    private async *loadUnstream(
+        response: IResponseLike,
+        total: number
+    ): AsyncGenerator<number, ILoadDataTypeMap[T]> {
+        const data = await this.processUnstreamableResponse(response);
+        this.loadedByte = this.totalByte;
+        this.contentLoaded = true;
+        this.forEachHook(hook => hook.onProgress?.(total, total));
+        yield total;
+        return data;
+    }
+
+    /**
+     * 使用流式加载方式进行加载
+     * @param reader 流式读取器
+     * @param total 加载总字节数
+     */
+    private async *loadStream(
+        reader: IResponseReaderLike,
+        total: number
+    ): AsyncGenerator<number, ILoadDataTypeMap[T]> {
         let received = 0;
         const chunks: Uint8Array<ArrayBuffer>[] = [];
         while (true) {
@@ -129,23 +177,70 @@ export class LoadTask<T extends LoadDataType, R> implements ILoadTask<T, R> {
             }
             if (done) this.contentLoaded = true;
             this.loadedByte = received;
-            this.progress.onProgress(this, received, total);
-            if (done) break;
+            this.forEachHook(hook => hook.onProgress?.(received, total));
+            yield received;
+            if (done) {
+                this.loadedByte = total;
+                yield total;
+                break;
+            }
         }
         const data = this.processStreamChunkResponse(chunks);
-        const processed = await this.processor.process(data, this);
-        this.loadedData = processed;
-        this.loadResolve(processed);
+        return data;
     }
 
-    async start(): Promise<void> {
-        const response = await fetch(this.url, {
-            method: this.method,
-            body: this.body,
-            headers: this.headers
-        });
-        this.processResponse(response);
-        return;
+    /**
+     * 执行加载任务，自动决定使用流式加载或非流式加载
+     * @param response 响应体
+     * @param total 加载总字节数
+     */
+    private loadTask(
+        response: IResponseLike,
+        total: number
+    ): AsyncGenerator<number, ILoadDataTypeMap[T]> {
+        const reader = response.body?.getReader();
+        if (reader) {
+            return this.loadStream(reader, total);
+        } else {
+            return this.loadUnstream(response, total);
+        }
+    }
+
+    /**
+     * 处理响应体，并进行加载工作
+     * @param response 响应体
+     */
+    private async *processResponse(
+        response: IResponseLike
+    ): AsyncIterable<number> {
+        const contentLength = response.headers.get('Content-Length') ?? '0';
+        const total = parseInt(contentLength, 10);
+        this.loadedByte = 0;
+        this.totalByte = total;
+        this.forEachHook(hook => hook.onLoadStart?.(total));
+        this.forEachHook(hook => hook.onProgress?.(0, total));
+
+        const iter = this.loadTask(response, total);
+        const data = yield* iter;
+
+        const processed = await this.processData(data);
+        this.loadedData = processed;
+        this.loadResolve(processed);
+        this.forEachHook(hook => hook.onLoadEnd?.(processed, data, total));
+    }
+
+    async *start(): AsyncIterable<number> {
+        if (this.loadedData) return;
+
+        if (!this.starter) {
+            logger.error(30);
+            return;
+        }
+        const response = await this.starter.start(this);
+        yield* this.processResponse(response);
+
+        // 加载完毕后就可以清空钩子了
+        this.forEachHook(hook => hook).forEach(v => this.removeHook(v));
     }
 
     loaded(): Promise<R> {

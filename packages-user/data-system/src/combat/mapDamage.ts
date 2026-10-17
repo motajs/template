@@ -45,17 +45,18 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     private readonly sourcelessDamage: Map<number, IPointInfo> = new Map();
     /** 有来源地图伤害，坐标 -> 点伤害信息 */
     private readonly sourcedDamage: Map<number, IPointInfo> = new Map();
-    /** 地图伤害视图 -> 其信息对象 */
+    /** 地图伤害视图 -> 地图伤害视图对应的信息对象 */
     private readonly viewStore: Map<IMapDamageView<any>, IViewStore<TEnemy>> =
         new Map();
-    /** 地图伤害信息 -> 其信息对象 */
+    /** 地图伤害数据 -> 地图伤害数据对应的信息对象 */
     private readonly damageStore: Map<IMapDamageInfo, IDamageStore<TEnemy>> =
         new Map();
-    /** 怪物视图 -> 其影响对象 */
+    /** 怪物视图 -> 其产生的地图伤害视图 */
     private readonly enemyStore: Map<
         IEnemyView<TEnemy>,
         Set<IMapDamageView<any>>
     > = new Map();
+
     /** 需要延迟刷新的坐标索引 */
     private readonly dirtyIndexes: Set<number> = new Set();
     /** 合并后伤害缓存，索引 -> 合并结果 */
@@ -96,23 +97,32 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
         };
     }
 
+    /**
+     * 创建空地图伤害对象
+     */
+    private createEmptyDamage(): IPointInfo {
+        return {
+            affectedBy: new Set(),
+            damages: new Set()
+        };
+    }
+
     useReducer(reducer: IMapDamageReducer): void {
         this.reducer = reducer;
         this.reducedCache.clear();
     }
 
     addMapDamage(locator: ITileLocator, info: IMapDamageInfo): void {
-        const index = this.indexer.locaterToIndex(locator);
-        const store = this.sourcelessDamage.getOrInsertComputed(index, () => ({
-            affectedBy: new Set(),
-            damages: new Set()
-        }));
+        const index = this.indexer.locatorToIndex(locator);
+        const store = this.sourcelessDamage.getOrInsertComputed(index, () =>
+            this.createEmptyDamage()
+        );
         store.damages.add(info);
         this.markDirtyIndex(index);
     }
 
     deleteMapDamage(locator: ITileLocator, info: IMapDamageInfo): void {
-        const index = this.indexer.locaterToIndex(locator);
+        const index = this.indexer.locatorToIndex(locator);
         const current = this.sourcelessDamage.get(index);
         if (!current) return;
         current.damages.delete(info);
@@ -132,7 +142,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     }
 
     markDirty(locator: ITileLocator): void {
-        this.markDirtyIndex(this.indexer.locaterToIndex(locator));
+        this.markDirtyIndex(this.indexer.locatorToIndex(locator));
     }
 
     markEnemyDirty(view: IEnemyView<TEnemy>): void {
@@ -150,27 +160,36 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
         this.refreshEnemyAndClearCache(view, locator);
     }
 
-    deleteEnemy(view: IEnemyView<TEnemy>): void {
-        const store = this.enemyStore.get(view);
-        if (!store) return;
-        const collection = new Set<number>();
-        for (const viewItem of store) {
-            const affecting = this.viewStore.get(viewItem);
-            if (!affecting) continue;
-            affecting.damages.forEach((dam, index) => {
-                this.damageStore.delete(dam);
-                collection.add(index);
+    /**
+     * 移除指定怪物所产生的地图伤害
+     * @param view 怪物视图
+     */
+    private removeEnemyAffecting(view: IEnemyView<TEnemy>) {
+        const views = this.enemyStore.get(view);
+        if (!views) return;
+        // 收集被移除贡献的坐标索引，遍历结束后统一标脏以清掉其旧合并缓存
+        const removed = new Set<number>();
+        views.forEach(viewItem => {
+            const store = this.viewStore.get(viewItem);
+            if (!store) return;
+            store.damages.forEach((dam, index) => {
+                removed.add(index);
                 const point = this.sourcedDamage.get(index);
                 if (!point) return;
                 point.affectedBy.delete(viewItem);
                 point.damages.delete(dam);
+                this.damageStore.delete(dam);
             });
             this.viewStore.delete(viewItem);
-        }
-        this.enemyStore.delete(view);
-        collection.forEach(v => {
-            this.markDirtyIndex(v);
         });
+        removed.forEach(index => {
+            this.markDirtyIndex(index);
+        });
+    }
+
+    deleteEnemy(view: IEnemyView<TEnemy>): void {
+        this.removeEnemyAffecting(view);
+        this.enemyStore.delete(view);
     }
 
     getReducedDamage(locator: ITileLocator): Readonly<IMapDamageInfo> | null {
@@ -179,7 +198,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
             return null;
         }
 
-        const index = this.indexer.locaterToIndex(locator);
+        const index = this.indexer.locatorToIndex(locator);
         if (this.dirtyIndexes.has(index)) {
             this.refreshIndex(index);
         }
@@ -221,7 +240,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
     getSeparatedDamage(
         locator: ITileLocator
     ): Iterable<Readonly<IMapDamageInfo>> {
-        const index = this.indexer.locaterToIndex(locator);
+        const index = this.indexer.locatorToIndex(locator);
         if (this.dirtyIndexes.has(index)) {
             this.refreshIndex(index);
         }
@@ -238,34 +257,6 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
         this.enemyStore.clear();
         this.dirtyIndexes.clear();
         this.reducedCache.clear();
-    }
-
-    /**
-     * 移除指定怪物所产生的地图伤害
-     * @param view 怪物视图
-     */
-    private removeEnemyAffecting(view: IEnemyView<TEnemy>) {
-        const views = this.enemyStore.get(view);
-        if (!views) return;
-        // 收集被移除贡献的坐标索引，遍历结束后统一标脏以清掉其旧合并缓存
-        const removed = new Set<number>();
-        views.forEach(viewItem => {
-            const store = this.viewStore.get(viewItem);
-            if (!store) return;
-            store.damages.forEach((dam, index) => {
-                removed.add(index);
-                const point = this.sourcedDamage.get(index);
-                if (!point) return;
-                point.affectedBy.delete(viewItem);
-                point.damages.delete(dam);
-                this.damageStore.delete(dam);
-            });
-            this.viewStore.delete(viewItem);
-        });
-        this.enemyStore.delete(view);
-        removed.forEach(index => {
-            this.markDirtyIndex(index);
-        });
     }
 
     /**
@@ -319,13 +310,10 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
             const param = viewItem.getRangeParam();
             range.bindHost(this.context);
             for (const index of range.iterateLoc(param)) {
-                const loc = this.indexer.indexToLocator(index);
+                const loc = this.indexer.locator(index);
                 const point = this.sourcedDamage.getOrInsertComputed(
                     index,
-                    () => ({
-                        affectedBy: new Set(),
-                        damages: new Set()
-                    })
+                    () => this.createEmptyDamage()
                 );
                 const damage = viewItem.getDamageWithoutCheck(loc);
                 if (damage) {
@@ -383,7 +371,7 @@ export class MapDamage<TEnemy, THero> implements IMapDamage<TEnemy, THero> {
         this.dirtyIndexes.delete(index);
         this.reducedCache.delete(index);
 
-        const locator = this.indexer.indexToLocator(index);
+        const locator = this.indexer.locator(index);
         const point = this.sourcedDamage.get(index);
         if (!point) return;
 

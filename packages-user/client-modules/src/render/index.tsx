@@ -1,16 +1,14 @@
 import { Font } from '@motajs/render';
 import { defineComponent } from 'vue';
 import { DEFAULT_FONT, MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
-import { hook } from '@user/data-base';
-import { createElements } from './elements';
+import { createElements } from '@user/client-base';
 import { mainRenderer } from './renderer';
-import { createUI } from './ui';
+import { createUI } from '../ui';
 import { createAction } from './action';
 import { sceneController } from './scene';
-import { GameTitleUI } from './ui/title';
 import { createWeather } from './weather';
 import { createApp } from './renderer';
-import { LoadSceneUI } from './ui/load';
+import { LoadSceneUI } from '../ui/load';
 
 export function createGameRenderer() {
     const App = defineComponent(_props => {
@@ -34,21 +32,12 @@ export function createRender() {
     createAction();
     createWeather();
 
-    hook.on('restart', () => {
-        sceneController.closeAll();
-        sceneController.open(GameTitleUI, {});
-    });
-
     Font.setDefaults(DEFAULT_FONT);
 }
 
-export * from './components';
-export * from './elements';
 export * from './fx';
-export * from './ui';
 export * from './utils';
 export * from './weather';
 export * from './renderer';
 export * from './scene';
-export * from '../shared';
 export * from './use';

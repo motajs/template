@@ -1,0 +1,23 @@
+// Type: packages-user/client-modules/src/common.ts IClientConfig
+// --- SYSTEM PREFIX END --- //
+{
+    "titleImage": "title.jpg",
+    "titleBGM": "bgm.opus",
+    "heroImage": "hero.png",
+    "content": {
+        "textureDir": "texture",
+        "textureListDir": "texture/.list.jsonc",
+        "audioDir": "audio",
+        "audioListDir": "audio/.list.jsonc",
+        "animationDir": "animation",
+        "animationListDir": "animation/.list.jsonc",
+        "fontDir": "font",
+        "fontListDir": "font/.list.jsonc",
+        "defaults": {
+            "textureDefault": "defaults/texture.jsonc",
+            "audioDefault": "defaults/audio.jsonc",
+            "animationDefault": "defaults/animation.jsonc",
+            "fontDefault": "defaults/font.jsonc"
+        }
+    }
+}

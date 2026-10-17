@@ -1,6 +1,8 @@
 {
     "name": "@user/main",
     "dependencies": {
+        "@user/data-common": "workspace:*",
+        "@user/data-state": "workspace:*",
         "@user/entry-client": "workspace:*",
         "@user/entry-data": "workspace:*"
     }

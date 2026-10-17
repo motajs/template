@@ -4,6 +4,12 @@
         "@motajs/audio": "workspace:*",
         "@motajs/render": "workspace:*",
         "@motajs/client-base": "workspace:*",
-        "@user/data-base": "workspace:*"
+        "@user/data-base": "workspace:*",
+        "@user/data-state": "workspace:*",
+        "@motajs/animate": "workspace:*",
+        "@motajs/common": "workspace:*",
+        "@motajs/render-vue": "workspace:*",
+        "@motajs/system": "workspace:*",
+        "@user/data-common": "workspace:*"
     }
 }

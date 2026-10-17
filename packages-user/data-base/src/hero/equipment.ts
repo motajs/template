@@ -1,5 +1,5 @@
 import { isNil } from 'lodash-es';
-import { IDataCommon, ReplayCode } from '@user/data-common';
+import { IDataCommon, ReplayCode, shouldReplay } from '@user/data-common';
 import {
     EquipStatus,
     IEquipmentState,
@@ -150,6 +150,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         }
     }
 
+    @shouldReplay('Equiping equipment should be replayed.')
     equip(
         uid: number,
         slot: number | string,
@@ -197,6 +198,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         return curr;
     }
 
+    @shouldReplay('Unequiping equipment should be replayed.')
     unequip(slot: number): number | undefined {
         const uid = this.equips.get(slot);
         if (isNil(uid)) return void 0;
@@ -259,12 +261,8 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
     ): Readonly<Partial<THero>> {
         const stateA = this.store.get(equipA);
         const stateB = this.store.get(equipB);
-        if (!stateA) {
-            logger.warn(146, equipA.toString());
-            return {} as Partial<THero>;
-        }
-        if (!stateB) {
-            logger.warn(146, equipB.toString());
+        if (!stateA && !stateB) {
+            logger.warn(195, equipA.toString(), equipB.toString());
             return {} as Partial<THero>;
         }
 
@@ -294,7 +292,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         const attrB: Partial<THero> = {};
         const keys = new Set<SelectKey<THero, number>>();
 
-        const modifiersA = [...stateA.getModifiers()];
+        const modifiersA = stateA ? [...stateA.getModifiers()] : [];
         const addedA: typeof modifiersA = [];
         for (const [name, modifier] of modifiersA) {
             const copy = modifier.clone();
@@ -302,7 +300,7 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
             clone.addModifier(name, copy);
             addedA.push([name, copy]);
         }
-        for (const [name] of stateA.getModifiers()) {
+        for (const [name] of modifiersA) {
             attrA[name] = clone.getFinalAttribute(name);
             keys.add(name);
         }
@@ -311,12 +309,13 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
             clone.deleteModifier(name, copy);
         }
 
-        for (const [name, modifier] of stateB.getModifiers()) {
+        const modifiersB = stateB ? [...stateB.getModifiers()] : [];
+        for (const [name, modifier] of modifiersB) {
             const copy = modifier.clone();
             // @ts-expect-error 泛型无法推导
             clone.addModifier(name, copy);
         }
-        for (const [name] of stateB.getModifiers()) {
+        for (const [name] of modifiersB) {
             attrB[name] = clone.getFinalAttribute(name);
             keys.add(name);
         }
@@ -351,8 +350,12 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         });
         // 由于装备修饰器不进存档，所以此时的勇士处于没有任何装备修饰器的状态，故可以安全清除
         this.equips.clear();
+
+        const replay = this.state.replaySystem;
+        replay.disable();
         for (const [index, uid] of state.equipped) {
             this.equip(uid, index);
         }
+        replay.revert();
     }
 }

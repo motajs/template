@@ -1,0 +1,195 @@
+# Phase 10: 文档重构 - Context
+
+**Gathered:** 2026-10-14
+**Updated:** 2026-10-17（旧内容删除并入本批 Wave 0 / 10-01）
+**Status:** Incremental dispatch — 可先行部分先规划执行，其余待引擎完工
+
+<domain>
+## Phase Boundary
+
+重构过老、结构不佳、新人理解难度过高的项目文档。面向多背景读者（完全新手 / 不懂代码的作者 / 有基础的作者 / AI Agent）提供分层指南，并专门为 AI Agent 编写参考文档。
+
+**执行方式（本阶段关键）：** 引擎大部分接口已定稿、短期内不会大改，但编辑器、部分重构与整体收尾尚未完工，故本阶段采用**伞阶段 + 增量派发**：用户每次派发一个具体小任务，AI 据此在 Phase 10 下创建独立计划并执行（Plan → Execute → Verify），做完再由用户派发下一个。**已定稿、可先行的部分先做**；未完工部分（初级文档、高级教程、未定稿接口等）挂起，待条件成熟后由用户再派发。
+
+文档分为六大部分：
+
+1. **总览**：如何正确地看文档、查文档；不同背景的作者应如何阅读；AI Agent 应如何阅读。
+2. **初级文档**：面向完全新手，**不含任何代码**，教学编辑器基本操作，并提供一些**仅使用编辑器的非代码编辑功能**即可实现的效果。因编辑器尚未实装，**待编辑器实装后再规划**。
+3. **中级教程**：面向读完初级文档的作者及有一定经验的作者，讲解**必须使用代码**才能完成的内容，简单讲解顶层接口的使用，**不深挖底层逻辑**。读完本部分，作者理应能完成绝大多数需求。
+4. **高级教程**：面向有高度定制需求、以及需要理解底层逻辑的作者，**系统讲解引擎的设计理念**。**待引擎整体完工后再规划**。
+5. **API 参考**：列出引擎的所有 API 接口并给出解释，**重点接口详细解释**。
+6. **Agent 参考**：面向 AI Agent，包含引擎快速总览、需求接口定位、游戏数值设计、游戏地图设计等参考文档。
+
+**第一批已派发内容 = 中级教程（`docs/intermediate`，24 篇）**，详见下方 `### 中级教程（第一批派发内容）`。
+
+**旧内容删除并入本批（Wave 0 / 10-01）：** 本批除注册 24 篇外，还执行 D-04 的旧内容清空——删除 `docs/guide`、`docs/dev`、`docs/logger`、`docs/api` 与首页 `docs/index.md`；同时清理 `docs/.vitepress/config.ts` 中指向这些内容的旧 `nav`/`sidebar` 键、保留 `docs/api/` 的生成机制（`api.ts`）并在目录缺失时安全跳过。删除后站点不再有既有 dead link，构建应转绿。
+
+</domain>
+
+<decisions>
+## Implementation Decisions
+
+### 载体与整体形式
+
+- **D-01:** 文档载体沿用现有 **VitePress** 站点（`docs/.vitepress/`）；**不要求**脱离 VitePress 的纯 markdown 兼容，按 VitePress 语法书写即可（`:::info`、`mermaid` 等可用，mermaid 插件已安装）。
+- **D-02:** 六大块各建**独立文件夹**，命名已获用户批准：
+  - `docs/overview`（总览）
+  - `docs/beginner`（初级文档）
+  - `docs/intermediate`（中级教程）
+  - `docs/advanced`（高级教程）
+  - `docs/api`（API 参考；旧内容已随本批删除，生成机制保留，正文待后续重建）
+  - `docs/agent`（Agent 参考）
+  - 按 `dev.md`，目录 / 文件名一律使用连字符英文命名。
+
+### API 参考（第 5 部分）
+
+- **D-03:** 继续按包生成 API 列表（保留 `docs/api/` 现有生成机制），但**正文讲解由人手写**，不是自动生成；对**重点接口额外详细讲解**。（本批先删除 `docs/api/` 旧内容，生成机制 `docs/.vitepress/api.ts` 保留并向「目录缺失」场景加固，新的 API 正文待后续派发重建。）
+
+### 旧内容处置
+
+- **D-04:** 现有旧文档内容**全部删除、重写**，不保留——旧接口设计与当前实现差距较大。**删除已并入本批执行（Wave 0 / 10-01）**，范围包括 `docs/guide/*`、`docs/dev/*`、`docs/logger/*`、`docs/api/*` 及首页 `docs/index.md`；同时清理 `docs/.vitepress/config.ts` 中指向这些内容的旧 `nav`/`sidebar` 键，并让 `docs/api/` 侧边栏生成机制在目录缺失时安全跳过（保留 `docs/.vitepress/api.ts` 生成机制，供后续 API 参考重建）。
+
+### 范围界定
+
+- **D-05:** API 参考**不含 legacy 包**（`@motajs/legacy-*`、`@user/legacy-*`、`@user/data-fallback`）——这部分尚未重构完。
+- **D-06:** **初级文档**暂缓——待**编辑器实装后**由用户再派发；具体范围届时另行说明。
+- **D-07:** **高级教程**暂缓——待**引擎整体完工后**由用户再派发。
+- **D-08:** **Agent 参考**放 `docs/agent`，具体内容后续再讨论。
+
+### 验收与流程
+
+- **D-09:** 验收标准 = **用户人工审阅** + **链接全部有效** + **构建通过**。
+- **D-10:** 本阶段采用**增量派发**：用户每次派发一个具体小任务，AI 只针对该任务在 Phase 10 下创建独立计划；不得预先把整个阶段规划到底。可先行部分先做，未完工部分挂起待派发。
+
+### 执行方式（本阶段特有，优先级最高）
+
+- **D-11:** 阶段计划随任务累积，可反复追加/重规划；新任务到来时可新增计划而不必重排既有计划。
+- **D-12:** 每个计划执行前，第一个 block 点必须**先向用户汇报计划内容**（要做什么、为什么、大致怎么做、影响范围）并等待用户明确回复「可以执行」；未收到「可以执行」前不得开始该计划的任何一步，也不得派发执行子代理。
+- **D-13:** 新增或修改任何公共、受保护、私有方法/字段等命名，以及文档目录/文件名，均**必须先向用户反馈并获批准**后方可使用。
+- **D-14:** 每个任务的范围由用户界定；AI 不擅自扩大范围。发现的越界内容只记录、不实施。
+
+### 中级教程（第一批派发内容：`docs/intermediate`，24 篇）
+
+**总原则**
+
+- **D-15:** 本批只写**中级教程**；面向「读完初级 / 只懂一点代码的作者」。只讲**必须用代码完成**的内容与**顶层常用接口**，不深挖底层原理；**底层 / 不常用接口不讲**（留高级教程）。
+- **D-16:** **不写**「渲染端教程后续再讲」这类元叙述；**假设渲染端教程已存在**，指向渲染端内容时如指向一个平行部分。
+- **D-17:** 全文**适当加跳转链接**，但不要过多。
+- **D-18:** 部分特殊属性与**地图伤害实际结算**尚未内置，用户会在编写文档前补齐；写作以当时代码为准。
+- **D-19:** 标注「占位 / 待提供」的示例，待用户提供后再写。
+- **D-20:** 阅读顺序（4 + 8 + 9 + 3 = 24 篇）：
+  - 概念与导航：`data-vs-render`、`src-tour`、`code-basics`、`hooks`
+  - 基础接口：`data-state-overview`、`hero-attribute`、`hero-items`、`hero-equipment`、`hero-location`、`map-structure`、`map-tiles`、`flags`
+  - 战斗：`combat-overview`、`enemy-specials`、`enemy-aura`、`enemy-query`、`enemy-final`、`enemy-calculator`、`enemy-map-damage`、`enemy-combat-script`、`enemy-status-hooks`
+  - 其他：`events`、`replay-commands`、`data-plugins`
+
+**逐篇内容**
+
+- **D-21（概念·`data-vs-render`）** 数据端负责「算」、渲染端负责「画」；比喻「棋局 / 账本」对「棋盘 / 摄像机」；两者分别在 `src/data`、`src/client`；只讲好处，重点**录像验证**（只跑数据端）；附 mermaid 图；**不提**「渲染端不能反向推送」（留高级）；不提「后续再讲」。
+- **D-22（概念·`src-tour`）** 详讲 `src/data`、`src/client`、`src/content`、`src/constant.ts`；**一句带过** `src/bootstrap.ts`、`src/data.ts`（数据端入口、需外部 bootstrap）、`src/package.json`、`src/styles.less`（一般不需要动）；**不讲** `src/main.ts`、`src/App.vue`、`src/types/`（均已弃用）；含一张「该不该改」表。
+- **D-23（概念·`code-basics`）** 顺序 ①简明语法 ②模块与引入 ③类型入门；类型把**泛型比喻成「类型的函数」**；讲 `interface` → `implements` 约定（**建议但非强制**，不遵循也不会出问题）；三者都大概讲；结尾给 JS/TS 教程链接 `https://h5mota.com/bbs/thread/?tid=1018&p=3#p41`（该教程针对本引擎设计、更适合本引擎作者）。
+- **D-24（概念·`hooks`）** 钩子是什么；常用钩子族一览；**需求 → 钩子对照表**（核心）；`addHook` / `removeHook`；`hook/initialize.ts` 一笔带过；async 钩子只提哪些是；「钩子可能被非本对象触发」简说一句（多主对象时才需要判断，一般不会串）。
+- **D-25（基础·`data-state-overview`）** 数据端主对象 `state` 是访问一切入口；一张表列常用对象与获取方式：`hero` / `maps` / `flags` / `enemyManager` / `enemyContext` / `combat` / `eventSystem` / `pathfinding` / `tileStore` / `itemStore` / `mapStore` / `eventStore` / `faceManager` / `roleFace` / `replaySystem` / `loader` / `loadManager` / `getDataPlugin(id)` / `emitTip(...)`；按 L0–L3 **轻量分组标注**（分层不影响接口使用，细讲留高级）。放在基础接口组最前。
+- **D-26（基础·`hero-attribute`）** 属性列表；基础 vs 最终属性（`getBaseAttribute` / `getFinalAttribute`）；改基础属性 `set` / `add` / `mul` / `div`（经 `getModifiableAttribute()`）；**修饰器**：内置 `ValueModifier`（数值加减，`@system/value`）与 `PercentageModifier`（**按基础值算百分比**，`@system/percentage`）；`addModifier` / `deleteModifier`；提 `save` 参数——**不进存档时，应由外部其它系统负责分配该修饰器，避免读档后不一致**；`getAttribute()` 只读、`getIsolatedAttribute()` 试算；示例：攻击 +N 永久、防御 −X% 临时；指回 hooks 篇。
+- **D-27（基础·`hero-items`）** `IHeroItems`（`addItem` 可传负数、`Pick` 立刻生效、`getItemState`、`iterateItems`、`useItem` 仅 `Constant` / `Consumable`、`itemCount`）；**四种类别区分**：`Constant`（永久）/ `Consumable`（消耗）/ `Pick`（即捡即用）/ `Equipment`（装备，虽是道具但属单独系统）；道具效果提一句属**内容层**，并说明道具效果可调用哪些内容（`state`、道具数据）；示例：发黄钥匙 / 减道具 / 使用道具。
+- **D-28（基础·`hero-equipment`）** `IHeroEquipment`（`slots` / `canEquipTo` / `equip` 含 `autoUnload` / `unequip` / `equipped` / `getEquipped` / `getEquips`）；`IHeroEquipsStore`（`add` / `delete` / `get` / `instancesOf` / `instances` / `count`）；`IEquipmentState` 的 `value` / `percentage`（本质是修饰器）；`compareEquip` **简单讲**；**排序器不讲**（高级）；以「会用常用接口」为界。
+- **D-29（基础·`hero-location`）** 只讲**获取位置**（`hero.location` 的 `x` / `y` / `direction`、`hero.getLocation()`）与**获取楼层**（`floorId` / `map`）；移动位置、切换楼层留高级。
+- **D-30（基础·`map-structure`）** `IMapState` 楼层集合（`maps` / `getMap` / `getActiveMap` / `iterateAllMaps`）与**楼层激活**（active）；`IGameMap`（`layerList` / `eventLayer` / `tileStore` / 宽高）；`IMapLayer`（`alias` 别名、宽高）；**事件层本质就是个图层，归本篇**。
+- **D-31（基础·`map-tiles`）** 只讲 `getBlock` / `setBlock` / `removeBlock` / `putMapData` / `getMapData` / `iterateBlocks`；`getLocationData` 属低级需求，**留高级**。
+- **D-32（基础·`flags`）** 全局**可存档**变量系统；**所有接口都讲（含 `occupied`）**：`setField` / `getField` / `getOrInsert` / `getOrInsertComputed` / `deleteField` / `setFieldValue` / `addFieldValue` / `getFieldValue` / `getFieldValueDefaults`；会进存档；**建议**不滥用、不用的变量及时 `deleteField`；示例：记录开关 / 计数。
+- **D-33（战斗·`combat-overview`）** 伤害大致怎么算；流程（基础数据 → 光环 / 查询 / 最终 → 伤害计算 → 战前脚本 → 战斗 → 战后结算 + 状态钩子）；mermaid 图；末尾「流程步骤 → 对应文档」对照表；临界值不在本篇提。
+- **D-34（战斗·`enemy-specials`）** 特殊属性是什么、在数据里的样子、两类定义（无参 `defineNonePropertySpecial` / 有参 `defineCommonSerializableSpecial`）；`src/data/enemy/special.ts` 注册；**如何自定义新特殊属性**（步骤）；**「属性实现位置」对照表**（内置属性各自实现在哪）；**多个示例**（有参 / 无参、`name` / `desc` 用字符串与函数）；编辑器识别约定（`// {code} - {name}`、`/** {code} - {name} */`、`ISpecial{code}Value`、`#region` 不能删）；**怪物比较**简单说、一般不改、真要改参考高级教程。
+- **D-35（战斗·`enemy-aura`）** **先讲优先级**（高优先级可影响低优先级、反之不行；与查询效果共用优先级）；内置光环（普通 23 / 支援 24 / 特殊光环 26）；运作方式（写「转换器 + 视图」并注册，**不深讲为何**）；四种内置范围只列名（`FullRange` / `RectRange` / `ManhattanRange` / `RayRange`）；**多个自定义示例**：基础光环（减少周围怪物金币与经验）+ 高级特殊光环（给周围怪物上光环、优先级高于特殊光环）；借示例讲清基础光环 vs 特殊光环差距；`apply` 与 `applySpecial` 差别讲清。
+- **D-36（战斗·`enemy-query`）** **新增内容（引擎未内置）**；解决「特殊属性查询外部状态」；常规查询 `CommonQuery`（`registerCommonQueryEffect(code, effect)`，`apply(handler, special, query)`）与特殊查询 `SpecialQuery`（`registerSpecialQueryEffect(effect)`，`for(ctx)` → 修饰器 `shouldQuery` / `add` / `delete` / `modify`）；与光环共用优先级；**三个示例**：抱团（范围内每有一个带该属性的怪物就给自身加成）、同化（把范围内怪物特殊属性同化到自身，数值型加算叠加、否则取位置索引最小者）、号角（场上每有一只怪物就给自身加成）；说明三者能干什么即可；用**抱团**对比「用光环实现复杂度更高」；设计原因留高级。
+- **D-37（战斗·`enemy-final`）** 最终属性效果：**只影响自身、不依赖也不影响外部环境**的一段收尾调整；内置坚固(3)、模仿(8)；接口 `IEnemyFinalEffect`（`priority` + `apply`）、`registerFinalEffect`；**三方对比**（光环：不依赖外部但影响外部；查询：依赖外部仅影响自身；最终：两者皆无）；示例：**仿攻**（怪物攻击 = 玩家攻击）；`priority` 一句带过；回指 `combat-overview` 流程。
+- **D-38（战斗·`enemy-calculator`）** `IDamageCalculator`（`calculate` → `{ damage, turn }`、`getCriticalLimit`）；注册 `useCalculator`；**逐段导读**内置伤害公式并指明「加自己的属性加在哪一步」；**支援怪**较难 → 写「实在理解不了可暂时跳过」；示例：**等差数列属性**（怪物攻击每回合按固定值递增，等差公式）等；核心讲明调整的是 `f(enemy, hero)` 里的 **`f`**；**临界**：定义 + 现有约定（伤害值单调递减；不单调也可、但临界不准）+ 临界值唯一依赖「最后的伤害值」，**不讲二分过程**。
+- **D-39（战斗·`enemy-map-damage`）** 概念（领域 / 夹击 / 阻击 / 激光 / 伏击）；三部分（伤害视图 / 转换器 / 合并器，浅讲）；注册 `useConverter` / `useReducer`；内置五类表（`code` / 实现位置**写文档时核对源码**）；自定义示例：**受地形遮挡的激光**；合并器简单讲（决定一个点受多个地图伤害时取什么伤害类型，深入留高级）；**实际结算用户届时补**。
+- **D-40（战斗·`enemy-combat-script`）** 战斗脚本（战前 `before` 返回 `bool` 拦截、战后 `after` 结算，按 `priority`）；内置 `MainCombatScript`；注册 `addCombatScript`；**「脚本 vs 钩子」选型表**；战前示例「怪物拥有某特殊属性时无法与其战斗」、战后示例「战后玩家回复固定量生命值」；`priority` 一句。
+- **D-41（战斗·`enemy-status-hooks`）** 状态类属性（中毒 / 衰弱 / 重生）必须挂钩子；三类内置（中毒：`onStepEnd` + `onAfterTeleportTo` **两个钩子**；衰弱：`onAfterCombat` + 修饰器；重生：`onAfterCombat` + `onSetFloor` **跨钩子协同**）；注册在 `initialize.ts`；**强调一个状态可能要用多个钩子**；自定义示例「下次战斗伤害乘二」（并说明还要改伤害计算器，串起 `enemy-calculator`）；修饰器概念见 `hero-attribute`。
+- **D-42（其他·`events`）** 只讲**如何自定义新事件**（内建函数），不讲原理、不列内建全量；`BuiltInFunction`（`name` + `func(param, env)`）；`IBlockEventEnv` 常用字段（其余指向 API）；参数接口在 `types.ts`；注册在 `createEventRegistrations()`；内置示例导读；**自定义示例：设置 flag、勇士回血**；编辑器识别方式未设计完 → 文档留余地。
+- **D-43（其他·`replay-commands`）** 录像系统用途 + **核心原则**「玩家直接产生、会影响最终成绩的行为必须计入录像」并解释其含义；**如何新增自定义录像需改 `packages-user` 下的引擎内容**；主动录像 vs 被动录像（`ReplayCommandType.Active` / `Passive`）；`@shouldReplay` / `@ignoreReplay` 的功能与检测（`begin` / `end` 区间）；**不给示例**，后续其他教程引入自定义录像时直接链接过去。
+- **D-44（其他·`data-plugins`）** 插件是强拓展系统，中级只讲基础、**高级教程详解其工作原理**；`IDataPluginDefine`（`id` / `dependencies` / `awake` / `initialize` / `afterLoad`）；时机次序 `awake`（装配）→ `initialize`（**加载前**）→ `afterLoad`（加载后）；注册在 `src/data/plugin/list.ts` 的 `dataPlugins`；`state.addSaveableContent`；示例**占位**（待用户提供**较简单**插件，**不用商店插件**）；写明「是否纳入本中级篇取决于示例难度」。
+
+</decisions>
+
+<specifics>
+## Specific Ideas
+
+- 用户原话（目标）：「现在的项目使用文档过老，而且文档编写的结构也不够好，对于新人来说理解难度过高……目标是能让新人、不怎么懂代码的作者、有一定基础的作者等各种背景的作者都能获取到合理的指南，并且专门为 AI Agent 编写文档，让 Agent 有文档参考。」
+- 用户原话（时机）：「目前来看，文档可能还无法开始编写，因此本阶段先进行大致的讨论，待引擎整体完工后再进行规划执行。」
+- 用户原话（中级范围）：「中级教程主要针对 src 文件夹，一般不涉及新增文件，主要是针对 src 中的已有文件的解释与修改，不做深层讲解，只讲为了实现某些功能，我们需要调用什么接口……目前完工的部分主要是数据端，也就是 src/data 文件夹……最常修改的是战斗，所以是重点。」
+
+</specifics>
+
+<canonical_refs>
+## Canonical References
+
+**Downstream agents MUST read these before planning or implementing.**
+
+### 项目与阶段定义
+- `.planning/PROJECT.md` — 项目核心价值与项目级决策
+- `.planning/ROADMAP.md` — Phase 10 目标与依赖（Depends on: Phase 9）
+- `.planning/REQUIREMENTS.md` — 需求基线
+- `dev.md` — 项目开发规范（命名、流程、约束）
+- `AGENTS.md` — AI 行为约束（执行前须获批、命名须先反馈等）
+
+### 中级教程相关源码（写作时以当时代码为准）
+- `src/data/enemy/*`（`special.ts` / `calculator.ts` / `aura.ts` / `mapDamage.ts` / `final.ts` / `script.ts` / `hook.ts` / `comparer.ts`）
+- `src/data/event/*`、`src/data/hero/*`、`src/data/hook/*`、`src/data/replay/*`、`src/data/plugin/*`
+- `packages-user/data-common/src/replay/types.ts` — 录像指令类型（`ReplayCommandType` / `@shouldReplay` / `@ignoreReplay`）
+- `packages-user/data-base/src/hero/*`、`.../map/*`、`.../flag/*` — 勇士 / 地图 / Flag 接口
+- `packages-user/data-system/src/combat/types.ts` — 战斗相关接口（含查询效果）
+- `packages-user/data-state/src/types.ts`、`packages-user/data-system/src/types.ts`、`packages-user/data-base/src/types.ts`、`packages-user/data-common/src/types.ts` — 数据端主对象分层字段来源
+
+### 文档站点现状（重构对象）
+- `docs/index.md` — VitePress 首页（hero / features）
+- `docs/.vitepress/config.ts`、`docs/.vitepress/api.ts`、`docs/.vitepress/init.ts` — 站点配置与 API 构建
+- `docs/api/index.md` — 按包 API 列表（现含 legacy 包，本阶段将排除）
+- `docs/guide/*`、`docs/dev/*`、`docs/logger/*` — 待删除重写的旧内容
+
+</canonical_refs>
+
+<code_context>
+## Existing Code Insights
+
+### 文档站点结构（已核实）
+- VitePress 站点位于 `docs/`，配置在 `docs/.vitepress/`。
+- `docs/api/` 按包生成（`motajs-*` / `user-*` 各一目录 + `index.md` 列表）。
+- `docs/guide/` 为面向作者的使用指南（quick-start、coding、diff、audio、system、implements、ui）。
+- `docs/dev/` 为引擎接口设计文档（如 `template.md` 的「需求综述 → 需求理解 → 接口设计分析 → 实现思路」方法论）。
+- `docs/logger/` 为 logger 相关文档。
+
+### 数据端主对象分层（first-class 事实）
+- Layer 0 `IDataCommon`（`data-common/src/types.ts`）：`tileStore` / `itemStore` / `mapStore` / `eventStore` / `roleFace` / `faceManager` / `replaySystem` / `emitTip`。
+- Layer 1 `IStateBase`（`data-base/src/types.ts`）：`maps` / `hero` / `enemyManager` / `flags` / `addSaveableContent` / `getSaveableContent`。
+- Layer 2 `IStateSystem`（`data-system/src/types.ts`）：`enemyContext` / `combat` / `eventSystem` / `pathfinding`。
+- Layer 3 `ICoreState`（`data-state/src/types.ts`）：`loader` / `loadManager` / `getDataPlugin` / `load` / `bindSaveableExecuter`。
+
+### 关键接口事实（写作时参考）
+- 修饰器：`ValueModifier`（`@system/value`，`modify = value + this.value`）、`PercentageModifier`（`@system/percentage`，`modify = value + baseValue * this.value`）。
+- 道具类别 `ItemCategory`：`Unknown` / `Constant` / `Consumable` / `Pick` / `Equipment`。
+- 录像：`ReplayCommandType.Active` / `Passive`；`ReplayCode` 枚举；`@shouldReplay` / `@ignoreReplay` 为安全检测修饰器。
+- 战斗查询：`IEnemyCommonQueryEffect` / `IEnemySpecialQueryEffect`（引擎未在 `src` 内置）。
+
+### 相关约定
+- `dev.md`：Markdown 文档文件名使用连字符命名法。
+
+</code_context>
+
+<deferred>
+## Deferred Ideas
+
+- **初级文档**（第 2 部分）完整范围与内容 —— 待编辑器实装后再规划。
+- **高级教程**（第 4 部分）完整范围与内容 —— 待引擎整体完工后再规划；中级教材中明确「留高级」的项包括：渲染端结构性内容、地图通行性/移动/踩踏触发、静态与动态图块设计、光环/查询的设计原理、插件系统工作原理、`map-tiles.getLocationData`、装备排序器、修饰器的底层原理、数据端分层原理、位置移动与切换楼层。
+- **总览**（第 1 部分）—— 待文档整体做完后最后写。
+- **Agent 参考**（第 6 部分）——「游戏数值设计、游戏地图设计」的具体内涵与内容来源。
+- 中级教程中标注「占位 / 待提供」的示例（`data-plugins` 的简单插件示例）。
+- **API 参考（第 5 部分）正文重建** —— `docs/api/` 旧内容已随本批（Wave 0 / 10-01）删除，生成机制 `docs/.vitepress/api.ts` 保留；新的按包 API 正文待后续派发重建。
+
+</deferred>
+
+---
+
+*Phase: 10-docs-restructure*
+*Context gathered: 2026-10-14*
+*Context updated: 2026-10-17（旧内容删除并入本批 Wave 0 / 10-01；中级教程第一批 24 篇讨论结果沿用）*

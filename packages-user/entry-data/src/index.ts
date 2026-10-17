@@ -1,7 +1,5 @@
 import { createMota } from './mota';
 import { create } from './create';
-import { loading } from '@user/data-base';
-import { Patch } from '@motajs/legacy-common';
 import { logger } from '@motajs/common';
 
 export function createData() {
@@ -14,10 +12,6 @@ export function createData() {
                 `此时录像验证中可以看到完整正确的报错栈。调试完毕后，记得将它重新设为 false`
         );
     }
-
-    loading.once('coreInit', () => {
-        Patch.patchAll();
-    });
 }
 
 export * from './mota';

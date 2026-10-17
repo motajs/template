@@ -1,5 +1,11 @@
-import { logger } from '@motajs/common';
-import { IGameEventStore, ignoreReplay } from '@user/data-common';
+import {
+    Hookable,
+    HookController,
+    IHookBase,
+    IHookController,
+    logger
+} from '@motajs/common';
+import { IGameEventStore, shouldReplay } from '@user/data-common';
 import { AnonTokyoInterpreter } from '@motajs/anon-tokyo';
 import {
     EventExecuteMode,
@@ -7,17 +13,29 @@ import {
     IGameEventExecutor,
     IBlockEventEnv,
     IBlockEventParam,
-    IGameEventInvocation
+    IGameEventInvocation,
+    IGameEventExecutorHooks
 } from './types';
 
-export class EventExecutor implements IGameEventExecutor {
+export class EventExecutor
+    extends Hookable<IGameEventExecutorHooks>
+    implements IGameEventExecutor
+{
     mode: EventExecuteMode = EventExecuteMode.Normal;
     reduce: EventReduceMode = EventReduceMode.NoReduce;
 
     constructor(
         readonly interpreter: AnonTokyoInterpreter,
         private readonly storeRef: () => IGameEventStore | null
-    ) {}
+    ) {
+        super();
+    }
+
+    protected createController(
+        hook: Partial<IHookBase>
+    ): IHookController<IHookBase> {
+        return new HookController(this, hook);
+    }
 
     setMode(mode: EventExecuteMode): void {
         this.mode = mode;
@@ -52,12 +70,12 @@ export class EventExecutor implements IGameEventExecutor {
         }
     }
 
-    // @ts-expect-error 泛型无法推导
-    @ignoreReplay('事件一般由其他动作被动触发，不应计入录像')
+    @shouldReplay('Executing event should be replayed.')
     async execute<R = void>(
         events: IGameEventInvocation[],
         param: IBlockEventParam
     ): Promise<R> {
+        this.forEachHook(hook => hook.onBeforeExecuteEvent?.(events, param));
         // 事件执行
         const results: any[] = [];
         for (const invocation of events) {
@@ -87,6 +105,10 @@ export class EventExecutor implements IGameEventExecutor {
             }
         }
 
-        return this.reduceResults(this.reduce, results);
+        const reduced = this.reduceResults(this.reduce, results);
+        this.forEachHook(hook =>
+            hook.onAfterExecuteEvent?.(events, param, reduced)
+        );
+        return reduced;
     }
 }
