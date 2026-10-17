@@ -42,9 +42,7 @@
 | 25 | 捕捉 | 无 |
 | 26 | 特殊光环 | `ISpecial26Value` |
 
-:::warning 地图伤害转换器编号未对齐
-`src/data/enemy/mapDamage.ts` 里的转换器目前读取的编号与上表**不一致**：它把 15 当作领域、18 当作阻击、24 当作激光（详见[地图伤害](./enemy-map-damage.md)）。以**本表**为准理解「编号代表哪种机制」；地图伤害的这条偏差属于转换器尚未对齐，挂上内置属性不一定立刻产生对应效果。
-:::
+地图伤害使用的也是上表的编号：转换器读取领域 13、夹击 14、阻击 16、激光 22、捕捉 25，挂上对应的内置属性就会生效（详见[地图伤害](./enemy-map-damage.md)）。
 
 ## 在数据里的样子
 
@@ -160,7 +158,7 @@ map.set(
 |----------|----------|------|
 | 调参类（先攻、魔攻、连击、破甲、反击、净化、固伤、仇恨、自爆等） | `src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate` | 只改变伤害公式的结果 |
 | 坚固、模仿 | `src/data/enemy/final.ts` 的 `MainEnemyFinalEffect.apply` | 只修改怪物自身基础属性 |
-| 领域、夹击、阻击、激光、伏击 | `src/data/enemy/mapDamage.ts` | 伤害视图 + 转换器 |
+| 领域、夹击、阻击、激光、捕捉 | `src/data/enemy/mapDamage.ts` | 伤害视图 + 转换器 |
 | 光环、支援、特殊光环 | `src/data/enemy/aura.ts` | 光环视图 + 转换器 |
 | 中毒的每步效果 | `src/data/enemy/hook.ts` 的 `EnemyMoveHooks.handlePoison` | 移动钩子 |
 | 中毒的瞬移效果 | `src/data/enemy/hook.ts` 的 `EnemyPathfindingHooks.handlePoison` | 寻路钩子 |

@@ -142,4 +142,49 @@
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
 - 非阻断项（N-01..N-18）：本轮仍不修，留待用户判断；N-4 已知、待用户提供示例后处理。
 
+---
+
+## 第 3 轮 · 复审问题清单（round 3 recheck）
+
+**触发：** 用户已在 `src/data/enemy/` 对齐特殊属性编号（提交 `2494629 fix: 属性编号问题`），第 2 轮记录的「编号未对齐 / 待补齐」状态解除。据此复核第 2 轮的遗留项，并处理读者新提出的 4 个困惑点。
+
+### 原阻断项复核
+
+| # | 结论 | 说明 |
+|---|------|------|
+| B-03 | 已消除 | `special.ts` 注册的 0–26 与 `mapDamage.ts` 转换器读取的编号现已一致，文档可直接给出权威编号表。 |
+
+### 新的可操作困惑点（4）
+
+| # | 问题 | 定位 |
+|---|------|------|
+| R3-01 | 旧文残留「15 双重含义」的冲突叙述，读者仍会以为 15 既可能是仇恨又可能是领域 | `enemy-map-damage.md` |
+| R3-02 | 旧文仍写「27 / 伏击」，而现行内置特殊属性是 25 / 捕捉 | `enemy-map-damage.md`、`enemy-specials.md` |
+| R3-03 | `registerCommonQueryEffect(code, effect)` 与 `registerSpecialQueryEffect(effect)` 签名不对称，未解释原因 | `enemy-query.md` |
+| R3-04 | 「同化」的文字描述（范围内、非数值取索引最小）与示例逻辑（遍历全场、数值加算）不符 | `enemy-query.md` |
+
+## 第 3 轮迭代记录（Task 2 · round 3）
+
+**本轮目标：** 按已对齐的源码修正地图伤害编号与命名，并消除 R3-01..R3-04。本轮为迭代上限内的最后一轮。
+
+### 逐条处置
+
+| # | 处置 | 改动文件 |
+|---|------|----------|
+| B-03 / R3-01 | 删除两列「转换器读取的 code vs `special.ts` code」对照表与「编号未对齐」warning，改为单列权威表：领域 13、夹击 14、阻击 16、激光 22、捕捉 25；明确「挂上对应内置属性即可生效」；删去 15/16/18/24/27 的全部偏差叙述，15 现在只表示仇恨。 | `enemy-map-damage.md` |
+| B-03 | `enemy-specials.md` 的「转换器编号未对齐」warning 替换为一句对齐说明（转换器读取同一组 13/14/16/22/25）。 | `enemy-specials.md` |
+| B-03 | `enemy-combat-script.md` 的 code 18 注解改为「18 = 无敌，地图伤害使用同一套编号（阻击是 16），无编号冲突」。 | `enemy-combat-script.md` |
+| R3-02 | 全文「伏击」改为「捕捉」（code 25）：表项、开篇枚举、实现位置表；并注明视图类名沿用 `AmbushDamageView`（历史命名）。 | `enemy-map-damage.md`、`enemy-specials.md` |
+| R3-02 | 明确捕捉伤害恒为 0、类型为 `MapDamageType.Unknown`、只产生 `extra.catch`，这是设计如此，不是未补齐的功能。 | `enemy-map-damage.md` |
+| R3-02 | 删去「实际结算仍在补齐」：`hook.ts` 的 `handleMapDamage` 已接通扣血、阻击后退与捕捉强制战斗。 | `enemy-map-damage.md` |
+| R3-03 | 补充一句签名差异的原因：常规查询绑定在单个 code 上，引擎需按 code 找到触发它的属性；特殊查询面向整只怪物、由 `shouldQuery` 自行筛选，可一次改动多个属性，故不绑定 code。 | `enemy-query.md` |
+| R3-04 | 重写「同化」描述以匹配示例：用 `ctx.iterateEnemy()` 遍历全场（如需范围改用 `ctx.scanRange`）；自己没有的属性按位置索引从小到大照抄，已有的数值型属性与场上其他怪物加算叠加；开篇「附近怪物」改为「其他怪物」。 | `enemy-query.md` |
+
+### 校验
+
+- 源码核对：`src/data/enemy/special.ts`（`map.set` 0..26，13 领域 / 14 夹击 / 15 仇恨 / 16 阻击 / 18 无敌 / 20 固伤 / 22 激光 / 25 捕捉）、`src/data/enemy/mapDamage.ts`（转换器读取 13/14/16/22/25；`BetweenDamageView` 对侧 `hasSpecial(14)`；`AmbushDamageView` 读取 25 并返回 0 伤害 + `extra.catch`）、`src/data/enemy/calculator.ts`（18 无敌、20 固伤）、`src/data/enemy/hook.ts`（`handleMapDamage` 已结算）、`packages-user/data-system/src/combat/types.ts`（`registerCommonQueryEffect(code, effect)` / `registerSpecialQueryEffect(effect)`）。
+- 结构门禁：24 篇全部 CRLF、单 H1（`STRUCT-DONE`，无 `LF-ONLY` / `H1-COUNT`）。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+- 结论：第 2 轮遗留的 B-03 与 R3-01..R3-04 全部消除；本轮为第 3 轮（上限），未发现新的阻断性理解问题。
+
 
