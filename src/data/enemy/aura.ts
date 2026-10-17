@@ -247,8 +247,8 @@ export class SpecialAura implements IEnemyAuraView<
     ISpecial26Value
 > {
     readonly priority: number = 20;
-    readonly couldApplyBase: boolean = true;
-    readonly couldApplySpecial: boolean = false;
+    readonly couldApplyBase: boolean = false;
+    readonly couldApplySpecial: boolean = true;
     readonly range: IRange<IRectRangeParam | IManhattanRangeParam | void>;
 
     constructor(
