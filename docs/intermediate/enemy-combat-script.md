@@ -52,7 +52,7 @@ state.combat.addCombatScript(new MainCombatScript());
 
 ## 战前示例：拥有某特殊属性时无法战斗
 
-下面的脚本检查怪物是否拥有 code 18 的特殊属性（无敌），有则直接放弃战斗（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
+下面的脚本检查怪物是否拥有 code 18 的特殊属性（无敌，编号见[特殊属性](./enemy-specials.md)的「内置属性编号表」），有则直接放弃战斗（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
 
 ```ts
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
@@ -83,6 +83,8 @@ state.combat.addCombatScript(new SealCombatScript());
 ```
 
 `priority = 100` 让它先于内置脚本执行；返回 `false` 后，后续战前脚本、战后脚本与 `onAfterCombat` 钩子都不会执行。
+
+这里的 18 号在内置属性编号表里就是「无敌」。地图伤害转换器把 18 读作「阻击」是它自身的编号未对齐（见[地图伤害](./enemy-map-damage.md)），与本篇的判定无关。
 
 ## 战后示例：战后玩家回复固定量生命值
 

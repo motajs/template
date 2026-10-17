@@ -6,7 +6,7 @@
 
 ## 内建函数（BuiltInFunction）
 
-事件里能调用的每一个动作都叫**内建函数**，接口为 `BuiltInFunction`：
+事件里能调用的每一个动作都叫**内建函数**，接口为 `BuiltInFunction`（来自 `@motajs/anon-tokyo`——引擎里负责把事件脚本解释执行的包，其归属层级见 [src 导览](./src-tour.md) 的「包从哪来」）：
 
 ```ts
 interface BuiltInFunction<P, E> {
@@ -93,7 +93,7 @@ export function createEventRegistrations(): BuiltInFunction[] {
 
 ## 示例：设置 Flag
 
-下面这个事件函数把参数里的 Flag 名与值写进 Flag 系统（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
+下面这个事件函数把参数里的 Flag 名与值写进 Flag 系统。示例为了紧凑，把参数接口 `ISetFlagEventParam` 直接写在同一个代码块里；实际编写时按上文「参数接口」一节，把它放进 `src/data/event/types.ts`，只把事件函数类放到 `src/data/event/` 下（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
 
 ```ts
 import { BuiltInFunction } from '@motajs/anon-tokyo';
@@ -133,7 +133,7 @@ Flag 的读写接口见 [Flag 变量](./flags.md)。
 
 ## 示例：勇士回血
 
-再写一个让勇士回复生命值的事件函数。它读取参数里的回复量，通过可修改属性接口加到勇士的 `hp` 上：
+再写一个让勇士回复生命值的事件函数。它读取参数里的回复量，通过可修改属性接口加到勇士的 `hp` 上（参数接口同样应放入 `src/data/event/types.ts`，这里为紧凑仍内联书写）：
 
 ```ts
 import { BuiltInFunction } from '@motajs/anon-tokyo';

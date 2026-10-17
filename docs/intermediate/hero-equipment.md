@@ -13,7 +13,8 @@
 - `unequip(slot)`：卸下指定槽的装备；
 - `equipped(uid)`：查询某装备是否处于装备状态；
 - `getEquipped(slot)`：取指定槽的装备 uid；
-- `getEquips()`：按槽位顺序取所有已装备实例。
+- `getEquips()`：按槽位顺序取所有已装备实例；
+- `compareEquip(equipA, equipB, slot)`：比较两件装备在同一槽位上的属性表现，详见下文「比较装备」。
 
 `slot` 可以传装备槽索引（数字）或槽位名称（字符串）。`EquipStatus` 有三个取值：`CanEquip`（可以直接装备）、`CannotEquip`（不能装备）、`NeedReplace`（需要替换槽位上的装备）。
 

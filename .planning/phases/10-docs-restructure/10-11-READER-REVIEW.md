@@ -90,4 +90,56 @@
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
 - 非阻断项（N-01..N-18）：本轮不修，留待用户判断。
 
+---
+
+## 第 2 轮 · 复审问题清单（round 2 recheck）
+
+**复审结果：** 首轮 13 条阻断性问题中 **12 条已消除**；`B-03` 仍阻断，另有 6 个新的可操作困惑点。
+
+### 仍阻断（1）
+
+| # | 问题 | 定位 |
+|---|------|------|
+| B-03 | 特殊属性 `code` 仍无统一编号表，读者不知哪个号对应哪种机制；且同一数字在不同页面含义不同（18 在 `enemy-combat-script.md` 作「无敌」，在 `enemy-map-damage.md` 作「阻击」），内置属性无法据此配置 | `enemy-specials.md`、`enemy-map-damage.md`、`enemy-combat-script.md` |
+
+### 新的可操作困惑点（6）
+
+| # | 问题 | 定位 |
+|---|------|------|
+| R2-01 | `@motajs/anon-tokyo`（`BuiltInFunction` 的来源）从未解释 | `events.md` |
+| R2-02 | 内置光环 code 23 经 `setValue({...})` 使用的字段（`range/square/hpBuff/atkBuff/defBuff`）未定义 | `enemy-aura.md` |
+| R2-03 | `initializeEnemy` 被战斗各篇反复引用却从未介绍 | `enemy-specials.md`、`enemy-aura.md`、`enemy-map-damage.md` |
+| R2-04 | 参数接口该放哪（`src/data/event/types.ts`）与内联示例混淆 | `events.md` |
+| R2-05 | `compareEquip` 在正文使用，却未列入 `IHeroEquipment` 接口清单 | `hero-equipment.md` |
+| R2-06 | code-43 示例中 `FaceGroup.Dir4` / `IFaceHandler` / `dir.mapMovement()` / `MapDamageType.Layer` 未作注解 | `enemy-map-damage.md` |
+
+### 记录但不修（供用户判断）
+
+- N-4：`data-plugins.md` 的示例仍为占位（已知，待用户提供「较简单插件」，D-44）。
+
+## 第 2 轮迭代记录（Task 2 · round 2）
+
+**本轮目标：** 消除仍阻断的 `B-03`，并处理 6 个新的可操作困惑点（`R2-01..R2-06`）。
+
+### 逐条处置
+
+| # | 处置 | 改动文件 |
+|---|------|----------|
+| B-03 | `enemy-specials.md` 新增「内置属性编号表」小节：从**当前** `src/data/enemy/special.ts` 的 `map.set(code, ...)` 逐条抄录 `0..26` 的 code→名称（0 空 / 1 先攻 / 2 魔攻 / 3 坚固 / 4 n连击 / 5 破甲 / 6 反击 / 7 净化 / 8 模仿 / 9 吸血 / 10 中毒 / 11 衰弱 / 12 诅咒 / 13 领域 / 14 夹击 / 15 仇恨 / 16 阻击 / 17 自爆 / 18 无敌 / 19 退化 / 20 固伤 / 21 重生 / 22 激光 / 23 光环 / 24 支援 / 25 捕捉 / 26 特殊光环），并附各 code 的参数形态。表下以 warning 说明地图伤害转换器读取的编号与内置表**不一致**，不臆造「已对齐」的编号。核心信息按用户口径落定：以 `special.ts` 注册的编号为**权威**，转换器偏差标注为「编号未对齐 / 待补齐」。 | `enemy-specials.md` |
+| B-03 | `enemy-map-damage.md` 的「编号未对齐」warning 明确点出 18 号的双重含义（`special.ts` 定义 18 = 无敌，转换器却读作阻击），并说明 16、24 同样不一致；保留「改用转换器真正读取的 code，或改转换器使其对齐」的可操作二选一。 | `enemy-map-damage.md` |
+| B-03 | `enemy-combat-script.md` 的 code 18 示例注明「18 = 无敌」（链到编号表），并说明地图伤害转换器把 18 读作阻击是转换器自身未对齐，与本篇判定无关——两处不再在无提示的情况下给出同一数字的两种含义。 | `enemy-combat-script.md` |
+| R2-01 | `events.md` 的 `BuiltInFunction` 注明来自 `@motajs/anon-tokyo`（负责解释执行事件脚本的包）；`src-tour.md`「包从哪来」把 `@motajs/anon-tokyo` 补为该层示例。 | `events.md`、`src-tour.md` |
+| R2-02 | `enemy-aura.md` 内置光环表下补 `ISpecial23Value` 字段说明表（`range` / `square` / `hpBuff` / `atkBuff` / `defBuff`，已核对 `special.ts`）。 | `enemy-aura.md` |
+| R2-03 | `enemy-specials.md`、`enemy-aura.md` 补 `initializeEnemy` 一句介绍（`src/data/enemy/initialize.ts` 中集中注册内置怪物功能的入口函数），并说明内置与自定义走同一注册流程。 | `enemy-specials.md`、`enemy-aura.md` |
+| R2-04 | `events.md` 两处示例注明：参数接口实际应放入 `src/data/event/types.ts`，示例为紧凑才内联书写。 | `events.md` |
+| R2-05 | `hero-equipment.md` 的 `IHeroEquipment` 接口清单补入 `compareEquip(equipA, equipB, slot)`。 | `hero-equipment.md` |
+| R2-06 | `enemy-map-damage.md` code-43 示例补 `FaceGroup.Dir4` / `dir.mapMovement()` / `IFaceHandler` / `IFaceDescriptor` / `MapDamageType.Layer` 各一句简短注解。 | `enemy-map-damage.md` |
+
+### 校验
+
+- 源码核对：`src/data/enemy/special.ts`（`map.set` 0..26）、`src/data/enemy/mapDamage.ts`（转换器读取 15/16/18/24/27）、`src/data/enemy/types.ts`（`MapDamageType`：`Unknown/Zone/Layer/Repulse/Between`）、`src/data/enemy/initialize.ts`（`initializeEnemy` 集中注册）。
+- 结构门禁：本轮被改的 7 篇（`enemy-specials`、`enemy-map-damage`、`enemy-combat-script`、`src-tour`、`events`、`enemy-aura`、`hero-equipment`）均 CRLF、单 H1。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+- 非阻断项（N-01..N-18）：本轮仍不修，留待用户判断；N-4 已知、待用户提供示例后处理。
+
 

@@ -8,6 +8,44 @@
 
 访问怪物特殊属性的入口见[战斗总览](./combat-overview.md)。
 
+## 内置属性编号表
+
+下表是 `src/data/enemy/special.ts` 里 `map.set(code, ...)` 当前注册的全部内置属性，code 与名称一一对应。判断「某个数字代表哪种机制」时以本表为准：
+
+| code | 名称 | 参数 |
+|------|------|------|
+| 0 | 空 | 无 |
+| 1 | 先攻 | 无 |
+| 2 | 魔攻 | 无 |
+| 3 | 坚固 | 无 |
+| 4 | n连击 | 每回合攻击次数 |
+| 5 | 破甲 | 附加伤害百分比 |
+| 6 | 反击 | 附加伤害百分比 |
+| 7 | 净化 | 附加伤害倍数 |
+| 8 | 模仿 | 无 |
+| 9 | 吸血 | `ISpecial9Value`（比例与是否加到自身） |
+| 10 | 中毒 | 每步损失生命值 |
+| 11 | 衰弱 | 攻防下降比例 |
+| 12 | 诅咒 | 无 |
+| 13 | 领域 | `ISpecial13Value` |
+| 14 | 夹击 | 无 |
+| 15 | 仇恨 | 无 |
+| 16 | 阻击 | 伤害值 |
+| 17 | 自爆 | 无 |
+| 18 | 无敌 | 无 |
+| 19 | 退化 | `ISpecial19Value`（攻防下降值） |
+| 20 | 固伤 | 固定伤害值 |
+| 21 | 重生 | 无 |
+| 22 | 激光 | 伤害值 |
+| 23 | 光环 | `ISpecial23Value` |
+| 24 | 支援 | 无 |
+| 25 | 捕捉 | 无 |
+| 26 | 特殊光环 | `ISpecial26Value` |
+
+:::warning 地图伤害转换器编号未对齐
+`src/data/enemy/mapDamage.ts` 里的转换器目前读取的编号与上表**不一致**：它把 15 当作领域、18 当作阻击、24 当作激光（详见[地图伤害](./enemy-map-damage.md)）。以**本表**为准理解「编号代表哪种机制」；地图伤害的这条偏差属于转换器尚未对齐，挂上内置属性不一定立刻产生对应效果。
+:::
+
 ## 在数据里的样子
 
 数据端的怪物对象（`IReadonlyEnemy`）提供三个读取接口：
@@ -112,7 +150,7 @@ map.set(
 );
 ```
 
-`createSpecials(state)` 返回 `Map<number, SpecialCreation<any>>`。`initializeEnemy` 会遍历这个 Map，逐个调用 `state.enemyManager.registerSpecial(code, cons)`，所以新增属性只要放进这个 Map 就会完成注册。
+`createSpecials(state)` 返回 `Map<number, SpecialCreation<any>>`。`initializeEnemy`（`src/data/enemy/initialize.ts`，数据端集中注册内置怪物功能的入口函数）会遍历这个 Map，逐个调用 `state.enemyManager.registerSpecial(code, cons)`。也就是说，内置属性与你自己新增的属性走的是同一套注册流程：只要把新属性放进这个 Map，它就会随 `initializeEnemy` 一起完成注册。
 
 ## 属性实现位置
 
