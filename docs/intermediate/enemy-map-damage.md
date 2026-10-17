@@ -49,7 +49,7 @@ mapDamage?.useConverter(new MainMapDamageConverter());
 另外两点以当前代码为准：
 
 - `AmbushDamageView` 返回 `MapDamageType.Unknown`，因为 `MapDamageType` 没有「伏击」这一项；它的作用是产生 `extra.catch`，由移动钩子触发强制战斗。
-- `BetweenDamageView` 读取全局 `core.flags.betweenAttackMax`，决定夹击伤害是否取「半血、当前怪物伤害、对侧怪物伤害」三者的较小值；对侧怪物通过 `hasSpecial(16)` 识别。
+- `BetweenDamageView` 读取全局 flag `betweenAttackMax`，决定夹击伤害是否取「半血、当前怪物伤害、对侧怪物伤害」三者的较小值；对侧怪物通过 `hasSpecial(16)` 识别。
 
 ## 示例：受地形遮挡的激光
 
