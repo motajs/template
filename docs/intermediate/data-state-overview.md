@@ -1,10 +1,10 @@
 # 数据端总览
 
-数据端的一切都从主对象 `state` 开始。本篇列出作者最常需要的对象与接口，并说明如何从 `state` 拿到它们，作为中级教程其余篇章的查表入口。
+数据端的一切都从一个叫 `state` 的对象开始。本篇先讲清 `state` 是什么、怎样拿到它，再列出作者最常需要的对象与接口，作为中级教程其余篇章的查表入口。
 
 ## state：一切入口
 
-`state` 是数据端的主对象（类型为 `ICoreState`），地图、勇士、怪物、战斗、Flag 等全部挂在它下面。在数据端代码里，它通常由框架传入——例如道具效果拿到 `(item, state)`、插件拿到 `state`；你也可以从任一数据端对象向外取得它。
+`state` 是数据端的主对象（类型为 `ICoreState`），可以把它想成整个游戏的**总目录**：勇士、地图、怪物、战斗、Flag（全局可存档变量）等每一个子系统都挂在它下面。拿到 `state`，就等于拿到了通往整个数据端的入口。
 
 ```ts
 // 从 state 出发访问勇士、地图与 Flag
@@ -13,9 +13,47 @@ const floorId = state.hero.location.floorId;
 const cleared = state.flags.getFieldValue('cleared');
 ```
 
+## state 从哪来
+
+写代码的位置不同，`state` 的来路也不同，常见的有三类。
+
+**一是框架作为参数传入。** 你写的函数由框架调用时，`state` 常常就是它的一个参数：
+
+- 道具效果：`useEffect(item, state)`，主对象是第二个参数；
+- 数据插件：`awake(state, ...)`、`initialize(state, ...)`、`afterLoad(state, ...)`，主对象是第一个参数；
+- 事件内建函数：从环境对象上取 `env.state`。
+
+```ts
+// 道具效果：state 由框架作为第二个参数传入
+function useEffect(item, state) {
+    state.hero.getModifiableAttribute().add('atk', 5);
+}
+```
+
+**二是从处理对象上取。** 战斗、怪物等上下文里的处理对象自带一个 `state`，直接读 `handler.state` 即可，不必再向外找。
+
+```ts
+// 处理对象上带着主对象
+handler.state.flags.setFieldValue('battle-start', true);
+```
+
+**三是存到自己的对象上。** 自己写的类可以在构造时接收 `state` 并保存下来，之后用 `this.state` 访问它。
+
+```ts
+class MySystem {
+    constructor(private readonly state) {}
+
+    mark() {
+        this.state.flags.setFieldValue('my-system', true);
+    }
+}
+```
+
+本教程后续的代码示例都假设 `state` 已经在当前作用域中（由上面任一方式获得），因此示例不再重复它的来源。
+
 ## 常用对象与获取方式
 
-下表把最常用的对象与接口列在一起：
+下表把最常用的对象与接口列在一起——只要拿到了 `state`，就能按表中的方式访问它们：
 
 | 对象 | 获取方式 | 用途 | 分层 |
 | --- | --- | --- | --- |
