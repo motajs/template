@@ -52,6 +52,13 @@
 - `hasSpecial(code)`：判断是否拥有指定特殊属性；
 - `iterateSpecials()`：迭代全部特殊属性。
 
+其中 `getSpecial<T>(code)` 的尖括号 `T` 是**这条特殊属性的参数类型**，也就是它 `value` 的类型：连击（code 4）的 `value` 是次数（`number`），光环（code 23）的 `value` 是 `ISpecial23Value` 对象。写 `<T>` 就是在告诉引擎「我要按这个类型读它的 `value`」：
+
+- 参数是数字：`enemy.getSpecial<number>(4)`，之后 `value` 就是 `number`，可以直接参与计算；
+- 参数是对象：`enemy.getSpecial<ISpecial23Value>(23)`，之后 `value.range`、`value.hpBuff` 等字段都能直接读取。
+
+`T` 也可以省略（写成 `getSpecial(4)`）。但省略后引擎推断不出具体类型，`value` 会退化为一个取不到具体类型的宽泛类型，必须自己断言之后才能当数字或对象用。因此读取已知属性时，建议把 `<T>` 显式写出来。`T` 的写法（尖括号里填类型）就是[代码基础](./code-basics.md)里讲的泛型。
+
 每个特殊属性对象实现 `ISpecial<T>`，常用成员是 `code`、`value` 与 `getDescription()`：
 
 ```ts
@@ -80,26 +87,37 @@ if (enemy.hasSpecial(3)) {
 `config` 的 `name`、`desc`、`color` 都可以写成字符串，也可以写成 `(special) => string` 的函数。需要根据参数变化显示不同文字时，就写成函数：
 
 ```ts
-// 无参：坚固
+// 无参：坚固。用 defineNonePropertySpecial 定义，value 为空，所以不需要默认值
 map.set(
-    3,
+    3, // 往属性表里登记 code 3
     defineNonePropertySpecial(3, {
-        name: '坚固',
-        desc: '怪物防御不小于勇士攻击-1。',
-        color: '#C0B088'
+        name: '坚固', // 名称：固定字符串，直接显示
+        desc: '怪物防御不小于勇士攻击-1。', // 描述：固定字符串
+        color: '#C0B088' // 名称显示颜色
     })
 );
 
-// 有参：n连击，默认 2 次
+// 有参：n连击。用 defineCommonSerializableSpecial 定义
 map.set(
     4,
-    defineCommonSerializableSpecial(4, 2, {
-        name: special => `${special.value}连击`,
-        desc: special => `怪物每回合攻击${special.value}次。`,
-        color: '#FE7'
-    })
+    defineCommonSerializableSpecial(
+        4, // code
+        2, // value 的默认值：默认每回合攻击 2 次
+        {
+            name: special => `${special.value}连击`, // 名称写成函数：按 value 拼出「2连击」
+            desc: special => `怪物每回合攻击${special.value}次。`, // 描述随 value 变化
+            color: '#FE7'
+        }
+    )
 );
 ```
+
+`name`、`desc`、`color` 既可以直接写字符串，也可以写成 `(special) => string` 的函数，区别在于文字是否要随参数变化：
+
+- 写字符串时，这段文字是固定的，例如坚固永远显示「坚固」；
+- 写函数时，引擎会在需要显示时把这条特殊属性对象传进来（就是参数 `special`），你就能用它的 `value` 拼出动态文字——上面的连击在 `value` 为 2 时显示「2连击」，为 3 时显示「3连击」。
+
+函数这种「接收参数、返回结果」的写法，见[代码基础](./code-basics.md)的函数一节。
 
 参数可以不只是数字。比如吸血用对象保存比例与是否加到自身：
 
@@ -114,11 +132,13 @@ export interface ISpecial9Value {
 
 map.set(
     9,
+    // 参数是对象时，把类型写进尖括号，value 默认值也是一个对象
     defineCommonSerializableSpecial<ISpecial9Value>(
-        9,
-        { vampire: 0, add: false },
+        9, // code
+        { vampire: 0, add: false }, // value 的默认值：不吸血
         {
-            name: '吸血',
+            name: '吸血', // 固定名称
+            // 描述写成函数，从对象 value 里读字段拼出文字
             desc: special => `战斗前吸取勇士${special.value.vampire}%生命。`,
             color: '#DD4448'
         }
@@ -134,7 +154,7 @@ map.set(
 2. **有参数时定义参数接口**。在文件顶部 `//#region 复合属性值类型` 内声明 `ISpecial50Value`，并在接口前写 `/** 50 - 属性名 */`。
 3. **在 `//#region 属性定义` 内注册**。每条定义前写 `// 50 - 属性名`，再用 `map.set(50, define...)` 添加。
 4. **实现效果**。按下方「属性实现位置」表，把效果写进对应的计算器、光环、地图伤害或钩子；如果不属于现有分类，再考虑新增对应的转换器 / 效果 / 钩子。
-5. **刷新上下文**。修改怪物模板或新增属性后，调用 `state.enemyContext.markDirty(view)` 标记脏数据，必要时调用 `state.enemyContext.buildup()` 全量重建计算后怪物。
+5. **刷新上下文（通常无需手动）**。重建由怪物上下文惰性处理：放置 / 移除怪物、注册效果、绑定勇士都会自动标记更新，读取计算后怪物时自动重算。只有当你绕开正常流程、直接改动了怪物对象时，才需要手动 `state.enemyContext.markDirty(view)` 标记脏数据（必要时 `state.enemyContext.buildup()` 全量重建）。详见[战斗总览](./combat-overview.md)的「什么时候重建」。
 
 ```ts
 // 50 - 灼烧

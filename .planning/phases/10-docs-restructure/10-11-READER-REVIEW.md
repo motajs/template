@@ -187,4 +187,115 @@
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
 - 结论：第 2 轮遗留的 B-03 与 R3-01..R3-04 全部消除；本轮为第 3 轮（上限），未发现新的阻断性理解问题。
 
+---
+
+## 第 3 轮 · 复审结果（Task 3 收尾复议）
+
+**触发：** 第 3 轮修正 + prettier 格式化（提交 `4f4090d style(10-11): prettier 格式化中级教程文档`）之后，再次派发一个**独立 persona 子代理**（同一人格设定，逐字同 Task 1：「假设你是一个不懂代码的游戏作者，你正在阅读这个样板的使用文档，现在看到了中级教程，你了解魔塔游戏的基本概念」），让它重新通读全部 24 篇并回答「现在还有哪些看不懂的地方？」。
+
+**复审结论：阻断性问题 = 0，审阅通过。**
+
+### 逐条复核（首轮 B-01..B-13 · 第 2 轮 R2-01..R2-06 · 第 3 轮 R3-01..R3-04）
+
+| # | 结论 | 说明 |
+|---|------|------|
+| B-01 | 已消除 | `src-tour.md`「包从哪来」讲清 `@motajs/*` / `@user/*` / `src` 三层与单向依赖，各处 `import` 有据可循。 |
+| B-02 | 已消除 | `enemy-specials.md` / `enemy-map-damage.md` 说明 `map` 即 `createSpecials(state)` 返回的、最终注册的那张属性表。 |
+| B-03 | 已消除 | 内置编号以 `special.ts` 为准给出 0–26 权威表；地图伤害（13 领域 / 14 夹击 / 16 阻击 / 22 激光 / 25 捕捉）在 `enemy-specials.md` 与 `enemy-map-damage.md` 两处一致，并写明「挂上对应内置属性即可生效」。 |
+| B-04 | 已消除 | `enemy-map-damage.md` 的 warning 改为「今日可用 vs 待补齐」，五类地图伤害可用性明确。 |
+| B-05 | 已消除 | `replay-commands.md` 补指向「包从哪来」，`packages-user` 有解释。 |
+| B-06 | 已消除 | 装饰器 `@shouldReplay` / `@ignoreReplay` 前有铺垫并链到 `code-basics.md` 的「装饰器」小节。 |
+| B-07 | 已消除 | `map-tiles.md` 定义「图块数字」= 内容层 `tile.jsonc` 的 `num`，并给 `state.tileStore.num/id` 换算。 |
+| B-08 | 已消除 | `putMapData` 数组按行排列、高度 = `array.length / width` 已说明。 |
+| B-09 | 已消除 | `ILayerStatic`（静态那半）与 `ILayerDynamic`（动态那半）已在开头解释。 |
+| B-10 | 已消除 | `events.md` 说明自定义事件的类放 `src/data/event/` 下并由 `registrations.ts` 引入注册。 |
+| B-11 | 已消除 | `onSetFloor` 归属统一为 `IHeroLocationHooks`，与 `IHeroStateHooks` 分族。 |
+| B-12 | 已消除 | `data-plugins.md` 区分定义时的 id 数组与时机方法收到的 `IDataPlugin[]` 对象。 |
+| B-13 | 已消除 | `enemy-query.md` 新增「查询上下文 ctx」小节。 |
+| R2-01 | 已消除 | `BuiltInFunction` 来源 `@motajs/anon-tokyo` 已注明。 |
+| R2-02 | 已消除 | 内置光环 code 23 的 `ISpecial23Value` 字段（`range`/`square`/`hpBuff`/`atkBuff`/`defBuff`）已给表。 |
+| R2-03 | 已消除 | `initializeEnemy` 已在 `enemy-specials.md` / `enemy-aura.md` 介绍。 |
+| R2-04 | 已消除 | `events.md` 注明参数接口应放 `src/data/event/types.ts`。 |
+| R2-05 | 已消除 | `compareEquip` 已列入 `IHeroEquipment` 接口清单。 |
+| R2-06 | 已消除 | code-43 示例中的 `FaceGroup.Dir4` / `dir.mapMovement()` / `IFaceHandler` / `MapDamageType.Layer` 均有注解。 |
+| R3-01 | 已消除 | 删除「15 双重含义」冲突叙述，15 现在只表示仇恨。 |
+| R3-02 | 已消除 | 「27 / 伏击」统一为「25 / 捕捉」。 |
+| R3-03 | 已消除 | `registerCommonQueryEffect(code, effect)` 与 `registerSpecialQueryEffect(effect)` 的签名差异已解释。 |
+| R3-04 | 已消除 | 「同化」描述与示例逻辑（遍历全场、数值加算）已对齐。 |
+
+### 非阻断 residual（仅记录，不在本计划修正）
+
+以下为第 3 次复议后仍存在的**非阻断**残项，均属内容层 / 编辑层或命名措辞范畴，不影响读者按文档完成操作，记录供用户判断（D-14）：
+
+| # | 残项 | 定位 / 性质 |
+|---|------|-------------|
+| a | 这 24 篇内没有 `enemy.jsonc` 中「一条特殊属性条目带值长什么样」的示例 | 内容层 / 编辑器范畴，超出中级教程定位 |
+| b | 查询示例的 code（40/41/42）没有像光环 / 最终效果页那样给出 `map.set` 定义 | 示例完整性 |
+| c | 「最终效果 / 脚本」与「光环 / 查询」两处的优先级作用范围未完全区分 | 描述精度 |
+| d | 「普通光环 / 特殊光环」命名过载（阶段名 vs code 23/26） | 命名措辞 |
+| e | `data-plugins.md` 表格里的 `awake` 签名与占位示例不一致 | 占位示例 |
+| f | `IEnemyDamageInfo` 与 `IEnemyDamageInfoBase` 命名漂移 | 命名措辞 |
+| g | 措辞「30 及以上是示例编号」可能被读成 27–29 已被占用 | 措辞 |
+
+### 校验
+
+- 结构门禁：24 篇全部 CRLF、单 H1（`STRUCT-OK`）。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+- 结论：阻断性理解问题 = 0，审阅通过；非阻断残项（a）–（g）仅记录，留待用户判断（D-14）。
+
+---
+
+## 用户修订循环 · 第 1 轮（用户主导，领域视角）
+
+> 规则见 `10-CONTEXT.md` D-46：子代理自审后，必须再经用户主导的修订循环（用户提问题 → AI 派子代理修改 → 回报 → 继续），经用户确认后才可收尾。
+
+| # | 用户意见 | 主要落点 |
+|---|----------|----------|
+| U-01 | `content` 文件夹主要是在编辑器内修改的，对应**初级教程**，需明确说明 | `src-tour.md` |
+| U-02 | 为什么有些地方获得的 `state` 主对象不包含所有层级？需解释 | `data-state-overview.md` |
+| U-03 | 图块数字与图块 id 的区别、为何要区分；**新增一篇基础接口文档**简述 `TileStore` 基本概念与 `id()` / `num()` 接口 | 新文档 + `map-tiles.md` / `hero-items.md` |
+| U-04 | 怎么**获取地图的指定图层**？目前只讲遍历所有图层 | `map-structure.md` |
+| U-05 | 地图批量接口怎么用？说明**高级教程会详细解释** | `map-tiles.md` |
+| U-06 | Flag 的**字段与字段值**区别；如何选择用哪个 | `flags.md` |
+| U-07 | 怪物上下文重建**何时调用**、是否需要手动；说明样板已内置处理大部分情况，一般不需要手动重建（**不写「代码未实装」**） | 战斗各篇 |
+| U-08 | 为什么不提供「既依赖外部环境、又修改外部环境」的能力——会引入**循环依赖**（依赖修改前还是修改后的环境？），要提 | `enemy-aura` / `enemy-query` / `enemy-final` |
+| U-09 | `getSpecial<T>()` 的 `T` 是什么、怎么填、可否不填 | 战斗各篇 |
+| U-10 | 特殊属性定义示例代码逐行是什么意思；`name` 为何可填字符串也可填函数（代码基础衔接） | `enemy-specials.md` |
+| U-11 | 光环运作方式：作者能否理解转换器/视图；需说明「每个特殊属性可对应不同的转换器」 | `enemy-aura.md` |
+| U-12 | 转换器/视图代码逐行注释；哪些是模板可直接照抄、哪些需自己改 | 战斗各篇 |
+| U-13 | 注册上下文：给出 `initializeEnemy` 函数体（无关内容可注释省略），说明代码放哪 | 战斗各篇 |
+| U-14 | 常规查询能否用 `handler.context` 替代 `query`？必须用 `query`，否则上下文认为未查询 → 后续计算不一致（严重） | `enemy-query.md` |
+| U-15 | 查询上下文是 `IReadonlyEnemyContext`（只读），文档写成 `IEnemyContext` | `enemy-query.md` |
+| U-16 | 其他示例也有 U-12 的问题，全部要改 | 战斗各篇 |
+| U-17 | 中级应主要教**改内置代码**而非自创新类；说明直接改内置 vs 自己写的区别；仅必须自定义的（光环/查询）说明模板 vs 自己写；钩子建议直接改 `hook/` 下内置 | 战斗各篇 + `hooks.md` |
+| U-18 | 「受地形遮挡的激光」示例过复杂，换成更简单的**八方向激光** | `enemy-map-damage.md` |
+| U-19 | 计算器**必须无副作用**（临界/显示/手册会多次调用）；「下次战斗伤害乘二」实现错误，需修正 | `enemy-calculator.md` + `enemy-status-hooks.md` |
+| U-20 | 内置事件将扩展到约 100 个（发布前完成）；以**已完成视角**编写，只说明新增需要改什么 | `events.md` |
+| U-21 | 录像指令会在**高级教程细讲**，要说明 | `replay-commands.md` |
+| U-22 | 所有会在高级教程再细讲的内容都要说明，并**预留链接**，方便后续直接链接 | 全部 |
+
+---
+
+## 用户循环 · batch 1 记录（战斗概念）
+
+**范围：** 用户修订循环第 1 轮 batch 1（U-07、U-08、U-09、U-10、U-11、U-14、U-15）。
+
+### 逐条处置
+
+| # | 处置 | 改动文件 |
+|---|------|----------|
+| U-07 | 新增「什么时候重建」小节：重建由 `enemyContext` 惰性处理，`buildup()` 为全量入口、`markDirty(view)` 为局部标记；放置/移除怪物、注册效果、绑定勇士会自动标记更新，读取计算后怪物时自动重算，一般**无需手动重建**；仅绕开正常流程直接改怪物对象时才需手动 `markDirty(view)`。**不写**「代码未实装」。同步改写 `enemy-specials.md` 自定义步骤第 5 步。 | `combat-overview.md`、`enemy-specials.md` |
+| U-08 | 在三方对比后新增「为什么没有『既依赖外部、又修改外部』的能力」：说明该组合会引入**循环依赖**（无法确定结果基于改动前还是改动后的环境），故刻意不提供；`enemy-aura.md` / `enemy-query.md` 各加一句点出归类并交叉引用。 | `enemy-final.md`、`enemy-aura.md`、`enemy-query.md` |
+| U-09 | 详释 `getSpecial<T>(code)`：`T` 即该特殊属性 `value` 的类型（数字如连击 4、对象如光环 23 的 `ISpecial23Value`），给出 `getSpecial<number>(4)` 与 `getSpecial<ISpecial23Value>(23)`；说明可省略，但省略后 `value` 退化为取不到具体类型的宽泛类型（需自行断言），故建议显式写 `<T>`；链到 `code-basics` 的泛型。 | `enemy-specials.md` |
+| U-10 | 为特殊属性定义示例补逐行注释（无参坚固 / 有参连击 / 对象参数吸血），并解释 `name` / `desc` / `color` 为何可写字符串或函数（函数收到该特殊属性、可用其 `value` 拼出动态文字），链到 `code-basics` 的函数一节。 | `enemy-specials.md` |
+| U-11 | 在「运作方式」用大白话讲清转换器（分诊台）与视图（操作说明）的分工，并明确**每条特殊属性可对应不同转换器**、多个 code 也可共用一个转换器；内置三条光环各有转换器。 | `enemy-aura.md` |
+| U-14 | 将「建议」改为**必须**调用 `query()`：直接读 `handler.context` 不会登记「查询过外部状态」，环境变化时上下文会视其为未查询、不重算，导致后续伤害等结果不一致甚至出错（严重）。 | `enemy-query.md` |
+| U-15 | 查询上下文类型由 `IEnemyContext` 更正为 `IReadonlyEnemyContext`，并说明其只读是有意为之（避免查询效果依赖可变外部上下文）。 | `enemy-query.md` |
+
+### 校验
+
+- 源码核对：`packages-user/data-base/src/enemy/types.ts`（`getSpecial<T>(code): ISpecial<T> | null`、`IEnemy.getModifiableEnemy`）、`packages-user/data-base/src/enemy/special.ts`（`ICommonSpecialConfig<T>` 的 `name`/`desc`/`color: string | (special) => string`）、`packages-user/data-system/src/combat/types.ts`（`IAuraConverter` / `IAuraView` / `IEnemyAuraView`；`query: () => IEnemyContext` / `for(ctx: IEnemyContext)`；`IReadonlyEnemyContext` / `IEnemyContext`）、`packages-user/data-system/src/combat/context.ts`（`buildup()` 惰性早退、`markDirty(view)`、`requestRefresh`、`buildupQuery` 对 `queried` 的登记）。
+- 结构门禁：被改的 5 篇（`combat-overview`、`enemy-specials`、`enemy-aura`、`enemy-query`、`enemy-final`）均 CRLF、单 H1。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+- 备注（待用户确认）：`combat/types.ts` 当前 `query: () => IEnemyContext` / `for(ctx: IEnemyContext)` 的签名仍为可写 `IEnemyContext`；U-15 已按用户口径把**文档**改为只读 `IReadonlyEnemyContext`。若需源码同步为只读，请另行派发。
 
