@@ -95,3 +95,7 @@ state.hero.getModifiableAttribute().addModifier('def', weaken);
 ```
 
 想在属性变化时收到通知，可以用属性钩子族的 `onUpdateAttribute`，见[钩子](./hooks.md)。
+
+> 修饰器的底层原理（修饰器如何参与属性求值、加减乘除类修饰器的组合规则等）会在**高级教程**中讲解（预留标记：`高级教程 · 修饰器原理`）；待高级教程就位后，此处会替换为链接。
+
+<!-- TODO(advanced): 修饰器原理 -->

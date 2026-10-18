@@ -1,6 +1,6 @@
 # 自定义事件
 
-在地图事件里，你能调用一批内建动作——设置图块、移动勇士、往事件里再插一段……这些都是引擎内置的**事件函数**。当内置的还不够用时，你也能照着同样的方式加一个自己的动作，让事件语句调用到它。
+在地图事件里，你能调用一批内建动作——设置图块、移动勇士、往事件里再插一段……这些都是引擎内置的**事件函数**。内置事件集已经相当完整（发布前会提供约 100 个，覆盖地图、玩家、事件、流程控制等常用动作）；当你需要其中没有的额外动作时，也能照着同样的方式加一个自己的事件函数，让事件语句调用到它。
 
 本篇只讲「如何自定义新的事件函数」，不展开事件系统的原理。事件环境里会用到数据端主对象 `state`，它的获取方式与含义见[数据端总览](./data-state-overview.md)。
 
@@ -58,7 +58,7 @@ interface ISetBlockEventParam {
 
 ## 注册事件
 
-光写内建函数还不够，还要把它注册进事件系统。注册入口是 `src/data/event/registrations.ts` 的 `createEventRegistrations()`，它返回一个 `BuiltInFunction[]`：
+光写内建函数还不够，还要把它注册进事件系统。注册入口是 `src/data/event/registrations.ts` 的 `createEventRegistrations()`，它返回一个 `BuiltInFunction[]`。下面是它的**节选**（内置事件总数约 100 个，这里只列几个作示例）：
 
 ```ts
 export function createEventRegistrations(): BuiltInFunction[] {
@@ -75,21 +75,23 @@ export function createEventRegistrations(): BuiltInFunction[] {
         // 事件控制
         new EventInsertEvents(),
         new EventInsertEvent()
+
+        // ...其余内置事件（发布前合计约 100 个）
     ];
 }
 ```
 
-目前它注册了 7 个内置事件：地图控制 `setBlock` / `moveBlock` / `removeBlock`、玩家控制 `moveHero` / `stepHero`、事件控制 `insertEvents` / `insertEvent`。把你自己写的事件函数 `new` 出来加进这个数组，就完成注册。
+这些内置事件覆盖了地图控制（`setBlock` / `moveBlock` / `removeBlock` 等）、玩家控制（`moveHero` / `stepHero` 等）、事件控制（`insertEvents` / `insertEvent` 等）以及更多常用动作。要**新增一个事件**，只需两步：按上一节写好事件函数类，再把它 `new` 出来加进这个数组。
 
 ## 内置事件导读
 
-内置事件的实现分别放在 `src/data/event/` 下：
+内置事件的实现按用途分散在 `src/data/event/` 下的若干文件里，例如：
 
 - `map.ts`：图块相关。`setBlock` 取到事件图层后把指定坐标设为某个图块，`moveBlock` 把图块按步骤移动，`removeBlock` 删除图块；
 - `hero.ts`：勇士相关。`moveHero` 让勇士按给定步骤移动，`stepHero` 让勇士前进一步；
 - `event.ts`：事件相关。`insertEvents` 按 id 临时插入多个已有事件，`insertEvent` 临时执行一段事件语句。
 
-想照着写，挑一个内置事件读它的 `func` 即可。
+想照着写新事件，挑一个功能相近的内置事件读它的 `func` 即可。
 
 ## 示例：设置 Flag
 

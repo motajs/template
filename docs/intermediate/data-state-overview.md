@@ -93,6 +93,21 @@ const map = state.maps.getActiveMap('floor-1'); // L1
 state.emitTip('获得黄钥匙'); // L0
 ```
 
+### 为什么有些地方的 state 看不到全部层级
+
+`state` 在运行时始终是同一个主对象，分层只是它的**静态类型**在逐层累加。类型定义一层叠一层，每层只声明自己这一层拥有的成员：
+
+- L0 `IDataCommon`：公共层，声明 `tileStore` / `itemStore` / `mapStore` / `eventStore` / `faceManager` / `roleFace` / `replaySystem` / `emitTip` 等共享设施；
+- L1 `IStateBase`：在 L0 之上加数据层成员，即 `hero` / `maps` / `flags` / `enemyManager`；
+- L2 `IStateSystem`：在 L1 之上加系统层成员，即 `enemyContext` / `combat` / `eventSystem` / `pathfinding`；
+- L3 `ICoreState`：在 L2 之上加顶层成员，即 `loader` / `loadManager` / `getDataPlugin` 等。
+
+所以，当你从某个**底层对象**上取到 `state` 时，它的类型可能只标到 L0 或 L1——编辑器里就看不到 `hero`、`flags` 这些更高层的成员。这并不是它们不存在，而是**当前这层接口没有声明它们**：运行时是同一个对象，只是编译期类型更窄。这正是「分层」的实际体现：越往上，成员越全。
+
+要使用完整成员，就拿 L3 的 `ICoreState`，也就是框架作为参数传入、或从 `handler.state` 取到的那个 `state`（获取方式见上文「state 从哪来」）。这套分层的设计原理（为什么这样拆、每层负责什么）会在**高级教程**中展开（预留标记：`高级教程 · 数据端分层`）；待高级教程就位后，此处会替换为链接。
+
+<!-- TODO(advanced): 数据端分层 -->
+
 ## 从这里继续
 
 - 勇士的数值与加成：见[勇士属性](./hero-attribute.md)；

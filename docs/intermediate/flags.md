@@ -2,9 +2,32 @@
 
 有些状态要跨事件、跨楼层一直保留，还要跟着存档走——比如「Boss 是否已被击败」「这道门开过没有」「某处计数到了几」。这些状态放哪？Flag 系统（`state.flags`）就是数据端提供的**全局可存档变量**：任何需要跨事件、跨楼层保留的简单状态，都可以存进 Flag，它会随存档一起保存与恢复。
 
-## 字段
+## 字段与字段值
 
-Flag 中的每一项是一个**字段**（`IFlagCommonField`），字段名与值一一对应。字段对象提供 `set(value)`（设置值）、`add(value)`（对数字值增减）与 `get()`（取值）。一般不需要直接操作字段对象，用下面的系统接口即可。
+Flag 里的每一项都对应一个**字段**（`IFlagCommonField`）。要读懂下面的接口清单，先分清两个概念：
+
+- **字段**是一个**对象**，代表「这个变量本身」，提供 `get()`（取值）、`set(value)`（设置值）、`add(value)`（对数字值增减）等方法；
+- **字段值**就是字段里存的**那个普通值**（数字、字符串、布尔等）。你平时读写的，大多是字段值。
+
+系统接口因此分成两组，看名字就能分辨：
+
+- **返回或操作「字段」（对象）**的：`setField` / `getField` / `getOrInsert` / `getOrInsertComputed`——它们返回字段对象本身；
+- **直接操作「字段值」**的：`setFieldValue` / `addFieldValue` / `getFieldValue` / `getFieldValueDefaults`——只关心值，不暴露字段对象。
+
+怎么选？**只读写一次值**时用「值」那组更简单，不必多一步 `get()`；**要多次操作同一个字段、或要复用字段对象**（例如先拿到字段、再反复增减）时，用「字段对象」那组更省事。两者可以互相转换：
+
+```ts
+// 用「字段值」的写法：一次设置、一次增减
+state.flags.setFieldValue('open-count', 0);
+state.flags.addFieldValue('open-count', 1);
+
+// 用「字段对象」的写法：拿到字段后反复操作
+const field = state.flags.getOrInsert('open-count', 0);
+field.add(1);
+const value = field.get();
+```
+
+其实「值」那组就是对「字段对象」那组的简写：`setFieldValue(name, v)` 等价于 `getField(name)?.set(v)`，`getFieldValue(name)` 等价于 `getField(name)?.get()`，`addFieldValue(name, v)` 等价于 `getField(name)?.add(v)`，`getFieldValueDefaults(name, d)` 等价于 `getOrInsert(name, d).get()`。
 
 ## 全部接口
 

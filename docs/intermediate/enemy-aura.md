@@ -386,3 +386,7 @@ export function initializeEnemy(
 ```
 
 把 `registerAuraConverter(new WeakAuraConverter())` 放在这几行之后，你的光环就会随 `initializeEnemy` 一起生效。
+
+> 光环机制的设计原理（优先级为何这样设计、转换器与视图为何要分开、范围是如何定义的）会在**高级教程**中讲解（预留标记：`高级教程 · 光环设计原理`）；待高级教程就位后，此处会替换为链接。
+
+<!-- TODO(advanced): 光环设计原理 -->

@@ -322,3 +322,30 @@
 - 格式门禁：`pnpm exec prettier --write docs/intermediate/*.md`（D-45）已跑，被改 6 篇格式化通过。
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
 
+---
+
+## 用户循环 · batch 3 记录（基础接口 / 其他 + 高级教程预留）
+
+**范围：** 用户修订循环第 1 轮 batch 3（U-01、U-02、U-04、U-05、U-06、U-20、U-21、U-22）。**U-03 不在本批**（需新增一篇基础接口文档并先经命名审批，另行处理）。
+
+### 逐条处置
+
+| # | 处置 | 改动文件 |
+|---|------|----------|
+| U-01 | `src-tour.md` 的 `src/content` 一节标题补注「（初级教程范畴）」，并加一段：内容层**主要在编辑器内修改**、对应**初级教程**，本中级教程不手工编辑这些 `.jsonc`，只将其视为「配置数据存放处」（知道 `tile.jsonc` 条目的 `num` 即[图块数字](./map-tiles.md)才能在代码里定位）；「该不该改」表该行改为「配置数据，主要在编辑器内改」。 | `src-tour.md` |
+| U-02 | `data-state-overview.md` 的 L0–L3 节新增「为什么有些地方的 state 看不到全部层级」：说明 `state` 运行时始终是同一个主对象，分层只是其**静态类型**逐层累加——L0 `IDataCommon`（公共层）→ L1 `IStateBase`（数据层）→ L2 `IStateSystem`（系统层）→ L3 `ICoreState`（顶层），每层只声明自己拥有的成员；故从底层对象取到的 `state` 类型更窄、看不到更高层成员，要完整成员用 L3 的 `ICoreState`。 | `data-state-overview.md` |
+| U-04 | `map-structure.md` 新增「如何取到指定图层」：`layerList` 是 `Set<IMapLayer>`，本身无按名取法，从其中按 `alias`（最常用）或 `zIndex` 筛出目标图层；事件层直接取 `map.eventLayer`；并提醒 `addLayer(alias)` 是**新建**图层而非取用。 | `map-structure.md` |
+| U-05 | `map-tiles.md` 的「批量读写」补一个**完整示例**（3 列 × 2 行 `Uint32Array` → `putMapData(data, 5, 5, 3)` → `getMapData(5, 5, 3, 2)` 读回），并说明扁平数组第 `row * width + col` 项对应偏移 `(col, row)`；注明更深入的用法在高级教程。 | `map-tiles.md` |
+| U-06 | `flags.md` 原「字段」节改写为「字段与字段值」：区分**字段对象**（`IFlagCommonField`，有 `get` / `set` / `add`）与**字段值**（普通值）；接口分为两组——返回字段的 `setField` / `getField` / `getOrInsert` / `getOrInsertComputed`，操作值的 `setFieldValue` / `addFieldValue` / `getFieldValue` / `getFieldValueDefaults`；给出选择依据（一次读写用值、反复操作用字段对象）与互相等价关系。 | `flags.md` |
+| U-20 | `events.md` 以「内置事件集**已完整**」视角改写：开篇说明发布前约 **100** 个内置事件；注册节把代码块标为**节选**、删去「注册了 7 个」的定性句；内置导读改为「按用途分散在若干文件」；并明确**新增一个事件**只需「写函数类 + `new` 进 `createEventRegistrations()`」两步。全文不再出现「功能没做完」式表述。 | `events.md` |
+| U-21 | `replay-commands.md` 末尾加注：录像指令的更多细节会在**高级教程**中讲解。 | `replay-commands.md` |
+| U-22 | 在「留高级」主题所在篇目统一加一句显式说明 + **预留标记**（可见代码 span `高级教程 · <topic>` + 非渲染 HTML 注释 `<!-- TODO(advanced): <topic> -->`），并说明高级教程就位后替换为链接。**不引入真实链接**（`docs/advanced/` 尚未创建，真链接会死链）：渲染端结构（`data-vs-render`）、地图通行与踩踏（`map-structure`）、静态与动态图块 / 地图批量接口 / `getLocationData`（`map-tiles`）、光环设计原理（`enemy-aura`）、查询设计原理（`enemy-query`）、插件系统工作原理（`data-plugins`）、装备排序器（`hero-equipment`）、修饰器原理（`hero-attribute`）、数据端分层（`data-state-overview`）、位置移动与切换楼层（`hero-location`）、录像指令（`replay-commands`）。 | `data-vs-render.md`、`map-structure.md`、`map-tiles.md`、`enemy-aura.md`、`enemy-query.md`、`data-plugins.md`、`hero-equipment.md`、`hero-attribute.md`、`data-state-overview.md`、`hero-location.md`、`replay-commands.md` |
+
+### 校验
+
+- 源码核对：`packages-user/data-common/src/types.ts`（`IDataCommon`：`tileStore` / `itemStore` / `mapStore` / `eventStore` / `roleFace` / `faceManager` / `replaySystem` / `emitTip`）、`packages-user/data-base/src/types.ts`（`IStateBase`：`maps` / `hero` / `enemyManager` / `flags`）、`packages-user/data-system/src/types.ts`（`IStateSystem`：`enemyContext` / `combat` / `eventSystem` / `pathfinding`）、`packages-user/data-state/src/types.ts`（`ICoreState`：`loader` / `loadManager` / `getDataPlugin` / `load`）、`packages-user/data-base/src/map/types.ts`（`IGameMap.layerList` / `eventLayer`；`IMapLayer.alias` / `zIndex`；`ILayerStatic.putMapData` 与 `getMapData` 两处重载 `:332, :337, :345`）、`packages-user/data-base/src/map/gameMap.ts`（`addLayer` 每次 `new MapLayer`、`aliasLayerMap` 未暴露于 `IGameMap`）、`packages-user/data-base/src/flag/types.ts`（`IFlagCommonField.get/set/add`；`IFlagSystem` 的字段接口与值接口分组）、`src/data/event/registrations.ts`（`createEventRegistrations()` 返回 `BuiltInFunction[]`）。
+- 结构门禁：24 篇全部 CRLF、单 H1（`STRUCT-OK`）。
+- 格式门禁：`pnpm exec prettier --write`（D-45）已跑，改动篇目格式化通过；`map-tiles.md` 示例数组用 `// prettier-ignore` 保留**按行分组**（否则会被折成逐元素一行，失去「按行排列」的演示效果）。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0（高级教程预留使用代码 span 与 HTML 注释，不产生链接）。
+- 边界：仅改 `docs/intermediate/*.md`；未改 `config.ts` 与任何生产代码；未新增文件；U-03 不在本批。
+

@@ -48,9 +48,38 @@ const active = state.maps.getActiveMap('floor-1');
 
 `layerList` 中的每个图层（`IMapLayer`）都有：
 
-- `alias`：图层别名；
+- `alias`：图层别名，用于标识这个图层；
+- `zIndex`：图层纵深，决定渲染时的遮挡顺序；
 - `width`、`height`：图层宽高。
 
-**事件层本质就是一个图层**：`eventLayer` 的类型同样是 `IMapLayer`，因此对图层的操作同样适用于事件层。图块的读写见[地图图块](./map-tiles.md)。
+**事件层本质就是一个图层**：`eventLayer` 的类型同样是 `IMapLayer`，因此对图层的操作同样适用于事件层。
+
+### 如何取到指定图层
+
+`layerList` 是一个集合（`Set<IMapLayer>`），本身没有「按名字直接取」的方法，所以从 `layerList` 里筛出想要的那一个即可：按 **`alias`** 找（最常用），或按 **`zIndex`** 找。
+
+```ts
+const map = state.maps.getMap('floor-1')!;
+
+// 按别名取：例如名为 'ground' 的图层
+const ground = [...map.layerList].find(layer => layer.alias === 'ground');
+
+// 按纵深取：例如 zIndex 为 2 的图层
+const second = [...map.layerList].find(layer => layer.zIndex === 2);
+```
+
+事件层是个例外：它可以直接从楼层的 `eventLayer` 取得，不必去筛 `layerList`。
+
+```ts
+const eventLayer = map.eventLayer; // IMapLayer | null
+```
+
+注意别把 `addLayer(alias)` 当成「取图层」——它是**新建**一个图层并返回，用同一个别名调用会再建一个。取已有图层请按上面的方式从 `layerList` 里找。
+
+图块的读写见[地图图块](./map-tiles.md)。
+
+> 地图的通行性判定、图块移动与踩踏触发等更底层的内容，会在**高级教程**中讲解（预留标记：`高级教程 · 地图通行与踩踏`）；待高级教程就位后，此处会替换为链接。
+
+<!-- TODO(advanced): 地图通行与踩踏 -->
 
 想从 `state` 出发找到地图对象，见[数据端总览](./data-state-overview.md)；勇士当前所在楼层见[勇士位置](./hero-location.md)。

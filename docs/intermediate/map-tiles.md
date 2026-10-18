@@ -4,6 +4,10 @@
 
 图层的接口分成两半：一半管**静态图块**（`ILayerStatic`，负责单点与批量读写、迭代），一半管**动态图块**（`ILayerDynamic`，负责创建、删除、移动）。本篇只讲静态图块那半，也就是 `ILayerStatic` 上的方法。
 
+> 静态图块与动态图块各自的设计取向（为什么要把图块分成这两种、它们之间如何转换）会在**高级教程**中讲解（预留标记：`高级教程 · 静态与动态图块`）；待高级教程就位后，此处会替换为链接。
+
+<!-- TODO(advanced): 静态与动态图块 -->
+
 先明确一个词：**图块数字**（tile number）是每个图块的整数编号，以内容层 `src/content/tile.jsonc` 中每个条目的 `num` 字段为准（同一条目还有字符串名 `id`）。图层上存取的都是这个编号；想用 `id` 换编号可以用 `state.tileStore.num(id)`，反过来用 `state.tileStore.id(num)`。
 
 ## 取到图层
@@ -43,9 +47,27 @@ layer.removeBlock(3, 5);
 
 返回的数组是对内部存储的拷贝，修改它不会直接改动地图。
 
+**完整示例：一次写入一片 3 列 × 2 行的区域，再读回来。**
+
 ```ts
-const region = layer.getMapData(0, 0, 3, 3);
+const width = 3;
+// 按行排列：先第 0 行（y = 5），再第 1 行（y = 6）
+// prettier-ignore
+const data = new Uint32Array([
+    21, 21, 21, // 第 0 行
+    22, 22, 22 // 第 1 行
+]);
+// 从 (5, 5) 开始写入；高度由 6 ÷ 3 = 2 自动推出
+layer.putMapData(data, 5, 5, width);
+
+// 读出刚写入的区域（区域版必须显式传宽高）
+const back = layer.getMapData(5, 5, width, 2);
+// back 与 data 内容一致：长度 6、按行排列
 ```
+
+`putMapData` 与 `getMapData` 用的都是「扁平」的一维数组：第 `row * width + col` 项，对应左上角偏移 `(col, row)` 的那一格。日常读写用这两个接口就够了；它们更深入的用法与性能取向会在**高级教程**中讲解（预留标记：`高级教程 · 地图批量接口`）；待高级教程就位后，此处会替换为链接。
+
+<!-- TODO(advanced): 地图批量接口 -->
 
 ## 迭代非空图块
 
@@ -57,6 +79,8 @@ for (const block of layer.iterateBlocks()) {
 }
 ```
 
-若需要读取某一点的全部图块信息（静态、动态、事件等），图层还提供 `getLocationData(x, y)`；它面向更底层的需求，留到高级教程。
+若需要读取某一点的全部图块信息（静态、动态、事件等），图层还提供 `getLocationData(x, y)`；它面向更底层的需求，会在**高级教程**中讲解（预留标记：`高级教程 · getLocationData`）；待高级教程就位后，此处会替换为链接。
+
+<!-- TODO(advanced): getLocationData -->
 
 图层与事件层的结构见[地图结构](./map-structure.md)；想从 `state` 出发找到地图对象，见[数据端总览](./data-state-overview.md)。

@@ -62,4 +62,8 @@ const diff = state.hero.equip.compareEquip(uid, -1, 0);
 // diff.atk 即装备这件装备相对空槽的攻击提升
 ```
 
+> 装备排序器（决定同一槽位上多件装备如何排序、如何挑选「更好」的一件）会在**高级教程**中讲解（预留标记：`高级教程 · 装备排序器`）；待高级教程就位后，此处会替换为链接。
+
+<!-- TODO(advanced): 装备排序器 -->
+
 装备道具本身来自道具定义，见[勇士道具](./hero-items.md)；想从 `state` 出发找到这些对象，见[数据端总览](./data-state-overview.md)。
