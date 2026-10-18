@@ -17,7 +17,16 @@
 state.enemyContext.registerFinalEffect(effect);
 ```
 
-`initializeEnemy` 已经注册了内置的 `MainEnemyFinalEffect`（`src/data/enemy/final.ts`）。它处理两个属性：
+### 改内置，还是自己写
+
+最终效果有两种做法，按需要选一种：
+
+- **改内置实现**：直接在 `src/data/enemy/final.ts` 的 `MainEnemyFinalEffect.apply` 里加一个分支。内置的坚固、模仿就是这么写的，适合与现有逻辑同类的机制。
+- **写自己的类**：实现 `IEnemyFinalEffect` 接口，再用 `registerFinalEffect` 注册。适合独立机制，或不想改动内置文件时。
+
+两种做法进入的是同一条流水线，会按各自的 `priority` 与内置效果一起执行。下面示例用「写自己的类」演示。
+
+`initializeEnemy`（`src/data/enemy/initialize.ts`）已经注册了内置的 `MainEnemyFinalEffect`（`src/data/enemy/final.ts`）。它处理两个属性：
 
 - **坚固（code 3）**：把怪物防御提升到不低于「勇士攻击 - 1」；
 - **模仿（code 8）**：把怪物攻击与防御设置为勇士的最终攻击与最终防御。
@@ -48,30 +57,41 @@ state.enemyContext.registerFinalEffect(effect);
 
 示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。
 
+下面代码中用 `[模板]` 标出可以原样照抄的部分，用 `[需改]` 标出必须按你的需求修改的部分。特殊属性定义写在 `src/data/enemy/special.ts`：
+
 ```ts
 // special.ts：32 - 仿攻
+// [需改] 照 special.ts 里其他属性的写法，新增这样一条定义，编号与名称换成你自己的
 map.set(
-    32,
+    32, // [需改] 编号：示例自选的未占用号
     defineNonePropertySpecial(32, {
-        name: '仿攻',
-        desc: '怪物攻击等于勇士攻击。',
-        color: '#B0C0DD'
+        name: '仿攻', // [需改] 显示名称
+        desc: '怪物攻击等于勇士攻击。', // [需改] 悬停时显示的说明
+        color: '#B0C0DD' // [需改] 名称的显示颜色
     })
 );
 ```
 
+然后写最终效果本身：
+
 ```ts
+// [模板] 依赖导入：类型分别来自 @user/data-common 与 @user/data-system
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import { IEnemyFinalEffect, IEnemyHandler } from '@user/data-system';
 
+// [需改] 类名：换成你自己的效果名
 export class AttackCopyFinal implements IEnemyFinalEffect<
     IEnemyAttr,
     IHeroAttr
 > {
+    // [需改] priority：数值越大越先执行；内置最终效果是 0
     readonly priority = 0;
 
+    // [模板] apply 的签名是固定的，引擎在最终阶段调用它并传入 handler
     apply(handler: IEnemyHandler<IEnemyAttr, IHeroAttr>): void {
+        // [需改] 触发条件：只有带本效果（示例 code 32）的怪物才处理
         if (!handler.enemy.hasSpecial(32)) return;
+        // [需改] 真正做的事：把怪物攻击设为勇士的最终攻击
         handler.enemy.setAttribute(
             'atk',
             handler.hero.getFinalAttribute('atk')
@@ -79,12 +99,43 @@ export class AttackCopyFinal implements IEnemyFinalEffect<
     }
 }
 
+// [需改] 注册这行要挪进 initializeEnemy（见下方「注册在哪里」）
 state.enemyContext.registerFinalEffect(new AttackCopyFinal());
 ```
 
 `apply` 里直接 `setAttribute`，因为最终阶段拿到的 `handler.enemy` 就是可修改的怪物对象。最终阶段之后不再有别的属性修正，所以这里写进去的值会直接进入伤害计算。
 
 `priority` 只需要记住一句：数值越大越先执行；内置最终效果的 `priority` 是 `0`。
+
+### 注册在哪里
+
+`registerFinalEffect` 要写进 `initializeEnemy`。下面是 `src/data/enemy/initialize.ts` 中该函数的样子（省略了无关的行）：
+
+```ts
+export function initializeEnemy(
+    state: ICoreState
+): IEnemyInitializationReturns {
+    // ...省略：怪物管理器、特殊属性、上下文的初始化...
+
+    const ctx = state.enemyContext;
+
+    // ...省略：伤害系统、地图伤害的初始化与注册...
+
+    // 注册光环转换器
+    ctx.registerAuraConverter(new CommonAuraConverter());
+    ctx.registerAuraConverter(new GuardAuraConverter());
+    ctx.registerAuraConverter(new SpecialAuraConverter());
+
+    // 注册怪物最终效果 —— 内置效果就在这里注册
+    ctx.registerFinalEffect(new MainEnemyFinalEffect());
+    // [需改] 你自己的最终效果紧接着追加即可：
+    // ctx.registerFinalEffect(new AttackCopyFinal());
+
+    // ...省略：脚本与钩子的注册...
+}
+```
+
+把注册调用放在内置效果那一行之后，你的效果就会随 `initializeEnemy` 一起生效。
 
 ## 与伤害计算的分工
 

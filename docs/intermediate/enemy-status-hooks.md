@@ -60,57 +60,103 @@ state.hero.location.addHook(new EnemyChangeFloorHooks(state));
 
 ## 示例：下次战斗伤害乘二
 
-钩子能改状态，但「伤害乘二」最终要由伤害公式来兑现。这个例子正好展示一个状态如何跨两个系统：战斗钩子负责「挂上状态」，伤害计算器负责「消费状态」。先定义一个无参数特殊属性（code 45）：
+钩子能改状态，但「伤害乘二」最终要由伤害公式来兑现。这个例子展示一个状态如何跨多个系统：战斗钩子负责「挂上状态」，伤害计算器负责「读状态」，战斗脚本负责「一次性消费状态」。
+
+:::warning 计算器不能消费状态
+不要在伤害计算器里 `deleteField` 之类地去「消费」这个 flag。计算器在一次战斗里会被反复调用（算临界、显示伤害、图鉴等），谁先调用谁就把 flag 用掉了，真正开打时反而不翻倍；而且这属于改动外部状态，违反「计算器必须无副作用」的规则（见[伤害计算](./enemy-calculator.md)）。正确做法是：**计算器只读 flag**，由「一场战斗只跑一次」的**战斗脚本**去消费它。
+:::
+
+先定义一个无参数特殊属性（code 45）。下面代码中用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求修改的行：
 
 ```ts
 // special.ts：45 - 蓄力
+// [需改] 照常加进 src/data/enemy/special.ts
 map.set(
-    45,
+    45, // [需改] 编号
     defineNonePropertySpecial(45, {
-        name: '蓄力',
-        desc: '战斗后，下一次战斗伤害翻倍。',
-        color: '#F99'
+        name: '蓄力', // [需改] 名称
+        desc: '战斗后，下一次战斗伤害翻倍。', // [需改] 说明
+        color: '#F99' // [需改] 颜色
     })
 );
 ```
 
-再写一个战斗钩子。它不修改内置的 `EnemyCombatHooks`，而是作为另一个钩子并存（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
+**第一步：用战斗钩子「挂上状态」。** 它不修改内置的 `EnemyCombatHooks`，而是作为另一个钩子并存（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
 
 ```ts
+// [模板] 依赖导入
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import { ICoreState } from '@user/data-state';
 import { ICombatFlowHooks, IEnemyDamageInfo } from '@user/data-system';
 
+// [需改] 类名
 export class ChargedHooks implements ICombatFlowHooks<IEnemyAttr, IHeroAttr> {
-    constructor(readonly state: ICoreState) {}
+    constructor(readonly state: ICoreState) {} // [模板] 存下数据端状态，供读写 flag
 
+    // [模板] onAfterCombat 签名固定：一场战斗结束后调用一次
     async onAfterCombat(
         info: IEnemyDamageInfo<IEnemyAttr, IHeroAttr>
     ): Promise<void> {
+        // [需改] 只有带「蓄力」（code 45）的怪物战斗后，才设置这个 flag
         if (info.handler.enemy.hasSpecial(45)) {
+            // [需改] 在全局 flag 里记下「下次战斗伤害翻倍」
             this.state.flags.setFieldValue('nextBattleDouble', true);
         }
     }
 }
 
+// [需改] 注册：挂到战斗流程上
 state.combat.addHook(new ChargedHooks(state));
 ```
 
-最后在伤害计算器里消费这个 flag：
+**第二步：用战斗脚本「消费状态」。** 脚本的 `after` 一场战斗只执行一次，正好用来把 flag 清掉：
 
 ```ts
+// [模板] 依赖导入
+import { IEnemyAttr, IHeroAttr } from '@user/data-common';
+import { ICoreState } from '@user/data-state';
+import { ICombatScript } from '@user/data-system';
+
+// [需改] 类名
+export class ConsumeDoubleScript implements ICombatScript<
+    IEnemyAttr,
+    IHeroAttr
+> {
+    constructor(readonly state: ICoreState) {} // [模板] 存下状态以清 flag
+
+    readonly priority = 0; // [需改] 优先级按需要设置
+
+    // [模板] 本脚本不拦截战斗，直接放行
+    async before(): Promise<boolean> {
+        return true;
+    }
+
+    // [模板] after 一场战斗只跑一次，是消费 flag 的正确位置
+    async after(): Promise<void> {
+        // [需改] 战斗结束后清掉 flag，保证只翻倍一次
+        this.state.flags.deleteField('nextBattleDouble');
+    }
+}
+
+// [需改] 注册
+state.combat.addCombatScript(new ConsumeDoubleScript(state));
+```
+
+**第三步：让伤害计算器「只读」这个 flag**（不改、不删）：
+
+```ts
+// [模板] 放在 calculate 返回之前：只读，不修改任何外部状态
 const double = handler.state.flags.getFieldValueDefaults(
     'nextBattleDouble',
     false
 );
 if (double) {
-    damage *= 2;
-    handler.state.flags.deleteField('nextBattleDouble');
+    damage *= 2; // [需改] 翻倍逻辑；注意不要在这里 deleteField
 }
 ```
 
-把这段逻辑放在 `calculate` 返回之前即可。伤害公式的其余部分见[伤害计算](./enemy-calculator.md)。
+把这段读 flag 的逻辑放在 `calculate` 返回之前即可；伤害公式的其余部分见[伤害计算](./enemy-calculator.md)。
 
-这个例子体现了「一个状态要用多个钩子/系统」：`onAfterCombat` 只负责记录状态，真正影响伤害的是计算器。如果只在钩子里改 flag 而不改计算器，状态不会有任何效果。
+这个例子体现了「一个状态要用多个系统」：`onAfterCombat` 钩子负责记录状态，计算器负责读取并翻倍，战斗脚本负责在真正的战斗里消费掉它。若把消费放进计算器，就会因计算器被反复调用而提前把 flag 用掉——只有放进「每次战斗只跑一次」的脚本里才可靠。
 
 状态里用到的临时加减或百分比，优先用修饰器实现，概念与 `save` 参数见[勇士属性](./hero-attribute.md)。

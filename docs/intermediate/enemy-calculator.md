@@ -27,6 +27,17 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 
 `initializeEnemy` 在创建 `DamageSystem` 后就调用了 `useCalculator(new MainDamageCalculator())`，因此默认使用内置公式。
 
+:::warning 计算器必须无副作用
+计算器在一次战斗里会被**反复调用**：算临界值要二分十几次，渲染伤害数值、图鉴与提示等也可能在真正开打前各调用一次。因此它**必须只读输入、算出结果，不能改动任何外部状态**——不能写 flag、不能删 flag，也不能改怪物或勇士对象。只要存在副作用，同一只怪物在不同时刻就会算出不同结果，临界与显示都会错乱。需要「一次性」生效的状态，请放到别处去改（战斗脚本、钩子等），计算器只负责读取。
+:::
+
+### 改内置，还是自己写
+
+- **改内置公式**：直接在 `src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate` 里改公式或加分支。多数「调参类」属性（先攻、连击、破甲等）都实现在这里。
+- **写自己的计算器**：实现 `IDamageCalculator` 接口，再用 `useCalculator` 替换。适合整条公式都要换、或不想改动内置文件时。
+
+两者只能二选一：`useCalculator` 是**替换**当前计算器，选了自己的就会把内置的整个换掉，内置的那些分支需要你在自己的 `calculate` 里重新保留。
+
 ## 内置公式逐段导读
 
 与其一次背下整条公式，不如按顺序看每一段在算什么。`MainDamageCalculator.calculate`（`src/data/enemy/calculator.ts`）按以下顺序计算：
@@ -59,9 +70,10 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 
 「等差数列属性」指怪物攻击每回合按固定值递增。属性本身在一次计算中是常量，所以不能靠给 `atk` 加值实现；要在 `calculate` 里把「每回合伤害」按等差数列求和：
 
-示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。
+示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。下面用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求修改的行。
 
 ```ts
+// [模板] 依赖导入：类型分别来自 @user/data-common 与 @user/data-system
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import {
     CriticalableHeroStatus,
@@ -70,32 +82,42 @@ import {
     IReadonlyEnemyHandler
 } from '@user/data-system';
 
+// [需改] 类名：换成你自己的计算器名
 export class ArithmeticCalculator implements IDamageCalculator<
     IEnemyAttr,
     IHeroAttr
 > {
+    // [模板] calculate 签名固定：读 handler 里的 enemy 与 hero，返回 { damage, turn }
     calculate(
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
     ): IEnemyDamageInfoBase {
+        // [模板] 取出只读的怪物与勇士对象（只读，供读取，不可改写）
         const { enemy, hero } = handler;
+        // [模板] 勇士每回合对怪物造成的伤害 = 勇士攻击 - 怪物防御
         const heroPerDamage =
             hero.getFinalAttribute('atk') - enemy.getAttribute('def');
+        // [模板] 打不动（≤ 0）时返回 Infinity，表示无法击败
         if (heroPerDamage <= 0) {
             return { damage: Infinity, turn: 0 };
         }
 
+        // [模板] 回合数 = 怪物血量 / 每回合伤害，向上取整
         const turn = Math.ceil(enemy.getAttribute('hp') / heroPerDamage);
+        // [需改] 怪物每回合的基础伤害：这里按「怪物攻击 - 勇士防御」并最低取 0
         const base = Math.max(
             0,
             enemy.getAttribute('atk') - hero.getFinalAttribute('def')
         );
+        // [需改] 公差：每回合递增的伤害（本示例固定为 5）
         const step = 5;
 
-        // 首项 base，公差 step，共 turn 项
+        // [需改] 等差数列求和：首项 base，公差 step，共 turn 项
         const damage = turn * base + (step * turn * (turn - 1)) / 2;
+        // [模板] 返回结果，damage 向下取整
         return { damage: Math.floor(damage), turn };
     }
 
+    // [模板] getCriticalLimit 的签名同样是固定的：这里直接返回勇士当前最终值
     getCriticalLimit(
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
         attribute: CriticalableHeroStatus<IHeroAttr>

@@ -299,3 +299,26 @@
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
 - 备注（待用户确认）：`combat/types.ts` 当前 `query: () => IEnemyContext` / `for(ctx: IEnemyContext)` 的签名仍为可写 `IEnemyContext`；U-15 已按用户口径把**文档**改为只读 `IReadonlyEnemyContext`。若需源码同步为只读，请另行派发。
 
+---
+
+## 用户循环 · batch 2 记录（代码讲解 / 修正）
+
+**范围：** 用户修订循环第 1 轮 batch 2（U-12、U-13、U-16、U-17、U-18、U-19）。对战斗各篇的代码块补逐行中文注释、标注「模板 / 需改」，补注册上下文，明确「改内置 vs 自己写」，替换地图伤害示例，并修正计算器副作用问题。
+
+### 逐条处置
+
+| #         | 处置                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 改动文件                                                                                                                            |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| U-12/U-16 | 战斗各篇的转换器 / 视图 / 效果 / 计算器 / 脚本 / 钩子代码块全部补**逐行中文注释**，并用 `[模板]`（可原样照抄）与 `[需改]`（必须按需求修改）标注每行性质；覆盖 `enemy-aura`（两个示例）、`enemy-query`（抱团 / 同化 / 号角）、`enemy-final`（仿攻）、`enemy-calculator`（等差数列）、`enemy-map-damage`（八方向激光）、`enemy-combat-script`（战前 / 战后）、`enemy-status-hooks`（蓄力示例）。 | `enemy-aura.md`、`enemy-query.md`、`enemy-final.md`、`enemy-calculator.md`、`enemy-map-damage.md`、`enemy-combat-script.md`、`enemy-status-hooks.md` |
+| U-13      | 在注册相关篇目各加「注册在哪里」，给出 `src/data/enemy/initialize.ts` 的 `initializeEnemy` 函数体（无关行以「...省略...」注释略去），标出注册调用（光环转换器 / 最终效果 / 地图伤害转换器 / 战斗脚本 / 查询效果）应放的位置。                                                                                                                                                                                                                                      | `enemy-aura.md`、`enemy-final.md`、`enemy-map-damage.md`、`enemy-combat-script.md`、`enemy-query.md`                                 |
+| U-17      | 每篇明确「改内置实现」与「写自己的类」的区别：`enemy-specials`（只改内置 `special.ts`，不建类）、`enemy-calculator`（改 `MainDamageCalculator` vs 自写 + `useCalculator` 替换）、`enemy-combat-script`（改 `MainCombatScript` vs 自写 + `addCombatScript` 追加）、`enemy-map-damage`（改内置 vs 自写 + `useConverter` 替换）、`enemy-final`（改 `MainEnemyFinalEffect` vs 自写 + `registerFinalEffect`）、`enemy-aura` / `enemy-query`（必须自写类，说明模板 vs 需改与各自效果）。 | 战斗各篇                                                                                                                            |
+| U-18      | `enemy-map-damage.md` 的「受地形遮挡的激光」示例替换为更简单的「八方向激光」：内置激光用 `FaceGroup.Dir4`，示例改用 `FaceGroup.Dir8`（八方向），其余逻辑与内置 `LaserDamageView` 一致；已核对 `FaceGroup`（`packages-user/data-common/src/common/faceManager.ts`）、`RayRange`（`packages/common/src/utils/range.ts`）与 `LaserDamageView`（`src/data/enemy/mapDamage.ts`）的方向 API。                                                                       | `enemy-map-damage.md`                                                                                                               |
+| U-19      | `enemy-calculator.md` 新增「计算器必须无副作用」warning，说明其在临界 / 显示 / 手册等场景被反复调用；`enemy-status-hooks.md` 的「下次战斗伤害乘二」示例改为正确做法：战斗钩子挂状态 → 计算器**只读** flag → 战斗脚本 `after`（每场只跑一次）消费 flag；并解释「在计算器里消费」为何失败。                                                                                                                                                                         | `enemy-calculator.md`、`enemy-status-hooks.md`                                                                                      |
+
+### 校验
+
+- 源码核对：`src/data/enemy/initialize.ts`（`registerAuraConverter` / `registerFinalEffect` / `addCombatScript` / `useConverter` / `useReducer` / `useCalculator` 的注册位置）、`src/data/enemy/mapDamage.ts`（`LaserDamageView` 用 `FaceGroup.Dir4`；`IMapDamageView` 需实现 `getRange` / `getRangeParam` / `getDamageAt` / `getDamageWithoutCheck`）、`packages-user/data-common/src/common/faceManager.ts`（`FaceGroup.Dir8`、`mapMovement()`）、`packages/common/src/utils/range.ts`（`RayRange` 跳过零偏移方向）、`packages-user/data-system/src/combat/combat.ts`（`combatFlow` 先算伤害、再跑脚本 `before` / `after`、最后 `onBeforeCombat` / `onAfterCombat`；脚本 `after` 每场只跑一次）、`packages-user/data-system/src/combat/damage.ts`（`calculate` 在临界二分中被反复调用）。
+- 结构门禁：24 篇全部 CRLF、单 H1（`STRUCT-OK`）。
+- 格式门禁：`pnpm exec prettier --write docs/intermediate/*.md`（D-45）已跑，被改 6 篇格式化通过。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+

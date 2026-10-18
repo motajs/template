@@ -49,37 +49,49 @@ mapDamage?.useConverter(new MainMapDamageConverter());
 - 「捕捉」的视图类名沿用 `AmbushDamageView`（伏击），它读取的是 code 25「捕捉」。它返回 `MapDamageType.Unknown`，因为 `MapDamageType` 没有「捕捉」这一项；伤害恒为 0，作用是产生 `extra.catch`，由移动钩子触发强制战斗。捕捉本身不造成伤害是设计如此，不是未补齐的功能。
 - `BetweenDamageView` 读取全局 flag `betweenAttackMax`，决定夹击伤害是否取「半血、当前怪物伤害、对侧怪物伤害」三者的较小值；对侧怪物通过 `hasSpecial(14)` 识别，与夹击自身使用的是同一个编号。
 
-## 示例：受地形遮挡的激光
+## 示例：八方向激光
 
-内置激光使用 `RayRange` 沿四个方向发射，不判断中间是否被地形挡住。下面的示例新增一个「遮挡激光」特殊属性（code 43），沿射线检查路径，遇到非空图块就停止：
+内置激光（code 22）用 `FaceGroup.Dir4`（上下左右四个方向）沿射线发射。下面的示例新增一个「八方向激光」特殊属性（code 43），改用 `FaceGroup.Dir8`（再加上四个斜向，共八个方向）发射，其余逻辑与内置激光一致。
 
 示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」；`map.set(...)` 的 `map` 是 `special.ts` 中 `createSpecials(state)` 建的属性表，见[特殊属性](./enemy-specials.md)。
 
-示例里出现的几个名字先简单说明：`FaceGroup.Dir4` 是「四方向」朝向组，`faceManager` 按朝向组管理朝向；`dir.mapMovement()` 把朝向处理器映射成各方向对应的移动量，示例据此取出四个方向；`IFaceHandler` / `IFaceDescriptor` 分别是「朝向处理器」与「单个朝向」的类型；`MapDamageType.Layer` 是伤害类型枚举里的「激光伤害」（定义在 `src/data/enemy/types.ts`）。
+示例里出现的几个名字先简单说明：`FaceGroup.Dir8` 是「八方向」朝向组，`faceManager` 按朝向组管理朝向；`dir.mapMovement()` 把朝向处理器映射成各方向对应的移动量，示例据此取出八个方向（其中「原地不动」的未知方向偏移为零，`RayRange` 会自动跳过它）；`IFaceHandler` / `IFaceDescriptor` 分别是「朝向处理器」与「单个朝向」的类型；`MapDamageType.Layer` 是伤害类型枚举里的「激光伤害」（定义在 `src/data/enemy/types.ts`）。
+
+### 改内置，还是自己写
+
+- **改内置**：直接改 `src/data/enemy/mapDamage.ts` 里的 `LaserDamageView` / `MainMapDamageConverter`，或往转换器里加分支。内置五类地图伤害都实现在那里。
+- **写自己的**：实现 `IMapDamageView`（描述一个来源的影响范围与某点的伤害）与 `IMapDamageConverter`（把特殊属性翻译成视图），再用 `useConverter` 注册。下面的示例就是这种写法。
+
+`useConverter` 是**替换**当前转换器：选了自己的就把内置的整个换掉，若要同时保留内置五类，需要在自己的转换器里把它们的视图也收集进去，或直接改内置转换器。
+
+下面代码用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求修改的行。先在 `src/data/enemy/special.ts` 登记这条属性：
 
 ```ts
-/** 43 - 遮挡激光 */
+/** 43 - 八方向激光 */
 export interface ISpecial43Value {
-    damage: number;
+    damage: number; // [需改] 参数：激光造成的伤害
 }
 
-// 43 - 遮挡激光
+// 43 - 八方向激光
 map.set(
-    43,
+    43, // [需改] 编号：示例自选的未占用号
     defineCommonSerializableSpecial<ISpecial43Value>(
         43,
-        { damage: 50 },
+        { damage: 50 }, // [需改] 默认参数：默认 50 点伤害
         {
-            name: '遮挡激光',
+            name: '八方向激光', // [需改] 显示名称
             desc: special =>
-                `同行或同列时造成${special.value.damage}点伤害，被地形遮挡则无效。`,
-            color: '#D0A0DD'
+                `同行、同列或同斜线时造成${special.value.damage}点伤害。`, // [需改] 悬停说明
+            color: '#D0A0DD' // [需改] 名称颜色
         }
     )
 );
 ```
 
+再写伤害视图与转换器：
+
 ```ts
+// [模板] 依赖导入：类型分别来自 @motajs/common、@user/data-system、@user/data-base 与 @user/data-common
 import {
     IFaceDescriptor,
     IFaceHandler,
@@ -100,24 +112,31 @@ import { IEnemyAttr, IHeroAttr, FaceGroup } from '@user/data-common';
 import { MapDamageType } from './types';
 import { ISpecial43Value } from './special';
 
+// [模板] 范围对象可以复用，在模块顶层建一次即可
 const RAY_RANGE = new RayRange();
 
-export class BlockedLaserDamageView implements IMapDamageView<IRayRangeParam> {
+// [需改] 类名：换成你的视图名
+export class EightDirLaserDamageView implements IMapDamageView<IRayRangeParam> {
+    // [模板] 存下八个方向的偏移量，供 getRangeParam 使用
     private readonly dirs: IFaceDescriptor[];
 
+    // [模板] 构造函数签名固定：引擎会把上下文、位置、特殊属性与朝向处理器传进来
     constructor(
         private readonly context: IEnemyContext<IEnemyAttr, IHeroAttr>,
         private readonly locator: ITileLocator,
         private readonly special: ISpecial<ISpecial43Value>,
         dir: IFaceHandler<number>
     ) {
+        // [模板] mapMovement() 给出「方向 → 偏移」，这里只取偏移（每项的 [1]）
         this.dirs = [...dir.mapMovement()].map(v => v[1]);
     }
 
+    // [模板] 返回射线范围对象
     getRange(): IRange<IRayRangeParam> {
         return RAY_RANGE;
     }
 
+    // [模板] 范围参数：中心点是怪物位置，方向列表是八个方向
     getRangeParam(): IRayRangeParam {
         return {
             cx: this.locator.x,
@@ -126,6 +145,7 @@ export class BlockedLaserDamageView implements IMapDamageView<IRayRangeParam> {
         };
     }
 
+    // [模板] 先判断目标点是否落在范围内（RayRange 会跳过零偏移的未知方向）
     getDamageAt(locator: ITileLocator): Readonly<IMapDamageInfo> | null {
         const range = this.getRange();
         range.bindHost(this.context);
@@ -135,65 +155,75 @@ export class BlockedLaserDamageView implements IMapDamageView<IRayRangeParam> {
         return this.getDamageWithoutCheck(locator);
     }
 
+    // [需改] 真正决定某点的伤害：这里固定返回本属性登记的伤害与激光类型
     getDamageWithoutCheck(
         locator: ITileLocator
     ): Readonly<IMapDamageInfo> | null {
-        if (this.isBlocked(locator)) return null;
         return {
             damage: this.special.value.damage,
             type: MapDamageType.Layer,
             extra: {
-                catch: new Set(),
-                repulse: new Set()
+                catch: new Set(), // [模板] 无捕捉来源
+                repulse: new Set() // [模板] 无阻击来源
             }
         };
     }
-
-    /**
-     * 判断从怪物到目标点的路径上是否有非空图块
-     */
-    private isBlocked(target: ITileLocator): boolean {
-        const floor = this.context.floor;
-        if (!floor) return false;
-        const map = this.context.state.maps.getMap(floor);
-        const eventLayer = map?.eventLayer;
-        if (!eventLayer) return false;
-
-        const dx = Math.sign(target.x - this.locator.x);
-        const dy = Math.sign(target.y - this.locator.y);
-        let x = this.locator.x + dx;
-        let y = this.locator.y + dy;
-        while (x !== target.x || y !== target.y) {
-            if (eventLayer.getBlock(x, y) !== 0) return true;
-            x += dx;
-            y += dy;
-        }
-        return false;
-    }
 }
 
-export class BlockedLaserConverter implements IMapDamageConverter<
+// [需改] 类名：换成你的转换器名
+export class EightDirLaserConverter implements IMapDamageConverter<
     IEnemyAttr,
     IHeroAttr
 > {
+    // [模板] convert 签名固定：把怪物身上的特殊属性翻译成一组视图
     convert(
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
         context: IEnemyContext<IEnemyAttr, IHeroAttr>
     ): IMapDamageView<any>[] {
+        // [需改] 读取触发本转换器的特殊属性（示例 code 43）
         const special = handler.enemy.getSpecial<ISpecial43Value>(43);
+        // [模板] 没有这个属性就不产生视图
         if (!special) return [];
-        const face = handler.state.faceManager.get(FaceGroup.Dir4)!;
+        // [需改] 取八方向朝向处理器（内置激光这里用的是 FaceGroup.Dir4）
+        const face = handler.state.faceManager.get(FaceGroup.Dir8)!;
+        // [模板] 返回视图数组
         return [
-            new BlockedLaserDamageView(context, handler.locator, special, face)
+            new EightDirLaserDamageView(context, handler.locator, special, face)
         ];
     }
 }
 
+// [需改] 注册这行要挪进 initializeEnemy（见下方「注册在哪里」）
 const mapDamage = state.enemyContext.getMapDamage();
-mapDamage?.useConverter(new BlockedLaserConverter());
+mapDamage?.useConverter(new EightDirLaserConverter());
 ```
 
-示例用 `eventLayer.getBlock(x, y)` 判断遮挡；如果你的项目把地形放在别的图层，替换成对应图层的 `getBlock` 即可。`useConverter` 会替换掉内置转换器，若要保留内置五类，需要在转换器里同时收集内置视图，或修改 `MainMapDamageConverter`。
+### 注册在哪里
+
+`useConverter` 要写进 `initializeEnemy`。下面是 `src/data/enemy/initialize.ts` 中该函数的样子（省略了无关的行）：
+
+```ts
+export function initializeEnemy(
+    state: ICoreState
+): IEnemyInitializationReturns {
+    // ...省略：怪物管理器、特殊属性、上下文的初始化...
+
+    const ctx = state.enemyContext;
+    const damageSystem = new DamageSystem(ctx);
+    const mapDamage = new MapDamage(ctx);
+    // ...省略：damageSystem.useCalculator(...)...
+    mapDamage.useReducer(new MainMapDamageReducer());
+    mapDamage.useConverter(new MainMapDamageConverter());
+    // [需改] 你自己的转换器在这里替换/追加：
+    // mapDamage.useConverter(new EightDirLaserConverter());
+    ctx.attachDamageSystem(damageSystem);
+    ctx.attachMapDamage(mapDamage);
+
+    // ...省略：绑定勇士、光环、最终效果、脚本、钩子...
+}
+```
+
+示例只用 `FaceGroup.Dir8` 替换内置的 `FaceGroup.Dir4`，其余与内置激光相同，就得到了八方向激光。
 
 ## 合并器
 

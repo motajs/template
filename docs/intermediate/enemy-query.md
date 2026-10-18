@@ -63,44 +63,65 @@ state.enemyContext.registerSpecialQueryEffect(effect);
 
 这里的**怪物视图**是 `IEnemyView`：用 `view.getComputedEnemy()` 取到该怪物的计算后对象，就能读它的特殊属性。上下文还有其他成员（如按坐标取怪物、取绑定的勇士与地图伤害管理器），需要时再查 API 参考。
 
+## 改内置，还是自己写
+
+查询是**引擎未内置、必须自己写并注册的新增内容**（见上方 warning），没有「只改内置一处」的捷径：`initialize.ts` 里目前没有注册任何查询效果。
+
+- **常规查询**：写一个 `IEnemyCommonQueryEffect` 对象，用 `registerCommonQueryEffect(code, effect)` 注册；
+- **特殊查询**：写一个 `IEnemySpecialQueryEffect` 对象，用 `registerSpecialQueryEffect(effect)` 注册。
+
+下面代码用 `[模板]` 标出可原样照抄的行（接口签名、遍历骨架），用 `[需改]` 标出必须按需求改写的行（code、优先级、统计与修改逻辑）。
+
 ## 示例：抱团
 
 「抱团」的规则是：范围内每有一个带同种特殊属性的怪物，自身攻击力就增加固定值。它只需要读周围、改自己的攻击，所以用常规查询实现（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
 
 ```ts
+// [模板] 依赖导入
 import { ManhattanRange } from '@motajs/common';
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import { IEnemyCommonQueryEffect } from '@user/data-system';
 
+// [需改] 变量名：这是一个常规查询效果对象
 const effect: IEnemyCommonQueryEffect<IEnemyAttr, IHeroAttr> = {
+    // [需改] priority：与光环共用一套优先级，越大越先执行
     priority: 10,
+    // [模板] apply 签名固定：handler 是当前怪物，special 是触发查询的属性，query() 取上下文
     apply(handler, special, query) {
+        // [需改] 读出本属性登记的参数（示例：半径与每只同类提供的攻击加成）
         const { radius, atk } = special.value as {
             radius: number;
             atk: number;
         };
+        // [模板] 必须用 query() 取上下文（直接读 handler.context 不会被登记为「查询过」，见上文）
         const ctx = query();
+        // [模板] 范围对象建一次即可
         const range = new ManhattanRange();
         let count = 0;
+        // [模板] 扫出范围内的怪物，逐项拿到 [位置, 视图]
         for (const [locator, view] of ctx.scanRange(range, {
             cx: handler.locator.x,
             cy: handler.locator.y,
             radius
         })) {
+            // [需改] 跳过自己：只统计周围的其他怪物
             if (
                 locator.x === handler.locator.x &&
                 locator.y === handler.locator.y
             ) {
                 continue;
             }
+            // [需改] 统计拥有同种特殊属性的怪物
             if (view.getComputedEnemy().hasSpecial(special.code)) {
                 count++;
             }
         }
+        // [需改] 修改自身：每有一个同类，攻击加 atk 点
         handler.enemy.addAttribute('atk', count * atk);
     }
 };
 
+// [需改] 注册：code 是绑定本效果的属性编号（示例自选 40）
 state.enemyContext.registerCommonQueryEffect(40, effect);
 ```
 
@@ -111,17 +132,23 @@ state.enemyContext.registerCommonQueryEffect(40, effect);
 「同化」的规则是：把场上其他怪物的特殊属性搬到自己身上——自己还没有的属性直接照抄（先按位置索引从小到大排序，靠前位置的属性先被抄过来）；自己已经有的数值型属性则与场上其他怪物的同一属性加算叠加。它要增删、改写自己拥有的特殊属性，所以用特殊查询（示例用 `ctx.iterateEnemy()` 遍历全场；若要限定范围，把遍历换成 `ctx.scanRange`）：
 
 ```ts
+// [模板] 依赖导入
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import { IEnemySpecialQueryEffect } from '@user/data-system';
 import { ISpecial } from '@user/data-base';
 
+// [需改] 变量名：特殊查询效果对象
 const effect: IEnemySpecialQueryEffect<IEnemyAttr, IHeroAttr> = {
-    priority: 15,
+    priority: 15, // [需改] 优先级
+    // [模板] for(ctx) 签名固定：返回一个修饰器；ctx 是只读查询上下文
     for(ctx) {
         return {
+            // [需改] shouldQuery：本效果是否作用于这只怪物（示例：带 code 41 的怪物）
             shouldQuery: handler => handler.enemy.hasSpecial(41),
+            // [需改] add：返回要添加给怪物的特殊属性
             add(handler) {
                 const result: ISpecial<any>[] = [];
+                // [模板] 取全场其他怪物，并按位置索引从小到大排序
                 const others = [...ctx.iterateEnemy()]
                     .filter(
                         ([, view]) => view.getComputedEnemy() !== handler.enemy
@@ -131,6 +158,7 @@ const effect: IEnemySpecialQueryEffect<IEnemyAttr, IHeroAttr> = {
                             ctx.indexer.index(a.x, a.y) -
                             ctx.indexer.index(b.x, b.y)
                     );
+                // [需改] 把别人有、自己没有的属性照抄过来（跳过同化属性自身）
                 for (const [, view] of others) {
                     for (const special of view
                         .getComputedEnemy()
@@ -142,13 +170,17 @@ const effect: IEnemySpecialQueryEffect<IEnemyAttr, IHeroAttr> = {
                 }
                 return result;
             },
+            // [模板] 本效果不删除属性，返回空数组
             delete() {
                 return [];
             },
+            // [需改] modify：自己已有、需要叠加数值的属性在这里处理
             modify(handler, special) {
+                // [模板] 只处理数值型属性
                 if (typeof special.value !== 'number') return false;
                 let sum = special.value;
                 let found = false;
+                // [模板] 遍历全场，把同 code 的数值加算进来
                 for (const [, view] of ctx.iterateEnemy()) {
                     const other = view
                         .getComputedEnemy()
@@ -158,6 +190,7 @@ const effect: IEnemySpecialQueryEffect<IEnemyAttr, IHeroAttr> = {
                     found = true;
                 }
                 if (!found) return false;
+                // [模板] 写回并返回 true，表示确实改动了
                 special.setValue(sum);
                 return true;
             }
@@ -165,6 +198,7 @@ const effect: IEnemySpecialQueryEffect<IEnemyAttr, IHeroAttr> = {
     }
 };
 
+// [需改] 注册（特殊查询不绑定单个 code，只传 effect）
 state.enemyContext.registerSpecialQueryEffect(effect);
 ```
 
@@ -175,22 +209,53 @@ state.enemyContext.registerSpecialQueryEffect(effect);
 「号角」的规则是：场上每有一只怪物，自身就获得一份加成。它不关心范围与同类，用常规查询遍历全场即可：
 
 ```ts
+// [模板] 依赖导入
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import { IEnemyCommonQueryEffect } from '@user/data-system';
 
+// [需改] 变量名：同样是常规查询效果对象
 const effect: IEnemyCommonQueryEffect<IEnemyAttr, IHeroAttr> = {
-    priority: 5,
+    priority: 5, // [需改] 优先级
+    // [模板] apply 签名固定
     apply(handler, special, query) {
+        // [模板] 必须用 query() 取上下文
         const ctx = query();
         let count = 0;
+        // [模板] 遍历全场怪物逐一计数
         for (const _ of ctx.iterateEnemy()) {
             count++;
         }
+        // [需改] 修改自身：每有一只怪物，攻击加 special.value 点
         handler.enemy.addAttribute('atk', count * (special.value as number));
     }
 };
 
+// [需改] 注册：示例自选 code 42
 state.enemyContext.registerCommonQueryEffect(42, effect);
 ```
 
-三个示例分别覆盖了「按范围统计同类」「合并特殊属性」「遍历全场计数」三种典型用法。把注册调用放进 `initializeEnemy`，查询就会参与构建计算后怪物。
+三个示例分别覆盖了「按范围统计同类」「合并特殊属性」「遍历全场计数」三种典型用法。
+
+## 注册在哪里
+
+`registerCommonQueryEffect` 与 `registerSpecialQueryEffect` 要写进 `initializeEnemy`。下面是 `src/data/enemy/initialize.ts` 中该函数的样子（省略了无关的行）：
+
+```ts
+export function initializeEnemy(
+    state: ICoreState
+): IEnemyInitializationReturns {
+    // ...省略：怪物管理器、特殊属性、上下文、伤害系统、地图伤害的初始化...
+
+    const ctx = state.enemyContext;
+
+    // ...省略：光环转换器与最终效果的注册...
+
+    // [需改] 查询效果目前没有内置，需要自己在这里注册：
+    // ctx.registerCommonQueryEffect(40, effect);
+    // ctx.registerSpecialQueryEffect(effect);
+
+    // ...省略：脚本与钩子的注册...
+}
+```
+
+把注册调用放在这里，查询就会参与构建计算后怪物。
