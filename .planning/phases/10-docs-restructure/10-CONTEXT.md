@@ -85,30 +85,81 @@
 
 **逐篇内容**
 
-- **D-21（概念·`data-vs-render`）** 数据端负责「算」、渲染端负责「画」；比喻「棋局 / 账本」对「棋盘 / 摄像机」；两者分别在 `src/data`、`src/client`；只讲好处，重点**录像验证**（只跑数据端）；附 mermaid 图；**不提**「渲染端不能反向推送」（留高级）；不提「后续再讲」。
-- **D-22（概念·`src-tour`）** 详讲 `src/data`、`src/client`、`src/content`、`src/constant.ts`；**一句带过** `src/bootstrap.ts`、`src/data.ts`（数据端入口、需外部 bootstrap）、`src/package.json`、`src/styles.less`（一般不需要动）；**不讲** `src/main.ts`、`src/App.vue`、`src/types/`（均已弃用）；含一张「该不该改」表。
-- **D-23（概念·`code-basics`）** 顺序 ①简明语法 ②模块与引入 ③类型入门；类型把**泛型比喻成「类型的函数」**；讲 `interface` → `implements` 约定（**建议但非强制**，不遵循也不会出问题）；三者都大概讲；结尾给 JS/TS 教程链接 `https://h5mota.com/bbs/thread/?tid=1018&p=3#p41`（该教程针对本引擎设计、更适合本引擎作者）。
-- **D-24（概念·`hooks`）** 钩子是什么；常用钩子族一览；**需求 → 钩子对照表**（核心）；`addHook` / `removeHook`；`hook/initialize.ts` 一笔带过；async 钩子只提哪些是；「钩子可能被非本对象触发」简说一句（多主对象时才需要判断，一般不会串）。
-- **D-25（基础·`data-state-overview`）** 数据端主对象 `state` 是访问一切入口；一张表列常用对象与获取方式：`hero` / `maps` / `flags` / `enemyManager` / `enemyContext` / `combat` / `eventSystem` / `pathfinding` / `tileStore` / `itemStore` / `mapStore` / `eventStore` / `faceManager` / `roleFace` / `replaySystem` / `loader` / `loadManager` / `getDataPlugin(id)` / `emitTip(...)`；按 L0–L3 **轻量分组标注**（分层不影响接口使用，细讲留高级）。放在基础接口组最前。
-- **D-26（基础·`hero-attribute`）** 属性列表；基础 vs 最终属性（`getBaseAttribute` / `getFinalAttribute`）；改基础属性 `set` / `add` / `mul` / `div`（经 `getModifiableAttribute()`）；**修饰器**：内置 `ValueModifier`（数值加减，`@system/value`）与 `PercentageModifier`（**按基础值算百分比**，`@system/percentage`）；`addModifier` / `deleteModifier`；提 `save` 参数——**不进存档时，应由外部其它系统负责分配该修饰器，避免读档后不一致**；`getAttribute()` 只读、`getIsolatedAttribute()` 试算；示例：攻击 +N 永久、防御 −X% 临时；指回 hooks 篇。
-- **D-27（基础·`hero-items`）** `IHeroItems`（`addItem` 可传负数、`Pick` 立刻生效、`getItemState`、`iterateItems`、`useItem` 仅 `Constant` / `Consumable`、`itemCount`）；**四种类别区分**：`Constant`（永久）/ `Consumable`（消耗）/ `Pick`（即捡即用）/ `Equipment`（装备，虽是道具但属单独系统）；道具效果提一句属**内容层**，并说明道具效果可调用哪些内容（`state`、道具数据）；示例：发黄钥匙 / 减道具 / 使用道具。
-- **D-28（基础·`hero-equipment`）** `IHeroEquipment`（`slots` / `canEquipTo` / `equip` 含 `autoUnload` / `unequip` / `equipped` / `getEquipped` / `getEquips`）；`IHeroEquipsStore`（`add` / `delete` / `get` / `instancesOf` / `instances` / `count`）；`IEquipmentState` 的 `value` / `percentage`（本质是修饰器）；`compareEquip` **简单讲**；**排序器不讲**（高级）；以「会用常用接口」为界。
-- **D-29（基础·`hero-location`）** 只讲**获取位置**（`hero.location` 的 `x` / `y` / `direction`、`hero.getLocation()`）与**获取楼层**（`floorId` / `map`）；移动位置、切换楼层留高级。
-- **D-30（基础·`map-structure`）** `IMapState` 楼层集合（`maps` / `getMap` / `getActiveMap` / `iterateAllMaps`）与**楼层激活**（active）；`IGameMap`（`layerList` / `eventLayer` / `tileStore` / 宽高）；`IMapLayer`（`alias` 别名、宽高）；**事件层本质就是个图层，归本篇**。
-- **D-31（基础·`map-tiles`）** 只讲 `getBlock` / `setBlock` / `removeBlock` / `putMapData` / `getMapData` / `iterateBlocks`；`getLocationData` 属低级需求，**留高级**。
-- **D-32（基础·`flags`）** 全局**可存档**变量系统；**所有接口都讲（含 `occupied`）**：`setField` / `getField` / `getOrInsert` / `getOrInsertComputed` / `deleteField` / `setFieldValue` / `addFieldValue` / `getFieldValue` / `getFieldValueDefaults`；会进存档；**建议**不滥用、不用的变量及时 `deleteField`；示例：记录开关 / 计数。
-- **D-33（战斗·`combat-overview`）** 伤害大致怎么算；流程（基础数据 → 光环 / 查询 / 最终 → 伤害计算 → 战前脚本 → 战斗 → 战后结算 + 状态钩子）；mermaid 图；末尾「流程步骤 → 对应文档」对照表；临界值不在本篇提。
-- **D-34（战斗·`enemy-specials`）** 特殊属性是什么、在数据里的样子、两类定义（无参 `defineNonePropertySpecial` / 有参 `defineCommonSerializableSpecial`）；`src/data/enemy/special.ts` 注册；**如何自定义新特殊属性**（步骤）；**「属性实现位置」对照表**（内置属性各自实现在哪）；**多个示例**（有参 / 无参、`name` / `desc` 用字符串与函数）；编辑器识别约定（`// {code} - {name}`、`/** {code} - {name} */`、`ISpecial{code}Value`、`#region` 不能删）；**怪物比较**简单说、一般不改、真要改参考高级教程。
-- **D-35（战斗·`enemy-aura`）** **先讲优先级**（高优先级可影响低优先级、反之不行；与查询效果共用优先级）；内置光环（普通 23 / 支援 24 / 特殊光环 26）；运作方式（写「转换器 + 视图」并注册，**不深讲为何**）；四种内置范围只列名（`FullRange` / `RectRange` / `ManhattanRange` / `RayRange`）；**多个自定义示例**：基础光环（减少周围怪物金币与经验）+ 高级特殊光环（给周围怪物上光环、优先级高于特殊光环）；借示例讲清基础光环 vs 特殊光环差距；`apply` 与 `applySpecial` 差别讲清。
-- **D-36（战斗·`enemy-query`）** **新增内容（引擎未内置）**；解决「特殊属性查询外部状态」；常规查询 `CommonQuery`（`registerCommonQueryEffect(code, effect)`，`apply(handler, special, query)`）与特殊查询 `SpecialQuery`（`registerSpecialQueryEffect(effect)`，`for(ctx)` → 修饰器 `shouldQuery` / `add` / `delete` / `modify`）；与光环共用优先级；**三个示例**：抱团（范围内每有一个带该属性的怪物就给自身加成）、同化（把范围内怪物特殊属性同化到自身，数值型加算叠加、否则取位置索引最小者）、号角（场上每有一只怪物就给自身加成）；说明三者能干什么即可；用**抱团**对比「用光环实现复杂度更高」；设计原因留高级。
-- **D-37（战斗·`enemy-final`）** 最终属性效果：**只影响自身、不依赖也不影响外部环境**的一段收尾调整；内置坚固(3)、模仿(8)；接口 `IEnemyFinalEffect`（`priority` + `apply`）、`registerFinalEffect`；**三方对比**（光环：不依赖外部但影响外部；查询：依赖外部仅影响自身；最终：两者皆无）；示例：**仿攻**（怪物攻击 = 玩家攻击）；`priority` 一句带过；回指 `combat-overview` 流程。
-- **D-38（战斗·`enemy-calculator`）** `IDamageCalculator`（`calculate` → `{ damage, turn }`、`getCriticalLimit`）；注册 `useCalculator`；**逐段导读**内置伤害公式并指明「加自己的属性加在哪一步」；**支援怪**较难 → 写「实在理解不了可暂时跳过」；示例：**等差数列属性**（怪物攻击每回合按固定值递增，等差公式）等；核心讲明调整的是 `f(enemy, hero)` 里的 **`f`**；**临界**：定义 + 现有约定（伤害值单调递减；不单调也可、但临界不准）+ 临界值唯一依赖「最后的伤害值」，**不讲二分过程**。
-- **D-39（战斗·`enemy-map-damage`）** 概念（领域 / 夹击 / 阻击 / 激光 / 伏击）；三部分（伤害视图 / 转换器 / 合并器，浅讲）；注册 `useConverter` / `useReducer`；内置五类表（`code` / 实现位置**写文档时核对源码**）；自定义示例：**受地形遮挡的激光**；合并器简单讲（决定一个点受多个地图伤害时取什么伤害类型，深入留高级）；**实际结算用户届时补**。
-- **D-40（战斗·`enemy-combat-script`）** 战斗脚本（战前 `before` 返回 `bool` 拦截、战后 `after` 结算，按 `priority`）；内置 `MainCombatScript`；注册 `addCombatScript`；**「脚本 vs 钩子」选型表**；战前示例「怪物拥有某特殊属性时无法与其战斗」、战后示例「战后玩家回复固定量生命值」；`priority` 一句。
-- **D-41（战斗·`enemy-status-hooks`）** 状态类属性（中毒 / 衰弱 / 重生）必须挂钩子；三类内置（中毒：`onStepEnd` + `onAfterTeleportTo` **两个钩子**；衰弱：`onAfterCombat` + 修饰器；重生：`onAfterCombat` + `onSetFloor` **跨钩子协同**）；注册在 `initialize.ts`；**强调一个状态可能要用多个钩子**；自定义示例「下次战斗伤害乘二」（并说明还要改伤害计算器，串起 `enemy-calculator`）；修饰器概念见 `hero-attribute`。
-- **D-42（其他·`events`）** 只讲**如何自定义新事件**（内建函数），不讲原理、不列内建全量；`BuiltInFunction`（`name` + `func(param, env)`）；`IBlockEventEnv` 常用字段（其余指向 API）；参数接口在 `types.ts`；注册在 `createEventRegistrations()`；内置示例导读；**自定义示例：设置 flag、勇士回血**；编辑器识别方式未设计完 → 文档留余地。
-- **D-43（其他·`replay-commands`）** 录像系统用途 + **核心原则**「玩家直接产生、会影响最终成绩的行为必须计入录像」并解释其含义；**如何新增自定义录像需改 `packages-user` 下的引擎内容**；主动录像 vs 被动录像（`ReplayCommandType.Active` / `Passive`）；`@shouldReplay` / `@ignoreReplay` 的功能与检测（`begin` / `end` 区间）；**不给示例**，后续其他教程引入自定义录像时直接链接过去。
-- **D-44（其他·`data-plugins`）** 插件是强拓展系统，中级只讲基础、**高级教程详解其工作原理**；`IDataPluginDefine`（`id` / `dependencies` / `awake` / `initialize` / `afterLoad`）；时机次序 `awake`（装配）→ `initialize`（**加载前**）→ `afterLoad`（加载后）；注册在 `src/data/plugin/list.ts` 的 `dataPlugins`；`state.addSaveableContent`；示例**占位**（待用户提供**较简单**插件，**不用商店插件**）；写明「是否纳入本中级篇取决于示例难度」。
+- **D-21:** （概念·`data-vs-render`）数据端负责「算」、渲染端负责「画」；比喻「棋局 / 账本」对「棋盘 / 摄像机」；两者分别在 `src/data`、`src/client`；只讲好处，重点**录像验证**（只跑数据端）；附 mermaid 图；**不提**「渲染端不能反向推送」（留高级）；不提「后续再讲」。
+- **D-22:** （概念·`src-tour`）详讲 `src/data`、`src/client`、`src/content`、`src/constant.ts`；**一句带过** `src/bootstrap.ts`、`src/data.ts`（数据端入口、需外部 bootstrap）、`src/package.json`、`src/styles.less`（一般不需要动）；**不讲** `src/main.ts`、`src/App.vue`、`src/types/`（均已弃用）；含一张「该不该改」表。
+- **D-23:** （概念·`code-basics`）顺序 ①简明语法 ②模块与引入 ③类型入门；类型把**泛型比喻成「类型的函数」**；讲 `interface` → `implements` 约定（**建议但非强制**，不遵循也不会出问题）；三者都大概讲；结尾给 JS/TS 教程链接 `https://h5mota.com/bbs/thread/?tid=1018&p=3#p41`（该教程针对本引擎设计、更适合本引擎作者）。
+- **D-24:** （概念·`hooks`）钩子是什么；常用钩子族一览；**需求 → 钩子对照表**（核心）；`addHook` / `removeHook`；`hook/initialize.ts` 一笔带过；async 钩子只提哪些是；「钩子可能被非本对象触发」简说一句（多主对象时才需要判断，一般不会串）。
+- **D-25:** （基础·`data-state-overview`）数据端主对象 `state` 是访问一切入口；一张表列常用对象与获取方式：`hero` / `maps` / `flags` / `enemyManager` / `enemyContext` / `combat` / `eventSystem` / `pathfinding` / `tileStore` / `itemStore` / `mapStore` / `eventStore` / `faceManager` / `roleFace` / `replaySystem` / `loader` / `loadManager` / `getDataPlugin(id)` / `emitTip(...)`；按 L0–L3 **轻量分组标注**（分层不影响接口使用，细讲留高级）。放在基础接口组最前。
+- **D-26:** （基础·`hero-attribute`）属性列表；基础 vs 最终属性（`getBaseAttribute` / `getFinalAttribute`）；改基础属性 `set` / `add` / `mul` / `div`（经 `getModifiableAttribute()`）；**修饰器**：内置 `ValueModifier`（数值加减，`@system/value`）与 `PercentageModifier`（**按基础值算百分比**，`@system/percentage`）；`addModifier` / `deleteModifier`；提 `save` 参数——**不进存档时，应由外部其它系统负责分配该修饰器，避免读档后不一致**；`getAttribute()` 只读、`getIsolatedAttribute()` 试算；示例：攻击 +N 永久、防御 −X% 临时；指回 hooks 篇。
+- **D-27:** （基础·`hero-items`）`IHeroItems`（`addItem` 可传负数、`Pick` 立刻生效、`getItemState`、`iterateItems`、`useItem` 仅 `Constant` / `Consumable`、`itemCount`）；**四种类别区分**：`Constant`（永久）/ `Consumable`（消耗）/ `Pick`（即捡即用）/ `Equipment`（装备，虽是道具但属单独系统）；道具效果提一句属**内容层**，并说明道具效果可调用哪些内容（`state`、道具数据）；示例：发黄钥匙 / 减道具 / 使用道具。
+- **D-28:** （基础·`hero-equipment`）`IHeroEquipment`（`slots` / `canEquipTo` / `equip` 含 `autoUnload` / `unequip` / `equipped` / `getEquipped` / `getEquips`）；`IHeroEquipsStore`（`add` / `delete` / `get` / `instancesOf` / `instances` / `count`）；`IEquipmentState` 的 `value` / `percentage`（本质是修饰器）；`compareEquip` **简单讲**；**排序器不讲**（高级）；以「会用常用接口」为界。
+- **D-29:** （基础·`hero-location`）只讲**获取位置**（`hero.location` 的 `x` / `y` / `direction`、`hero.getLocation()`）与**获取楼层**（`floorId` / `map`）；移动位置、切换楼层留高级。
+- **D-30:** （基础·`map-structure`）`IMapState` 楼层集合（`maps` / `getMap` / `getActiveMap` / `iterateAllMaps`）与**楼层激活**（active）；`IGameMap`（`layerList` / `eventLayer` / `tileStore` / 宽高）；`IMapLayer`（`alias` 别名、宽高）；**事件层本质就是个图层，归本篇**。
+- **D-31:** （基础·`map-tiles`）只讲 `getBlock` / `setBlock` / `removeBlock` / `putMapData` / `getMapData` / `iterateBlocks`；`getLocationData` 属低级需求，**留高级**。
+- **D-32:** （基础·`flags`）全局**可存档**变量系统；**所有接口都讲（含 `occupied`）**：`setField` / `getField` / `getOrInsert` / `getOrInsertComputed` / `deleteField` / `setFieldValue` / `addFieldValue` / `getFieldValue` / `getFieldValueDefaults`；会进存档；**建议**不滥用、不用的变量及时 `deleteField`；示例：记录开关 / 计数。
+- **D-33:** （战斗·`combat-overview`）伤害大致怎么算；流程（基础数据 → 光环 / 查询 / 最终 → 伤害计算 → 战前脚本 → 战斗 → 战后结算 + 状态钩子）；mermaid 图；末尾「流程步骤 → 对应文档」对照表；临界值不在本篇提。
+- **D-34:** （战斗·`enemy-specials`）特殊属性是什么、在数据里的样子、两类定义（无参 `defineNonePropertySpecial` / 有参 `defineCommonSerializableSpecial`）；`src/data/enemy/special.ts` 注册；**如何自定义新特殊属性**（步骤）；**「属性实现位置」对照表**（内置属性各自实现在哪）；**多个示例**（有参 / 无参、`name` / `desc` 用字符串与函数）；编辑器识别约定（`// {code} - {name}`、`/** {code} - {name} */`、`ISpecial{code}Value`、`#region` 不能删）；**怪物比较**简单说、一般不改、真要改参考高级教程。
+- **D-35:** （战斗·`enemy-aura`）**先讲优先级**（高优先级可影响低优先级、反之不行；与查询效果共用优先级）；内置光环（普通 23 / 支援 24 / 特殊光环 26）；运作方式（写「转换器 + 视图」并注册，**不深讲为何**）；四种内置范围只列名（`FullRange` / `RectRange` / `ManhattanRange` / `RayRange`）；**多个自定义示例**：基础光环（减少周围怪物金币与经验）+ 高级特殊光环（给周围怪物上光环、优先级高于特殊光环）；借示例讲清基础光环 vs 特殊光环差距；`apply` 与 `applySpecial` 差别讲清。
+- **D-36:** （战斗·`enemy-query`）**新增内容（引擎未内置）**；解决「特殊属性查询外部状态」；常规查询 `CommonQuery`（`registerCommonQueryEffect(code, effect)`，`apply(handler, special, query)`）与特殊查询 `SpecialQuery`（`registerSpecialQueryEffect(effect)`，`for(ctx)` → 修饰器 `shouldQuery` / `add` / `delete` / `modify`）；与光环共用优先级；**三个示例**：抱团（范围内每有一个带该属性的怪物就给自身加成）、同化（把范围内怪物特殊属性同化到自身，数值型加算叠加、否则取位置索引最小者）、号角（场上每有一只怪物就给自身加成）；说明三者能干什么即可；用**抱团**对比「用光环实现复杂度更高」；设计原因留高级。
+- **D-37:** （战斗·`enemy-final`）最终属性效果：**只影响自身、不依赖也不影响外部环境**的一段收尾调整；内置坚固(3)、模仿(8)；接口 `IEnemyFinalEffect`（`priority` + `apply`）、`registerFinalEffect`；**三方对比**（光环：不依赖外部但影响外部；查询：依赖外部仅影响自身；最终：两者皆无）；示例：**仿攻**（怪物攻击 = 玩家攻击）；`priority` 一句带过；回指 `combat-overview` 流程。
+- **D-38:** （战斗·`enemy-calculator`）`IDamageCalculator`（`calculate` → `{ damage, turn }`、`getCriticalLimit`）；注册 `useCalculator`；**逐段导读**内置伤害公式并指明「加自己的属性加在哪一步」；**支援怪**较难 → 写「实在理解不了可暂时跳过」；示例：**等差数列属性**（怪物攻击每回合按固定值递增，等差公式）等；核心讲明调整的是 `f(enemy, hero)` 里的 **`f`**；**临界**：定义 + 现有约定（伤害值单调递减；不单调也可、但临界不准）+ 临界值唯一依赖「最后的伤害值」，**不讲二分过程**。
+- **D-39:** （战斗·`enemy-map-damage`）概念（领域 / 夹击 / 阻击 / 激光 / 伏击）；三部分（伤害视图 / 转换器 / 合并器，浅讲）；注册 `useConverter` / `useReducer`；内置五类表（`code` / 实现位置**写文档时核对源码**）；自定义示例：**受地形遮挡的激光**；合并器简单讲（决定一个点受多个地图伤害时取什么伤害类型，深入留高级）；**实际结算用户届时补**。
+- **D-40:** （战斗·`enemy-combat-script`）战斗脚本（战前 `before` 返回 `bool` 拦截、战后 `after` 结算，按 `priority`）；内置 `MainCombatScript`；注册 `addCombatScript`；**「脚本 vs 钩子」选型表**；战前示例「怪物拥有某特殊属性时无法与其战斗」、战后示例「战后玩家回复固定量生命值」；`priority` 一句。
+- **D-41:** （战斗·`enemy-status-hooks`）状态类属性（中毒 / 衰弱 / 重生）必须挂钩子；三类内置（中毒：`onStepEnd` + `onAfterTeleportTo` **两个钩子**；衰弱：`onAfterCombat` + 修饰器；重生：`onAfterCombat` + `onSetFloor` **跨钩子协同**）；注册在 `initialize.ts`；**强调一个状态可能要用多个钩子**；自定义示例「下次战斗伤害乘二」（并说明还要改伤害计算器，串起 `enemy-calculator`）；修饰器概念见 `hero-attribute`。
+- **D-42:** （其他·`events`）只讲**如何自定义新事件**（内建函数），不讲原理、不列内建全量；`BuiltInFunction`（`name` + `func(param, env)`）；`IBlockEventEnv` 常用字段（其余指向 API）；参数接口在 `types.ts`；注册在 `createEventRegistrations()`；内置示例导读；**自定义示例：设置 flag、勇士回血**；编辑器识别方式未设计完 → 文档留余地。
+- **D-43:** （其他·`replay-commands`）录像系统用途 + **核心原则**「玩家直接产生、会影响最终成绩的行为必须计入录像」并解释其含义；**如何新增自定义录像需改 `packages-user` 下的引擎内容**；主动录像 vs 被动录像（`ReplayCommandType.Active` / `Passive`）；`@shouldReplay` / `@ignoreReplay` 的功能与检测（`begin` / `end` 区间）；**不给示例**，后续其他教程引入自定义录像时直接链接过去。
+- **D-44:** （其他·`data-plugins`）插件是强拓展系统，中级只讲基础、**高级教程详解其工作原理**；`IDataPluginDefine`（`id` / `dependencies` / `awake` / `initialize` / `afterLoad`）；时机次序 `awake`（装配）→ `initialize`（**加载前**）→ `afterLoad`（加载后）；注册在 `src/data/plugin/list.ts` 的 `dataPlugins`；`state.addSaveableContent`；示例**占位**（待用户提供**较简单**插件，**不用商店插件**）；写明「是否纳入本中级篇取决于示例难度」。
+
+### 文档写作流程（长期规范，适用于后续所有文档写作，不止本批）
+
+- **D-45（prettier 格式化）：** 文档写完后**必须**跑 prettier 格式化——prettier 也管 markdown；不格式化虽不报 eslint 错，但用户日后手动修改会产生大量格式变动。推荐命令：`node node_modules/prettier/bin/prettier.cjs --write "docs/intermediate/*.md"`（或等价的 `pnpm exec prettier --write`）。若格式化会阻断某条命令执行，**先跳过并在对话中提出**，由用户自行格式化。
+- **D-46（两阶段修订循环）：** 修订必须依次经过两阶段，缺一不可：
+  1. **子代理自审循环**：如 plan-checker，以及**按文档实际情况选择合适视角**的子代理反向审阅（面向新手的文档可用「不懂代码的读者」人格；面向有基础作者或特定领域的文档，应选更贴近该受众/领域的视角）→ 问题清单 → 迭代修正。**审阅视角不固定为「不懂代码的读者」，须因文档而异。**
+  2. **用户主导的修订循环**：用户以更贴近本领域的视角提出问题 → AI 派子代理逐条修改文档 → 回报 → 用户继续提，直到用户满意并确认。
+  **必须经过用户循环且获用户确认后才可收尾**，不得由 AI 自行收尾。适用于后续所有文档写作。
+- **D-47（高级教程预留，修订 D-16）：** 凡「留到高级教程细讲」的内容，必须**显式说明**并**预留链接标记**。由于 `docs/advanced/` 尚未建立，**不得**写指向它的真实 markdown 链接（会造成死链、构建失败）；改用非断链占位（如代码 span `高级教程 · <topic>` 或 `<!-- TODO(advanced): <topic> -->`），待高级教程存在后再替换为真链接。此条在「高级教程引用」范围内取代 D-16 的「禁元叙述」。
+- **D-48（实操写法，长期规范）：** 系统/原理讲解保持现状（可以讲、且现在这样就好）；需要重做的是**「实操/示例」部分**。每处实操统一写成可分步照抄的形式：
+  1. **目标**：先说要做出什么效果；
+  2. **改哪里**：哪个文件、文件内哪个位置；
+  3. **复制什么**：只给要新增的那段，**不含 `import`**；写清「顶部通常已有这些 import，不要再粘；若报缺少 X，再在顶部补 `import ...`」；
+  4. **改什么**：复制后只需改的数值/字段/名称；
+  5. **怎么验证**：改完看什么现象；
+  6. **注意**：常见错误、别碰什么。
+  另外：示例取**最短可行**（如「下次战斗伤害翻倍」直接用 `onAfterCombat`，不额外写战后脚本）；**不写 `dev.md` 的引擎开发约定**（如 import 必须置顶、注释位置等）；**不写发布前/数量类无关信息**（如「发布前会有约 100 个内置事件」）。适用于后续所有文档写作。
+- **D-49（示例与「改内置优先」）：** 
+  1. 示例代码必须**贴合引擎现状**：定义 `class` 再 `new`，**不要**写 `const obj = { ... }` 这类 plain object（引擎代码即如此）。例外：引擎本身就以对象字面量声明的内容（如 `src/content/item.ts` 的 `ItemEffect`），可沿用其现有写法。
+  2. 文档主体应主要讲**如何改内置类**（如 `src/data/enemy/*`、`src/data/hook/*` 中已有的类）；在**末尾**再简述「何时需要自己新写类、怎么写」。
+  3. 必须明确写明：**如果你不怎么懂代码，建议直接改内置，而不是自己写新的类。**
+- **D-50（通用模板 vs 示例）：** 对每类可扩展机制，文档要提供的是**机制本身的通用模板**，而不是某个具体效果的模板/示例：
+  1. 单独一节（如「模板：复制什么、改什么」），给出一段可复制的**骨架**（类 / 转换器 / 视图 / 效果等），并用 `[需改]` 标出作者需按自己需求修改的部分；
+  2. 模板与示例**分开**，不要把某个特定效果（如某个具体光环）当作模板；
+  3. 示例仅用于辅助说明，尽量短。
+  示例：光环应给「光环转换器 + 光环视图」的通用骨架 + 需改点，而不是给「减少金币经验的光环」当模板。
+- **D-51（特殊属性实现的落点与讲解方式）：**
+  1. **不要建议新建文件**：已有实现文件（如光环的 `src/data/enemy/aura.ts`）就全部写在其中，不要建议「新增一个自己的文件」。样板集中放置是为了方便管理与后续编辑器自动识别；只有**查询属性**需要单独新建 `query.ts`。
+  2. 对 `aura.ts` / `query.ts` 这类独立的特殊属性实现，建议用 `#region` 包裹，结构更清晰、后续编辑器也可能据此识别。暂定识别约定：`//#region {code}-{name}` … `//#endregion`。
+  3. 必须用**通俗语言解释「副作用」是什么**（刚接触代码的作者不懂这个概念）。
+  4. 说明**地图伤害是按「计算后怪物」计算**的：因此若光环给怪物新增了「领域」这类属性，该怪物确实会有领域效果；旧样板无法动态给怪物加特殊属性，这一点值得单独说明。若某种属性确实既要依赖外部环境、又要修改外部环境，应拆成「查询效果 + 光环效果」两个，二者通过新增一个怪物属性桥接（指向高级教程）。
+  5. `getCriticalLimit` 一般用不到，提一句即可，并说明高级教程会详细讲。
+  6. **接口讲解方式**：不要上来就搬接口列表；先说「为了实现 X，我们需要修改 Y 接口」，再讲这个接口的参数，这样更自然。
+- **D-52（加粗边界，长期规范）：** `**加粗**` 的内容**不要以标点开头或结尾**（CommonMark emphasis 边界规则会导致不渲染）。若确需加粗含标点的短语，应调整结构，使 `**` 相邻处为标点/空白，或改用 HTML `<strong>`。提交前用 flanking 规则自检所有 markdown。适用于后续所有文档写作。
+- **D-53（高级教程分层）：** 高级教程本身按难度/依赖分为 **I / II / III** 三层（避免与顶层「初级/中级/高级教程」撞名）：
+  - **I**：核心为**插件系统**，后续内容都是基于插件系统的拓展；
+  - **II**：系统级实现（如战斗上下文/光环/查询/优先级、伤害与地图伤害、渲染层与布局、加载与插件生命周期、自定义录像行为等）；
+  - **III**：原理与架构（双端分离约束、数据端 L0–L3、编辑器识别协议、录像深层原理、性能与调试等）。
+  由于渲染端尚未完工，**当前只规划/编写数据端内容**。
+- **D-54（高级教程定位）：** 文档面向**使用者**（不是引擎编写者）：在适度解析的同时，必须告诉读者**怎么用、怎么改、怎么自定义**；仍沿用 D-48（实操六步）、D-49（改内置优先/类示例）、D-50（通用模板单独成节）、D-51（落点/副作用/接口讲解方式）、D-52（加粗边界）等规范。
+- **D-55（优先插件）：** 明确建议：**新增系统优先通过插件系统实现**；只有不得不修改内置系统时才去改内部。理由：版本迁移时 `src` 基本不会改，但内置包（`packages` / `packages-user`）有可能会改，改内置会增加升级时的维护成本。
+- **D-56（高级 I 内容，7 篇）：**
+  1. **高级 I 导览**：I/II/III 分层、阅读路径与前置、D-55 原则；
+  2. **声明式 vs 命令式接口**：旧样板命令式（写一行即生效）vs 新样板声明式（告诉系统要做什么，系统在合适时机执行）；必须讲透，作为后续基础；
+  3. **插件系统**：自定义新插件、插件间调用、`dependencies` 依赖与排序、生命周期进阶、插件 id 稳定性与版本迁移；
+  4. **可存档内容（`ISaveableContent`）**：存档一致性、三级压缩、注册存档对象、存档顺序 / `afterLoad` / `bindSaveableExecuter`、跨对象引用、结构化约束（structured-cloneable：Object/Array/number/string/boolean/null/Map/Set/TypedArray/ArrayBuffer 等）、必须返回经 `structuredClone` 的对象；
+  5. **录像一致性**：`@shouldReplay` / `@ignoreReplay` 该写在什么方法/函数上、能保证什么、不能保证什么；自定义录像行为 → II，深层原理 → III；
+  6. **data-common 的 Store**：讲清各 Store 存了什么，明确是**内容层原始数据**、运行时一般**只读**，修改很可能绕过存档/录像/一致性而引发问题；
+  7. **钩子深入**：多对象场景（地图与图层）、如何判断「触发者是不是我关心的 map/layer」（身份校验）、同一钩子被多个对象复用、注册/移除与异步钩子。
+  每篇仍保留「怎么验证」。
+- **D-57（高级 I 读者修订循环）：** 高级 I 完成后，**必须**再走用户主导的修订循环（D-46 第 2 阶段）；且这次的读者人格**不能复用中级教程的「不懂代码的游戏作者」**——应面向**有一定代码基础、已读完中级教程、想做深度定制/理解扩展机制**的作者（具体人格在计划中明确，并经用户确认）。
 
 </decisions>
 
@@ -192,4 +243,4 @@
 
 *Phase: 10-docs-restructure*
 *Context gathered: 2026-10-14*
-*Context updated: 2026-10-17（旧内容删除并入本批 Wave 0 / 10-01；中级教程第一批 24 篇讨论结果沿用）*
+*Context updated: 2026-10-18（旧内容删除并入本批 Wave 0 / 10-01；中级教程第一批 24 篇讨论结果沿用；新增文档写作流程规范 D-45/D-46：prettier 格式化 + 两阶段修订循环）*

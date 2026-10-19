@@ -145,7 +145,7 @@ export const specials: SpecialDeclaration[] = [
 
 **Analog：** 自身（edit-in-place），形状参照同文件既有 `nav`/`sidebar`。
 
-**现有 `nav`（待新增一条，不改旧条目）**（`docs/.vitepress/config.ts:53-58`）：
+**现有 `nav`（本批将新增 `中级教程` 一条，并删除 `主页`/`指南`/`API`/`错误代码` 旧条目——D-04 已并入本批 `10-01` Wave 0）**（`docs/.vitepress/config.ts:53-58`）：
 ```ts
 nav: [
     { text: '主页', link: '/' },
@@ -192,15 +192,13 @@ sidebar: {
             ]
         }
     ],
-    '/guide/': [ /* 原样保留，禁止改动 */ ],
-    '/logger/': [ /* 原样保留，禁止改动 */ ],
-    '/api/': [{ text: 'API 列表', items: api }]
+    // '/guide/'、'/logger/'、'/api/' 三个旧键已随 D-04 并入本批（10-01），随旧内容一并移除
 }
 ```
 
 **硬约束：**
-- 只**新增** `nav` 一条 + `sidebar['/intermediate/']` 键；**禁止**改动/删除 `'/guide/'`、`'/logger/'`、`'/api/'` 及既有 `nav` 条目（D-14 / RESEARCH Pitfall 3）。
-- **不要**触碰 `docs/.vitepress/api.ts`、`init.ts`、`apiSidebar.ts`（后者 gitignored 且会被覆盖，`api.ts:71`）。
+- **新增** `nav` 一条 + `sidebar['/intermediate/']` 键；**同时**（D-04 已并入本批 / `10-01`）移除因旧内容被删而失效的旧 `nav` 条目（主页 / 指南 / API / 错误代码）与旧 `sidebar` 键 `'/guide/'`、`'/logger/'`、`'/api/'`。删除 / 改键的路径白名单以 `10-01-PLAN.md` 为准。
+- `docs/.vitepress/api.ts` 仅按 `10-01` 追加「`docs/api/` 缺失即跳过」守卫，`generateSidebar()` 的扫描逻辑不改（D-03）；`init.ts` 不改。`apiSidebar.ts` 为 gitignored 生成物，`10-01` 会一并删除（已无消费者，`api.ts:71` 会被覆盖）。
 - 24 条链接必须全部挂上，否则页面「写了但看不见」（RESEARCH Pitfall 1 / D-09 人工审阅）。
 
 ---
@@ -427,7 +425,7 @@ graph LR
 ### 越界红线
 **Source:** D-14（CONTEXT）、RESEARCH Pitfall 3
 **Apply to:** 本批**全部**改动。
-> 本批**只**做 `docs/intermediate/*` + `config.ts` 的 intermediate 注册。**禁止**删除/修改 `docs/guide/*`、`docs/dev/*`、`docs/logger/*`，也**禁止**改动 `nav`/`sidebar` 的既有 guide/logger/api 键与 `api.ts`/`init.ts`。越界项只记录、不实施。
+> 本批范围 = `docs/intermediate/*` + `config.ts` 的 intermediate 注册，**并**（D-04 已并入本批 / `10-01`）删除旧内容（`docs/guide/*`、`docs/dev/*`、`docs/logger/*`、`docs/api/*` 与首页 `docs/index.md`）、清理其失效的 `nav`/`sidebar` 键，及给 `docs/.vitepress/api.ts` 追加缺失目录守卫。**不**触碰 `src/`、`packages/`、`packages-user/` 生产代码；`init.ts` 不改。越界项只记录、不实施。
 
 ---
 

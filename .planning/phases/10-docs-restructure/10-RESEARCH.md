@@ -244,9 +244,9 @@ nav: [
 
    链接写法：`{ text: '数据端与渲染端', link: '/intermediate/data-vs-render' }`（与既有 `'/guide/'` 写法一致，用绝对路径、不带 `.md`）。
 
-**不需要改的：** `docs/.vitepress/api.ts`、`init.ts`（它们的 `generateSidebar` **只**扫描 `docs/api/`，与本批无关，[VERIFIED: docs/.vitepress/api.ts:5,19]）。
+**需要小改 / 不需改的：** `docs/.vitepress/init.ts` 不需改（其 `generateSidebar` **只**扫描 `docs/api/`，[VERIFIED: docs/.vitepress/api.ts:5,19]）；`docs/.vitepress/api.ts` 需按 `10-01` 追加「`docs/api/` 缺失即跳过」守卫（扫描逻辑不变）。
 
-**注意（D-04 与本批的关系）：** 计划**不要**在本批删除 `docs/guide/*`、`docs/dev/*`、`docs/logger/*` 或改动既有 `nav`/`sidebar` 的 guide/logger 键——旧内容删除是 D-04 的独立任务，本批只负责 intermediate（见 CONTEXT「第一批已派发内容」界定与 D-14）。若计划顺带改了旧键，属越界。
+**注意（D-04 与本批的关系，已更新）：** D-04 的旧内容删除**已并入本批**：`10-01`（Wave 0）会删除 `docs/guide/*`、`docs/dev/*`、`docs/logger/*`、`docs/api/*` 与首页 `docs/index.md`，并清理 `config.ts` 中指向这些内容的旧 `nav` 条目（主页 / 指南 / API / 错误代码）与旧 `sidebar` 键（guide / logger / api 三个路径前缀）。删除后本批 dead-link 数应为 0（原 `docs/dev/store/tile-store.md` 的 3 处死链随删除消失）。本文件下方若仍见「本批不得删除旧文档 / 不得改旧键」之类的旧版表述，均已作废，以本段与 `10-01-PLAN.md` 为准。
 
 ### API 参考生成机制（回答 research question 2）
 
@@ -255,7 +255,7 @@ nav: [
 - 触发方式：仅通过 `docs/.vitepress/init.ts`（init.ts:3-5）在 `docs:dev` 时执行（package.json:26）；并有一个 vite dev 插件 `listenSidebar()` 在文件增删/重命名时重新生成（config.ts:7-36,192）。
 - 没有 `typedoc` / `api-extractor` 的仓库内脚本或配置（`package.json` scripts 无相关命令；`.github/`、`script/` 下无相关配置）。`pnpm-lock.yaml` 里存在 `@microsoft/api-extractor@7.57.6`（作为某依赖的传递依赖），但**仓库没有任何脚本调用它**。
 
-**结论（供 D-03 计划）：** 「API 参考按包生成」的现有机制 = 已检入的 `docs/api/**/*.md` 文件树 + `generateSidebar()` 扫描。本批（中级教程）**不涉及** `docs/api/` 的改动；且 `docs/api/` 当前**已含 legacy 包条目**（`docs/api/index.md:10-13,25,30-31` 列出 `@motajs/legacy-*`、`@user/legacy-plugin-*`、`@user/data-fallback`），与 D-05「排除 legacy」冲突——但 D-05 属第 5 部分（API 参考）任务，**不在本批范围**，仅记录备用。
+**结论（供 D-03 计划）：** 「API 参考按包生成」的现有机制 = 已检入的 `docs/api/**/*.md` 文件树 + `generateSidebar()` 扫描。本批**不做** API 参考的**内容重建**（注：`docs/api/` 目录本体会随 D-04 并入本批的 `10-01` 一并删除，此处「不涉及改动」仅指不重建其正文）；且 `docs/api/` 当前**已含 legacy 包条目**（`docs/api/index.md:10-13,25,30-31` 列出 `@motajs/legacy-*`、`@user/legacy-plugin-*`、`@user/data-fallback`），与 D-05「排除 legacy」冲突——但 D-05 属第 5 部分（API 参考）任务，**不在本批范围**，仅记录备用。
 
 ### 写作 / 验收工作流（回答 research question 3）
 
@@ -341,7 +341,7 @@ graph TD
 ### Anti-Patterns to Avoid
 
 - **手改 `docs/.vitepress/apiSidebar.ts`：** 它被 `.gitignore` 忽略（.gitignore:54）、被 `.prettierignore` 忽略（.prettierignore:17）、且每次 `generateSidebar()` 运行会被覆盖（api.ts:71）。改它无效。
-- **在本批删除旧文档：** D-04 的删除是独立任务；本批只做 intermediate（D-14 不擅自扩大范围）。
+- **（旧范围界定，已作废）把旧文档删除当作本批外任务：** D-04 已更新——旧内容删除（`docs/guide/*`、`docs/dev/*`、`docs/logger/*`、`docs/api/*` 与首页 `docs/index.md`）连同旧 `nav`/`sidebar` 键清理**已并入本批 `10-01`（Wave 0）**，与中级教程同期进行。
 - **新增文档却忘了注册 sidebar：** 不会导致构建失败，但页面在导航中不可见——D-09 的人工审阅会因此不通过。
 - **在文档里写"渲染端教程后续再讲"之类元叙述：** D-16 明令禁止。
 
@@ -449,11 +449,11 @@ graph TD
 **How to avoid:** 先 `pnpm docs:dev` 或 `tsx docs/.vitepress/init.ts` 生成后再构建；或把构建命令写成先 init 再 build。
 **Warning signs:** 构建报 `Failed to resolve import "./apiSidebar"`。
 
-### Pitfall 3: 越界改旧文档
-**What goes wrong:** 顺手删/改了 `docs/guide/*`、`docs/dev/*`、`docs/logger/*` 或改动了 `nav`/`sidebar` 的 guide/logger 键。
-**Why it happens:** D-04 确有"旧内容全删重写"的总目标，但那是独立任务。
-**How to avoid:** 严守 D-14 与"第一批 = 中级教程"的界定；越界项只记录不实施。
-**Warning signs:** 计划 diff 触及 `docs/guide/**`、`docs/dev/**`、`docs/logger/**`。
+### Pitfall 3: 越界删除 / 改旧文档（范围已随 D-04 更新）
+**What goes wrong:** 越过 `10-01` 的白名单去删除或修改内容——白名单仅为 `docs/guide/*`、`docs/dev/*`、`docs/logger/*`、`docs/api/*` 与首页 `docs/index.md`；此外误改 `src/`、`packages/`、`packages-user/` 或 `docs/intermediate/` 也属越界。
+**Why it happens:** D-04 已把「旧内容全删重写」并入本批 `10-01`（Wave 0），删除本身**现在是本批内**的合法动作；越界风险已从「不该删」转为「删多了 / 删错对象 / 误改生产代码」。
+**How to avoid:** 严守 `10-01` 的五个路径白名单并保持站点可构建；删除对象受 git 跟踪，误删可 `git restore` 回滚。
+**Warning signs:** 计划 diff 触及 `src/**`、`packages*/**` 或 `docs/intermediate/**`。
 
 ### Pitfall 4: 写出被禁止的元叙述
 **What goes wrong:** 出现"渲染端教程后续再讲""这块留到高级教程再说"之类。
@@ -475,7 +475,7 @@ graph TD
 
 ## Code Examples
 
-### 在 config.ts 里注册 intermediate 侧边栏（本批唯一必改的配置）
+### 在 config.ts 里注册 intermediate 侧边栏（本批配置改动之一；旧键清理见 `10-01`）
 
 ```ts
 // 依据现有写法：docs/.vitepress/config.ts:59-156 的 sidebar 为按路径前缀分键的手写对象
@@ -500,9 +500,7 @@ sidebar: {
             ]
         }
     ],
-    '/guide/': [ /* 原样保留 */ ],
-    '/logger/': [ /* 原样保留 */ ],
-    '/api/': [{ text: 'API 列表', items: api }]
+    // '/guide/'、'/logger/'、'/api/' 三个旧键已随 D-04 并入本批（10-01）随旧内容一并移除
 }
 ```
 （来源：结构参照仓库现行 `docs/.vitepress/config.ts:59-156`；`link` 写法与 config.ts:64-124 一致）
@@ -532,7 +530,7 @@ sidebar: {
 | `docs/api/index.md` 含 legacy 包 | 计划排除 legacy（D-05） | 2026-10-14 | 非本批 |
 
 **Deprecated/outdated:**
-- 详细介绍引擎接口设计的旧"开发文档"（`docs/dev/*`，含 `template.md` 的「需求综述 → 需求理解 → 接口设计分析 → 实现思路」方法论）——D-04 将删除重写；本批不涉及。
+- 详细介绍引擎接口设计的旧"开发文档"（`docs/dev/*`，含 `template.md` 的「需求综述 → 需求理解 → 接口设计分析 → 实现思路」方法论）——D-04 已并入本批 Wave 0（`10-01`）删除重写。
 
 ## Assumptions Log
 
@@ -546,7 +544,7 @@ sidebar: {
 
 **若上表非空：** A1、A3 建议由用户在计划前的汇报中被确认（涉及验收命令）；A4 可在执行时直接观察。
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **验收命令的确切形态**
    - What we know: `docs:dev` 会生成 `apiSidebar.ts`；`docs:build` 不会；当前工作区无该文件。
@@ -678,7 +676,7 @@ sidebar: {
 **Confidence:** HIGH
 
 **要点回顾：**
-1. 本批 = 24 篇中文中级教程（`docs/intermediate/`）+ 在 `docs/.vitepress/config.ts` 新增 `nav` 与 `sidebar['/intermediate/']`；API 参考与旧文档删除**不在本批**。
+1. 本批 = 24 篇中文中级教程（`docs/intermediate/`）+ 在 `docs/.vitepress/config.ts` 新增 `nav` 与 `sidebar['/intermediate/']`；旧文档删除与旧 `nav`/`sidebar` 键清理**已并入本批 Wave 0（`10-01`）**；API 参考的按包生成机制保留、正文重建另行安排。
 2. 站点 `nav`/`sidebar` 为手写（config.ts:53-156）；`docs/api/` 侧边栏由 `generateSidebar()` 扫描生成，正文为已检入静态文件，仓库无 typedoc/api-extractor 脚本。
 3. 验收命令：先 `tsx docs/.vitepress/init.ts`（生成 gitignored 的 `apiSidebar.ts`，当前工作区缺失），再 `pnpm docs:build`；预览用 `pnpm docs:dev`。
 4. 24 篇的源码入口已逐篇核实到 `file:line`（见「24 篇文档的源码入口」表）。
