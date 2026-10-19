@@ -31,12 +31,11 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 计算器在一次战斗里会被**反复调用**：算临界值要二分十几次，渲染伤害数值、图鉴与提示等也可能在真正开打前各调用一次。因此它**必须只读输入、算出结果，不能改动任何外部状态**——不能写 flag、不能删 flag，也不能改怪物或勇士对象。只要存在副作用，同一只怪物在不同时刻就会算出不同结果，临界与显示都会错乱。需要「一次性」生效的状态，请放到别处去改（战斗脚本、钩子等），计算器只负责读取。
 :::
 
-### 改内置，还是自己写
+## 改内置：在 `MainDamageCalculator.calculate` 里加分支
 
-- **改内置公式**：直接在 `src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate` 里改公式或加分支。多数「调参类」属性（先攻、连击、破甲等）都实现在这里。
-- **写自己的计算器**：实现 `IDamageCalculator` 接口，再用 `useCalculator` 替换。适合整条公式都要换、或不想改动内置文件时。
+内置公式全部写在 `src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate` 一个方法里，而且它已经在 `initializeEnemy` 里注册好了。所以**改内置就是在这个方法里改公式、加分支**——不新建类，也不用再调用 `useCalculator`。这是本篇的主线做法，多数「调参类」属性（先攻、连击、破甲等）都实现在这里。
 
-两者只能二选一：`useCalculator` 是**替换**当前计算器，选了自己的就会把内置的整个换掉，内置的那些分支需要你在自己的 `calculate` 里重新保留。
+改之前先弄清楚公式的段落顺序，否则很容易加错位置。
 
 ## 内置公式逐段导读
 
@@ -60,10 +59,6 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 - 要让属性按回合数累积、按条件改变倍率、或增加新的伤害分支：在 `calculate` 的对应段落里改公式；
 - 只是给勇士一侧加临时数值：用[勇士属性](./hero-attribute.md)里的修饰器，计算器会自动读到最终属性。
 
-## 支援怪
-
-支援怪部分的递归计算较绕：计算当前怪物时，会把每个支援者的回合数与伤害也加进来。初次阅读可以暂时跳过这一段，不影响自定义普通怪物的公式；等需要处理支援组合时再回来看。
-
 ## 示例：等差数列属性
 
 有时公式本身要随回合变化，而光环、查询、最终效果都做不到这一点——它们改的是一次计算里的固定属性。这时就该动计算器。
@@ -74,9 +69,60 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 
 **目标**：让怪物的每回合伤害按固定公差逐回合递增（本示例公差为 5）。
 
-**改哪里**：`src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate`（改内置），或另建文件写一个计算器再用 `useCalculator` 替换。
+**改哪里**：`src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate`（内置文件，改完不需要注册）。
 
-**复制什么**：下面是只保留本示例所需分支的最小计算器——
+**复制什么**：在总伤害累加之后、魔防扣减之前，把等差数列多出来的部分一次加上。下面只摘出相关几段，`...省略...` 表示原有代码保持不动——
+
+```ts
+calculate(
+    handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
+): IEnemyDamageInfoBase {
+    const { enemy, locator, hero } = handler;
+    // ...省略：读取属性、无敌分支、勇士每回合伤害、吸血...
+
+    // ...省略：内置的「怪物每回合伤害」与连击、取零...
+    // 此时 enemyPerDamage 是怪物每回合的基础伤害
+
+    // ...省略：内置的回合数计算与支援递归...
+    // 此时 turn 已经是最终的回合数（支援怪的回合也加进来了）
+
+    // ...省略：先攻、破甲、反击、净化...
+
+    // 内置原本就有的总伤害累加
+    damage += (turn - 1) * enemyPerDamage;
+
+    // [需改] 等差数列：第 1 次出手是 enemyPerDamage，之后每次再加 step
+    // [模板] 怪物共出手 turn - 1 次，额外伤害合计 step * (turn - 1) * (turn - 2) / 2
+    const step = 5; // [需改] 公差：每回合递增的伤害
+    const count = Math.max(turn - 1, 0);
+    damage += (step * count * (count - 1)) / 2;
+
+    // ...省略：魔防、负伤归零、固伤、仇恨、自爆、返回...
+}
+```
+
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：`step`（公差，本示例为 `5`）换成你要的递增规则。注意 `turn` 在内置方法里已经算过，插入时不要重复声明同名变量——把新增两行放在 `damage += (turn - 1) * enemyPerDamage;` 之后即可。
+
+**怎么验证**：给怪物挂上后开战，看显示的回合伤害是否随回合数按公差递增、总伤害是否等于求和结果。
+
+**注意**：这段只改「怪物每回合伤害」的数值，内置的无敌、吸血、支援、先攻等分支全部原样保留——这正是改内置比自写计算器省事的地方。计算器**必须无副作用**（见上方 warning）。
+
+## 自己写计算器类
+
+只有「整条公式都要换掉」时才需要自己写计算器。如果只是加一条分支、改一段系数，改内置方法体就够了。
+
+自己写类要同时处理接口签名、`getCriticalLimit` 与注册，而且替换会丢掉全部内置分支，改动面比在内置 `calculate` 里加一段大得多。
+
+**如果你不怎么懂代码，建议直接改内置的 `MainDamageCalculator.calculate`（在 `src/data/enemy/calculator.ts` 里加分支），而不是自己写新的计算器。** 上面「改内置」一节已经覆盖了绝大多数需求；自写计算器意味着你要自己重新实现无敌、吸血、支援、连击、先攻、破甲、反击、净化、固伤、仇恨、自爆这些分支。
+
+做法是实现 `IDamageCalculator` 接口，再用 `useCalculator` 替换：
+
+- **接口**：`calculate` 返回 `{ damage, turn }`，`getCriticalLimit` 返回临界上界；
+- **替换**：`useCalculator` 是**替换**当前计算器，选了自己的就会把内置的整个换掉。
+
+下面用「等差数列」演示自写类的最小形态（只保留本示例所需分支）：
 
 ```ts
 // [需改] 类名：换成你自己的计算器名
@@ -108,8 +154,10 @@ export class ArithmeticCalculator implements IDamageCalculator<
         // [需改] 公差：每回合递增的伤害（本示例固定为 5）
         const step = 5;
 
-        // [需改] 等差数列求和：首项 base，公差 step，共 turn 项
-        const damage = turn * base + (step * turn * (turn - 1)) / 2;
+        // [需改] 等差数列求和：勇士先手，怪物共出手 turn - 1 次
+        // 首项 base、公差 step、共 turn - 1 项
+        const count = Math.max(turn - 1, 0);
+        const damage = count * base + (step * count * (count - 1)) / 2;
         // [模板] 返回结果，damage 向下取整
         return { damage: Math.floor(damage), turn };
     }
@@ -122,15 +170,41 @@ export class ArithmeticCalculator implements IDamageCalculator<
         return handler.hero.getFinalAttribute(attribute);
     }
 }
+
+// [需改] 注册这行要挪进 initializeEnemy（见下方「注册在哪里」）
+state.enemyContext.getDamageSystem()?.useCalculator(new ArithmeticCalculator());
 ```
 
 > 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
 
-**改什么**：`step`（公差，本示例为 `5`）与 `base` 的算法换成你要的递增规则；换算成「改内置」时，把这段逻辑并入 `calculate` 的对应段落即可。
+**改什么**：`step`（公差，本示例为 `5`）与 `base` 的算法换成你要的递增规则。
 
-**怎么验证**：给怪物挂上后开战，看显示的回合伤害是否随回合数按公差递增、总伤害是否等于求和结果。
+**怎么验证**：同「改内置」一节——开战看回合伤害是否按公差递增、总伤害是否等于求和结果。
 
 **注意**：这是只保留本示例分支的最小计算器；若用 `useCalculator` 替换，内置的无敌、吸血、支援等分支需要你按上文顺序自行保留。计算器**必须无副作用**（见上方 warning）。
+
+### 注册在哪里
+
+`useCalculator` 要写进 `initializeEnemy`。下面是 `src/data/enemy/initialize.ts` 中该函数的样子（省略了无关的行）：
+
+```ts
+export function initializeEnemy(
+    state: ICoreState
+): IEnemyInitializationReturns {
+    // ...省略：怪物管理器、特殊属性与上下文的初始化...
+
+    const ctx = state.enemyContext;
+    const damageSystem = new DamageSystem(ctx);
+    // 注册内置伤害计算器
+    damageSystem.useCalculator(new MainDamageCalculator());
+    // [需改] 你自己的计算器在这里替换（注意是替换，不是追加）：
+    // damageSystem.useCalculator(new ArithmeticCalculator());
+
+    // ...省略：地图伤害、光环、最终效果、脚本与钩子...
+}
+```
+
+把 `useCalculator(new ArithmeticCalculator())` 放在内置那一行之后，你的公式就会随 `initializeEnemy` 一起生效。
 
 ## 临界
 

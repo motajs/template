@@ -36,12 +36,86 @@ state.combat.addCombatScript(new MainCombatScript());
 - **战前**：非强制战斗时，如果勇士当前生命小于本次伤害，返回 `false`，阻止战斗；
 - **战后**：把怪物与支援者的经验、金币加到勇士身上；`curse` flag 为 `true` 时不加；最后发出一次全局提示。
 
-### 改内置，还是自己写
+## 改内置：在 `MainCombatScript` 里加逻辑
 
-- **改内置脚本**：直接改 `src/data/enemy/script.ts` 的 `MainCombatScript`（内置的战前拦截与战后结算就写在里面）。
-- **写自己的脚本**：实现 `ICombatScript` 接口，再用 `addCombatScript` 追加。适合额外规则，或不想改动内置文件时。
+内置脚本只有一个类 `MainCombatScript`，写在 `src/data/enemy/script.ts`，而且已经在 `initializeEnemy` 里注册好了。所以**改内置就是改它的 `before` / `after` 方法体**——不新建类，也不用再调用 `addCombatScript`。这是本篇的主线做法。
 
-`addCombatScript` 是**追加**而不是替换：内置脚本仍会执行，新脚本按 `priority` 与它一起排序；但同优先级的脚本不能重复注册。
+先按「什么时候做」找落点：
+
+| 想做的事                    | 改哪里                                         |
+| --------------------------- | ---------------------------------------------- |
+| 战斗开始前拦下这一场        | `before` 里加判断，返回 `false`                |
+| 战斗结束后改勇士状态 / 结算 | `after` 里追加逻辑                             |
+| 调整内置逻辑的先后          | 内置方法体里的语句顺序（同类内按书写顺序执行） |
+
+内置 `before` 的结构是「先看是不是强制战斗，再看勇士血量够不够」；内置 `after` 是「先算经验金币，再判断诅咒，最后发提示」。加逻辑时接在对应位置即可。
+
+### 示例：战前拦下带无敌的怪物
+
+**目标**：带「无敌」（code 18）的怪物不能被打，点它时直接放弃战斗并给出提示。
+
+**改哪里**：`src/data/enemy/script.ts` 的 `MainCombatScript.before`（内置文件，改完不需要注册）。
+
+**复制什么**：在内置判断之后接一段——
+
+```ts
+async before(
+    info: IEnemyDamageInfo<IEnemyAttr, IHeroAttr>,
+    handler: ICombatFlowHandler<IEnemyAttr, IHeroAttr>
+): Promise<boolean> {
+    const hero = handler.hero;
+
+    // 如果伤害大于勇士血量，直接不允许战斗
+    // ...省略：内置判断原样保留...
+
+    // [需改] 带「无敌」（code 18）的怪物直接拦下
+    if (handler.enemy.hasSpecial(18)) {
+        handler.state.emitTip('这个怪物无法被击败。');
+        // [模板] 返回 false：放弃本次战斗
+        return false;
+    }
+
+    // [模板] 返回 true：允许继续
+    return true;
+}
+```
+
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：`hasSpecial(18)` 的判断与提示文字换成你自己的。
+
+**怎么验证**：给一只怪物挂上「无敌」后点它开战，应看到提示、且勇士不入场、战斗不结算。
+
+**注意**：`before` 一旦返回 `false`，后续战前脚本、战后脚本与 `onAfterCombat` 钩子都不会执行。这里的 18 号在内置属性编号表里就是「无敌」，地图伤害使用同一套编号（阻击是 16），所以这个判断与其他系统没有编号冲突。内置 `MainCombatScript` 已经在 `initializeEnemy` 注册过，改完直接生效，**不要**再 `addCombatScript(new MainCombatScript())`——同优先级重复注册会被忽略并告警。
+
+### 示例：战后回复固定量生命
+
+**目标**：每场战斗结束后，给勇士回复固定量生命（本示例 20 点）。
+
+**改哪里**：`src/data/enemy/script.ts` 的 `MainCombatScript.after`（内置文件，改完不需要注册）。
+
+**复制什么**：在内置结算之后追加一段——
+
+```ts
+async after(
+    info: IEnemyDamageInfo<IEnemyAttr, IHeroAttr>,
+    handler: ICombatFlowHandler<IEnemyAttr, IHeroAttr>
+): Promise<void> {
+    const hero = handler.hero;
+    // ...省略：内置的经验金币结算、诅咒判断与全局提示...
+
+    // [需改] 战后给勇士回 20 点血
+    hero.add('hp', 20);
+}
+```
+
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：回复量 `20` 与回复的属性换成你自己的。如果希望回血发生在奖励结算**之前**，就把这段放在 `after` 开头而不是末尾。
+
+**怎么验证**：打完一场战斗，看勇士生命是否回复了设定量，且奖励结算仍正常。
+
+**注意**：`handler.hero` 是可修改对象，直接 `add` 即可。这段对所有战斗生效——它写在无条件的 `after` 里，不带任何 `hasSpecial` 判断。如果只想对特定怪物生效，在外面套一个 `if (info.handler.enemy.hasSpecial(...))`。
 
 ## 脚本 vs 钩子
 
@@ -57,7 +131,17 @@ state.combat.addCombatScript(new MainCombatScript());
 
 简单记：**要拦截或按顺序结算，用脚本；只想在战斗前后做附加动作，用钩子。**
 
-## 战前示例：拥有某特殊属性时无法战斗
+## 自己写脚本类
+
+只有两种情况需要自己写脚本：一是规则要按自己的 `priority` 与内置脚本拉开顺序（内置脚本固定是 0），二是同一条规则要能被单独注册或移除。
+
+自己写类要同时处理接口签名、优先级与注册，而且同优先级会与内置脚本冲突，改动面比在内置方法体里加一段大。
+
+**如果你不怎么懂代码，建议直接改内置的 `MainCombatScript`（在 `src/data/enemy/script.ts` 的 `before` / `after` 里加逻辑），而不是自己写新的脚本类。** 上面「改内置」一节已经覆盖了拦截与结算两类需求；只有确实需要独立优先级时才用下面的写法。
+
+做法是实现 `ICombatScript` 接口，再用 `addCombatScript` 追加。`addCombatScript` 是**追加**而不是替换：内置脚本仍会执行，新脚本按 `priority` 与它一起排序；但同优先级的脚本不能重复注册。
+
+### 示例：拥有某特殊属性时无法战斗
 
 下面的脚本检查怪物是否拥有 code 18 的特殊属性（无敌，编号见[特殊属性](./enemy-specials.md)的「内置属性编号表」），有则直接放弃战斗（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）。代码中用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
 
@@ -103,9 +187,9 @@ state.combat.addCombatScript(new SealCombatScript());
 
 **怎么验证**：给一只怪物挂上「无敌」后点它开战，应看到提示、且勇士不入场、战斗不结算。
 
-**注意**：`before` 一旦返回 `false`，后续战前脚本、战后脚本与 `onAfterCombat` 钩子都不会执行。这里的 18 号在内置属性编号表里就是「无敌」，地图伤害使用同一套编号（阻击是 16），所以这个判断与其他系统没有编号冲突。
+**注意**：自写脚本与内置脚本**同时**存在，不是替换。`before` 一旦返回 `false`，后续战前脚本、战后脚本与 `onAfterCombat` 钩子都不会执行。
 
-## 战后示例：战后玩家回复固定量生命值
+### 示例：战后玩家回复固定量生命值
 
 下面的脚本在每场战斗后给勇士回复 20 点生命：
 
@@ -151,7 +235,7 @@ state.combat.addCombatScript(new HealAfterCombatScript());
 
 **注意**：`handler.hero` 是可修改对象，直接 `add` 即可。`priority` 越大越先执行；战前与战后各自按这个顺序遍历脚本列表。把 `priority` 设成负值可在内置脚本之后执行，避免在奖励结算前改动勇士状态。
 
-## 注册在哪里
+### 注册在哪里
 
 `addCombatScript` 要写进 `initializeEnemy`。下面是 `src/data/enemy/initialize.ts` 中该函数的样子（省略了无关的行）：
 

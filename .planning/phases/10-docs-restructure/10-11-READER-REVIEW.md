@@ -484,3 +484,34 @@
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
 - 边界：仅改两篇文档与本记录；未改 `config.ts` 与生产代码；未新增文件；未引入指向 `docs/advanced/` 的真实链接（D-47 预留仍为代码 span + HTML 注释）；未创建 `10-11-SUMMARY.md`，未改 `STATE.md` / `ROADMAP.md`（按本次派发要求）。
 
+---
+
+## 用户循环 · batch 8 记录（D-49 战斗框架：改内置优先）
+
+**范围：** 用户修订循环第 1 轮 batch 8（D-49）——战斗组其余 7 篇：`enemy-specials`、`enemy-aura`、`enemy-final`、`enemy-calculator`、`enemy-map-damage`、`enemy-combat-script`、`enemy-status-hooks`（`enemy-query` 已在 batch 7 完成，本次不动）。按 `10-CONTEXT.md` D-49：①示例贴合引擎现状、定义 `class` 再 `new`，不用 `const obj = {...}`；②主体讲**改内置类 / 改内置文件**，末尾才简述「自己写类」；③明确写出「不懂代码建议直接改内置，而不是自己写新类」。保留 D-48 六步实操、D-47 高级教程预留与既有 U 系列修正。
+
+### 逐条处置
+
+| 文档 | 处置 |
+| --- | --- |
+| `enemy-specials.md` | 原「自定义一个新特殊属性」改为「改内置：往属性表里加一条属性」，开篇点明「本篇主线是改内置、特殊属性没有自己写类的做法」，六步照旧；末尾新增「如果内置实现里实在找不到落点」并写入 D-49 caveat「不懂代码建议直接改内置实现」。 |
+| `enemy-aura.md` | 删去旧的「改内置，还是自己写」（原称光环**必须**写转换器 + 视图），改为「改内置：调整内置光环的行为」：给出「想改什么 → 改哪个方法」对照表，并以「让普通光环同时影响金币与经验」为六步实操（改 `special.ts` 的 `ISpecial23Value` + `CommonAura.apply`），附「改另外两类内置光环」要点；原两个自写类示例（`WeakAura` / `ChainAura`）整体移到末尾「自己写光环类」，并在节首写入 D-49 caveat。 |
+| `enemy-final.md` | 删去「改内置，还是自己写」，改为「改内置：在 `MainEnemyFinalEffect.apply` 里加分支」，把原 `AttackCopyFinal` 示例改写为**改内置分支**的六步实操；原自写类形态移到末尾「自己写最终效果类」并写入 caveat。「三方对比」「为什么没有既读又改」原样保留。 |
+| `enemy-calculator.md` | 删去「改内置，还是自己写」，改为「改内置：在 `MainDamageCalculator.calculate` 里加分支」，把「等差数列属性」改写为在内置 `calculate` 里追加两行的六步实操；原自写最小计算器 `ArithmeticCalculator` 移到末尾「自己写计算器类」并写入 caveat。「计算器必须无副作用」warning 与内置公式逐段导读原样保留。 |
+| `enemy-map-damage.md` | 删去「改内置，还是自己写」，改为「改内置：调整内置视图与转换器」，以「让内置激光也打斜向」为六步实操（把 `MainMapDamageConverter.convert` 的 `FaceGroup.Dir4` 改成 `Dir8`），并附「另外几处常见的改法」；原自写类示例 `EightDirLaser` 移到末尾「自己写地图伤害类」并写入 caveat。 |
+| `enemy-combat-script.md` | 删去「改内置，还是自己写」，改为「改内置：在 `MainCombatScript` 里加逻辑」，给出战前拦下「无敌」与战后回血两段改内置六步实操；原 `SealCombatScript` / `HealAfterCombatScript` 移到末尾「自己写脚本类」并写入 caveat。「脚本 vs 钩子」选型表保留。 |
+| `enemy-status-hooks.md` | 删去「改内置，还是自己写」式叙述，改为「改内置：往内置钩子类里加逻辑」，给出「什么时候生效 → 改哪个钩子」对照表，并把「下次战斗伤害乘二」改写为三处**内置**修改（`hook.ts` 挂状态、`script.ts` 消费、`calculator.ts` 只读）的实操；原自写 `ChargedHooks` / `ConsumeDoubleScript` 移到末尾「自己写钩子类」并写入 caveat；修正自写脚本 `priority` 与内置 `0` 冲突的隐患（改为 `-10`）。 |
+
+### 共用复制说明（各篇统一）
+
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 `code-basics.md` 的「照抄教程里的代码时，怎么处理 import」）。
+
+### 校验
+
+- 源码核对：`src/data/enemy/special.ts`（`ISpecial23Value` 字段、23 号默认值）、`src/data/enemy/aura.ts`（`CommonAura.apply` / `createRange` / `getRangeParam`、`GuardAura.apply` / `getRangeParam` 3×3、`SpecialAuraModifier.add` / `modify`）、`src/data/enemy/final.ts`（`MainEnemyFinalEffect.apply` 的坚固 / 模仿分支）、`src/data/enemy/calculator.ts`（`calculate` 段落顺序、`damage += (turn - 1) * enemyPerDamage`、`getCriticalLimit`）、`src/data/enemy/mapDamage.ts`（`MainMapDamageConverter.convert` 的 `FaceGroup.Dir4`、各视图 `getRange` / `getRangeParam` / `getDamageWithoutCheck`、`MainMapDamageReducer.reduce`）、`src/data/enemy/script.ts`（`MainCombatScript.before` / `after`）、`src/data/enemy/hook.ts`（`EnemyCombatHooks.onAfterCombat` 分支顺序、四个钩子类）、`packages-user/data-system/src/combat/combat.ts`（`addCombatScript` 同优先级告警忽略、脚本 `after` 早于 `onAfterCombat`）、`packages-user/data-common/src/common/faceManager.ts`（`FaceGroup.Dir8`）。
+- 结构门禁：7 篇均 CRLF、单 H1（`STRUCT-OK`）。
+- 格式门禁：`node node_modules/prettier/bin/prettier.cjs --write`（D-45，`endOfLine: crlf`）已跑。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+- 边界：仅改 7 篇文档 + 本记录；未改 `config.ts` 与生产代码；未新增文件；未引入指向 `docs/advanced/` 的真实链接（D-47 预留仍为代码 span + HTML 注释）；未创建 `10-11-SUMMARY.md`，未改 `STATE.md` / `ROADMAP.md`（按本次派发要求）。
+
+

@@ -49,24 +49,83 @@ mapDamage?.useConverter(new MainMapDamageConverter());
 - 「捕捉」的视图类名沿用 `AmbushDamageView`（伏击），它读取的是 code 25「捕捉」。它返回 `MapDamageType.Unknown`，因为 `MapDamageType` 没有「捕捉」这一项；伤害恒为 0，作用是产生 `extra.catch`，由移动钩子触发强制战斗。捕捉本身不造成伤害是设计如此，不是未补齐的功能。
 - `BetweenDamageView` 读取全局 flag `betweenAttackMax`，决定夹击伤害是否取「半血、当前怪物伤害、对侧怪物伤害」三者的较小值；对侧怪物通过 `hasSpecial(14)` 识别，与夹击自身使用的是同一个编号。
 
-## 示例：八方向激光
+## 改内置：调整内置视图与转换器
 
-内置激光（code 22）用 `FaceGroup.Dir4`（上下左右四个方向）沿射线发射。下面的示例新增一个「八方向激光」特殊属性（code 43），改用 `FaceGroup.Dir8`（再加上四个斜向，共八个方向）发射，其余逻辑与内置激光一致。
+内置五类地图伤害的视图与转换器都写在 `src/data/enemy/mapDamage.ts`，而且已经在 `initializeEnemy` 里注册好了。所以**改内置就是改这些类的现有方法、或往 `MainMapDamageConverter.convert` 里加一个分支**——不新建类，也不用再调用 `useConverter`。这是本篇的主线做法。
 
-示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」；`map.set(...)` 的 `map` 是 `special.ts` 中 `createSpecials(state)` 建的属性表，见[特殊属性](./enemy-specials.md)。
+先按「想改什么」找落点：
 
-示例里出现的几个名字先简单说明：`FaceGroup.Dir8` 是「八方向」朝向组，`faceManager` 按朝向组管理朝向；`dir.mapMovement()` 把朝向处理器映射成各方向对应的移动量，示例据此取出八个方向（其中「原地不动」的未知方向偏移为零，`RayRange` 会自动跳过它）；`IFaceHandler` / `IFaceDescriptor` 分别是「朝向处理器」与「单个朝向」的类型；`MapDamageType.Layer` 是伤害类型枚举里的「激光伤害」（定义在 `src/data/enemy/types.ts`）。
+| 想改的东西             | 改哪里                                                                |
+| ---------------------- | --------------------------------------------------------------------- |
+| 某类伤害的范围         | 对应视图的 `getRange` / `getRangeParam`                               |
+| 某类伤害的数值或类型   | 对应视图的 `getDamageWithoutCheck`                                    |
+| 某类伤害读哪个特殊属性 | `MainMapDamageConverter.convert` 里对应的 `getSpecial` / `hasSpecial` |
+| 多来源叠加的取舍规则   | `MainMapDamageReducer.reduce`                                         |
+| 某类伤害的触发条件     | 对应视图的 `getDamageWithoutCheck`（返回 `null` 即该点不受伤）        |
 
-### 改内置，还是自己写
+五个视图都继承自 `BaseMapDamageView`，它已经实现了 `getDamageAt`（先判范围再取伤害）并提供 `createInfo(damage, type, extra?)` 帮你拼伤害信息。所以改一个视图时通常只需要碰 `getRangeParam` 与 `getDamageWithoutCheck` 两个方法。
 
-- **改内置**：直接改 `src/data/enemy/mapDamage.ts` 里的 `LaserDamageView` / `MainMapDamageConverter`，或往转换器里加分支。内置五类地图伤害都实现在那里。
-- **写自己的**：实现 `IMapDamageView`（描述一个来源的影响范围与某点的伤害）与 `IMapDamageConverter`（把特殊属性翻译成视图），再用 `useConverter` 注册。下面的示例就是这种写法。
+### 示例：让激光也打斜向（八方向激光）
+
+内置激光（code 22）用 `FaceGroup.Dir4`（上下左右四个方向）沿射线发射。要让同一条内置激光多覆盖四个斜向，最省事的做法是改内置：把转换器里取的朝向组换成 `FaceGroup.Dir8`，`LaserDamageView` 本身一行都不用改——它只是把传入的朝向处理器映射成方向列表，方向多了自然就多打四个斜向。
+
+**目标**：内置激光（code 22）沿上下左右加四个斜向共八个方向发射，其余行为不变。
+
+**改哪里**：`src/data/enemy/mapDamage.ts` 的 `MainMapDamageConverter.convert`（内置文件，改完不需要注册）。
+
+**复制什么**：把取朝向处理器那一行换个方向组——
+
+```ts
+convert(
+    handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
+    context: IEnemyContext<IEnemyAttr, IHeroAttr>
+): IMapDamageView<any>[] {
+    const views: IMapDamageView<any>[] = [];
+    const { enemy, locator, hero } = handler;
+
+    // ...省略：领域 13、夹击 14、阻击 16 的分支，原样保留...
+
+    const laser = enemy.getSpecial<number>(22);
+    if (laser) {
+        // [需改] 内置是 FaceGroup.Dir4（四方向），改成 Dir8 即八方向
+        const face = handler.state.faceManager.get(FaceGroup.Dir8)!;
+        views.push(new LaserDamageView(context, locator, laser, face));
+    }
+
+    // ...省略：捕捉 25 的分支，原样保留...
+
+    return views;
+}
+```
+
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：只需要把 `FaceGroup.Dir4` 换成 `FaceGroup.Dir8`。`LaserDamageView` 的构造函数把朝向处理器经 `dir.mapMovement()` 映射成方向列表，八方向组自然给出八项；其中「原地不动」的未知方向偏移为零，`RayRange` 会自动跳过它，不必额外处理。
+
+**怎么验证**：给带激光（code 22）的怪物挂上后，站在它八个方向任一格的勇士都应受到伤害；斜向也要覆盖到（这正是与原本四方向激光的区别）。
+
+**注意**：这次改的是**内置激光**，所有挂 code 22 的怪物都会变成八方向。如果只想让某一种新怪物打八方向、其余仍是四方向，就得给它一条新的特殊属性并另写转换器分支——那属于下一节的「自己写」。
+
+### 另外几处常见的改法
+
+- **领域（13）**：`ZoneDamageView.getRangeParam` 按 `square` 在矩形与曼哈顿之间切换。想换算法（例如改成全场），在模块顶部建一个 `const FULL_RANGE = new FullRange();`，让 `getRange` 返回它，并让 `getRangeParam` 返回 `undefined` 即可。
+- **阻击（16）**：`RepulseDamageView.getRangeParam` 里的 `radius: 1` 决定触发距离，`getDamageWithoutCheck` 里的 `extra.repulse` 决定哪个怪物后退。想改触发距离，改 `getRangeParam` 的 `radius`。
+- **捕捉（25）**：`AmbushDamageView` 的伤害恒为 0、只产出 `extra.catch`。要让捕捉附带伤害，改 `createInfo` 的第一个参数。
+- **合并规则**：`MainMapDamageReducer.reduce` 现在是「伤害相加、类型取最大来源」。要改成取最大值、或优先某类型，改这个方法。
+
+## 自己写地图伤害类
+
+只有「内置五类都表达不了、往内置方法体里也塞不进去」时才需要自己写类。典型情况是：一条全新的特殊属性要有自己的范围形态与伤害算法，而它既不是射线、也不是矩形 / 曼哈顿。
+
+自己写类要同时处理视图与转换器两个接口，还要用 `useConverter` 替换内置转换器，改动面比改内置方法体大得多。
+
+**如果你不怎么懂代码，建议直接改内置的视图与转换器（`src/data/enemy/mapDamage.ts`），而不是自己写新的类。** 上面「改内置」一节已经覆盖了调范围、调数值、调方向、调合并规则这些需求；自写转换器意味着你要自己把内置五类视图也重新收集进去，否则它们会全部失效。
 
 `useConverter` 是**替换**当前转换器：选了自己的就把内置的整个换掉，若要同时保留内置五类，需要在自己的转换器里把它们的视图也收集进去，或直接改内置转换器。
 
 下面代码用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
 
-**目标**：新增一个「八方向激光」特殊属性（示例 code 43），沿上下左右加四个斜向共八个方向发射，其余与内置激光一致。
+**目标**：新增一个「八方向激光」特殊属性（示例 code 43），沿上下左右加四个斜向共八个方向发射，且不影响内置的四方向激光。
 
 **改哪里**：`src/data/enemy/special.ts` 登记属性；另建文件写伤害视图与转换器；`initializeEnemy` 里用 `useConverter` 替换（见下方「注册在哪里」）。
 
@@ -187,7 +246,7 @@ mapDamage?.useConverter(new EightDirLaserConverter());
 
 **改什么**：编号（`43`）、类名、方向组（本示例 `FaceGroup.Dir8`）与 `getDamageWithoutCheck` 返回的伤害 / 类型换成你自己的。
 
-**怎么验证**：给带该属性的怪物挂上后，站在它八个方向任一格的勇士都应受到伤害；斜向也要覆盖到（这正是与内置四方向激光的区别）。
+**怎么验证**：给带该属性的怪物挂上后，站在它八个方向任一格的勇士都应受到伤害；斜向也要覆盖到。同时确认原本带激光（code 22）的怪物仍按四方向工作——如果你没有在自己的转换器里收集内置视图，它不会再生效。
 
 **注意**：`useConverter` 是**替换**当前转换器——选了自己的就把内置的整个换掉；要同时保留内置五类，需要在自己的转换器里把它们的视图也收集进去，或直接改内置转换器。
 
@@ -216,8 +275,6 @@ export function initializeEnemy(
 }
 ```
 
-示例只用 `FaceGroup.Dir8` 替换内置的 `FaceGroup.Dir4`，其余与内置激光相同，就得到了八方向激光。
-
 ## 合并器
 
 `MainMapDamageReducer.reduce` 的规则很直接：
@@ -226,7 +283,7 @@ export function initializeEnemy(
 - 取伤害最大的那条来源的 `type` 作为合并后的类型；
 - 把所有来源的 `extra.catch` 与 `extra.repulse` 合并。
 
-多个地图伤害落在同一格时，勇士只会受到合并后的一份伤害。需要不同的取舍规则时，实现 `IMapDamageReducer` 并 `useReducer` 替换即可。
+多个地图伤害落在同一格时，勇士只会受到合并后的一份伤害。需要不同的取舍规则时，改内置的 `reduce` 方法即可；只有在整条合并逻辑都要换掉时才实现 `IMapDamageReducer` 并用 `useReducer` 替换。
 
 ## 实际结算
 

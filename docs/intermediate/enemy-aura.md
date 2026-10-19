@@ -2,7 +2,7 @@
 
 有些怪物并不直接改自己，而是影响周围的怪物：站在它旁边的怪物攻击更高、金币更少，或者被「传染」上另一层光环。这类特殊属性的执行方式就是光环（aura）。
 
-光环的效果作用在范围内的其他怪物身上（也可以包括自己）。它要回答两个问题：先算谁、后算谁？改基础属性还是改特殊属性？下面先从优先级讲起，再看内置光环与自定义写法。基础概念见[战斗总览](./combat-overview.md)。
+光环的效果作用在范围内的其他怪物身上（也可以包括自己）。它要回答两个问题：先算谁、后算谁？改基础属性还是改特殊属性？下面先从优先级讲起，再看内置光环、怎么改它们，最后才是自己写类。基础概念见[战斗总览](./combat-overview.md)。
 
 光环属于「不读取外部环境、但会修改外部」的那一类：它只按范围命中目标，不会先观察环境再决定自己。（为什么没有「既读取外部、又修改外部」的能力，见[最终属性效果](./enemy-final.md)。）
 
@@ -51,7 +51,7 @@
 
 用大白话说：**转换器**像一个「分诊台」——引擎拿到一条特殊属性后，会挨个问每个已注册的转换器「这条你管吗？」（`shouldConvert`），哪个回答「管」，就由它把这条属性翻译成一份**视图**；**视图**则是一张「操作说明」，写清这条光环的范围多大、优先级多少、具体要改目标的哪些属性（`apply` / `applySpecial`）。
 
-因此，**每一条特殊属性都可以对应不同的转换器**，不必都挤进同一个里；反过来，只要 `shouldConvert` 认得出来，多个 code 也可以共用同一个转换器。内置的三条光环就各有各的转换器（`CommonAuraConverter` / `GuardAuraConverter` / `SpecialAuraConverter`），下面两个自定义示例也各自写了一个转换器。
+因此，**每一条特殊属性都可以对应不同的转换器**，不必都挤进同一个里；反过来，只要 `shouldConvert` 认得出来，多个 code 也可以共用同一个转换器。内置的三条光环就各有各的转换器（`CommonAuraConverter` / `GuardAuraConverter` / `SpecialAuraConverter`），文末「自己写光环类」的两个示例也各自写了一个转换器。
 
 视图的核心成员：
 
@@ -72,16 +72,118 @@
 
 下方示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。
 
-### 改内置，还是自己写
+## 改内置：调整内置光环的行为
 
-光环与前面几篇不同：**它必须写一个「转换器 + 视图」的类**，没有「只改内置一处」的省事办法。原因是「怎么认出这条光环、怎么影响目标」在光环里是拆成两个对象表达的，引擎没有提供更简单的注册入口。（若你的需求恰好与内置三条光环同构，也可以直接改 `src/data/enemy/aura.ts` 里的内置实现。）
+内置三类光环都写在 `src/data/enemy/aura.ts`，而且已经在 `initializeEnemy` 里注册好了。所以**改内置就是在这些类的现有方法里加分支、改参数**：不用新建类，也不用再调用 `registerAuraConverter`。这是本篇的主线做法，绝大多数需求都能这样完成。
 
-- **转换器**：只有 `shouldConvert` 与 `convert` 两个方法，负责「认领」特殊属性并构造视图。`shouldConvert` 通常照抄、只换一个 code；`convert` 里构造视图那一行要按你的视图构造函数改。
-- **视图**：真正描述效果的地方（范围、优先级、`apply` / `applySpecial`），这部分必须按你的需求写。
+先按「想改什么」找到落点：
 
-下面两个示例用 `[模板]` 标出可原样照抄的行（多为接口签名、`shouldConvert`、范围对象的构建），用 `[需改]` 标出必须按需求改写的行（code、范围、优先级，以及 `apply` / `applySpecial` 里做的事）。
+| 想改的东西        | 改哪个方法                                                                   |
+| ----------------- | ---------------------------------------------------------------------------- |
+| 光环影响哪些属性  | `CommonAura.apply`（基础属性）、`SpecialAuraModifier.add/modify`（特殊属性） |
+| 光环影响多大范围  | `CommonAura.createRange` 与 `getRangeParam`、`GuardAura.getRangeParam`       |
+| 光环什么时候执行  | 视图里的 `readonly priority`                                                 |
+| 光环认领哪个 code | 转换器里的 `shouldConvert`                                                   |
 
-## 示例：基础光环（减少周围怪物的金币与经验）
+三组「转换器 + 视图」的对应关系是：普通光环 `CommonAuraConverter` → `CommonAura`；支援 `GuardAuraConverter` → `GuardAura`；特殊光环 `SpecialAuraConverter` → `SpecialAura`（特殊属性由 `SpecialAuraModifier` 改动）。日常调整效果不必动 `shouldConvert`，只有想让某个内置转换器改认另一个 code 时才需要改它。
+
+### 示例：让普通光环同时影响金币与经验
+
+**目标**：普通光环（code 23）除了现有的生命 / 攻击 / 防御百分比，还能按参数调整范围内怪物的金币与经验。
+
+**改哪里**：`src/data/enemy/special.ts` 的 `ISpecial23Value` 与 code 23 的默认值；`src/data/enemy/aura.ts` 的 `CommonAura.apply`。两处都是内置文件，改完不需要注册。
+
+**复制什么**：先给参数接口补两个字段——
+
+```ts
+/** 23 - 光环 */
+export interface ISpecial23Value {
+    // [模板] 原有字段保持不变
+    range: number;
+    square: boolean;
+    hpBuff: number;
+    atkBuff: number;
+    defBuff: number;
+    // [需改] 新增：金币 / 经验变化百分比，正数提升、负数下降
+    moneyBuff: number;
+    expBuff: number;
+}
+```
+
+再把 code 23 的默认值补齐（不补的话，旧数据读到的这两个字段是 `undefined`）——
+
+```ts
+// 23 - 光环
+map.set(
+    23,
+    defineCommonSerializableSpecial<ISpecial23Value>(
+        23,
+        {
+            range: 0,
+            square: false,
+            hpBuff: 0,
+            atkBuff: 0,
+            defBuff: 0,
+            moneyBuff: 0, // [需改] 新增字段的默认值
+            expBuff: 0 // [需改] 新增字段的默认值
+        }
+        // ...省略：name / desc / color 原样保留
+    )
+);
+```
+
+最后在 `CommonAura.apply` 末尾追加两个分支——
+
+```ts
+apply(
+    handler: IEnemyHandler<IEnemyAttr, any>,
+    baseEnemy: IReadonlyEnemy<IEnemyAttr>
+): void {
+    const { enemy } = handler;
+    const { hpBuff, atkBuff, defBuff, moneyBuff, expBuff } =
+        this.special.value;
+
+    // ...省略：原有的 hpBuff / atkBuff / defBuff 三段，保持不变...
+
+    // [需改] 新增：同样用 baseEnemy 的原始值算百分比
+    if (moneyBuff !== 0) {
+        const money = (baseEnemy.getAttribute('money') * moneyBuff) / 100;
+        enemy.addAttribute('money', Math.floor(money));
+    }
+    if (expBuff !== 0) {
+        const exp = (baseEnemy.getAttribute('exp') * expBuff) / 100;
+        enemy.addAttribute('exp', Math.floor(exp));
+    }
+}
+```
+
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：新增字段的名字与含义、`apply` 里改的属性换成你自己的。如果只是想改现有数值的算法（例如把取整改成四舍五入），只改 `apply` 里对应那一段，不用动参数接口。
+
+**怎么验证**：给一只怪物挂上带 `moneyBuff: -20` 的光环，让它旁边站另一只怪物，看后者显示的金币是否下降 20%。
+
+**注意**：`apply` 里一律用 `baseEnemy`（未修改的原始怪物）算百分比，否则多个光环会把彼此的结果继续乘进去。改内置不需要再注册——`initializeEnemy` 已经注册过这些转换器。
+
+### 改另外两类内置光环
+
+- **支援（24）**：`GuardAura.apply` 把来源怪物登记进目标的 `guard` 属性，`GuardAura.getRangeParam` 固定返回周围 3×3。想让支援范围更大，或改成按某个参数决定，就改这两个方法。
+- **特殊光环（26）**：`SpecialAuraModifier.add` 负责「目标没有的属性就补上」，`modify` 负责「已有的数值属性按 `mulAdd` 加算或乘算」。要支持新的叠加方式，改 `modify` 里的判断。
+- **调整执行顺序**：直接改对应视图的 `readonly priority`。内置值是支援 5、普通光环 10、特殊光环 20，改大就会更早执行。
+
+## 自己写光环类
+
+只有在「内置三类光环表达不了、往内置方法体里也塞不进去」时才需要自己写类。典型情况是：一种全新的特殊属性要有自己的范围、优先级和影响方式，而它既不改基础属性、也不符合特殊光环那种「按 code 列表加属性」的形态。
+
+自己写类要同时处理接口签名、`shouldConvert` 认领、注册时机与优先级，改动面比改内置方法体大得多。
+
+**如果你不怎么懂代码，建议直接改内置光环类（`src/data/enemy/aura.ts` 的 `CommonAura` / `GuardAura` / `SpecialAura`），而不是自己写新的类。** 上面「改内置」一节已经覆盖了绝大多数需求：调数值、调范围、调优先级、给目标加属性，都能在现有方法里完成。
+
+自己写的做法是「转换器 + 视图」两个类：转换器只有 `shouldConvert` 与 `convert` 两个方法，负责认领特殊属性并构造视图；视图负责范围、优先级与 `apply` / `applySpecial`。下面两个示例用 `[模板]` 标出可原样照抄的行（多为接口签名、`shouldConvert`、范围对象的构建），用 `[需改]` 标出必须按需求改写的行（code、范围、优先级，以及 `apply` / `applySpecial` 里做的事）。
+
+两个示例都新建了自己的 code（30、31），不修改内置的 23 / 24 / 26。如果需求只是「让已有光环多做一点事」，用上一节的改内置写法更省事。
+
+### 示例：基础光环（减少周围怪物的金币与经验）
 
 先从一个只改基础属性的例子开始：让范围内的怪物金币与经验下降。它用 code 30（示例自选的未占用号）定义一条带参数的特殊属性，再配一个转换器与视图。
 
@@ -227,7 +329,7 @@ state.enemyContext.registerAuraConverter(new WeakAuraConverter());
 
 **注意**：`apply` 里用 `baseEnemy` 的原始值做百分比，因此多个光环不会把彼此的结果继续乘进去。只改基础属性就实现 `apply`；要改目标的特殊属性才需要 `applySpecial`。
 
-## 示例：特殊光环（给周围怪物上光环）
+### 示例：特殊光环（给周围怪物上光环）
 
 如果光环要给目标「加一条特殊属性」，而不是直接改基础属性，就把逻辑放进 `applySpecial`。下面的例子给范围内没有普通光环的怪物加上 code 23 的普通光环。
 
