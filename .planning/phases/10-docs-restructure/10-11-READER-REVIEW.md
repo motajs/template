@@ -415,3 +415,30 @@
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
 - 边界：仅改 `docs/intermediate/*.md`（`combat-overview` 无实操、不改）；未改 `config.ts` 与任何生产代码；未新增文件；未引入指向 `docs/advanced/` 的真实链接（D-47 预留仍为代码 span + HTML 注释）；未引入 `dev.md` 引擎开发约定，未写发布前/数量类信息。
 
+---
+
+## 用户循环 · batch 6 记录（D-48 实操·其他）
+
+**范围：** 用户修订循环第 1 轮 batch 6（D-48 实操写法）——「其他」组 3 篇（`events`、`replay-commands`、`data-plugins`）。沿用 batch 4/5 的口径：**保留系统/原理讲解**，只重做「实操/示例」部分，使其可分步照抄（目标 → 改哪里 → 复制什么 → 改什么 → 怎么验证 → 注意）；片段一律去掉 `import`，并显式给出「顶部通常已有、不要重复粘，报缺再补」的说明（统一指向 `code-basics.md` 的「照抄教程里的代码时，怎么处理 import」）。既有的 U-20 / U-21 / B-10 / B-12 等修正全部保留。
+
+### 逐条处置
+
+| 文档 | 处置 |
+| --- | --- |
+| `events.md` | ①两个示例（「设置 Flag」「勇士回血」）各改写为六步实操，片段删去 `import { BuiltInFunction } from '@motajs/anon-tokyo'` 与 `import { IBlockEventEnv } from '@user/data-system'`，补复制说明；包来源在「注意」中保留一句并回指 `src-tour`「包从哪来」（B-01 修正保留）。②按 D-48 删去「发布前会提供约 100 个」「内置事件总数约 100 个」「（发布前合计约 100 个）」三处**数量 / 发布前**信息，「内置事件集已完整 / 相当完整」的 U-20 视角保留（不再以具体数字表述）。③`BuiltInFunction`、`IBlockEventEnv`、参数接口、注册入口、内置导读、编辑器识别等系统讲解原样保留。 |
+| `replay-commands.md` | 本篇按 D-43 **本就不给示例**，全文无代码片段、无 `import`；「新增自定义录像指令」三步为分步文字指令，无需改动。U-21 的高级教程说明与 D-47 预留标记（代码 span `高级教程 · 录像指令` + `<!-- TODO(advanced): 录像指令 -->`）保留。本批不改。 |
+| `data-plugins.md` | ①「注册插件」片段删去 `import { IDataPluginDefine } from '@user/data-state'` 与 `import { DataShopPlugin } from './shop'`，补复制说明；把原「示例里的 `@user/*` 是包名」改为直接说明 `IDataPluginDefine` 来自 `@user/data-state`（指回 `src-tour`「包从哪来」）。②「插件定义」「时机次序」（含 B-12 的 `dependencies` 两义区分）、「可存档内容」、D-47 预留、`示例` 占位（N-4）原样保留——示例仍为占位，待用户提供较简单插件（D-44）。 |
+
+### 共用复制说明（各篇统一）
+
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 `code-basics.md` 的「照抄教程里的代码时，怎么处理 import」）。
+
+### 校验
+
+- 结构门禁：本批所涉 3 篇（含未改的 `replay-commands`）复核为 CRLF、单 H1（`STRUCT-OK`）。
+- 格式门禁：`node node_modules/prettier/bin/prettier.cjs --write docs/intermediate/*.md`（D-45）已跑，全部 `unchanged`（内容本就符合 prettier）。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+- 边界：仅改 `docs/intermediate/*.md`（`replay-commands` 按 D-43 无示例、不改）；未改 `config.ts` 与任何生产代码；未新增文件；未引入指向 `docs/advanced/` 的真实链接（D-47 预留仍为代码 span + HTML 注释）；未引入 `dev.md` 引擎开发约定，未写发布前/数量类信息。
+- 备注：D-48 明确不写「发布前/数量类无关信息」，与 batch 3 U-20 曾写入的「发布前约 100 个」冲突；本批按 D-48 删去该数字表述，仅保留「内置事件集已完整」的视角。
+- 结论：中级教程 24 篇的 D-48 实操改写（概念 / 基础 / 战斗 / 其他四组）至此全部覆盖。
+

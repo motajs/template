@@ -1,6 +1,6 @@
 # 自定义事件
 
-在地图事件里，你能调用一批内建动作——设置图块、移动勇士、往事件里再插一段……这些都是引擎内置的**事件函数**。内置事件集已经相当完整（发布前会提供约 100 个，覆盖地图、玩家、事件、流程控制等常用动作）；当你需要其中没有的额外动作时，也能照着同样的方式加一个自己的事件函数，让事件语句调用到它。
+在地图事件里，你能调用一批内建动作——设置图块、移动勇士、往事件里再插一段……这些都是引擎内置的**事件函数**。内置事件集已经相当完整（覆盖地图、玩家、事件、流程控制等常用动作）；当你需要其中没有的额外动作时，也能照着同样的方式加一个自己的事件函数，让事件语句调用到它。
 
 本篇只讲「如何自定义新的事件函数」，不展开事件系统的原理。事件环境里会用到数据端主对象 `state`，它的获取方式与含义见[数据端总览](./data-state-overview.md)。
 
@@ -58,7 +58,7 @@ interface ISetBlockEventParam {
 
 ## 注册事件
 
-光写内建函数还不够，还要把它注册进事件系统。注册入口是 `src/data/event/registrations.ts` 的 `createEventRegistrations()`，它返回一个 `BuiltInFunction[]`。下面是它的**节选**（内置事件总数约 100 个，这里只列几个作示例）：
+光写内建函数还不够，还要把它注册进事件系统。注册入口是 `src/data/event/registrations.ts` 的 `createEventRegistrations()`，它返回一个 `BuiltInFunction[]`。下面是它的**节选**（这里只列几个作示例）：
 
 ```ts
 export function createEventRegistrations(): BuiltInFunction[] {
@@ -76,7 +76,7 @@ export function createEventRegistrations(): BuiltInFunction[] {
         new EventInsertEvents(),
         new EventInsertEvent()
 
-        // ...其余内置事件（发布前合计约 100 个）
+        // ...其余内置事件
     ];
 }
 ```
@@ -95,12 +95,13 @@ export function createEventRegistrations(): BuiltInFunction[] {
 
 ## 示例：设置 Flag
 
-下面这个事件函数把参数里的 Flag 名与值写进 Flag 系统。示例为了紧凑，把参数接口 `ISetFlagEventParam` 直接写在同一个代码块里；实际编写时按上文「参数接口」一节，把它放进 `src/data/event/types.ts`，只把事件函数类放到 `src/data/event/` 下（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
+**目标**：让事件语句能调用一个 `setFlag` 动作，把指定的 Flag 字段设为指定值。
+
+**改哪里**：事件函数**类**放进 `src/data/event/` 下的文件（可新建，也可并入与该功能相关的现有文件，例如图块相关的放进 `map.ts`）；下面的参数接口 `ISetFlagEventParam` 放进 `src/data/event/types.ts`；再注册进 `src/data/event/registrations.ts` 的 `createEventRegistrations()`。
+
+**复制什么**：
 
 ```ts
-import { BuiltInFunction } from '@motajs/anon-tokyo';
-import { IBlockEventEnv } from '@user/data-system';
-
 interface ISetFlagEventParam {
     /** Flag 名 */
     readonly field: string;
@@ -120,7 +121,9 @@ export class EventSetFlag implements BuiltInFunction<
 }
 ```
 
-写好后加进 `createEventRegistrations()`：
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+再把新类加进注册数组：
 
 ```ts
 export function createEventRegistrations(): BuiltInFunction[] {
@@ -131,16 +134,21 @@ export function createEventRegistrations(): BuiltInFunction[] {
 }
 ```
 
-Flag 的读写接口见 [Flag 变量](./flags.md)。
+**改什么**：把 `'setFlag'` 换成你的事件名（需全局唯一）；把 `setFieldValue(...)` 那一行换成你要执行的动作。
+
+**怎么验证**：在事件语句里写一句 `setFlag(...)` 调用它，运行后读对应 Flag，应能看到写入的值（Flag 的读写见 [Flag 变量](./flags.md)）。
+
+**注意**：`BuiltInFunction` 来自 `@motajs/anon-tokyo`、`IBlockEventEnv` 来自 `@user/data-system`（包名含义见 [src 导览](./src-tour.md) 的「包从哪来」），顶部缺哪个再补哪个；参数接口建议放进 `src/data/event/types.ts`，与内置参数放在一起。
 
 ## 示例：勇士回血
 
-再写一个让勇士回复生命值的事件函数。它读取参数里的回复量，通过可修改属性接口加到勇士的 `hp` 上（参数接口同样应放入 `src/data/event/types.ts`，这里为紧凑仍内联书写）：
+**目标**：让事件语句能调用一个 `healHero` 动作，按给定数值回复勇士生命值。
+
+**改哪里**：事件函数类放进 `src/data/event/` 下；参数接口 `IHealHeroEventParam` 放进 `src/data/event/types.ts`；再注册进 `createEventRegistrations()`（方式同上例）。
+
+**复制什么**：
 
 ```ts
-import { BuiltInFunction } from '@motajs/anon-tokyo';
-import { IBlockEventEnv } from '@user/data-system';
-
 interface IHealHeroEventParam {
     /** 回复的生命值 */
     readonly hp: number;
@@ -158,7 +166,13 @@ export class EventHealHero implements BuiltInFunction<
 }
 ```
 
-勇士属性的读写方式见[勇士属性](./hero-attribute.md)。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：把 `'healHero'` 换成你的事件名；把 `add('hp', param.hp)` 换成你要调整的属性与数值。
+
+**怎么验证**：在事件里调用 `healHero(...)`，勇士生命值应增加对应数值（勇士属性的读写见 [勇士属性](./hero-attribute.md)）。
+
+**注意**：回复生命走可修改属性接口的 `add('hp', ...)`，不要直接改 `state.hero.attribute`；事件名需全局唯一，与内置事件重名会冲突。
 
 ## 编辑器识别
 
