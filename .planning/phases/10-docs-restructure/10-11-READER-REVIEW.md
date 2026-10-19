@@ -463,3 +463,24 @@
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0（侧边栏 `/intermediate/tile-store` 链接可解析）。
 - 边界：仅新增 1 篇文档 + 1 条侧边栏；未改任何生产代码；未引入指向 `docs/advanced/` 的真实链接（D-47）。
 
+---
+
+## 用户循环 · batch 7 记录（D-49 示例与「改内置优先」）
+
+**范围：** 用户修订循环第 1 轮 batch 7（D-49）——战斗组两篇 `enemy-query.md`、`hooks.md`。按 `10-CONTEXT.md` D-49：①示例代码贴合引擎现状，定义 `class` 再 `new`，不再用 `const obj = {...}`；②主体讲**改内置类**，末尾再简述「自己写类」；③明确写出「不懂代码建议直接改内置，而不是自己写新类」。保留 D-48 六步实操与 D-47 高级教程预留。
+
+### 逐条处置
+
+| 文档 | 处置 |
+| --- | --- |
+| `enemy-query.md` | ①三个示例（抱团 / 同化 / 号角）由 `const effect: IEnemyCommonQueryEffect<...> = {...}` / `const effect: IEnemySpecialQueryEffect<...> = {...}` 改为 `class ... implements ...`，注册改为 `new ...()`；同化示例把 `for` 返回的修饰器也抽成 `AssimilationModifier` 类，与「定义类再 `new`」保持一致。②按源码核对接口签名：`priority`、`apply(handler, special, query)`、`for(ctx)`、修饰器 `shouldQuery` / `add` / `delete` / `modify`，`query` / `ctx` 按既有 U-15 口径标注为 `IReadonlyEnemyContext`。③主体新增「接进内置流程」：说明查询效果**在 `src/` 中无内置实现**、需在 `src/data/enemy/` 新建类并在 `initializeEnemy` 注册；同时指出能由内置光环（`aura.ts`）或最终效果（`final.ts`）表达的需求应优先改内置。④末尾新增「自己写查询类时」+ 明确 D-49 caveat「不懂代码建议直接改内置类」。⑤「注册在哪里」示例改为 `new` 实例并注明注册的是实例不是类本身。 |
+| `hooks.md` | ①开篇 `const hook = {...}` 改为 `class MyHeroAttributeHooks implements IHeroAttributeHooks<IHeroAttr>`、构造函数保存 `state`。②原「注册与移除钩子」改为「改内置钩子（推荐）」：先给内置钩子类 → 文件对照表（`combat` / `event` / `hero` / `loader` / `path`），再按 D-48 六步给出「改 `MainHeroAttributeHooks.onUpdateAttribute` 方法体」的做法，并说明内置类已在 `initializeHooks` 注册、不要重复 `addHook`。③末尾新增「自己写钩子类」：`class` + `addHook(new ...(state))`、保留实例/控制器移除，并写明 D-49 caveat「不懂代码建议直接改内置钩子」。 |
+
+### 校验
+
+- 源码核对：`packages-user/data-system/src/combat/types.ts`（`IEnemyCommonQueryEffect.priority` / `apply(handler, special, query)`、`IEnemySpecialQueryEffect.priority` / `for(ctx)`、`IEnemySpecialQueryModifier.shouldQuery`、`IEnemySpecialModifier.add` / `delete` / `modify`、`registerCommonQueryEffect(code, effect)` / `registerSpecialQueryEffect(effect)`）、`src/data/enemy/initialize.ts`（无查询效果注册；光环 / 最终效果 / 脚本 / 钩子已注册）、`src/data/hook/initialize.ts`（内置钩子统一 `addHook`）、`src/data/hook/*.ts`（`Main*Hooks` 类与文件对应）、`packages-user/data-base/src/hero/types.ts`（`IHeroAttributeHooks.onUpdateAttribute<K>`）、`packages-user/data-common/src/types.ts`（`IHeroAttr`、`emitTip`）。
+- 结构门禁：两篇均 CRLF、单 H1（`STRUCT-OK`）。
+- 格式门禁：`node node_modules/prettier/bin/prettier.cjs --write docs/intermediate/enemy-query.md docs/intermediate/hooks.md`（D-45，`endOfLine: crlf`）已跑。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+- 边界：仅改两篇文档与本记录；未改 `config.ts` 与生产代码；未新增文件；未引入指向 `docs/advanced/` 的真实链接（D-47 预留仍为代码 span + HTML 注释）；未创建 `10-11-SUMMARY.md`，未改 `STATE.md` / `ROADMAP.md`（按本次派发要求）。
+
