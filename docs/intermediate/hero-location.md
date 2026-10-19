@@ -42,4 +42,29 @@ const floorId = state.hero.location.floorId;
 const map = state.hero.location.map;
 ```
 
+## 示例：读取勇士位置信息
+
+**目标**：读取勇士当前的坐标、朝向与所在楼层，并弹出一条提示。
+
+**改哪里**：任何需要这些信息的地方——例如钩子、事件函数或战斗计算里。
+
+**复制什么**：
+
+```ts
+const loc = state.hero.getLocation();
+const floorId = state.hero.location.floorId;
+
+state.emitTip(
+    `坐标 (${loc.x}, ${loc.y})，朝向 ${loc.direction}，楼层 ${floorId}`
+);
+```
+
+> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：只保留你要用的那几行；提示文字换成你自己的。
+
+**怎么验证**：触发一次，看提示里的坐标、朝向、楼层是否与勇士当前状态一致。
+
+**注意**：`floorId` 为 `undefined`、`map` 为 `null` 时表示勇士不处于任何楼层，用到它们前要考虑这种情况（例如勇士尚未上场时）。
+
 楼层的结构与激活状态见[地图结构](./map-structure.md)；想从 `state` 出发找到勇士与地图对象，见[数据端总览](./data-state-overview.md)。

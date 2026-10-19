@@ -349,3 +349,38 @@
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0（高级教程预留使用代码 span 与 HTML 注释，不产生链接）。
 - 边界：仅改 `docs/intermediate/*.md`；未改 `config.ts` 与任何生产代码；未新增文件；U-03 不在本批。
 
+---
+
+## 用户循环 · batch 4 记录（D-48 实操）
+
+**范围：** 用户修订循环第 1 轮 batch 4（D-48 实操写法）——概念与导航组（`data-vs-render`、`src-tour`、`code-basics`、`hooks`）与基础接口组（`data-state-overview`、`hero-attribute`、`hero-items`、`hero-equipment`、`hero-location`、`map-structure`、`map-tiles`、`flags`）共 12 篇。按 `10-CONTEXT.md` D-48：**保留系统/原理讲解**，只重做「实操/示例」部分，使其可分步照抄（目标 → 改哪里 → 复制什么 → 改什么 → 怎么验证 → 注意）；代码片段不含 `import`，并显式给出「顶部通常已有、不要重复粘，报缺再补」的说明。
+
+### 逐条处置
+
+| 文档 | 处置 |
+| --- | --- |
+| `data-vs-render.md` | 无「实操/示例」段落（纯概念 + mermaid），本批不改。 |
+| `src-tour.md` | 无代码片段与「实操/示例」段落（目录导览 + 「该不该改」表），本批不改。 |
+| `code-basics.md` | ①删除 dev.md 引擎开发约定句「文件顶部的 `import` 必须紧挨在一起，中间不夹注释或空行」（D-48 明确不写此类约定）；②在「模块与引入」下新增「照抄教程里的代码时，怎么处理 import」小节，作为其余各篇统一引用的复制约定（三步：直接粘 → 报缺再补 → 不重复引入）；教学示例代码块保留不动。 |
+| `hooks.md` | 「注册与移除钩子」改写为 D-48 六步实操（目标 / 改哪里 / 复制什么 / 改什么 / 怎么验证 / 注意），片段含钩子对象 + `addHook`，附复制说明；移除方式保留。 |
+| `data-state-overview.md` | 属查表入口，无独立实操；在「state 从哪来」补一句「示例一律省略 `import`，照抄办法见 code-basics」，指向统一复制约定。 |
+| `hero-attribute.md` | ①「修饰器」代码块删去 `import { ValueModifier, PercentageModifier } from '@user/data-base'`，改为复制说明；②「示例」改写为六步实操「永久加攻与临时减防」。 |
+| `hero-items.md` | ①「常用接口」示例改写为六步实操（发 / 扣 / 使用 / 查询道具）；②「道具效果属内容层」示例改写为六步实操（内容层道具效果：加攻 + 提示）。 |
+| `hero-equipment.md` | 「装备槽」示例改写为六步实操（获得装备 → 装备到 0 号槽 → 卸下）。 |
+| `hero-location.md` | 新增六步实操「读取勇士位置信息」（坐标 + 朝向 + 楼层 + 提示）。 |
+| `map-structure.md` | U-04 的「如何取到指定图层」改写为六步实操；把 `addLayer` 的提醒并入「注意」。 |
+| `map-tiles.md` | ①「读取与写入单点」示例改写为六步实操；②U-05 的「完整示例（批量）」改写为六步实操（保留 `// prettier-ignore` 的按行数组）。 |
+| `flags.md` | U-06 的「示例：记录开关与计数」改写为六步实操。 |
+
+### 共用复制说明（各篇统一）
+
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+### 校验
+
+- 结构门禁：本批改动的 10 篇全部 CRLF、单 H1（`STRUCT-OK`）。
+- 格式门禁：`node node_modules/prettier/bin/prettier.cjs --write`（D-45）已跑，改动篇目全部 `unchanged`（内容本就符合 prettier）。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+- 边界：仅改 `docs/intermediate/*.md`（`data-vs-render`、`src-tour` 无实操、不改）；未改 `config.ts` 与任何生产代码；未新增文件；未引入指向 `docs/advanced/` 的真实链接（D-47 预留仍为代码 span + HTML 注释）。
+- 未决：战斗组与「其他」组（`combat-overview`、`enemy-*`、`events`、`replay-commands`、`data-plugins`）的实操尚未按 D-48 重做，其中仍是含 `import` 的代码块；留待后续批次。
+

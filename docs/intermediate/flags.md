@@ -73,6 +73,12 @@ Flag 常与游戏关键动作配合使用，例如在钩子中读写，见[钩�
 
 ## 示例：记录开关与计数
 
+**目标**：记下「Boss 已被击败」这个开关，以及「门被开过几次」这个计数——两者都要跟着存档走。
+
+**改哪里**：你要记录这些状态的地方——例如某个事件函数或钩子里。
+
+**复制什么**：
+
 ```ts
 // 记录一个开关
 state.flags.setFieldValue('boss-defeated', true);
@@ -81,5 +87,13 @@ state.flags.setFieldValue('boss-defeated', true);
 const times = state.flags.getOrInsert('open-count', 0);
 times.add(1);
 ```
+
+> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：把 `'boss-defeated'`、`'open-count'` 换成你的字段名，把 `true`、`1` 换成你的值。只需一次读写的开关用「值」那组更简单；要反复增减的计数，用 `getOrInsert` 拿到字段对象后再 `add` 更省事。
+
+**怎么验证**：写入后读 `state.flags.getFieldValue('boss-defeated')` / `getFieldValue('open-count')`，应返回你写入的值；存档后再读档依然存在。
+
+**注意**：Flag 会进存档，不再需要的变量要及时 `deleteField`，避免一直残留在存档里。
 
 想从 `state` 出发找到 Flag 对象，见[数据端总览](./data-state-overview.md)。

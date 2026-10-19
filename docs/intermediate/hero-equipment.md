@@ -20,12 +20,30 @@
 
 `equip` 的 `autoUnload` 参数默认为 `true`：当要装备的装备当前穿在别的槽上时，自动把它从原槽卸下。`equip` 与 `unequip` 都会返回被卸下的装备 uid（没有则为 `undefined`）。
 
+**目标**：给勇士获得一件装备并穿上 0 号槽，随后再把它卸下。
+
+**改哪里**：你要操作装备的地方——例如某个事件函数或道具效果里。
+
+**复制什么**：
+
 ```ts
+// 获得一件新装备实例，拿到它的 uid
 const uid = state.hero.items.equipment.add('sword');
 
+// 穿到 0 号槽；返回被自动卸下的装备 uid（没有则 undefined）
 state.hero.equip.equip(uid, 0);
+
+// 卸下 0 号槽，返回被卸下的装备 uid
 const off = state.hero.equip.unequip(0);
 ```
+
+> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员，一般无需额外引入）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：把 `'sword'` 换成你的装备 id 或图块数字；把 `0`（槽位）换成目标槽的索引或名称；`uid`、`off` 不需要时可省去接收。
+
+**怎么验证**：穿装备后看 `state.hero.equip.getEquipped(0)` 是否返回该 uid、`state.hero.equip.equipped(uid)` 是否为 `true`；卸下后应为 `undefined` / `false`。
+
+**注意**：`equip` 的 `autoUnload` 默认为 `true`（自动从原槽卸下）；要事先判断能否装备，用 `canEquipTo(uid, slot)`，它返回 `CanEquip` / `CannotEquip` / `NeedReplace`。
 
 ## 装备实例仓库（IHeroEquipsStore）
 

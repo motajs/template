@@ -58,6 +58,12 @@ const active = state.maps.getActiveMap('floor-1');
 
 `layerList` 是一个集合（`Set<IMapLayer>`），本身没有「按名字直接取」的方法，所以从 `layerList` 里筛出想要的那一个即可：按 **`alias`** 找（最常用），或按 **`zIndex`** 找。
 
+**目标**：从某个楼层里取出指定图层（例如名为 `ground` 的图层）。
+
+**改哪里**：任何需要操作图层的地方——例如某个事件函数或钩子里。
+
+**复制什么**：
+
 ```ts
 const map = state.maps.getMap('floor-1')!;
 
@@ -68,13 +74,19 @@ const ground = [...map.layerList].find(layer => layer.alias === 'ground');
 const second = [...map.layerList].find(layer => layer.zIndex === 2);
 ```
 
+> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：把 `'floor-1'` 换成你的楼层 id；把 `'ground'` / `2` 换成你要找的别名或纵深；只保留你要用的那种找法。
+
+**怎么验证**：取到的图层若非 `undefined`，再读它的 `alias` 应与你要找的一致；找不到时为 `undefined`。
+
+**注意**：别把 `addLayer(alias)` 当成「取图层」——它是**新建**一个图层并返回，用同一个别名调用会再建一个。取已有图层请按上面的方式从 `layerList` 里找。
+
 事件层是个例外：它可以直接从楼层的 `eventLayer` 取得，不必去筛 `layerList`。
 
 ```ts
 const eventLayer = map.eventLayer; // IMapLayer | null
 ```
-
-注意别把 `addLayer(alias)` 当成「取图层」——它是**新建**一个图层并返回，用同一个别名调用会再建一个。取已有图层请按上面的方式从 `layerList` 里找。
 
 图块的读写见[地图图块](./map-tiles.md)。
 

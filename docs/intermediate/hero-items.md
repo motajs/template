@@ -27,6 +27,12 @@
 
 `item` 参数可以传道具的图块数字或字符串 id（图块数字的含义见[地图图块](./map-tiles.md)）。
 
+**目标**：给勇士发一把黄钥匙、扣掉两把、再使用一把，并查回持有数量。
+
+**改哪里**：你要发放或消耗道具的地方——例如某个事件函数或道具效果里。
+
+**复制什么**：
+
 ```ts
 // 发一把黄钥匙（+1）
 state.hero.items.addItem('yellow-key');
@@ -40,6 +46,14 @@ state.hero.items.useItem('yellow-key');
 // 查询数量
 const count = state.hero.items.itemCount('yellow-key');
 ```
+
+> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员，一般无需额外引入）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：把 `'yellow-key'` 换成你的道具 id 或图块数字；只用得到哪几行就留哪几行，不必全抄。
+
+**怎么验证**：执行后看 `state.hero.items.itemCount('yellow-key')` 有没有随之变化；`useItem` 会让 `Consumable` 类道具数量减一。
+
+**注意**：对 `Pick` 类道具调用 `addItem` 会**立刻触发它的效果**、不进入背包；`useItem` 只对 `Constant` 与 `Consumable` 生效，对其它类别不起作用。`count` 只在需要数量时才写。
 
 ## 迭代背包
 
@@ -56,6 +70,14 @@ for (const [num, item] of state.hero.items.iterateItems()) {
 
 道具「被捡起或使用时具体做什么」，写在内容层的 `src/content/item.ts`，用 `IItemEffect` 描述：`useEffect` 在 `Pick` 拾取或 `Constant` / `Consumable` 使用时触发，`canUse` 决定能否使用，`useEvent` 关联使用事件。道具效果可以调用 `state`（数据端主对象）与道具数据，因而能修改勇士属性、设置 Flag、发送提示等。
 
+下面是一个完整的道具效果示例。
+
+**目标**：某件道具被捡起或使用时，给勇士加 5 点攻击，并弹出一条提示。
+
+**改哪里**：内容层 `src/content/item.ts` 中该道具对应的效果条目。
+
+**复制什么**：
+
 ```ts
 // src/content/item.ts（内容层）
 export const item200: ItemEffect = {
@@ -65,5 +87,13 @@ export const item200: ItemEffect = {
     }
 };
 ```
+
+> 复制说明：片段已省略 `import`（`ItemEffect` 等类型来自内容层）；这是**内容层**文件，不是你平时写逻辑的 `src/data`。若编辑器提示缺少名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：把 `item200` 的编号换成你的道具编号；把 `useEffect` 里的效果换成你要的（这里是把 `+5` 攻击与提示文字改成你的）。
+
+**怎么验证**：在游戏里捡起或使用这件道具，看攻击是否 +5、提示是否弹出。
+
+**注意**：`useEffect` 只在 `Pick` 拾取或 `Constant` / `Consumable` 使用时触发，对 `Pick` 用 `useItem` 不生效；想给道具加「能否使用」的条件，用 `canUse`。
 
 想了解从 `state` 能取到哪些对象，见[数据端总览](./data-state-overview.md)。

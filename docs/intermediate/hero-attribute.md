@@ -41,11 +41,9 @@ attr.mul('money', 2); // 金币翻倍
 - `ValueModifier`（type `@system/value`）：数值加减，最终值 = 原值 + 修饰值；
 - `PercentageModifier`（type `@system/percentage`）：按**基础值**计算百分比，最终值 = 原值 + 基础值 × 修饰值。
 
-用 `addModifier(name, modifier, save?)` 挂上修饰器，用 `deleteModifier(name, modifier)` 移除（示例里的 `@user/*`、`@motajs/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
+用 `addModifier(name, modifier, save?)` 挂上修饰器，用 `deleteModifier(name, modifier)` 移除：
 
 ```ts
-import { ValueModifier, PercentageModifier } from '@user/data-base';
-
 const attr = state.hero.getModifiableAttribute();
 
 // 攻击永久 +5：加一个数值修饰器
@@ -58,6 +56,8 @@ attr.addModifier('def', defDown);
 // 需要移除时，传回同一个修饰器对象
 attr.deleteModifier('def', defDown);
 ```
+
+> 复制说明：片段已省略 `import`（`ValueModifier`、`PercentageModifier` 来自 `@user/data-base`）；文件顶部通常已有，不要再粘，报缺少时再补（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
 
 想要一段**临时**加成时，就先 `addModifier(...)` 挂上修饰器，在不再需要时用 `deleteModifier(...)` 把它移除，加成随即消失；反之，只要一直不移除，它就是永久加成。
 
@@ -83,16 +83,30 @@ trial.add('atk', 999);
 const preview = trial.getFinalAttribute('atk');
 ```
 
-## 示例
+## 示例：永久加攻与临时减防
+
+**目标**：让勇士攻击永久 +15；再给一个「防御 -20%」的临时减益，战斗结束后撤掉。
+
+**改哪里**：希望效果生效的地方——例如某个事件函数、钩子或道具效果里。
+
+**复制什么**：
 
 ```ts
-// 攻击 +15 永久：直接改基础属性
+// 攻击永久 +15：直接改基础属性
 state.hero.getModifiableAttribute().add('atk', 15);
 
-// 防御 -20% 临时：挂一个百分比修饰器，战斗结束后再删除
+// 防御临时 -20%：挂一个百分比修饰器
 const weaken = new PercentageModifier(-0.2);
 state.hero.getModifiableAttribute().addModifier('def', weaken);
 ```
+
+> 复制说明：片段已省略 `import`（`PercentageModifier` 来自 `@user/data-base`）；文件顶部通常已有，不要再粘，报缺少时再补（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：把 `'atk'`、`'def'` 换成你要改的属性名，把 `15`、`-0.2` 换成你的数值（`-0.2` 即 -20%）。
+
+**怎么验证**：加攻后读 `state.hero.attribute.getFinalAttribute('atk')`，应比原来高 15；挂上减益后读 `getFinalAttribute('def')`，应比基础值低 20%。
+
+**注意**：`add('atk', 15)` 改的是**基础属性**，是永久的；临时减益要自己留住 `weaken` 这个修饰器对象，在不再需要时用 `deleteModifier('def', weaken)` 撤销，否则它会一直生效。
 
 想在属性变化时收到通知，可以用属性钩子族的 `onUpdateAttribute`，见[钩子](./hooks.md)。
 

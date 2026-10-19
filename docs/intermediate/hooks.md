@@ -64,15 +64,31 @@ const hook = {
 
 ## 注册与移除钩子
 
-写好了钩子对象，还要挂到目标主对象上。用 `addHook` 完成注册，它会返回一个控制器：
+写好了钩子对象，还要挂到目标主对象上。用 `addHook` 完成注册，它会返回一个控制器。
+
+**目标**：在勇士某个属性变化时，立刻执行你写好的处理。
+
+**改哪里**：希望效果生效的地方——事件函数、道具效果，或 `src/data/hook/` 下你新增的钩子文件都可以。
+
+**复制什么**：
 
 ```ts
-const controller = state.hero.attribute.addHook({
+const hook = {
     onUpdateAttribute(name, value) {
-        // 属性变化时的处理
+        // 属性变化时要做的事
     }
-});
+};
+
+const controller = state.hero.attribute.addHook(hook);
 ```
+
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：把 `onUpdateAttribute` 换成你要用的钩子方法名（对照上两张表），把方法体换成你的处理；把 `state.hero.attribute` 换成要挂接的目标主对象。
+
+**怎么验证**：手动触发一次对应动作（例如改一次攻击力），看方法体里的效果有没有执行。
+
+**注意**：一个钩子方法会对该主对象的**所有**同类动作触发——例如 `onUpdateAttribute` 对每个属性变化都触发，需要时要在方法体里判断 `name`，别误以为只对某一个属性生效。
 
 需要移除时，有两种方式：把**原来的钩子对象**传给 `removeHook`，或调用 `addHook` 返回的控制器的 `unload` 方法。
 
