@@ -442,3 +442,24 @@
 - 备注：D-48 明确不写「发布前/数量类无关信息」，与 batch 3 U-20 曾写入的「发布前约 100 个」冲突；本批按 D-48 删去该数字表述，仅保留「内置事件集已完整」的视角。
 - 结论：中级教程 24 篇的 D-48 实操改写（概念 / 基础 / 战斗 / 其他四组）至此全部覆盖。
 
+---
+
+## 用户循环 · U-03 记录（新增《图块存储》基础接口文档）
+
+**范围：** 用户修订循环第 1 轮 `U-03`——图块数字与图块 id 的区别、为何要区分，需**新增一篇基础接口文档**简述 `TileStore` 基本概念与 `id()` / `num()` 接口。命名与位置已经用户批准：文件名 `tile-store.md`、显示名「图块存储」、置于 `map-tiles.md` 之后、归 `基础接口` 组（8 → 9 条）。
+
+### 逐条处置
+
+| # | 处置 | 改动文件 |
+| --- | --- | --- |
+| U-03 | 新增 `docs/intermediate/tile-store.md`：①讲清 `state.tileStore`（`ITileStore`）是图块定义的存放处；②解释**图块数字（num）**与**图块 id** 的区别与**为何两者并存**（地图矩阵 / `Uint32Array` 用数字以求紧凑与检索快，id 可读稳定供内容与作者使用，store 内部维护 `id → num`、`num → id` 双向映射并保存默认事件）；③按源码逐条列出接口 `getData` / `getType` / `getEvent` / `addTile` / `idToNumber` / `numberToId` / `num` / `id` / `identity`；④D-48 六步实操（id ↔ 数字换算，片段不含 `import`，附标准复制说明）；⑤注意项写明未知 token 返回 `undefined`、`identity` 未知返回 `[]`；⑥交叉引用 `map-tiles.md` 与 `hero-items.md`。 | `tile-store.md`（新增） |
+| U-03 | `docs/.vitepress/config.ts` 在 `/intermediate/` 的 `基础接口` 组、`地图图块` 之后加入 `{ text: '图块存储', link: '/intermediate/tile-store' }`；`nav`、其它 sidebar 键与既有配置一律未动。 | `config.ts` |
+
+### 校验
+
+- 源码核对：`packages-user/data-common/src/store/types.ts`（`ITileStore` 全部 9 个方法签名、`ITileRawData.num` / `id` / `events` / `type`）、`packages-user/data-common/src/store/tileStore.ts`（`dataMap` / `idMap` / `numMap` / `eventMap` 四表、`num` / `id` / `identity` 的 `undefined` / `[]` 行为）、`packages-user/data-common/src/types.ts`（`IDataCommon.tileStore`）、`src/content/tile.jsonc`（条目 `num` / `id` 形态）。
+- 结构门禁：新篇 CRLF、单 H1（`STRUCT-OK`）。
+- 格式门禁：prettier（D-45，`endOfLine: crlf`）已对新文件与 `config.ts` 跑过。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0（侧边栏 `/intermediate/tile-store` 链接可解析）。
+- 边界：仅新增 1 篇文档 + 1 条侧边栏；未改任何生产代码；未引入指向 `docs/advanced/` 的真实链接（D-47）。
+

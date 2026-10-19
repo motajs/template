@@ -17,9 +17,7 @@ export default defineConfig({
     themeConfig: {
         // https://vitepress.dev/reference/default-theme-config
         outline: [2, 3],
-        nav: [
-            { text: '中级教程', link: '/intermediate/data-vs-render' }
-        ],
+        nav: [{ text: '中级教程', link: '/intermediate/data-vs-render' }],
         sidebar: {
             '/intermediate/': [
                 {
@@ -76,6 +74,10 @@ export default defineConfig({
                                 {
                                     text: '地图图块',
                                     link: '/intermediate/map-tiles'
+                                },
+                                {
+                                    text: '图块存储',
+                                    link: '/intermediate/tile-store'
                                 },
                                 {
                                     text: 'Flag 变量',
