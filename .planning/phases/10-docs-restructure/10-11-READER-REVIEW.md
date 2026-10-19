@@ -514,4 +514,31 @@
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
 - 边界：仅改 7 篇文档 + 本记录；未改 `config.ts` 与生产代码；未新增文件；未引入指向 `docs/advanced/` 的真实链接（D-47 预留仍为代码 span + HTML 注释）；未创建 `10-11-SUMMARY.md`，未改 `STATE.md` / `ROADMAP.md`（按本次派发要求）。
 
+---
+
+## 用户循环 · batch 9 记录（D-50 通用模板）
+
+**范围：** 用户修订循环第 1 轮 batch 9（D-50）——战斗组 8 篇（`enemy-aura`、`enemy-query`、`enemy-final`、`enemy-calculator`、`enemy-map-damage`、`enemy-combat-script`、`enemy-status-hooks`、`enemy-specials`）。按 `10-CONTEXT.md` D-50：①每类可扩展机制给**机制本身的通用骨架**（类 / 转换器 / 视图 / 效果 / 钩子），用 `[需改]` 标出作者要改的部分；②模板与示例**分开**，不把某个具体效果当作模板；③示例仅作短小的填空示范。D-49（改内置优先 + caveat）与 D-48（六步实操）保留。
+
+### 逐条处置
+
+| 文档 | 处置 |
+| --- | --- |
+| `enemy-aura.md` | 在「自己写光环类」新增「模板：复制什么、改什么」：转换器骨架（`shouldConvert` / `convert`）+ 光环视图骨架（`priority` / `couldApplyBase` / `couldApplySpecial` / `range` / `getRangeParam` / `apply` / `applySpecial`），全部 `[需改]` 标注，并附「复制后要改的六处」表。「减少金币经验的光环」「链式光环」改为短示例，明确「只是填空示范，不是模板本身」。 |
+| `enemy-query.md` | 新增「模板：复制什么、改什么」：常规查询骨架（`priority` / `apply` / `query()`）+ 特殊查询骨架（效果 `for(ctx)` + 修饰器 `shouldQuery` / `add` / `delete` / `modify`），附注册写法与需改点表；抱团 / 同化 / 号角三个示例改为短小的填空示范。 |
+| `enemy-final.md` | 在「自己写最终效果类」新增「模板」：`IEnemyFinalEffect` 骨架（`priority` / `apply`）+ 注册写法；「仿攻」改为独立短示例。 |
+| `enemy-calculator.md` | 在「自己写计算器类」新增「模板」：`IDamageCalculator` 骨架（`calculate` / `getCriticalLimit`）+ `useCalculator` 注册；「等差数列」改为独立短示例；保留「计算器必须无副作用」warning，并在模板后再次强调。 |
+| `enemy-map-damage.md` | 在「自己写地图伤害类」新增「模板」：伤害视图骨架（`getRange` / `getRangeParam` / `getDamageAt` / `getDamageWithoutCheck`）+ 转换器骨架（`convert`）+ `useConverter` 注册；「八方向激光」改为独立短示例。 |
+| `enemy-combat-script.md` | 在「自己写脚本类」新增「模板」：`ICombatScript` 骨架（`priority` / `before` / `after`）+ `addCombatScript` 注册；战前拦下「无敌」与战后回血改为独立短示例。 |
+| `enemy-status-hooks.md` | 在「自己写钩子类」新增「模板」：钩子类骨架（构造保存 `state` + 钩子方法）+ 挂载点注册；「蓄力（下次战斗伤害乘二）」改为独立短示例。 |
+| `enemy-specials.md` | 在「改内置」新增「模板」：`special.ts` 风格的无参 / 有参两种属性定义骨架 + `[需改]`，并提示按「编辑器识别约定」补齐注释与 `ISpecial{code}Value`；「灼烧」改为独立短示例。内置属性编号表与系统讲解保留。 |
+
+### 校验
+
+- 源码核对：`src/data/enemy/aura.ts`（`IAuraConverter.shouldConvert` / `convert`、`IEnemyAuraView` 的 `priority` / `couldApplyBase` / `couldApplySpecial` / `range` / `getRangeParam` / `apply` / `applySpecial`）、`packages-user/data-system/src/combat/types.ts`（`IEnemyCommonQueryEffect` / `IEnemySpecialQueryEffect` / `IEnemySpecialQueryModifier` / `IEnemyFinalEffect` / `IMapDamageView` / `IMapDamageConverter` / `IDamageCalculator` / `ICombatScript` / `ICombatFlowHooks`）、`src/data/enemy/final.ts`、`src/data/enemy/calculator.ts`、`src/data/enemy/mapDamage.ts`、`src/data/enemy/script.ts`、`src/data/enemy/hook.ts`、`src/data/enemy/special.ts`。
+- 结构门禁：8 篇均 CRLF、单 H1（`STRUCT-OK`）。
+- 格式门禁：`pnpm exec prettier --write`（D-45，`endOfLine: crlf`）已跑，8 篇全部 `unchanged` 或已格式化。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+- 边界：仅改 `docs/intermediate/enemy-*.md` 与本记录；未改 `config.ts` 与生产代码；未新增文件；未引入指向 `docs/advanced/` 的真实链接（D-47 预留仍为代码 span + HTML 注释）；未创建 `10-11-SUMMARY.md`，未改 `STATE.md` / `ROADMAP.md`（按本次派发要求）。
+
 

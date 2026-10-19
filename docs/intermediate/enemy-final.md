@@ -108,22 +108,54 @@ apply(handler: IEnemyHandler<IEnemyAttr, IHeroAttr>): void {
 
 **如果你不怎么懂代码，建议直接改内置的 `MainEnemyFinalEffect.apply`（在 `src/data/enemy/final.ts` 里加分支），而不是自己写新的类。** 上面「改内置」一节已经覆盖了绝大多数需求；只有确实需要独立优先级或独立类时，才用下面的写法。
 
-做法是实现 `IEnemyFinalEffect` 接口，再用 `registerFinalEffect` 注册。它与内置效果进入同一条流水线，会按各自的 `priority` 一起执行。下面仍以「仿攻」为例，演示自写类的形态：
+做法是实现 `IEnemyFinalEffect` 接口，再用 `registerFinalEffect` 注册。它与内置效果进入同一条流水线，会按各自的 `priority` 一起执行。先看接口模板，再看一个具体示例。
+
+### 模板：复制什么、改什么
+
+下面是最终效果机制本身的骨架，不含任何具体效果。复制到新文件后按 `[需改]` 修改：
 
 ```ts
 // [需改] 类名：换成你自己的效果名
-export class AttackCopyFinal implements IEnemyFinalEffect<
+export class XxxFinalEffect implements IEnemyFinalEffect<
     IEnemyAttr,
     IHeroAttr
 > {
     // [需改] priority：数值越大越先执行；内置最终效果是 0
     readonly priority = 0;
 
-    // [模板] apply 的签名是固定的，引擎在最终阶段调用它并传入 handler
+    // [模板] apply 签名固定：引擎在最终阶段调用它并传入 handler
     apply(handler: IEnemyHandler<IEnemyAttr, IHeroAttr>): void {
-        // [需改] 触发条件：只有带本效果（示例 code 32）的怪物才处理
+        // [需改] 触发条件：哪些怪物要执行这段收尾
+        if (!handler.enemy.hasSpecial(XX)) return;
+        // [需改] 收尾逻辑：只读 handler.enemy / handler.hero，
+        //        再改 handler.enemy 的基础属性
+    }
+}
+```
+
+注册：
+
+```ts
+state.enemyContext.registerFinalEffect(new XxxFinalEffect());
+```
+
+复制后需要改的只有三处：类名、`priority`、`apply` 里「怎么判断」与「改什么属性」。
+
+### 示例：仿攻
+
+下面仍以「仿攻」为例，演示自写类的形态。它只是填空示范，不是模板本身：
+
+```ts
+export class AttackCopyFinal implements IEnemyFinalEffect<
+    IEnemyAttr,
+    IHeroAttr
+> {
+    readonly priority = 0;
+
+    apply(handler: IEnemyHandler<IEnemyAttr, IHeroAttr>): void {
+        // [需改] 只有带本效果（示例 code 32）的怪物才处理
         if (!handler.enemy.hasSpecial(32)) return;
-        // [需改] 真正做的事：把怪物攻击设为勇士的最终攻击
+        // [需改] 把怪物攻击设为勇士的最终攻击
         handler.enemy.setAttribute(
             'atk',
             handler.hero.getFinalAttribute('atk')

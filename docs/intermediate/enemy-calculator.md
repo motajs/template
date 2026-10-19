@@ -117,12 +117,47 @@ calculate(
 
 **如果你不怎么懂代码，建议直接改内置的 `MainDamageCalculator.calculate`（在 `src/data/enemy/calculator.ts` 里加分支），而不是自己写新的计算器。** 上面「改内置」一节已经覆盖了绝大多数需求；自写计算器意味着你要自己重新实现无敌、吸血、支援、连击、先攻、破甲、反击、净化、固伤、仇恨、自爆这些分支。
 
-做法是实现 `IDamageCalculator` 接口，再用 `useCalculator` 替换：
+做法是实现 `IDamageCalculator` 接口，再用 `useCalculator` 替换。先看接口模板，再看一个具体示例。
 
-- **接口**：`calculate` 返回 `{ damage, turn }`，`getCriticalLimit` 返回临界上界；
-- **替换**：`useCalculator` 是**替换**当前计算器，选了自己的就会把内置的整个换掉。
+### 模板：复制什么、改什么
 
-下面用「等差数列」演示自写类的最小形态（只保留本示例所需分支）：
+下面是计算器机制本身的骨架，不含任何具体公式。复制到新文件后按 `[需改]` 修改：
+
+```ts
+// [需改] 类名：换成你自己的计算器名
+export class XxxCalculator implements IDamageCalculator<IEnemyAttr, IHeroAttr> {
+    // [模板] calculate 签名固定：读 handler 里的 enemy 与 hero，返回 { damage, turn }
+    calculate(
+        handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
+    ): IEnemyDamageInfoBase {
+        // [模板] 取出只读的怪物与勇士对象（只读，供读取，不可改写）
+        const { enemy, hero } = handler;
+        // [需改] 在这里写你的公式；只读输入，不改任何外部状态
+        return { damage: 0, turn: 0 };
+    }
+
+    // [模板] getCriticalLimit 签名固定：返回临界计算的上界
+    getCriticalLimit(
+        handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
+        attribute: CriticalableHeroStatus<IHeroAttr>
+    ): number {
+        // [需改] 需要自定义临界上界时改这里；否则返回勇士当前最终值即可
+        return handler.hero.getFinalAttribute(attribute);
+    }
+}
+```
+
+注册（**替换**当前计算器）：
+
+```ts
+state.enemyContext.getDamageSystem()?.useCalculator(new XxxCalculator());
+```
+
+复制后需要改的只有：类名、`calculate` 里的公式、必要时 `getCriticalLimit` 的返回值。**计算器必须无副作用**（见上方 warning）——模板里的 `calculate` 只读输入，不要写 flag、不要改 `enemy` / `hero`。
+
+### 示例：等差数列
+
+下面用「等差数列」演示自写类的最小形态（只保留本示例所需分支）。它只是填空示范，不是模板本身：
 
 ```ts
 // [需改] 类名：换成你自己的计算器名

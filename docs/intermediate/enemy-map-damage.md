@@ -123,7 +123,91 @@ convert(
 
 `useConverter` 是**替换**当前转换器：选了自己的就把内置的整个换掉，若要同时保留内置五类，需要在自己的转换器里把它们的视图也收集进去，或直接改内置转换器。
 
-下面代码用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
+### 模板：复制什么、改什么
+
+自己写地图伤害永远是「一个视图 + 一个转换器」两个类。下面是机制本身的骨架，不含任何具体伤害；复制到新文件后按 `[需改]` 修改。
+
+先写视图——它负责「范围、某点的伤害与类型」：
+
+```ts
+// [需改] 类名：换成你的视图名
+export class XxxDamageView implements IMapDamageView<TRangeParam> {
+    // [模板] 构造函数接收引擎传进来的上下文、位置与特殊属性
+    constructor(
+        private readonly context: IEnemyContext<IEnemyAttr, IHeroAttr>,
+        private readonly locator: ITileLocator,
+        private readonly special: ISpecial<IXxxValue>
+    ) {}
+
+    // [需改] 范围对象：RectRange / ManhattanRange / RayRange / FullRange 之一
+    getRange(): IRange<TRangeParam> {
+        // [需改] RANGE 换成你在模块顶部建好的范围对象
+        return RANGE;
+    }
+
+    // [需改] 与范围配套的参数（矩形 { x, y, w, h }；曼哈顿 { cx, cy, radius }；
+    //        射线 { cx, cy, dir }；全场返回 undefined）
+    getRangeParam(): TRangeParam {
+        return undefined as TRangeParam;
+    }
+
+    // [模板] 先判范围，再取伤害；通常不需要改
+    getDamageAt(locator: ITileLocator): Readonly<IMapDamageInfo> | null {
+        const range = this.getRange();
+        range.bindHost(this.context);
+        if (!range.inRange(locator.x, locator.y, this.getRangeParam())) {
+            return null;
+        }
+        return this.getDamageWithoutCheck(locator);
+    }
+
+    // [需改] 真正决定某点的伤害与类型；返回 null 表示该点不受伤
+    getDamageWithoutCheck(
+        locator: ITileLocator
+    ): Readonly<IMapDamageInfo> | null {
+        return {
+            damage: 0,
+            type: MapDamageType.Unknown,
+            extra: { catch: new Set(), repulse: new Set() }
+        };
+    }
+}
+```
+
+再写转换器——它负责「从怪物身上读出属性，造出视图」：
+
+```ts
+// [需改] 类名：换成你的转换器名
+export class XxxConverter implements IMapDamageConverter<
+    IEnemyAttr,
+    IHeroAttr
+> {
+    // [模板] convert 签名固定：把特殊属性翻译成一组视图
+    convert(
+        handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
+        context: IEnemyContext<IEnemyAttr, IHeroAttr>
+    ): IMapDamageView<any>[] {
+        // [需改] 读取要转换的特殊属性
+        const special = handler.enemy.getSpecial<IXxxValue>(XX);
+        if (!special) return [];
+        // [需改] 造视图；一条属性也可以返回多个视图
+        return [new XxxDamageView(context, handler.locator, special)];
+    }
+}
+```
+
+注册（**替换**当前转换器）：
+
+```ts
+const mapDamage = state.enemyContext.getMapDamage();
+mapDamage?.useConverter(new XxxConverter());
+```
+
+复制后需要改的只有：两个类名、范围对象与参数、`getDamageWithoutCheck` 的伤害 / 类型、转换器读取的 code。
+
+### 示例：八方向激光
+
+下面是一个具体效果，演示怎么把模板填满。它只是填空示范，不是模板本身。
 
 **目标**：新增一个「八方向激光」特殊属性（示例 code 43），沿上下左右加四个斜向共八个方向发射，且不影响内置的四方向激光。
 

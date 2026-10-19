@@ -139,7 +139,44 @@ async after(
 
 **如果你不怎么懂代码，建议直接改内置的 `MainCombatScript`（在 `src/data/enemy/script.ts` 的 `before` / `after` 里加逻辑），而不是自己写新的脚本类。** 上面「改内置」一节已经覆盖了拦截与结算两类需求；只有确实需要独立优先级时才用下面的写法。
 
-做法是实现 `ICombatScript` 接口，再用 `addCombatScript` 追加。`addCombatScript` 是**追加**而不是替换：内置脚本仍会执行，新脚本按 `priority` 与它一起排序；但同优先级的脚本不能重复注册。
+做法是实现 `ICombatScript` 接口，再用 `addCombatScript` 追加。`addCombatScript` 是**追加**而不是替换：内置脚本仍会执行，新脚本按 `priority` 与它一起排序；但同优先级的脚本不能重复注册。先看接口模板，再看两个具体示例。
+
+### 模板：复制什么、改什么
+
+下面是战斗脚本机制本身的骨架，不含任何具体规则。复制到新文件后按 `[需改]` 修改：
+
+```ts
+// [需改] 类名：换成你的脚本名
+export class XxxCombatScript implements ICombatScript<IEnemyAttr, IHeroAttr> {
+    // [需改] priority：越大越先执行；内置脚本是 0，自写时不要撞上 0
+    readonly priority = 100;
+
+    // [模板] before 签名固定：战前执行，返回 false 即放弃战斗
+    async before(
+        info: IEnemyDamageInfo<IEnemyAttr, IHeroAttr>,
+        handler: ICombatFlowHandler<IEnemyAttr, IHeroAttr>
+    ): Promise<boolean> {
+        // [需改] 你的战前判断；不拦截就返回 true
+        return true;
+    }
+
+    // [模板] after 签名固定：战后执行
+    async after(
+        info: IEnemyDamageInfo<IEnemyAttr, IHeroAttr>,
+        handler: ICombatFlowHandler<IEnemyAttr, IHeroAttr>
+    ): Promise<void> {
+        // [需改] 你的战后处理
+    }
+}
+```
+
+注册（**追加**）：
+
+```ts
+state.combat.addCombatScript(new XxxCombatScript());
+```
+
+复制后需要改的只有：类名、`priority`、`before` 里的拦截条件、`after` 里的处理。不用的方法保留空实现即可（`before` 返回 `true`、`after` 留空）。
 
 ### 示例：拥有某特殊属性时无法战斗
 

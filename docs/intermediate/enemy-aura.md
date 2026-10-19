@@ -179,13 +179,103 @@ apply(
 
 **如果你不怎么懂代码，建议直接改内置光环类（`src/data/enemy/aura.ts` 的 `CommonAura` / `GuardAura` / `SpecialAura`），而不是自己写新的类。** 上面「改内置」一节已经覆盖了绝大多数需求：调数值、调范围、调优先级、给目标加属性，都能在现有方法里完成。
 
-自己写的做法是「转换器 + 视图」两个类：转换器只有 `shouldConvert` 与 `convert` 两个方法，负责认领特殊属性并构造视图；视图负责范围、优先级与 `apply` / `applySpecial`。下面两个示例用 `[模板]` 标出可原样照抄的行（多为接口签名、`shouldConvert`、范围对象的构建），用 `[需改]` 标出必须按需求改写的行（code、范围、优先级，以及 `apply` / `applySpecial` 里做的事）。
+自己写的做法是「转换器 + 视图」两个类：转换器只有 `shouldConvert` 与 `convert` 两个方法，负责认领特殊属性并构造视图；视图负责范围、优先级与 `apply` / `applySpecial`。下面先给这两个类的**通用模板**，再用两个具体效果作示例。
 
-两个示例都新建了自己的 code（30、31），不修改内置的 23 / 24 / 26。如果需求只是「让已有光环多做一点事」，用上一节的改内置写法更省事。
+### 模板：复制什么、改什么
+
+这是光环机制本身的骨架，不含任何具体效果。把它复制到 `src/data/enemy/` 下新建的文件里，再按 `[需改]` 改成你的效果。
+
+先写转换器——它只负责「认领 code」和「造出视图」：
+
+```ts
+// [需改] 类名：换成你的转换器名
+export class XxxAuraConverter implements IAuraConverter<IEnemyAttr, IHeroAttr> {
+    // [模板] 签名固定：引擎拿每条特殊属性挨个问「这条你管吗」
+    shouldConvert(
+        special: ISpecial<any>,
+        handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
+    ): boolean {
+        // [需改] 认领条件：这个转换器负责哪个 code
+        return special.code === 30;
+    }
+
+    // [模板] 签名固定：把认领到的特殊属性翻译成视图
+    convert(
+        special: ISpecial<ISpecial30Value>,
+        handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
+        context: IEnemyContext<IEnemyAttr, IHeroAttr>
+    ): XxxAura {
+        // [需改] 构造视图；需要读上下文时把 context 也传进去
+        return new XxxAura(handler.enemy, special, handler.locator);
+    }
+}
+```
+
+再写视图——它负责「优先级、范围、改什么」：
+
+```ts
+// [需改] 类名：换成你的视图名
+export class XxxAura implements IEnemyAuraView<
+    IEnemyAttr,
+    IRectRangeParam | IManhattanRangeParam | void,
+    ISpecial30Value
+> {
+    // [需改] 优先级：越大越先执行（内置是支援 5 / 普通 10 / 特殊 20）
+    readonly priority = 10;
+    // [需改] 改基础属性就把 couldApplyBase 设为 true；改特殊属性则设 couldApplySpecial
+    readonly couldApplyBase = true;
+    readonly couldApplySpecial = false;
+    // [需改] 范围对象：FullRange / RectRange / ManhattanRange / RayRange 之一
+    readonly range: IRange<IRectRangeParam | IManhattanRangeParam | void>;
+
+    // [模板] 构造函数保存来源怪物、特殊属性与位置
+    constructor(
+        readonly enemy: IReadonlyEnemy<IEnemyAttr>,
+        readonly special: ISpecial<ISpecial30Value>,
+        readonly locator: ITileLocator
+    ) {
+        // [需改] 按需求选一个范围对象
+        this.range = new FullRange();
+    }
+
+    // [模板] 签名固定：返回与 range 配套的范围参数
+    getRangeParam(): IRectRangeParam | IManhattanRangeParam | void {
+        // [需改] FullRange 返回 undefined；矩形返回 { x, y, w, h }；
+        //        曼哈顿返回 { cx, cy, radius }；射线返回 { cx, cy, dir }
+        return undefined;
+    }
+
+    // [模板] 签名固定：baseEnemy 是未修改的原始怪物
+    apply(
+        handler: IEnemyHandler<IEnemyAttr, IHeroAttr>,
+        baseEnemy: IReadonlyEnemy<IEnemyAttr>
+    ): void {
+        // [需改] 在这里改 handler.enemy 的基础属性
+    }
+
+    // [模板] 签名固定：不改特殊属性就返回 null
+    applySpecial(): IEnemySpecialModifier<IEnemyAttr> | null {
+        return null;
+    }
+}
+```
+
+复制后只需要改这几处：
+
+| 位置                                    | 改成什么                 |
+| --------------------------------------- | ------------------------ |
+| `shouldConvert` 里的 `30`               | 你的特殊属性 code        |
+| 两个类名 `XxxAuraConverter` / `XxxAura` | 你的名字                 |
+| `priority`                              | 你的执行顺序             |
+| `couldApplyBase` / `couldApplySpecial`  | 改基础属性还是改特殊属性 |
+| `range` 与 `getRangeParam`              | 你的范围形态             |
+| `apply` / `applySpecial` 的方法体       | 你的效果                 |
+
+`ISpecial30Value` 只是占位：有参数就换成你在 `special.ts` 里定义的 `ISpecial{code}Value`，无参数就换成 `void`。注册见文末「注册在哪里」。
 
 ### 示例：基础光环（减少周围怪物的金币与经验）
 
-先从一个只改基础属性的例子开始：让范围内的怪物金币与经验下降。它用 code 30（示例自选的未占用号）定义一条带参数的特殊属性，再配一个转换器与视图。
+这是一个只改基础属性的短示例：范围内的怪物金币与经验下降。它用 code 30（示例自选的未占用号）定义一条带参数的特殊属性，再按上面的模板配一个转换器与视图。
 
 **目标**：站在带「削弱光环」怪物周围的怪物，金币与经验按参数下降。
 
@@ -194,85 +284,71 @@ apply(
 **复制什么**：先在 `special.ts` 登记属性——
 
 ```ts
-// [需改] 在 src/data/enemy/special.ts 里新增这条属性定义（编号换成你没用过的）
 /** 30 - 削弱光环 */
 export interface ISpecial30Value {
-    range: number; // [需改] 光环范围值
-    square: boolean; // [需改] true 矩形 / false 十字
-    moneyBuff: number; // [需改] 金币变化百分比（负数表示下降）
-    expBuff: number; // [需改] 经验变化百分比
+    range: number;
+    square: boolean;
+    moneyBuff: number;
+    expBuff: number;
 }
 
 // 30 - 削弱光环
 map.set(
-    30, // [需改] 编号：示例自选的未占用号
+    30,
     defineCommonSerializableSpecial<ISpecial30Value>(
         30,
-        { range: 1, square: false, moneyBuff: -20, expBuff: -20 }, // [需改] 默认参数
+        { range: 1, square: false, moneyBuff: -20, expBuff: -20 },
         {
-            name: '削弱光环', // [需改] 显示名称
+            name: '削弱光环',
             desc: special =>
-                `周围怪物金币与经验下降${Math.abs(special.value.moneyBuff)}%。`, // [需改] 悬停说明
-            color: '#9AC' // [需改] 名称颜色
+                `周围怪物金币与经验下降${Math.abs(special.value.moneyBuff)}%。`,
+            color: '#9AC'
         }
     )
 );
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
-
-再写转换器与视图——
+再按模板填两个类。与模板不同的只有 code、范围选择与 `apply`：
 
 ```ts
-// [模板] 两个范围对象各建一次复用
+// [模板] 两个范围对象在模块顶部各建一次
 const MANHATTAN_RANGE = new ManhattanRange();
 const RECT_RANGE = new RectRange();
 
-// [需改] 类名：换成你的转换器名
 export class WeakAuraConverter implements IAuraConverter<
     IEnemyAttr,
     IHeroAttr
 > {
-    // [模板] shouldConvert：认领本转换器负责的 code，通常只需换掉这个判断
     shouldConvert(special: ISpecial<any>): boolean {
         return special.code === 30; // [需改] code
     }
 
-    // [模板] convert 签名固定：把认领到的特殊属性翻译成视图
     convert(
         special: ISpecial<ISpecial30Value>,
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
     ): WeakAura {
-        // [需改] 构造视图，并决定把哪些信息传给它（这里传了来源怪物、属性、位置）
         return new WeakAura(handler.enemy, special, handler.locator);
     }
 }
 
-// [需改] 类名：换成你的视图名
 export class WeakAura implements IEnemyAuraView<
     IEnemyAttr,
     IRectRangeParam | IManhattanRangeParam,
     ISpecial30Value
 > {
-    // [需改] priority：越大越先执行；高优先级的结果能被低优先级看到
-    readonly priority = 8;
-    // [需改] 本光环改基础属性（走 apply）还是改特殊属性（走 applySpecial）
+    readonly priority = 8; // [需改] 优先级
     readonly couldApplyBase = true;
     readonly couldApplySpecial = false;
-    // [模板] 范围对象在构造函数里挑选，getRangeParam 负责给参数
     readonly range: IRange<IRectRangeParam | IManhattanRangeParam>;
 
-    // [模板] 构造函数把来源怪物、特殊属性、位置存下来
     constructor(
         readonly enemy: IReadonlyEnemy<IEnemyAttr>,
         readonly special: ISpecial<ISpecial30Value>,
         readonly locator: ITileLocator
     ) {
-        // [模板] 按参数里的 square 选矩形或曼哈顿范围
         this.range = special.value.square ? RECT_RANGE : MANHATTAN_RANGE;
     }
 
-    // [模板] 生成范围参数：矩形用左上角与宽高，曼哈顿用中心点与半径
     getRangeParam(): IRectRangeParam | IManhattanRangeParam {
         const { range, square } = this.special.value;
         if (square) {
@@ -283,55 +359,44 @@ export class WeakAura implements IEnemyAuraView<
                 h: range * 2 + 1
             };
         }
-        return {
-            cx: this.locator.x,
-            cy: this.locator.y,
-            radius: range
-        };
+        return { cx: this.locator.x, cy: this.locator.y, radius: range };
     }
 
-    // [需改] apply：真正修改目标基础属性；baseEnemy 是未修改的原始怪物
     apply(
         handler: IEnemyHandler<IEnemyAttr, IHeroAttr>,
         baseEnemy: IReadonlyEnemy<IEnemyAttr>
     ): void {
-        // [需改] 从参数里取出要用的字段
+        // [需改] 用 baseEnemy 的原始值算百分比，避免多个光环互相叠乘
         const { moneyBuff, expBuff } = this.special.value;
-        // [模板] handler.enemy 是被光环命中的目标怪物
-        const enemy = handler.enemy;
-        if (moneyBuff !== 0) {
-            // [需改] 以 baseEnemy 的原始值算百分比，避免多个光环互相叠乘
-            const money = (baseEnemy.getAttribute('money') * moneyBuff) / 100;
-            enemy.addAttribute('money', Math.floor(money));
-        }
-        if (expBuff !== 0) {
-            const exp = (baseEnemy.getAttribute('exp') * expBuff) / 100;
-            enemy.addAttribute('exp', Math.floor(exp));
-        }
+        const money = (baseEnemy.getAttribute('money') * moneyBuff) / 100;
+        const exp = (baseEnemy.getAttribute('exp') * expBuff) / 100;
+        handler.enemy.addAttribute('money', Math.floor(money));
+        handler.enemy.addAttribute('exp', Math.floor(exp));
     }
 
-    // [模板] 本光环不改特殊属性，返回 null
     applySpecial(): IEnemySpecialModifier<IEnemyAttr> | null {
         return null;
     }
 }
 ```
 
-最后把注册行加进 `initializeEnemy`（`src/data/enemy/initialize.ts`，见文末「注册在哪里」）：
+最后注册：
 
 ```ts
 state.enemyContext.registerAuraConverter(new WeakAuraConverter());
 ```
 
-**改什么**：编号（`30`）、类名、`priority`、范围参数与 `apply` 里改的字段（本示例 `moneyBuff` / `expBuff`）换成你自己的。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：`30`、类名、`priority`、`apply` 里改的属性。
 
 **怎么验证**：把带该属性的怪物与另一只怪物放在范围内，看后者的金币 / 经验是否按参数下降。
 
-**注意**：`apply` 里用 `baseEnemy` 的原始值做百分比，因此多个光环不会把彼此的结果继续乘进去。只改基础属性就实现 `apply`；要改目标的特殊属性才需要 `applySpecial`。
+**注意**：`apply` 里用 `baseEnemy` 的原始值做百分比；只改基础属性就实现 `apply`，要改目标的特殊属性才需要 `applySpecial`。
 
 ### 示例：特殊光环（给周围怪物上光环）
 
-如果光环要给目标「加一条特殊属性」，而不是直接改基础属性，就把逻辑放进 `applySpecial`。下面的例子给范围内没有普通光环的怪物加上 code 23 的普通光环。
+如果光环要给目标「加一条特殊属性」，而不是直接改基础属性，就把逻辑放进 `applySpecial`：`couldApplySpecial` 设为 `true`，并返回一个实现 `IEnemySpecialModifier` 的对象，它有三个方法——`add`（返回要添加的属性）、`delete`（返回要删除的属性）、`modify`（改动已有属性并返回是否真的改了）。下面的例子给范围内没有普通光环的怪物加上 code 23 的普通光环。
 
 **目标**：站在带「传染光环」怪物附近的怪物，若自己没有普通光环，就获得一层 code 23 的普通光环。
 
@@ -340,36 +405,29 @@ state.enemyContext.registerAuraConverter(new WeakAuraConverter());
 **复制什么**：先在 `special.ts` 登记属性——
 
 ```ts
-// [需改] 这条无参属性定义同样加进 src/data/enemy/special.ts
 // special.ts：31 - 传染光环
 map.set(
-    31, // [需改] 编号
+    31,
     defineNonePropertySpecial(31, {
-        name: '传染光环', // [需改] 显示名称
-        desc: '同楼层没有光环的怪物获得普通光环。', // [需改] 悬停说明
-        color: '#9F9' // [需改] 名称颜色
+        name: '传染光环',
+        desc: '同楼层没有光环的怪物获得普通光环。',
+        color: '#9F9'
     })
 );
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
-
-再写转换器与视图——
+再按模板填两个类，这次 `applySpecial` 返回一个修饰器：
 
 ```ts
-// [需改] 类名：换成你的修饰器名；它负责「给目标增删改特殊属性」
 export class ChainAuraModifier implements IEnemySpecialModifier<IEnemyAttr> {
-    // [模板] 构造函数存下来源属性
     constructor(readonly special: ISpecial<void>) {}
 
-    // [需改] add：返回要添加给目标的特殊属性数组
     add(handler: IReadonlyEnemyHandler<IEnemyAttr, any>): ISpecial<any>[] {
         // [需改] 已经有普通光环（code 23）就不再添加
         if (handler.enemy.hasSpecial(23)) return [];
-        // [模板] 从怪物管理器取一条新的属性实例
         const sp = handler.state.enemyManager.getSpecial(23)?.();
         if (!sp) return [];
-        // [需改] 设置这条属性的参数（这里是普通光环的字段）
+        // [需改] 设置新属性的参数
         sp.setValue({
             range: 1,
             square: false,
@@ -377,74 +435,59 @@ export class ChainAuraModifier implements IEnemySpecialModifier<IEnemyAttr> {
             atkBuff: 0,
             defBuff: 0
         });
-        // [模板] 返回要添加的属性
         return [sp];
     }
 
-    // [模板] 本修饰器不删除属性，返回空数组
     delete(): ISpecial<any>[] {
         return [];
     }
 
-    // [模板] 本修饰器不修改已有属性，返回 false
     modify(): boolean {
         return false;
     }
 }
 
-// [需改] 类名：换成你的转换器名
 export class ChainAuraConverter implements IAuraConverter<
     IEnemyAttr,
     IHeroAttr
 > {
-    // [模板] shouldConvert：认领 code，通常只换这个判断
     shouldConvert(special: ISpecial<any>): boolean {
         return special.code === 31; // [需改] code
     }
 
-    // [模板] convert 签名固定
     convert(
         special: ISpecial<void>,
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
     ): ChainAura {
-        // [需改] 构造视图
         return new ChainAura(handler.enemy, special, handler.locator);
     }
 }
 
-// [需改] 类名：换成你的视图名
 export class ChainAura implements IEnemyAuraView<IEnemyAttr, void, void> {
-    // [需改] priority = 25 高于内置特殊光环的 20，故先执行
-    readonly priority = 25;
-    // [需改] 本光环只改特殊属性：couldApplyBase 为 false，couldApplySpecial 为 true
+    readonly priority = 25; // [需改] 高于内置特殊光环的 20，故先执行
     readonly couldApplyBase = false;
     readonly couldApplySpecial = true;
-    // [需改] 范围：这里用 FullRange 作用于全场
     readonly range = new FullRange();
 
-    // [模板] 构造函数保存来源信息
     constructor(
         readonly enemy: IReadonlyEnemy<IEnemyAttr>,
         readonly special: ISpecial<void>,
         readonly locator: ITileLocator
     ) {}
 
-    // [模板] 范围参数：FullRange 不需要参数
     getRangeParam(): void {
         return undefined;
     }
 
-    // [模板] 本光环不改基础属性，apply 留空
     apply(): void {}
 
-    // [需改] applySpecial：返回修饰器，由上下文按优先级应用到目标
     applySpecial(): IEnemySpecialModifier<IEnemyAttr> | null {
         return new ChainAuraModifier(this.special);
     }
 }
 ```
 
-**改什么**：编号（`31`）、类名、`priority`、范围与 `add` 里设置的参数（本示例的 `range` / `hpBuff` 等光环字段）换成你自己的。
+**改什么**：`31`、类名、`priority`、范围与 `add` 里设置的参数。
 
 **怎么验证**：把带该属性的怪物与一只没有普通光环的怪物放在范围内，看后者是否被加上了普通光环（属性提升）。
 

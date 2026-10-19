@@ -83,7 +83,119 @@ state.enemyContext.registerSpecialQueryEffect(new AssimilationQueryEffect());
 
 这些内置类已经在 `initializeEnemy` 里注册好，直接改方法体即可，不需要新建类。只有「必须读取周围怪物、再修改自己」的逻辑，才需要按下面的示例自己写查询类。
 
-下面代码用 `[模板]` 标出可原样照抄的行（接口签名、遍历骨架），用 `[需改]` 标出必须按需求改写的行（code、优先级、统计与修改逻辑）。
+## 模板：复制什么、改什么
+
+查询分两种，模板也分两种。下面是机制本身的骨架，不含任何具体效果；复制到 `src/data/enemy/` 下的新文件后，按 `[需改]` 改成你的查询。
+
+### 常规查询模板
+
+```ts
+// [需改] 类名
+export class XxxCommonQueryEffect implements IEnemyCommonQueryEffect<
+    IEnemyAttr,
+    IHeroAttr
+> {
+    // [需改] 优先级：与光环共用，越大越先执行
+    readonly priority = 10;
+
+    // [模板] apply 签名固定
+    apply(
+        handler: IEnemyHandler<IEnemyAttr, IHeroAttr>,
+        special: ISpecial<any>,
+        query: () => IReadonlyEnemyContext<IEnemyAttr, IHeroAttr>
+    ): void {
+        // [模板] 必须用 query() 取上下文，不能用 handler.context 代替
+        const ctx = query();
+        // [需改] 用 ctx 读外部状态（scanRange / iterateEnemy / indexer），
+        //        再改 handler.enemy 的基础属性
+    }
+}
+```
+
+注册时把效果绑定到一个 code 上：
+
+```ts
+// [需改] code 换成触发这条查询的特殊属性编号
+state.enemyContext.registerCommonQueryEffect(40, new XxxCommonQueryEffect());
+```
+
+### 特殊查询模板
+
+特殊查询由「效果 + 修饰器」两个类组成：效果只负责造修饰器，修饰器负责真正增删改目标的特殊属性。
+
+```ts
+// [需改] 类名：修饰器
+class XxxQueryModifier implements IEnemySpecialQueryModifier<
+    IEnemyAttr,
+    IHeroAttr
+> {
+    // [模板] 保存只读查询上下文
+    constructor(
+        private readonly ctx: IReadonlyEnemyContext<IEnemyAttr, IHeroAttr>
+    ) {}
+
+    // [需改] 这次查询作用于哪些怪物
+    shouldQuery(
+        handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
+    ): boolean {
+        return handler.enemy.hasSpecial(41);
+    }
+
+    // [需改] 要添加的特殊属性
+    add(
+        handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
+    ): ISpecial<any>[] {
+        return [];
+    }
+
+    // [需改] 要删除的特殊属性
+    delete(): ISpecial<any>[] {
+        return [];
+    }
+
+    // [需改] 要改写的特殊属性；真正改了才返回 true
+    modify(
+        handler: IEnemyHandler<IEnemyAttr, IHeroAttr>,
+        special: ISpecial<any>
+    ): boolean {
+        return false;
+    }
+}
+
+// [需改] 类名：效果本身
+export class XxxSpecialQueryEffect implements IEnemySpecialQueryEffect<
+    IEnemyAttr,
+    IHeroAttr
+> {
+    // [需改] 优先级
+    readonly priority = 15;
+
+    // [模板] for 签名固定：返回修饰器
+    for(
+        ctx: IReadonlyEnemyContext<IEnemyAttr, IHeroAttr>
+    ): IEnemySpecialQueryModifier<IEnemyAttr, IHeroAttr> {
+        return new XxxQueryModifier(ctx);
+    }
+}
+```
+
+注册时特殊查询不绑定 code，只传效果实例：
+
+```ts
+state.enemyContext.registerSpecialQueryEffect(new XxxSpecialQueryEffect());
+```
+
+复制后只需要改这几处：
+
+| 位置                                     | 改成什么                 |
+| ---------------------------------------- | ------------------------ |
+| `priority`                               | 你的执行顺序             |
+| 常规查询的 `apply` 方法体与注册时的 code | 你的读法、改法与触发属性 |
+| 特殊查询的 `shouldQuery`                 | 这次查询作用于哪些怪物   |
+| 特殊查询的 `add` / `delete` / `modify`   | 你要增删改哪些特殊属性   |
+| 类名 `Xxx...`                            | 你的名字                 |
+
+下面三个示例都只是「填空示范」，不是模板本身。
 
 ## 示例：抱团
 
@@ -96,49 +208,42 @@ state.enemyContext.registerSpecialQueryEffect(new AssimilationQueryEffect());
 **复制什么**：
 
 ```ts
-// [需改] 类名：这是一个常规查询效果
 export class GroupQueryEffect implements IEnemyCommonQueryEffect<
     IEnemyAttr,
     IHeroAttr
 > {
-    // [需改] priority：与光环共用一套优先级，越大越先执行
-    readonly priority = 10;
+    readonly priority = 10; // [需改] 优先级
 
-    // [模板] apply 签名固定：handler 是当前怪物，special 是触发查询的属性，query() 取上下文
     apply(
         handler: IEnemyHandler<IEnemyAttr, IHeroAttr>,
         special: ISpecial<any>,
         query: () => IReadonlyEnemyContext<IEnemyAttr, IHeroAttr>
     ): void {
-        // [需改] 读出本属性登记的参数（示例：半径与每只同类提供的攻击加成）
+        // [需改] 读出本属性登记的参数
         const { radius, atk } = special.value as {
             radius: number;
             atk: number;
         };
-        // [模板] 必须用 query() 取上下文（直接读 handler.context 不会被登记为「查询过」，见上文）
         const ctx = query();
-        // [模板] 范围对象建一次即可
         const range = new ManhattanRange();
         let count = 0;
-        // [模板] 扫出范围内的怪物，逐项拿到 [位置, 视图]
         for (const [locator, view] of ctx.scanRange(range, {
             cx: handler.locator.x,
             cy: handler.locator.y,
             radius
         })) {
-            // [需改] 跳过自己：只统计周围的其他怪物
+            // [需改] 跳过自己，统计拥有同种特殊属性的其他怪物
             if (
                 locator.x === handler.locator.x &&
                 locator.y === handler.locator.y
             ) {
                 continue;
             }
-            // [需改] 统计拥有同种特殊属性的怪物
             if (view.getComputedEnemy().hasSpecial(special.code)) {
                 count++;
             }
         }
-        // [需改] 修改自身：每有一个同类，攻击加 atk 点
+        // [需改] 每有一个同类，攻击加 atk 点
         handler.enemy.addAttribute('atk', count * atk);
     }
 }
@@ -168,29 +273,26 @@ state.enemyContext.registerCommonQueryEffect(40, new GroupQueryEffect());
 **复制什么**：
 
 ```ts
-// [需改] 类名：特殊查询的修饰器，负责实际改动目标怪物的特殊属性
 class AssimilationModifier implements IEnemySpecialQueryModifier<
     IEnemyAttr,
     IHeroAttr
 > {
-    // [模板] 构造时保存只读查询上下文
     constructor(
         private readonly ctx: IReadonlyEnemyContext<IEnemyAttr, IHeroAttr>
     ) {}
 
-    // [需改] shouldQuery：本效果是否作用于这只怪物（示例：带 code 41 的怪物）
+    // [需改] 这次查询作用于哪些怪物
     shouldQuery(
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
     ): boolean {
         return handler.enemy.hasSpecial(41);
     }
 
-    // [需改] add：返回要添加给怪物的特殊属性
+    // [需改] 把别人有、自己没有的属性照抄过来（跳过同化属性自身）
     add(
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>
     ): ISpecial<any>[] {
         const result: ISpecial<any>[] = [];
-        // [模板] 取全场其他怪物，并按位置索引从小到大排序
         const others = [...this.ctx.iterateEnemy()]
             .filter(([, view]) => view.getComputedEnemy() !== handler.enemy)
             .sort(
@@ -198,7 +300,6 @@ class AssimilationModifier implements IEnemySpecialQueryModifier<
                     this.ctx.indexer.index(a.x, a.y) -
                     this.ctx.indexer.index(b.x, b.y)
             );
-        // [需改] 把别人有、自己没有的属性照抄过来（跳过同化属性自身）
         for (const [, view] of others) {
             for (const special of view.getComputedEnemy().iterateSpecials()) {
                 if (special.code === 41) continue;
@@ -209,21 +310,18 @@ class AssimilationModifier implements IEnemySpecialQueryModifier<
         return result;
     }
 
-    // [模板] 本效果不删除属性，返回空数组
     delete(): ISpecial<any>[] {
         return [];
     }
 
-    // [需改] modify：自己已有、需要叠加数值的属性在这里处理
+    // [需改] 自己已有、需要叠加数值的属性在这里处理
     modify(
         handler: IEnemyHandler<IEnemyAttr, IHeroAttr>,
         special: ISpecial<any>
     ): boolean {
-        // [模板] 只处理数值型属性
         if (typeof special.value !== 'number') return false;
         let sum = special.value;
         let found = false;
-        // [模板] 遍历全场，把同 code 的数值加算进来
         for (const [, view] of this.ctx.iterateEnemy()) {
             const other = view
                 .getComputedEnemy()
@@ -233,20 +331,17 @@ class AssimilationModifier implements IEnemySpecialQueryModifier<
             found = true;
         }
         if (!found) return false;
-        // [模板] 写回并返回 true，表示确实改动了
         special.setValue(sum);
         return true;
     }
 }
 
-// [需改] 类名：特殊查询效果
 export class AssimilationQueryEffect implements IEnemySpecialQueryEffect<
     IEnemyAttr,
     IHeroAttr
 > {
     readonly priority = 15; // [需改] 优先级
 
-    // [模板] for(ctx) 签名固定：返回一个修饰器；ctx 是只读查询上下文
     for(
         ctx: IReadonlyEnemyContext<IEnemyAttr, IHeroAttr>
     ): IEnemySpecialQueryModifier<IEnemyAttr, IHeroAttr> {
@@ -277,27 +372,24 @@ state.enemyContext.registerSpecialQueryEffect(new AssimilationQueryEffect());
 **复制什么**：
 
 ```ts
-// [需改] 类名：同样是常规查询效果
 export class HornQueryEffect implements IEnemyCommonQueryEffect<
     IEnemyAttr,
     IHeroAttr
 > {
     readonly priority = 5; // [需改] 优先级
 
-    // [模板] apply 签名固定
     apply(
         handler: IEnemyHandler<IEnemyAttr, IHeroAttr>,
         special: ISpecial<any>,
         query: () => IReadonlyEnemyContext<IEnemyAttr, IHeroAttr>
     ): void {
-        // [模板] 必须用 query() 取上下文
         const ctx = query();
         let count = 0;
-        // [模板] 遍历全场怪物逐一计数
+        // [需改] 遍历全场怪物逐一计数
         for (const _ of ctx.iterateEnemy()) {
             count++;
         }
-        // [需改] 修改自身：每有一只怪物，攻击加 special.value 点
+        // [需改] 每有一只怪物，攻击加 special.value 点
         handler.enemy.addAttribute('atk', count * (special.value as number));
     }
 }

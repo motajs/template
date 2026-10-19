@@ -174,7 +174,37 @@ if (double) {
 - 战斗：`state.combat.addHook(new ...Hooks(state))`，实现 `ICombatFlowHooks`；
 - 切层：`state.hero.location.addHook(new ...Hooks(state))`，实现 `IHeroLocationHooks`。
 
-下面仍以「蓄力」为例，演示自写类的形态：一个钩子负责挂状态，一个脚本负责消费（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）。
+### 模板：复制什么、改什么
+
+下面是状态钩子机制本身的骨架（以战斗钩子为例），不含任何具体状态。复制到新文件后按 `[需改]` 修改：
+
+```ts
+// [需改] 类名与接口：按上表换成你要挂的钩子接口
+export class XxxHooks implements ICombatFlowHooks<IEnemyAttr, IHeroAttr> {
+    // [模板] 构造时保存数据端状态，供读写 flag、取勇士属性等
+    constructor(readonly state: ICoreState) {}
+
+    // [需改] 方法名：按上表换成 onStepEnd / onAfterTeleportTo / onAfterCombat / onSetFloor
+    async onAfterCombat(
+        info: IEnemyDamageInfo<IEnemyAttr, IHeroAttr>
+    ): Promise<void> {
+        // [需改] 你的状态逻辑：读状态、改 flag、挂修饰器等
+    }
+}
+```
+
+注册到对应挂载点：
+
+```ts
+// [需改] 挂载点与方法签名要匹配（见上表）
+state.combat.addHook(new XxxHooks(state));
+```
+
+复制后需要改的只有：类名、实现的接口、钩子方法名与内部逻辑、挂载点。一个状态要多个钩子时，可以写在同一个类里（实现多个接口），也可以拆成几个类分别挂载。
+
+### 示例：蓄力（下次战斗伤害乘二）
+
+下面仍以「蓄力」为例，演示自写类的形态。它只是填空示范，不是模板本身：一个钩子负责挂状态，一个脚本负责消费（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）。
 
 ```ts
 // [需改] 类名
