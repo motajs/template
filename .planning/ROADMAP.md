@@ -547,14 +547,14 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
 | 9. 最小浏览器可运行版本 | 15/16 | In Progress|  |
-| 10. 文档重构 | 0/12 | Planned | - |
+| 10. 文档重构 | 0/20 | Planned | - |
 
 ### Phase 10: 文档重构
 
-**Goal:** 重构过老、结构不佳、新人难懂的项目文档，面向多背景读者（完全新手 / 不懂代码的作者 / 有基础的作者 / AI Agent）提供分层指南。本阶段采用「伞阶段 + 增量派发」：每次只规划执行一个已派发的具体小任务。**第一批已派发 = 中级教程（`docs/intermediate/`，24 篇中文 markdown）+ 在 VitePress 站点注册它们 + 旧内容清空（D-04 并入本批）**（D-01..D-44）。
-**Requirements**: （无专属需求 ID；以 `10-CONTEXT.md` 的 D-01..D-44 为需求基线，验收锚在 D-09：用户人工审阅 + 链接全部有效 + 构建通过）
+**Goal:** 重构过老、结构不佳、新人难懂的项目文档，面向多背景读者（完全新手 / 不懂代码的作者 / 有基础的作者 / AI Agent）提供分层指南。本阶段采用「伞阶段 + 增量派发」：每次只规划执行一个已派发的具体小任务。**第一批已派发 = 中级教程（`docs/intermediate/`，24 篇中文 markdown）+ 在 VitePress 站点注册它们 + 旧内容清空（D-04 并入本批）**（D-01..D-44）。**第二批已派发 = 高级教程 I（`docs/advanced/`，7 篇数据端文档）+ 站点注册 + 独立读者人格审阅 + 用户主导修订循环**（D-53..D-57）。
+**Requirements**: （无专属需求 ID；以 `10-CONTEXT.md` 的 D-01..D-57 为需求基线，验收锚在 D-09：用户人工审阅 + 链接全部有效 + 构建通过）
 **Depends on:** Phase 9
-**Plans:** 12 plans（第一批：中级教程 24 篇 + 站点注册 + D-09 复审修订）
+**Plans:** 20 plans（第一批：中级教程 24 篇 + 站点注册 + D-09 复审修订；第二批：高级 I 7 篇 + 注册 + 读者审阅 + 用户修订循环）
 
 Plans:
 - [ ] 10-01-PLAN.md — Wave 0：旧内容清空 + 站点注册（删除 `docs/guide`、`docs/dev`、`docs/logger`、`docs/api` 与首页 `docs/index.md`；清理 `config.ts` 旧 nav/sidebar 键并解除 apiSidebar/api 依赖；`api.ts` 加缺失目录守卫；新增 nav 入口 + `sidebar['/intermediate/']` 4 组/24 条；报告并等待 checkpoint）
@@ -569,5 +569,15 @@ Plans:
 - [ ] 10-10-PLAN.md — 基础接口组引导式重写 finding 5（`hero-items`/`hero-equipment`/`hero-location`/`map-structure`/`map-tiles`/`flags`；6 篇）
 - [ ] 10-11-PLAN.md — 读者视角审阅（persona 子代理）→ 问题清单 → 迭代修正（≤3 轮）→ 复审清零
 - [ ] 10-12-PLAN.md — 最终验收：修订后重跑全批验收 + D-09 复审（重跑 10-06 Task 2 门禁）
+- [ ] 10-13-PLAN.md — 高级 I 第一篇：声明式 vs 命令式接口（地基；旧样板命令式 vs 新样板声明式 + 通用模板）
+- [ ] 10-14-PLAN.md — 高级 I 第二篇：插件系统（自定义插件、插件互调、依赖排序、生命周期、id 稳定性与迁移）
+- [ ] 10-15-PLAN.md — 高级 I 第三篇：可存档内容（`ISaveableContent`、三级压缩、注册、存档顺序 / 执行器、跨对象引用、structured-cloneable）
+- [ ] 10-16-PLAN.md — 高级 I 第四、五篇：录像一致性（`@shouldReplay` / `@ignoreReplay`）+ data-common 的 Store（内容层原始数据、运行时只读）
+- [ ] 10-17-PLAN.md — 高级 I 第六篇：钩子深入（多对象 / 身份校验 / 复用 / 注册移除 / 异步钩子）
+- [ ] 10-18-PLAN.md — 高级 I 导览 + 站点注册（`docs/advanced/index.md`、`config.ts` 的 nav / sidebar、六篇互链收口 + 全量构建）
+- [ ] 10-19-PLAN.md — 高级 I 独立读者人格审阅（不同于中级人格）→ 问题清单 → 迭代修正（≤3 轮）→ 复审清零
+- [ ] 10-20-PLAN.md — 高级 I 用户主导修订循环 → 用户确认 → 最终格式 / 构建 / SUMMARY 收尾
 
 **说明：** 每篇中级教程遵循 `10-CONTEXT.md` D-21..D-44 的逐篇要点与阅读顺序（4/8/9/3）。**旧内容删除已并入本批（D-04，Wave 0 / 10-01）**：删除 `docs/guide/*`、`docs/dev/*`、`docs/logger/*`、`docs/api/*` 与首页 `docs/index.md`，并清理 `docs/.vitepress/config.ts` 的旧 `nav`/`sidebar` 键。文档改动为 `docs/intermediate/*.md`（新增）、`docs/.vitepress/config.ts` 与 `docs/.vitepress/api.ts`（缺失目录守卫，保留按包生成机制）。构建命令 `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`；`init.ts` 在 `docs/api/` 缺失时安全跳过。本机 PowerShell 禁止 `pnpm.ps1`，命令经 `cmd /c "..."` 执行。
+
+**高级 I 说明：** 第二批（10-13..10-20）只写**数据端**内容，不含渲染端；七篇文件名与侧边栏显示名以各计划 Task 0 的用户确认为准（D-13）。指向高级 II / III 的内容一律使用代码 span 或 HTML 注释占位，不写真实链接（D-47）。每篇保留「怎么验证」小节，并按 D-48 六步 / D-49 改内置优先 / D-50 模板独立 / D-51 落点与副作用 / D-52 加粗边界执行。构建命令同上；10-18 负责站点注册与全量链接收口，10-19 / 10-20 分别执行独立读者人格审阅与用户主导修订循环，**用户明确确认后方可收尾**（D-46 第 2 阶段 / D-57）。
