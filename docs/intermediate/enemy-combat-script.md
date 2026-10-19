@@ -4,9 +4,9 @@
 
 战前脚本可以决定「这场战斗是否发生」，战后脚本负责结算奖励或修改状态。脚本与钩子的分工见下方选型表，整体流程见[战斗总览](./combat-overview.md)。
 
-## 接口
+## 战斗脚本接口
 
-`ICombatScript` 有三个成员：
+为了让一段逻辑在战斗开始前决定「打不打」、在战斗结束后做结算，我们需要实现 `ICombatScript` 接口。它有三个成员：
 
 - `priority`：优先级，越高越先执行；
 - `before(info, handler)`：战前执行，返回 `Promise<boolean>`。返回 `false` 会立刻停止后续战前脚本，并放弃此次战斗；
@@ -143,7 +143,7 @@ async after(
 
 ### 模板：复制什么、改什么
 
-下面是战斗脚本机制本身的骨架，不含任何具体规则。复制到新文件后按 `[需改]` 修改：
+下面是战斗脚本机制本身的骨架，不含任何具体规则。复制到 `src/data/enemy/script.ts` 末尾后按 `[需改]` 修改（不要另建文件，脚本的实现集中在这个文件里）：
 
 ```ts
 // [需改] 类名：换成你的脚本名
@@ -184,7 +184,7 @@ state.combat.addCombatScript(new XxxCombatScript());
 
 **目标**：带「无敌」（code 18）的怪物不能被打，点它时直接放弃战斗并给出提示。
 
-**改哪里**：另建文件写这个脚本类；`src/data/enemy/initialize.ts` 用 `addCombatScript` 注册（见文末「注册在哪里」）。
+**改哪里**：在 `src/data/enemy/script.ts` 里写这个脚本类；`src/data/enemy/initialize.ts` 用 `addCombatScript` 注册（见文末「注册在哪里」）。
 
 **复制什么**：
 
@@ -232,7 +232,7 @@ state.combat.addCombatScript(new SealCombatScript());
 
 **目标**：每场战斗结束后，给勇士回复固定量生命（本示例 20 点）。
 
-**改哪里**：另建文件写这个脚本类；`src/data/enemy/initialize.ts` 用 `addCombatScript` 注册（见文末「注册在哪里」）。
+**改哪里**：在 `src/data/enemy/script.ts` 里写这个脚本类；`src/data/enemy/initialize.ts` 用 `addCombatScript` 注册（见文末「注册在哪里」）。
 
 **复制什么**：
 

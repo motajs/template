@@ -167,7 +167,7 @@ if (double) {
 
 **如果你不怎么懂代码，建议直接改内置钩子（`src/data/enemy/hook.ts` 的四个 `Enemy*Hooks` 类），而不是自己写新的类。** 上面「改内置」一节已经覆盖了移动、瞬移、战后、切层四个时机；自写钩子意味着你要自己确认挂载点、优先级与状态校验。
 
-做法是实现对应接口的类，构造时保存 `state`，再 `addHook` 到对应挂载点：
+为了实现某个时机上的效果，我们需要实现对应钩子接口的类：构造时保存 `state`，再 `addHook` 到对应挂载点。四个时机对应的接口与挂载点是：
 
 - 移动：`state.hero.location.mover.addHook(new ...Hooks(state))`，实现 `IObjectMoverHooks`；
 - 寻路：`state.pathfinding.addHook(new ...Hooks(state))`，实现 `IPathfindingSystemHooks`；
@@ -176,7 +176,7 @@ if (double) {
 
 ### 模板：复制什么、改什么
 
-下面是状态钩子机制本身的骨架（以战斗钩子为例），不含任何具体状态。复制到新文件后按 `[需改]` 修改：
+下面是状态钩子机制本身的骨架（以战斗钩子为例），不含任何具体状态。复制到 `src/data/enemy/hook.ts` 末尾后按 `[需改]` 修改（不要另建文件，内置状态的钩子类集中在这个文件里）：
 
 ```ts
 // [需改] 类名与接口：按上表换成你要挂的钩子接口

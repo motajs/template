@@ -541,4 +541,30 @@
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
 - 边界：仅改 `docs/intermediate/enemy-*.md` 与本记录；未改 `config.ts` 与生产代码；未新增文件；未引入指向 `docs/advanced/` 的真实链接（D-47 预留仍为代码 span + HTML 注释）；未创建 `10-11-SUMMARY.md`，未改 `STATE.md` / `ROADMAP.md`（按本次派发要求）。
 
+---
+
+## 用户循环 · batch 10 记录（D-51 特殊属性落点与讲解方式）
+
+**范围：** 用户修订循环第 1 轮 batch 10（D-51）——战斗组 8 篇（`enemy-aura`、`enemy-query`、`enemy-calculator`、`enemy-map-damage`、`enemy-specials`、`enemy-final`、`enemy-combat-script`、`enemy-status-hooks`）。按 `10-CONTEXT.md` D-51：①不新建文件，已有实现文件（`aura.ts` 等）就写在里面，只有查询属性新建 `query.ts`；②`aura.ts` / `query.ts` 建议用 `//#region {code}-{name}` … `//#endregion` 包裹；③用通俗语言解释「副作用」；④说明地图伤害按计算后怪物计算、光环加的特殊属性会真实生效，并说明「依赖 + 修改外部环境」应拆成查询 + 光环、用新怪物属性桥接；⑤`getCriticalLimit` 提一句并指向高级教程；⑥接口讲解改为「为了实现 X，需要（实现 / 修改）Y 接口」再讲参数。保留 D-50 模板、D-49（改内置优先）、D-48（六步实操）、D-47 预留。
+
+### 逐条处置
+
+| 文档 | 处置 |
+| --- | --- |
+| `enemy-aura.md` | ①模板与两个示例的落点由「新建文件 / 另建文件」改为写进 `src/data/enemy/aura.ts`，并新增 `//#region {code}-{name}`（示例 `//#region 30-削弱光环` / `31-传染光环`）建议，说明内置 23 / 24 / 26 即如此组织。②新增「光环、计算后怪物与『读写外部』」：讲明 `applySpecial` 改的是计算后怪物、地图伤害等读到的就是这份结果，光环新增的特殊属性会真实生效（旧样板无法动态添加）；并说明「依赖 + 修改外部环境」应拆成查询 + 光环、用新怪物属性桥接，指向高级教程（D-47 预留 `高级教程 · 依赖并修改外部环境的属性` + TODO 注释）。 |
+| `enemy-query.md` | ①落点统一为 `src/data/enemy/query.ts`，并明确查询是唯一需要新建文件的一类（光环 / 最终效果 / 地图伤害写各自现成文件）。②新增 `//#region {code}-{name}`（示例 40 / 41 / 42）建议。③「常规查询」「特殊查询」intro 改为「为了实现它，我们需要实现 `IEnemy…QueryEffect` 接口」再讲参数。④「优先级」段的「既依赖外部、又修改外部」改为指向「拆成查询 + 光环、用新怪物属性桥接」。 |
+| `enemy-calculator.md` | ①「接口」改为「伤害计算器接口」，先讲 `calculate` 的用途，`getCriticalLimit` 降为一句带过并指向高级教程。②warning 用通俗语言补充「副作用」的定义。③模板 / 示例里 `getCriticalLimit` 注释改为「一般不用改；高级教程会细讲」；模板落点改为 `calculator.ts`。④「临界」章改为「临界（了解即可）」，保留单调递减约定与 `atk` 上界，二分等细节指向高级教程（D-47 预留 `高级教程 · 临界计算` + TODO 注释）。 |
+| `enemy-map-damage.md` | ①新增「按『计算后怪物』计算」：转换器拿到的是 `getComputedEnemy()`，光环 `applySpecial` 新增的「领域」等属性会真实生效；再说「依赖 + 修改外部」应拆成查询 + 光环桥接（回指光环篇）。②模板 / 示例落点改为写进 `src/data/enemy/mapDamage.ts`。 |
+| `enemy-specials.md` | ①「在数据里的样子」改为「为了读取怪物身上的特殊属性，我们需要用到 … 三个接口」。②「改内置」段补明光环写 `aura.ts`、查询写新建的 `query.ts`。③「如果内置实现里实在找不到落点」改为按类型写进现有实现文件（aura / mapDamage / final / script / hook），不要另建，只有查询新建 `query.ts`。 |
+| `enemy-final.md` | ①「接口」改为「最终效果接口」，改为「为了实现收尾调整，我们需要实现 `IEnemyFinalEffect` 接口」。②「为什么没有『既依赖外部、又修改外部』的能力」补：确实需要时拆成查询 + 光环、用新怪物属性桥接，指向高级教程（D-47 预留 + TODO 注释）。③模板落点改为写进 `src/data/enemy/final.ts`。 |
+| `enemy-combat-script.md` | ①「接口」改为「战斗脚本接口」，改为「为了实现战前拦截 / 战后结算，我们需要实现 `ICombatScript` 接口」。②模板与两个自写示例的落点改为写进 `src/data/enemy/script.ts`。 |
+| `enemy-status-hooks.md` | ①「自己写钩子类」intro 改为「为了实现某个时机上的效果，我们需要实现对应钩子接口的类」并列四时机接口 / 挂载点。②模板落点改为写进 `src/data/enemy/hook.ts`。 |
+
+### 校验
+
+- 源码核对：`src/data/enemy/aura.ts`（`//#region 23-光环` / `24-支援` / `26-特殊光环`，`CommonAuraConverter.convert` / `CommonAura.applySpecial`）、`packages-user/data-system/src/combat/mapDamage.ts`（`createReadonlyHandler` 用 `view.getComputedEnemy()` 作为 `enemy`，故地图伤害按计算后怪物计算）、`packages-user/data-system/src/combat/context.ts`（`buildupSpecials` → `buildupBase` → `buildupQuery` → `buildupFinal` 顺序、`applySpecial` / `refreshSpecialModifier`）、`src/data/enemy/calculator.ts`（`getCriticalLimit` 对 `atk` 的处理、`calculate`）、`src/data/enemy/mapDamage.ts`（`MainMapDamageConverter.convert` 读 `enemy.getSpecial(13/16/22)`）、`src/data/enemy/final.ts`、`src/data/enemy/script.ts`、`src/data/enemy/hook.ts`、`src/data/enemy/special.ts`（`//#region 复合属性值类型` / `属性定义`）。
+- 结构门禁：所改 8 篇均 CRLF、单 H1（`STRUCT-OK`）。
+- 格式门禁：`node node_modules/prettier/bin/prettier.cjs --write docs/intermediate/enemy-*.md`（D-45，`endOfLine: crlf`）已跑。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0（新增预留仍为代码 span + HTML 注释，不产生链接）。
+- 边界：仅改 `docs/intermediate/enemy-*.md` 与本记录；未改 `config.ts` 与生产代码；未新增文件；未创建 `10-11-SUMMARY.md`，未改 `STATE.md` / `ROADMAP.md`（按本次派发要求）。
 

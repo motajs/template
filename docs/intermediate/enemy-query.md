@@ -10,7 +10,7 @@
 
 ## 常规查询（CommonQuery）
 
-如果一条特殊属性只需要「读外部状态，然后改自己的基础属性」，用常规查询就够了。它的效果是一个实现了 `IEnemyCommonQueryEffect` 的类实例，注册方式：
+如果一条特殊属性只需要「读外部状态，然后改自己的基础属性」，用常规查询就够了。为了实现它，我们需要实现 `IEnemyCommonQueryEffect` 接口：写一个类，让引擎在构建计算后怪物时调用它的 `apply`。写好后这样注册：
 
 ```ts
 state.enemyContext.registerCommonQueryEffect(code, new GroupQueryEffect());
@@ -27,7 +27,7 @@ state.enemyContext.registerCommonQueryEffect(code, new GroupQueryEffect());
 
 ## 特殊查询（SpecialQuery）
 
-如果查询要动的是目标怪物**拥有的特殊属性**——添加、删除或改写——就用特殊查询。例如给范围内的怪物补上一条属性，或把它们身上的数值属性叠加起来。注册方式：
+如果查询要动的是目标怪物**拥有的特殊属性**——添加、删除或改写——就用特殊查询。例如给范围内的怪物补上一条属性，或把它们身上的数值属性叠加起来。为了实现它，我们需要实现 `IEnemySpecialQueryEffect` 接口，并配一个修饰器类来处理增删改。注册方式：
 
 ```ts
 state.enemyContext.registerSpecialQueryEffect(new AssimilationQueryEffect());
@@ -55,7 +55,7 @@ state.enemyContext.registerSpecialQueryEffect(new AssimilationQueryEffect());
 
 常规查询与特殊查询的 `priority` 和光环共用同一套优先级，从高到低处理。高优先级的效果先执行，低优先级能看到它留下的结果；反过来不行。查询新增的光环只能影响之后的阶段，规则与[怪物光环](./enemy-aura.md)一致。
 
-查询属于「依赖外部、但只改自己」的那一类；「既依赖外部、又修改外部」的能力是刻意不提供的，原因见[最终属性效果](./enemy-final.md)。
+查询属于「依赖外部、但只改自己」的那一类。如果一种属性确实同时需要「依赖外部」与「修改外部」，不要把它硬做成一种查询或一种光环，而应拆成查询 + 光环两个效果，再用一个新怪物属性桥接（见[怪物光环](./enemy-aura.md)的「光环、计算后怪物与『读写外部』」）。
 
 ## 查询上下文 ctx
 
@@ -71,7 +71,7 @@ state.enemyContext.registerSpecialQueryEffect(new AssimilationQueryEffect());
 
 查询效果在引擎里**没有可直接修改的内置实现**：`initializeEnemy` 中只注册了光环转换器、最终效果、战斗脚本与钩子，没有注册任何查询效果。要新增一条查询，需要做两件事：
 
-1. 在 `src/data/enemy/` 下新建一个文件，按下面的示例写一个**类**，让它实现对应接口；
+1. 在 `src/data/enemy/query.ts` 里按下面的示例写一个**类**，让它实现对应接口。查询属性是**唯一**需要新建文件的一类：光环、最终效果、地图伤害等都写进各自的现成文件，不要另建；
 2. 在 `initializeEnemy` 里 `new` 出这个类并注册（见文末「注册在哪里」）。
 
 三个示例都是这种写法：先定义类，再在注册时 `new` 一次。查询效果只需要一个实例，注册一次即可。
@@ -85,7 +85,7 @@ state.enemyContext.registerSpecialQueryEffect(new AssimilationQueryEffect());
 
 ## 模板：复制什么、改什么
 
-查询分两种，模板也分两种。下面是机制本身的骨架，不含任何具体效果；复制到 `src/data/enemy/` 下的新文件后，按 `[需改]` 改成你的查询。
+查询分两种，模板也分两种。下面是机制本身的骨架，不含任何具体效果；复制到 `src/data/enemy/query.ts` 后，按 `[需改]` 改成你的查询。每条查询建议用 `//#region {code}-{name}` 包起来，以 `//#endregion` 结束，例如 `//#region 40-抱团`。
 
 ### 常规查询模板
 
@@ -203,7 +203,7 @@ state.enemyContext.registerSpecialQueryEffect(new XxxSpecialQueryEffect());
 
 **目标**：带「抱团」（示例 code 40）的怪物，范围内每多一个同种特殊属性的怪物，自身攻击加固定值。
 
-**改哪里**：在 `src/data/enemy/` 下另建一个文件（如 `query.ts`），写下面这个类；再到 `src/data/enemy/initialize.ts` 里用 `registerCommonQueryEffect` 注册（见文末「注册在哪里」）。
+**改哪里**：在 `src/data/enemy/query.ts` 里写下面这个类（用 `//#region 40-抱团` 包住）；再到 `src/data/enemy/initialize.ts` 里用 `registerCommonQueryEffect` 注册（见文末「注册在哪里」）。
 
 **复制什么**：
 
@@ -268,7 +268,7 @@ state.enemyContext.registerCommonQueryEffect(40, new GroupQueryEffect());
 
 **目标**：带「同化」（示例 code 41）的怪物，把其他怪物的特殊属性搬到自己身上（没有的照抄，数值型的叠加）。
 
-**改哪里**：在 `src/data/enemy/` 下另建一个文件（如 `query.ts`），写下面这个类；再到 `src/data/enemy/initialize.ts` 里用 `registerSpecialQueryEffect` 注册（见文末「注册在哪里」）。
+**改哪里**：在 `src/data/enemy/query.ts` 里写下面这个类（用 `//#region 41-同化` 包住）；再到 `src/data/enemy/initialize.ts` 里用 `registerSpecialQueryEffect` 注册（见文末「注册在哪里」）。
 
 **复制什么**：
 
@@ -367,7 +367,7 @@ state.enemyContext.registerSpecialQueryEffect(new AssimilationQueryEffect());
 
 **目标**：带「号角」（示例 code 42）的怪物，场上每有一只怪物就给自身加一份攻击。
 
-**改哪里**：在 `src/data/enemy/` 下另建一个文件（如 `query.ts`），写下面这个类；再到 `src/data/enemy/initialize.ts` 里用 `registerCommonQueryEffect` 注册（见文末「注册在哪里」）。
+**改哪里**：在 `src/data/enemy/query.ts` 里写下面这个类（用 `//#region 42-号角` 包住）；再到 `src/data/enemy/initialize.ts` 里用 `registerCommonQueryEffect` 注册（见文末「注册在哪里」）。
 
 **复制什么**：
 

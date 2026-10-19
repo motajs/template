@@ -4,12 +4,11 @@
 
 它实现的是 `f(enemy, hero)`：输入计算后的怪物与勇士属性，输出 `{ damage, turn }`。本篇导读内置公式，并说明要改公式时应该动哪里。整体流程见[战斗总览](./combat-overview.md)。
 
-## 接口
+## 伤害计算器接口
 
-`IDamageCalculator` 有两个方法：
+为了把计算后的怪物与勇士属性换算成「勇士会掉多少血、要打几回合」，我们需要实现 `IDamageCalculator` 接口。日常只需要关心它的 `calculate(handler)`：返回 `IEnemyDamageInfoBase`，即 `{ damage, turn }`。
 
-- `calculate(handler)`：返回 `IEnemyDamageInfoBase`，即 `{ damage, turn }`；
-- `getCriticalLimit(handler, attribute)`：返回指定勇士属性进行临界计算时的上界。
+接口里还有一个 `getCriticalLimit(handler, attribute)`，只有临界计算会用到。大多数需求用不到它，先知道有这么个方法即可，细节留到高级教程。
 
 `handler` 是 `IReadonlyDamageHandler`，包含：
 
@@ -28,6 +27,8 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 `initializeEnemy` 在创建 `DamageSystem` 后就调用了 `useCalculator(new MainDamageCalculator())`，因此默认使用内置公式。
 
 :::warning 计算器必须无副作用
+所谓「副作用」，就是除了算出结果之外，还顺手改动了别的东西：写了一个 flag、删了一条记录、改了怪物或勇士的属性，这些都属于副作用。
+
 计算器在一次战斗里会被**反复调用**：算临界值要二分十几次，渲染伤害数值、图鉴与提示等也可能在真正开打前各调用一次。因此它**必须只读输入、算出结果，不能改动任何外部状态**——不能写 flag、不能删 flag，也不能改怪物或勇士对象。只要存在副作用，同一只怪物在不同时刻就会算出不同结果，临界与显示都会错乱。需要「一次性」生效的状态，请放到别处去改（战斗脚本、钩子等），计算器只负责读取。
 :::
 
@@ -121,7 +122,7 @@ calculate(
 
 ### 模板：复制什么、改什么
 
-下面是计算器机制本身的骨架，不含任何具体公式。复制到新文件后按 `[需改]` 修改：
+下面是计算器机制本身的骨架，不含任何具体公式。复制到 `src/data/enemy/calculator.ts` 末尾后按 `[需改]` 修改（不要另建文件，计算器的实现集中在 `calculator.ts`）：
 
 ```ts
 // [需改] 类名：换成你自己的计算器名
@@ -141,7 +142,7 @@ export class XxxCalculator implements IDamageCalculator<IEnemyAttr, IHeroAttr> {
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
         attribute: CriticalableHeroStatus<IHeroAttr>
     ): number {
-        // [需改] 需要自定义临界上界时改这里；否则返回勇士当前最终值即可
+        // [模板] 一般不用改：返回勇士当前最终值即可；高级教程会细讲临界
         return handler.hero.getFinalAttribute(attribute);
     }
 }
@@ -197,7 +198,7 @@ export class ArithmeticCalculator implements IDamageCalculator<
         return { damage: Math.floor(damage), turn };
     }
 
-    // [模板] getCriticalLimit 的签名同样是固定的：这里直接返回勇士当前最终值
+    // [模板] getCriticalLimit 一般不用改：这里直接返回勇士当前最终值
     getCriticalLimit(
         handler: IReadonlyEnemyHandler<IEnemyAttr, IHeroAttr>,
         attribute: CriticalableHeroStatus<IHeroAttr>
@@ -241,14 +242,10 @@ export function initializeEnemy(
 
 把 `useCalculator(new ArithmeticCalculator())` 放在内置那一行之后，你的公式就会随 `initializeEnemy` 一起生效。
 
-## 临界
+## 临界（了解即可）
 
-临界计算回答「勇士某项属性提高到多少时，战斗结果会发生变化」。相关接口：
+临界计算回答「勇士某项属性提高到多少时，战斗结果会发生变化」，它会用到 `getCriticalLimit`。多数需求不必改这个方法：内置实现已经处理了 `atk`（怪物有坚固时返回 `Infinity`，否则返回 `def + hp`）与其他属性的默认上界。
 
-- `getCriticalLimit(handler, attribute)`：返回该属性的计算上界；
-- `calculateViewCritical(enemy, attribute, precision?)` 与 `calculateEnemyCritical(...)`：伤害系统上的临界计算方法，返回 `IEnemyCritical` 的生成器；
-- `CriticalableHeroStatus<THero>`：只允许数值类型的勇士属性，例如 `atk`、`def`、`hp`。
+现有约定是**伤害值随属性提高单调递减**。公式不单调也能运行，只是算出的临界点不准。更完整的临界算法与二分过程会在**高级教程**中讲解（预留标记：`高级教程 · 临界计算`），待高级教程就位后替换为链接。
 
-内置 `getCriticalLimit` 对 `atk` 的处理是：怪物有坚固时返回 `Infinity`，否则返回 `def + hp`；其他属性直接返回勇士当前最终值。
-
-现有约定是**伤害值随属性提高单调递减**。临界值唯一依赖「最后的伤害值」，因此公式不单调也能运行，只是算出的临界点不准。写自定义公式时尽量保持单调，临界结果才有意义。
+<!-- TODO(advanced): 临界计算 -->
