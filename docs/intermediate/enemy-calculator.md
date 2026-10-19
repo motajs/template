@@ -70,18 +70,15 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 
 「等差数列属性」指怪物攻击每回合按固定值递增。属性本身在一次计算中是常量，所以不能靠给 `atk` 加值实现；要在 `calculate` 里把「每回合伤害」按等差数列求和：
 
-示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。下面用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求修改的行。
+示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。下面用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
+
+**目标**：让怪物的每回合伤害按固定公差逐回合递增（本示例公差为 5）。
+
+**改哪里**：`src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate`（改内置），或另建文件写一个计算器再用 `useCalculator` 替换。
+
+**复制什么**：下面是只保留本示例所需分支的最小计算器——
 
 ```ts
-// [模板] 依赖导入：类型分别来自 @user/data-common 与 @user/data-system
-import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import {
-    CriticalableHeroStatus,
-    IDamageCalculator,
-    IEnemyDamageInfoBase,
-    IReadonlyEnemyHandler
-} from '@user/data-system';
-
 // [需改] 类名：换成你自己的计算器名
 export class ArithmeticCalculator implements IDamageCalculator<
     IEnemyAttr,
@@ -127,7 +124,13 @@ export class ArithmeticCalculator implements IDamageCalculator<
 }
 ```
 
-这是只保留本示例所需分支的最小计算器；内置公式里的无敌、吸血、支援等分支需要你按上文顺序自行保留。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：`step`（公差，本示例为 `5`）与 `base` 的算法换成你要的递增规则；换算成「改内置」时，把这段逻辑并入 `calculate` 的对应段落即可。
+
+**怎么验证**：给怪物挂上后开战，看显示的回合伤害是否随回合数按公差递增、总伤害是否等于求和结果。
+
+**注意**：这是只保留本示例分支的最小计算器；若用 `useCalculator` 替换，内置的无敌、吸血、支援等分支需要你按上文顺序自行保留。计算器**必须无副作用**（见上方 warning）。
 
 ## 临界
 

@@ -64,7 +64,13 @@ mapDamage?.useConverter(new MainMapDamageConverter());
 
 `useConverter` 是**替换**当前转换器：选了自己的就把内置的整个换掉，若要同时保留内置五类，需要在自己的转换器里把它们的视图也收集进去，或直接改内置转换器。
 
-下面代码用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求修改的行。先在 `src/data/enemy/special.ts` 登记这条属性：
+下面代码用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
+
+**目标**：新增一个「八方向激光」特殊属性（示例 code 43），沿上下左右加四个斜向共八个方向发射，其余与内置激光一致。
+
+**改哪里**：`src/data/enemy/special.ts` 登记属性；另建文件写伤害视图与转换器；`initializeEnemy` 里用 `useConverter` 替换（见下方「注册在哪里」）。
+
+**复制什么**：先在 `src/data/enemy/special.ts` 登记这条属性——
 
 ```ts
 /** 43 - 八方向激光 */
@@ -88,30 +94,11 @@ map.set(
 );
 ```
 
-再写伤害视图与转换器：
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+再写伤害视图与转换器——
 
 ```ts
-// [模板] 依赖导入：类型分别来自 @motajs/common、@user/data-system、@user/data-base 与 @user/data-common
-import {
-    IFaceDescriptor,
-    IFaceHandler,
-    IRange,
-    IRayRangeParam,
-    ITileLocator,
-    RayRange
-} from '@motajs/common';
-import {
-    IEnemyContext,
-    IMapDamageConverter,
-    IMapDamageInfo,
-    IMapDamageView,
-    IReadonlyEnemyHandler
-} from '@user/data-system';
-import { ISpecial } from '@user/data-base';
-import { IEnemyAttr, IHeroAttr, FaceGroup } from '@user/data-common';
-import { MapDamageType } from './types';
-import { ISpecial43Value } from './special';
-
 // [模板] 范围对象可以复用，在模块顶层建一次即可
 const RAY_RANGE = new RayRange();
 
@@ -197,6 +184,12 @@ export class EightDirLaserConverter implements IMapDamageConverter<
 const mapDamage = state.enemyContext.getMapDamage();
 mapDamage?.useConverter(new EightDirLaserConverter());
 ```
+
+**改什么**：编号（`43`）、类名、方向组（本示例 `FaceGroup.Dir8`）与 `getDamageWithoutCheck` 返回的伤害 / 类型换成你自己的。
+
+**怎么验证**：给带该属性的怪物挂上后，站在它八个方向任一格的勇士都应受到伤害；斜向也要覆盖到（这正是与内置四方向激光的区别）。
+
+**注意**：`useConverter` 是**替换**当前转换器——选了自己的就把内置的整个换掉；要同时保留内置五类，需要在自己的转换器里把它们的视图也收集进去，或直接改内置转换器。
 
 ### 注册在哪里
 

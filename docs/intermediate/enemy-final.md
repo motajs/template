@@ -53,11 +53,15 @@ state.enemyContext.registerFinalEffect(effect);
 
 ## 示例：仿攻
 
-「仿攻」让怪物的攻击力等于勇士的最终攻击力。仿攻与内置的模仿类似，区别是只改攻击、不改防御（这里的 code 32 是示例自选的未占用编号；内置的最终效果是坚固 code 3、模仿 code 8，内置编号见[特殊属性](./enemy-specials.md)）：
+「仿攻」让怪物的攻击力等于勇士的最终攻击力。仿攻与内置的模仿类似，区别是只改攻击、不改防御（这里的 code 32 是示例自选的未占用编号；内置的最终效果是坚固 code 3、模仿 code 8，内置编号见[特殊属性](./enemy-specials.md)）。
 
-示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。
+示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。下面代码用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
 
-下面代码中用 `[模板]` 标出可以原样照抄的部分，用 `[需改]` 标出必须按你的需求修改的部分。特殊属性定义写在 `src/data/enemy/special.ts`：
+**目标**：让带「仿攻」（code 32）的怪物，攻击力始终等于勇士的最终攻击力。
+
+**改哪里**：`src/data/enemy/special.ts` 登记一条属性；另建一个文件放最终效果的类；`src/data/enemy/initialize.ts` 注册这个效果（见文末「注册在哪里」）。
+
+**复制什么**：先在 `special.ts` 里登记属性——
 
 ```ts
 // special.ts：32 - 仿攻
@@ -72,13 +76,11 @@ map.set(
 );
 ```
 
-然后写最终效果本身：
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+再写最终效果的类——
 
 ```ts
-// [模板] 依赖导入：类型分别来自 @user/data-common 与 @user/data-system
-import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import { IEnemyFinalEffect, IEnemyHandler } from '@user/data-system';
-
 // [需改] 类名：换成你自己的效果名
 export class AttackCopyFinal implements IEnemyFinalEffect<
     IEnemyAttr,
@@ -103,9 +105,11 @@ export class AttackCopyFinal implements IEnemyFinalEffect<
 state.enemyContext.registerFinalEffect(new AttackCopyFinal());
 ```
 
-`apply` 里直接 `setAttribute`，因为最终阶段拿到的 `handler.enemy` 就是可修改的怪物对象。最终阶段之后不再有别的属性修正，所以这里写进去的值会直接进入伤害计算。
+**改什么**：编号（`32`）、名称、描述与颜色换成你自己的；`hasSpecial(32)` 的触发条件与 `setAttribute` 里的效果换成你要的逻辑。
 
-`priority` 只需要记住一句：数值越大越先执行；内置最终效果的 `priority` 是 `0`。
+**怎么验证**：给一只怪物挂上「仿攻」后重建并开战，看它显示的攻击是否等于勇士当前最终攻击（勇士换装备后应同步变化）。
+
+**注意**：`apply` 里 `handler.enemy` 已是可修改对象，直接 `setAttribute` 即可；最终阶段之后不再有别的属性修正，这里写进去的值会直接进入伤害计算。`priority` 越大越先执行，内置最终效果的 `priority` 是 `0`。
 
 ### 注册在哪里
 

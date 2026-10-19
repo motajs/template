@@ -384,3 +384,34 @@
 - 边界：仅改 `docs/intermediate/*.md`（`data-vs-render`、`src-tour` 无实操、不改）；未改 `config.ts` 与任何生产代码；未新增文件；未引入指向 `docs/advanced/` 的真实链接（D-47 预留仍为代码 span + HTML 注释）。
 - 未决：战斗组与「其他」组（`combat-overview`、`enemy-*`、`events`、`replay-commands`、`data-plugins`）的实操尚未按 D-48 重做，其中仍是含 `import` 的代码块；留待后续批次。
 
+---
+
+## 用户循环 · batch 5 记录（D-48 实操·战斗）
+
+**范围：** 用户修订循环第 1 轮 batch 5（D-48 实操写法）——战斗组 9 篇（`combat-overview`、`enemy-specials`、`enemy-aura`、`enemy-query`、`enemy-final`、`enemy-calculator`、`enemy-map-damage`、`enemy-combat-script`、`enemy-status-hooks`）。沿用 batch 4 的口径：**保留系统/原理讲解**，只重做「实操/示例」部分，使其可分步照抄（目标 → 改哪里 → 复制什么 → 改什么 → 怎么验证 → 注意）；片段一律去掉 `import`，并显式给出「顶部通常已有、不要重复粘，报缺再补」的说明（统一指向 `code-basics.md` 的「照抄教程里的代码时，怎么处理 import」）。既有的 U-07/U-08/U-09/U-10/U-11/U-13/U-14/U-15/U-17/U-18/U-19 修正全部保留。
+
+### 逐条处置
+
+| 文档 | 处置 |
+| --- | --- |
+| `combat-overview.md` | 无「实操/示例」段落（纯概念 + 流程图 + 一处 `buildup()` 单行接口引用，本就不含 `import`），本批不改。 |
+| `enemy-specials.md` | 「自定义一个新特殊属性」的 5 步清单改写为六步实操；属性定义片段补 `[需改]` 标注；「两类定义」「内置属性编号表」等系统讲解保留。 |
+| `enemy-aura.md` | 两个示例（基础光环 / 特殊光环）各改写为六步实操；删去两个代码块的 `import`，补复制说明；优先级、运作方式、「改内置还是自己写」等系统讲解保留。 |
+| `enemy-query.md` | 三个示例（抱团 / 同化 / 号角）各改写为六步实操；删去三处 `import`，补复制说明；`ctx` 说明、warning、优先级、签名差异说明等保留。 |
+| `enemy-final.md` | 「示例：仿攻」改写为六步实操；删去 `import`，补复制说明；「注册在哪里」（U-13）保留。 |
+| `enemy-calculator.md` | 「示例：等差数列属性」改写为六步实操；删去 `import`，补复制说明；「计算器必须无副作用」（U-19）warning 与内置公式逐段导读保留。 |
+| `enemy-map-damage.md` | 「示例：八方向激光」（U-18）改写为六步实操；删去 `import`，补复制说明；五类内置表、编号/结算说明、`handleMapDamage` 结算段保留。 |
+| `enemy-combat-script.md` | 战前 / 战后两个示例各改写为六步实操；删去两处 `import`，补复制说明；「脚本 vs 钩子」选型表与「注册在哪里」保留。 |
+| `enemy-status-hooks.md` | 「下次战斗伤害乘二」示例改写为六步实操（一处「复制什么」统领「属性定义 + 钩子 + 脚本」三个片段，第三步计算器只读片段单列）；删去两处 `import`；按 U-19 保留「钩子挂状态 → 计算器只读 flag → 战斗脚本每场消费一次」的三系统结构（消费必须每场只跑一次，属 D-48「确实需要」的额外脚本）。 |
+
+### 共用复制说明（各篇统一）
+
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 `code-basics.md` 的「照抄教程里的代码时，怎么处理 import」）。
+
+### 校验
+
+- 结构门禁：24 篇全部 CRLF、单 H1（`STRUCT-OK`）。
+- 格式门禁：`node node_modules/prettier/bin/prettier.cjs --write`（D-45）已跑，改动篇目全部 `unchanged`（内容本就符合 prettier）。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+- 边界：仅改 `docs/intermediate/*.md`（`combat-overview` 无实操、不改）；未改 `config.ts` 与任何生产代码；未新增文件；未引入指向 `docs/advanced/` 的真实链接（D-47 预留仍为代码 span + HTML 注释）；未引入 `dev.md` 引擎开发约定，未写发布前/数量类信息。
+

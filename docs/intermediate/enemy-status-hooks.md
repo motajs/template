@@ -66,7 +66,13 @@ state.hero.location.addHook(new EnemyChangeFloorHooks(state));
 不要在伤害计算器里 `deleteField` 之类地去「消费」这个 flag。计算器在一次战斗里会被反复调用（算临界、显示伤害、图鉴等），谁先调用谁就把 flag 用掉了，真正开打时反而不翻倍；而且这属于改动外部状态，违反「计算器必须无副作用」的规则（见[伤害计算](./enemy-calculator.md)）。正确做法是：**计算器只读 flag**，由「一场战斗只跑一次」的**战斗脚本**去消费它。
 :::
 
-先定义一个无参数特殊属性（code 45）。下面代码中用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求修改的行：
+本示例要串起三个系统：先用战斗钩子在战斗结束时挂上「蓄力」状态，让伤害计算器只读这个 flag 把伤害翻倍，再由战斗脚本在一次战斗后把 flag 消费掉。
+
+**目标**：带「蓄力」（code 45）的怪物打完后，下一场战斗的伤害翻倍，且只翻倍一次。
+
+**改哪里**：`src/data/enemy/special.ts` 登记属性；另建文件写战斗钩子与战斗脚本；`initializeEnemy` 里注册（见文末）。另外在伤害计算器里加一段只读逻辑（见第三步）。
+
+**复制什么**：先定义一个无参数特殊属性（code 45）——
 
 ```ts
 // special.ts：45 - 蓄力
@@ -81,14 +87,11 @@ map.set(
 );
 ```
 
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
 **第一步：用战斗钩子「挂上状态」。** 它不修改内置的 `EnemyCombatHooks`，而是作为另一个钩子并存（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
 
 ```ts
-// [模板] 依赖导入
-import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import { ICoreState } from '@user/data-state';
-import { ICombatFlowHooks, IEnemyDamageInfo } from '@user/data-system';
-
 // [需改] 类名
 export class ChargedHooks implements ICombatFlowHooks<IEnemyAttr, IHeroAttr> {
     constructor(readonly state: ICoreState) {} // [模板] 存下数据端状态，供读写 flag
@@ -112,11 +115,6 @@ state.combat.addHook(new ChargedHooks(state));
 **第二步：用战斗脚本「消费状态」。** 脚本的 `after` 一场战斗只执行一次，正好用来把 flag 清掉：
 
 ```ts
-// [模板] 依赖导入
-import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import { ICoreState } from '@user/data-state';
-import { ICombatScript } from '@user/data-system';
-
 // [需改] 类名
 export class ConsumeDoubleScript implements ICombatScript<
     IEnemyAttr,
@@ -157,6 +155,10 @@ if (double) {
 
 把这段读 flag 的逻辑放在 `calculate` 返回之前即可；伤害公式的其余部分见[伤害计算](./enemy-calculator.md)。
 
-这个例子体现了「一个状态要用多个系统」：`onAfterCombat` 钩子负责记录状态，计算器负责读取并翻倍，战斗脚本负责在真正的战斗里消费掉它。若把消费放进计算器，就会因计算器被反复调用而提前把 flag 用掉——只有放进「每次战斗只跑一次」的脚本里才可靠。
+**改什么**：编号（`45`）、类名、flag 名（`nextBattleDouble`）、翻倍写法与注册位置换成你自己的。
+
+**怎么验证**：让带「蓄力」的怪物战斗一场，再打一场，看第二场伤害是否翻倍；连打第三场时应恢复原值（flag 已被消费）。
+
+**注意**：这里要三个系统配合，缺一不可——钩子负责记录状态，计算器只读并翻倍，战斗脚本负责在真正的战斗里消费掉它。若把消费放进计算器，就会因计算器被反复调用（临界、显示、图鉴等）而提前把 flag 用掉，只有放进「每场战斗只跑一次」的脚本里才可靠。
 
 状态里用到的临时加减或百分比，优先用修饰器实现，概念与 `save` 参数见[勇士属性](./hero-attribute.md)。

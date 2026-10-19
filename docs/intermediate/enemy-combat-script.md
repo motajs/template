@@ -59,17 +59,15 @@ state.combat.addCombatScript(new MainCombatScript());
 
 ## 战前示例：拥有某特殊属性时无法战斗
 
-下面的脚本检查怪物是否拥有 code 18 的特殊属性（无敌，编号见[特殊属性](./enemy-specials.md)的「内置属性编号表」），有则直接放弃战斗（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）。代码中用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求修改的行。
+下面的脚本检查怪物是否拥有 code 18 的特殊属性（无敌，编号见[特殊属性](./enemy-specials.md)的「内置属性编号表」），有则直接放弃战斗（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）。代码中用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
+
+**目标**：带「无敌」（code 18）的怪物不能被打，点它时直接放弃战斗并给出提示。
+
+**改哪里**：另建文件写这个脚本类；`src/data/enemy/initialize.ts` 用 `addCombatScript` 注册（见文末「注册在哪里」）。
+
+**复制什么**：
 
 ```ts
-// [模板] 依赖导入：类型分别来自 @user/data-common 与 @user/data-system
-import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import {
-    ICombatFlowHandler,
-    ICombatScript,
-    IEnemyDamageInfo
-} from '@user/data-system';
-
 // [需改] 类名：换成你的脚本名
 export class SealCombatScript implements ICombatScript<IEnemyAttr, IHeroAttr> {
     // [需改] priority：越大越先执行；内置脚本是 0
@@ -99,23 +97,25 @@ export class SealCombatScript implements ICombatScript<IEnemyAttr, IHeroAttr> {
 state.combat.addCombatScript(new SealCombatScript());
 ```
 
-`priority = 100` 让它先于内置脚本执行；返回 `false` 后，后续战前脚本、战后脚本与 `onAfterCombat` 钩子都不会执行。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
 
-这里的 18 号在内置属性编号表里就是「无敌」，地图伤害的转换器也使用同一套编号（阻击是 16），所以这个判断与其他系统没有编号冲突。
+**改什么**：`priority`（本示例 `100`，越大越先执行，内置脚本是 `0`）、`hasSpecial(18)` 的判断与提示文字换成你自己的。
+
+**怎么验证**：给一只怪物挂上「无敌」后点它开战，应看到提示、且勇士不入场、战斗不结算。
+
+**注意**：`before` 一旦返回 `false`，后续战前脚本、战后脚本与 `onAfterCombat` 钩子都不会执行。这里的 18 号在内置属性编号表里就是「无敌」，地图伤害使用同一套编号（阻击是 16），所以这个判断与其他系统没有编号冲突。
 
 ## 战后示例：战后玩家回复固定量生命值
 
 下面的脚本在每场战斗后给勇士回复 20 点生命：
 
-```ts
-// [模板] 依赖导入
-import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import {
-    ICombatFlowHandler,
-    ICombatScript,
-    IEnemyDamageInfo
-} from '@user/data-system';
+**目标**：每场战斗结束后，给勇士回复固定量生命（本示例 20 点）。
 
+**改哪里**：另建文件写这个脚本类；`src/data/enemy/initialize.ts` 用 `addCombatScript` 注册（见文末「注册在哪里」）。
+
+**复制什么**：
+
+```ts
 // [需改] 类名：换成你的脚本名
 export class HealAfterCombatScript implements ICombatScript<
     IEnemyAttr,
@@ -143,9 +143,13 @@ export class HealAfterCombatScript implements ICombatScript<
 state.combat.addCombatScript(new HealAfterCombatScript());
 ```
 
-`priority = -10` 让它在内置脚本之后执行，避免在奖励结算之前改动勇士状态。`handler.hero` 是可修改对象，直接 `add` 即可。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
 
-`priority` 只需要记住一句：数值越大越先执行；战前与战后各自按这个顺序遍历脚本列表。
+**改什么**：`priority`（本示例 `-10`，设成负值排在内置脚本之后）、回复量 `20` 与回复的属性换成你自己的。
+
+**怎么验证**：打完一场战斗，看勇士生命是否回复了设定量，且奖励结算仍正常。
+
+**注意**：`handler.hero` 是可修改对象，直接 `add` 即可。`priority` 越大越先执行；战前与战后各自按这个顺序遍历脚本列表。把 `priority` 设成负值可在内置脚本之后执行，避免在奖励结算前改动勇士状态。
 
 ## 注册在哪里
 

@@ -74,14 +74,15 @@ state.enemyContext.registerSpecialQueryEffect(effect);
 
 ## 示例：抱团
 
-「抱团」的规则是：范围内每有一个带同种特殊属性的怪物，自身攻击力就增加固定值。它只需要读周围、改自己的攻击，所以用常规查询实现（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
+「抱团」的规则是：范围内每有一个带同种特殊属性的怪物，自身攻击力就增加固定值。它只需要读周围、改自己的攻击，所以用常规查询实现（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）。
+
+**目标**：带「抱团」（示例 code 40）的怪物，范围内每多一个同种特殊属性的怪物，自身攻击加固定值。
+
+**改哪里**：另建文件写这个效果对象；`src/data/enemy/initialize.ts` 里用 `registerCommonQueryEffect` 注册（见文末「注册在哪里」）。
+
+**复制什么**：
 
 ```ts
-// [模板] 依赖导入
-import { ManhattanRange } from '@motajs/common';
-import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import { IEnemyCommonQueryEffect } from '@user/data-system';
-
 // [需改] 变量名：这是一个常规查询效果对象
 const effect: IEnemyCommonQueryEffect<IEnemyAttr, IHeroAttr> = {
     // [需改] priority：与光环共用一套优先级，越大越先执行
@@ -125,18 +126,27 @@ const effect: IEnemyCommonQueryEffect<IEnemyAttr, IHeroAttr> = {
 state.enemyContext.registerCommonQueryEffect(40, effect);
 ```
 
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：`priority`、触发用的 `special.code` 与注册时的 code（本示例 40）、`radius` / `atk` 的读法换成你自己的。
+
+**怎么验证**：给带该属性的怪物周围放上同类怪物，看它的攻击是否随同类数量按 `atk` 递增。
+
+**注意**：`apply` 里必须用 `query()` 取上下文（直接读 `handler.context` 不会被登记为「查询过」，见上文）。
+
 这个需求如果改用光环实现会麻烦得多：光环只能逐个目标施加减益或增益，很难先统计「范围内有多少个同类」再一次性加攻。查询可以在一次 `apply` 里完成扫描与累加。
 
 ## 示例：同化
 
-「同化」的规则是：把场上其他怪物的特殊属性搬到自己身上——自己还没有的属性直接照抄（先按位置索引从小到大排序，靠前位置的属性先被抄过来）；自己已经有的数值型属性则与场上其他怪物的同一属性加算叠加。它要增删、改写自己拥有的特殊属性，所以用特殊查询（示例用 `ctx.iterateEnemy()` 遍历全场；若要限定范围，把遍历换成 `ctx.scanRange`）：
+「同化」的规则是：把场上其他怪物的特殊属性搬到自己身上——自己还没有的属性直接照抄（先按位置索引从小到大排序，靠前位置的属性先被抄过来）；自己已经有的数值型属性则与场上其他怪物的同一属性加算叠加。它要增删、改写自己拥有的特殊属性，所以用特殊查询（示例用 `ctx.iterateEnemy()` 遍历全场；若要限定范围，把遍历换成 `ctx.scanRange`）。
+
+**目标**：带「同化」（示例 code 41）的怪物，把其他怪物的特殊属性搬到自己身上（没有的照抄，数值型的叠加）。
+
+**改哪里**：另建文件写这个效果对象；`src/data/enemy/initialize.ts` 里用 `registerSpecialQueryEffect` 注册（见文末「注册在哪里」）。
+
+**复制什么**：
 
 ```ts
-// [模板] 依赖导入
-import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import { IEnemySpecialQueryEffect } from '@user/data-system';
-import { ISpecial } from '@user/data-base';
-
 // [需改] 变量名：特殊查询效果对象
 const effect: IEnemySpecialQueryEffect<IEnemyAttr, IHeroAttr> = {
     priority: 15, // [需改] 优先级
@@ -202,17 +212,25 @@ const effect: IEnemySpecialQueryEffect<IEnemyAttr, IHeroAttr> = {
 state.enemyContext.registerSpecialQueryEffect(effect);
 ```
 
-`add` 负责处理「自己还没有的属性」，`modify` 负责处理「自己已经有、需要叠加数值」的属性。两者配合，就能把范围内怪物的特殊属性合并到自身。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：`priority`、`shouldQuery` 里的判断（本示例 `hasSpecial(41)`）、`add` / `modify` 的合并逻辑换成你自己的。
+
+**怎么验证**：给一只怪物挂上「同化」，让它周围有其他带特殊属性的怪物，看它是否照抄了别人的属性、数值型是否叠加。
+
+**注意**：`add` 与 `delete` 不要同时返回非空结果（见上文）；`add` 负责处理「自己还没有的属性」，`modify` 负责处理「自己已经有、需要叠加数值」的属性。两者配合，就能把范围内怪物的特殊属性合并到自身。
 
 ## 示例：号角
 
 「号角」的规则是：场上每有一只怪物，自身就获得一份加成。它不关心范围与同类，用常规查询遍历全场即可：
 
-```ts
-// [模板] 依赖导入
-import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import { IEnemyCommonQueryEffect } from '@user/data-system';
+**目标**：带「号角」（示例 code 42）的怪物，场上每有一只怪物就给自身加一份攻击。
 
+**改哪里**：另建文件写这个效果对象；`src/data/enemy/initialize.ts` 里用 `registerCommonQueryEffect` 注册（见文末「注册在哪里」）。
+
+**复制什么**：
+
+```ts
 // [需改] 变量名：同样是常规查询效果对象
 const effect: IEnemyCommonQueryEffect<IEnemyAttr, IHeroAttr> = {
     priority: 5, // [需改] 优先级
@@ -233,6 +251,14 @@ const effect: IEnemyCommonQueryEffect<IEnemyAttr, IHeroAttr> = {
 // [需改] 注册：示例自选 code 42
 state.enemyContext.registerCommonQueryEffect(42, effect);
 ```
+
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+**改什么**：`priority`、注册时的 code（本示例 42）、`special.value` 的用法换成你自己的。
+
+**怎么验证**：把怪物放到场上（场上有其他怪物），看它的攻击是否随全场怪物数量递增。
+
+**注意**：`apply` 里同样必须用 `query()` 取上下文。
 
 三个示例分别覆盖了「按范围统计同类」「合并特殊属性」「遍历全场计数」三种典型用法。
 

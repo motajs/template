@@ -79,11 +79,17 @@
 - **转换器**：只有 `shouldConvert` 与 `convert` 两个方法，负责「认领」特殊属性并构造视图。`shouldConvert` 通常照抄、只换一个 code；`convert` 里构造视图那一行要按你的视图构造函数改。
 - **视图**：真正描述效果的地方（范围、优先级、`apply` / `applySpecial`），这部分必须按你的需求写。
 
-下面两个示例用 `[模板]` 标出可原样照抄的行（多为依赖导入、接口签名、`shouldConvert`），用 `[需改]` 标出必须按需求改写的行（code、范围、优先级，以及 `apply` / `applySpecial` 里做的事）。
+下面两个示例用 `[模板]` 标出可原样照抄的行（多为接口签名、`shouldConvert`、范围对象的构建），用 `[需改]` 标出必须按需求改写的行（code、范围、优先级，以及 `apply` / `applySpecial` 里做的事）。
 
 ## 示例：基础光环（减少周围怪物的金币与经验）
 
-先从一个只改基础属性的例子开始：让范围内的怪物金币与经验下降。第一步是定义一条带参数的特殊属性（code 取一个未占用的值，这里用 30）：
+先从一个只改基础属性的例子开始：让范围内的怪物金币与经验下降。它用 code 30（示例自选的未占用号）定义一条带参数的特殊属性，再配一个转换器与视图。
+
+**目标**：站在带「削弱光环」怪物周围的怪物，金币与经验按参数下降。
+
+**改哪里**：`src/data/enemy/special.ts` 登记属性；另建文件写转换器与视图；`src/data/enemy/initialize.ts` 注册（见文末「注册在哪里」）。
+
+**复制什么**：先在 `special.ts` 登记属性——
 
 ```ts
 // [需改] 在 src/data/enemy/special.ts 里新增这条属性定义（编号换成你没用过的）
@@ -111,29 +117,11 @@ map.set(
 );
 ```
 
-然后写转换器与视图：
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+
+再写转换器与视图——
 
 ```ts
-// [模板] 依赖导入：@motajs/common 提供范围对象，其余来自用户包
-import {
-    IManhattanRangeParam,
-    IRange,
-    IRectRangeParam,
-    ITileLocator,
-    ManhattanRange,
-    RectRange
-} from '@motajs/common';
-import {
-    IAuraConverter,
-    IEnemyAuraView,
-    IEnemyHandler,
-    IEnemySpecialModifier,
-    IReadonlyEnemyHandler
-} from '@user/data-system';
-import { IReadonlyEnemy, ISpecial } from '@user/data-base';
-import { IEnemyAttr, IHeroAttr } from '@user/data-common';
-import { ISpecial30Value } from './special';
-
 // [模板] 两个范围对象各建一次复用
 const MANHATTAN_RANGE = new ManhattanRange();
 const RECT_RANGE = new RectRange();
@@ -227,17 +215,27 @@ export class WeakAura implements IEnemyAuraView<
 }
 ```
 
-注册：
+最后把注册行加进 `initializeEnemy`（`src/data/enemy/initialize.ts`，见文末「注册在哪里」）：
 
 ```ts
 state.enemyContext.registerAuraConverter(new WeakAuraConverter());
 ```
 
-`apply` 里用 `baseEnemy` 的原始值做百分比，因此多个光环不会把彼此的结果继续乘进去。
+**改什么**：编号（`30`）、类名、`priority`、范围参数与 `apply` 里改的字段（本示例 `moneyBuff` / `expBuff`）换成你自己的。
+
+**怎么验证**：把带该属性的怪物与另一只怪物放在范围内，看后者的金币 / 经验是否按参数下降。
+
+**注意**：`apply` 里用 `baseEnemy` 的原始值做百分比，因此多个光环不会把彼此的结果继续乘进去。只改基础属性就实现 `apply`；要改目标的特殊属性才需要 `applySpecial`。
 
 ## 示例：特殊光环（给周围怪物上光环）
 
-如果光环要给目标「加一条特殊属性」，而不是直接改基础属性，就把逻辑放进 `applySpecial`。下面的例子给范围内没有普通光环的怪物加上 code 23 的普通光环：
+如果光环要给目标「加一条特殊属性」，而不是直接改基础属性，就把逻辑放进 `applySpecial`。下面的例子给范围内没有普通光环的怪物加上 code 23 的普通光环。
+
+**目标**：站在带「传染光环」怪物附近的怪物，若自己没有普通光环，就获得一层 code 23 的普通光环。
+
+**改哪里**：`src/data/enemy/special.ts` 登记属性；另建文件写转换器与视图；`src/data/enemy/initialize.ts` 注册（见文末「注册在哪里」）。
+
+**复制什么**：先在 `special.ts` 登记属性——
 
 ```ts
 // [需改] 这条无参属性定义同样加进 src/data/enemy/special.ts
@@ -252,18 +250,11 @@ map.set(
 );
 ```
 
-```ts
-// [模板] 依赖导入
-import { FullRange, ITileLocator } from '@motajs/common';
-import {
-    IAuraConverter,
-    IEnemyAuraView,
-    IEnemySpecialModifier,
-    IReadonlyEnemyHandler
-} from '@user/data-system';
-import { IReadonlyEnemy, ISpecial } from '@user/data-base';
-import { IEnemyAttr, IHeroAttr } from '@user/data-common';
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
 
+再写转换器与视图——
+
+```ts
 // [需改] 类名：换成你的修饰器名；它负责「给目标增删改特殊属性」
 export class ChainAuraModifier implements IEnemySpecialModifier<IEnemyAttr> {
     // [模板] 构造函数存下来源属性
@@ -351,9 +342,11 @@ export class ChainAura implements IEnemyAuraView<IEnemyAttr, void, void> {
 }
 ```
 
-这里 `priority = 25` 高于内置特殊光环的 20，所以它在特殊光环之前执行；它新加上的普通光环（priority 10）会在之后的阶段生效。
+**改什么**：编号（`31`）、类名、`priority`、范围与 `add` 里设置的参数（本示例的 `range` / `hpBuff` 等光环字段）换成你自己的。
 
-不要把 `couldApplySpecial` 设为 `false` 后又指望 `applySpecial` 被调用：上下文只会对 `couldApplySpecial === true` 的光环调用它。
+**怎么验证**：把带该属性的怪物与一只没有普通光环的怪物放在范围内，看后者是否被加上了普通光环（属性提升）。
+
+**注意**：`priority = 25` 高于内置特殊光环的 20，所以它在特殊光环之前执行；它新加上的普通光环（priority 10）会在之后的阶段生效。不要把 `couldApplySpecial` 设为 `false` 后又指望 `applySpecial` 被调用：上下文只会对 `couldApplySpecial === true` 的光环调用它。
 
 ## 注册与全局光环
 
