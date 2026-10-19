@@ -11,8 +11,8 @@ Flag 里的每一项都对应一个**字段**（`IFlagCommonField`）。要读�
 
 系统接口因此分成两组，看名字就能分辨：
 
-- **返回或操作「字段」（对象）**的：`setField` / `getField` / `getOrInsert` / `getOrInsertComputed`——它们返回字段对象本身；
-- **直接操作「字段值」**的：`setFieldValue` / `addFieldValue` / `getFieldValue` / `getFieldValueDefaults`——只关心值，不暴露字段对象。
+- **返回或操作字段对象**的：`setField` / `getField` / `getOrInsert` / `getOrInsertComputed`——它们返回字段对象本身；
+- **直接操作字段值**的：`setFieldValue` / `addFieldValue` / `getFieldValue` / `getFieldValueDefaults`——只关心值，不暴露字段对象。
 
 怎么选？**只读写一次值**时用「值」那组更简单，不必多一步 `get()`；**要多次操作同一个字段、或要复用字段对象**（例如先拿到字段、再反复增减）时，用「字段对象」那组更省事。两者可以互相转换：
 

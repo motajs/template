@@ -568,3 +568,23 @@
 - 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0（新增预留仍为代码 span + HTML 注释，不产生链接）。
 - 边界：仅改 `docs/intermediate/enemy-*.md` 与本记录；未改 `config.ts` 与生产代码；未新增文件；未创建 `10-11-SUMMARY.md`，未改 `STATE.md` / `ROADMAP.md`（按本次派发要求）。
 
+---
+
+## 用户循环 · batch 11 记录（D-52 加粗边界修复）
+
+**范围：** 用户修订循环第 1 轮 batch 11（D-52 加粗边界）。按 CommonMark emphasis 边界（flanking）规则，`**…**` 的内容以标点结尾、且其后紧接普通文字时，不会被解析为加粗。
+
+### 逐条处置
+
+| # | 处置 | 改动文件 |
+| --- | --- | --- |
+| D-52 | `flags.md` 第 14 / 15 行的加粗短语以标点（`）`、`」`）结尾、其后又紧接`的`，触发 flanking 失败而不渲染；按 D-52 调整结构，去掉短语内的直角引号，使加粗内容以汉字结尾：`**返回或操作字段对象**的：`、`**直接操作字段值**的：`。 | `flags.md` |
+| 全量自检 | 对 `docs/intermediate/*.md` 全量扫描（排除围栏代码块、行内代码 span 与 HTML 注释），按 CommonMark flanking 规则逐条判定 `**…**` 能否渲染：修复后 **0 处真实失效**，且无残留未配对的 `**`。`enemy-specials.md` 的 `/** {code} - {name} */` 位于行内代码内、并非强调，确认为误报、未改动。 | —— |
+
+### 校验
+
+- 结构门禁：`flags.md` CRLF、单 H1（`STRUCT-OK`）。
+- 格式门禁：`node node_modules/prettier/bin/prettier.cjs --write docs/intermediate/flags.md`（D-45）→ `unchanged`。
+- 构建门禁：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` → **green**，输出 `build complete`，dead link = 0。
+- 边界：仅改 `docs/intermediate/flags.md` 与本记录；未改 `config.ts` 与生产代码；未新增文件；未创建 `10-11-SUMMARY.md`，未改 `STATE.md` / `ROADMAP.md`（按本次派发要求）。
+
