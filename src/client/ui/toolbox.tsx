@@ -4,8 +4,8 @@ import { Font } from '@motajs/render';
 import { Scroll, TextContent } from '@user/client-base';
 import { IHeroItemState, IHeroState } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
-import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
-import { IUIPropsBase } from './types';
+import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from './constant';
+import { IUIPropsBase } from '@user/client-modules';
 
 export interface ToolBoxProps extends IUIPropsBase {
     /** 勇士状态对象 */

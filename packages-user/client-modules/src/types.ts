@@ -77,3 +77,8 @@ export interface IClientCore extends IClientSystem {
         id: string
     ): Readonly<IClientPlugin<T>> | null;
 }
+
+export interface IClientCoreExtended {
+    /** 渲染端主对象 */
+    readonly state: IClientCore;
+}

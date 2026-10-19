@@ -1,7 +1,7 @@
 import { WebLoadStarter } from '@motajs/loader';
 import { createClientCore } from './client/entry';
 import { IClientCore } from '@user/client-modules';
-import { LoadSceneUI } from '../packages-user/client-modules/src/ui/load';
+import { LoadSceneUI } from './client/ui/load';
 
 declare global {
     interface Window {

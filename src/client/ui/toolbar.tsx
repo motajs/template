@@ -11,22 +11,20 @@ import {
     StepForward,
     ViewMapIcon
 } from '@user/client-base';
-import { getVitualKeyOnce } from '@motajs/legacy-ui';
 import { gameKey, generateKeyboardEvent } from '@motajs/system';
-import { transitioned } from '../render/use';
 import { linear } from 'mutate-animate';
 import { KeyCode } from '@motajs/client-base';
-import { IClientBaseExtended, Progress } from '@user/client-base';
+import { Progress } from '@user/client-base';
 import { generateBinary } from '@motajs/legacy-common';
 import { SetupComponentOptions } from '@motajs/system';
 import { saveSave, saveLoad } from './save';
-import { mainUIController } from './controller';
-import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '../shared';
+import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from './constant';
 import { openReplay, openSettings } from './settings';
 import { openViewMap } from './viewmap';
 import { DefaultProps } from '@motajs/render-vue';
+import { IClientCoreExtended, transitioned } from '@user/client-modules';
 
-interface ToolbarProps extends DefaultProps, IClientBaseExtended {
+interface ToolbarProps extends DefaultProps, IClientCoreExtended {
     loc?: ElementLocator;
 }
 
@@ -90,10 +88,10 @@ export const PlayingToolbar = defineComponent<
     const tool = () => core.openToolbox(true);
     const fly = () => core.useFly(true);
     const save = () => {
-        saveSave(mainUIController, FULL_LOC);
+        saveSave(props.state.mainUIController, FULL_LOC);
     };
     const load = () => {
-        saveLoad(mainUIController, FULL_LOC);
+        saveLoad(props.state.mainUIController, FULL_LOC);
     };
     const equip = () => core.openEquipbox(true);
     const shop = () => core.openQuickShop(true);
@@ -111,18 +109,18 @@ export const PlayingToolbar = defineComponent<
     const redo = () => core.doSL('autoSave', 'reload');
     const numpad = () => emit('numpad');
     const view = () => {
-        openViewMap(mainUIController, FULL_LOC);
+        openViewMap(props.state.mainUIController, FULL_LOC);
     };
     const replay = () => {
         const loc = CENTER_LOC.slice() as ElementLocator;
         loc[2] = POP_BOX_WIDTH;
-        openReplay(mainUIController, loc);
+        openReplay(props.state.mainUIController, loc);
     };
     const settings = () => {
         const loc = CENTER_LOC.slice() as ElementLocator;
         loc[2] = POP_BOX_WIDTH;
         loc[3] = MAIN_HEIGHT - 72;
-        openSettings(mainUIController, loc);
+        openSettings(props.state.mainUIController, loc);
     };
 
     return () => (
@@ -191,7 +189,7 @@ export const ReplayingToolbar = defineComponent<ReplayingProps>(props => {
     const speedUp = () => core.speedUpReplay();
     const book = () => core.openBook(true);
     const save = () => {
-        saveSave(mainUIController, FULL_LOC);
+        saveSave(props.state.mainUIController, FULL_LOC);
     };
     const view = () => {
         if (core.isPlaying() && !core.isMoving() && !core.status.lockControl) {

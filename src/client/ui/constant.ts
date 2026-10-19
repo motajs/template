@@ -2,22 +2,20 @@ import { ElementLocator, Font } from '@motajs/render';
 
 // 本文件为 UI 配置文件，你可以修改下面的每个常量来控制 UI 的显示参数，每个常量都有注释说明
 
-//#region 地图
+//#region 地图配置
 
-/** 每个格子的默认宽度，现阶段用处不大 */
+/** 每个格子的宽度 */
 export const CELL_WIDTH = 32;
-/** 每个格子的默认高度，现阶段用处不大 */
+/** 每个格子的高度 */
 export const CELL_HEIGHT = 32;
-/** 每个格子的宽高 */
-export const CELL_SIZE = 32;
 /** 地图格子宽度，此处仅影响画面，不影响游戏内逻辑，游戏内逻辑地图大小请在 core.js 中修改 */
 export const MAP_BLOCK_WIDTH = 13;
 /** 地图格子高度，此处仅影响画面，不影响游戏内逻辑，游戏内逻辑地图大小请在 core.js 中修改 */
 export const MAP_BLOCK_HEIGHT = 13;
 /** 地图像素宽度 */
-export const MAP_WIDTH = CELL_SIZE * MAP_BLOCK_WIDTH;
+export const MAP_WIDTH = CELL_WIDTH * MAP_BLOCK_WIDTH;
 /** 地图像素高度 */
-export const MAP_HEIGHT = CELL_SIZE * MAP_BLOCK_HEIGHT;
+export const MAP_HEIGHT = CELL_HEIGHT * MAP_BLOCK_HEIGHT;
 /** 地图宽度的一半 */
 export const HALF_MAP_WIDTH = MAP_WIDTH / 2;
 /** 地图高度的一半 */
@@ -37,7 +35,7 @@ export const DOOR_ANIMATE_INTERVAL = 50;
 
 //#endregion
 
-//#region 状态栏
+//#region 状态栏配置
 
 /** 状态栏像素宽度 */
 export const STATUS_BAR_WIDTH = 180;
@@ -84,74 +82,5 @@ export const CENTER_LOC: ElementLocator = [
 export const POP_BOX_WIDTH = MAP_WIDTH / 2;
 /** 默认字体 */
 export const DEFAULT_FONT = new Font('Verdana', 16);
-
-//#endregion
-
-//#region 加载界面
-
-/** 加载界面的任务进度条半径 */
-export const LOAD_TASK_RADIUS = Math.min(MAIN_WIDTH, MAIN_HEIGHT) / 6;
-/** 加载界面的字节进度条纵轴位置 */
-export const LOAD_BYTE_HEIGHT = MAIN_HEIGHT / 2 + MAIN_HEIGHT / 4;
-/** 加载界面任务进度条的纵轴位置 */
-export const LOAD_TASK_CENTER_HEIGHT = MAIN_HEIGHT / 2 - MAIN_HEIGHT / 8;
-/** 加载界面字节进度条的长度 */
-export const LOAD_BYTE_LENGTH = MAIN_WIDTH - MAIN_WIDTH / 12;
-/** 加载界面任务进度条的粗细 */
-export const LOAD_TASK_LINE_WIDTH = 6;
-/** 加载界面字节进度条的粗细 */
-export const LOAD_BYTE_LINE_WIDTH = 6;
-/** 已加载部分进度条的颜色 */
-export const LOAD_LOADED_COLOR = '#57ff78';
-/** 未加载部分进度条的颜色 */
-export const LOAD_UNLOADED_COLOR = '#ccc';
-/** 加载界面的文字颜色 */
-export const LOAD_FONT_COLOR = '#fff';
-
-//#endregion
-
-//#region 存档界面
-
-/** 存档缩略图尺寸 */
-export const SAVE_ITEM_SIZE = MAP_BLOCK_WIDTH * 10;
-/** 单个存档上方显示第几号存档的高度 */
-export const SAVE_ITEM_TOP = 24;
-/** 单个存档下方显示这个存档信息的高度 */
-export const SAVE_ITEM_DOWN = 24;
-/** 单个存档高度，包括存档下方的信息 */
-export const SAVE_ITEM_HEIGHT = SAVE_ITEM_SIZE + SAVE_ITEM_TOP + SAVE_ITEM_DOWN;
-/** 存档间距 */
-export const SAVE_INTERVAL = 20;
-/** 存档下巴高度，即下方显示页码和返回按钮的高度 */
-export const SAVE_DOWN_PAD = 30;
-/** 存档页码数，调高并不会影响性能，但是如果玩家存档太多的话会导致存档体积很大 */
-export const SAVE_PAGES = 1000;
-
-//#endregion
-
-//#region 标题界面
-
-/** 标题图 */
-export const TITLE_BACKGROUND_IMAGE = 'bg.jpg';
-
-/** 标题文字中心横坐标 */
-export const TITLE_X = HALF_WIDTH;
-/** 标题文字中心纵坐标 */
-export const TITLE_Y = 100;
-/** 标题文字的填充颜色 */
-export const TITLE_FILL = 'white';
-/** 标题文字的描边颜色 */
-export const TITLE_STROKE = 'black';
-/** 标题文字的描边宽度 */
-export const TITLE_STROKE_WIDTH = 2;
-
-/** 标题界面按钮宽度，如果文字被裁剪可以考虑扩大此值 */
-export const BUTTONS_WIDTH = 160;
-/** 标题界面按钮高度，如果文字被裁剪可以考虑扩大此值 */
-export const BUTTONS_HEIGHT = 200;
-/** 标题界面按钮中心横坐标 */
-export const BUTTONS_X = HALF_WIDTH;
-/** 标题界面按钮左上角纵坐标 */
-export const BUTTONS_Y = MAIN_HEIGHT - BUTTONS_HEIGHT;
 
 //#endregion

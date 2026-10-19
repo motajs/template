@@ -1,26 +1,33 @@
 import { DefaultProps } from '@motajs/render-vue';
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { defineComponent } from 'vue';
-import {
-    FULL_LOC,
-    LOAD_BYTE_HEIGHT,
-    LOAD_BYTE_LENGTH,
-    LOAD_BYTE_LINE_WIDTH,
-    LOAD_FONT_COLOR,
-    LOAD_LOADED_COLOR,
-    LOAD_TASK_CENTER_HEIGHT,
-    LOAD_TASK_LINE_WIDTH,
-    LOAD_TASK_RADIUS,
-    LOAD_UNLOADED_COLOR,
-    MAIN_WIDTH
-} from '../shared';
+import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from './constant';
 import { ElementLocator, Font, MotaOffscreenCanvas2D } from '@motajs/render';
-import { transitioned } from '../render/use';
+import { transitioned } from '../../../packages-user/client-modules/src/render/use';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { clamp } from 'lodash-es';
 import { sleep } from '@motajs/common';
 import { GameTitleUI } from './title';
-import { IUIPropsBase } from './types';
+import { IUIPropsBase } from '@user/client-modules';
+
+/** 加载界面的任务进度条半径 */
+export const LOAD_TASK_RADIUS = Math.min(MAIN_WIDTH, MAIN_HEIGHT) / 6;
+/** 加载界面的字节进度条纵轴位置 */
+export const LOAD_BYTE_HEIGHT = MAIN_HEIGHT / 2 + MAIN_HEIGHT / 4;
+/** 加载界面任务进度条的纵轴位置 */
+export const LOAD_TASK_CENTER_HEIGHT = MAIN_HEIGHT / 2 - MAIN_HEIGHT / 8;
+/** 加载界面字节进度条的长度 */
+export const LOAD_BYTE_LENGTH = MAIN_WIDTH - MAIN_WIDTH / 12;
+/** 加载界面任务进度条的粗细 */
+export const LOAD_TASK_LINE_WIDTH = 6;
+/** 加载界面字节进度条的粗细 */
+export const LOAD_BYTE_LINE_WIDTH = 6;
+/** 已加载部分进度条的颜色 */
+export const LOAD_LOADED_COLOR = '#57ff78';
+/** 未加载部分进度条的颜色 */
+export const LOAD_UNLOADED_COLOR = '#ccc';
+/** 加载界面的文字颜色 */
+export const LOAD_FONT_COLOR = '#fff';
 
 export interface ILoadProps extends IUIPropsBase, DefaultProps {}
 

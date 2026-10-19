@@ -1,9 +1,4 @@
-import {
-    Font,
-    IActionEvent,
-    MotaOffscreenCanvas2D,
-    CustomRenderItem
-} from '@motajs/render';
+import { Font, MotaOffscreenCanvas2D, CustomRenderItem } from '@motajs/render';
 // import { WeatherController } from '../weather';
 import { defineComponent, ref } from 'vue';
 import { Textbox, TextboxProps, Tip } from '@user/client-base';
@@ -17,13 +12,10 @@ import {
     RIGHT_STATUS_POS,
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
-} from '../shared';
+} from './constant';
 import { LeftStatusBar, RightStatusBar } from './statusBar';
-import { state } from '@user/data-state';
-import { mainUIController } from './controller';
 import { isNil } from 'lodash-es';
-import { using } from '../render/renderer';
-import { IUIPropsBase } from './types';
+import { IUIPropsBase, using } from '@user/client-modules';
 
 interface MainSceneProps extends IUIPropsBase {}
 
@@ -98,35 +90,6 @@ const MainScene = defineComponent<MainSceneProps>(props => {
         });
     };
 
-    //#region 交互监听
-
-    /**
-     * 对于 registerAction 的 fallback
-     */
-    const clickMap = (ev: IActionEvent) => {
-        const bx = Math.floor(ev.offsetX / 32);
-        const by = Math.floor(ev.offsetY / 32);
-        core.doRegisteredAction('onup', bx, by, ev.offsetX, ev.offsetY);
-    };
-
-    /**
-     * 对于 registerAction 的 fallback
-     */
-    const downMap = (ev: IActionEvent) => {
-        const bx = Math.floor(ev.offsetX / 32);
-        const by = Math.floor(ev.offsetY / 32);
-        core.doRegisteredAction('ondown', bx, by, ev.offsetX, ev.offsetY);
-    };
-
-    /**
-     * 对于 registerAction 的 fallback
-     */
-    const moveMap = (ev: IActionEvent) => {
-        const bx = Math.floor(ev.offsetX / 32);
-        const by = Math.floor(ev.offsetY / 32);
-        core.doRegisteredAction('onmove', bx, by, ev.offsetX, ev.offsetY);
-    };
-
     return () => (
         <container
             id="main-scene"
@@ -148,9 +111,6 @@ const MainScene = defineComponent<MainSceneProps>(props => {
                 id="map-draw"
                 loc={[STATUS_BAR_WIDTH, 0, MAP_WIDTH, MAP_HEIGHT]}
                 zIndex={10}
-                onClick={clickMap}
-                onDown={downMap}
-                onMove={moveMap}
                 noanti
             >
                 <map-render
@@ -188,10 +148,10 @@ const MainScene = defineComponent<MainSceneProps>(props => {
             ></RightStatusBar>
             <container
                 loc={[0, 0, MAIN_WIDTH, MAIN_HEIGHT]}
-                hidden={!mainUIController.active.value}
+                hidden={!props.state.mainUIController.active.value}
                 zIndex={200}
             >
-                {mainUIController.render()}
+                {props.state.mainUIController.render()}
             </container>
             <g-rect
                 loc={[0, 0, MAIN_WIDTH, MAIN_HEIGHT]}

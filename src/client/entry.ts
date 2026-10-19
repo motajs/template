@@ -11,7 +11,7 @@ import {
     RENDER_WIDTH,
     TILESET_RESERVE,
     TILESET_UNIT
-} from '../constant';
+} from './constant';
 import { createCoreStateConfig } from '../data/entry';
 import { MainClientPlugin } from './initialize';
 import { clientPlugins } from './plugin';

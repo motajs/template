@@ -1,38 +1,7 @@
-import { Font } from '@motajs/render';
-import { defineComponent } from 'vue';
-import { DEFAULT_FONT, MAIN_HEIGHT, MAIN_WIDTH } from '../shared';
 import { createElements } from '@user/client-base';
-import { mainRenderer } from './renderer';
-import { createUI } from '../ui';
-import { createAction } from './action';
-import { sceneController } from './scene';
-import { createWeather } from './weather';
-import { createApp } from './renderer';
-import { LoadSceneUI } from '../ui/load';
-
-export function createGameRenderer() {
-    const App = defineComponent(_props => {
-        return () => (
-            <container width={MAIN_WIDTH} height={MAIN_HEIGHT}>
-                {sceneController.render()}
-            </container>
-        );
-    });
-
-    mainRenderer.hide();
-    createApp(App).mount(mainRenderer);
-
-    sceneController.open(LoadSceneUI, {});
-    mainRenderer.show();
-}
 
 export function createRender() {
     createElements();
-    createUI();
-    createAction();
-    createWeather();
-
-    Font.setDefaults(DEFAULT_FONT);
 }
 
 export * from './fx';

@@ -1,37 +1,49 @@
 import { DefaultProps } from '@motajs/render-vue';
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { defineComponent, nextTick, onMounted, ref } from 'vue';
-import {
-    BUTTONS_HEIGHT,
-    BUTTONS_WIDTH,
-    BUTTONS_X,
-    BUTTONS_Y,
-    HALF_HEIGHT,
-    HALF_WIDTH,
-    MAIN_HEIGHT,
-    MAIN_WIDTH,
-    TITLE_BACKGROUND_IMAGE,
-    TITLE_FILL,
-    TITLE_STROKE,
-    TITLE_STROKE_WIDTH,
-    TITLE_X,
-    TITLE_Y
-} from '../shared';
+import { HALF_HEIGHT, HALF_WIDTH, MAIN_HEIGHT, MAIN_WIDTH } from './constant';
 import { ElementLocator, Font } from '@motajs/render';
 import {
-    ITransitionedController,
-    transitioned,
-    transitionedColor,
-    useKey
-} from '../render/use';
-import { ExitFullscreen, Fullscreen, SoundVolume } from '@user/client-base';
-import { mainSetting, triggerFullscreen } from '@motajs/legacy-ui';
+    ExitFullscreen,
+    Fullscreen,
+    SoundVolume,
+    triggerFullscreen
+} from '@user/client-base';
 import { saveLoad } from './save';
 import { MainSceneUI } from './main';
 import { adjustCover } from '@user/client-base';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { sleep } from '@motajs/common';
-import { IUIPropsBase } from './types';
+import {
+    ITransitionedController,
+    IUIPropsBase,
+    transitioned,
+    transitionedColor,
+    useKey
+} from '@user/client-modules';
+
+/** 标题图 */
+export const TITLE_BACKGROUND_IMAGE = 'bg.jpg';
+
+/** 标题文字中心横坐标 */
+export const TITLE_X = HALF_WIDTH;
+/** 标题文字中心纵坐标 */
+export const TITLE_Y = 100;
+/** 标题文字的填充颜色 */
+export const TITLE_FILL = 'white';
+/** 标题文字的描边颜色 */
+export const TITLE_STROKE = 'black';
+/** 标题文字的描边宽度 */
+export const TITLE_STROKE_WIDTH = 2;
+
+/** 标题界面按钮宽度，如果文字被裁剪可以考虑扩大此值 */
+export const BUTTONS_WIDTH = 160;
+/** 标题界面按钮高度，如果文字被裁剪可以考虑扩大此值 */
+export const BUTTONS_HEIGHT = 200;
+/** 标题界面按钮中心横坐标 */
+export const BUTTONS_X = HALF_WIDTH;
+/** 标题界面按钮左上角纵坐标 */
+export const BUTTONS_Y = MAIN_HEIGHT - BUTTONS_HEIGHT;
 
 const enum TitleButton {
     StartGame,

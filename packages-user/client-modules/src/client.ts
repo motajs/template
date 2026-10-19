@@ -42,7 +42,7 @@ import {
 import { IRendererUsing, RendererUsing } from '@motajs/render-vue';
 import { IUIController, UIController } from '@motajs/system';
 import { createApp } from './render';
-import { LoadSceneUI } from './ui/load';
+import { LoadSceneUI } from '../../../src/client/ui/load';
 import { createUIPropsBase } from './ui/func';
 
 export class ClientCore extends CoreState implements IClientCore {

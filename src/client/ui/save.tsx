@@ -1,11 +1,6 @@
 import { ElementLocator, IWheelEvent, Font } from '@motajs/render';
 import { DefaultProps } from '@motajs/render-vue';
-import {
-    GameUI,
-    IUIController,
-    SetupComponentOptions,
-    IUIDefaultPropsBase
-} from '@motajs/system';
+import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 import {
     defineComponent,
     ref,
@@ -19,32 +14,35 @@ import {
     PageExpose,
     Thumbnail,
     TipStore,
-    IGameUIPropsBase
+    IGameUIPropsBase,
+    MAP_BLOCK_WIDTH
 } from '@user/client-base';
-import { useKey } from '../render/use';
-import {
-    HALF_HEIGHT,
-    HALF_WIDTH,
-    MAP_WIDTH,
-    POP_BOX_WIDTH,
-    SAVE_DOWN_PAD,
-    SAVE_INTERVAL,
-    SAVE_ITEM_DOWN,
-    SAVE_ITEM_HEIGHT,
-    SAVE_ITEM_SIZE,
-    SAVE_ITEM_TOP,
-    SAVE_PAGES
-} from '../shared';
+import { HALF_HEIGHT, HALF_WIDTH, MAP_WIDTH, POP_BOX_WIDTH } from './constant';
 import { adjustGrid, IGridLayoutData } from '@user/client-base';
-import { getSave, SaveData } from '../render/utils';
+import { getSave, IUIPropsBase, SaveData, useKey } from '@user/client-modules';
 
-export const enum SaveMode {
+/** 存档缩略图尺寸 */
+export const SAVE_ITEM_SIZE = MAP_BLOCK_WIDTH * 10;
+/** 单个存档上方显示第几号存档的高度 */
+export const SAVE_ITEM_TOP = 24;
+/** 单个存档下方显示这个存档信息的高度 */
+export const SAVE_ITEM_DOWN = 24;
+/** 单个存档高度，包括存档下方的信息 */
+export const SAVE_ITEM_HEIGHT = SAVE_ITEM_SIZE + SAVE_ITEM_TOP + SAVE_ITEM_DOWN;
+/** 存档间距 */
+export const SAVE_INTERVAL = 20;
+/** 存档下巴高度，即下方显示页码和返回按钮的高度 */
+export const SAVE_DOWN_PAD = 30;
+/** 存档页码数，调高并不会影响性能，但是如果玩家存档太多的话会导致存档体积很大 */
+export const SAVE_PAGES = 1000;
+
+const enum SaveMode {
     Save,
     Load,
     Other
 }
 
-export interface SaveProps extends IUIDefaultPropsBase, DefaultProps {
+export interface SaveProps extends IUIPropsBase, DefaultProps {
     loc: ElementLocator;
     mode: SaveMode;
 }

@@ -7,17 +7,17 @@ import {
     reactive,
     shallowReactive
 } from 'vue';
-import { TextContent, IClientBaseExtended } from '@user/client-base';
+import { TextContent } from '@user/client-base';
 import { ElementLocator, Font, ITexture } from '@motajs/render';
 import { MixedToolbar, ReplayingStatus } from './toolbar';
 import { openViewMap } from './viewmap';
-import { mainUIController } from './controller';
 import {
     MAIN_HEIGHT,
     MAIN_WIDTH,
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
-} from '../shared';
+} from './constant';
+import { IUIPropsBase } from '@user/client-modules';
 import { DefaultProps } from '@motajs/render-vue';
 
 export interface ILeftHeroStatus {
@@ -99,7 +99,7 @@ interface KeyLikeInfo {
     readonly items: KeyLikeItem[];
 }
 
-interface StatusBarProps extends DefaultProps, IClientBaseExtended {
+interface StatusBarProps extends IUIPropsBase, DefaultProps {
     loc: ElementLocator;
     hidden: boolean;
 }
@@ -446,7 +446,7 @@ export const LeftStatusBar = defineComponent<StatusBarProps>(p => {
      * 点击楼层名打开浏览地图
      */
     const viewMap = () => {
-        openViewMap(mainUIController, [0, 0, MAIN_WIDTH, MAIN_HEIGHT]);
+        openViewMap(p.state.mainUIController, [0, 0, MAIN_WIDTH, MAIN_HEIGHT]);
     };
 
     return () => (

@@ -5,6 +5,7 @@ import {
     UIPropsBaseCreator
 } from '@motajs/system';
 import { IClientBase, IGameUIPropsBase } from '@user/client-base';
+import { markRaw } from 'vue';
 
 /**
  * 创建游戏 UI 基础参数的构造函数
@@ -20,7 +21,7 @@ export function createUIPropsBase(
         return {
             instance,
             controller,
-            state
+            state: markRaw(state)
         };
     };
 }

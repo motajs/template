@@ -1,5 +1,5 @@
 import { CoreState, ICoreState, ICoreStateConfig } from '@user/data-state';
-import { CORE_URL, HERO_FACE } from '../constant';
+import { CORE_URL, HERO_FACE } from './constant';
 import { ILoadTaskStarter } from '@motajs/loader';
 import { MainDataPlugin } from './initialize';
 import { dataPlugins } from './plugin';
