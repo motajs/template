@@ -1,51 +1,60 @@
 import { IClientSystem } from '@user/client-system';
-import { ICoreStateConfig, PluginStatus } from '@user/data-state';
+import {
+    ICoreStateConfig,
+    IDataPlugin,
+    IDataPluginDefine,
+    IPluginDefine,
+    IPluginBase
+} from '@user/data-state';
 
 //#region 插件系统
 
-export interface IClientPlugin<T extends IClientPluginDefine> {
-    /** 插件的当前状态 */
-    status: PluginStatus;
-    /** 插件内容 */
-    plugin: T;
-}
+export interface IClientPlugin<
+    T extends IClientPluginDefine = IClientPluginDefine
+> extends IPluginDefine<T> {}
 
-export interface IClientPluginDefine {
-    /** 插件标识符 */
-    readonly id: string;
-    /** 插件所依赖的其他插件 id */
-    readonly dependencies: readonly string[];
+export interface IClientPluginDefine extends IPluginBase {
+    /** 插件所依赖的其他数据端插件 id，对于渲染端来说，可以依赖任何数据端插件 */
+    readonly dataDeps: readonly string[];
+    /** 插件所依赖的其他渲染端插件 id。依赖插件不允许循环依赖，否则会抛出错误，且所有在环上的插件都不会初始化 */
+    readonly clientDeps: readonly string[];
 
     /**
      * 插件同步初始化，在渲染端主对象创建完毕，初始化之前时调用
      * @param state 渲染端主对象
-     * @param dependencies 此插件的依赖插件对象
+     * @param dataDeps 此插件的数据端依赖插件对象
+     * @param clientDeps 此插件的渲染端依赖插件对象
      */
     awake(
         state: IClientCore,
-        dependencies: IClientPlugin<IClientPluginDefine>[]
+        dataDeps: IDataPlugin<IDataPluginDefine>[],
+        clientDeps: IClientPlugin<IClientPluginDefine>[]
     ): void;
 
     /**
      * 插件异步初始化，在主对象创建完毕，初始化时，加载开始前调用。
      * 此方法具有阻塞效果，如果返回值迟迟不兑现，那么会导致依赖其的插件不会开始异步初始化
      * @param state 渲染端主对象
-     * @param dependencies 此插件的依赖插件对象
+     * @param dataDeps 此插件的数据端依赖插件对象
+     * @param clientDeps 此插件的渲染端依赖插件对象
      */
     initialize(
         state: IClientCore,
-        dependencies: IClientPlugin<IClientPluginDefine>[]
+        dataDeps: IDataPlugin<IDataPluginDefine>[],
+        clientDeps: IClientPlugin<IClientPluginDefine>[]
     ): Promise<void>;
 
     /**
      * 当主对象加载完毕后调用，可以用于依赖加载内容的初始化。
      * 此方法具有阻塞效果，如果返回值迟迟不兑现，那么会导致依赖其的插件不会开始加载初始化
      * @param state 渲染端主对象
-     * @param dependencies 此插件的依赖插件对象
+     * @param dataDeps 此插件的数据端依赖插件对象
+     * @param clientDeps 此插件的渲染端依赖插件对象
      */
     afterLoad(
         state: IClientCore,
-        dependencies: IClientPlugin<IClientPluginDefine>[]
+        dataDeps: IDataPlugin<IDataPluginDefine>[],
+        clientDeps: IClientPlugin<IClientPluginDefine>[]
     ): Promise<void>;
 }
 

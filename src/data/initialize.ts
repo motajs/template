@@ -16,7 +16,7 @@ import { initializeHooks } from './hook';
 
 export class MainDataPlugin implements IDataMainPlugin {
     readonly id: string = 'main-data-plugin';
-    readonly dependencies: string[] = [];
+    readonly dataDeps: string[] = [];
 
     weak!: ICombatWeakHandler;
 

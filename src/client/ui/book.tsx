@@ -7,7 +7,7 @@ import { IEnemyView } from '@user/data-system';
 import { IReadonlyEnemy } from '@user/data-base';
 import { IEnemyAttr } from '@user/data-common';
 import { BookDetailUI } from './bookDetail';
-import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from './constant';
+import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '@/client';
 import { IUIPropsBase } from '@user/client-modules';
 
 export interface BookProps extends IUIPropsBase {}

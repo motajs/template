@@ -6,7 +6,7 @@ import { Scroll, TextContent } from '@user/client-base';
 import { IEnemyCritical, IEnemyView, EnemyView } from '@user/data-system';
 import { IEnemy, IReadonlyEnemy } from '@user/data-base';
 import { IEnemyAttr } from '@user/data-common';
-import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from './constant';
+import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '@/client';
 import { IUIPropsBase } from '@user/client-modules';
 
 /** 详情当前展示的属性模式 */

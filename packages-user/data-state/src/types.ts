@@ -18,49 +18,52 @@ export const enum PluginStatus {
     Loaded
 }
 
-export interface IDataPlugin<T extends IDataPluginDefine> {
+export interface IPluginDefine<T> {
     /** 插件的当前状态 */
     status: PluginStatus;
     /** 插件内容 */
     plugin: T;
 }
 
-export interface IDataPluginDefine {
+export interface IDataPlugin<
+    T extends IDataPluginDefine = IDataPluginDefine
+> extends IPluginDefine<T> {}
+
+export interface IPluginBase {
     /** 插件标识符 */
     readonly id: string;
-    /** 插件所依赖的其他插件 id。依赖插件不允许循环依赖，否则会抛出错误，且所有在环上的插件都不会初始化 */
-    readonly dependencies: string[];
+    /** 插件所依赖的其他数据端插件 id。依赖插件不允许循环依赖，否则会抛出错误，且所有在环上的插件都不会初始化 */
+    readonly dataDeps: readonly string[];
+}
 
+export interface IDataPluginDefine extends IPluginBase {
     /**
      * 插件同步初始化，在数据端主对象创建完毕，初始化之前时调用
      * @param state 数据端主对象
-     * @param dependencies 此插件的依赖插件对象
+     * @param dependencies 此插件的数据端依赖插件对象
      */
-    awake(
-        state: ICoreState,
-        dependencies: IDataPlugin<IDataPluginDefine>[]
-    ): void;
+    awake(state: ICoreState, dependencies: Readonly<IDataPlugin>[]): void;
 
     /**
      * 插件异步初始化，在主对象创建完毕，初始化时，加载开始前调用。
      * 此方法具有阻塞效果，如果返回值迟迟不兑现，那么会导致依赖其的插件不会开始异步初始化，游戏加载也不会开始
      * @param state 数据端主对象
-     * @param dependencies 此插件的依赖插件对象
+     * @param dependencies 此插件的数据端依赖插件对象
      */
     initialize(
         state: ICoreState,
-        dependencies: IDataPlugin<IDataPluginDefine>[]
+        dependencies: Readonly<IDataPlugin>[]
     ): Promise<void>;
 
     /**
      * 当主对象加载完毕后调用，可以用于依赖加载内容的初始化。
      * 此方法具有阻塞效果，如果返回值迟迟不兑现，那么会导致依赖其的插件不会开始加载初始化，游戏也不会开始
      * @param state 数据端主对象
-     * @param dependencies 此插件的依赖插件对象
+     * @param dependencies 此插件的数据端依赖插件对象
      */
     afterLoad(
         state: ICoreState,
-        dependencies: IDataPlugin<IDataPluginDefine>[]
+        dependencies: Readonly<IDataPlugin>[]
     ): Promise<void>;
 }
 

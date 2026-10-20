@@ -16,7 +16,7 @@ import {
     MAIN_WIDTH,
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
-} from './constant';
+} from '@/client';
 import { IUIPropsBase } from '@user/client-modules';
 import { DefaultProps } from '@motajs/render-vue';
 

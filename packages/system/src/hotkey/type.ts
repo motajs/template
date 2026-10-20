@@ -1,3 +1,4 @@
+import { IExcitation } from '@motajs/animate';
 import { KeyCode } from './keyCodes';
 
 export const enum HotkeyEmitType {
@@ -5,6 +6,13 @@ export const enum HotkeyEmitType {
     KeyDown,
     /** 由按键抬起触发 */
     KeyUp
+}
+
+export const enum HotkeyEmitMode {
+    /** 只会触发一次 */
+    Once,
+    /** 按下后依据激励源进行触发 */
+    Excited
 }
 
 export interface IHotkeyEmitContext {
@@ -62,6 +70,17 @@ export interface IHotkeyCommand {
      * 迭代所有的按键组合
      */
     iterateKeyCombinations(): Iterable<[index: number, key: KeyCode[]][]>;
+
+    /**
+     * 按下时只触发一次，不会连续触发
+     */
+    once(): void;
+
+    /**
+     * 当按下后立刻进行一次触发，之后在松开前，会按照激励源的激励触发
+     * @param excitation 触发激励源
+     */
+    continuous(excitation: IExcitation<unknown>): void;
 }
 
 export interface IHotkeySystem {

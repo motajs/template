@@ -1,14 +1,13 @@
 import { DefaultProps } from '@motajs/render-vue';
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { defineComponent } from 'vue';
-import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from './constant';
+import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '@/client';
 import { ElementLocator, Font, MotaOffscreenCanvas2D } from '@motajs/render';
-import { transitioned } from '../../../packages-user/client-modules/src/render/use';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { clamp } from 'lodash-es';
 import { sleep } from '@motajs/common';
 import { GameTitleUI } from './title';
-import { IUIPropsBase } from '@user/client-modules';
+import { IUIPropsBase, transitioned } from '@user/client-modules';
 
 /** 加载界面的任务进度条半径 */
 export const LOAD_TASK_RADIUS = Math.min(MAIN_WIDTH, MAIN_HEIGHT) / 6;

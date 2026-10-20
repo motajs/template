@@ -5,7 +5,7 @@ import {
 } from '@motajs/system';
 import { DefaultProps } from '@motajs/render-vue';
 import { defineComponent } from 'vue';
-import { MAIN_HEIGHT, MAIN_WIDTH } from './constant';
+import { MAIN_HEIGHT, MAIN_WIDTH } from '@/client';
 
 export interface MainBackgroundProps
     extends DefaultProps, IUIDefaultPropsBase {}

@@ -17,7 +17,7 @@ import {
     IGameUIPropsBase,
     MAP_BLOCK_WIDTH
 } from '@user/client-base';
-import { HALF_HEIGHT, HALF_WIDTH, MAP_WIDTH, POP_BOX_WIDTH } from './constant';
+import { HALF_HEIGHT, HALF_WIDTH, MAP_WIDTH, POP_BOX_WIDTH } from '@/client';
 import { adjustGrid, IGridLayoutData } from '@user/client-base';
 import { getSave, IUIPropsBase, SaveData, useKey } from '@user/client-modules';
 

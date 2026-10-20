@@ -38,7 +38,7 @@ import {
     RIGHT_STATUS_POS,
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
-} from './constant';
+} from '@/client';
 import { useKey } from '@user/client-modules';
 
 export interface ViewMapProps extends IUIDefaultPropsBase, BaseProps {

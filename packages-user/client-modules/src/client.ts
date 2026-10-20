@@ -41,8 +41,6 @@ import {
 } from '@motajs/animate';
 import { IRendererUsing, RendererUsing } from '@motajs/render-vue';
 import { IUIController, UIController } from '@motajs/system';
-import { createApp } from './render';
-import { LoadSceneUI } from '../../../src/client/ui/load';
 import { createUIPropsBase } from './ui/func';
 
 export class ClientCore extends CoreState implements IClientCore {
@@ -65,13 +63,9 @@ export class ClientCore extends CoreState implements IClientCore {
     // Layer 5 渲染顶层 - 目前没东西
 
     /** 已注册的渲染端插件 */
-    private readonly clientPlugins: Map<
-        string,
-        IClientPlugin<IClientPluginDefine>
-    > = new Map();
-    private readonly orderedClientPlugins: IPluginOrderResult<
-        IClientPlugin<IClientPluginDefine>
-    >;
+    private readonly clientPlugins: Map<string, IClientPlugin> = new Map();
+    /** 排序后的渲染端插件 */
+    private readonly orderedClientPlugins: IPluginOrderResult;
 
     constructor(config: IClientCoreConfig) {
         super(config);
@@ -119,15 +113,28 @@ export class ClientCore extends CoreState implements IClientCore {
                 plugin: define
             });
         }
-        this.orderedClientPlugins = orderPlugins(this.clientPlugins);
+        const deps = new Map<string, readonly string[]>();
+        for (const [id, plugin] of this.clientPlugins) {
+            deps.set(id, plugin.plugin.clientDeps);
+        }
+        this.orderedClientPlugins = orderPlugins(deps);
     }
 
     //#region 插件方法
 
-    getClientPlugin<T extends IClientPluginDefine>(
-        id: string
-    ): Readonly<IClientPlugin<T>> | null {
-        return (this.clientPlugins.get(id) as IClientPlugin<T>) ?? null;
+    /**
+     * 获取指定插件的所有渲染端插件依赖对象
+     * @param plugin 目标插件定义对象
+     */
+    protected getClientDependencies(
+        plugin: IClientPluginDefine
+    ): IClientPlugin[] {
+        const dependencies: IClientPlugin[] = [];
+        for (const dependency of plugin.dataDeps) {
+            const plugin = this.clientPlugins.get(dependency);
+            if (plugin) dependencies.push(plugin);
+        }
+        return dependencies;
     }
 
     /**
@@ -144,14 +151,15 @@ export class ClientCore extends CoreState implements IClientCore {
                 logger.error(77, pluginId, dependency);
             }
         }
-        for (const holder of result.order) {
-            if (holder.status !== PluginStatus.NotAwakened) continue;
-            const dependencies: IClientPlugin<IClientPluginDefine>[] = [];
-            for (const dependency of holder.plugin.dependencies) {
-                const plugin = this.clientPlugins.get(dependency);
-                if (plugin) dependencies.push(plugin);
+        for (const id of result.order) {
+            const holder = this.clientPlugins.get(id)!;
+            const plugin = holder.plugin;
+            if (!this.checkPluginStatus(holder, PluginStatus.NotAwakened)) {
+                continue;
             }
-            holder.plugin.awake(this, dependencies);
+            const dataDeps = this.getDataDependencies(plugin);
+            const clientDeps = this.getClientDependencies(plugin);
+            plugin.awake(this, dataDeps, clientDeps);
             holder.status = PluginStatus.Awakened;
         }
     }
@@ -162,14 +170,15 @@ export class ClientCore extends CoreState implements IClientCore {
     protected async initialize(): Promise<void> {
         await super.initialize();
         const result = this.orderedClientPlugins;
-        for (const holder of result.order) {
-            if (holder.status !== PluginStatus.Awakened) continue;
-            const dependencies: IClientPlugin<IClientPluginDefine>[] = [];
-            for (const dependency of holder.plugin.dependencies) {
-                const plugin = this.clientPlugins.get(dependency);
-                if (plugin) dependencies.push(plugin);
+        for (const id of result.order) {
+            const holder = this.clientPlugins.get(id)!;
+            const plugin = holder.plugin;
+            if (!this.checkPluginStatus(holder, PluginStatus.Awakened)) {
+                continue;
             }
-            await holder.plugin.initialize(this, dependencies);
+            const dataDeps = this.getDataDependencies(plugin);
+            const clientDeps = this.getClientDependencies(plugin);
+            await plugin.initialize(this, dataDeps, clientDeps);
             holder.status = PluginStatus.Initialized;
         }
     }
@@ -180,27 +189,35 @@ export class ClientCore extends CoreState implements IClientCore {
     protected async afterLoad(): Promise<void> {
         await super.afterLoad();
         const result = this.orderedClientPlugins;
-        for (const holder of result.order) {
-            if (holder.status !== PluginStatus.Initialized) continue;
-            const dependencies: IClientPlugin<IClientPluginDefine>[] = [];
-            for (const dependency of holder.plugin.dependencies) {
-                const plugin = this.clientPlugins.get(dependency);
-                if (plugin) dependencies.push(plugin);
+        for (const id of result.order) {
+            const holder = this.clientPlugins.get(id)!;
+            const plugin = holder.plugin;
+            if (!this.checkPluginStatus(holder, PluginStatus.Initialized)) {
+                continue;
             }
-            await holder.plugin.afterLoad(this, dependencies);
+            const dataDeps = this.getDataDependencies(plugin);
+            const clientDeps = this.getClientDependencies(plugin);
+            await plugin.initialize(this, dataDeps, clientDeps);
             holder.status = PluginStatus.Loaded;
         }
     }
 
-    //#endregion
-
-    /**
-     * 初始化渲染端主对象
-     */
-    private async init() {
-        createApp(this.sceneController.render()).mount(this.renderer);
-        this.sceneController.open(LoadSceneUI, {});
+    getClientPlugin<T extends IClientPluginDefine>(
+        id: string
+    ): Readonly<IClientPlugin<T>> | null {
+        return (this.clientPlugins.get(id) as IClientPlugin<T>) ?? null;
     }
+
+    async *load(): AsyncGenerator<number, void> {
+        yield* super.load();
+        for (const plugin of this.clientPlugins.values()) {
+            if (plugin.status !== PluginStatus.Loaded) {
+                logger.error(81, plugin.plugin.id);
+            }
+        }
+    }
+
+    //#endregion
 
     /**
      * 进行地图渲染拓展初始化

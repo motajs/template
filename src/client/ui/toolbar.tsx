@@ -13,12 +13,12 @@ import {
 } from '@user/client-base';
 import { gameKey, generateKeyboardEvent } from '@motajs/system';
 import { linear } from 'mutate-animate';
-import { KeyCode } from '@motajs/client-base';
+import { KeyCode } from '@motajs/system';
 import { Progress } from '@user/client-base';
 import { generateBinary } from '@motajs/legacy-common';
 import { SetupComponentOptions } from '@motajs/system';
 import { saveSave, saveLoad } from './save';
-import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from './constant';
+import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '@/client';
 import { openReplay, openSettings } from './settings';
 import { openViewMap } from './viewmap';
 import { DefaultProps } from '@motajs/render-vue';

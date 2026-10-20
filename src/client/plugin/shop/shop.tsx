@@ -4,9 +4,9 @@ import { Font } from '@motajs/render';
 import { Scroll, TextContent } from '@user/client-base';
 import { IHeroState } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
-import { FULL_LOC, IUIPropsBase, MAIN_WIDTH } from '@user/client-modules';
+import { IUIPropsBase } from '@user/client-modules';
 import { IShopState, IShopSystem } from '@dp/shop';
-import { RENDER_WIDTH } from '@/constant';
+import { FULL_LOC, MAIN_WIDTH, RENDER_WIDTH } from '@/client';
 
 export interface IShopProps extends IUIPropsBase {
     /** 商店状态对象 */

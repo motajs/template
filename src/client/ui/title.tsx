@@ -1,7 +1,7 @@
 import { DefaultProps } from '@motajs/render-vue';
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { defineComponent, nextTick, onMounted, ref } from 'vue';
-import { HALF_HEIGHT, HALF_WIDTH, MAIN_HEIGHT, MAIN_WIDTH } from './constant';
+import { HALF_HEIGHT, HALF_WIDTH, MAIN_HEIGHT, MAIN_WIDTH } from '@/client';
 import { ElementLocator, Font } from '@motajs/render';
 import {
     ExitFullscreen,

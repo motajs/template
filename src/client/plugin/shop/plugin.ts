@@ -10,7 +10,8 @@ export interface IClientShopPlugin extends IClientPluginDefine {
 
 export class ClientShopPlugin implements IClientShopPlugin {
     id: string = 'client-shop-plugin';
-    dependencies: readonly string[] = [];
+    clientDeps: readonly string[] = [];
+    dataDeps: readonly string[] = [];
 
     Shop: typeof Shop = Shop;
     ShopUI: typeof ShopUI = ShopUI;

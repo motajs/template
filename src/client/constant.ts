@@ -1,4 +1,4 @@
-import { MAIN_HEIGHT, MAIN_WIDTH } from './ui';
+import { MAIN_HEIGHT, MAIN_WIDTH } from './uiConstant';
 
 // 本文件是游戏的底层核心配置，如果不懂的话千万不要动
 

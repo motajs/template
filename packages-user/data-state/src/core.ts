@@ -51,6 +51,8 @@ import {
     ICoreStateConfig,
     IDataPlugin,
     IDataPluginDefine,
+    IPluginDefine,
+    IPluginBase,
     ISaveableExecutor,
     PluginStatus
 } from './types';
@@ -96,12 +98,10 @@ export class CoreState
         ISaveableExecutor<any>
     > = new Map();
 
-    /** 已注册的插件 */
-    private readonly plugins: Map<string, IDataPlugin<IDataPluginDefine>> =
-        new Map();
-    private readonly orderedDataPlugins: IPluginOrderResult<
-        IDataPlugin<IDataPluginDefine>
-    >;
+    /** 已注册的数据端插件 */
+    private readonly dataPlugins: Map<string, IDataPlugin> = new Map();
+    /** 排序后的数据端插件 */
+    private readonly orderedDataPlugins: IPluginOrderResult;
 
     constructor(config: Readonly<ICoreStateConfig>) {
         super();
@@ -134,16 +134,20 @@ export class CoreState
 
         // 数据端插件注册表
         for (const define of config.dataPlugins) {
-            if (this.plugins.has(define.id)) {
+            if (this.dataPlugins.has(define.id)) {
                 logger.error(78, define.id);
                 continue;
             }
-            this.plugins.set(define.id, {
+            this.dataPlugins.set(define.id, {
                 status: PluginStatus.NotAwakened,
                 plugin: define
             });
         }
-        this.orderedDataPlugins = orderPlugins(this.plugins);
+        const deps = new Map<string, readonly string[]>();
+        for (const [id, plugin] of this.dataPlugins) {
+            deps.set(id, plugin.plugin.dataDeps);
+        }
+        this.orderedDataPlugins = orderPlugins(deps);
         this.awake();
     }
 
@@ -160,6 +164,41 @@ export class CoreState
     //#region 插件方法
 
     /**
+     * 检查插件加载状态
+     * @param plugin 插件状态对象
+     * @param expected 预期的插件加载状态
+     */
+    protected checkPluginStatus(
+        plugin: IPluginDefine<IPluginBase>,
+        expected: PluginStatus
+    ) {
+        if (plugin.status === expected) {
+            return true;
+        } else {
+            logger.error(
+                80,
+                plugin.plugin.id,
+                expected.toString(),
+                plugin.status.toString()
+            );
+            return false;
+        }
+    }
+
+    /**
+     * 获取指定插件的所有数据端插件依赖对象
+     * @param plugin 目标插件定义对象
+     */
+    protected getDataDependencies(plugin: IPluginBase): IDataPlugin[] {
+        const dependencies: IDataPlugin[] = [];
+        for (const dependency of plugin.dataDeps) {
+            const plugin = this.dataPlugins.get(dependency);
+            if (plugin) dependencies.push(plugin);
+        }
+        return dependencies;
+    }
+
+    /**
      * 插件同步初始化
      */
     protected awake(): void {
@@ -172,14 +211,14 @@ export class CoreState
                 logger.error(77, pluginId, dependency);
             }
         }
-        for (const holder of result.order) {
-            if (holder.status !== PluginStatus.NotAwakened) continue;
-            const dependencies: IDataPlugin<IDataPluginDefine>[] = [];
-            for (const dependency of holder.plugin.dependencies) {
-                const plugin = this.plugins.get(dependency);
-                if (plugin) dependencies.push(plugin);
+        for (const id of result.order) {
+            const holder = this.dataPlugins.get(id)!;
+            const plugin = holder.plugin;
+            if (!this.checkPluginStatus(holder, PluginStatus.NotAwakened)) {
+                continue;
             }
-            holder.plugin.awake(this, dependencies);
+            const dependencies = this.getDataDependencies(plugin);
+            plugin.awake(this, dependencies);
             holder.status = PluginStatus.Awakened;
         }
     }
@@ -189,14 +228,14 @@ export class CoreState
      */
     protected async initialize(): Promise<void> {
         const result = this.orderedDataPlugins;
-        for (const holder of result.order) {
-            if (holder.status !== PluginStatus.Awakened) continue;
-            const dependencies: IDataPlugin<IDataPluginDefine>[] = [];
-            for (const dependency of holder.plugin.dependencies) {
-                const plugin = this.plugins.get(dependency);
-                if (plugin) dependencies.push(plugin);
+        for (const id of result.order) {
+            const holder = this.dataPlugins.get(id)!;
+            const plugin = holder.plugin;
+            if (!this.checkPluginStatus(holder, PluginStatus.Awakened)) {
+                continue;
             }
-            await holder.plugin.initialize(this, dependencies);
+            const dependencies = this.getDataDependencies(plugin);
+            await plugin.initialize(this, dependencies);
             holder.status = PluginStatus.Initialized;
         }
     }
@@ -206,14 +245,14 @@ export class CoreState
      */
     protected async afterLoad(): Promise<void> {
         const result = this.orderedDataPlugins;
-        for (const holder of result.order) {
-            if (holder.status !== PluginStatus.Initialized) continue;
-            const dependencies: IDataPlugin<IDataPluginDefine>[] = [];
-            for (const dependency of holder.plugin.dependencies) {
-                const plugin = this.plugins.get(dependency);
-                if (plugin) dependencies.push(plugin);
+        for (const id of result.order) {
+            const holder = this.dataPlugins.get(id)!;
+            const plugin = holder.plugin;
+            if (!this.checkPluginStatus(holder, PluginStatus.Initialized)) {
+                continue;
             }
-            await holder.plugin.afterLoad(this, dependencies);
+            const dependencies = this.getDataDependencies(plugin);
+            await plugin.afterLoad(this, dependencies);
             holder.status = PluginStatus.Loaded;
         }
     }
@@ -221,7 +260,7 @@ export class CoreState
     getDataPlugin<T extends IDataPluginDefine>(
         id: string
     ): Readonly<IDataPlugin<T>> | null {
-        return (this.plugins.get(id) as IDataPlugin<T>) ?? null;
+        return (this.dataPlugins.get(id) as IDataPlugin<T>) ?? null;
     }
 
     //#endregion
@@ -232,6 +271,11 @@ export class CoreState
         await this.initialize();
         yield* this.loader.start();
         await this.afterLoad();
+        for (const plugin of this.dataPlugins.values()) {
+            if (plugin.status !== PluginStatus.Loaded) {
+                logger.error(81, plugin.plugin.id);
+            }
+        }
     }
 
     //#endregion

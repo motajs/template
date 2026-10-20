@@ -16,7 +16,7 @@ import { ExcitationVariator } from '@motajs/animate';
 
 export class MainClientPlugin implements IClientPluginDefine {
     id: string = 'main-client-plugin';
-    dependencies: readonly string[] = [];
+    clientDeps: readonly string[] = [];
 
     awake(state: IClientCore): void {
         // 渲染调试配置

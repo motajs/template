@@ -13,7 +13,7 @@ function createPlugin(
 ): IDataPluginDefine {
     return {
         id,
-        dependencies,
+        dataDeps: dependencies,
         awake: () => {
             calls.push(`${id}.awake`);
         },

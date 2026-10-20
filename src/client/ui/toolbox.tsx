@@ -4,7 +4,7 @@ import { Font } from '@motajs/render';
 import { Scroll, TextContent } from '@user/client-base';
 import { IHeroItemState, IHeroState } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
-import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from './constant';
+import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '@/client';
 import { IUIPropsBase } from '@user/client-modules';
 
 export interface ToolBoxProps extends IUIPropsBase {

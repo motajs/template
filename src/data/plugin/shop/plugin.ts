@@ -6,7 +6,7 @@ import { ShopSystem } from './system';
 
 export class DataShopPlugin implements IShopPlugin {
     id: string = 'data-shop-plugin';
-    dependencies: string[] = [];
+    dataDeps: string[] = [];
 
     shop!: IShopSystem;
     manager!: IShopManager;

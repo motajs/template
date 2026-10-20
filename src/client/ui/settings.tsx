@@ -16,7 +16,7 @@ import { openStatistics } from './statistics';
 import { saveWithExist } from './save';
 import { compressToBase64 } from 'lz-string';
 import { ViewMapUI } from './viewmap';
-import { CENTER_LOC, FULL_LOC, MAIN_HEIGHT, POP_BOX_WIDTH } from './constant';
+import { CENTER_LOC, FULL_LOC, MAIN_HEIGHT, POP_BOX_WIDTH } from '@/client';
 import { IUIPropsBase, useKey } from '@user/client-modules';
 
 export interface MainSettingsProps extends Partial<ChoicesProps>, IUIPropsBase {
