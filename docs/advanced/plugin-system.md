@@ -240,7 +240,7 @@ if (holder && holder.status === PluginStatus.Loaded) {
 | `state.ts` / `manager.ts` / `system.ts` | 插件自己的对象，按需创建             |
 | `index.ts`                              | 统一导出                             |
 
-然后在 `list.ts` 里 `new` 出来加进 `dataPlugins`。
+然后在 `list.ts` 里 `new` 出来加进 `dataPlugins`。最终传给 `CoreState` 的插件数组在 `src/data/entry.ts` 里拼成：主插件在前，`dataPlugins` 展开在后。日常只需要改 `list.ts`，不必动 `entry.ts`。
 
 这是少数<strong>应该新建文件与目录</strong>的场景：插件本身就是一个独立单元，把它的类、接口和对象放在一起，比全部塞进 `initialize.ts` 更容易维护。除此之外的普通效果仍然优先改内置文件，不要为每个效果新建目录。
 
