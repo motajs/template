@@ -31,3 +31,50 @@
 - `cmd /c "pnpm exec prettier --write docs/advanced/*.md"`：七篇全部 unchanged。
 - `cmd /c "node node_modules/prettier/bin/prettier.cjs --check ..."`：全部通过。
 - `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`：`build complete`，无 dead link。
+
+---
+
+## 第 2 轮
+
+**时间：** 2026-10-20
+**用户意见（17 条）：**
+
+| # | 意见 | 落点 |
+|---|------|------|
+| U2-01 | 不要用 `content`（`src/content`）中的内容举例——那是编辑器负责的，没人会直接改文件 | 全部 |
+| U2-02 | 地图伤害按「计算后怪物」结算，中级教程已讲过，高级教程不必重提 | 相关篇目 |
+| U2-03 | 「声明式 vs 命令式」的验证节可以不加——本篇是概念性描述 | `declarative-vs-imperative.md` |
+| U2-04 | 用户已修改插件系统结构：**渲染端可以依赖数据端插件，反之不行**；需重新适配文档 | `plugin-system.md`（及相关） |
+| U2-05 | 存档顶层**不会**自动 `structuredClone`；必须在 `saveState` 调用端保证返回对象独立、不与任何其他对象同引用（妥协：大存档 `structuredClone` 很慢） | `saveable-content.md` |
+| U2-06 | 存档执行器可举例：读档后勇士需切换至目标楼层 → 用执行器调用 `changeFloor`（实际内部实现不同，仅示例） | `saveable-content.md` |
+| U2-07 | 「该不该记录」不是试出来的，通常是分析出来的；若不知如何分析，就把所有「修改了游戏状态且该状态可能导致结果改变」的方法都加上 `@shouldReplay` | `replay-consistency.md` |
+| U2-08 | `@shouldReplay` 应明确：方法执行了但没探测到录像记录 → 控制台输出「录像记录缺失」警告；此说明要提前，不要脱节；不讲工作原理（留高级 II/III） | `replay-consistency.md` |
+| U2-09 | 不讲 `beginReplaySafetyCollection` / `endReplaySafetyCollection`（太底层；调用后续会补；作者绝大多数情况不需要自己写） | `replay-consistency.md` |
+| U2-10 | 示例应讲「在自己的方法上加标记」，而不是给内置方法补录；可用商店插件举例 | `replay-consistency.md` |
+| U2-11 | 四个 Store 一览表太挤，改为无序列表 | `data-stores.md` |
+| U2-12 | Store 登记是因为数据端未写完；说明「绝大多数情况下不需要自己登记」即可 | `data-stores.md` |
+| U2-13 | `EnemyStore` 之前漏了，现已补上；同步文档 | `data-stores.md` |
+| U2-14 | 模板允许在初始化期间登记内容，但现阶段不必讲（极少遇到），需要讲也放后面 | `data-stores.md` |
+| U2-15 | 不要到处讲「改内置还是自己写」——像 Store 几乎不可能需要自定义，不要为它专门开一节；该要求仅针对中级教程 | 全部（尤其 `data-stores.md`） |
+| U2-16 | 验证不必每篇都有；Store 只需讲怎么用接口。文档核心目的是让读者知道怎么用接口；几乎不可能自定义的 Store 用内置接口即可，无需验证 | `data-stores.md` 及相关 |
+| U2-17 | 「钩子深入」给人感觉怪：一般不会多个钩子对象共用一个钩子，通常一个钩子对象对应一个钩子实例。不必讲共用；只教「一个对象一个实例」，身份来源、不要用 alias 判断身份等内容可删 | `hooks-in-depth.md` |
+
+### 第 2 轮处置（`plugin-system` / `saveable-content` / `replay-consistency`）
+
+**修改方式：** 内联执行，仅修改上述三篇与本职记录。
+
+| # | 处置 |
+|---|------|
+| U2-04 | 按当前 `IDataPluginDefine` / `IClientPluginDefine` 源码把 `dependencies` 属性统一改为 `dataDeps`；新增「数据端与渲染端」小节，说明渲染端可依赖数据端、数据端不能依赖渲染端，并删去数据端文档中的渲染端细节。 |
+| U2-05 | 重写「返回值必须独立」一节：明确 `CoreState.saveState` 只负责收集返回值、顶层不再 `structuredClone`；`saveState` 必须自行返回独立对象，并说明大存档深拷贝的性能取舍。 |
+| U2-06 | 在「存档顺序与执行器」中加入 `HeroFloorExecutor` 示例：读档后按 `location.floorId` 取楼层并调用 `hero.changeFloor`；注明仅示意、实际内部实现不同，且执行器接口是同步的。 |
+| U2-07 | 把「该不该记」改为分析式判断（能否被玩家触发 / 是否改状态 / 是否可能影响结果）；判断不了时，给所有「改状态且可能影响结果」的方法都加 `@shouldReplay`。 |
+| U2-08 | 在「两个装饰器」之后提前加入「录像记录缺失」警告说明：带标记的方法执行了却没有录像记录时，控制台会告警；不展开内部机制。 |
+| U2-09 | 删除 `beginReplaySafetyCollection` / `endReplaySafetyCollection` 及相关收集区间、错误码、`logReplaySafetyDetail` 内容；验证改为回放对比与告警观察。 |
+| U2-10 | 删除给内置 `FlagSystem.getOrInsert` 补标记的示例，改为商店插件 `ShopSystem.buyItem` 上添加 `@shouldReplay` 的示例。 |
+| U2-15 | 删除三篇中的「改内置还是自己写 / 改现有插件还是新建插件」专门小节；仅保留插件承载新系统的正向说明。 |
+| D-60 / D-61 | 三篇按简洁优先删去重复示例与过度解释；常见错误统一收束为文末「边界与注意」小节，主干不再混入边界情况。 |
+
+**构建：** `pnpm exec prettier --check` 三篇通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
+
+**状态：处理中**
