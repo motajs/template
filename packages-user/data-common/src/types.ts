@@ -1,5 +1,11 @@
 import { IFaceManager, IRoleFaceBinder } from './common';
-import { IGameEventStore, IItemStore, IMapStore, ITileStore } from './store';
+import {
+    IEnemyStore,
+    IGameEventStore,
+    IItemStore,
+    IMapStore,
+    ITileStore
+} from './store';
 import { IReplaySystem } from './replay';
 import { IEnemyView } from '@user/data-system';
 import { IHookable, IHookBase } from '@motajs/common';
@@ -66,6 +72,8 @@ export interface IDataCommon extends IHookable<IDataCommonHooks> {
     readonly mapStore: IMapStore;
     /** 游戏事件存储 */
     readonly eventStore: IGameEventStore;
+    /** 怪物定义存储 */
+    readonly enemyStore: IEnemyStore<IEnemyAttr>;
     /** 朝向绑定 */
     readonly roleFace: IRoleFaceBinder;
     /** 朝向管理 */

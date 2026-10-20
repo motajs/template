@@ -24,7 +24,9 @@ import {
     MapStore,
     IReplaySystem,
     ReplaySystem,
-    IDataCommonHooks
+    IDataCommonHooks,
+    IEnemyStore,
+    EnemyStore
 } from '@user/data-common';
 import {
     EnemyManager,
@@ -68,6 +70,7 @@ export class CoreState
     readonly faceManager: IFaceManager;
     readonly tileStore: ITileStore;
     readonly itemStore: IItemStore<IHeroAttr>;
+    readonly enemyStore: IEnemyStore<IEnemyAttr>;
     readonly mapStore: IMapStore;
     readonly eventStore: IGameEventStore;
     readonly replaySystem: IReplaySystem;
@@ -112,6 +115,7 @@ export class CoreState
         this.itemStore = new ItemStore<IHeroAttr>(this.tileStore);
         this.mapStore = new MapStore();
         this.eventStore = new GameEventStore();
+        this.enemyStore = new EnemyStore(this.tileStore);
         this.replaySystem = new ReplaySystem();
 
         // L1 定义
