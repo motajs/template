@@ -139,6 +139,7 @@ None - plan executed exactly as written.
 - 首轮静态门禁在 `**能保证的：**` / `**不能保证的：**` 上触发 D-52 flanking 检查，改为 `<strong>` + 全角冒号后通过。
 - 构建仅出现 Vite 的 chunk 体积警告，不影响 `build complete`；无 dead link。
 - 仓库中 `.planning/*` 与 `pnpm-lock.yaml` 在本次执行前已有未提交修改，未纳入本计划的任何提交。
+- 本计划三个任务提交完成后，区间内出现一条并发会话的提交 `a147188 docs(09-21): 重写为 revision 4`（只改 `09-21-PLAN.md`，与本计划无关）。因此用 `plan_head_before..HEAD` 统计会多出这一条；本计划自身提交数为 3。
 
 ## User Setup Required
 
