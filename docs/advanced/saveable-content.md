@@ -109,7 +109,7 @@ state.addSaveableContent('@plugin/example-counter', this.counter);
 
 需要按 id 取回对象时，用 `state.getSaveableContent<T>(id)`。它返回 `ISaveableContent<T> | null`，没有这个 id 时返回 `null`。
 
-插件通常在 `awake` 里注册。此时主对象刚创建完，装配插件自己的对象正合适；`initialize` 与 `afterLoad` 都太晚，读档可能已经发生。内置内容也是同样的注册方式，主插件在 `awake` 里注册了五项：
+插件通常在 `awake` 里注册。此时主对象刚创建完，装配插件自己的对象正合适，注册顺序也最早、最可控；放到更晚的阶段注册，虽然同样能进入存档表，但会排到已有对象之后，读档顺序也跟着改变。内置内容也是同样的注册方式，主插件在 `awake` 里注册了五项：
 
 | 存档 id          | 对应对象             |
 | ---------------- | -------------------- |
@@ -173,7 +173,7 @@ export interface ISaveableExecutor<T> {
 
 关键在时机：<strong>执行器在该对象的 `loadState` 返回后立即运行</strong>，不是等所有对象都读完之后统一运行。此时它前面的对象已经恢复完毕，后面的对象还没开始。这个顺序直接决定了跨对象引用该怎么解析。
 
-还有一处与录像有关的细节：每个对象的 `loadState` 都被 `replaySystem.disable()` 与 `revert()` 包裹，读档本身不会被记进录像；但执行器<strong>不在包裹范围内</strong>，因为它可能确实要做需要记录的行为。在执行器里操作会影响成绩的状态时要谨慎，录像一致性的完整规则见 `高级教程 I · 录像一致性`。
+还有一处与录像有关的细节：读档开始时，主对象会先清掉残留的录像禁用标记，再逐个恢复对象。每个对象的 `loadState` 都被 `replaySystem.disable()` 与 `revert()` 包裹，读档本身不会被记进录像；但执行器<strong>不在包裹范围内</strong>，因为它可能确实要做需要记录的行为。在执行器里操作会影响成绩的状态时要谨慎，录像一致性的完整规则见 `高级教程 I · 录像一致性`。
 
 ### afterLoad 的两种含义
 
