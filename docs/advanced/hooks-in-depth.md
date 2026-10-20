@@ -273,46 +273,6 @@ layer.addHook(hook);
 <!-- TODO(advanced-II): 钩子的系统级消费与优先级 -->
 <!-- TODO(advanced-III): 钩子调度原理 -->
 
-## 模板：一个带身份校验的钩子
-
-<strong>目标</strong>：每层一个钩子实例，只对目标图层做事；如果回调回传了图块，再额外核对一次所属图层。
-
-<strong>改哪里</strong>：`src/data/hook/` 下的现有钩子文件，或你自己的插件文件；类写好后，在能拿到目标图层的时机注册。
-
-<strong>复制什么</strong>：下面是机制本身的通用骨架，复制后按 `[需改]` 修改。它不是某个具体效果的完整实现。
-
-```ts
-// [模板] 每层一个实例的图层钩子
-export class MyLayerHooks implements IMapLayerHooks {
-    constructor(
-        readonly state: ICoreState,
-        readonly layer: IMapLayer
-    ) {}
-
-    // [需改] 没有 layer 参数；触发者就是 this.layer
-    onUpdateBlock(block: number, x: number, y: number): void {
-        // 在这里做事
-    }
-
-    // [需改] 动态图块回调回传 tile，可再核对 tile.layer
-    onCreateDynamic(tile: IDynamicTile): void {
-        if (tile.layer !== this.layer) return;
-        // 在这里做事
-    }
-}
-```
-
-<strong>改什么</strong>：
-
-1. 类名 `MyLayerHooks` 换成你的名字；
-2. `readonly layer` 保留，构造时传入目标图层；
-3. 方法体换成你的处理；
-4. 如果目标钩子不回传身份，不要把这个实例共享给多个图层，改为每层 `new` 一个。
-
-<strong>怎么验证</strong>：见下面的「只处理指定图层」；核心是改目标图层会触发、改别的图层不触发。
-
-<strong>注意</strong>：`readonly layer` 不是为了在 `onUpdateBlock` 里比较一个不存在的参数。身份来自「这个实例注册在哪个图层上」；动态图块方法里的 `tile.layer` 才是额外的运行时校验。
-
 ## 示例：只处理指定图层
 
 <strong>目标</strong>：只对 `floor-1` 的 `ground` 图层响应图块更新，其他图层的变化不处理。
@@ -403,8 +363,6 @@ map.addHook(new TargetLayerResizeHooks(state, targetLayer));
 地图与图层没有对应的内置 `src/data/hook` 类；这类需求需要自己写一个小类。把类写小：只做身份限定与转发，真正的系统逻辑放进插件或独立系统，不要让钩子类承担一整套功能。
 
 如果这是一整套新系统，优先通过插件实现（见[插件系统](./plugin-system.md)），钩子在事件发生时调用它。这样新增逻辑留在 `src` 里，升级内置包时要跟的差异更少。
-
-<strong>如果你不怎么懂代码，建议直接改内置钩子，而不是自己写新的类。</strong>内置类已经注册好，改方法体就能生效；自己写类还要处理身份、注册时机与移除，排查面更大。
 
 ## 常见错误
 

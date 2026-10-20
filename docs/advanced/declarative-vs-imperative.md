@@ -194,11 +194,9 @@ calculate(handler) {
 
 可以用一句话概括：<strong>一次性动作用命令式，持续生效的规则用声明式</strong>。
 
-## 模板：声明式扩展的通用骨架
+## 扩展点一览
 
-下面给的是机制本身的通用骨架，不对应任何一种具体效果。具体效果只用来帮助理解，不要把它当成模板照抄。
-
-先看各类扩展点分别要写什么、注册到哪里、引擎什么时候调用：
+前面五组机制各自要写什么、注册到哪里、引擎什么时候调用，放在一起看更清楚：
 
 | 扩展点     | 你要实现的东西                               | 注册入口                                 | 引擎调用时机           |
 | ---------- | -------------------------------------------- | ---------------------------------------- | ---------------------- |
@@ -209,53 +207,21 @@ calculate(handler) {
 | 可存档对象 | `ISaveableContent.saveState` / `loadState`   | `state.addSaveableContent(id, content)`  | 存档与读档时           |
 | 钩子       | 对应钩子族接口的方法                         | `addHook(new …)`                         | 对应动作发生时         |
 
-通用形状可以写成下面这样。复制后按 `[需改]` 标记修改：
+这些扩展点的写法都是「实现一个类 + 注册一次」：类里只放引擎会调用的方法，注册放在初始化函数里。示例一律写成 `class` 再 `new`，不要写成 `const obj = { ... }` 这种 plain object。例外是引擎本身就用对象字面量声明的内容（如 `src/content/item.ts` 的 `ItemEffect`），那里沿用现有写法即可。
 
-```ts
-// [模板] 声明式扩展的通用形状：一个类 + 一次注册 + 一个由引擎调用的方法
-export class XxxHandler implements IXxxHandler<IEnemyAttr, IHeroAttr> {
-    // [模板] 构造时只保存长期引用；不要在这里改游戏状态
-    constructor(readonly state: ICoreState) {}
+像 `aura.ts` 这种集中放置多个实现的文件，建议用 `//#region {code}-{name}` 到 `//#endregion` 包起来，结构更清晰，后续编辑器也可能据此识别。
 
-    // [需改] 方法名与参数照抄你实现的接口（如 calculate、apply、useEffect）
-    run(handler: IReadonlyXxxHandler<IEnemyAttr, IHeroAttr>): IXxxResult {
-        // [需改] 只读输入、算出结果；需要改状态时，放到引擎规定的时机里
-        return /* [需改] 结果 */;
-    }
-}
+## 改内置还是写成插件
 
-// [模板] 注册一次，通常写在 initialize.ts 一类初始化函数里
-// [需改] 把 someSystem.useXxx 换成对应系统的注册方法
-state.someSystem.useXxx(new XxxHandler(state));
-```
+判断依据是改动落在谁的代码里，而不是改动大小。
 
-复制后需要改的地方：
-
-1. <strong>类名与接口名</strong>：`XxxHandler` 与 `IXxxHandler` 换成你实际实现的接口。
-2. <strong>方法名与签名</strong>：按接口来写，不同扩展点的方法名不同。
-3. <strong>方法体</strong>：只读输入、算出结果；需要改状态时，交给钩子或对应的时机。
-4. <strong>注册入口</strong>：按上表找到对应的注册方法，并放进初始化函数里。
-5. <strong>是否需要 `#region`</strong>：像 `aura.ts` 这种集中放置多个实现的文件，建议用 `//#region {code}-{name}` 到 `//#endregion` 包起来，结构更清晰，后续编辑器也可能据此识别。
-
-示例一律写成 `class` 再 `new`，不要写成 `const obj = { ... }` 这种 plain object。例外是引擎本身就用对象字面量声明的内容（如 `src/content/item.ts` 的 `ItemEffect`），那里沿用现有写法即可。
-
-## 改内置还是自己写
-
-日常需求优先<strong>改内置</strong>：
-
-- 特殊属性与光环：改 `src/data/enemy/special.ts` 与 `src/data/enemy/aura.ts`；
-- 伤害公式：改 `src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate`；
-- 事件处理：改 `src/data/hook/*` 里已有的钩子类。
-
-这些内置实现已经注册好，你改方法体或加一条分支就会生效，不需要自己写注册代码。不要为每个效果新建一个文件；光环、伤害计算这类实现本来就集中放在对应文件里。
+日常效果仍然集中在对应的内置实现里：特殊属性与光环改 `src/data/enemy/special.ts` 与 `src/data/enemy/aura.ts`；伤害公式改 `src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate`；事件处理改 `src/data/hook/*` 里已有的钩子类。这些实现已经注册好，改方法体或加一条分支就会生效，不需要自己写注册代码。不要为每个效果新建一个文件；光环、伤害计算这类实现本来就集中放在对应文件里。
 
 只有在下面这些情况才需要自己写类：
 
 - 你要替换整套策略，例如整条伤害公式都换掉；
 - 你要新增一组可独立复用的扩展，例如一个新的光环转换器；
-- 你要新增一个系统。此时优先通过插件实现，而不是直接改内置包，见[插件系统](./plugin-system.md)。
-
-<strong>如果你不怎么懂代码，建议直接改内置，而不是自己写新的类</strong>。自己写类要同时处理接口签名、注册时机与上下文刷新，改动面比在内置方法里加一个分支大得多，出错也更难排查。
+- 你要新增一个系统。新增系统优先通过插件实现，把改动留在 `src`；只有插件与现有扩展点都覆盖不了时，才去改内置包（`packages` / `packages-user`），见[插件系统](./plugin-system.md)。
 
 ## 常见误区
 
@@ -301,6 +267,6 @@ if (system && info) {
 - 声明式不是不写代码，而是把「做什么」与「什么时候做」分开。
 - 持续生效的规则用声明式；玩家直接产生的一次性动作用命令式，但要计入录像。
 - 计算类扩展必须无副作用；状态修改放到引擎规定的时机里。
-- 改内置优先；确实需要独立扩展时再自己写类，新增系统优先考虑插件。
+- 新增系统优先写成插件；只有必要时才改内置包。
 
 返回[高级 I 导览](./index.md)。

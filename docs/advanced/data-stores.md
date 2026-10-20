@@ -152,40 +152,32 @@ const raw = state.tileStore.getData(num);
 
 但它<strong>不在 `IDataCommon` 上</strong>：主对象没有把 `enemyStore` 暴露成字段。所以不要按前面四个 Store 的习惯去取，也不要假设它一定存在。本篇只讲 `IDataCommon` 上的四个 Store；需要怪物原始数据时，先确认当前版本把它接在了哪里，再决定从哪读。
 
-## 模板：在加载期注册 Store 原始数据
+## 模板：登记一条原始定义
 
-Store 的注册<strong>没有逐对象模板</strong>，原因和别的机制不同：插件、可存档对象、光环这些机制都要你实现一个接口，所以能给出「一个空类 + 需改点」的骨架；`addTile` / `addItem` / `addMap` / `addEvent` 不是这样——它们是<strong>逐条登记一条原始定义</strong>，你不需要实现任何方法，只需要把一条条定义交给它。
+Store 的注册没有「一个空类 + 需改点」那种逐对象模板，原因和别的机制不同：插件、可存档对象、光环这些机制都要你实现一个接口，所以能给出骨架；`addTile` / `addItem` / `addMap` / `addEvent` 不是这样——它们是<strong>逐条登记一条原始定义</strong>，你不需要实现任何方法，只需要把一条条定义交给它。
 
-所以这里给的是「把一批登记集中到加载期」的机制骨架：
+所以这里的骨架是「一条定义长什么样」。下面以图块为例，复制后按 `[需改]` 修改：
 
 ```ts
-// [模板] 在加载期集中登记一批原始数据：复制后按 [需改] 修改
-export class MyContent {
-    // [需改] 接住 state，或者改成由方法参数传入
-    constructor(readonly state: IDataCommon) {}
-
-    // [需改] 由插件的 awake / initialize / afterLoad 调用，只调用一次
-    register(): void {
-        this.state.tileStore.addTile({
-            // [需改] 图块数字与 id 必须各自唯一
-            num: 10001,
-            id: 'my-custom-tile',
-            // [需改] 默认事件：优先级 → 事件 id
-            events: {},
-            // [需改] 图块逻辑类型
-            type: TileType.Terrain,
-            pass: {
-                // [需改] 是否只在事件层生效
-                onlyEvents: false,
-                // [需改] 可离开 / 可进入的方向掩码
-                outPass: 0b1111,
-                inPass: 0b1111
-            },
-            // [需改] 走上去触发还是撞击触发
-            eventPass: false
-        });
-    }
-}
+// [模板] 登记一条图块定义：复制后按 [需改] 修改
+state.tileStore.addTile({
+    // [需改] 图块数字与 id 必须各自唯一
+    num: 10001,
+    id: 'my-custom-tile',
+    // [需改] 默认事件：优先级 → 事件 id
+    events: {},
+    // [需改] 图块逻辑类型
+    type: TileType.Terrain,
+    pass: {
+        // [需改] 是否只在事件层生效
+        onlyEvents: false,
+        // [需改] 可离开 / 可进入的方向掩码
+        outPass: 0b1111,
+        inPass: 0b1111
+    },
+    // [需改] 走上去触发还是撞击触发
+    eventPass: false
+});
 ```
 
 <strong>改什么</strong>：
@@ -193,11 +185,11 @@ export class MyContent {
 1. <strong>数据来源</strong>：把写死的 `num` / `id` 换成你内容文件里的条目；内容多时用循环读一遍，而不是手写几十条 `addTile`。
 2. <strong>键</strong>：`num` 与 `id` 必须唯一。撞了会告警并覆盖，等于悄悄丢掉了另一条定义。
 3. <strong>通行掩码</strong>：`outPass` / `inPass` 是方向位掩码（上 1、右 2、下 4、左 8），`0b1111` 表示四向都通。
-4. <strong>其它三个 Store</strong>：形状相同，把 `addTile` 换成对应调用即可——`addItem(data)` 收 `IItemRawData`，`addMap(map)` 收 `IMapRawData`，`addEvent(id, event)` 收事件实例。所以这套骨架不需要为每个 Store 重写一遍。
+4. <strong>其它三个 Store</strong>：形状相同，把 `addTile` 换成对应调用即可——`addItem(data)` 收 `IItemRawData`，`addMap(map)` 收 `IMapRawData`，`addEvent(id, event)` 收事件实例。所以这条骨架不需要为每个 Store 重写一遍。
 
 <strong>注意</strong>：`addEvent` 的签名与另外三个不同，它的第一个参数是事件 id，第二个参数才是事件实例。
 
-顶部通常已有这些类型的 `import`（`IDataCommon`、`TileType`）；若报缺少某个名字，再在顶部补对应的 `import`。
+顶部通常已有 `TileType` 这类名字的 `import`；若报缺少某个名字，再在顶部补对应的 `import`。
 
 ## 把一批自定义内容注册进 Store
 
@@ -209,12 +201,11 @@ export class MyContent {
 
 ```ts
 awake(state: ICoreState): void {
-    // [需改] 这一段就是上一节模板里 register() 的内容
-    new MyContent(state).register();
+    // 在这里调用 addTile / addItem / addMap / addEvent
 }
 ```
 
-<strong>复制什么</strong>：只复制 `add*` 调用那一段，粘进上面的时机方法里（或粘进模板类的 `register()` 里）。<strong>不含 `import`</strong>——插件的文件顶部通常已经有 `IDataCommon` / `ICoreState`，内容类型通常在 `@user/data-common` 里，已经引入过就不要重复粘；若编辑器报缺少某个名字，再在顶部补 `import ...`。
+<strong>复制什么</strong>：只复制上面的 `add*` 调用，粘进这个时机方法里。<strong>不含 `import`</strong>——插件的文件顶部通常已经有 `IDataCommon` / `ICoreState`，内容类型通常在 `@user/data-common` 里，已经引入过就不要重复粘；若编辑器报缺少某个名字，再在顶部补 `import ...`。
 
 <strong>改什么</strong>：把 `num`、`id` 与各字段换成你自己的数据。图块数字要与你的内容对得上，道具的 `num` 要与对应图块数字一致，地图的 `floorId` 要与切楼层用的 id 一致。
 
@@ -228,8 +219,6 @@ awake(state: ICoreState): void {
 - 确实需要一张全新的原始数据表（现有四个 Store 都装不下）——那属于系统级扩展，先按[插件系统](./plugin-system.md)组织自己的数据，再考虑是否真的需要挂到主对象上。
 
 扩展 `IDataCommon` 意味着改动内置包，版本升级时要跟着改；而补条目只动你自己的内容，升级时几乎不用管。
-
-<strong>如果你不怎么懂代码，建议直接改内置，而不是自己写新的类。</strong>
 
 ## 常见错误
 
@@ -280,7 +269,7 @@ console.log(raw, state.tileStore.getType(num));
 - 运行时调用 `add*` 会绕过存档、录像与一致性检查，所以只在加载期登记一次。
 - 读 Store 随时可以，但不要就地修改返回的对象；`eventStore.getEvent` 返回的是存储的实例。
 - `EnemyStore` 不在 `IDataCommon` 上，不要假设主对象能直接取到。
-- Store 注册没有逐对象模板，只有「在加载期集中登记」的机制骨架。
-- 不懂代码时优先在已有位置补条目，不要急着写新类或扩展主对象。
+- Store 注册没有逐对象模板，只有「一条定义长什么样」的骨架。
+- 需要新的原始数据表时优先按插件组织；不要急着扩展主对象。
 
 返回[高级 I 导览](./index.md)。

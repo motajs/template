@@ -236,7 +236,7 @@ state.bindSaveableExecuter('@plugin/example-quest', new QuestSaveExecutor());
 
 <strong>改哪里</strong>：放进你自己的插件目录，通常与插件类放在一起；不需要为它单独新建一套目录。
 
-<strong>复制什么</strong>：下面是机制本身的通用骨架，复制后按 `[需改]` 修改。它不是某个具体效果，计数器示例只是用法演示，不要拿示例当模板。
+<strong>复制什么</strong>：下面是机制本身的通用骨架，复制后按 `[需改]` 修改。它不是某个具体效果，下面的示例只演示怎么把它接到插件里。
 
 ```ts
 // [模板] 一个可存档对象的最小骨架：复制后按 [需改] 修改
@@ -279,57 +279,26 @@ export class MySaveable implements ISaveableContent<IMySave> {
 
 <strong>注意</strong>：`saveState` 里不要修改对象状态，也不要返回 `this` 或带方法的类实例。`loadState` 不要假设旧数据还在，先清空再重建，才不会残留上次的状态。
 
-## 示例：插件里的计数器
+## 示例：把可存档对象接到插件里
 
-<strong>目标</strong>：插件维护一组计数器，读档后计数能恢复。
+<strong>目标</strong>：让上一节模板里的对象跟着插件一起注册，并能在读档后恢复。
 
-<strong>改哪里</strong>：你插件的 `plugin.ts` 与它自己的对象文件。下面先给计数器类，再给插件的注册代码。
+<strong>改哪里</strong>：你插件的 `plugin.ts`。
 
-<strong>复制什么</strong>：计数器类：
-
-```ts
-// [需改] 插件里的计数器
-export interface ICounterSave {
-    readonly values: Map<string, number>;
-}
-
-export class Counter implements ISaveableContent<ICounterSave> {
-    private readonly values: Map<string, number> = new Map();
-
-    add(key: string, value: number = 1): void {
-        this.values.set(key, (this.values.get(key) ?? 0) + value);
-    }
-
-    get(key: string): number {
-        return this.values.get(key) ?? 0;
-    }
-
-    saveState(): ICounterSave {
-        return { values: structuredClone(this.values) };
-    }
-
-    loadState(state: ICounterSave): void {
-        this.values.clear();
-        for (const [key, value] of state.values) {
-            this.values.set(key, value);
-        }
-    }
-}
-```
-
-然后在插件的 `awake` 里创建并注册：
+<strong>复制什么</strong>：只复制持有与注册的那几行：
 
 ```ts
-// [需改] 插件里注册计数器
-export class CounterPlugin implements IDataPluginDefine {
-    readonly id = 'example-counter-plugin';
+// [需改] 在插件里持有并注册可存档对象
+export class MyPlugin implements IDataPluginDefine {
+    readonly id = 'my-plugin';
     readonly dependencies: string[] = [];
 
-    counter!: Counter;
+    // [需改] 换成你模板里的可存档对象
+    store!: MySaveable;
 
     awake(state: ICoreState): void {
-        this.counter = new Counter();
-        state.addSaveableContent('@plugin/example-counter', this.counter);
+        this.store = new MySaveable();
+        state.addSaveableContent('@plugin/my-store', this.store);
     }
 
     async initialize(): Promise<void> {}
@@ -338,27 +307,25 @@ export class CounterPlugin implements IDataPluginDefine {
 }
 ```
 
-如果文件顶部报缺少 `ISaveableContent`，再补 `import { ISaveableContent } from '@user/data-common';`；通常插件文件已经引入过相关类型，不要重复粘。
-
 <strong>改什么</strong>：
 
-1. <strong>存档 id</strong>：`@plugin/example-counter` 换成你自己的 id，保证唯一，并与插件 id 分开命名。
-2. <strong>键与值</strong>：`add(key, value)` 的键换成你的业务键；需要存字符串就改 `Map` 的值类型。
-3. <strong>方法</strong>：`add`、`get` 只是演示，按你的需求增删；存档形状 `ICounterSave` 跟着改。
+1. <strong>类名与 id</strong>：`MyPlugin` 与 `my-plugin` 换成你的插件名，`id` 全局唯一。
+2. <strong>持有字段</strong>：`store` 与 `MySaveable` 换成模板里你的类；对象构造需要 `state` 时，也在这里传入。
+3. <strong>存档 id</strong>：`@plugin/my-store` 换成你自己的 id，保证唯一，并与插件 id 分开命名。
 4. <strong>注册位置</strong>：必须在 `awake` 里注册，且只注册一次。
 
-<strong>怎么验证</strong>：启动后调用 `counter.add('kill', 1)`，存档，再 `add` 一次让它变成 2，然后读档。读档后 `counter.get('kill')` 应回到 1。如果还是 2，检查 `loadState` 有没有先 `clear()`；如果读档后 `get` 报「不是函数」，检查是不是把类实例直接塞进了存档。
+文件顶部通常已经有 `IDataPluginDefine` / `ICoreState`；若报缺少 `MySaveable` 或 `ISaveableContent`，再补对应的 `import`，不要重复粘。
 
-## 改内置还是自己写
+<strong>怎么验证</strong>：启动后把某个键改到一个可观察的值，存档；再改一次，然后读档。读档后应回到存档时的值。如果没恢复，检查 `loadState` 有没有先 `clear()`；如果读档后调用方法报「不是函数」，检查是不是把类实例直接塞进了存档。
+
+## 改内置还是写成插件
 
 先看你要改的东西属于哪一类：
 
 - 只是给现有系统补存档，例如某个内置对象漏了一个字段——<strong>直接改它的 `saveState` 与 `loadState`</strong>，不要在外面再包一层；
 - 要新增一组独立功能，有自己的状态、自己的管理器、自己的生命周期——做成插件，并给插件里的对象实现 `ISaveableContent`。
 
-能改内置解决的问题，不值得再新建一个可存档对象。新建意味着多一个 id、多一处注册、多一份读档顺序要维护；出问题时，排查面也更大。
-
-<strong>如果你不怎么懂代码，建议直接改内置，而不是自己写新的类。</strong>在内置类的 `saveState` 里补一个字段、在 `loadState` 里补一行恢复，改动小、对照原代码就能看出差异；自己写新类则要同时处理注册、存档形状、读档顺序与引用解析。
+新增系统优先走插件：可存档对象跟着插件留在 `src`，升级内置包时不必对照差异。只有必须修改内置对象的存档行为时，才动 `packages` / `packages-user` 里的实现。
 
 ## 常见错误
 
@@ -415,6 +382,6 @@ console.log(content);
 - 存档与读档按注册顺序执行；执行器在该对象 `loadState` 后立即运行，且不被录像禁用包裹。
 - 插件 `afterLoad` 只在初次加载后运行一次，不能替代读档执行器。
 - 跨对象引用存 id 或键，读档时按顺序或延迟解析，不要存活对象引用。
-- 不懂代码时优先改内置的 `saveState` / `loadState`，不要急着写新类。
+- 新增系统优先通过插件承载可存档对象；只有必要时才改内置的存档实现。
 
 返回[高级 I 导览](./index.md)。
