@@ -11,14 +11,11 @@
 - <strong>命令式</strong>：你写一步，代码走到就执行一步。执行时机由你写的位置决定。
 - <strong>声明式</strong>：你声明规则、数据或对象，引擎在定义好的时机调用。执行时机由引擎决定。
 
-可以把它想成点菜：
-
-- 命令式像你走进厨房，自己开火、下锅、装盘，每一步都要亲自做，而且只做这一次；
-- 声明式像你把菜单交给厨房：你说明「要什么」，厨房在出餐时按流程做好。你不需要知道灶台什么时候点火，也不需要在旁边盯着。
+可以把它想成点菜：命令式是你走进厨房自己开火、下锅、装盘，每一步都要亲自做，而且只做这一次；声明式是你把菜单交给厨房，说明「要什么」，厨房在出餐时按流程做好。
 
 所以，声明式<strong>不是不写代码</strong>。你仍然要写「怎么算、怎么改」；只是把「做什么」与「什么时候做」分开了。分开之后，同一个规则可以被引擎在不同场景反复使用，而不必在每个调用点重写一遍。
 
-## 旧样板：命令式，写到就执行
+## 命令式：写到就执行
 
 旧样板里，很多效果是直接写在某段脚本里的：需要强化周围怪物，就在事件脚本里遍历它们、直接改攻击力；需要勇士回血，就直接改勇士当前的血量。
 
@@ -40,52 +37,36 @@ hero.hp = hero.hp + 50;
 - <strong>只在执行到的那一瞬间生效</strong>。脚本没被触发，效果就不存在；触发第二次，效果就再来一次。
 - <strong>想重新计算只能重跑</strong>。怪物移动、光环范围变化之后，旧数值不会自动更新；再跑一遍脚本，又容易把加成叠加两次。
 - <strong>每条路径都要自己同步</strong>。存档、读档、录像回放、重新进入楼层，这些路径都可能绕开你写的那段脚本，于是状态对不上。
-- <strong>没法凭空给怪物加特殊属性</strong>。直接改 `atk` 只是改了一个数字，不能让怪物「获得一条领域属性」，因此也带不出领域对应的地图伤害。
+- <strong>没法凭空给怪物加特殊属性</strong>。直接改 `atk` 只是改了一个数字，不能让怪物「获得一条领域属性」。
 
 这不是说命令式一无是处。玩家点一下、走一步、用一次道具，本来就是「现在立刻发生」的动作，用命令式接口最直接。问题只出在：把<strong>持续生效的规则</strong>也写成了一次性命令。
 
-## 新样板：声明式，引擎在合适时机执行
+## 声明式：引擎在合适的时机执行
 
-新样板把规则与调用时机拆开。你只声明规则长什么样，引擎在它已经定义好的时机调用你。下面五组都是当前源码里真实存在的机制，也是后续高级内容的基础。
+新样板把规则与调用时机拆开。下面五组都是当前源码里真实存在的机制，也是后续高级内容的基础。
 
 ### 怪物特殊属性与光环
 
-这是最典型的一组。你不需要在每只怪物身上写「攻击加两成」，只需要在数据里声明它带有哪种特殊属性、参数是多少。
+<strong>你声明什么</strong>：怪物数据上的 `special` 字段。键是特殊属性编号，值是该属性的参数。比如给怪物声明一条光环（编号 `23`），参数类型是 `ISpecial23Value`，定义在 `src/data/enemy/special.ts`：
 
-<strong>你声明什么</strong>：`src/content/enemy.jsonc` 里怪物数据对象的 `special` 字段。字段的键是特殊属性编号，值是该属性的参数。给怪物声明一条光环（编号 23）的完整写法见下方示例。光环的参数类型是 `ISpecial23Value`，定义在 `src/data/enemy/special.ts`；这份类型同时被 `aura.ts` 里的转换器与视图使用。
-
-<strong>引擎在哪个时机执行</strong>：引擎构建「计算后怪物」时。`state.enemyContext.buildup()` 会按固定顺序重建每只怪物，把光环、查询、最终效果真正写进属性。`aura.ts` 里的 `CommonAuraConverter` 负责识别编号 23，把它转换成 `CommonAura` 视图；这个转换器在 `src/data/enemy/initialize.ts` 里通过 `ctx.registerAuraConverter(new CommonAuraConverter())` 注册一次即可。
-
-<strong>为什么这比命令式更稳</strong>：怪物模板本身没有被改写，每次重建都从模板的原始值出发，所以反复重建不会让加成越叠越多。你改的是数据里的一条声明，所有读取计算后怪物的场景都会自动看到新结果。存档也只需要保存模板，不需要额外记录「上次光环加了多少」。更细的构建流程见[战斗总览](../intermediate/combat-overview.md)，属性本身的写法见[特殊属性](../intermediate/enemy-specials.md)。
-
-#### 示例：给怪物加一条光环
-
-假设要让某只怪物给范围内的其他怪物增加 20% 攻击。做法是在 `src/content/enemy.jsonc` 里给这只怪物的数据对象声明一条 `special`，不需要写任何调用代码。JSON 没有 `import`，直接把字段放进对象即可：
-
-```jsonc
-// 目标怪物对象上的 special 字段
-"special": {
-    // 键 "23" 是光环的特殊属性编号，不能改名
-    "23": {
-        // 影响范围，单位为格
-        "range": 1,
-        // false 表示十字范围，true 表示矩形范围
-        "square": false,
-        // 三项加成都是百分比：生命、攻击、防御
-        "hpBuff": 0,
-        "atkBuff": 20,
-        "defBuff": 0
-    }
-}
+```ts
+// special 字段里编号 23 的值，类型为 ISpecial23Value
+const aura: ISpecial23Value = {
+    range: 1, // 光环范围，单位为格
+    square: false, // true 为矩形范围，false 为十字型范围
+    hpBuff: 0, // 三项都是百分比：生命、攻击、防御
+    atkBuff: 20,
+    defBuff: 0
+};
 ```
 
-`special` 的键必须是特殊属性编号，`"23"` 就代表光环这一条；参数类型 `ISpecial23Value` 定义在 `src/data/enemy/special.ts`，同时被 `aura.ts` 里的转换器与视图使用。字段值才是你要改的部分：`range` 是范围，`square` 决定矩形还是十字，`hpBuff`、`atkBuff`、`defBuff` 是百分比。
+<strong>引擎在哪个时机执行</strong>：构建「计算后怪物」时。`state.enemyContext.buildup()` 会按固定顺序重建每只怪物，把光环、查询与最终效果真正写进属性；`aura.ts` 里的 `CommonAuraConverter` 负责把编号 `23` 转成 `CommonAura` 视图，这个转换器在初始化时通过 `ctx.registerAuraConverter(...)` 注册一次。
 
-重新进入楼层或触发一次重建，然后查看周围怪物的计算后攻击：它应当按 `atkBuff` 的百分比提高，把 `atkBuff` 改回 0 后恢复到原值。验证时还要确认没有在事件脚本里手动再加一遍攻击——光环与脚本会叠加，数值会比预期高。
+<strong>为什么这比命令式更稳</strong>：怪物模板本身没有被改写，每次重建都从模板的原始值出发，所以反复重建不会让加成越叠越多；你改的是数据里的一条声明，所有读取计算后怪物的场景都会自动看到新结果；存档也只需要保存模板。更细的构建流程见[战斗总览](../intermediate/combat-overview.md)，属性本身的写法见[特殊属性](../intermediate/enemy-specials.md)。
 
 ### 伤害计算器
 
-<strong>你声明什么</strong>：一组属性到伤害结果的换算规则。为了实现「把这组属性换算成勇士掉多少血、要打几回合」，我们需要实现 `IDamageCalculator` 接口，核心方法是 `calculate(handler)`，返回 `{ damage, turn }`。接口还有 `getCriticalLimit(handler, attribute)`，供临界值计算使用；一般不需要自己实现，改公式时按 `MainDamageCalculator` 的写法保留它即可。内置实现是 `src/data/enemy/calculator.ts` 里的 `MainDamageCalculator`，它在 `initializeEnemy` 中通过 `useCalculator(new MainDamageCalculator())` 注册。
+<strong>你声明什么</strong>：一组属性到伤害结果的换算规则。核心是实现 `IDamageCalculator.calculate(handler)`，返回 `{ damage, turn }`；接口还有 `getCriticalLimit(handler, attribute)` 供临界值计算，改公式时按内置实现 `MainDamageCalculator` 的写法保留它即可。内置实现通过 `useCalculator(new ...)` 注册一次。
 
 <strong>引擎在哪个时机执行</strong>：任何需要伤害数值的地方。显示伤害预览、计算临界值、真正结算战斗，都会调用计算器；同一场战斗里，它可能被反复调用很多次。
 
@@ -95,7 +76,7 @@ hero.hp = hero.hp + 50;
 
 ### 道具效果
 
-<strong>你声明什么</strong>：道具被使用或拾取时要做的事。为了实现这个效果，需要实现 `IItemEffect` 的 `useEffect(item, state)`；如果还要判断能不能用，再实现 `canUse(item, state)`。内容层的 `src/content/item.ts` 就是用对象字面量声明这些效果的。
+<strong>你声明什么</strong>：道具被使用或拾取时要做的事，即道具数据上的效果对象。要实现效果，实现 `IItemEffect` 的 `useEffect(item, state)`；如果还要判断能不能用，再实现 `canUse(item, state)`。
 
 <strong>引擎在哪个时机执行</strong>：道具系统处理使用与拾取时。`Pick` 类道具在拾取时触发，`Constant` 与 `Consumable` 类道具在使用时触发。这个时机以及道具数量、消耗、存档与录像，都由道具系统统一处理。
 
@@ -103,15 +84,15 @@ hero.hp = hero.hp + 50;
 
 ### 可存档对象
 
-<strong>你声明什么</strong>：一份自定义状态该怎么存、怎么读。为了让一份状态跟着存档一起保存，需要实现 `ISaveableContent<T>`：`saveState(compression)` 返回要保存的数据，`loadState(state, compression)` 负责把数据读回来。`saveState` 返回的对象应当经过深拷贝（`structuredClone`），避免和运行中的对象共用引用。
+<strong>你声明什么</strong>：一份自定义状态该怎么存、怎么读。实现 `ISaveableContent<T>`：`saveState(compression)` 返回要保存的数据，`loadState(state, compression)` 负责把数据读回来。返回的对象必须与运行中的对象<strong>互相独立</strong>，`saveState` 不会替你深拷贝。
 
-<strong>引擎在哪个时机执行</strong>：存档与读档时。你只需要在初始化阶段注册一次，例如 `state.addSaveableContent('@my/xxx', content)`，之后引擎会在存档、读档时按注册表逐个调用。
+<strong>引擎在哪个时机执行</strong>：存档与读档时。你只需要注册一次，例如 `state.addSaveableContent('@my/xxx', content)`，之后引擎会在存档、读档时按注册表逐个调用。
 
-<strong>为什么这比命令式更稳</strong>：存与读写在同一个接口里，不会出现「存的时候漏了一个字段、读的时候又忘了恢复」。注册一次之后，压缩级别、调用顺序、跨对象引用都由存档系统统一管理。存档的完整约束见[可存档内容](./saveable-content.md)。
+<strong>为什么这比命令式更稳</strong>：存与读写在同一个接口里，不会出现「存的时候漏了一个字段、读的时候又忘了恢复」。注册一次之后，压缩级别、调用顺序、跨对象引用都由存档系统统一管理。完整约束见[可存档内容](./saveable-content.md)。
 
 ### 钩子
 
-<strong>你声明什么</strong>：某个动作发生时要做的事。为了实现这个，需要实现对应的钩子族接口，把处理写进方法体。比如「勇士属性变化时做点什么」，就实现 `IHeroAttributeHooks` 的 `onUpdateAttribute`。
+<strong>你声明什么</strong>：某个动作发生时要做的事。实现对应的钩子族接口，把处理写进方法体。比如「勇士属性变化时做点什么」，就实现 `IHeroAttributeHooks` 的 `onUpdateAttribute`。
 
 <strong>引擎在哪个时机执行</strong>：对应动作发生时。主对象会通过 `forEachHook` 依次通知挂在自己身上的钩子。你只需要注册一次：
 
@@ -120,9 +101,9 @@ hero.hp = hero.hp + 50;
 state.hero.attribute.addHook(new MyHeroAttributeHooks(state));
 ```
 
-不需要时可以用 `removeHook` 摘掉。内置钩子已经在 `initializeHooks` 里注册好，日常改内置时通常不需要自己调用 `addHook`。
+不需要时可以用 `removeHook` 摘掉。内置钩子已经在初始化时注册好，你自己写的钩子才需要 `addHook`。
 
-<strong>为什么这比命令式更稳</strong>：你不需要去改每一个调用点。动作发生时引擎统一广播，多个钩子可以同时存在、各自处理；不再需要时也能干净地移除。钩子的完整用法见[钩子](../intermediate/hooks.md)。
+<strong>为什么这比命令式更稳</strong>：你不需要去改每一个调用点。动作发生时引擎统一广播，多个钩子可以同时存在、各自处理；不再需要时也能干净地移除。完整用法见[钩子深入](./hooks-in-depth.md)。
 
 这五组的共同点是：你写的不是一串执行步骤，而是「一份规则加一个注册动作」。注册之后，调用时机归引擎。你不需要，也不应该自己再找地方调用它。
 
@@ -147,7 +128,6 @@ state.hero.attribute.addHook(new MyHeroAttributeHooks(state));
 2. <strong>从模板重算，避免叠加</strong>。每次重建都从模板的原始值出发，算出来的是「当前应该是什么样」，而不是「上次基础上再加一点」。命令式反复执行同一段脚本，很容易越加越多。
 3. <strong>按注册表与优先级组合</strong>。转换器、效果、钩子都注册到对应系统里，多个扩展可以同时存在；需要顺序时由优先级决定，而不是靠你调整脚本摆放位置。
 4. <strong>录像只记录玩家入口动作</strong>。玩家的移动、使用道具等动作进入录像，光环、伤害这些派生结果在回放时重新计算。如果派生结果依赖某段命令式脚本执行了几次，回放就会和录制时对不上。
-5. <strong>计算会被反复调用</strong>。伤害计算器要同时服务显示、临界与战斗结算，所以它只能读输入、返回结果。把状态修改塞进计算器，第一次和第二次就可能算出不同答案。
 
 ## 「副作用」是什么
 
@@ -165,31 +145,19 @@ calculate(handler) {
 }
 ```
 
-计算器在一次战斗里会被反复调用：显示伤害要算、临界值要二分十几次、真正结算还要算。只要它顺手改了状态，第二次调用的输入就可能已经被第一次改过了。结果是显示、临界与实际战斗互相污染，同一只怪物在不同时刻显示出不同伤害。
+计算器在一次战斗里会被反复调用：显示伤害要算、临界值要二分十几次、真正结算还要算。只要它顺手改了状态，第二次调用的输入就可能已经被第一次改过了。结果是显示、临界与实际战斗互相污染。
 
 需要说明的是，副作用本身不是错。钩子、道具效果、存档对象本来就要改状态；错的是在<strong>只该读输入、且会被反复调用</strong>的位置改状态。判断标准很简单：这个方法会不会被引擎多次调用？如果会，它就应该只读输入、返回结果。
-
-## 地图伤害按「计算后怪物」结算
-
-地图伤害读取的是<strong>计算后怪物</strong>，而不是怪物模板。这一点和光环直接相关。
-
-光环（尤其是特殊光环）在重建阶段可以给计算后怪物添加特殊属性。如果添加的是领域（13）、夹击（14）、阻击（16）、激光（22）这类属性，那么地图伤害在读取这只计算后怪物时就会看到它们——也就是说，这只怪物确实会获得对应的地图伤害效果。这正是声明式的好处：你只声明「光环给周围怪物加上某条属性」，后续系统会把它当成怪物真实拥有的属性来处理。
-
-旧样板直接改数值，没法凭空给怪物加一条特殊属性，所以做不到「由光环派生出地图伤害」。
-
-如果某个机制既要读取外部环境、又要修改外部环境，应该拆成「查询效果 + 光环效果」两个部分，二者通过新增的一条怪物属性桥接。细节属于更深入的实现，见 `高级教程 II · 光环与查询的优先级`。
-
-<!-- TODO(advanced-II): 查询效果与光环效果通过属性桥接 -->
 
 ## 什么时候仍然用命令式
 
 声明式不是万能模板。下面这些场景仍然应该用命令式接口：
 
-- <strong>玩家直接产生的一次性动作</strong>：走一步、使用一个道具、触发一段一次性剧情。它们的语义就是「现在立刻发生」，用命令式最自然。
+- <strong>玩家直接产生的一次性动作</strong>：走一步、使用一个道具、触发一段一次性剧情。它们的语义就是「现在立刻发生」。
 - <strong>只在该时刻生效、且不需要回放的脚本</strong>：如果一段脚本的效果本来就只应该发生一次，写成命令式没有问题。
 - <strong>需要立即得到返回值再决定下一步的流程</strong>：比如先判断能否使用道具，再决定是否扣除数量。
 
-但要记住一条边界：<strong>这些入口动作必须计入录像</strong>。玩家按下的操作进入录像，回放时重新走一遍命令式接口，派生结果再由声明式规则重算。录像一致性的具体要求见[录像一致性](./replay-consistency.md)。
+但要记住一条边界：<strong>这些入口动作必须计入录像</strong>。玩家按下的操作进入录像，回放时重新走一遍命令式接口，派生结果再由声明式规则重算。具体要求见[录像一致性](./replay-consistency.md)。
 
 可以用一句话概括：<strong>一次性动作用命令式，持续生效的规则用声明式</strong>。
 
@@ -202,74 +170,11 @@ calculate(handler) {
 | 特殊属性   | `createSpecials` 里的一条 `map.set(code, …)` | `initializeEnemy` 统一注册，无需单独调用 | 读取或重建计算后怪物时 |
 | 光环       | 一个转换器与一个视图                         | `ctx.registerAuraConverter(new …)`       | 重建计算后怪物时       |
 | 伤害计算器 | `IDamageCalculator.calculate`                | `useCalculator(new …)`                   | 显示、临界、战斗结算时 |
-| 道具效果   | `IItemEffect.useEffect`                      | 写在内容层道具数据里                     | 使用或拾取道具时       |
+| 道具效果   | `IItemEffect.useEffect`                      | 写在道具数据里                           | 使用或拾取道具时       |
 | 可存档对象 | `ISaveableContent.saveState` / `loadState`   | `state.addSaveableContent(id, content)`  | 存档与读档时           |
 | 钩子       | 对应钩子族接口的方法                         | `addHook(new …)`                         | 对应动作发生时         |
 
-这些扩展点的写法都是「实现一个类 + 注册一次」：类里只放引擎会调用的方法，注册放在初始化函数里。示例一律写成 `class` 再 `new`，不要写成 `const obj = { ... }` 这种 plain object。例外是引擎本身就用对象字面量声明的内容（如 `src/content/item.ts` 的 `ItemEffect`），那里沿用现有写法即可。
-
-像 `aura.ts` 这种集中放置多个实现的文件，建议用 `//#region {code}-{name}` 到 `//#endregion` 包起来，结构更清晰，后续编辑器也可能据此识别。
-
-## 改内置还是写成插件
-
-判断依据是改动落在谁的代码里，而不是改动大小。
-
-日常效果仍然集中在对应的内置实现里：特殊属性与光环改 `src/data/enemy/special.ts` 与 `src/data/enemy/aura.ts`；伤害公式改 `src/data/enemy/calculator.ts` 的 `MainDamageCalculator.calculate`；事件处理改 `src/data/hook/*` 里已有的钩子类。这些实现已经注册好，改方法体或加一条分支就会生效，不需要自己写注册代码。不要为每个效果新建一个文件；光环、伤害计算这类实现本来就集中放在对应文件里。
-
-只有在下面这些情况才需要自己写类：
-
-- 你要替换整套策略，例如整条伤害公式都换掉；
-- 你要新增一组可独立复用的扩展，例如一个新的光环转换器；
-- 你要新增一个系统。新增系统优先通过插件实现，把改动留在 `src`；只有插件与现有扩展点都覆盖不了时，才去改内置包（`packages` / `packages-user`），见[插件系统](./plugin-system.md)。
-
-## 常见误区
-
-- <strong>把声明式当成不用写逻辑</strong>。声明式只是把「什么时候执行」交给引擎，「怎么算」仍然要你写清楚。
-- <strong>在计算器里改状态</strong>。计算器会被反复调用，任何副作用都会污染显示、临界与结算。要改状态，放到钩子、道具效果或战斗脚本里。
-- <strong>在声明式规则里依赖调用顺序</strong>。多个光环、多个钩子之间的顺序不应靠你摆放代码的位置来保证；需要顺序时使用系统提供的优先级。
-- <strong>把一次性动作硬做成声明式</strong>。玩家走一步就是现在发生，硬包成「声明规则等引擎调用」只会增加复杂度，还容易漏记录像。
-- <strong>只改模板却忘记刷新</strong>。正常流程下引擎会自动重建；只有绕过正常流程直接改怪物对象时，才需要手动标记那只怪物待重算。
-
-## 验证
-
-声明式写对了，最明显的特征是：<strong>只改声明，不改调用代码，结果就会跟着变</strong>。
-
-先试一次最直接的检查：在 `src/content/enemy.jsonc` 里把某只怪物的光环参数改大（例如把 `atkBuff` 从 20 改成 50），不要动 `aura.ts`，也不要改任何注册代码。重新进入楼层或触发一次重建，再看这只怪物周围的怪物属性：攻击加成应该按新参数变化。如果没变，先确认你改的是数据里的 `special` 字段，而不是另写了一段命令式脚本。
-
-接着检查计算器有没有副作用：用同一份输入调用两次，`damage` 与 `turn` 应该完全相同，并且 flag、怪物属性、勇士属性都不应发生变化。可以取到同一个 handler 后连算两次：
-
-```ts
-// [验证] 同一个 handler 连续计算两次，结果应完全一致
-const view = state.enemyContext.getEnemyByLoc(0, 0);
-if (!view) return;
-
-const system = state.enemyContext.getDamageSystem();
-const info = system?.getDamageInfo(view);
-
-if (system && info) {
-    const first = system.getDamageInfoByHandler(info.handler);
-    const second = system.getDamageInfoByHandler(info.handler);
-    // first 与 second 的 damage、turn 应一致
-}
-```
-
-把 `(0, 0)` 换成场上有怪物的坐标；那里没有怪物时，`getEnemyByLoc` 会返回 `null`。如果两次结果不同，或者第二次算完之后状态多出了东西，说明计算器里有副作用，回到 `calculate` 里检查有没有写 flag、删记录或改对象。
-
-最后检查存档与读档。两个入口都在主对象上：`state.saveState(compression)` 返回一份 `ReadonlyMap<string, unknown>`，`state.loadState(snapshot, compression)` 用同一份映射恢复：
-
-```ts
-// [验证] 存档 → 改状态 → 读档
-import { SaveCompression } from '@user/data-common';
-
-state.flags.setFieldValue('demo', 1);
-const snapshot = state.saveState(SaveCompression.NoCompression);
-
-state.flags.setFieldValue('demo', 2);
-state.loadState(snapshot, SaveCompression.NoCompression);
-console.log(state.flags.getFieldValue('demo')); // 应为 1
-```
-
-先存档，然后修改你声明的状态（例如改一个 flag、移动一次怪物、使用一个道具），再读档。读档后应该回到存档时的状态。如果某个字段没有恢复，检查它所属的对象有没有实现 `ISaveableContent`、有没有通过 `state.addSaveableContent` 注册，以及 `saveState` 返回的对象里有没有漏掉这个字段。
+这些扩展点的写法都是「实现一个类 + 注册一次」：类里只放引擎会调用的方法，注册放在初始化函数里。示例一律写成 `class` 再 `new`，不要写成 `const obj = { ... }` 这种 plain object。
 
 ## 小结
 
@@ -277,6 +182,5 @@ console.log(state.flags.getFieldValue('demo')); // 应为 1
 - 声明式不是不写代码，而是把「做什么」与「什么时候做」分开。
 - 持续生效的规则用声明式；玩家直接产生的一次性动作用命令式，但要计入录像。
 - 计算类扩展必须无副作用；状态修改放到引擎规定的时机里。
-- 新增系统优先写成插件；只有必要时才改内置包。
 
 返回[高级 I 导览](./index.md)。
