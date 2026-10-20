@@ -197,6 +197,19 @@
 - **D-91（范围边界）:** 仅实现插件系统机制本身；不改入口/接线；不改 `initializeL0..L3` 等 config 字段口径（用户自行处理）；不新增依赖；遵循 `dev.md`（无循环引用、命名、jsDoc、无副作用模块）。
 - **D-92（插件错误处理与日志码，修订 D-87）:** 插件系统用**新错误码**（`packages/common/src/logger.json` error 段新增）：**循环依赖 → 76**；**依赖不存在的插件 → 77**；**重复 id → 78**。**重复 id 不覆盖原插件**（保留先注册者，重复者不注册）。**报错的插件全部不进入加载流程**（`awake`/`initialize`/`afterLoad` 均不执行；其下游依赖者亦不加载）。取代 D-87 中「复用 error 75」的口径；错误消息文本待用户批准。（2026-10-14 用户裁定）
 
+### 任务 11（当前规划单元：构建重构）
+
+> 本节界定**本次规划运行**的范围：任务 11 = 重构构建脚本以适配新引擎（`script/build-game.ts` / `script/build-resource.ts`），删除 `build-packages.ts` 与 `build-lib.ts`。`script/dev.ts` **不在范围**。
+
+- **D-93（范围）:** 重构 `script/build-game.ts` 与 `script/build-resource.ts`；**删除** `script/build-packages.ts` 与 `script/build-lib.ts`（后者为 vite-plugin-dts 遗留，不需要类型声明）；`script/dev.ts` 不在本次范围。
+- **D-94（数据端/渲染端分离 + Vite 插件检测）:** 保证**数据端独立包不得引用渲染端**。写一个 **Vite 插件**在构建数据端时扫描其模块图，若含渲染端模块（`@user/client-*`、`@motajs/render*`、`vue` 等）则**报错并终止**构建。**取代**现有按构建体积推断的 `checkClientData` 启发式。
+- **D-95（数据端产物）:** 数据端构建为**库模式**、输出 **ESM**（**不用 iife**），入口 `src/data.ts`，产物 `dist/data/data.js`。
+- **D-96（content 处理）:** 构建后把 `src/content` 复制到 `dist/content`（去掉 `src` 前缀）；做**简单压缩**——**jsonc** 用 `JSON.parse + JSON.stringify` 压缩（**去掉注释**，**后缀仍保留 `.jsonc`** 以确保加载不出错）；**字体**用 fontmin 压缩；**不做资源分块**（不生成 `resource.<hash>.h5data`），**不做 zip 压缩**。`build-resource` 改为从 `src/content` 读取素材。
+- **D-97（删除旧模板内容）:** **不保留** `public/**`（即将整体删除）、`editor.html`、`_server`、`_docs`、`libs`、`logo.png`、`styles.css`、`main.js`、`script/template/启动服务.exe`；**不打包** `source-code.zip`；**不加** `loadList.json`；**保留 `LICENSE`（LGPL v3）**。`index.html` 去掉旧 `<link href='/styles.css'>`，样式改由入口经 JS 打包引入。
+- **D-98（脚本与 npm script 调整）:** 删除 `build-packages.ts` / `build-lib.ts` 及 `package.json` 中对应 `build:packages` / `build:lib` script；`build:game` 保留并调整（同时产出渲染端游戏与数据端独立包）。
+- **D-99（类型检查前置）:** 构建仍**前置 `vue-tsc --noEmit`**（保留）。
+- **D-100（渲染端构建微调）:** 移除 main.js 二次压缩（babel）步骤（`main.js` 不留）；legacy 插件与 `manualChunks` 按新引擎实际情况微调。
+
 ### the agent's Discretion
 
 - 无。用户明确未授权 AI 自行决定 UI 形态或任务范围。

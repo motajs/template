@@ -1,225 +1,121 @@
-import JSZip from 'jszip';
-import { RequiredData, RequiredIconsData } from './types';
-import { Stats } from 'fs';
-import { readdir, readFile, stat } from 'fs/promises';
-import { resolve } from 'path';
-import { fileHash } from './utils';
+import Fontmin from 'fontmin';
+import { copy } from 'fs-extra';
+import { mkdir, readdir, readFile, writeFile } from 'fs/promises';
+import { dirname, extname, join } from 'path';
 
-export const enum CompressedUsage {
-    // ---- 系统加载内容，不可更改
-    Font,
-    Image,
-    Sound,
-    Tileset,
-    Autotile,
-    Material,
-    Animate
+/** 需要经 fontmin 做字形子集化的字体扩展名 */
+const FONT_EXTENSIONS = ['.ttf', '.otf', '.woff', '.woff2'];
+
+export interface IContentBuildOptions {
+    /** content 素材的源目录 */
+    readonly sourceDir: string;
+    /** content 素材的输出目录 */
+    readonly outputDir: string;
+    /** 参与字体子集化的全部字符 */
+    readonly chars: string;
 }
 
-export const enum LoadDataType {
-    ArrayBuffer,
-    Uint8Array,
-    Blob,
-    Text,
-    JSON
+export interface IContentBuildStats {
+    /** 处理的文件总数 */
+    readonly files: number;
+    /** 压缩的 jsonc 文件数 */
+    readonly jsonc: number;
+    /** 压缩的字体文件数 */
+    readonly fonts: number;
 }
 
-export interface ResourceInfo {
-    readonly name: string;
-    readonly readAs: LoadDataType;
-    readonly usage: CompressedUsage;
-    readonly stats: Stats;
+interface IContentBuildCounter {
+    files: number;
+    jsonc: number;
+    fonts: number;
 }
 
-export interface SplittedResource {
-    readonly byteLength: number;
-    readonly resource: JSZip;
-    readonly buffer: Uint8Array;
-    readonly fileName: string;
-    readonly content: Readonly<ResourceInfo>[];
+/**
+ * 将 jsonc 文本压缩为单行纯 JSON，按行去掉全部 `//` 注释与系统标记行。
+ * @param text jsonc 原文
+ */
+export function minifyJSONC(text: string): string {
+    const body = text
+        .split(/\r?\n/)
+        .filter(line => !line.trim().startsWith('//'))
+        .join('\n');
+    return JSON.stringify(JSON.parse(body));
 }
 
-interface ResourceContent extends ResourceInfo {
-    readonly content: string | Buffer | Uint8Array;
-    readonly exceed: boolean;
+/**
+ * 将单个字体文件按给定字符集做字形子集化，输出到目标目录并保留原文件名。
+ * @param source 字体源文件
+ * @param target 目标文件路径
+ * @param chars 参与子集化的全部字符
+ */
+async function compressFont(source: string, target: string, chars: string) {
+    const fontmin = new Fontmin();
+    const glyph = Fontmin.glyph({ text: chars });
+    await fontmin.src(source).dest(dirname(target)).use(glyph).runAsync();
 }
 
-interface ResourcePath {
-    readonly name: string;
-    readonly path: string;
-    readonly usage: CompressedUsage;
-}
-
-function getTypeByUsage(usage: CompressedUsage): LoadDataType {
-    switch (usage) {
-        case CompressedUsage.Animate:
-            return LoadDataType.Text;
-        case CompressedUsage.Autotile:
-        case CompressedUsage.Image:
-        case CompressedUsage.Tileset:
-        case CompressedUsage.Material:
-            return LoadDataType.Blob;
-        case CompressedUsage.Font:
-        case CompressedUsage.Sound:
-            return LoadDataType.ArrayBuffer;
-    }
-}
-
-function getZipFolderByUsage(usage: CompressedUsage): string {
-    switch (usage) {
-        case CompressedUsage.Image:
-            return 'image';
-        case CompressedUsage.Tileset:
-            return 'tileset';
-        case CompressedUsage.Autotile:
-            return 'autotile';
-        case CompressedUsage.Material:
-            return 'material';
-        case CompressedUsage.Font:
-            return 'font';
-        case CompressedUsage.Sound:
-            return 'sound';
-        case CompressedUsage.Animate:
-            return 'animate';
-    }
-}
-
-function readFileOfType(path: string, type: LoadDataType) {
-    if (type === LoadDataType.Text) {
-        return readFile(path, 'utf-8');
-    } else {
-        return readFile(path);
-    }
-}
-
-async function compressFiles(files: ResourceContent[]) {
-    const zip = new JSZip();
-    files.forEach(v => {
-        const dir = `${getZipFolderByUsage(v.usage)}/${v.name}`;
-        zip.file(dir, v.content);
-    });
-    const buffer = await zip.generateAsync({
-        type: 'uint8array',
-        compression: 'DEFLATE',
-        compressionOptions: {
-            level: 9
-        }
-    });
-
-    const hash = fileHash(buffer);
-    const name = `resource.${hash}.h5data`;
-
-    const resource: SplittedResource = {
-        byteLength: buffer.byteLength,
-        buffer: buffer,
-        resource: zip,
-        fileName: name,
-        content: files
-    };
-
-    return resource;
-}
-
-export async function splitResource(
-    data: RequiredData,
-    icons: RequiredIconsData,
-    base: string,
-    fontsDir: string,
-    limit: number
+/**
+ * 递归处理目录：jsonc 压缩为纯 JSON，字体做子集化，其它素材原样拷贝。
+ * @param sourceDir 源目录
+ * @param outputDir 输出目录
+ * @param chars 参与字体子集化的全部字符
+ * @param counter 统计计数器
+ */
+async function processDirectory(
+    sourceDir: string,
+    outputDir: string,
+    chars: string,
+    counter: IContentBuildCounter
 ) {
-    const result: SplittedResource[] = [];
+    await mkdir(outputDir, { recursive: true });
+    const entries = await readdir(sourceDir, { withFileTypes: true });
 
-    // 获取所有需要分块的资源
-    const { animates, fonts, images, sounds, tilesets } = data.main;
-    const autotiles = Object.keys(icons.autotile);
-    const materials = await readdir(resolve(base, 'project/materials'));
+    for (const entry of entries) {
+        const source = join(sourceDir, entry.name);
+        const target = join(outputDir, entry.name);
 
-    const paths: ResourcePath[] = [
-        ...animates.map<ResourcePath>(v => ({
-            name: `${v}.animate`,
-            path: resolve(base, 'project/animates', `${v}.animate`),
-            usage: CompressedUsage.Animate
-        })),
-        ...fonts.map<ResourcePath>(v => ({
-            name: v,
-            path: resolve(fontsDir, v),
-            usage: CompressedUsage.Font
-        })),
-        ...images.map<ResourcePath>(v => ({
-            name: v,
-            path: resolve(base, 'project/images', v),
-            usage: CompressedUsage.Image
-        })),
-        ...sounds.map<ResourcePath>(v => ({
-            name: v,
-            path: resolve(base, 'project/sounds', v),
-            usage: CompressedUsage.Sound
-        })),
-        ...tilesets.map<ResourcePath>(v => ({
-            name: v,
-            path: resolve(base, 'project/tilesets', v),
-            usage: CompressedUsage.Tileset
-        })),
-        ...autotiles.map<ResourcePath>(v => ({
-            name: `${v}.png`,
-            path: resolve(base, 'project/autotiles', `${v}.png`),
-            usage: CompressedUsage.Autotile
-        })),
-        ...materials.map<ResourcePath>(v => ({
-            name: v,
-            path: resolve(base, 'project/materials', v),
-            usage: CompressedUsage.Material
-        }))
-    ];
+        if (entry.isDirectory()) {
+            await processDirectory(source, target, chars, counter);
+            continue;
+        }
 
-    const files = await Promise.all(
-        paths.map(async ({ path, usage, name }) => {
-            const stats = await stat(path);
-            if (!stats.isFile()) {
-                return Promise.reject(
-                    new ReferenceError(
-                        `Expected resource is a file, but get directory.`
-                    )
-                );
-            }
-            const type = getTypeByUsage(usage);
-            const content = await readFileOfType(path, type);
-            const info: ResourceContent = {
-                readAs: type,
-                name,
-                usage,
-                stats,
-                content,
-                exceed: stats.size > limit
-            };
-            return info;
-        })
+        const extension = extname(entry.name);
+        if (extension === '.jsonc') {
+            const text = await readFile(source, 'utf-8');
+            await writeFile(target, minifyJSONC(text), 'utf-8');
+            counter.jsonc += 1;
+        } else if (FONT_EXTENSIONS.includes(extension)) {
+            await compressFont(source, target, chars);
+            counter.fonts += 1;
+        } else {
+            await copy(source, target);
+        }
+        counter.files += 1;
+    }
+}
+
+/**
+ * 将 content 素材从源目录构建到输出目录，jsonc 压缩为纯 JSON，字体做子集化。
+ * @param options 构建选项
+ */
+export async function buildContent(
+    options: IContentBuildOptions
+): Promise<IContentBuildStats> {
+    const counter: IContentBuildCounter = { files: 0, jsonc: 0, fonts: 0 };
+    await processDirectory(
+        options.sourceDir,
+        options.outputDir,
+        options.chars,
+        counter
     );
 
-    // 从小到大排序，这样的话可以尽量减小资源分块文件数量
-    files.sort((a, b) => a.stats.size - b.stats.size);
-
-    let index = 0;
-    while (index < files.length) {
-        let total = 0;
-        const start = index;
-        let i = index;
-        for (; i < files.length; i++) {
-            const file = files[i];
-            if (file.exceed) {
-                if (i === index) i = index + 1;
-                break;
-            } else {
-                total += file.stats.size;
-            }
-            if (total > limit) {
-                break;
-            }
-        }
-        index = i;
-        const toZip = files.slice(start, index);
-        result.push(await compressFiles(toZip));
+    if (counter.fonts === 0) {
+        process.stdout.write('⚠️   未找到可压缩的字体文件，已跳过字体压缩\r\n');
     }
 
-    return result;
+    return {
+        files: counter.files,
+        jsonc: counter.jsonc,
+        fonts: counter.fonts
+    };
 }
