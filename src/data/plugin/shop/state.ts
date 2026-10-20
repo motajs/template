@@ -77,9 +77,9 @@ export class ShopState implements IShopState {
         return {
             id: this.id,
             enabled: this.enabled,
-            items: this.items,
-            buyPrice: this.buyPrice,
-            sellPrice: this.sellPrice
+            items: new Map(this.items),
+            buyPrice: new Map(this.buyPrice),
+            sellPrice: new Map(this.sellPrice)
         };
     }
 

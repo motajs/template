@@ -668,12 +668,48 @@ importers:
 
   src:
     dependencies:
+      '@motajs/animate':
+        specifier: workspace:*
+        version: link:../packages/animate
+      '@motajs/anon-tokyo':
+        specifier: workspace:*
+        version: link:../packages/anon-tokyo
+      '@motajs/audio':
+        specifier: workspace:*
+        version: link:../packages/audio
+      '@motajs/common':
+        specifier: workspace:*
+        version: link:../packages/common
+      '@motajs/loader':
+        specifier: workspace:*
+        version: link:../packages/loader
+      '@motajs/render':
+        specifier: workspace:*
+        version: link:../packages/render
+      '@motajs/render-vue':
+        specifier: workspace:*
+        version: link:../packages/render-vue
+      '@motajs/system':
+        specifier: workspace:*
+        version: link:../packages/system
+      '@user/client-base':
+        specifier: workspace:*
+        version: link:../packages-user/client-base
+      '@user/client-modules':
+        specifier: workspace:*
+        version: link:../packages-user/client-modules
+      '@user/data-base':
+        specifier: workspace:*
+        version: link:../packages-user/data-base
       '@user/data-common':
         specifier: workspace:*
         version: link:../packages-user/data-common
       '@user/data-state':
         specifier: workspace:*
         version: link:../packages-user/data-state
+      '@user/data-system':
+        specifier: workspace:*
+        version: link:../packages-user/data-system
 
 packages:
 

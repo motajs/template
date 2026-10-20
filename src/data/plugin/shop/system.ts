@@ -45,6 +45,9 @@ export class ShopSystem implements IShopSystem {
 
     @shouldReplay('Buying items should be replayed.')
     buyItem(item: number | string, count: number): ShopTradeResult {
+        if (count < 0) return this.sellItem(item, -count);
+        if (count === 0) return ShopTradeResult.Success;
+        if (!Number.isInteger(count)) return ShopTradeResult.Invalid;
         if (!this.current || !this.hero) {
             logger.warn(199);
             return ShopTradeResult.Invalid;
@@ -76,7 +79,11 @@ export class ShopSystem implements IShopSystem {
         return ShopTradeResult.Success;
     }
 
+    @shouldReplay('Selling items should be replayed.')
     sellItem(item: number | string, count: number): ShopTradeResult {
+        if (count < 0) return this.buyItem(item, -count);
+        if (count === 0) return ShopTradeResult.Success;
+        if (!Number.isInteger(count)) return ShopTradeResult.Invalid;
         if (!this.current || !this.hero) {
             logger.warn(199);
             return ShopTradeResult.Invalid;
