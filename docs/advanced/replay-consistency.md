@@ -24,10 +24,10 @@
 
 两个装饰器都写在<strong>类的方法</strong>上方，作用对象是「录像安全检查」，不是录像本身。
 
-| 装饰器            | 写在哪                            | 做什么                                               | 会不会记录录像 |
-| ----------------- | --------------------------------- | ---------------------------------------------------- | -------------- |
-| `@shouldReplay()` | 会改变游戏状态的方法上            | 收集区间开启时，把「这个方法被调用过」登记成一条路径 | 不会           |
-| `@ignoreReplay()` | 确实不该计入录像的被动 / 延迟路径 | 把<strong>整段</strong>检查标记为忽略                | 不会           |
+| 装饰器                   | 写在哪                            | 做什么                                               | 会不会记录录像 |
+| ------------------------ | --------------------------------- | ---------------------------------------------------- | -------------- |
+| `@shouldReplay(message)` | 会改变游戏状态的方法上            | 收集区间开启时，把「这个方法被调用过」登记成一条路径 | 不会           |
+| `@ignoreReplay(reason)`  | 确实不该计入录像的被动 / 延迟路径 | 把<strong>整段</strong>检查标记为忽略                | 不会           |
 
 ### @shouldReplay：登记一条路径
 
@@ -131,7 +131,7 @@ Mota.require('@user/data-common').logReplaySafetyDetail(0);
 
 这是当前必须知道的事实：`beginReplaySafetyCollection` 与 `endReplaySafetyCollection` 在仓库里目前<strong>只有测试在调用</strong>（`packages-user/data-common/src/replay/__test__/func.test.ts`），`logReplaySafetyDetail` 也一样。
 
-所以本篇描述的是<strong>「收集区间开启时」的检测口径</strong>：区间开着，两个装饰器才有意义；区间没开，`@shouldReplay` 只是原样调用方法。不要指望启动游戏就能看到漏记告警——需要时按「怎么验证」里的方式手动开一次区间。
+所以本篇描述的是<strong>「收集区间开启时」的检测口径</strong>：区间开着，两个装饰器才有意义；区间没开，`@shouldReplay` 只是原样调用方法。不要指望启动游戏就能看到漏记告警——需要时按「怎么验证」里的方式手动开一次区间。生产环境目前也没有自动开启收集区间的开关；如果要在实际游玩中检查，只能在自定义的调试流程或录像入口里，自己把一段操作包在 `beginReplaySafetyCollection` / `endReplaySafetyCollection` 之间。
 
 ### 边界二：读档期间录像被禁用
 
@@ -147,9 +147,9 @@ Mota.require('@user/data-common').logReplaySafetyDetail(0);
 
 这一节按六步给出可直接照做的改法。
 
-<strong>目标</strong>：让一个会改变状态的玩家动作入口，在收集区间里能被登记出来，并亲眼看到「有标记」与「没标记」的差别。
+<strong>目标</strong>：让一个会改变状态的方法入口，在收集区间里能被登记出来，并亲眼看到「有标记」与「没标记」的差别。
 
-<strong>改哪里</strong>：`packages-user/data-base/src/flag/system.ts`，`FlagSystem.setField` 的上方。这个文件里 `setField` 与 `deleteField` 都已经有标记，照着它们的位置改最直观。
+<strong>改哪里</strong>：`packages-user/data-base/src/flag/system.ts`，`FlagSystem.getOrInsert` 的上方。这个文件里 `setField` 与 `deleteField` 都已经有标记；`getOrInsert` 还没有，而它在字段不存在时会新建一条 Flag 字段，同样会改变状态，正好用来观察「加标记 / 去掉标记」的差别。
 
 <strong>复制什么</strong>：只复制装饰器那一行，粘在方法声明的上一行：
 
@@ -160,9 +160,9 @@ Mota.require('@user/data-common').logReplaySafetyDetail(0);
 
 这里不含 `import`：`system.ts` 顶部已经有 `import { shouldReplay } from '@user/data-common';`，不要再粘一次。若你换到别的文件、编辑器报缺少 `shouldReplay`，再在顶部补这一行。
 
-<strong>改什么</strong>：把消息文本改成这个方法实际改变了什么。内置用的都是英文短语，例如 `Flag field set should be replayed.`；语言本身不影响行为，写清意思即可。
+<strong>改什么</strong>：把消息文本改成这个方法实际改变了什么。例如可以写 `Flag field inserted should be replayed.`；语言本身不影响行为，写清意思即可。
 
-<strong>怎么验证</strong>：手动开一次收集区间，看告警里有没有这条路径。这几个函数不在 `state` 上，需要在文件顶部引入（只用于调试，平时不需要）：
+<strong>怎么验证</strong>：手动开一次收集区间，看告警里有没有这条路径。这几个函数不在 `state` 上，需要引入（只用于调试，平时不需要）：
 
 ```ts
 import {
@@ -171,14 +171,15 @@ import {
 } from '@user/data-common';
 
 beginReplaySafetyCollection(state.replaySystem);
-state.flags.setField('replay-check', 1);
+state.flags.getOrInsert('replay-check', 1);
 endReplaySafetyCollection();
 ```
 
-- 区间内没有产生任何新录像步，`setField` 又带着标记，所以控制台应出现告警（错误码 `161`），列表里能看到 `setField: ...` 这一条；
-- 把 `setField` 上的标记注释掉再跑一次，告警会<strong>消失</strong>。这不是修好了，而是检查器看不见这个入口了——这正是「漏标记比漏记录更难查」的原因。
+- 区间内没有产生任何新录像步，`getOrInsert` 又带着标记，所以控制台应出现告警（错误码 `161`），列表里能看到 `getOrInsert: ...` 这一条；
+- 把 `getOrInsert` 上的标记注释掉再跑一次，告警会<strong>消失</strong>。这不是修好了，而是检查器看不见这个入口了——这正是「漏标记比漏记录更难查」的原因。
+- 两个过程都不会产生录像步：标记只登记路径，真正的记录仍要 `record` 或内置录制入口。
 
-<strong>注意</strong>：只加在真正会改状态的方法上。入口方法与它内部的方法可以都标（嵌套路径就是为此设计的），但把标记集中在真正改状态的那一层，告警会更短、更好读。
+<strong>注意</strong>：只加在真正会改状态的方法上。入口方法与它内部的方法可以都标（嵌套路径就是为此设计的），但把标记集中在真正改状态的那一层，告警会更短、更好读。不要选一个内部已经调用了带标记方法的方法来做这个练习——那样即使去掉外层标记，里层仍会登记路径，告警不会消失。
 
 ## 改内置还是自己写
 

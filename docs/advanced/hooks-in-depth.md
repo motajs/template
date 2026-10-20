@@ -240,7 +240,9 @@ layer.addHook(hook);
 
 ### 图层移除会卸载内部转发器
 
-`GameMap.removeLayer(layer)` 会移除图层，并卸载 `addLayer` 时为它创建的内部 `StateMapLayerHook`。因此图层移除后，地图级钩子不会再收到这个图层的 resize。你自己挂在图层上的钩子会随图层对象一起失去作用；如果还持有控制器，也可以显式 `unload()`。
+`GameMap.removeLayer(layer)` 会移除图层，并卸载 `addLayer` 时为它创建的内部 `StateMapLayerHook`。因此图层移除后，地图级钩子不会再收到这个图层的 resize。
+
+但它<strong>不会清理你自己挂在图层上的钩子</strong>：图层自身的钩子列表仍然保留，也不会调用你钩子的 `destroy`。如果你还持有这个图层对象的引用，直接调用它的方法仍会触发那些钩子；要释放定时器、外部监听器等资源，需要自己保存 `addHook` 返回的控制器并显式 `controller.unload()`。
 
 ## 异步钩子
 
@@ -279,6 +281,8 @@ layer.addHook(hook);
 
 <strong>改哪里</strong>：在能拿到 `state` 与目标图层的时机注册，例如插件的 `afterLoad` 中；下面的片段省略了外层函数或方法，`return` 需要放在函数体内。
 
+注意：`afterLoad` 时 `floor-1` 未必已经由加载流程构造出来（取决于你的内容加载方式与插件顺序），`state.maps.getMap('floor-1')` 可能返回 `null`。片段里的 `if (!map) return` 只是让代码能编译；实际使用时不要这样静默跳过——至少用 `logger.warn` 或 `emitTip` 报出来，或者把注册推迟到楼层创建之后再执行。
+
 <strong>复制什么</strong>：
 
 ```ts
@@ -304,6 +308,8 @@ const hook = new GroundBlockHooks(state, layer);
 const controller = layer.addHook(hook);
 ```
 
+这是新建类；新文件顶部需要 `import { ICoreState } from '@user/data-state';` 与 `import { IMapLayer, IMapLayerHooks } from '@user/data-base';`。注册代码所在的外层函数或方法还要能拿到 `state`。
+
 <strong>改什么</strong>：
 
 - `'floor-1'` 换成你的楼层 id；
@@ -323,7 +329,7 @@ const controller = layer.addHook(hook);
 
 <strong>目标</strong>：在地图级 `onResizeLayer` 里只处理目标图层。地图级钩子会收到该地图所有图层的尺寸变化，必须自己筛。
 
-<strong>改哪里</strong>：在能拿到 `map` 与目标图层的时机注册；这次注册到 `map`，不是 `layer`。
+<strong>改哪里</strong>：在能拿到 `map` 与目标图层的时机注册；这次注册到 `map`，不是 `layer`。同样注意 `floor-1` 可能尚未构造，`getMap` 返回 `null` 时不要静默 `return`，至少打一条提示。
 
 <strong>复制什么</strong>：
 
@@ -349,6 +355,8 @@ if (!targetLayer) return;
 
 map.addHook(new TargetLayerResizeHooks(state, targetLayer));
 ```
+
+这个新文件顶部需要 `import { ICoreState } from '@user/data-state';` 与 `import { IGameMapHooks, IMapLayer } from '@user/data-base';`。
 
 <strong>改什么</strong>：楼层 id、图层 alias、比较字段与提示内容。比较必须用 `layer !== this.targetLayer`，不要用 `layer.alias`。
 

@@ -86,7 +86,7 @@ hero.hp = hero.hp + 50;
 
 ### 伤害计算器
 
-<strong>你声明什么</strong>：一组属性到伤害结果的换算规则。为了实现「把这组属性换算成勇士掉多少血、要打几回合」，我们需要实现 `IDamageCalculator` 接口，核心方法是 `calculate(handler)`，返回 `{ damage, turn }`。内置实现是 `src/data/enemy/calculator.ts` 里的 `MainDamageCalculator`，它在 `initializeEnemy` 中通过 `useCalculator(new MainDamageCalculator())` 注册。
+<strong>你声明什么</strong>：一组属性到伤害结果的换算规则。为了实现「把这组属性换算成勇士掉多少血、要打几回合」，我们需要实现 `IDamageCalculator` 接口，核心方法是 `calculate(handler)`，返回 `{ damage, turn }`。接口还有 `getCriticalLimit(handler, attribute)`，供临界值计算使用；一般不需要自己实现，改公式时按 `MainDamageCalculator` 的写法保留它即可。内置实现是 `src/data/enemy/calculator.ts` 里的 `MainDamageCalculator`，它在 `initializeEnemy` 中通过 `useCalculator(new MainDamageCalculator())` 注册。
 
 <strong>引擎在哪个时机执行</strong>：任何需要伤害数值的地方。显示伤害预览、计算临界值、真正结算战斗，都会调用计算器；同一场战斗里，它可能被反复调用很多次。
 
@@ -245,6 +245,9 @@ calculate(handler) {
 
 ```ts
 // [验证] 同一个 handler 连续计算两次，结果应完全一致
+const view = state.enemyContext.getEnemyByLoc(0, 0);
+if (!view) return;
+
 const system = state.enemyContext.getDamageSystem();
 const info = system?.getDamageInfo(view);
 
@@ -255,9 +258,23 @@ if (system && info) {
 }
 ```
 
-如果两次结果不同，或者第二次算完之后状态多出了东西，说明计算器里有副作用，回到 `calculate` 里检查有没有写 flag、删记录或改对象。
+把 `(0, 0)` 换成场上有怪物的坐标；那里没有怪物时，`getEnemyByLoc` 会返回 `null`。如果两次结果不同，或者第二次算完之后状态多出了东西，说明计算器里有副作用，回到 `calculate` 里检查有没有写 flag、删记录或改对象。
 
 <strong>第三项：存档后改状态，再读档，确认恢复</strong>。
+
+存档与读档的入口都在主对象上：`state.saveState(compression)` 返回一份 `ReadonlyMap<string, unknown>`，`state.loadState(snapshot, compression)` 用同一份映射恢复。最外层的调用就是这样一对：
+
+```ts
+// [验证] 存档 → 改状态 → 读档
+import { SaveCompression } from '@user/data-common';
+
+state.flags.setFieldValue('demo', 1);
+const snapshot = state.saveState(SaveCompression.NoCompression);
+
+state.flags.setFieldValue('demo', 2);
+state.loadState(snapshot, SaveCompression.NoCompression);
+console.log(state.flags.getFieldValue('demo')); // 应为 1
+```
 
 先存档，然后修改你声明的状态（例如改一个 flag、移动一次怪物、使用一个道具），再读档。读档后应该回到存档时的状态。如果某个字段没有恢复，检查它所属的对象有没有实现 `ISaveableContent`、有没有通过 `state.addSaveableContent` 注册，以及 `saveState` 返回的对象里有没有漏掉这个字段。
 

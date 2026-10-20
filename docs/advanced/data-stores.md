@@ -57,7 +57,7 @@ Store 里的东西在<strong>加载 / 初始化阶段</strong>被填一次，之
 
 ### itemStore：道具定义
 
-以<strong>道具图块数字</strong>为键，存 `IItemRawData`：`num`、`category`（`ItemCategory`）、`name`、`text`、`hideInToolbox`、`effect`（非装备类道具的效果对象）、`equip`（装备类道具的数值与事件）。
+以<strong>道具图块数字</strong>为键，存 `IItemRawData`：`num`、`category`（`ItemCategory`）、`name`、`text`、`hideInToolbox`、`effect`（使用 / 拾取效果）、`equip`（装备数值与事件）。`effect` 与 `equip` <strong>都是必填字段</strong>，不是二选一：非装备类除了 `effect`，也要给出一个 `equip`（通常由内容数据填默认值）；装备类除了 `equip`，同样要提供 `effect`（可以是空实现）。只写其中一个过不了类型检查。
 
 它在构造时接收 `tileStore`，所以 `getData(token)` 同时接受数字与 id，内部先用 `tileStore.num(token)` 换算。
 
@@ -150,16 +150,18 @@ const raw = state.tileStore.getData(num);
 
 `data-common` 里还有一个 `EnemyStore`（`IEnemyStore`，`addEnemy` / `getEnemy`），存怪物原始数据：`num`、`attribute`、`special`。
 
-但它<strong>不在 `IDataCommon` 上</strong>：主对象没有把 `enemyStore` 暴露成字段。所以不要按前面四个 Store 的习惯去取，也不要假设它一定存在。本篇只讲 `IDataCommon` 上的四个 Store；需要怪物原始数据时，先确认当前版本把它接在了哪里，再决定从哪读。
+但它<strong>不在 `IDataCommon` 上</strong>：主对象没有把 `enemyStore` 暴露成字段，`@user/data-common` 的公开入口也没有导出 `EnemyStore` 类；仓库里目前只有测试直接 `new EnemyStore(state.tileStore)` 来构造它。所以不要按前面四个 Store 的习惯去取，也不要假设它一定存在。如果你确实需要一张怪物原始数据表，最稳妥的做法是在自己的插件里维护一个同形状的 `Map` 注册表（`addEnemy` / `getEnemy` 的语义可照 `IEnemyStore`），把改动留在自己的代码里。
 
 ## 模板：登记一条原始定义
 
 Store 的注册没有「一个空类 + 需改点」那种逐对象模板，原因和别的机制不同：插件、可存档对象、光环这些机制都要你实现一个接口，所以能给出骨架；`addTile` / `addItem` / `addMap` / `addEvent` 不是这样——它们是<strong>逐条登记一条原始定义</strong>，你不需要实现任何方法，只需要把一条条定义交给它。
 
-所以这里的骨架是「一条定义长什么样」。下面以图块为例，复制后按 `[需改]` 修改：
+所以这里的骨架是「一条定义长什么样」。下面以图块为例，复制后按 `[需改]` 修改。新建文件时把 `import` 放在顶部，把 `state.tileStore.addTile(...)` 这段调用放进插件的 `awake` / `afterLoad` 里：
 
 ```ts
 // [模板] 登记一条图块定义：复制后按 [需改] 修改
+import { TileType } from '@user/data-common';
+
 state.tileStore.addTile({
     // [需改] 图块数字与 id 必须各自唯一
     num: 10001,
@@ -189,7 +191,7 @@ state.tileStore.addTile({
 
 <strong>注意</strong>：`addEvent` 的签名与另外三个不同，它的第一个参数是事件 id，第二个参数才是事件实例。
 
-顶部通常已有 `TileType` 这类名字的 `import`；若报缺少某个名字，再在顶部补对应的 `import`。
+上面这段按新建文件写，`TileType` 从 `@user/data-common` 引入；如果放进已有文件，顶部可能已经引入过，不要重复粘。
 
 ## 把一批自定义内容注册进 Store
 
@@ -212,6 +214,8 @@ awake(state: ICoreState): void {
 <strong>怎么验证</strong>：启动后读回刚登记的内容，见下面的「怎么验证」第一项。`getData` / `getMap` / `getEvent` 能查到，说明登记成功；查不到就检查是否真的执行到了这个时机方法、以及键是否拼错。
 
 <strong>注意</strong>：不要在玩家动作、事件回调或每帧里登记；同一个 `num` 重复登记会告警并覆盖，等于把登记做成了「碰运气」。
+
+在 `afterLoad` 里登记还要多确认一步：`mapStore.addMap` 只是把原始数据放进注册表，<strong>不会自动创建运行时楼层</strong>，需要时自己调用 `state.maps.fromRaw(raw)`。`addTile` 也只影响之后构造的图层；如果目标图层已经由 `fromRaw` 建好，新图块不会自动补进去，必须在构造图层之前完成登记，或自己重新构造楼层 / 图层（`fromRaw` / `addLayer`）。
 
 ## 改内置还是自己写
 
@@ -236,9 +240,12 @@ awake(state: ICoreState): void {
 <strong>第一项：读回定义</strong>。
 
 ```ts
+// [验证] num 可能为 undefined：id 没登记时先停下来
 const num = state.tileStore.num('my-custom-tile');
-const raw = state.tileStore.getData(num);
-console.log(raw, state.tileStore.getType(num));
+if (num !== undefined) {
+    const raw = state.tileStore.getData(num);
+    console.log(raw, state.tileStore.getType(num));
+}
 ```
 
 `raw` 应为对象而不是 `null`，`getType(num)` 应等于你登记的类型。道具、地图、事件同理：`itemStore.getData(token)`、`mapStore.getMap(floorId)`、`eventStore.getEvent(id)` 都应查得到。

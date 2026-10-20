@@ -56,7 +56,7 @@ export interface ISaveableContent<T> {
 `loadState` 拿到的是普通数据，不是你的类实例。它要做的是把这份数据装回对象：该清空的清空，该重建的重建，不要假设旧字段还留着。商店管理器就是典型写法：
 
 ```ts
-loadState(state: IShopManagerSave): void {
+loadState(state: IShopManagerSave, compression: SaveCompression): void {
     this.shops.clear();
     for (const save of state.list) {
         const shop: IShopState = new ShopState(save.id, this.state);
@@ -100,7 +100,8 @@ saveState(): IMySave {
 实现好之后，用 `state.addSaveableContent(id, content)` 把它交给存档系统：
 
 ```ts
-state.addSaveableContent('@plugin/example-counter', this.counter);
+// [示例] 下文插件示例里的对象叫 this.store，注册 id 就沿用它
+state.addSaveableContent('@plugin/my-store', this.store);
 ```
 
 `id` 是这个对象在存档里的唯一标识。整份数据端存档就是一个 `Map<string, unknown>`，键是注册 id，值是该对象的 `saveState` 返回值。注册之后，存档时它会自动被遍历，读档时也会自动收到自己的那份数据。
@@ -109,7 +110,7 @@ state.addSaveableContent('@plugin/example-counter', this.counter);
 
 需要按 id 取回对象时，用 `state.getSaveableContent<T>(id)`。它返回 `ISaveableContent<T> | null`，没有这个 id 时返回 `null`。
 
-插件通常在 `awake` 里注册。此时主对象刚创建完，装配插件自己的对象正合适，注册顺序也最早、最可控；放到更晚的阶段注册，虽然同样能进入存档表，但会排到已有对象之后，读档顺序也跟着改变。内置内容也是同样的注册方式，主插件在 `awake` 里注册了五项：
+插件通常在 `awake` 里注册。此时主对象刚创建完，装配插件自己的对象正合适，注册顺序也最早、最可控。`initialize` / `afterLoad` 也能调用 `addSaveableContent`（接口本身不限制），但会排到已有对象之后，读档顺序也随之后移；只有对象必须等加载内容才能构造时才这样做，并保证注册发生在任何 `saveState` / `loadState` 调用之前。内置内容也是同样的注册方式，主插件在 `awake` 里注册了五项：
 
 | 存档 id          | 对应对象             |
 | ---------------- | -------------------- |
@@ -195,12 +196,32 @@ export interface ISaveableExecutor<T> {
 正确做法是<strong>存 id 或键，读档时再解析</strong>。常见的键有楼层 `floorId`、商店 id、可存档 id，以及你自己维护的稳定 `uid`。例如一个任务系统要记住「目标商店」：
 
 ```ts
-// [需改] 存档里只存 id，不存 IShopState 对象
+// [需改] 引用方：存档里只存目标 id，不存 IShopState 对象
 export interface IQuestSave {
     readonly targetShopId: string;
-    readonly targetFloorId: string;
+}
+
+export class QuestSaveable implements ISaveableContent<IQuestSave> {
+    private targetShopId: string | null = null;
+
+    constructor(private readonly state: ICoreState) {}
+
+    /** [需改] 在你的任务逻辑里调用，记录目标商店 */
+    setTargetShop(id: string): void {
+        this.targetShopId = id;
+    }
+
+    saveState(): IQuestSave {
+        return { targetShopId: this.targetShopId ?? '' };
+    }
+
+    loadState(state: IQuestSave): void {
+        this.targetShopId = state.targetShopId;
+    }
 }
 ```
+
+这两个类放在你自己的插件目录里（例如 `src/data/plugin/my-plugin/state.ts`）。新文件顶部需要：`import { ISaveableContent } from '@user/data-common';`、`import { ICoreState } from '@user/data-state';`；一会儿的执行器还要 `ISaveableExecutor`（同样来自 `@user/data-state`）与 `IStateBase`（来自 `@user/data-base`）。
 
 读档时怎么把它变回对象，有三种策略：
 
@@ -212,23 +233,32 @@ export interface IQuestSave {
 
 选择时看注册顺序：执行器只保证「该对象自己的 `loadState` 已完成」，不保证后面的对象已完成。如果你要引用的对象注册在引用者之后，执行器里拿到的可能还是旧状态，这时应该改成惰性解析，或者调整注册顺序，让被引用者先注册。
 
-「拥有者注册在被引用者之后」是最省事的做法：先注册商店管理器，再注册引用商店的任务系统；这样任务系统的执行器运行时，商店已经恢复完毕。依赖关系不固定时，才需要惰性解析兜底。
+「拥有者注册在被引用者之后」是最省事的做法：先注册商店管理器（商店插件在 `awake` 里用 `@plugin/shop` 注册），再注册引用商店的任务系统；这样任务系统的执行器运行时，商店已经恢复完毕。依赖关系不固定时，才需要惰性解析兜底。
+
+引用者自己的注册与绑定如下，顺序不能反：
 
 ```ts
-// [需改] 读档后在执行器里解析引用
+// [需改] 先注册引用者，再绑定执行器
+state.addSaveableContent('@plugin/example-quest', this.quest);
+state.bindSaveableExecuter('@plugin/example-quest', new QuestSaveExecutor());
+```
+
+执行器里按 `@plugin/shop` 取回商店管理器。`getSaveableContent` 返回的是 `ISaveableContent<T>`，要调用管理器自己的 `getShop`，需要断言成 `IShopManager`：
+
+```ts
+// [需改] 读档后按 id 解析目标商店
 export class QuestSaveExecutor implements ISaveableExecutor<IQuestSave> {
     afterLoad(data: IQuestSave, state: IStateBase): void {
-        const map = state.maps.getMap(data.targetFloorId);
+        const manager = state.getSaveableContent<IShopManagerSave>(
+            '@plugin/shop'
+        ) as IShopManager | null;
+        const shop = manager?.getShop(data.targetShopId) ?? null;
         // [需改] 找不到时怎么处理，由你决定；不要假设它一定存在
     }
 }
 ```
 
-绑定放在注册之后：
-
-```ts
-state.bindSaveableExecuter('@plugin/example-quest', new QuestSaveExecutor());
-```
+执行器文件还要从 `../shop` 引入 `IShopManager` / `IShopManagerSave`（路径按你的目录调整）。
 
 ## 模板：一个可存档对象的最小骨架
 
@@ -240,6 +270,8 @@ state.bindSaveableExecuter('@plugin/example-quest', new QuestSaveExecutor());
 
 ```ts
 // [模板] 一个可存档对象的最小骨架：复制后按 [需改] 修改
+import { ISaveableContent } from '@user/data-common';
+
 export interface IMySave {
     // [需改] 存档形状，只能用 structured-cloneable 的类型
     readonly values: Map<string, number>;
@@ -252,6 +284,11 @@ export class MySaveable implements ISaveableContent<IMySave> {
     // [需改] 对外方法按你的需求增删
     setValue(key: string, value: number): void {
         this.values.set(key, value);
+    }
+
+    // [需改] 验证时会用到；不需要就删掉
+    getValue(key: string): number | undefined {
+        return this.values.get(key);
     }
 
     saveState(): IMySave {
@@ -275,7 +312,7 @@ export class MySaveable implements ISaveableContent<IMySave> {
 2. <strong>字段</strong>：把 `values` 换成你真正要保存的数据。只放重建必需的信息，缓存与派生数据不要放。
 3. <strong>存档形状</strong>：`IMySave` 里列出 `saveState` 返回的字段，并确认每个字段都能被 `structuredClone` 处理。
 4. <strong>loadState</strong>：按你的数据结构清空并重建。类实例要重新 `new`，不要直接使用存档里的普通对象。
-5. <strong>压缩参数</strong>：如果三档实现相同，方法可以省略 `compression` 参数；需要区分时再补上。
+5. <strong>压缩参数</strong>：`ISaveableContent` 声明的是 `saveState(compression)` / `loadState(state, compression)`。实现里不需要区分时，可以省略参数：TypeScript 允许实现接口时少写参数，调用方仍会按接口传两个实参，多出的那个被忽略。需要区分时，再把 `compression: SaveCompression` 加回来。
 
 <strong>注意</strong>：`saveState` 里不要修改对象状态，也不要返回 `this` 或带方法的类实例。`loadState` 不要假设旧数据还在，先清空再重建，才不会残留上次的状态。
 
@@ -312,7 +349,7 @@ export class MyPlugin implements IDataPluginDefine {
 1. <strong>类名与 id</strong>：`MyPlugin` 与 `my-plugin` 换成你的插件名，`id` 全局唯一。
 2. <strong>持有字段</strong>：`store` 与 `MySaveable` 换成模板里你的类；对象构造需要 `state` 时，也在这里传入。
 3. <strong>存档 id</strong>：`@plugin/my-store` 换成你自己的 id，保证唯一，并与插件 id 分开命名。
-4. <strong>注册位置</strong>：必须在 `awake` 里注册，且只注册一次。
+4. <strong>注册位置</strong>：优先在 `awake` 里注册；对象必须等加载内容才能构造时，可以放到插件 `afterLoad`，但注册顺序会排在已有对象之后。无论放在哪，只注册一次，并保证早于任何存档 / 读档调用。
 
 文件顶部通常已经有 `IDataPluginDefine` / `ICoreState`；若报缺少 `MySaveable` 或 `ISaveableContent`，再补对应的 `import`，不要重复粘。
 
@@ -341,26 +378,74 @@ export class MyPlugin implements IDataPluginDefine {
 
 ## 怎么验证
 
+存档与读档的入口都在主对象上：`state.saveState(compression)` 返回一份 `ReadonlyMap<string, unknown>`，键是注册 id，值是该对象的 `saveState` 结果；`state.loadState(snapshot, compression)` 按同一份映射恢复。下面把验证代码放进一个能拿到 `state` 的临时函数（或你插件的某个方法里）执行。
+
 <strong>第一项：改状态，存档，再改，读档</strong>。
 
-把目标字段改到一个可观察的值，存档；再把它改成另一个值，然后读档。读档后应回到存档时的值。同时确认<strong>没有存</strong>的缓存被重新生成，而不是保留了读档前的旧值。
+文件顶部补上两个 `import`，再把下面的代码放进临时函数：
+
+```ts
+// [验证] 存档 → 改状态 → 读档；MyPlugin / MySaveable 换成你自己的类
+import { SaveCompression } from '@user/data-common';
+import { MyPlugin } from './plugin/my-plugin';
+
+const plugin = state.getDataPlugin<MyPlugin>('my-plugin')?.plugin;
+if (!plugin) return;
+
+plugin.store.setValue('count', 1);
+const snapshot = state.saveState(SaveCompression.NoCompression);
+
+plugin.store.setValue('count', 2);
+state.loadState(snapshot, SaveCompression.NoCompression);
+console.log(plugin.store.getValue('count')); // 应为 1
+```
+
+读档后应回到存档时的值。同时确认<strong>没有存</strong>的缓存被重新生成，而不是保留了读档前的旧值。
 
 <strong>第二项：三档压缩各跑一次</strong>。
 
-分别用 `SaveCompression.NoCompression`、`LowCompression`、`HighCompression` 存档并读档。三档都应恢复出相同结果；如果只有某一档出错，说明 `saveState` 与 `loadState` 对压缩级别的处理不一致。
+对同一个对象循环三档：
+
+```ts
+// [验证] 三档压缩都应恢复出同一个值
+for (const compression of [
+    SaveCompression.NoCompression,
+    SaveCompression.LowCompression,
+    SaveCompression.HighCompression
+]) {
+    plugin.store.setValue('count', 1);
+    const snapshot = state.saveState(compression);
+
+    plugin.store.setValue('count', 2);
+    state.loadState(snapshot, compression);
+    console.log(compression, plugin.store.getValue('count')); // 每次都应为 1
+}
+```
+
+如果只有某一档出错，说明 `saveState` 与 `loadState` 对压缩级别的处理不一致。
 
 <strong>第三项：确认注册成功</strong>。
 
 在启动完成后调用：
 
 ```ts
-const content = state.getSaveableContent('@plugin/example-counter');
+const content = state.getSaveableContent('@plugin/my-store');
 console.log(content);
 ```
 
 应拿到你注册的对象，而不是 `null`。为 `null` 时先检查 `addSaveableContent` 的 id 是否拼错、是否真的执行到了 `awake`。
 
 <strong>第四项：故意删掉存档里的一个键</strong>。
+
+`saveState` 返回的是 `ReadonlyMap`，要删键先复制成可修改的 `Map`：
+
+```ts
+// [验证] 删掉本对象的存档数据再读档，应告警 177
+const snapshot = state.saveState(SaveCompression.NoCompression);
+const edited = new Map(snapshot);
+edited.delete('@plugin/my-store');
+state.loadState(edited, SaveCompression.NoCompression);
+```
 
 读档时控制台应出现缺键告警（`177`），并跳过该对象，而不是静默通过。存档里多出未注册的 id 时，应出现多键告警（`178`）。这两条能帮你区分「没存进去」和「读的时候没对上」。
 

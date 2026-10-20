@@ -62,12 +62,23 @@ export class MyPlugin implements IDataPluginDefine {
 
 ### 注册到 dataPlugins
 
-插件写好后，在 `src/data/plugin/list.ts` 的 `dataPlugins` 数组里登记。文件顶部通常已经有 `IDataPluginDefine` 和你插件的 `import`，不要再粘；只改这一行：
+插件写好后，在 `src/data/plugin/list.ts` 的 `dataPlugins` 数组里<strong>追加</strong>一项，不要清空或替换已有插件。列表里现在已经有商店插件：
 
 ```ts
+import { IDataPluginDefine } from '@user/data-state';
+import { DataShopPlugin } from './shop';
+// [需改] 新建插件文件时，必须补上你自己的 import
+import { MyPlugin } from './my-plugin';
+
 /** 数据端插件列表 */
-export const dataPlugins: IDataPluginDefine[] = [new MyPlugin()];
+export const dataPlugins: IDataPluginDefine[] = [
+    new DataShopPlugin(),
+    // [需改] 追加到末尾，不要替换上面的已有插件
+    new MyPlugin()
+];
 ```
+
+如果你改的是<strong>已有插件</strong>，它对应的 `import` 通常已经在文件顶部，不要重复粘；如果你是<strong>新建插件</strong>，`list.ts` 里不会有你的类名，必须自己补一行 `import { MyPlugin } from './my-plugin';`（路径指向你的插件目录）。只把数组写成 `[new MyPlugin()]` 会把商店插件挤掉。
 
 数据端启动时会遍历这个数组，把插件收进注册表。同一个 `id` 出现两次时，后一个会被忽略，控制台报一条错误（错误码 `78`），所以请保证 `id` 唯一。
 
@@ -289,6 +300,8 @@ export class MyPlugin implements IDataPluginDefine {
 }
 ```
 
+这段是<strong>新建文件</strong>，顶部的 `import` 必须一起保留。`MySystem` 是你自己写的类，文档不会替你定义：先按你的需求写出这个类；暂时没有对应对象时，把 `mySystem` 字段、`new MySystem(state)` 以及相关的 `addSaveableContent` 一起删掉，否则编译器会报「找不到名称 MySystem」。
+
 <strong>改什么</strong>：
 
 1. <strong>类名与 id</strong>：`MyPlugin` 与 `my-plugin` 换成你的名字，`id` 全局唯一。
@@ -431,7 +444,28 @@ console.log(holder?.status === PluginStatus.Loaded, holder?.plugin);
 
 <strong>第三项：存档后读档，确认插件注册的内容恢复</strong>。
 
-让插件注册的可存档内容进入一个可观察状态（例如改一个计数），存档，再改动它，然后读档。读档后应回到存档时的值。没恢复时依次检查：对象有没有实现 `ISaveableContent`、有没有在 `awake` 里用 `state.addSaveableContent` 注册、`saveState` 返回的数据里有没有漏字段。
+存档与读档的入口都在主对象上：`state.saveState(compression)` 返回一份 `ReadonlyMap<string, unknown>`，`state.loadState(snapshot, compression)` 再用同一份映射恢复。把下面几行放进一个能拿到 `state` 的临时函数执行一次，就是最外层的「存档 → 改 → 读档」：
+
+```ts
+// [验证] 存档，改掉可观察值，再读档；类名与路径换成你自己的
+import { SaveCompression } from '@user/data-common';
+import { MyPlugin } from './plugin/my-plugin';
+
+const plugin = state.getDataPlugin<MyPlugin>('my-plugin')?.plugin;
+if (plugin) {
+    // [需改] store 换成你插件里实际注册的可存档对象
+    plugin.store.setValue('count', 1);
+    const snapshot = state.saveState(SaveCompression.NoCompression);
+
+    plugin.store.setValue('count', 2);
+    state.loadState(snapshot, SaveCompression.NoCompression);
+    console.log(plugin.store.getValue('count')); // 应为 1
+}
+```
+
+这里假设插件用[可存档内容](./saveable-content.md)里的 `MySaveable` 作为注册对象，它带有 `setValue` / `getValue`；换成你自己的对象时，把 `plugin.store` 与这两个方法一起替换掉。
+
+让插件注册的可存档内容进入一个可观察状态（例如改一个计数），存档，再改动它，然后读档。读档后应回到存档时的值。没恢复时依次检查：对象有没有实现 `ISaveableContent`、有没有在 `awake` 里用 `state.addSaveableContent` 注册、`saveState` 返回的数据里有没有漏字段。完整的验证写法（含三档压缩与修改映射）见[可存档内容](./saveable-content.md)的「怎么验证」。
 
 <strong>第四项：故意把依赖写错一次</strong>。
 
