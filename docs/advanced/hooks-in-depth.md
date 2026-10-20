@@ -68,19 +68,19 @@
 构造钩子时把目标对象保存为字段，注册时只注册到那个对象上。以图层为例，构造时保存 `readonly layer`：
 
 ```ts
-// [模板] 每层一个实例的图层钩子
+// 每层一个实例的图层钩子
 export class MyLayerHooks implements IMapLayerHooks {
     constructor(
         readonly state: ICoreState,
         readonly layer: IMapLayer
     ) {}
 
-    // [需改] 这个方法没有 layer 参数；触发者就是注册时的 this.layer
+    // 这个方法没有 layer 参数；触发者就是注册时的 this.layer
     onUpdateBlock(block: number, x: number, y: number): void {
         // 只在这个图层上做事
     }
 
-    // [需改] 动态图块钩子会回传 tile，可以再核对一次
+    // 动态图块钩子会回传 tile，可以再核对一次
     onCreateDynamic(tile: IDynamicTile): void {
         if (tile.layer !== this.layer) return;
         // 只处理目标图层上的动态图块
@@ -95,7 +95,7 @@ export class MyLayerHooks implements IMapLayerHooks {
 如果钩子是通用的、构造时还拿不到图层，可以利用 `awake` 收到的控制器。`MapLayer` 的控制器是 `IMapLayerHookController`，带 `layer` 字段与 `getMapData()`：
 
 ```ts
-// [模板] 在 awake 里取得所属图层
+// 在 awake 里取得所属图层
 awake(controller: IMapLayerHookController): void {
     // controller.layer 就是注册这个钩子的图层
 }
@@ -110,7 +110,7 @@ awake(controller: IMapLayerHookController): void {
 例如地图级钩子 `IGameMapHooks.onResizeLayer(layer, width, height)` 会收到该地图所有图层的 resize。共享实例时，构造时保存目标图层 `targetLayer`：
 
 ```ts
-// [模板] 共享实例：在回调里比较目标图层
+// 共享实例：在回调里比较目标图层
 export class MyMapResizeHooks implements IGameMapHooks {
     constructor(
         readonly state: ICoreState,
@@ -118,7 +118,7 @@ export class MyMapResizeHooks implements IGameMapHooks {
     ) {}
 
     onResizeLayer(layer: IMapLayer, width: number, height: number): void {
-        // [需改] 只处理目标图层；其他图层直接返回
+        // 只处理目标图层；其他图层直接返回
         if (layer !== this.targetLayer) return;
 
         this.state.emitTip(`目标图层变为 ${width} x ${height}`);
@@ -169,7 +169,7 @@ onResizeLayer(layer: IMapLayer): void {
 为多个对象创建实例时，用一个工厂把「创建 + 注册」收在一起，避免漏注册或注册到错误对象：
 
 ```ts
-// [模板] 为每个图层各建一个实例
+// 为每个图层各建一个实例
 function addLayerHook(state: ICoreState, layer: IMapLayer) {
     return layer.addHook(new MyLayerHooks(state, layer));
 }
@@ -184,7 +184,7 @@ function addLayerHook(state: ICoreState, layer: IMapLayer) {
 `addHook` 会创建控制器、把钩子写入内部映射与列表、调用 `awake`，最后返回控制器：
 
 ```ts
-// [模板] 注册并保留控制器
+// 注册并保留控制器
 const hook = new MyLayerHooks(state, layer);
 const controller = layer.addHook(hook);
 ```
@@ -277,92 +277,88 @@ layer.addHook(hook);
 
 ## 示例：只处理指定图层
 
-<strong>目标</strong>：只对 `floor-1` 的 `ground` 图层响应图块更新，其他图层的变化不处理。
-
-<strong>改哪里</strong>：在能拿到 `state` 与目标图层的时机注册，例如插件的 `afterLoad` 中；下面的片段省略了外层函数或方法，`return` 需要放在函数体内。
-
-注意：`afterLoad` 时 `floor-1` 未必已经由加载流程构造出来（取决于你的内容加载方式与插件顺序），`state.maps.getMap('floor-1')` 可能返回 `null`。片段里的 `if (!map) return` 只是让代码能编译；实际使用时不要这样静默跳过——至少用 `logger.warn` 或 `emitTip` 报出来，或者把注册推迟到楼层创建之后再执行。
-
-<strong>复制什么</strong>：
+假设要只对 `floor-1` 的 `ground` 图层响应图块更新，其他图层的变化不处理。做法是写一个图层钩子类，把目标图层保存在构造参数里；由于 `onUpdateBlock` 没有 layer 参数，身份由「注册到哪个图层」决定。下面的类放在新文件里，顶部需要 `import { ICoreState } from '@user/data-state';` 与 `import { IMapLayer, IMapLayerHooks } from '@user/data-base';`：
 
 ```ts
-// [需改] 类名、提示内容
-class GroundBlockHooks implements IMapLayerHooks {
+export class GroundBlockHooks implements IMapLayerHooks {
     constructor(
         readonly state: ICoreState,
+        // 注册时传入的目标图层；这个实例只服务它
         readonly layer: IMapLayer
     ) {}
 
     onUpdateBlock(block: number, x: number, y: number): void {
+        // 只在目标图层上做事；onUpdateBlock 没有 layer 参数，触发者必然是 this.layer
         this.state.emitTip(`ground 图层更新：(${x}, ${y}) -> ${block}`);
     }
 }
-
-// [模板] 取楼层、取图层、注册
-const map = state.maps.getMap('floor-1');
-if (!map) return;
-const layer = [...map.layerList].find(l => l.alias === 'ground');
-if (!layer) return;
-
-const hook = new GroundBlockHooks(state, layer);
-const controller = layer.addHook(hook);
 ```
 
-这是新建类；新文件顶部需要 `import { ICoreState } from '@user/data-state';` 与 `import { IMapLayer, IMapLayerHooks } from '@user/data-base';`。注册代码所在的外层函数或方法还要能拿到 `state`。
+然后在能拿到 `state` 与目标图层的时机注册，例如插件的 `afterLoad` 中。这里的 `'floor-1'` 换成你的楼层 id，`'ground'` 换成目标图层 alias：
 
-<strong>改什么</strong>：
+```ts
+const map = state.maps.getMap('floor-1');
+// afterLoad 时楼层未必已经构造出来，不要静默跳过
+if (!map) {
+    state.emitTip('floor-1 尚未构造，钩子未注册');
+    return;
+}
+const layer = [...map.layerList].find(l => l.alias === 'ground');
+if (!layer) {
+    state.emitTip('ground 图层不存在');
+    return;
+}
 
-- `'floor-1'` 换成你的楼层 id；
-- `'ground'` 换成目标图层 alias；
-- 提示内容换成你的处理；
-- `layer.addHook(hook)` 的目标必须是 `layer`，不是 `map`。
+// 注册到 layer，不是 map；保存控制器以便之后卸载
+const controller = layer.addHook(new GroundBlockHooks(state, layer));
+```
 
-<strong>怎么验证</strong>：
+`afterLoad` 时 `floor-1` 未必已经由加载流程构造出来（取决于你的内容加载方式与插件顺序），`state.maps.getMap('floor-1')` 可能返回 `null`。上面的提示只是示例，实际使用时至少要报出来，或者把注册推迟到楼层创建之后再执行。
 
-1. 对目标图层调用 `layer.setBlock(1, 0, 0)`，换一个与原来不同的图块数字，提示应出现；
-2. 从 `map.layerList` 里取另一个图层，调用它的 `setBlock(1, 0, 0)`，提示不应出现；
-3. 调用 `controller.unload()`，再改目标图层，提示不应再出现。
+注册后可以这样确认隔离：对目标图层调用 `layer.setBlock(1, 0, 0)`（换一个与原来不同的图块数字），提示应出现；从 `map.layerList` 里取另一个图层，调用它的 `setBlock(1, 0, 0)`，提示不应出现；调用 `controller.unload()` 后再改目标图层，提示不应再出现。
 
-<strong>注意</strong>：`onUpdateBlock` 只在图块数字真的变化时触发；设置成相同数字不会触发。不要用 `alias` 当身份，也不要把同一个钩子实例注册到所有图层。
+`onUpdateBlock` 只在图块数字真的变化时触发；设置成相同数字不会触发。不要用 `alias` 当身份，也不要把同一个钩子实例注册到所有图层。
 
 ## 示例：地图级钩子里筛图层
 
-<strong>目标</strong>：在地图级 `onResizeLayer` 里只处理目标图层。地图级钩子会收到该地图所有图层的尺寸变化，必须自己筛。
-
-<strong>改哪里</strong>：在能拿到 `map` 与目标图层的时机注册；这次注册到 `map`，不是 `layer`。同样注意 `floor-1` 可能尚未构造，`getMap` 返回 `null` 时不要静默 `return`，至少打一条提示。
-
-<strong>复制什么</strong>：
+换一个层级：地图级钩子 `IGameMapHooks.onResizeLayer` 会收到该地图所有图层的尺寸变化，因此必须在回调里自己筛。下面的类同样把目标图层固定为字段，但注册到 `map`：
 
 ```ts
-// [需改] 类名与处理逻辑
-class TargetLayerResizeHooks implements IGameMapHooks {
+export class TargetLayerResizeHooks implements IGameMapHooks {
     constructor(
         readonly state: ICoreState,
         readonly targetLayer: IMapLayer
     ) {}
 
     onResizeLayer(layer: IMapLayer, width: number, height: number): void {
+        // 只处理目标图层；其它图层直接返回
         if (layer !== this.targetLayer) return;
         this.state.emitTip(`目标图层尺寸：${width} x ${height}`);
     }
 }
+```
 
-// [模板] 取目标图层并注册到地图
+这个新文件顶部需要 `import { ICoreState } from '@user/data-state';` 与 `import { IGameMapHooks, IMapLayer } from '@user/data-base';`。注册代码同样放在能拿到 `state` 的时机方法里，这次注册到 `map`，不是 `layer`：
+
+```ts
 const map = state.maps.getMap('floor-1');
-if (!map) return;
+if (!map) {
+    state.emitTip('floor-1 尚未构造，钩子未注册');
+    return;
+}
 const targetLayer = [...map.layerList].find(l => l.alias === 'ground');
-if (!targetLayer) return;
+if (!targetLayer) {
+    state.emitTip('ground 图层不存在');
+    return;
+}
 
+// 比较必须用对象引用，不能用 layer.alias
 map.addHook(new TargetLayerResizeHooks(state, targetLayer));
 ```
 
-这个新文件顶部需要 `import { ICoreState } from '@user/data-state';` 与 `import { IGameMapHooks, IMapLayer } from '@user/data-base';`。
+调用 `map.resizeLayer(30, 30, true)`（换一个与当前不同的尺寸）即可验证：该地图的每个图层都会触发一次 `onResizeLayer`，但提示只应出现一次，且宽高是目标图层的新尺寸；把 `targetLayer` 换成另一个图层，提示应对应另一层。
 
-<strong>改什么</strong>：楼层 id、图层 alias、比较字段与提示内容。比较必须用 `layer !== this.targetLayer`，不要用 `layer.alias`。
-
-<strong>怎么验证</strong>：调用 `map.resizeLayer(30, 30, true)`（换一个与当前不同的尺寸）。该地图的每个图层都会触发一次 `onResizeLayer`，但提示只应出现一次，且宽高是目标图层的新尺寸。把 `targetLayer` 换成另一个图层，提示应对应另一层。
-
-<strong>注意</strong>：`onResizeLayer` 能拿到 layer，是因为 `GameMap.addLayer` 给每个图层装了内部转发器；`onChangeBackground` 没有地图参数，跨地图共享实例时无法判断是谁的背景变化。地图级钩子建议每张地图一个实例，除非你只使用带身份参数的方法。
+`onResizeLayer` 能拿到 layer，是因为 `GameMap.addLayer` 给每个图层装了内部转发器；`onChangeBackground` 没有地图参数，跨地图共享实例时无法判断是谁的背景变化。地图级钩子建议每张地图一个实例，除非你只使用带身份参数的方法。
 
 ## 改内置还是自己写
 
@@ -382,15 +378,15 @@ map.addHook(new TargetLayerResizeHooks(state, targetLayer));
 - <strong>在 awake 里等自己触发的事件</strong>。`awake` 调用时钩子还没加入已加载列表，`forEachHook` 不会遍历到它。初始同步直接在 `awake` 里做。
 - <strong>移除时 new 了一个新实例</strong>。`removeHook` 按引用查找，新实例不会匹配，也不会报错；保存注册时的实例或控制器。
 
-## 怎么验证
+## 验证
 
-<strong>第一项：确认图层隔离</strong>。按「只处理指定图层」注册后，分别修改目标图层与另一个图层。目标图层应有提示，另一个图层不应有。把钩子注册到另一个图层，现象应对调。
+确认图层隔离：按「只处理指定图层」注册后，分别修改目标图层与另一个图层。目标图层应有提示，另一个图层不应有；把钩子注册到另一个图层，现象应对调。
 
-<strong>第二项：确认地图级筛选</strong>。按「地图级钩子里筛图层」注册后，调用 `map.resizeLayer` 改一次尺寸。地图级钩子会对每个图层触发，但你的处理只应对目标图层生效。把比较条件删掉，提示会变成每个图层一次——这能反过来证明筛选确实在起作用。
+确认地图级筛选：按「地图级钩子里筛图层」注册后，调用 `map.resizeLayer` 改一次尺寸。地图级钩子会对每个图层触发，但你的处理只应对目标图层生效。把比较条件删掉，提示会变成每个图层一次——这能反过来证明筛选确实在起作用。
 
-<strong>第三项：确认移除生效</strong>。保存 `addHook` 返回的控制器，调用 `controller.unload()`，再触发同一事件，处理不应再执行。也可以改用 `removeHook(原实例)`，效果应一致；传一个新实例则不应生效。
+确认移除生效：保存 `addHook` 返回的控制器，调用 `controller.unload()`，再触发同一事件，处理不应再执行。也可以改用 `removeHook(原实例)`，效果应一致；传一个新实例则不应生效。
 
-<strong>第四项：确认异步完成顺序不等于注册顺序</strong>。注册两个都实现 `onStepEnd` 的异步钩子：第一个内部延迟 100ms，第二个不延迟。故意把慢的注册在前面，移动一步后，快的应先提示。这个现象只说明 `Promise.all` 并发等待，不说明引擎按注册顺序执行。
+确认异步完成顺序不等于注册顺序：注册两个都实现 `onStepEnd` 的异步钩子，第一个内部延迟 100ms，第二个不延迟。故意把慢的注册在前面，移动一步后，快的应先提示。这个现象只说明 `Promise.all` 并发等待，不说明引擎按注册顺序执行。
 
 ## 小结
 

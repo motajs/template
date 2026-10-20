@@ -152,68 +152,70 @@ const raw = state.tileStore.getData(num);
 
 但它<strong>不在 `IDataCommon` 上</strong>：主对象没有把 `enemyStore` 暴露成字段，`@user/data-common` 的公开入口也没有导出 `EnemyStore` 类；仓库里目前只有测试直接 `new EnemyStore(state.tileStore)` 来构造它。所以不要按前面四个 Store 的习惯去取，也不要假设它一定存在。如果你确实需要一张怪物原始数据表，最稳妥的做法是在自己的插件里维护一个同形状的 `Map` 注册表（`addEnemy` / `getEnemy` 的语义可照 `IEnemyStore`），把改动留在自己的代码里。
 
-## 模板：登记一条原始定义
+## 示例：登记一条原始定义
 
-Store 的注册没有「一个空类 + 需改点」那种逐对象模板，原因和别的机制不同：插件、可存档对象、光环这些机制都要你实现一个接口，所以能给出骨架；`addTile` / `addItem` / `addMap` / `addEvent` 不是这样——它们是<strong>逐条登记一条原始定义</strong>，你不需要实现任何方法，只需要把一条条定义交给它。
+Store 没有「实现一个接口再填空」那种逐对象骨架：`addTile` / `addItem` / `addMap` / `addEvent` 是<strong>逐条登记一条原始定义</strong>的接口，你不需要实现任何方法，只需要把一条条定义交给它。因此这里要展示的是「一条定义长什么样」。
 
-所以这里的骨架是「一条定义长什么样」。下面以图块为例，复制后按 `[需改]` 修改。新建文件时把 `import` 放在顶部，把 `state.tileStore.addTile(...)` 这段调用放进插件的 `awake` / `afterLoad` 里：
+以图块为例，下面是一条完整的 `addTile` 载荷。新建文件时把 `import` 放在顶部，把调用放进插件的 `awake` / `afterLoad` 里：
 
 ```ts
-// [模板] 登记一条图块定义：复制后按 [需改] 修改
 import { TileType } from '@user/data-common';
 
+// 登记一条图块定义；num 与 id 必须各自唯一
 state.tileStore.addTile({
-    // [需改] 图块数字与 id 必须各自唯一
     num: 10001,
     id: 'my-custom-tile',
-    // [需改] 默认事件：优先级 → 事件 id
+    // 默认事件：优先级 → 事件 id
     events: {},
-    // [需改] 图块逻辑类型
+    // 图块逻辑类型
     type: TileType.Terrain,
     pass: {
-        // [需改] 是否只在事件层生效
+        // 是否只在事件层生效
         onlyEvents: false,
-        // [需改] 可离开 / 可进入的方向掩码
+        // 可离开 / 可进入的方向掩码（上 1、右 2、下 4、左 8）
         outPass: 0b1111,
         inPass: 0b1111
     },
-    // [需改] 走上去触发还是撞击触发
+    // false 撞击触发，true 走上去触发
     eventPass: false
 });
 ```
 
-<strong>改什么</strong>：
+实际使用时，把写死的 `num` / `id` 换成你内容文件里的条目；内容多时用循环读一遍，而不是手写几十条 `addTile`。`num` 与 `id` 必须唯一，撞了会告警并覆盖，等于悄悄丢掉了另一条定义。`outPass` / `inPass` 是方向位掩码，`0b1111` 表示四向都通。
 
-1. <strong>数据来源</strong>：把写死的 `num` / `id` 换成你内容文件里的条目；内容多时用循环读一遍，而不是手写几十条 `addTile`。
-2. <strong>键</strong>：`num` 与 `id` 必须唯一。撞了会告警并覆盖，等于悄悄丢掉了另一条定义。
-3. <strong>通行掩码</strong>：`outPass` / `inPass` 是方向位掩码（上 1、右 2、下 4、左 8），`0b1111` 表示四向都通。
-4. <strong>其它三个 Store</strong>：形状相同，把 `addTile` 换成对应调用即可——`addItem(data)` 收 `IItemRawData`，`addMap(map)` 收 `IMapRawData`，`addEvent(id, event)` 收事件实例。所以这条骨架不需要为每个 Store 重写一遍。
-
-<strong>注意</strong>：`addEvent` 的签名与另外三个不同，它的第一个参数是事件 id，第二个参数才是事件实例。
+另外三个 Store 的形状相同，把 `addTile` 换成对应调用即可：`addItem(data)` 收 `IItemRawData`，`addMap(map)` 收 `IMapRawData`，`addEvent(id, event)` 收事件实例。注意 `addEvent` 的签名与另外三个不同，第一个参数是事件 id，第二个参数才是事件实例。
 
 上面这段按新建文件写，`TileType` 从 `@user/data-common` 引入；如果放进已有文件，顶部可能已经引入过，不要重复粘。
 
 ## 把一批自定义内容注册进 Store
 
-这一节按六步给出可直接照做的改法。
-
-<strong>目标</strong>：让新增的图块 / 道具 / 地图 / 事件在加载完成后能被查到，并确定它只被登记一次。
-
-<strong>改哪里</strong>：你的插件类里接受 `state` 的那个时机方法。定义写死在代码里就用 `awake`；要等加载结果就用 `afterLoad`。下面是 `awake` 的写法：
+批量登记时，把这些调用集中在插件的一个时机方法里：定义写死在代码里就用 `awake`；要等加载结果就用 `afterLoad`。例如：
 
 ```ts
 awake(state: ICoreState): void {
-    // 在这里调用 addTile / addItem / addMap / addEvent
+    // 图块定义直接写在代码里；也可以改成读数组后循环登记
+    state.tileStore.addTile({
+        num: 10001,
+        id: 'my-custom-tile',
+        events: {},
+        type: TileType.Terrain,
+        pass: { onlyEvents: false, outPass: 0b1111, inPass: 0b1111 },
+        eventPass: false
+    });
+
+    // 其它 Store 同理，逐条登记各自的原始定义
+    // rawItem / rawMap / event 换成你实际构造的定义
+    state.itemStore.addItem(rawItem);
+    state.mapStore.addMap(rawMap);
+    state.eventStore.addEvent('my-event', event);
 }
 ```
 
-<strong>复制什么</strong>：只复制上面的 `add*` 调用，粘进这个时机方法里。<strong>不含 `import`</strong>——插件的文件顶部通常已经有 `IDataCommon` / `ICoreState`，内容类型通常在 `@user/data-common` 里，已经引入过就不要重复粘；若编辑器报缺少某个名字，再在顶部补 `import ...`。
+把 `num`、`id` 与各字段换成你自己的数据。图块数字要与你的内容对得上，道具的 `num` 要与对应图块数字一致，地图的 `floorId` 要与切楼层用的 id 一致。插件的文件顶部通常已经有 `IDataCommon` / `ICoreState`，内容类型通常在 `@user/data-common` 里（`TileType` 也在其中）；已经引入过就不要重复粘，编辑器报缺少某个名字时再补 `import`。
 
-<strong>改什么</strong>：把 `num`、`id` 与各字段换成你自己的数据。图块数字要与你的内容对得上，道具的 `num` 要与对应图块数字一致，地图的 `floorId` 要与切楼层用的 id 一致。
+启动后读回刚登记的内容即可确认：`getData` / `getMap` / `getEvent` 能查到，说明登记成功；查不到就检查是否真的执行到了这个时机方法、以及键是否拼错。
 
-<strong>怎么验证</strong>：启动后读回刚登记的内容，见下面的「怎么验证」第一项。`getData` / `getMap` / `getEvent` 能查到，说明登记成功；查不到就检查是否真的执行到了这个时机方法、以及键是否拼错。
-
-<strong>注意</strong>：不要在玩家动作、事件回调或每帧里登记；同一个 `num` 重复登记会告警并覆盖，等于把登记做成了「碰运气」。
+不要在玩家动作、事件回调或每帧里登记；同一个 `num` 重复登记会告警并覆盖，等于把登记做成了「碰运气」。
 
 在 `afterLoad` 里登记还要多确认一步：`mapStore.addMap` 只是把原始数据放进注册表，<strong>不会自动创建运行时楼层</strong>，需要时自己调用 `state.maps.fromRaw(raw)`。`addTile` 也只影响之后构造的图层；如果目标图层已经由 `fromRaw` 建好，新图块不会自动补进去，必须在构造图层之前完成登记，或自己重新构造楼层 / 图层（`fromRaw` / `addLayer`）。
 
@@ -235,9 +237,9 @@ awake(state: ICoreState): void {
 - <strong>假设主对象上有 `enemyStore`</strong>。`EnemyStore` 存在，但 `IDataCommon` 没有把它暴露成字段。
 - <strong>在 `getEvent` 上做缓存却以为拿到了快照</strong>。它给的是实例本身，不是替你复制一份。
 
-## 怎么验证
+## 验证
 
-<strong>第一项：读回定义</strong>。
+启动后先读回刚登记的定义：
 
 ```ts
 // [验证] num 可能为 undefined：id 没登记时先停下来
@@ -250,23 +252,11 @@ if (num !== undefined) {
 
 `raw` 应为对象而不是 `null`，`getType(num)` 应等于你登记的类型。道具、地图、事件同理：`itemStore.getData(token)`、`mapStore.getMap(floorId)`、`eventStore.getEvent(id)` 都应查得到。
 
-<strong>第二项：在游戏进行中改一次，观察三个现象</strong>。
-
-用同一个 `num` 再调用一次 `addTile` 改掉类型，然后：
-
-1. 看已经存在的对象——静态图块 `mapLayer.getTile(x, y)!.raw()` 会读到新定义，而已进背包的道具 `raw` 仍是旧定义；同一个改动在不同对象上表现并不一致；
-2. 存档再读档，看改动是否保留——不会，Store 不在存档里；
-3. 录一段包含相关操作的录像并回放，看结果是否与原始游玩一致——定义生效的时点变了，结果就可能对不上。
-
-这三个观察合起来，就是「运行时不该改 Store」的理由。
-
-<strong>第三项：把登记挪到加载期后重跑</strong>。
+接着在游戏进行中用同一个 `num` 再调用一次 `addTile` 改掉类型，观察三件事：已经存在的对象里，静态图块 `mapLayer.getTile(x, y)!.raw()` 会读到新定义，而已进背包的道具 `raw` 仍是旧定义——同一个改动在不同对象上表现并不一致；存档再读档，改动不会保留，因为 Store 不在存档里；录一段包含相关操作的录像并回放，结果可能因定义生效的时点变了而对不上。这三个观察合起来，就是「运行时不该改 Store」的理由。
 
 把 `add*` 从玩家动作或回调里移到插件 `awake` / `afterLoad`，重启游戏再验证一遍：登记只发生一次，行为不再随操作次数变化。
 
-<strong>第四项：确认没有被重复登记</strong>。
-
-重复登记会告警（`181` / `170` / `133` / `134`）。启动时留意控制台，没有这类告警，说明每个键只登记了一次。
+最后留意启动时的控制台：重复登记会告警（`181` / `170` / `133` / `134`）。没有这类告警，说明每个键只登记了一次。
 
 ## 小结
 

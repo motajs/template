@@ -131,7 +131,7 @@ Mota.require('@user/data-common').logReplaySafetyDetail(0);
 
 这是当前必须知道的事实：`beginReplaySafetyCollection` 与 `endReplaySafetyCollection` 在仓库里目前<strong>只有测试在调用</strong>（`packages-user/data-common/src/replay/__test__/func.test.ts`），`logReplaySafetyDetail` 也一样。
 
-所以本篇描述的是<strong>「收集区间开启时」的检测口径</strong>：区间开着，两个装饰器才有意义；区间没开，`@shouldReplay` 只是原样调用方法。不要指望启动游戏就能看到漏记告警——需要时按「怎么验证」里的方式手动开一次区间。生产环境目前也没有自动开启收集区间的开关；如果要在实际游玩中检查，只能在自定义的调试流程或录像入口里，自己把一段操作包在 `beginReplaySafetyCollection` / `endReplaySafetyCollection` 之间。
+所以本篇描述的是<strong>「收集区间开启时」的检测口径</strong>：区间开着，两个装饰器才有意义；区间没开，`@shouldReplay` 只是原样调用方法。不要指望启动游戏就能看到漏记告警——需要时按「验证」一节里的方式手动开一次区间。生产环境目前也没有自动开启收集区间的开关；如果要在实际游玩中检查，只能在自定义的调试流程或录像入口里，自己把一段操作包在 `beginReplaySafetyCollection` / `endReplaySafetyCollection` 之间。
 
 ### 边界二：读档期间录像被禁用
 
@@ -145,24 +145,18 @@ Mota.require('@user/data-common').logReplaySafetyDetail(0);
 
 ## 给一个内置方法补录像标记
 
-这一节按六步给出可直接照做的改法。
+假设要让 `FlagSystem.getOrInsert` 这个会改变状态的入口在收集区间里被登记出来。它位于 `packages-user/data-base/src/flag/system.ts`；同一个文件里的 `setField` 与 `deleteField` 都已经有标记，`getOrInsert` 还没有——它在字段不存在时会新建一条 Flag 字段，同样会改变状态，正好用来观察「加标记 / 去掉标记」的差别。
 
-<strong>目标</strong>：让一个会改变状态的方法入口，在收集区间里能被登记出来，并亲眼看到「有标记」与「没标记」的差别。
-
-<strong>改哪里</strong>：`packages-user/data-base/src/flag/system.ts`，`FlagSystem.getOrInsert` 的上方。这个文件里 `setField` 与 `deleteField` 都已经有标记；`getOrInsert` 还没有，而它在字段不存在时会新建一条 Flag 字段，同样会改变状态，正好用来观察「加标记 / 去掉标记」的差别。
-
-<strong>复制什么</strong>：只复制装饰器那一行，粘在方法声明的上一行：
+标记就是方法声明上方的一行装饰器。`system.ts` 顶部已经有 `import { shouldReplay } from '@user/data-common';`，不需要再引入：
 
 ```ts
-// [需改] 只新增这一行
-@shouldReplay('[需改] 这个方法改变了什么状态')
+// 加在 FlagSystem.getOrInsert 的上一行；消息写清这个方法改变了什么状态
+@shouldReplay('Flag field inserted should be replayed.')
 ```
 
-这里不含 `import`：`system.ts` 顶部已经有 `import { shouldReplay } from '@user/data-common';`，不要再粘一次。若你换到别的文件、编辑器报缺少 `shouldReplay`，再在顶部补这一行。
+若你换到别的文件、编辑器报缺少 `shouldReplay`，再在顶部补这一行 import。消息文本只写给人看，语言不影响行为，写清意思即可。
 
-<strong>改什么</strong>：把消息文本改成这个方法实际改变了什么。例如可以写 `Flag field inserted should be replayed.`；语言本身不影响行为，写清意思即可。
-
-<strong>怎么验证</strong>：手动开一次收集区间，看告警里有没有这条路径。这几个函数不在 `state` 上，需要引入（只用于调试，平时不需要）：
+手动开一次收集区间，就能看到这条路径有没有被登记。这几个函数不在 `state` 上，需要从 `@user/data-common` 引入（只用于调试，平时不需要）：
 
 ```ts
 import {
@@ -171,15 +165,14 @@ import {
 } from '@user/data-common';
 
 beginReplaySafetyCollection(state.replaySystem);
+// 调用一个会改状态、但不会产生录像步的方法
 state.flags.getOrInsert('replay-check', 1);
 endReplaySafetyCollection();
 ```
 
-- 区间内没有产生任何新录像步，`getOrInsert` 又带着标记，所以控制台应出现告警（错误码 `161`），列表里能看到 `getOrInsert: ...` 这一条；
-- 把 `getOrInsert` 上的标记注释掉再跑一次，告警会<strong>消失</strong>。这不是修好了，而是检查器看不见这个入口了——这正是「漏标记比漏记录更难查」的原因。
-- 两个过程都不会产生录像步：标记只登记路径，真正的记录仍要 `record` 或内置录制入口。
+区间内没有产生任何新录像步，`getOrInsert` 又带着标记，所以控制台应出现告警（错误码 `161`），列表里能看到 `getOrInsert: ...` 这一条。把 `getOrInsert` 上的标记注释掉再跑一次，告警会<strong>消失</strong>——这不是修好了，而是检查器看不见这个入口了，这也正是「漏标记比漏记录更难查」的原因。两个过程都不会产生录像步：标记只登记路径，真正的记录仍要 `record` 或内置录制入口。
 
-<strong>注意</strong>：只加在真正会改状态的方法上。入口方法与它内部的方法可以都标（嵌套路径就是为此设计的），但把标记集中在真正改状态的那一层，告警会更短、更好读。不要选一个内部已经调用了带标记方法的方法来做这个练习——那样即使去掉外层标记，里层仍会登记路径，告警不会消失。
+标记只加在真正会改状态的方法上。入口方法与它内部的方法可以都标（嵌套路径就是为此设计的），但把标记集中在真正改状态的那一层，告警会更短、更好读。做这个练习时不要选一个内部已经调用了带标记方法的方法——那样即使去掉外层标记，里层仍会登记路径，告警不会消失。
 
 ## 改内置还是自己写
 
@@ -201,27 +194,17 @@ endReplaySafetyCollection();
 - <strong>把装饰器写在普通函数上</strong>。它只支持类的方法。
 - <strong>以为没告警就是没问题</strong>。收集区间没开、或者入口压根没标记，都不会有告警。
 
-## 怎么验证
+## 验证
 
-<strong>第一项：开一次收集区间，看登记路径</strong>。
+开一次收集区间，就能看到登记路径：`beginReplaySafetyCollection` → 调用一个带标记的方法 → `endReplaySafetyCollection`。控制台应给出告警（`161`）和路径列表；粘上告警里给出的 `logReplaySafetyDetail(n)` 命令，应打印出完整嵌套路径。
 
-用上一节的三行代码，`beginReplaySafetyCollection` → 调用一个带标记的方法 → `endReplaySafetyCollection`。控制台应给出告警（`161`）和路径列表；粘上告警里给出的 `logReplaySafetyDetail(n)` 命令，应打印出完整嵌套路径。
+随后把同一个方法上的标记注释掉再跑一次。告警消失说明检查器「看不见」这个入口，而不是问题解决了——这也是为什么标记必须加在正确的层。
 
-<strong>第二项：去掉标记，确认告警消失</strong>。
+再让区间内产生一条录像步：在区间内调用一个真正会记录录像的方法（例如走一步、使用一个道具），再结束收集。此时不应告警，因为检查只关心「有没有新录像步」，不关心是哪一条。
 
-把同一个方法上的标记注释掉再跑一次。告警消失说明检查器「看不见」这个入口，而不是问题解决了——这也是为什么标记必须加在正确的层。
+参数与顺序需要自己核对。装饰器不会替你检查这些：录一段包含目标操作的录像，回放后对比关键数据——位置、属性、道具数量、Flag 值。检查器只管「有没有记」，这里要管「记得对不对」。
 
-<strong>第三项：让区间内产生一条录像步，确认检查通过</strong>。
-
-在区间内调用一个真正会记录录像的方法（例如走一步、使用一个道具），再结束收集。此时不应告警，因为检查只关心「有没有新录像步」，不关心是哪一条。
-
-<strong>第四项：自己核对参数与顺序</strong>。
-
-装饰器不会替你检查这些。录一段包含目标操作的录像，回放后对比关键数据：位置、属性、道具数量、Flag 值。检查器只管「有没有记」，这里要管「记得对不对」。
-
-<strong>第五项：确认读档不产生录像</strong>。
-
-存档、读档，然后检查录像长度有没有变化。`loadState` 期间的记录被禁用，长度应当不变；若有变化，检查是不是在绑定的执行器里做了会记录的操作。
+最后确认读档不产生录像：存档、读档，然后检查录像长度有没有变化。`loadState` 期间的记录被禁用，长度应当不变；若有变化，检查是不是在绑定的执行器里做了会记录的操作。
 
 ## 小结
 

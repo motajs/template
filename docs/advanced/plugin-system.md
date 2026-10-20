@@ -38,13 +38,13 @@
 最小实现如下。方法里用不到的参数可以省略，现有的 `DataShopPlugin` 就只收了 `state`：
 
 ```ts
-// [模板] 一个最小插件：只有 id、dependencies 和三个时机方法
+// 一个最小插件：只有 id、dependencies 和三个时机方法
 export class MyPlugin implements IDataPluginDefine {
     readonly id = 'my-plugin';
     readonly dependencies: string[] = [];
 
     awake(state: ICoreState): void {
-        // [需改] 在这里装配插件自己的对象
+        // 在这里装配插件自己的对象
     }
 
     async initialize(state: ICoreState): Promise<void> {}
@@ -67,13 +67,13 @@ export class MyPlugin implements IDataPluginDefine {
 ```ts
 import { IDataPluginDefine } from '@user/data-state';
 import { DataShopPlugin } from './shop';
-// [需改] 新建插件文件时，必须补上你自己的 import
+// 新建插件文件时，必须补上你自己的 import
 import { MyPlugin } from './my-plugin';
 
 /** 数据端插件列表 */
 export const dataPlugins: IDataPluginDefine[] = [
     new DataShopPlugin(),
-    // [需改] 追加到末尾，不要替换上面的已有插件
+    // 追加到末尾，不要替换上面的已有插件
     new MyPlugin()
 ];
 ```
@@ -169,7 +169,7 @@ load() 开始
 声明了依赖，最直接的方式就是用方法参数里的插件对象。注意它是 `IDataPlugin` 包装对象，你要取 `.plugin`：
 
 ```ts
-// [需改] 插件 B 依赖插件 A，并在初始化时调用 A 的方法
+// 插件 B 依赖插件 A，并在初始化时调用 A 的方法
 export class PluginB implements IDataPluginDefine {
     readonly id = 'plugin-b';
     readonly dependencies = ['plugin-a'];
@@ -178,7 +178,7 @@ export class PluginB implements IDataPluginDefine {
         state: ICoreState,
         dependencies: IDataPlugin<IDataPluginDefine>[]
     ): void {
-        // [需改] 参数顺序与 dependencies 数组一致
+        // 参数顺序与 dependencies 数组一致
         const a = dependencies[0]?.plugin as PluginA | undefined;
         if (!a) return;
         a.doSomething();
@@ -199,7 +199,7 @@ export class PluginB implements IDataPluginDefine {
 没有声明依赖、或者在启动之后才按需访问时，用 `state.getDataPlugin(id)`。它返回 `Readonly<IDataPlugin<T>> | null`：
 
 ```ts
-// [需改] 取回插件，先判空，再确认状态
+// 取回插件，先判空，再确认状态
 const holder = state.getDataPlugin<PluginA>('plugin-a');
 if (holder && holder.status === PluginStatus.Loaded) {
     holder.plugin.doSomething();
@@ -255,32 +255,27 @@ if (holder && holder.status === PluginStatus.Loaded) {
 
 这是少数<strong>应该新建文件与目录</strong>的场景：插件本身就是一个独立单元，把它的类、接口和对象放在一起，比全部塞进 `initialize.ts` 更容易维护。除此之外的普通效果直接写在对应的内置实现文件里，不要为每个效果新建目录。
 
-## 模板：一个插件的最小骨架
+## 示例：一个完整插件
 
-<strong>目标</strong>：新建一个插件，能被启动流程加载，并拥有自己的对象与存档内容。
-
-<strong>改哪里</strong>：在 `src/data/plugin/` 下新建一个目录，放入 `plugin.ts` 与 `index.ts`；再改 `src/data/plugin/list.ts`。
-
-<strong>复制什么</strong>：下面是机制本身的通用骨架，复制后按 `[需改]` 修改。它不是任何一个具体插件，商店插件只是示例，不要拿它当模板。
+假设要新建一个插件：它要能被启动流程加载，并拥有自己的对象与存档内容。插件放在 `src/data/plugin/` 下自己的目录里，下面这份代码写在新建的 `plugin.ts` 中，顶部的 `import` 要一起保留：
 
 ```ts
-// [模板] 插件通用骨架：复制后按 [需改] 修改
 import { ICoreState, IDataPlugin, IDataPluginDefine } from '@user/data-state';
 
-// [需改] 把 MyPlugin 换成你的插件类名
+// 插件类：实现 IDataPluginDefine 的五个成员
 export class MyPlugin implements IDataPluginDefine {
-    // [需改] 插件 id：一旦发布就不要改，其他插件可能依赖它
+    // 插件 id：全局唯一，发布后不要改，其他插件可能依赖它
     readonly id = 'my-plugin';
-    // [需改] 依赖的插件 id；没有依赖就留空数组
+    // 依赖的插件 id 字符串数组；没有依赖就留空
     readonly dependencies: string[] = [];
 
-    // [需改] 插件自己的对象；没有就删掉这一行
+    // 插件自己的对象；暂时没有就删掉这一行以及 awake 里对应的装配
     mySystem!: MySystem;
 
     awake(state: ICoreState): void {
-        // [需改] 装配对象，不要在这里 await
+        // 装配插件自己的对象；这里不要 await
         this.mySystem = new MySystem(state);
-        // [需改] 有需要存档的数据时注册；这里是存档 id，不是插件 id
+        // 有需要存档的数据时注册；这里是存档 id，不是插件 id
         state.addSaveableContent('@plugin/my-plugin', this.mySystem);
     }
 
@@ -288,29 +283,45 @@ export class MyPlugin implements IDataPluginDefine {
         state: ICoreState,
         dependencies: IDataPlugin<IDataPluginDefine>[]
     ): Promise<void> {
-        // [需改] 加载开始前要做的事；可以 await，但会阻塞加载
+        // 加载开始前要做的事；可以 await，但会阻塞加载
     }
 
     async afterLoad(
         state: ICoreState,
         dependencies: IDataPlugin<IDataPluginDefine>[]
     ): Promise<void> {
-        // [需改] 需要读取加载内容时写在这里
+        // 需要读取加载内容时写在这里
     }
 }
 ```
 
-这段是<strong>新建文件</strong>，顶部的 `import` 必须一起保留。`MySystem` 是你自己写的类，文档不会替你定义：先按你的需求写出这个类；暂时没有对应对象时，把 `mySystem` 字段、`new MySystem(state)` 以及相关的 `addSaveableContent` 一起删掉，否则编译器会报「找不到名称 MySystem」。
+`MySystem` 是你自己写的类，文档不会替你定义。先按需求写出这个类；暂时没有对应对象时，把 `mySystem` 字段、`new MySystem(state)` 以及相关的 `addSaveableContent` 一起删掉，否则编译器会报「找不到名称 MySystem」。
 
-<strong>改什么</strong>：
+写好后，把插件追加到 `src/data/plugin/list.ts` 的 `dataPlugins` 数组末尾，并补上新建文件的 `import`：
 
-1. <strong>类名与 id</strong>：`MyPlugin` 与 `my-plugin` 换成你的名字，`id` 全局唯一。
-2. <strong>dependencies</strong>：填依赖插件的 id 字符串；没有就保持空数组，不要填插件对象。
-3. <strong>awake 里的装配</strong>：换成你自己的对象。需要进存档的对象必须实现 `ISaveableContent`（`saveState` / `loadState`），细节见[可存档内容](./saveable-content.md)。
-4. <strong>存档 id</strong>：`@plugin/my-plugin` 换成你自己的存档 id，与插件 id 分开命名。
-5. <strong>initialize / afterLoad</strong>：用不到就留空方法；用到时按需加逻辑。
+```ts
+import { IDataPluginDefine } from '@user/data-state';
+import { DataShopPlugin } from './shop';
+// 新建插件文件时补上这一行；改已有插件则复用它原有的 import
+import { MyPlugin } from './my-plugin';
 
-<strong>注意</strong>：`awake` 里的异步工作不会被等待；`initialize` 与 `afterLoad` 里启动的异步任务必须 `await`，否则阶段会提前结束。注册时只改 `list.ts` 的数组，不要另外找地方调用插件方法。
+/** 数据端插件列表 */
+export const dataPlugins: IDataPluginDefine[] = [
+    new DataShopPlugin(),
+    // 追加到末尾，不要替换上面的已有插件
+    new MyPlugin()
+];
+```
+
+只把数组写成 `[new MyPlugin()]` 会把商店插件挤掉。注册进 `dataPlugins` 只是第一步：`awake` 里的异步工作不会被等待；`initialize` 与 `afterLoad` 里启动的异步任务必须 `await`，否则阶段会提前结束。注册位置只有 `list.ts` 的数组，不要另外找地方调用插件方法。
+
+需要定制时，通常只改这几处：
+
+- <strong>类名与 id</strong>：`MyPlugin` 与 `my-plugin` 换成你的名字，`id` 全局唯一。
+- <strong>dependencies</strong>：填依赖插件的 id 字符串；没有就保持空数组，不要填插件对象。
+- <strong>awake 里的装配</strong>：换成你自己的对象。需要进存档的对象必须实现 `ISaveableContent`（`saveState` / `loadState`），细节见[可存档内容](./saveable-content.md)。
+- <strong>存档 id</strong>：`@plugin/my-plugin` 换成你自己的存档 id，与插件 id 分开命名。
+- <strong>initialize / afterLoad</strong>：用不到就留空方法；用到时按需加逻辑。
 
 ## 示例：读一个现有插件
 
@@ -407,11 +418,9 @@ async afterLoad(state: ICoreState): Promise<void> {
 - <strong>直接改其他系统的内部字段</strong>。插件之间应通过公开方法与接口协作；直接改私有字段会绕开对方维护的一致性逻辑。
 - <strong>重复注册同一个 id</strong>。后一个会被忽略并报错（`78`），你以为生效的插件其实没有进注册表。
 
-## 怎么验证
+## 验证
 
-<strong>第一项：确认三个时机按顺序发生</strong>。
-
-在你插件的三个方法里各放一条可观察信号，例如：
+想确认三个时机按顺序发生，可以在插件的三个方法里各放一条可观察信号：
 
 ```ts
 // [验证] 用提示确认时机顺序
@@ -430,9 +439,7 @@ async afterLoad(state: ICoreState): Promise<void> {
 
 把插件加进 `dataPlugins` 后启动，三条提示应依次出现：`awake` 最早，`initialize` 在加载开始前，`afterLoad` 在加载结束后。用控制台输出也可以，只要顺序能被观察到。
 
-<strong>第二项：确认插件已经能被取回</strong>。
-
-在启动完成后执行：
+启动完成后，用 `state.getDataPlugin` 取回插件，确认它已经进了注册表：
 
 ```ts
 // [验证] 取回插件并检查状态
@@ -442,9 +449,7 @@ console.log(holder?.status === PluginStatus.Loaded, holder?.plugin);
 
 `status` 应为 `Loaded`，`plugin` 应是你 `new` 的那个实例。如果是 `null`，先检查 `list.ts` 有没有真的 `new` 并放进数组。
 
-<strong>第三项：存档后读档，确认插件注册的内容恢复</strong>。
-
-存档与读档的入口都在主对象上：`state.saveState(compression)` 返回一份 `ReadonlyMap<string, unknown>`，`state.loadState(snapshot, compression)` 再用同一份映射恢复。把下面几行放进一个能拿到 `state` 的临时函数执行一次，就是最外层的「存档 → 改 → 读档」：
+要确认插件注册的存档内容能恢复，先存档，再改动它，然后读档。两个入口同样在主对象上：`state.saveState(compression)` 返回一份 `ReadonlyMap<string, unknown>`，`state.loadState(snapshot, compression)` 再用同一份映射恢复。把下面几行放进一个能拿到 `state` 的临时函数执行一次：
 
 ```ts
 // [验证] 存档，改掉可观察值，再读档；类名与路径换成你自己的
@@ -453,7 +458,7 @@ import { MyPlugin } from './plugin/my-plugin';
 
 const plugin = state.getDataPlugin<MyPlugin>('my-plugin')?.plugin;
 if (plugin) {
-    // [需改] store 换成你插件里实际注册的可存档对象
+    // store 换成你插件里实际注册的可存档对象
     plugin.store.setValue('count', 1);
     const snapshot = state.saveState(SaveCompression.NoCompression);
 
@@ -463,13 +468,9 @@ if (plugin) {
 }
 ```
 
-这里假设插件用[可存档内容](./saveable-content.md)里的 `MySaveable` 作为注册对象，它带有 `setValue` / `getValue`；换成你自己的对象时，把 `plugin.store` 与这两个方法一起替换掉。
+这里假设插件用[可存档内容](./saveable-content.md)里的 `MySaveable` 作为注册对象，它带有 `setValue` / `getValue`；换成你自己的对象时，把 `plugin.store` 与这两个方法一起替换掉。读档后应回到存档时的值。没恢复时依次检查：对象有没有实现 `ISaveableContent`、有没有在 `awake` 里用 `state.addSaveableContent` 注册、`saveState` 返回的数据里有没有漏字段。完整的验证写法（含三档压缩与修改映射）见[可存档内容](./saveable-content.md)的「验证」一节。
 
-让插件注册的可存档内容进入一个可观察状态（例如改一个计数），存档，再改动它，然后读档。读档后应回到存档时的值。没恢复时依次检查：对象有没有实现 `ISaveableContent`、有没有在 `awake` 里用 `state.addSaveableContent` 注册、`saveState` 返回的数据里有没有漏字段。完整的验证写法（含三档压缩与修改映射）见[可存档内容](./saveable-content.md)的「怎么验证」。
-
-<strong>第四项：故意把依赖写错一次</strong>。
-
-把 `dependencies` 里的某个 id 改成一个不存在的名字，重新启动。此时应出现两条现象：控制台报缺失依赖错误（错误码 `77`，带插件 id 与缺失的依赖 id），你的插件没有任何时机输出。改回正确 id 后应恢复正常。这一步能让你亲眼看到「阻断」不是只影响被写错的插件。
+最后可以故意把 `dependencies` 里的某个 id 改成一个不存在的名字，重新启动。此时应出现两条现象：控制台报缺失依赖错误（错误码 `77`，带插件 id 与缺失的依赖 id），你的插件没有任何时机输出。改回正确 id 后应恢复正常。这一步能让你亲眼看到「阻断」不是只影响被写错的插件。
 
 ## 小结
 

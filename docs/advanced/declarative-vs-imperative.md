@@ -60,17 +60,18 @@ hero.hp = hero.hp + 50;
 
 #### 示例：给怪物加一条光环
 
-<strong>目标</strong>：让某只怪物给范围内的其他怪物增加 20% 攻击。
-
-<strong>改哪里</strong>：`src/content/enemy.jsonc` 中目标怪物的数据对象，找到它的 `special` 字段。
-
-<strong>复制什么</strong>：把下面的 `special` 字段贴进该怪物对象。JSON 没有 `import`，不需要补引入：
+假设要让某只怪物给范围内的其他怪物增加 20% 攻击。做法是在 `src/content/enemy.jsonc` 里给这只怪物的数据对象声明一条 `special`，不需要写任何调用代码。JSON 没有 `import`，直接把字段放进对象即可：
 
 ```jsonc
+// 目标怪物对象上的 special 字段
 "special": {
+    // 键 "23" 是光环的特殊属性编号，不能改名
     "23": {
+        // 影响范围，单位为格
         "range": 1,
+        // false 表示十字范围，true 表示矩形范围
         "square": false,
+        // 三项加成都是百分比：生命、攻击、防御
         "hpBuff": 0,
         "atkBuff": 20,
         "defBuff": 0
@@ -78,11 +79,9 @@ hero.hp = hero.hp + 50;
 }
 ```
 
-<strong>改什么</strong>：只改参数。`range` 是范围，`square` 决定矩形还是十字，`hpBuff`、`atkBuff`、`defBuff` 是百分比。键 `"23"` 是光环的编号，不要改。
+`special` 的键必须是特殊属性编号，`"23"` 就代表光环这一条；参数类型 `ISpecial23Value` 定义在 `src/data/enemy/special.ts`，同时被 `aura.ts` 里的转换器与视图使用。字段值才是你要改的部分：`range` 是范围，`square` 决定矩形还是十字，`hpBuff`、`atkBuff`、`defBuff` 是百分比。
 
-<strong>怎么验证</strong>：重新进入楼层或触发一次重建，查看周围怪物的计算后攻击。数值应当按 `atkBuff` 的百分比提高；改回 0 后应当恢复原值。
-
-<strong>注意</strong>：`special` 的键必须是特殊属性编号，不要把 `"23"` 改成别的名字。也不要在事件脚本里再手动加一遍攻击，否则光环与脚本会叠加。
+重新进入楼层或触发一次重建，然后查看周围怪物的计算后攻击：它应当按 `atkBuff` 的百分比提高，把 `atkBuff` 改回 0 后恢复到原值。验证时还要确认没有在事件脚本里手动再加一遍攻击——光环与脚本会叠加，数值会比预期高。
 
 ### 伤害计算器
 
@@ -117,7 +116,7 @@ hero.hp = hero.hp + 50;
 <strong>引擎在哪个时机执行</strong>：对应动作发生时。主对象会通过 `forEachHook` 依次通知挂在自己身上的钩子。你只需要注册一次：
 
 ```ts
-// [模板] 注册钩子：new 一个钩子实例，挂到关心的主对象上
+// 注册钩子：new 一个钩子实例，挂到关心的主对象上
 state.hero.attribute.addHook(new MyHeroAttributeHooks(state));
 ```
 
@@ -231,17 +230,13 @@ calculate(handler) {
 - <strong>把一次性动作硬做成声明式</strong>。玩家走一步就是现在发生，硬包成「声明规则等引擎调用」只会增加复杂度，还容易漏记录像。
 - <strong>只改模板却忘记刷新</strong>。正常流程下引擎会自动重建；只有绕过正常流程直接改怪物对象时，才需要手动标记那只怪物待重算。
 
-## 怎么验证
+## 验证
 
-声明式写对了，最明显的特征是：<strong>只改声明，不改调用代码，结果就会跟着变</strong>。可以按下面三项检查。
+声明式写对了，最明显的特征是：<strong>只改声明，不改调用代码，结果就会跟着变</strong>。
 
-<strong>第一项：改一处声明，观察结果是否跟着变</strong>。
+先试一次最直接的检查：在 `src/content/enemy.jsonc` 里把某只怪物的光环参数改大（例如把 `atkBuff` 从 20 改成 50），不要动 `aura.ts`，也不要改任何注册代码。重新进入楼层或触发一次重建，再看这只怪物周围的怪物属性：攻击加成应该按新参数变化。如果没变，先确认你改的是数据里的 `special` 字段，而不是另写了一段命令式脚本。
 
-在 `src/content/enemy.jsonc` 里把某只怪物的光环参数改大（例如把 `atkBuff` 从 20 改成 50），不要动 `aura.ts`，也不要改任何注册代码。重新进入楼层或触发一次重建，再看这只怪物周围的怪物属性：攻击加成应该按新参数变化。如果没变，先确认你改的是数据里的 `special` 字段，而不是另写了一段命令式脚本。
-
-<strong>第二项：把计算器连续调用两次，确认结果一致</strong>。
-
-用同一份输入调用两次，`damage` 与 `turn` 应该完全相同，并且 flag、怪物属性、勇士属性都不应发生变化。可以用下面的方式取到同一个 handler 后连算两次：
+接着检查计算器有没有副作用：用同一份输入调用两次，`damage` 与 `turn` 应该完全相同，并且 flag、怪物属性、勇士属性都不应发生变化。可以取到同一个 handler 后连算两次：
 
 ```ts
 // [验证] 同一个 handler 连续计算两次，结果应完全一致
@@ -260,9 +255,7 @@ if (system && info) {
 
 把 `(0, 0)` 换成场上有怪物的坐标；那里没有怪物时，`getEnemyByLoc` 会返回 `null`。如果两次结果不同，或者第二次算完之后状态多出了东西，说明计算器里有副作用，回到 `calculate` 里检查有没有写 flag、删记录或改对象。
 
-<strong>第三项：存档后改状态，再读档，确认恢复</strong>。
-
-存档与读档的入口都在主对象上：`state.saveState(compression)` 返回一份 `ReadonlyMap<string, unknown>`，`state.loadState(snapshot, compression)` 用同一份映射恢复。最外层的调用就是这样一对：
+最后检查存档与读档。两个入口都在主对象上：`state.saveState(compression)` 返回一份 `ReadonlyMap<string, unknown>`，`state.loadState(snapshot, compression)` 用同一份映射恢复：
 
 ```ts
 // [验证] 存档 → 改状态 → 读档
