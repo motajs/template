@@ -17,7 +17,10 @@ export default defineConfig({
     themeConfig: {
         // https://vitepress.dev/reference/default-theme-config
         outline: [2, 3],
-        nav: [{ text: '中级教程', link: '/intermediate/data-vs-render' }],
+        nav: [
+            { text: '中级教程', link: '/intermediate/data-vs-render' },
+            { text: '高级教程', link: '/advanced/' }
+        ],
         sidebar: {
             '/intermediate/': [
                 {
@@ -146,6 +149,49 @@ export default defineConfig({
                             ]
                         }
                     ]
+                }
+            ],
+            '/advanced/': [
+                {
+                    text: '高级 I · 扩展基础',
+                    collapsed: false,
+                    items: [
+                        { text: '高级 I 导览', link: '/advanced/' },
+                        {
+                            text: '声明式 vs 命令式接口',
+                            link: '/advanced/declarative-vs-imperative'
+                        },
+                        {
+                            text: '插件系统',
+                            link: '/advanced/plugin-system'
+                        },
+                        {
+                            text: '可存档内容',
+                            link: '/advanced/saveable-content'
+                        },
+                        {
+                            text: '录像一致性',
+                            link: '/advanced/replay-consistency'
+                        },
+                        {
+                            text: 'data-common 的 Store',
+                            link: '/advanced/data-stores'
+                        },
+                        {
+                            text: '钩子深入',
+                            link: '/advanced/hooks-in-depth'
+                        }
+                    ]
+                },
+                {
+                    text: '高级 II · 系统实现',
+                    collapsed: true,
+                    items: []
+                },
+                {
+                    text: '高级 III · 原理与架构',
+                    collapsed: true,
+                    items: []
                 }
             ]
         },
