@@ -282,3 +282,5 @@ console.log(raw, state.tileStore.getType(num));
 - `EnemyStore` 不在 `IDataCommon` 上，不要假设主对象能直接取到。
 - Store 注册没有逐对象模板，只有「在加载期集中登记」的机制骨架。
 - 不懂代码时优先在已有位置补条目，不要急着写新类或扩展主对象。
+
+返回[高级 I 导览](./index.md)。

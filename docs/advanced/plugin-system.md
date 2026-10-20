@@ -293,11 +293,9 @@ export class MyPlugin implements IDataPluginDefine {
 
 1. <strong>类名与 id</strong>：`MyPlugin` 与 `my-plugin` 换成你的名字，`id` 全局唯一。
 2. <strong>dependencies</strong>：填依赖插件的 id 字符串；没有就保持空数组，不要填插件对象。
-3. <strong>awake 里的装配</strong>：换成你自己的对象。需要进存档的对象必须实现 `ISaveableContent`（`saveState` / `loadState`），细节见 `高级教程 I · 可存档内容`。
+3. <strong>awake 里的装配</strong>：换成你自己的对象。需要进存档的对象必须实现 `ISaveableContent`（`saveState` / `loadState`），细节见[可存档内容](./saveable-content.md)。
 4. <strong>存档 id</strong>：`@plugin/my-plugin` 换成你自己的存档 id，与插件 id 分开命名。
 5. <strong>initialize / afterLoad</strong>：用不到就留空方法；用到时按需加逻辑。
-
-<!-- TODO(advanced-I): 可存档内容 -->
 
 <strong>注意</strong>：`awake` 里的异步工作不会被等待；`initialize` 与 `afterLoad` 里启动的异步任务必须 `await`，否则阶段会提前结束。注册时只改 `list.ts` 的数组，不要另外找地方调用插件方法。
 
@@ -449,3 +447,5 @@ console.log(holder?.status === PluginStatus.Loaded, holder?.plugin);
 - 三个阶段都按依赖顺序走；循环依赖、缺失依赖会连同下游一起被阻断。
 - 插件 id 是对外契约，不要随意改名或复用；它与可存档 id 是两套命名。
 - 优先改内置；需要独立成组的功能时再写插件。
+
+返回[高级 I 导览](./index.md)。

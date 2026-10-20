@@ -262,3 +262,5 @@ endReplaySafetyCollection();
 - 收集区间目前只有测试在开启；需要时手动 `beginReplaySafetyCollection` / `endReplaySafetyCollection`。
 - 读档期间录像被临时禁用，执行器不在保护范围内。
 - 不懂代码时优先改内置加一行标记，不要急着写新类。
+
+返回[高级 I 导览](./index.md)。

@@ -433,3 +433,5 @@ map.addHook(new TargetLayerResizeHooks(state, targetLayer));
 - 不要用 alias 判断身份；对象引用才唯一。
 - `addHook` 返回控制器，`removeHook` 要传原实例，控制器可 `unload`；`awake` 在加入已加载列表前调用，`destroy` 在移除时调用。
 - `addHook` 不去重，`forEachHook` 顺序不保证，异步钩子用 `Promise.all` 并发等待。
+
+返回[高级 I 导览](./index.md)。
