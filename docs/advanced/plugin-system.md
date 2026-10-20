@@ -35,9 +35,11 @@
 | `initialize(state, dependencies)` | `(state, dependencies) => Promise<void>` | 异步初始化，加载开始前调用   |
 | `afterLoad(state, dependencies)`  | `(state, dependencies) => Promise<void>` | 加载完毕后调用               |
 
-最小实现如下。方法里用不到的参数可以省略，现有的 `DataShopPlugin` 就只收了 `state`：
+只看类本身，最小实现如下（完整文件见下文「示例：一个完整插件」）。方法里用不到的参数可以省略，现有的 `DataShopPlugin` 就只收了 `state`：
 
 ```ts
+import { ICoreState, IDataPluginDefine } from '@user/data-state';
+
 // 一个最小插件：只有 id、dependencies 和三个时机方法
 export class MyPlugin implements IDataPluginDefine {
     readonly id = 'my-plugin';
@@ -190,13 +192,13 @@ export class PluginB implements IDataPluginDefine {
 }
 ```
 
-`PluginA` 需要有能被外部调用的方法。通常的做法是像 `IShopPlugin` 那样，给自己的插件定一个接口：`interface IMyPlugin extends IDataPluginDefine { ... }`，把要暴露的方法写进去。
+这段按新文件写，顶部需要 `import { ICoreState, IDataPlugin, IDataPluginDefine } from '@user/data-state';` 与 `import { PluginA } from './plugin-a';`（路径按你的目录调整）。`PluginA` 需要有能被外部调用的方法。通常的做法是像 `IShopPlugin` 那样，给自己的插件定一个接口：`interface IMyPlugin extends IDataPluginDefine { ... }`，把要暴露的方法写进去。
 
 拿到的是注册表里同一个包装对象，它的 `status` 会随阶段推进更新。所以你在自己 `awake` 里看到的依赖状态是 `Awakened`，在 `afterLoad` 里看到的通常已经是 `Loaded`。
 
 ### 用 getDataPlugin 取回
 
-没有声明依赖、或者在启动之后才按需访问时，用 `state.getDataPlugin(id)`。它返回 `Readonly<IDataPlugin<T>> | null`：
+没有声明依赖、或者在启动之后才按需访问时，用 `state.getDataPlugin(id)`。它返回 `Readonly<IDataPlugin<T>> | null`。下面这段放在能拿到 `state` 的方法里：
 
 ```ts
 // 取回插件，先判空，再确认状态
@@ -447,7 +449,7 @@ const holder = state.getDataPlugin<MyPlugin>('my-plugin');
 console.log(holder?.status === PluginStatus.Loaded, holder?.plugin);
 ```
 
-`status` 应为 `Loaded`，`plugin` 应是你 `new` 的那个实例。如果是 `null`，先检查 `list.ts` 有没有真的 `new` 并放进数组。
+`PluginStatus` 从 `@user/data-state` 引入，`MyPlugin` 从你的插件文件引入。`status` 应为 `Loaded`，`plugin` 应是你 `new` 的那个实例。如果是 `null`，先检查 `list.ts` 有没有真的 `new` 并放进数组。
 
 要确认插件注册的存档内容能恢复，先存档，再改动它，然后读档。两个入口同样在主对象上：`state.saveState(compression)` 返回一份 `ReadonlyMap<string, unknown>`，`state.loadState(snapshot, compression)` 再用同一份映射恢复。把下面几行放进一个能拿到 `state` 的临时函数执行一次：
 
