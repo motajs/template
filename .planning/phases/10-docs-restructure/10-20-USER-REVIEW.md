@@ -130,3 +130,46 @@
 **构建：** `pnpm exec prettier --write docs/advanced/*.md` 后 `--check` 七篇通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
 
 **状态：已处理**
+
+---
+
+## 第 4 轮
+
+**时间：** 2026-10-20
+**用户意见（13 条）：**
+
+| # | 意见 | 落点 |
+|---|------|------|
+| U4-01 | 删除「声明式 vs 命令式」里「怪物特殊属性与光环」的例子——不合适，不可能有作者手写特殊属性对象 | `declarative-vs-imperative.md` |
+| U4-02 | 插件系统里数据端与渲染端应**并列**写，不要在「插件接口」一节只写数据端、后面才补「数据端与渲染端」 | `plugin-system.md` |
+| U4-03 | 示例插件不要写 `dataDeps[0]?.plugin as IShopPlugin \| undefined`；直接 `dataDeps[0].plugin` 或 `const [{ plugin: dataShop }] = dataDeps;`。依赖已加载完毕，不需要非空判断 | `plugin-system.md` |
+| U4-04 | 数据端与渲染端插件是**平等关系**；不能只写注册到 dataPlugin。补全渲染端插件的注册与目录；「注册与目录」应放到文档开头 | `plugin-system.md` |
+| U4-05 | 删除「插件 id 稳定性与版本迁移」——对普通作者无用，发布相关信息应放到插件库的说明里 | `plugin-system.md` |
+| U4-06 | 接口以 `I` 开头的约定文档也要遵守（作者可不遵守，但文档必须规范）；`getDataPlugin<PluginA>` 的 `PluginA` 应改为 `IPluginA` 形式 | `plugin-system.md` |
+| U4-07 | **先写模板，再解释每个方法**；高级教程也需要模板，但与中级不同 | 全部 |
+| U4-08 | 插件可以在插件之外调用（如钩子里）；不是只有插件内部才能调用插件 | `plugin-system.md` |
+| U4-09 | `saveState` / `loadState` **不保证顺序**（Map 存储一律不保证），删除「保证被引用对象先注册」；跨存档引用只说「存 id，读档或需要时再新建」，该场景极其少见，不必展开；存读档验证不需要复杂告警验证；**不要把 `__test__` 的内容写进文档** | `saveable-content.md`（及全部验证） |
+| U4-10 | 明确写明 `@shouldReplay` **仅用于数据端** | `replay-consistency.md` |
+| U4-11 | 五个 Store 的 inline-code 密度太高；删掉括号里的 `IInterface` 标识；说明改成文字，只讲这个 Store 能干什么，细节后置 | `data-stores.md` |
+| U4-12 | Store 要讲**里面存的数据**，不能只讲 Store 本身；不要单开「逐个看接口」大节，直接把五个 Store 平铺，每个讲「存什么 + 自身接口」 | `data-stores.md` |
+| U4-13 | 钩子写成「建议一个对象一个实例」；共享允许但不建议，除非明确了解原理与后果；不展开共享实例 | `hooks-in-depth.md` |
+
+### 第 4 轮处置（声明式 / 插件系统）
+
+**修改方式：** 派发子代理执行（内联编辑），仅修改 `docs/advanced/declarative-vs-imperative.md`、`docs/advanced/plugin-system.md` 与本职记录。
+
+| #     | 处置                                                                                                                                                                                                                                                                                                   |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| U4-01 | 删除手写 `special` 对象的示例（`ISpecial23Value` 片段）；保留概念，改为说明特殊属性在 `src/data/enemy/special.ts` 的 `createSpecials` 中统一注册、光环通过 `registerAuraConverter` 注册，怪物数据只写编号与参数。                                                                                      |
+| U4-02 | 合并原「数据端与渲染端」与「插件接口」两节：接口一节先并列给出数据端、渲染端完整模板，再用同一组条目逐项说明，不再先写数据端、后面另起一节补渲染端。                                                                                                                                                   |
+| U4-03 | 依赖示例改为直接解构后取 `.plugin`（`const [{ plugin }] = dependencies;`），删除 `dataDeps[0]?.plugin as IShopPlugin \| undefined` 与非空判断；在「逐项说明」和「边界与注意」明确依赖已在插件执行前解析完毕。                                                                                          |
+| U4-04 | 「注册与目录」移到文档开头：并列给出 `src/data/plugin/` 与 `src/client/plugin/` 目录、`dataPlugins` 与 `clientPlugins` 两个列表、两个入口的拼接方式；渲染端插件与数据端按同等篇幅覆盖，并补充 `ClientShopPlugin` 的说明。                                                                              |
+| U4-05 | 删除「插件 id 稳定性与版本迁移」整节，以及小结里对应的 id 契约条目。                                                                                                                                                                                                                                   |
+| U4-06 | 示例泛型统一使用接口名：`getDataPlugin<IMyPlugin>`、`getDataPlugin<IShopPlugin>`，不再出现 `getDataPlugin<MyPlugin>`；插件对外接口统一用 `I` 前缀，数据端模板把 `IMyPlugin` 放进 `types.ts`。                                                                                                     |
+| U4-07 | 改为先模板后解释：插件系统先列数据端 `types.ts` / `plugin.ts` 与渲染端 `plugin.ts` 模板，再逐项解释 `id` / `dataDeps` / `clientDeps` / `awake` / `initialize` / `afterLoad`；声明式篇的伤害计算器与钩子也改成先给完整示例、再解释时机与原因。                                                       |
+| U4-08 | 新增「插件之外也能调用」小节：以钩子为例，通过 `state.getDataPlugin` 取回插件并调用其公开成员，明确调用方不必是插件。                                                                                                                                                                                  |
+
+**构建：** `pnpm exec prettier --check docs/advanced/plugin-system.md docs/advanced/declarative-vs-imperative.md` 通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
+
+**状态：处理中**
+
