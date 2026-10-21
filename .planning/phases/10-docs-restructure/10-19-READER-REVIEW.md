@@ -105,4 +105,29 @@
 - `cmd /c "pnpm exec prettier --write docs/advanced/*.md"`：通过。
 - `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`：`build complete`，无 dead link。
 
+---
+
+## 读者审阅 · 第 2 轮（复审）
+
+**结论：阻断性问题 = 0，审阅通过。**
+
+5 项旧阻断问题均判「已消除」：
+- B-01：插件注册示例改为追加 + 新文件 import 说明；
+- B-02：`compression` 形参补齐；
+- B-03：注册/验证 id 统一为 `@plugin/my-store`；
+- B-04：补 `state.saveState` / `state.loadState` 可执行入口；
+- B-05：练习目标改为未标记的 `getOrInsert`。
+
+### 残留（非阻断，供用户与后续处理）
+
+1. **录像标记练习对普通作者的可验证性偏弱**：收集区间目前只在测试中调用，正文已说明，但读者仍缺乏生产环境下的可观察入口。
+2. **目标楼层/图层的注册时机**：文档提示 `afterLoad` 时可能 `getMap` 为 `null`，但没有给出「楼层创建」的可订阅事件/时机。
+3. **命名一致性**：`setField` vs `setFieldValue`、`@plugin/my-plugin` vs `@plugin/my-store` 跨篇不一致；`bindSaveableExecuter` 与 `ISaveableExecutor` 拼写差异易被误认为笔误；`revert()` 名称易误解。
+4. **`Mota.require(...)`** 在验证示例中出现但未解释。
+5. **`data-stores.md`** 只有图块定义骨架，道具/地图/事件的原始数据形状缺示例。
+6. **钩子示例** 地图级 `addHook` 的控制器未保存，后续 `unload` 无句柄。
+
+以上均为「能写、但验证/细节仍有落差」的项，不影响读者照文档写出可注册代码；留待用户修订循环（10-20）决定是否处理。
+
+
 
