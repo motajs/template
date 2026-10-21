@@ -15,9 +15,14 @@
 - `getEnemyByLoc(x, y)` / `getEnemyByLocator(locator)` / `getEnemyLocatorByView(view)`：按位置或视图互查；
 - `getDamageSystem()` / `getMapDamage()`：取绑定到上下文的伤害系统与地图伤害。
 
-上下文本身不进入存档。切楼层时由外部调用 `setFloor`；地图尺寸变化时调用 `resize`，它会清空当前上下文中的所有怪物与运行状态。`clear()` 只清空怪物与运行状态，`destroy()` 还会解绑伤害系统、地图伤害并清空所有注册项。
+上下文本身不进入存档。切楼层时由外部调用 `setFloor`；地图尺寸变化时调用 `resize`，它会清空当前上下文中的所有怪物与运行状态，并把 `needUpdate` 置为真。`clear()` 只清空怪物与运行状态（以及无来源全局光环列表），保留转换器、查询、最终效果等注册项；`destroy()` 还会解绑伤害系统、地图伤害并清空所有注册项。
 
-`resize` 与 `setFloor` 都会把上下文标记为需要更新，下一次读取计算后怪物时会重新构建。不要把它们当成普通的字段赋值。
+**`setFloor` 只改 `floor` 字段，不会把 `needUpdate` 置为真。** 如果只调用 `setFloor`，下一次 `buildup()` 会直接返回，计算后怪物与伤害都不会重建。切楼层时必须同时做一次会置脏的动作：
+
+- 正常换图流程调用 `resize(新地图宽, 新地图高)`，它会清空旧怪物并置 `needUpdate`，随后重新放入新楼层的怪物；
+- 如果尺寸没变、只想让已有视图重算，可以重新 `bindHero(state.hero.getAttribute())`（它也会置 `needUpdate`），或触发任一注册/增删接口，再调用 `buildup()`。
+
+不要只写 `setFloor` 就期待上下文刷新。
 
 ## 三种怪物对象
 
@@ -76,12 +81,17 @@ graph TD
 
 ## 优先级的边界
 
-光环、特殊查询与常规查询共用同一套优先级：数值越大越先执行。高优先级留下的结果，低优先级能看到；反过来不行。
+这里其实有两套顺序，不要混为一谈。
+
+**特殊光环与特殊查询**按优先级全局排队：`buildupSpecials` 每轮取当前未处理的最大优先级，先执行该优先级下的 `couldApplySpecial` 光环，再执行同优先级的特殊查询，然后才进入下一个优先级。高优先级留下的特殊属性，低优先级能看到；反过来不行。
+
+**常规查询**不参加这个全局队列。`buildupQuery` 是逐只怪物、逐个特殊属性 code 执行的：对怪物身上的每个 `special`，取出 `commonQueryMap.get(special.code)` 上注册的效果，按这些效果自己的 `priority` 从高到低执行。优先级只在**同一个 code 内**排序；不同 code 之间没有全局先后，执行顺序取决于 `enemy.iterateSpecials()` 的遍历顺序。
 
 由效果新增的特殊属性会立刻被转换成光环，但这条新光环只能影响之后的阶段：
 
-- 新光环的优先级**高于**当前阶段时，开发环境会告警并跳过这条新增属性；
-- 当前阶段不能删除同优先级或更高优先级的已生效光环，删除会被拒绝并告警；
+- 新光环的优先级**高于**当前阶段时，开发环境会告警并跳过这条新增属性（特殊属性也不会被加上）；
+- 删除特殊属性时，`enemy.deleteSpecial(...)` **总是先执行**；如果对应光环的优先级不低于当前阶段，开发环境会告警并跳过「从排序表移除光环」这一步，于是出现「特殊属性已经删了，但这一轮光环还在」的状态。生产环境没有这个优先级拦截，会直接把光环移除。因此不要把它理解成「删除被拒绝」；
+- `modify` 命中同优先级或更高优先级的光环时只会告警，不会回滚已经写入的修改；
 - 同一优先级内部不保证先后顺序，不要把有依赖关系的两条效果放在同一优先级。
 
 举个例子：优先级 20 的特殊光环给周围怪物加上一条优先级 10 的普通光环，这是成立的——20 先执行，10 在之后的基础光环阶段生效。反过来，优先级 10 的光环想给目标加上优先级 20 的光环则不成立：20 比当前阶段高，开发环境会告警并跳过。设计效果时，先想清楚「它应该在谁之后生效」，再决定优先级。
@@ -166,7 +176,7 @@ import { FullRange, IRange } from '@motajs/common';
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import { ICoreState } from '@user/data-state';
 import {
-    IEnemyAuraView,
+    IAuraView,
     IEnemyFinalEffect,
     IEnemyHandler,
     IEnemySpecialModifier,
@@ -182,8 +192,8 @@ class GlobalArmorFinal implements IEnemyFinalEffect<IEnemyAttr, IHeroAttr> {
     }
 }
 
-/** 全局基础光环：全场怪物 +10 攻速。 */
-class SpeedAura implements IEnemyAuraView<IEnemyAttr, void, void> {
+/** 无来源的全局基础光环：全场怪物 +10 攻速。 */
+class SpeedAura implements IAuraView<IEnemyAttr, void> {
     readonly priority = 10;
     readonly couldApplyBase = true;
     readonly couldApplySpecial = false;
@@ -236,7 +246,7 @@ function inspectAfterBuildup(
 }
 ```
 
-`addAura` 添加的是无来源全局光环，不需要转换器。实际游戏里 `initializeEnemy` 已经注册了三个光环转换器，因此基础光环阶段一定会执行；如果你在测试里手建了一个空上下文，记得先注册至少一个转换器或特殊查询，否则这一段会被跳过。
+`addAura` 添加的是无来源全局光环，不需要转换器。但要注意 `buildup()` 的外层开关：它判断的是 `auraConverter.size > 0 || specialQueryEffects.size > 0`，并不看 `globalAuraList`。实际游戏里 `initializeEnemy` 已经注册了三个光环转换器，所以全局光环会正常进入构建；如果你在测试里手建了一个空上下文，只调用 `addAura` 而不注册任何转换器或特殊查询，`buildupSpecials` / `buildupBase` 根本不会被调用，光环看起来像没生效。
 
 ## 怎么验证
 
@@ -288,7 +298,9 @@ function verifyBuildup(state: ICoreState, view: IEnemyView<IEnemyAttr>): void {
 - **不要在高频循环里反复全量 `buildup()`**：全量构建会重置并重算所有怪物，开销随怪物数量增长；单只变化优先用 `markDirty` + `requestRefresh`。
 - **`getComputingEnemy()` 是内部接口**：它暴露正在构建中的可写怪物，外部调用会绕过刷新与脏标记。
 - **查询效果不是内置内容**：`initializeEnemy` 只注册光环转换器、最终效果、战斗脚本与钩子，没有注册任何查询。查询需要自己注册后才会参与构建。
+- **`buildupSpecials` 在没有光环时提前返回**：它先加入全局光环、转换特殊属性光环，然后执行 `if (sortedAura.size === 0) return;`。如果只注册了特殊查询而场上没有任何光环，这个提前返回会让特殊查询也不执行。需要特殊查询时，至少保证存在一条光环（全局或转换出的都算）。
+- **光环可以命中自己**：范围包含中心时（`ManhattanRange` 的 `radius: 0`、`FullRange` 等），来源怪物自己也在扫描结果里，`apply` / `applySpecial` 会作用到它自己。设计要求「不影响自身」时，在 `apply` 里跳过 `handler.locator` 与来源位置相同的目标（带来源的 `IEnemyAuraView` 可比较 `aura.locator`），或改用不含中心的范围。
 - **开发环境的优先级告警不是致命错误**：它会跳过不合法的增删，但通常说明阶段依赖设计有问题，应该调整优先级而不是忽略告警。
-- **`clear()` 与 `destroy()` 的时机不同**：`clear()` 清空怪物与运行状态，保留注册项；`destroy()` 会连伤害系统、地图伤害与所有注册项一起清掉。销毁后不应继续使用该上下文。
+- **`clear()` 与 `destroy()` 的时机不同**：`clear()` 清空怪物、运行状态与无来源全局光环列表（`globalAuraList`），但保留光环转换器、查询、最终效果等注册项；`destroy()` 会连伤害系统、地图伤害与所有注册项一起清掉。销毁后不应继续使用该上下文。
 
 返回[高级 II 导览](./index.md)。

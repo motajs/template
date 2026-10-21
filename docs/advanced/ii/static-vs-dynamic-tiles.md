@@ -73,7 +73,12 @@ function inspectLayer(layer: IMapLayer): void {
 3. 用这个数字创建一个动态图块；
 4. 按 `keepEvent` 决定是否把原静态图块的**图块事件**复制到动态图块。
 
-`keepEvent` 默认是 `true`。保留时，原静态图块当前的图块事件会复制到动态实例，然后原位置的事件被清空；不保留时，动态实例保留它按图块定义重建的默认事件。无论是否保留，静态图块那一格都不再持有原来的图块事件。
+`keepEvent` 默认是 `true`。两种取值对源静态图块的影响并不对称：
+
+- `true`：先把源静态图块的图块事件复制到动态实例，再调用 `staticTile.tileEvent().clear()` 清空源实例的事件；
+- `false`：动态实例按图块定义重建默认事件，但**源静态图块实例完全不被触碰**，它缓存里原来的图块事件仍然保留。
+
+因此「不保留」不等于「源事件被清空」。之后如果又往这一格写静态图块，`layer.setBlock(num, x, y)` 不会重置该坐标缓存实例的事件（只有 `StaticTile.set(num)` 会调用 `restoreDefaultEvents()`），旧的图块事件就可能被新图块继承。想确保干净，转换后用 `source.tileEvent().clear()` 或 `source.restoreDefaultEvents()` 显式清一次，之后再用 `tile.set(num)` 换图块。
 
 ```ts
 import { IMapLayer } from '@user/data-base';
@@ -137,8 +142,8 @@ async function shiftRight(
 ### 转换的失败条件
 
 - `transferToDynamic` 在坐标不在地图上时返回 `null`，并告警 code 128；目标格为空时仍会创建一个数字为 `0` 的动态图块，并告警 code 127。
-- `toStatic()` 按接口约定，在动态图块坐标不是整数或正在移动时返回 `null`；目标格被占用时会告警 code 129 并覆盖。
-- `toStaticIfSafe()` 在 `toStatic()` 的基础上额外要求目标格为空；目标格被占用时返回 `null`。
+- `toStatic()` 在目标坐标不在地图内时返回 `null`；目标格被占用时会告警 code 129 并覆盖。接口注释还约定「坐标不是整数或正在移动」时应失败，但当前实现没有在 `transferToStatic` 里检查 `mover.moving`，所以不要依赖它替你拦截移动中的转换。需要转换时先 `await controller.onEnd`，或至少判断 `dynamic.mover.moving` 为 `false`。
+- `toStaticIfSafe()` 在 `toStatic()` 的基础上额外要求目标格为空；目标格被占用时返回 `null`。它同样不会检查移动状态。
 - 动态图块被转回静态，或被 `delete()` 删除时，会触发图层的 `onDeleteDynamic` 钩子。`delete()` 返回 `Promise<void>`，会等待钩子完成；`toStatic` 只触发钩子，不等待。
 - `createDynamic` 与 `transferToDynamic` 都会触发 `onCreateDynamic`；`updateDynamicTile` 会触发 `onUpdateDynamicPosition`，移动器在每步落点更新位置时会调用它。
 
@@ -160,7 +165,7 @@ async function shiftRight(
 
 ## 事件视图接口
 
-点事件与图块事件都用同一套事件视图。只读接口是 `IReadonlyEventView`：
+点事件与图块事件都用同一套事件视图。取可写视图用 `layer.event(x, y)`（返回 `ILayerEventView | null`）或 `tile.tileEvent()`；`layer.getPointEvent(x, y)` 不是视图，它只是 `event(x, y)?.get()` 的简写，返回 `ReadonlyMap<number, string> | null`，不能用来修改点事件。只读接口是 `IReadonlyEventView`：
 
 | 成员      | 作用                                                           |
 | --------- | -------------------------------------------------------------- |
@@ -293,6 +298,7 @@ async function verifyTileConversion(
 - **静态图块的 `set()` 会重置默认事件**：`set(num)` 把图块事件恢复为该图块定义的默认事件。想保留自定义事件，应在 `set` 之后再挂，或使用 `syncTileEvent` 从别的实例复制。
 - **动态图块不写回图层数组**：图层数组只保存静态图块数字。判断某一格有没有动态图块要用 `getDynamicTilesAt` / `iterateDynamicTiles`，不要只读 `getBlock`。
 - **`keepEvent` 为 `false` 时事件不是「丢了」**：目标图块会回到该图块定义的默认事件，这是设计行为，不是转换失败。需要保留自定义事件就显式传 `true`，并在转换前确认源实例的事件已经设置好。
+- **`layer.setBlock` 不会重置图块事件**：它只改图块数字；同一坐标缓存着的静态图块实例会继续持有旧事件。要重置事件，用 `tile.set(num)` 或 `tile.restoreDefaultEvents()`，不要以为换了数字事件就自动干净。
 - **同一格多个动态图块的顺序不保证**：`getDynamicTilesAt` 返回的是集合语义的迭代器；依赖先后顺序时，请先取出数组并自行排序。
 - **`syncTileEvent` 会覆盖目标**：它先清空目标再复制，目标原有的图块事件不会保留。只想追加一条事件时，用 `tileEvent().set(priority, eventId)`，不要用 `syncTileEvent`。
 - **点事件与图块事件共用优先级概念但不是同一张表**：同一格可以同时有优先级 `5` 的点事件与优先级 `5` 的图块事件，两者互不冲突；冲突只发生在同一个事件视图内部。

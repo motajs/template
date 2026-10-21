@@ -93,7 +93,8 @@ export interface IRingRangeParam {
 export class RingRange extends BaseRange<IRingRangeParam> {
     // autoDetect 用这个估算决定走 iterate 还是 scan，不要求精确
     protected estimatePointCount(param: Readonly<IRingRangeParam>): number {
-        const radius = Math.abs(param.radius);
+        // 半径必须是整数；这里统一截断，避免非整数半径产生非整数索引
+        const radius = Math.abs(Math.trunc(param.radius));
         // 半径 0 退化为单点；否则曼哈顿距离恰为 radius 的格子有 4 * radius 个
         return radius === 0 ? 1 : 4 * radius;
     }
@@ -101,7 +102,7 @@ export class RingRange extends BaseRange<IRingRangeParam> {
     // 必须与下面的 inRange 判定完全一致，否则 scan 会漏格或多格
     *iterateLoc(param: Readonly<IRingRangeParam>): Iterable<number> {
         const { width, height } = this.host;
-        const radius = Math.abs(param.radius);
+        const radius = Math.abs(Math.trunc(param.radius));
         for (let dy = -radius; dy <= radius; dy++) {
             const y = param.cy + dy;
             if (y < 0 || y >= height) continue;
@@ -121,7 +122,7 @@ export class RingRange extends BaseRange<IRingRangeParam> {
     }
 
     inRange(x: number, y: number, param: Readonly<IRingRangeParam>): boolean {
-        const radius = Math.abs(param.radius);
+        const radius = Math.abs(Math.trunc(param.radius));
         return (
             this.inBound(x, y) &&
             Math.abs(x - param.cx) + Math.abs(y - param.cy) === radius
@@ -136,7 +137,7 @@ export class RingRange extends BaseRange<IRingRangeParam> {
 - `iterateLoc` 决定「枚举时输出哪些格」，必须和 `inRange` 使用同一套判定；
 - `inRange` 决定「单个点算不算命中」，越界必须先由 `inBound` 收口，不能只比较距离。
 
-`radius` 统一取绝对值，因此 `-2` 与 `2` 等价。`radius: 0` 时环形退化为中心单点，这与 `inRange` 的 `距离 === 0` 判定一致。
+`radius` 统一取绝对值并截断为整数，因此 `-2` 与 `2` 等价，`2.7` 会按 `2` 处理。**不要依赖非整数半径**：不截断时 `iterateLoc` 会产出非整数索引，`index % width` 也会得到错误坐标。示例用 `Math.trunc` 兜底；如果你希望非整数直接报错而不是被截断，就在三个方法开头换成显式校验。`radius: 0` 时环形退化为中心单点，这与 `inRange` 的 `距离 === 0` 判定一致。
 
 ## 绑定到系统
 
@@ -157,6 +158,8 @@ for (const [hit, view] of hits) {
 ```
 
 `scanRange` 内部会先 `range.bindHost(this)`，再用 `autoDetect` 在「遍历怪物列表」与「遍历范围」之间选一条路径。自定义范围不需要知道怪物列表长什么样。
+
+注意 `scanRange` 的语义是「筛选**当前上下文里已存在的怪物视图**」，不是「枚举范围内的空格」：范围里的空格不会出现在结果里，只有站在范围内的怪物才会。要检查范围本身覆盖了哪些坐标，直接跑 `range.iterateLoc(param)`（先绑定宿主），不要拿 `scanRange` 的结果当格子清单。
 
 如果要在自己的函数里复用范围，也可以显式接收宿主：
 
@@ -184,7 +187,7 @@ function collectRing(
 
 先确认上下文已绑定勇士。正常初始化流程会调用 `state.enemyContext.bindHero(state.hero.getAttribute())`；如果你在最小环境里手动搭上下文，需要自己补这一步。
 
-把勇士放在一只怪物旁边，执行：
+`scanRange` 只返回范围内的怪物，所以验证要摆好怪物，而不是只看格子。先以勇士为中心，在中心、曼哈顿距离 `1`、距离 `2` 的位置各放一只测试怪，再执行：
 
 ```ts
 state.enemyContext.bindHero(state.hero.getAttribute());
@@ -198,12 +201,35 @@ const hits = [
     })
 ];
 
-for (const [hit] of hits) {
-    console.log(`命中 (${hit.x}, ${hit.y})`);
+for (const [hit, view] of hits) {
+    // hit 是怪物所在坐标；view 是该位置的怪物视图
+    console.log(
+        `命中 (${hit.x}, ${hit.y})`,
+        view.getBaseEnemy().getAttribute('hp')
+    );
 }
 ```
 
-预期现象：只输出与勇士曼哈顿距离恰好为 `2` 的格子，最多 8 格；中心与距离为 `1` 的格子不会出现。如果勇士靠近地图边缘，超出地图的格会被裁掉，数量相应减少。场景里没有怪物时，可以先放两只测试怪，或临时用 `collectRing` 直接检查索引数量。
+预期现象：
+
+- 结果里只有距离恰好为 `2` 的那只怪物；中心与距离 `1` 的怪物不会出现；
+- 结果的数量取决于你放在环上的怪物数量，而不是环上的空格数量——环本身最多有 8 格，但 `scanRange` 不会为空格产出条目；
+- 如果勇士靠近地图边缘，超出地图的环上格子会被裁掉；如果那里也没有怪物，结果数量相应减少。
+
+要单独确认范围覆盖了哪些格子，绕过怪物列表，直接检查 `iterateLoc`：
+
+```ts
+const ring = new RingRange();
+// 上下文有 width / height，可以直接作为宿主
+ring.bindHost(state.enemyContext);
+
+const loc = state.hero.getLocation();
+const cells = [...ring.iterateLoc({ cx: loc.x, cy: loc.y, radius: 2 })];
+
+console.log('环上格子数', cells.length); // 未被地图边缘裁剪时最多 8
+```
+
+场景里没有怪物时，`scanRange` 返回空结果是正常的；这时用上面的 `iterateLoc` 或 `collectRing` 检查范围本身。不要用「输出最多 8 格」来判断 `scanRange` 是否正确。
 
 ## 边界与注意
 

@@ -100,6 +100,38 @@ export interface IEnemyAttr {
 
 内容对象不会与默认模板合并，缺键就是缺键。读取到 `undefined` 后，`armor / 100` 与 `atkSpeed / 100` 都会变成 `NaN`，伤害与回合数随之失真。新增属性后，最好全局搜索一遍 `"attribute"`，确认每个模板入口都补齐。
 
+### 旧存档迁移
+
+新游戏补 `enemy.jsonc` 与默认模板即可；旧存档不会自动补键。`state.loadState(save, compression)` 读取 `@system/enemy` 时，会把每个脏模板的 `attrs` 原样交给怪物模板，缺失的键不会从内容配置或默认模板回填。迁移点在调用 `loadState` 之前：
+
+```ts
+import { IEnemyAttr, SaveCompression } from '@user/data-common';
+import { ICoreState } from '@user/data-state';
+
+/** 在 state.loadState 之前补齐旧档里怪物模板缺失的属性键。 */
+function migrateEnemySave(save: Map<string, unknown>): void {
+    const enemy = save.get('@system/enemy') as
+        | { modified?: Map<number, { attrs?: Partial<IEnemyAttr> }> }
+        | undefined;
+    if (!enemy?.modified) return;
+
+    // modified 的键是怪物 code，值是该模板的属性与特殊属性存档
+    for (const enemyState of enemy.modified.values()) {
+        enemyState.attrs ??= {};
+        enemyState.attrs.atkSpeed ??= 100;
+        enemyState.attrs.armor ??= 0;
+    }
+}
+
+/** 读档入口：先迁移，再交给数据端统一读档。 */
+function loadEnemySave(state: ICoreState, save: Map<string, unknown>): void {
+    migrateEnemySave(save);
+    state.loadState(save, SaveCompression.NoCompression);
+}
+```
+
+只补 `@system/enemy` 还不够：勇士属性也可能从旧档读入，两个存档键都要按各自的新字段做一次迁移。勇士侧的写法见[新增勇士属性](./adding-hero-attribute.md)的「旧存档迁移」。
+
 ## 读取与修改
 
 怪物对象有两套写入口，取决于你拿到的是可写对象还是视图：
@@ -202,22 +234,22 @@ export class EnemyAttributeCalculator implements IDamageCalculator<
 
 ## 接入光环
 
-光环视图 `IEnemyAuraView` 继承自 `IAuraView`，它的 `apply(handler, baseEnemy)` 在基础属性阶段执行，适合给范围内的怪物加护甲或攻速。`handler.enemy` 是计算后怪物，`baseEnemy` 是未修改的原始怪物：读原始值用后者，写结果用前者。
+光环的公共接口是 `IAuraView<TEnemy, TRange>`，它的 `apply(handler, baseEnemy)` 在基础属性阶段执行，适合给范围内的怪物加护甲或攻速。`handler.enemy` 是计算后怪物，`baseEnemy` 是未修改的原始怪物：读原始值用后者，写结果用前者。
 
-下面是一条全场 +10 护甲的基础光环。转换器与视图的完整写法见[怪物光环](../../intermediate/enemy-aura.md)，这里只保留视图本身：
+`IEnemyAuraView` 是在 `IAuraView` 之上多出 `enemy` / `special` / `locator` 的派生接口，专门表示「由某只怪物的某个特殊属性转换出来的光环」。**无来源的全局光环不是 `IEnemyAuraView`**：它没有来源怪物，只实现 `IAuraView`，再用 `state.enemyContext.addAura(...)` 注册。转换器与特殊光环的完整写法见[怪物光环](../../intermediate/enemy-aura.md)，这里只保留无来源全局光环的视图本身：
 
 ```ts
 import { FullRange, IRange } from '@motajs/common';
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import { IReadonlyEnemy } from '@user/data-base';
 import {
-    IEnemyAuraView,
+    IAuraView,
     IEnemyHandler,
     IEnemySpecialModifier
 } from '@user/data-system';
 
-/** 给范围内所有怪物增加 10 点护甲的基础光环。 */
-export class ArmorAura implements IEnemyAuraView<IEnemyAttr, void, void> {
+/** 给范围内所有怪物增加 10 点护甲的无来源全局光环。 */
+export class ArmorAura implements IAuraView<IEnemyAttr, void> {
     readonly priority = 10;
     readonly couldApplyBase = true;
     readonly couldApplySpecial = false;
@@ -243,7 +275,12 @@ export class ArmorAura implements IEnemyAuraView<IEnemyAttr, void, void> {
         return null;
     }
 }
+
+// 初始化阶段注册一次；同一个实例会一直留在 globalAuraList 里
+state.enemyContext.addAura(new ArmorAura());
 ```
+
+`addAura` 接受的就是 `IAuraView`。如果你写成 `implements IEnemyAuraView`，编译期会要求补 `enemy`、`special`、`locator` 三个字段，而无来源光环根本拿不出这些值。
 
 光环修改的是计算后怪物，因此不需要你自己标脏：`buildup()` 结束时会统一清空伤害缓存；局部刷新也会在 `refreshEnemy` 末尾处理。**不要在光环里改 `baseEnemy`**，那会污染原始模板，并让后续重建从被改过的值出发。
 
@@ -303,6 +340,8 @@ export class PackAtkSpeedQuery implements IEnemyCommonQueryEffect<
 state.enemyContext.registerCommonQueryEffect(40, new PackAtkSpeedQuery());
 ```
 
+注册只决定「拥有 code 40 的怪物会执行哪条查询」，**不会让任何怪物自动拥有 40**。常规查询的执行条件是怪物身上有对应特殊属性：在 `src/content/enemy.jsonc` 的 `special` 里写 `"40": ...`，或在运行时用 `enemy.addSpecial(...)` 添加。只注册效果、不给怪物 code，查询一次也不会触发。
+
 查询效果需要 `registerCommonQueryEffect` 注册；引擎的 `src/data/enemy/initialize.ts` **没有注册任何查询实现**，不注册就不会执行。如果要增删或改写目标拥有的特殊属性，应使用特殊查询 `IEnemySpecialQueryEffect`，写法见[怪物查询](../../intermediate/enemy-query.md)，本篇不重复。
 
 ## 接入最终效果
@@ -348,37 +387,65 @@ state.enemyContext.registerFinalEffect(new ArmorFinalEffect());
 
 ## 怎么验证
 
-固定一只怪物与勇士属性，避免光环、支援或随机因素干扰。先把怪物 `armor` 设为 `50`、`atkSpeed` 设为 `100`，打印伤害；再把 `armor` 改为 `0`，确认伤害接近翻倍：
+固定一只怪物与勇士属性，避免光环、支援或随机因素干扰。模板护甲不能直接写在 `getComputedEnemy()` 上；要先改可修改怪物，再 `markDirty()` + `requestRefresh()`，最后重新取伤害：
 
 ```ts
 import { IEnemyAttr } from '@user/data-common';
 import { ICoreState } from '@user/data-state';
 import { IEnemyView } from '@user/data-system';
 
-/** 打印指定怪物的护甲、攻速与伤害信息。 */
+/** 修改模板属性并立即刷新这只怪物。 */
+function setEnemyAttribute(
+    state: ICoreState,
+    view: IEnemyView<IEnemyAttr>,
+    name: 'armor' | 'atkSpeed',
+    value: number
+): void {
+    // getModifiableEnemy() 返回模板；改完不会自动同步
+    view.getModifiableEnemy().setAttribute(name, value);
+
+    // 标脏后申请刷新，伤害缓存也会随之失效
+    view.markDirty();
+    state.enemyContext.requestRefresh(view);
+}
+
+/** 对比 50 护甲与 0 护甲下的伤害。 */
 function verifyEnemyAttribute(
     state: ICoreState,
     view: IEnemyView<IEnemyAttr>
 ): void {
-    const enemy = view.getComputedEnemy();
-    console.log('护甲', enemy.getAttribute('armor'));
-    console.log('攻速', enemy.getAttribute('atkSpeed'));
-
     const damageSystem = state.enemyContext.getDamageSystem();
     if (!damageSystem) return;
 
-    const info = damageSystem.getDamageInfo(view);
-    if (!info) return;
+    setEnemyAttribute(state, view, 'armor', 50);
+    const highArmor = view.getComputedEnemy();
+    const high = damageSystem.getDamageInfo(view);
+    console.log(
+        '计算后护甲',
+        highArmor.getAttribute('armor'),
+        '伤害',
+        high?.damage,
+        '回合',
+        high?.turn
+    );
 
-    console.log('伤害', info.damage, '回合', info.turn);
+    setEnemyAttribute(state, view, 'armor', 0);
+    const low = damageSystem.getDamageInfo(view);
+    console.log('0 护甲伤害', low?.damage, '回合', low?.turn);
+
+    setEnemyAttribute(state, view, 'atkSpeed', 120);
+    const fast = damageSystem.getDamageInfo(view);
+    console.log('120 攻速伤害', fast?.damage, '回合', fast?.turn);
 }
 ```
 
 预期现象：
 
 - `armor` 从 `50` 改为 `0` 后，勇士每回合伤害恢复，回合数减半，总伤害大致翻倍；
-- 给该怪物加一条 +10 护甲的光环后，`armor` 变为 `60`，伤害再次下降；
+- 计算后护甲可能高于模板值（光环或最终效果会继续叠加），所以打印的是 `getComputedEnemy()` 的结果；
 - `atkSpeed` 从 `100` 提到 `120` 后，怪物每回合伤害提高 20%，总伤害随之上升。
+
+如果第二次读取仍是旧伤害，检查是否漏了 `markDirty()` 或 `requestRefresh()`：只改模板不会让伤害缓存失效。
 
 若最终值是 `NaN`，先检查接口、默认模板与内容条目是否都补了键；若光环加了护甲但伤害不变，确认 `buildup()` 是否已经执行，以及是否误改了原始怪物而没有标脏。
 
@@ -387,9 +454,9 @@ function verifyEnemyAttribute(
 - **接口、默认模板、内容条目都要补键**：三处缺一不可。内容对象不会与默认模板合并，缺键就是 `undefined`。
 - **`guard` 不要写进内容**：它是运行时由支援光环维护的集合，手填会与运行时行为冲突。
 - **百分数统一用整数存储**：`20` 表示 20%，计算时再除以 `100`；不要一处存 `0.2`、另一处存 `20`。
-- **新增字段会进入怪物存档**：读旧档时缺失的键不会自动补齐，需要在使用前给默认值。
+- **新增字段会进入怪物存档**：读旧档时缺失的键不会自动补齐，需要按上文「旧存档迁移」在 `state.loadState` 之前给默认值。
 - **光环、查询、最终效果改的都是计算后怪物**：刷新前不要把它当原始数据；也不要在这三个阶段改 `getBaseEnemy()`。
-- **直接改原始怪物要标脏**：`getModifiableEnemy()` 的修改不会自动同步，必须 `markDirty()` 后重新读取。
+- **直接改原始怪物要标脏**：`getModifiableEnemy()` 的修改不会自动同步，必须 `markDirty()` 后调用 `state.enemyContext.requestRefresh(view)`，再重新读取计算后怪物与伤害。
 - **护甲要夹在有效区间**：大于 `100` 会让怪物无法被击败，负数会放大伤害；在计算器入口统一夹一次。
 - **攻速改动会影响回合数**：凡是依赖 `turn` 的逻辑（支援、先攻、状态持续时间）都要跟着复核，不能只改伤害数字。
 - **编辑器与图鉴尚未接入**：在对应端实现之前，不要假设属性会自动出现在界面上。

@@ -36,7 +36,8 @@ flowchart LR
 绑定发生在初始化与换楼层两处。`src/data/initialize.ts` 已经注入通行谓词并把移动器指向勇士，图层先置为 `null`；真正进入楼层后，再把当前楼层的事件层与方向处理器绑上：
 
 ```ts
-import { Dir4FaceHandler } from '@motajs/common';
+// Dir4FaceHandler / Dir8FaceHandler 都在 @user/data-common，不在 @motajs/common
+import { Dir4FaceHandler } from '@user/data-common';
 import { ICoreState } from '@user/data-state';
 
 /**
@@ -73,6 +74,13 @@ function bindPathfindingLayer(state: ICoreState): void {
 
 每一步是 `IPathfindingStep`，包含 `dir`（移动方向）、`from`（出发位置）与 `to`（到达位置）。`from` 与 `to` 都是只读的坐标对象；路径按起点到终点的顺序排列。
 
+`finder.find(start, target)` 和 `state.pathfinding.getPath(target)` 的区别只在起点：
+
+- `finder.find` 要求显式传入起始坐标，不会读取移动器，适合「从任意起点试算」；
+- `getPath` 是便捷包装，取 `state.pathfinding.mover.tile` 的当前坐标作为起点，再把结果交给 `finder.find`。没有绑定移动器时它直接返回 `InvalidInput`。
+
+两者都依赖同一套图层、通行谓词与方向处理器；换用哪个都不会绕过这些绑定。
+
 ## 两种移动方式
 
 `moveTo` 总是逐步移动。它先取路径，状态不是 `Success` 时直接返回 `null`；否则把每一步的 `dir` 依次交给移动器，再启动移动器。
@@ -97,7 +105,7 @@ async function walkTo(
 }
 ```
 
-两个方法都返回 `IPathfindingController`：`controller` 是底层移动控制器（可读 `done`、可 `await onEnd`），`path` 是本次使用的寻路结果。需要中止当前移动时调用 `interrupt()`，它会停止底层移动器并等待其结束；新的方向输入或新的寻路调用也可以接管当前移动。
+成功启动时，两个方法都返回 `IPathfindingController`：`controller` 是底层移动控制器（可读 `done`、可 `await onEnd`），`path` 是本次使用的寻路结果。**上一次移动没有结束时，新的 `moveTo` / `teleportTo` 会直接返回 `null`，不会接管当前移动**；底层 `mover.start()` 在移动中同样返回 `null`。想换目标，必须先等 `controller.onEnd`，或调用 `await state.pathfinding.interrupt()` 停止当前移动，再发起新的寻路。
 
 ## 初始化在哪里
 
@@ -236,14 +244,26 @@ export class MainPathfindingSystemHooks implements IPathfindingSystemHooks {
         );
     }
 
-    onAfterTeleportTo(path: IPathfindingResult): void {
+    onAfterTeleportTo(
+        path: IPathfindingResult,
+        system: IPathfindingSystem
+    ): void {
+        // 第二个参数同样是寻路系统，可用来判断这次移动绑定的移动器
+        void system;
         // 这个钩子挂在所有移动的结束回调上，逐步移动也会走到这里
         console.log('寻路移动结束，共', path.path.length, '步');
     }
 }
 ```
 
-钩子实例在 `src/data/hook/initialize.ts` 中注册。需要区分「这次是瞬移还是逐步」时，在 `onBeforeTeleportTo` 里记录标记，再在 `onAfterTeleportTo` 里读取并清除；不要只看结束钩子。
+这段代码直接补进 `src/data/hook/path.ts` 的 `MainPathfindingSystemHooks` 即可（类已存在，方法体是空的）。注册发生在 `src/data/hook/initialize.ts` 的 `initializeHooks`：
+
+```ts
+// initializeHooks 内部
+state.pathfinding.addHook(new MainPathfindingSystemHooks(state));
+```
+
+需要区分「这次是瞬移还是逐步」时，在 `onBeforeTeleportTo` 里记录标记，再在 `onAfterTeleportTo` 里读取并清除；不要只看结束钩子。
 
 ## 怎么验证
 

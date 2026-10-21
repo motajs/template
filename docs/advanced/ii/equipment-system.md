@@ -33,15 +33,15 @@ export interface IItemEquipData<THero> {
 
 `state.hero.items.equipment` 是 `IHeroEquipsStore<IHeroAttr>`，管理所有已获得的装备实例：
 
-| 成员                 | 作用                                                        |
-| -------------------- | ----------------------------------------------------------- |
-| `add(item)`          | 按图块数字或字符串 id 创建实例，返回新 `uid`；失败返回 `-1` |
-| `delete(uid)`        | 移除实例                                                    |
-| `get(uid)`           | 取实例，未找到返回 `null`                                   |
-| `instancesOf(equip)` | 取某件装备的全部实例，按排序器输出                          |
-| `instances()`        | 取全部实例，按排序器输出                                    |
-| `count(item)`        | 数某件装备的实例数量                                        |
-| `useSorter(sorter)`  | 设置排序器，传 `null` 恢复按 `uid` 升序                     |
+| 成员                 | 作用                                                          |
+| -------------------- | ------------------------------------------------------------- |
+| `add(item)`          | 按图块数字或字符串 id 创建实例，返回新 `uid`；失败返回 `-1`   |
+| `delete(uid)`        | 移除实例                                                      |
+| `get(uid)`           | 取实例，未找到返回 `null`                                     |
+| `instancesOf(equip)` | 取某件装备的全部实例，参数为图块数字或字符串 id，按排序器输出 |
+| `instances()`        | 取全部实例，按排序器输出                                      |
+| `count(item)`        | 数某件装备的实例数量，参数为图块数字或字符串 id               |
+| `useSorter(sorter)`  | 设置排序器，传 `null` 恢复按 `uid` 升序                       |
 
 `add` 的参数可以传图块数字或字符串 id，内部先经 `tileStore.num` 解析，再取 `itemStore` 里的定义。因此调用前道具定义必须已经注册。
 
@@ -62,7 +62,7 @@ function grantEquipment(state: ICoreState, id: string): number {
 }
 ```
 
-拿到 `uid` 后，既可以交给装备槽穿戴，也可以直接改实例的加成。`instancesOf` 与 `count` 都按「同一件装备」聚合，与 `uid` 无关。
+拿到 `uid` 后，既可以交给装备槽穿戴，也可以直接改实例的加成。`instancesOf` 与 `count` 都按「同一件装备」聚合，与 `uid` 无关；两者都接受图块数字或字符串 id，内部同样先经 `tileStore.num` 解析。
 
 ## 装备实例的修饰器
 
@@ -105,6 +105,8 @@ function strengthenEquipment(state: ICoreState, uid: number): void {
 两类修饰器的计算方式不同。`ValueModifier`（优先级 0）的 `modify(value)` 返回 `value + this.value`，直接加到当前值上；`PercentageModifier`（优先级 10）的 `modify(value, baseValue)` 返回 `value + baseValue * this.value`，乘的是基础属性值，再加到当前值上。
 
 修饰器按 `priority` 从大到小应用，所以百分比先算、数值后加。若基础攻击为 `10`，装备提供 `atk +5` 与 `def +10%`，则攻击为 `15`，防御为 `baseDef * 1.1`。百分比不会把其它装备的数值加成也乘进去。
+
+多件装备的百分比是**相加**，不是相乘：每件装备的 `PercentageModifier` 都独立按基础值计算 `baseValue * value`，再依次加到当前值上。两件各 `+10%` 的装备得到 `base * 1.2`，不是 `base * 1.21`；数值修饰器则在百分比之后再直接相加。
 
 实例的修饰器是活的：穿戴后修改实例数值，`setValue` 会让已挂到属性上的修饰器标脏并立即重算，不需要重新穿戴。
 
@@ -238,7 +240,7 @@ function useAtkSort(state: ICoreState): void {
 
 ## 装备事件
 
-`EquipmentState` 提供 `IEquipmentStateHooks.onChangeModifier`，在修饰器增加、删除、数值修改时触发。它适合做「装备强化后重算某个系统」这类联动：
+`EquipmentState` 提供 `IEquipmentStateHooks.onChangeModifier`，但它监听的是**修饰器变化**，不是穿戴。`setValue`、`setPercentage`、`buildModifiers` 以及删除条目都会触发它；`equip` 与 `unequip` 本身不会触发。它适合做「装备强化后重算某个系统」这类联动：
 
 ```ts
 import { ICoreState } from '@user/data-state';
@@ -250,7 +252,7 @@ function watchEquipment(state: ICoreState, uid: number): void {
 
     const controller = equip.addHook({
         onChangeModifier(modifiers) {
-            // 每次增加、删除或修改修饰器后都会触发
+            // 改变 setValue / setPercentage / buildModifiers 时触发
             // modifiers 是实时迭代器，不要保存到回调之外
             for (const [name, modifier] of modifiers) {
                 console.log('装备属性变化', name, modifier.value);
@@ -263,7 +265,29 @@ function watchEquipment(state: ICoreState, uid: number): void {
 }
 ```
 
-`IItemRawData.equip.loadEvent` 与 `unloadEvent` 不是自动钩子。引擎不会在穿戴或卸下时执行它们，目前它们只是数据字段。需要「穿上后触发」的行为，用 `onChangeModifier`，或在调用 `equip` 与 `unequip` 的地方自行处理。
+`IItemRawData.equip.loadEvent` 与 `unloadEvent` 不是自动钩子。引擎不会在穿戴或卸下时执行它们，目前它们只是数据字段。**引擎也没有内置「装备穿上/卸下」钩子**；`onChangeModifier` 不能替代它：
+
+- 如果装备实例在 `add` 时已经 `buildModifiers()`，之后 `equip` 只是把已有修饰器挂到属性上，不会触发 `onChangeModifier`；
+- 如果实例是在别的时机才首次 `getModifiers()`，`equip` 可能顺带触发一次懒构建，但那是构建副作用，不是稳定的穿戴信号；
+- 强化或改值同样会触发它，即使没有穿戴。
+
+需要「穿上后触发」的行为，就在调用 `equip` / `unequip` 的统一入口里处理，或者包装一个自己的装备服务：
+
+```ts
+import { ICoreState } from '@user/data-state';
+
+/** 在穿戴入口统一处理穿上后的逻辑。 */
+function equipWithCallback(
+    state: ICoreState,
+    uid: number,
+    slot: string | number
+): number | undefined {
+    const replaced = state.hero.equip.equip(uid, slot);
+    // 只有这里能确定「刚完成一次穿戴」；不要依赖 loadEvent 或 onChangeModifier
+    console.log('穿上', uid, '替换下', replaced);
+    return replaced;
+}
+```
 
 `onChangeModifier` 在 `buildModifiers()` 时也会触发一次。实例在 `add` 时就已经构建过修饰器，所以之后才 `addHook` 的监听者收不到这次初始构建，只会收到后续变化。
 
@@ -302,11 +326,14 @@ function verifyEquipment(state: ICoreState): void {
     console.log('穿戴后攻击', attribute.getFinalAttribute('atk'));
     console.log('穿戴后防御', attribute.getFinalAttribute('def'));
 
+    // 先存档，此时装备仍穿在身上，装备槽与实例仓都会写进快照
+    const snapshot = state.hero.saveState(SaveCompression.NoCompression);
+
+    // 再卸下，确认修饰器被移除
     equipment.unequip(equipment.slots.indexOf('weapon'));
     console.log('卸下后攻击', attribute.getFinalAttribute('atk'));
 
-    // 存档 -> 卸下 -> 读档，确认加成由重新穿戴恢复
-    const snapshot = state.hero.saveState(SaveCompression.NoCompression);
+    // 最后读档：属性先回到基础值，HeroEquipment.loadState 再按快照重新穿戴
     state.hero.loadState(snapshot, SaveCompression.NoCompression);
 
     console.log('读档后攻击', attribute.getFinalAttribute('atk'));
@@ -317,7 +344,7 @@ function verifyEquipment(state: ICoreState): void {
 }
 ```
 
-穿戴后攻击应比基础值多 `5`，防御应为 `baseDef * 1.1`；卸下后两者回到基础值。读档后这两个差值应再次出现。
+穿戴后攻击应比基础值多 `5`，防御应为 `baseDef * 1.1`；卸下后两者回到基础值。因为存档发生在卸下之前，读档后 `HeroEquipment.loadState` 会按快照重新穿戴，这两个差值应再次出现。若把存档放在卸下之后，快照里没有已穿戴的装备，读档后自然不会有加成——这不是读档失败。
 
 ## 边界与注意
 

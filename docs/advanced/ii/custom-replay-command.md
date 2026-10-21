@@ -43,17 +43,29 @@ export const enum ReplayCode {
 
 新增一项意味着修改 `packages-user` 的引擎内容，而不是只改 `src`。`registerCommand` 收的是普通 `number`，跳过枚举直接写数字也能注册；但引擎之后分配新码时可能撞号，所以正式做法仍然是在枚举末尾追加。
 
-指令码的取值还受位宽限制。默认的 `ReplayCommandWidth.Uint8` 只支持 `0–255`，超出后写入会被截断。需要更多指令码时，要切到 `ReplayCommandWidth.Uint16`（`0–65535`）；这是录像格式的变更，已保存的录像会带上当时的位宽，不能假设新旧录像可以混用。
+指令码的取值还受位宽限制。默认的 `ReplayCommandWidth.Uint8` 只支持 `0–255`，超出后写入会被截断。需要更多指令码时，在开始录制前切到 `ReplayCommandWidth.Uint16`（`0–65535`）：
+
+```ts
+import { ReplayCommandWidth } from '@user/data-common';
+import { ICoreState } from '@user/data-state';
+
+/** 在注册/录制超过 255 的指令码之前调用。 */
+function useUint16ReplayCodes(state: ICoreState): void {
+    state.replaySystem.array.setCommandWidth(ReplayCommandWidth.Uint16);
+}
+```
+
+`setCommandWidth` 会重新编码现有指令；`ReplaySystem.saveState` 会把当前 `commandWidth` 一并存入录像，`loadState` 再按存档里的宽度恢复，所以本系统自己的存读档不需要额外转换。但这是录像格式变更：外部工具或旧版本若固定按 Uint8 解析，就读不了 Uint16 录像；从 Uint16 降回 Uint8 时，大于 255 的指令码会告警 code 154 并被截断。确定要扩容后就不要来回切换。
 
 ## 指令对象
 
 一条指令实现 `IReplayCommand`：
 
-| 成员            | 作用                                            |
-| --------------- | ----------------------------------------------- |
-| `type`          | `ReplayCommandType.Active` 或 `Passive`         |
-| `execute(step)` | 执行这一步，返回 `Promise<ReplayCommandResult>` |
-| `finalize?()`   | 连续多步同一指令结束时统一收尾；可选            |
+| 成员            | 作用                                                                      |
+| --------------- | ------------------------------------------------------------------------- |
+| `type`          | `ReplayCommandType.Active` 或 `Passive`                                   |
+| `execute(step)` | 执行这一步，返回 `Promise<ReplayCommandResult>`                           |
+| `finalize?()`   | 连续多步同一指令结束时统一收尾，返回 `Promise<ReplayCommandResult>`；可选 |
 
 `step` 提供 `command`（指令码）、`params`（参数列表）与 `index`（读取流给出的步索引）。返回值 `ReplayCommandResult` 有三种：
 
@@ -61,15 +73,71 @@ export const enum ReplayCode {
 - `Failed`：这一步失败，播放中止；
 - `Ignored`：失败但可以忽略，控制台输出信息后继续。
 
-`finalize` 在两种时机被调用：下一步换了另一条指令，或整条录像已经播完。它没有参数，因此需要跨步保存的数据要放在指令对象的成员里。典型用途是「连续多步移动后，统一启动一次动画」：每步只更新目标，最后一步结束时再提交。
+`finalize` 在两种时机被调用：下一步换了另一条指令，或整条录像已经播完。它没有参数，但**有返回值**：`Promise<ReplayCommandResult>`。返回 `Success` 继续，返回 `Ignored` 记录后继续，返回 `Failed` 会中止播放。需要跨步保存的数据要放在指令对象的成员里。典型用途是「连续多步移动后，统一启动一次动画」：每步只更新目标，最后一步结束时再提交。
 
 ## 主动录像与被动录像
 
 `ReplayCommandType.Active` 的指令自己执行逻辑，是最常见的形式。内置的移动、瞬移、使用道具、装备都是主动录像。
 
-`ReplayCommandType.Passive` 的指令不执行任何逻辑。沙盒在主动步执行期间把下一步暴露给 `IReplaySandbox.getPassive()`，由外部取走参数，处理完后调用 `next(status)` 才会推进。适合「需要渲染端配合、耗时不可预测」的行为：数据端只负责给出参数，什么时候处理完由外部决定。
+`ReplayCommandType.Passive` 的指令不执行任何逻辑。沙盒在主动步执行期间把下一步暴露给 `IReplaySandbox.getPassive()`，由主动步取走参数，处理完后调用 `next(status)` 才会推进。适合「需要渲染端配合、耗时不可预测」的行为：数据端只负责给出参数，什么时候处理完由外部决定。
 
-被动步必须紧跟在某个主动步之后，并在那个主动步结束前被取走。没有及时消费的被动步会被沙盒跳过，并输出告警。被动步对应的指令对象仍然要注册，沙盒要靠它判断 `type`；但它的 `execute` 不会被调用。
+`getPassive()` 返回的是 `IReplayPassiveHandler | null`，结构为：
+
+```ts
+export interface IReplayPassiveHandler {
+    /** 被动步本身，params 与 command 都在这里 */
+    readonly step: IReplayStepHandler;
+    /** 处理完后调用；Success 或 Ignored 会进入下一步，Failed 不推进 */
+    next(status: ReplayCommandResult): Promise<void>;
+}
+```
+
+**`next(status)` 在这个 handler 上，不在 `IReplayCommand` 上，也不在 `getPassive()` 的返回值之外**。完整链路是：
+
+1. 玩家入口先 `record` 主动指令，再紧接着 `record` 被动指令——两个录像步必须相邻：
+
+    ```ts
+    this.state.replaySystem.record(ReplayCode.UseSkill, skillId, x, y);
+    // 紧随其后的被动步，给渲染端播放技能特效
+    this.state.replaySystem.record(ReplayCode.SkillEffect, skillId);
+    ```
+
+2. 回放时，主动指令的 `execute` 在自己的执行期间取被动 handler：
+
+    ```ts
+    const passive = this.state.replaySystem.sandbox?.getPassive();
+    if (passive) {
+        // 参数在 passive.step.params；先确认它确实是预期的那条被动指令
+        const [effectSkill] = passive.step.params as [number];
+        console.log('播放技能特效', effectSkill);
+        // 渲染端处理完后推进；不调用 next 就不会进入下一步
+        await passive.next(ReplayCommandResult.Success);
+    }
+    ```
+
+3. `next` 推进读取流并触发 `onStep`；重复调用 `getPassive()` 在推进前会拿到同一个 handler / 同一步。
+
+被动指令本身只需要声明类型并注册，`execute` 不会被沙盒调用：
+
+```ts
+import { ReplayCommandResult, ReplayCommandType } from '@user/data-common';
+import { BaseReplayCommand } from './commands';
+
+/** 技能特效的被动步：参数由主动步通过 getPassive 取走。 */
+export class ReplaySkillEffect extends BaseReplayCommand {
+    readonly type: ReplayCommandType = ReplayCommandType.Passive;
+
+    protected readonly name: string = 'skill-effect';
+    protected readonly paramTypes: readonly string[] = ['number'];
+
+    async wrappedExecute(): Promise<ReplayCommandResult> {
+        // 被动步不会进入这里；保留实现只是为了满足基类契约
+        return ReplayCommandResult.Success;
+    }
+}
+```
+
+被动步必须紧跟在某个主动步之后，并在那个主动步的 `execute` 返回前被取走。没有及时消费的被动步不会让播放永远卡住：下一次 `replayStep` 发现它是 `Passive` 时会告警 code 194 并跳过，但这一步对应的效果就丢了。被动步对应的指令对象仍然要注册，沙盒要靠它判断 `type`；它的 `execute` 不会被调用。一个主动步只对应一个紧随其后的被动步，不要连续排两个。
 
 渲染端的播放表现按渲染端教程处理，本篇只写数据端。 <!-- TODO(renderer): 被动录像的渲染端消费 -->
 
@@ -278,20 +346,22 @@ async function playReplay(
 
 `reseter` 负责把游戏状态重置到录像的起点；不重置的话，回放会叠加在当前状态上，结果与原始游玩对不上。`createReplaySandbox` 在创建时就会调用一次 `reset`，不是在 `play` 时。
 
+`reset` 收到的 `save` 来自沙盒配置的 `save` 字段（`IReplaySandboxConfig.save`，可选）。`ReplaySystem.createReplaySandbox` 实际执行的是 `config.reseter.reset(config.save)`；不传 `save` 就是 `reset(undefined)`。如果录像要从某个存档点开始回放，把该存档读出的 `Map<string, unknown>` 传给 `save`，`reset` 就用它恢复起点；`ReplayReseter` 里注入的 `restore` 只是项目自己的「新游戏 / 读档」实现。
+
 播放控制由 `IReplaySandbox` 提供：
 
-| 成员            | 作用                                            |
-| --------------- | ----------------------------------------------- |
-| `play()`        | 连续播放                                        |
-| `step()`        | 单步播放，返回该步是否成功                      |
-| `pause()`       | 暂停，返回的 Promise 在真正暂停后兑现           |
-| `resume()`      | 从暂停恢复                                      |
-| `stop()`        | 停止播放                                        |
-| `getReplayed()` | 已读取的录像步数量，不含当前正在播放的一步      |
-| `pausing`       | 是否处于暂停状态                                |
-| `ended`         | 是否已经播放完毕                                |
-| `playing`       | 是否处于播放状态                                |
-| `getPassive()`  | 取下一步的被动录像参数，不是被动步时返回 `null` |
+| 成员            | 作用                                                        |
+| --------------- | ----------------------------------------------------------- |
+| `play()`        | 连续播放                                                    |
+| `step()`        | 单步播放，返回该步是否成功                                  |
+| `pause()`       | 暂停，返回的 Promise 在真正暂停后兑现                       |
+| `resume()`      | 从暂停恢复                                                  |
+| `stop()`        | 停止播放                                                    |
+| `getReplayed()` | 已读取的录像步数量，不含当前正在播放的一步                  |
+| `pausing`       | 是否处于暂停状态                                            |
+| `ended`         | 是否已经播放完毕                                            |
+| `playing`       | 是否处于播放状态                                            |
+| `getPassive()`  | 取下一步的 `IReplayPassiveHandler`，不是被动步时返回 `null` |
 
 `ended` 由连续播放的循环在结束时置为 `true`。只用 `step()` 一步步走到末尾时，沙盒会完成 `finalize` 并停止推进，但不会因此设置 `ended`；需要观察结束状态时，用 `play()` 或 `resume()` 跑完循环。
 
@@ -364,8 +434,9 @@ async function verifyUseSkill(
 - **不要复用已删除的旧指令码**：数值属于录像格式，旧录像会按旧值解码。新语义一律追加新值。
 - **`Uint8` 下不要超过 255**：写入会截断，产生无法回放的录像。需要更多码时切 `Uint16`，并把它当成格式变更处理。
 - **参数类型必须与 `paramTypes` 一致**：只支持 `number`、`string`、`boolean`、`bigint`。传对象等无法编码的值会被丢弃，参数个数随之变化，基类会判为失败。
-- **被动步忘记 `next` 会卡住**：沙盒不会自己推进；重复调用 `getPassive()` 会得到同一步。被动步没有在主动步期间取走时，会被跳过并告警。
-- **`finalize` 返回 `Failed` 会中止播放**：它和 `execute` 一样会中断后续步骤，不要在里面吞掉错误。
+- **被动步忘记 `next` 不会推进**：沙盒不会自己前进；重复调用 `getPassive()` 会得到同一个 handler / 同一步。被动步没有在主动步期间取走时，下一次 `replayStep` 会告警 code 194 并跳过它——播放不会永远卡住，但这一步的效果丢了。
+- **`finalize` 返回 `Failed` 会中止播放**：它返回的是 `Promise<ReplayCommandResult>`，和 `execute` 一样会中断后续步骤，不要在里面吞掉错误。
+- **指令对象跨回放复用**：指令对象在注册时创建一次，之后每次回放都用同一个实例。成员变量不会自动清空；如果 `execute` 里累积了跨步状态，要在每次 `execute` 开头重置，或在 `finalize` 末尾清理，否则第二次回放会带着上一次的残留。
 - **重复注册不会覆盖**：同一指令码重复注册会告警（code 163）并保留先注册的对象。确认注册只发生一次。
 - **未知指令码会中止播放**：沙盒查不到指令时告警并停止，不会跳过继续。
 - **播放期间必须禁用录制**：否则回放执行的行为会写回同一条录像，并让读取流过期。用 `disable()` 与 `revert()` 包住播放，且保证配对。
