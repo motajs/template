@@ -1,6 +1,8 @@
 import { IExcitation } from '@motajs/animate';
 import { KeyCode } from './keyCodes';
 
+// TODO: 适配存档，可能需要把 ISaveableContent 挪到 @motajs/common，或让 packages-user 自己负责存档
+
 export const enum HotkeyEmitType {
     /** 由按键按下触发 */
     KeyDown,
@@ -9,7 +11,9 @@ export const enum HotkeyEmitType {
 }
 
 export const enum HotkeyEmitMode {
-    /** 只会触发一次 */
+    /** 按键抬起时触发 */
+    KeyUp,
+    /** 按下时只会触发一次 */
     Once,
     /** 按下后依据激励源进行触发 */
     Continuous,
@@ -45,7 +49,28 @@ export interface IHotkeyEmitInfo {
     readonly context: IHotkeyEmitContext;
 }
 
+export interface IHotkeyCommandInit {
+    /** 按键指令优先级 */
+    readonly priority: number;
+    /** 是否阻断优先级精确比此按键指令更低的指令的执行，同优先级的会全部执行，并不会阻断 */
+    readonly block: boolean;
+    /** 默认按键组合，可设置多组 */
+    readonly defaults: KeyCode[][];
+    /** 按键触发方式，默认为抬起时触发 */
+    readonly mode?: HotkeyEmitMode;
+    /** 从指定按键组合被触发，至指令首次被真正执行期间，最少经过的时间 */
+    readonly timeout?: number;
+    /** 在按下的持续触发模式或节流触发模式下，首次指令被触发，至第二次指令被触发，最少经过的时间 */
+    readonly interval?: number;
+    /** 在按下的节流触发模式下，两次指令触发要经过的最少时间 */
+    readonly dt?: number;
+}
+
 export interface IHotkeyCommand {
+    /** 按键指令优先级，越高越先执行，如果同优先级，则无法保证顺序 */
+    readonly priority: number;
+    /** 触发后，是否阻断优先级比当前优先级更低的按键的触发 */
+    readonly block: boolean;
     /** 当前指令可以被多少种按键组合触发 */
     readonly length: number;
     /** 按键触发方式 */
@@ -79,7 +104,13 @@ export interface IHotkeyCommand {
     /**
      * 迭代所有的按键组合
      */
-    iterateKeyCombinations(): Iterable<[index: number, key: KeyCode[]][]>;
+    iterateKeyCombinations(): Iterable<[index: number, key: KeyCode[]]>;
+
+    /**
+     * 抬起后，在经过 `timeout` 时间后触发一次
+     * @param timeout 抬起后距离首次触发的时间间隔，单位毫秒，默认为 0
+     */
+    keyUp(timeout?: number): void;
 
     /**
      * 按下后，在经过 `timeout` 时间后只触发一次，不会连续触发
@@ -88,7 +119,7 @@ export interface IHotkeyCommand {
     once(timeout?: number): void;
 
     /**
-     * 当按下后立刻进行一次触发，之后在松开前，会按照激励源的激励触发
+     * 当按下后，在经过 `timeout` 时间后进行一次触发，之后在松开前，会按照激励源的激励触发
      * @param interval 第一次触发距离第二次触发的最小时间间隔，设置后，按下时会立刻进行一次触发，
      *                 而第二次触发需要等待 `interval` 毫秒才会触发。默认为 0
      * @param timeout 按下后距离首次触发的时间间隔，单位号码，默认为 0
@@ -96,7 +127,7 @@ export interface IHotkeyCommand {
     continuous(interval?: number, timeout?: number): void;
 
     /**
-     * 当按下后立刻进行一次触发，之后在松开前，会根据激励源的激励进行触发，两次触发的触发间隔不小于节流间隔
+     * 当按下后，在经过 `timeout` 时间后进行一次触发，之后在松开前，会按照激励源的激励触发，两次触发的触发间隔不小于节流间隔
      * @param dt 节流间隔
      * @param interval 第一次触发距离第二次触发的最小时间间隔，设置后，按下时会立刻进行一次触发，
      *                 而第二次触发需要等待 `interval` 毫秒才会触发。默认为 0
@@ -106,6 +137,9 @@ export interface IHotkeyCommand {
 }
 
 export interface IHotkeySystem {
+    /** 当前正在监听的元素 */
+    readonly listening: HTMLElement | null;
+
     /**
      * 设置当前按键系统由指定激励源所激励，用于连续触发按下后持续触发等触发场景
      * @param excitation 激励源
@@ -132,8 +166,9 @@ export interface IHotkeySystem {
     /**
      * 添加新的按键指令
      * @param command 按键指令标识符
+     * @param init 指令初始化对象
      */
-    addCommand(command: string): IHotkeyCommand;
+    addCommand(command: string, init: IHotkeyCommandInit): IHotkeyCommand;
 
     /**
      * 删除指定按键指令
@@ -142,19 +177,22 @@ export interface IHotkeySystem {
     deleteCommand(command: string): void;
 
     /**
+     * 迭代当前所有注册的按键指令
+     */
+    iterateCommands(): Iterable<IHotkeyCommand>;
+
+    /**
+     * 设置按键指令的触发判断函数，当函数返回 `true` 时才可能触发按键指令
+     * @param func 判断函数，返回 `true` 时才可能触发按键指令
+     */
+    when(func: () => boolean): this;
+
+    /**
      * 实现按键的触发函数，仅在当前作用域生效
      * @param command 按键指令标识符
      * @param func 按键的触发函数
      */
-    implement(command: string, func: (ctx: IHotkeyEmitContext) => void): void;
-
-    /**
-     * 手动触发指定按键命令
-     * @param command 按键指令标识符
-     * @param context 按键的上下文信息
-     * @returns 是否执行成功，如果按键命令不存在或上下文条件无法触发指定按键指令，会返回 `false`
-     */
-    emit(command: string, context: IHotkeyEmitContext): boolean;
+    implement(command: string, func: (ctx: IHotkeyEmitInfo) => void): this;
 
     /**
      * 按下指定按键
@@ -169,4 +207,10 @@ export interface IHotkeySystem {
      * @returns 是否至少有一个已实现的指令被因此触发，包括将要延时触发的
      */
     up(key: KeyCode): boolean;
+
+    /**
+     * 监听目标元素
+     * @param target 监听的目标元素
+     */
+    listen(target: HTMLElement | null): void;
 }
