@@ -8,6 +8,19 @@
 
 阅读前需要会基础语法：`class`、`new`、`import`、`async` / `await`。不需要懂引擎内部实现；涉及内部机制的地方，会先说清「你能拿它做什么」。
 
+## 插件解决什么问题
+
+假设你要加一个任务系统：它有自己的状态、自己的管理器，还要在加载完地图后读一遍任务配置。不做成插件的话，这些代码会散在几个地方——对象在 `src/data/initialize.ts` 里 `new`，存档注册也写在那里，加载后的初始化再塞进某个钩子。功能一多，`initialize.ts` 会变成所有人的公共草稿纸。
+
+插件把这一组东西收进一个独立单元：
+
+- 自己的对象在自己的目录里创建；
+- 自己的存档内容在自己的 `awake` 里注册；
+- 自己的加载后逻辑在自己的 `afterLoad` 里写；
+- 启动时只需要在对应端的插件列表里 `new` 一次。
+
+这和[声明式接口](./declarative-vs-imperative.md)是同一个思路：你不去改引擎的初始化流程，只声明「在哪个时机做什么」，时机由引擎统一调用。
+
 ## 注册与目录
 
 数据端插件放在 `src/data/plugin/`，渲染端插件放在 `src/client/plugin/`，各自在自己的目录里：
@@ -68,24 +81,11 @@ export const clientPlugins: IClientPluginDefine[] = [
 
 同一端的注册表里，`id` 重复时后一个会被忽略，控制台报一条错误（错误码 `78`），所以请保证 `id` 在各自的注册表里唯一。
 
-## 插件解决什么问题
-
-假设你要加一个任务系统：它有自己的状态、自己的管理器，还要在加载完地图后读一遍任务配置。不做成插件的话，这些代码会散在几个地方——对象在 `src/data/initialize.ts` 里 `new`，存档注册也写在那里，加载后的初始化再塞进某个钩子。功能一多，`initialize.ts` 会变成所有人的公共草稿纸。
-
-插件把这一组东西收进一个独立单元：
-
-- 自己的对象在自己的目录里创建；
-- 自己的存档内容在自己的 `awake` 里注册；
-- 自己的加载后逻辑在自己的 `afterLoad` 里写；
-- 启动时只需要在对应端的插件列表里 `new` 一次。
-
-这和[声明式接口](./declarative-vs-imperative.md)是同一个思路：你不去改引擎的初始化流程，只声明「在哪个时机做什么」，时机由引擎统一调用。
-
 ## 插件接口
 
 数据端插件实现 `IDataPluginDefine`（来自 `@user/data-state`），渲染端插件实现 `IClientPluginDefine`（来自 `@user/client-modules`）。两者都由 `id`、依赖声明与三个时机方法组成；渲染端多一份 `clientDeps`，生命周期方法也多一个依赖参数。
 
-先看两边的完整模板，后面逐项解释。
+如果你想新增一个插件，可以参考下面两个模板。数据端与渲染端各一份，目录、类名与公开成员换成你自己的，其余结构保持不变。
 
 ### 数据端插件模板
 
@@ -95,6 +95,7 @@ import { IDataPluginDefine } from '@user/data-state';
 
 /** 插件对外暴露的能力；依赖它的插件按这个接口调用 */
 export interface IMyPlugin extends IDataPluginDefine {
+    /** 插件公开给其他插件调用的方法 */
     doSomething(): void;
 }
 ```
@@ -111,6 +112,7 @@ export class MyPlugin implements IMyPlugin {
     // 依赖的其他数据端插件 id；没有依赖就留空
     readonly dataDeps: string[] = [];
 
+    // 同步初始化：创建插件自己的对象
     awake(state: ICoreState): void {
         // 在这里装配插件自己的对象
         // 需要进存档的对象，在这里调用 state.addSaveableContent(...)
@@ -120,11 +122,13 @@ export class MyPlugin implements IMyPlugin {
         // 对外方法：其他插件、钩子等通过插件对象调用
     }
 
+    // 异步初始化：加载开始前执行；不需要就留空
     async initialize(
         state: ICoreState,
         dependencies: Readonly<IDataPlugin>[]
     ): Promise<void> {}
 
+    // 加载完毕后执行；需要读加载内容时再填
     async afterLoad(
         state: ICoreState,
         dependencies: Readonly<IDataPlugin>[]
@@ -151,6 +155,7 @@ export class MyClientPlugin implements IClientPluginDefine {
     // 依赖的渲染端插件 id；没有依赖就留空
     readonly clientDeps: string[] = [];
 
+    // 同步初始化：三个时机都会收到已解析的依赖
     awake(
         state: IClientCore,
         dataDeps: IDataPlugin[],
@@ -159,12 +164,14 @@ export class MyClientPlugin implements IClientPluginDefine {
         // 依赖已经解析好，直接取用即可
     }
 
+    // 异步初始化：加载开始前执行
     async initialize(
         state: IClientCore,
         dataDeps: IDataPlugin[],
         clientDeps: IClientPlugin[]
     ): Promise<void> {}
 
+    // 加载完毕后执行
     async afterLoad(
         state: IClientCore,
         dataDeps: IDataPlugin[],
@@ -172,6 +179,8 @@ export class MyClientPlugin implements IClientPluginDefine {
     ): Promise<void> {}
 }
 ```
+
+两个模板都声明了一个实现插件接口的类：数据端的 `MyPlugin` 实现 `IMyPlugin extends IDataPluginDefine`，渲染端的 `MyClientPlugin` 实现 `IClientPluginDefine`。它们都没有构造器，插件需要的对象要在 `awake` 里自己创建。你需要改的是：`id`（在对应端唯一）、依赖数组（没有就留空）、以及三个时机方法的方法体——`awake` 里装配对象、`initialize` 里做加载前的异步准备、`afterLoad` 里做依赖加载内容的初始化。数据端模板把对外接口放在 `types.ts`，是为了让依赖它的插件能按接口调用；渲染端模板暂时没有单独拆文件。
 
 ### 逐项说明
 
@@ -269,6 +278,7 @@ import { IShopPlugin } from '../shop';
 
 // 依赖商店插件，在初始化时调用它的公开成员
 export class ShopConsumerPlugin implements IDataPluginDefine {
+    // 本插件的唯一标识
     readonly id = 'shop-consumer-plugin';
     // 依赖顺序与 dataDeps 数组一致
     readonly dataDeps = ['data-shop-plugin'];
@@ -276,16 +286,19 @@ export class ShopConsumerPlugin implements IDataPluginDefine {
     awake(state: ICoreState, dependencies: Readonly<IDataPlugin>[]): void {
         // 依赖已经解析好，直接取 .plugin，不需要判空
         const [{ plugin }] = dependencies;
+        // 断言成商店插件的对外接口，才能调用它公开的方法
         const dataShop = plugin as IShopPlugin;
         const shop = dataShop.createShopState('my-shop');
         shop.enable();
     }
 
+    // 本示例不需要异步初始化，留空即可
     async initialize(
         state: ICoreState,
         dependencies: Readonly<IDataPlugin>[]
     ): Promise<void> {}
 
+    // 本示例不需要加载后处理
     async afterLoad(
         state: ICoreState,
         dependencies: Readonly<IDataPlugin>[]
@@ -297,32 +310,49 @@ export class ShopConsumerPlugin implements IDataPluginDefine {
 
 要调用插件自己的成员，需要把 `.plugin` 断言成它的对外接口（例如 `IShopPlugin`）。所以写插件时，如果希望别人调用你的方法，就在 `types.ts` 里定一个 `IMyPlugin extends IDataPluginDefine`，把公开成员写进去。渲染端插件的 `dataDeps` / `clientDeps` 参数同理，分别断言成数据端接口与渲染端接口。
 
-### 用 getDataPlugin 取回
+### 用 getDataPlugin / getClientPlugin 取回
 
-没有声明依赖、或者在启动之后才按需访问时，用 `state.getDataPlugin(id)`。它返回 `Readonly<IDataPlugin<T>> | null`：
+没有声明依赖、或者在启动之后才按需访问时，数据端用 `state.getDataPlugin(id)`，渲染端用 `state.getClientPlugin(id)`。两端返回的都是只读的插件包装对象，取不到时为 `null`：
 
 ```ts
 import { ICoreState, PluginStatus } from '@user/data-state';
 import { IShopPlugin } from './types';
 
-// 按 id 取回插件，确认状态后再调用
+// 数据端：按 id 取回插件，确认状态后再调用
 export function enableShop(state: ICoreState): void {
     const holder = state.getDataPlugin<IShopPlugin>('data-shop-plugin');
     if (!holder || holder.status !== PluginStatus.Loaded) {
+        // 没注册、id 拼错，或还没执行到 afterLoad
         return;
     }
     holder.plugin.createShopState('my-shop').enable();
 }
 ```
 
-这里和依赖参数相反，两个检查都不能省：
+```ts
+import { IClientCore } from '@user/client-modules';
+import { PluginStatus } from '@user/data-state';
+import { IClientShopPlugin } from './types';
+
+// 渲染端：接口名与取回方法不同，判空与状态检查完全一致
+export function useShopUI(state: IClientCore): void {
+    const holder =
+        state.getClientPlugin<IClientShopPlugin>('client-shop-plugin');
+    if (!holder || holder.status !== PluginStatus.Loaded) {
+        // 渲染端插件同样可能还没到达 Loaded
+        return;
+    }
+    // 取回的是插件实例，公开成员可以直接使用
+    console.log(holder.plugin.ShopUI);
+}
+```
+
+`getDataPlugin` 返回 `Readonly<IDataPlugin<T>> | null`，`getClientPlugin` 返回 `Readonly<IClientPlugin<T>> | null`。这里和依赖参数相反，两个检查都不能省：
 
 - 返回 `null` 表示没有这个 `id`，可能是没注册，也可能是拼写错了；
 - `status` 没到你要的阶段，说明它还没执行到那一步，此时调用它的方法可能读到还没装配好的字段。
 
-渲染端用 `state.getClientPlugin(id)`，返回 `Readonly<IClientPlugin<T>> | null`，判空方式与 `getDataPlugin` 一致。
-
-如果在启动阶段就要用某个插件，优先声明依赖，让引擎保证顺序；`getDataPlugin` 更适合可选的、运行中才发生的调用。
+如果在启动阶段就要用某个插件，优先声明依赖，让引擎保证顺序；这两个按 id 取回的方法更适合可选的、运行中才发生的调用。
 
 ### 插件之外也能调用
 
@@ -359,28 +389,37 @@ export class MyAttributeHooks implements IHeroAttributeHooks<IHeroAttr> {
 商店插件是 `dataPlugins` 里当前唯一的独立插件，适合逐段对照。它的代码在 `src/data/plugin/shop/plugin.ts`：
 
 ```ts
+// 商店插件：把系统、管理器与存档注册收进一个单元
 export class DataShopPlugin implements IShopPlugin {
+    // 数据端注册表里的唯一标识
     id: string = 'data-shop-plugin';
+    // 不依赖其他插件，因此会在第一批 awake
     dataDeps: string[] = [];
 
+    // 对外暴露的系统与管理器，其他插件可以直接调用
     shop!: IShopSystem;
     manager!: IShopManager;
 
     /** 数据端主对象 */
+    // awake 时保存，供创建商店状态使用
     private state!: ICoreState;
 
+    // 其他插件通过这个方法创建一份商店状态
     createShopState(id: string): IShopState {
         return new ShopState(id, this.state);
     }
 
     awake(state: ICoreState): void {
         this.state = state;
+        // 这两个对象都需要主对象，只能在这里 new
         this.shop = new ShopSystem(state);
         this.manager = new ShopManager(state);
 
+        // 注册的是管理器，不是插件本身
         state.addSaveableContent('@plugin/shop', this.manager);
     }
 
+    // 商店不依赖加载内容，两个异步时机留空
     async initialize(): Promise<void> {}
 
     async afterLoad(): Promise<void> {}
@@ -425,11 +464,13 @@ export class MainDataPlugin implements IDataMainPlugin {
             logger.error(79, 'Data');
             return;
         }
+        // 朝向组在 awake 里已经由入口传入，这里可以直接用
         const dir = state.faceManager.get(this.heroFace);
         if (!dir) {
             logger.error(80);
             return;
         }
+        // 属性与位置都要靠加载后的配置才能创建
         state.hero.createAttribute(coreConfig.init.hero.attribute);
         const location: IFacedTileLocator = {
             x: coreConfig.init.hero.x,

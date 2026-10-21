@@ -6,9 +6,29 @@
 
 阅读前需要会基础语法：`class`、`new`、`Map`、`import`。如果你还没写过插件，建议先看[数据插件](../intermediate/data-plugins.md)与[插件系统](./plugin-system.md)；可存档内容通常就注册在插件的 `awake` 里。
 
-## 先看模板
+## 什么该存，什么不该存
 
-可存档内容分两部分：一个实现 `ISaveableContent` 的对象，以及把它注册进存档系统的插件。下面把两部分一次写完，后面再逐项解释。
+判断一个字段该不该进存档，只看一件事：<strong>读档之后，它还能不能从别的地方算回来</strong>。
+
+- 算不回来、又会影响后续结果的，必须存；
+- 每次都能从已有数据重新算出来的，不该存；
+- 只影响当下表现的临时状态，也不该存。
+
+| 状态                       | 该不该存 | 原因                                    |
+| -------------------------- | -------- | --------------------------------------- |
+| 勇士位置、属性、道具       | 存       | 影响后续所有结算                        |
+| 地图图块改动、点事件       | 存       | 玩家改造过世界，无法从原始地图推回      |
+| Flag 变量                  | 存       | 跨事件、跨楼层的持久状态                |
+| 敌人当前状态               | 存       | 影响战斗与后续查询                      |
+| 静态图块缓存、坐标索引     | 不存     | 由地图数据派生，随时可以重建            |
+| 临时动画、提示、界面状态   | 不存     | 读档后重新产生，或根本不影响游戏结果    |
+| 战斗上下文、寻路等 L2 系统 | 不存     | 只操作 Layer 1 数据，读档后按需重新建立 |
+
+漏存会让字段回到默认值或只恢复一半；多存会把缓存、派生数据也写进去，读档时旧缓存覆盖新算出的结果，存档体积还会膨胀。所以 `saveState` 的原则是<strong>只交出重建所需的最小信息</strong>，`loadState` 的原则是<strong>先清空旧状态，再按存档重建</strong>。缓存不要存，读档后第一次用到时重新生成即可。
+
+## 写一个可存档对象
+
+可存档内容分两部分：一个实现 `ISaveableContent` 的对象，以及把它注册进存档系统的插件。如果你有一份自定义状态需要跟着存档走，可以参考下面的模板；模板把两部分一次写完，后面再逐项解释。
 
 ```ts
 // src/data/plugin/my-plugin/state.ts
@@ -19,6 +39,7 @@ export interface IMySave {
     readonly values: Map<string, number>;
 }
 
+// 可存档对象：实现 ISaveableContent，泛型参数是存档形状
 export class MySaveable implements ISaveableContent<IMySave> {
     // 运行时的真实数据；换成你真正要保存的结构
     private readonly values: Map<string, number> = new Map();
@@ -64,14 +85,18 @@ import { ICoreState } from '@user/data-state';
 import { IMyPlugin } from './types';
 import { MySaveable } from './state';
 
+// 插件：创建可存档对象，并在 awake 里注册
 export class MyPlugin implements IMyPlugin {
+    // 插件 id，与存档 id 是两套命名
     readonly id = 'my-plugin';
     readonly dataDeps: string[] = [];
 
     // 供插件其他方法使用
+    // 其他插件通过 IMyPlugin 访问
     store!: MySaveable;
 
     awake(state: ICoreState): void {
+        // 对象在插件自己的目录里创建
         this.store = new MySaveable();
         // 存档 id 要唯一，并与插件 id 分开命名
         state.addSaveableContent('@plugin/my-store', this.store);
@@ -83,27 +108,9 @@ export class MyPlugin implements IMyPlugin {
 }
 ```
 
-`state.ts` 声明存档形状并实现 `saveState` / `loadState`；`types.ts` 声明插件接口；`plugin.ts` 创建对象并在 `awake` 里注册。下面解释这两部分为什么这样写。
+模板一共声明了三样东西：`state.ts` 里的 `IMySave` 是存档形状，`MySaveable` 实现 `ISaveableContent<IMySave>`，负责在活对象与存档数据之间转换；`types.ts` 里的 `IMyPlugin` 继承 `IDataPluginDefine`，把可存档对象作为公开成员暴露出去；`plugin.ts` 里的 `MyPlugin` 实现 `IMyPlugin`，在 `awake` 里创建对象并调用 `addSaveableContent` 注册。
 
-## 什么该存，什么不该存
-
-判断一个字段该不该进存档，只看一件事：<strong>读档之后，它还能不能从别的地方算回来</strong>。
-
-- 算不回来、又会影响后续结果的，必须存；
-- 每次都能从已有数据重新算出来的，不该存；
-- 只影响当下表现的临时状态，也不该存。
-
-| 状态                       | 该不该存 | 原因                                    |
-| -------------------------- | -------- | --------------------------------------- |
-| 勇士位置、属性、道具       | 存       | 影响后续所有结算                        |
-| 地图图块改动、点事件       | 存       | 玩家改造过世界，无法从原始地图推回      |
-| Flag 变量                  | 存       | 跨事件、跨楼层的持久状态                |
-| 敌人当前状态               | 存       | 影响战斗与后续查询                      |
-| 静态图块缓存、坐标索引     | 不存     | 由地图数据派生，随时可以重建            |
-| 临时动画、提示、界面状态   | 不存     | 读档后重新产生，或根本不影响游戏结果    |
-| 战斗上下文、寻路等 L2 系统 | 不存     | 只操作 Layer 1 数据，读档后按需重新建立 |
-
-漏存会让字段回到默认值或只恢复一半；多存会把缓存、派生数据也写进去，读档时旧缓存覆盖新算出的结果，存档体积还会膨胀。所以 `saveState` 的原则是<strong>只交出重建所需的最小信息</strong>，`loadState` 的原则是<strong>先清空旧状态，再按存档重建</strong>。缓存不要存，读档后第一次用到时重新生成即可。
+你需要改的是：`IMySave` 的字段（只保留重建必需的数据）、`MySaveable` 里真正的状态与对外方法、插件 `id`、注册 id，以及把 `MySaveable` 换成你自己的类。`initialize` / `afterLoad` 在模板里是空的，需要等加载内容时再填。下面解释 `saveState` / `loadState` 的约束，以及注册时要注意什么。
 
 ## saveState 与 loadState
 
@@ -136,15 +143,18 @@ import { ShopState } from './state';
 
 // 管理器节选：只保留 loadState，其余成员用注释省略
 export class ShopManager implements IShopManager {
+    // 运行时保存的是带方法的商店实例
     private readonly shops: Map<string, IShopState> = new Map();
 
     // ... 其他成员省略
 
     loadState(state: IShopManagerSave, compression: SaveCompression): void {
+        // 先清空旧状态，避免上一次读档的数据残留
         this.shops.clear();
         for (const save of state.list) {
             // 不能把普通对象直接塞进 Map，要重新构造类实例
             const shop: IShopState = new ShopState(save.id, this.state);
+            // 让每个商店自己恢复内部状态
             shop.loadState(save, compression);
             this.shops.set(save.id, shop);
         }

@@ -51,7 +51,7 @@ function healHero(hero: IHeroState<IHeroAttr>): void {
 
 ### 伤害计算器
 
-<strong>你声明什么</strong>：一组属性到伤害结果的换算规则。下面是它的完整模板：
+<strong>你声明什么</strong>：一组属性到伤害结果的换算规则。如果你要替换内置公式，可以参考下面的模板；它只负责声明计算规则，注册那一步由 `useCalculator` 完成：
 
 ```ts
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
@@ -70,7 +70,7 @@ export class MyDamageCalculator implements IDamageCalculator<
     calculate(
         handler: IReadonlyDamageHandler<IEnemyAttr, IHeroAttr>
     ): IEnemyDamageInfoBase {
-        // 按 handler 里的属性算出结果
+        // 按 handler 里的属性算出结果；这里只保留结构
         return { damage: 0, turn: 0 };
     }
 
@@ -78,13 +78,13 @@ export class MyDamageCalculator implements IDamageCalculator<
         handler: IReadonlyDamageHandler<IEnemyAttr, IHeroAttr>,
         attribute: CriticalableHeroStatus<IHeroAttr>
     ): number {
-        // 临界计算的上限；多数需求用不到
+        // 临界计算的上限；没有特殊需求就照内置实现保留
         return 0;
     }
 }
 ```
 
-`calculate` 是日常唯一需要关心的成员：它接收 `handler`，返回 `{ damage, turn }`。`getCriticalLimit` 只在临界值计算时用到，改公式时按内置实现 `MainDamageCalculator` 的写法保留即可。内置实现通过 `useCalculator(new ...)` 注册一次。
+模板声明了 `MyDamageCalculator` 类，实现 `IDamageCalculator` 接口。你需要改的是 `calculate` 的方法体，以及返回的 `damage` 与 `turn`；`getCriticalLimit` 只在临界值计算时用到，改公式时按内置实现 `MainDamageCalculator` 的写法保留即可。`calculate` 是日常唯一需要关心的成员：它接收 `handler`，返回 `{ damage, turn }`。内置实现通过 `useCalculator(new ...)` 注册一次。
 
 <strong>引擎在哪个时机执行</strong>：任何需要伤害数值的地方。显示伤害预览、计算临界值、真正结算战斗，都会调用计算器；同一场战斗里，它可能被反复调用很多次。
 
@@ -126,6 +126,7 @@ import { MyHeroAttributeHooks } from './hero-attribute-hooks';
 
 // 注册钩子：new 一个钩子实例，挂到关心的主对象上
 export function registerHeroAttributeHooks(state: ICoreState): void {
+    // 钩子类实现 IHeroAttributeHooks，这里只负责创建并注册
     state.hero.attribute.addHook(new MyHeroAttributeHooks(state));
 }
 ```

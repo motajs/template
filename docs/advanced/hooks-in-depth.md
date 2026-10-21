@@ -2,13 +2,27 @@
 
 中级教程的[钩子](../intermediate/hooks.md)回答的是「什么需求该用哪个钩子」；这一篇讲另一件事：怎么把钩子限定到你关心的那个对象上。做法很简单——<strong>建议一个对象一个钩子实例</strong>。共享实例是允许的，但不建议；除非你明确了解钩子的内部实现与后果，否则不要这样做。
 
-钩子接口本身不难，容易出错的是「挂上去了，触发的却不只是你想管的那张地图、那个图层」。下面先给一个完整模板，再解释实例与对象的关系，最后是注册、移除与异步的接口事实。
+钩子接口本身不难，容易出错的是「挂上去了，触发的却不只是你想管的那张地图、那个图层」。下面先讲实例与对象的关系，再给一个完整模板，最后是注册、移除与异步的接口事实。
 
 阅读前需要会基础语法：`class`、`new`、`import`、`async` / `await`。本篇只讲数据端，示例都按当前源码里的接口书写。
 
-## 先看模板
+## 建议一个对象一个实例
 
-图层级钩子最典型的写法是：钩子类只处理注册它的那个图层，注册函数负责找到目标图层并把实例挂上去。
+一个钩子类只是定义。真正参与事件的是你用 `new` 创建出来的<strong>实例</strong>，以及它被注册到的那个对象实例。
+
+`Hookable` 的钩子列表是实例字段：每个地图、每个图层、每个移动器各自持有一份，而不是整个类共享一份。所以：
+
+- 同一个钩子类可以 `new` 出多个实例，分别注册到不同对象；
+- 给图层 A 注册的钩子，不会出现在图层 B 上；
+- 一个实例只应注册到一个对象。
+
+以图层为例，`GameMap.addLayer(alias)` 每次调用都会创建一个新的 `MapLayer`。同一张地图的 `ground` 与 `wall` 是两个不同的 `MapLayer` 实例，各自有独立的钩子列表。地图对象本身也是 `Hookable`，但它的钩子列表与图层完全分开，接收的是另一套接口（`IGameMapHooks` 与 `IMapLayerHooks`），事件也从不同对象发出。
+
+把实例固定在一个对象上，身份就固定在注册处：钩子在哪个对象上被触发，就是因为它注册在哪个对象上。多数钩子方法因此不需要再判断「这次是不是我要的对象」。把同一个实例注册到多个对象是允许的，但回调里就得自己区分触发者，还要承担共享状态带来的后果；除非你明确了解钩子的内部实现，否则不要这样做，本篇也不展开这种用法。
+
+## 示例：图层级钩子
+
+如果你想给某个图层挂一个只处理它的钩子，可以参考下面的模板：钩子类只处理注册它的那个图层，注册函数负责找到目标图层并把实例挂上去。
 
 ```ts
 import { IMapLayer, IMapLayerHooks } from '@user/data-base';
@@ -55,21 +69,9 @@ export function registerGroundHooks(
 }
 ```
 
+这个模板声明了 `GroundBlockHooks` 类，实现 `IMapLayerHooks`；`registerGroundHooks` 负责按 `alias` 找到目标图层，再调用 `layer.addHook` 注册实例。你需要改的是：目标楼层 id 与图层 `alias`、`onUpdateBlock` 的方法体，以及 `registerGroundHooks` 的调用位置（通常放在插件的 `afterLoad`）。
+
 模板里的 `readonly layer` 让钩子能访问目标图层本身（读宽高、调用图层方法），不是用来比较一个不存在的参数。`afterLoad` 时楼层未必已经由加载流程构造出来（取决于内容加载方式与插件顺序），`state.maps.getMap('floor-1')` 可能返回 `null`；这时至少要把原因报出来，或者把注册推迟到楼层创建之后。另外，`onUpdateBlock` 只在图块数字真的变化时触发，设置成相同数字不会触发。
-
-## 建议一个对象一个实例
-
-一个钩子类只是模板。真正参与事件的是你用 `new` 创建出来的<strong>实例</strong>，以及它被注册到的那个对象实例。
-
-`Hookable` 的钩子列表是实例字段：每个地图、每个图层、每个移动器各自持有一份，而不是整个类共享一份。所以：
-
-- 同一个钩子类可以 `new` 出多个实例，分别注册到不同对象；
-- 给图层 A 注册的钩子，不会出现在图层 B 上；
-- 一个实例只应注册到一个对象。
-
-以图层为例，`GameMap.addLayer(alias)` 每次调用都会创建一个新的 `MapLayer`。同一张地图的 `ground` 与 `wall` 是两个不同的 `MapLayer` 实例，各自有独立的钩子列表。地图对象本身也是 `Hookable`，但它的钩子列表与图层完全分开，接收的是另一套接口（`IGameMapHooks` 与 `IMapLayerHooks`），事件也从不同对象发出。
-
-把实例固定在一个对象上，身份就固定在注册处：钩子在哪个对象上被触发，就是因为它注册在哪个对象上。多数钩子方法因此不需要再判断「这次是不是我要的对象」。把同一个实例注册到多个对象是允许的，但回调里就得自己区分触发者，还要承担共享状态带来的后果；除非你明确了解钩子的内部实现，否则不要这样做，本篇也不展开这种用法。
 
 如果钩子要在构造时保持通用、注册时才确定图层，可以在 `awake` 里取控制器。`MapLayer` 的控制器是 `IMapLayerHookController`，带 `layer` 字段与 `getMapData()`：
 
@@ -100,9 +102,11 @@ export class UniversalBlockHooks implements IMapLayerHooks {
 import { IGameMapHooks, IMapLayer } from '@user/data-base';
 import { ICoreState } from '@user/data-state';
 
+// 地图级钩子：一个地图一个实例，回调里自己筛图层
 export class TargetLayerResizeHooks implements IGameMapHooks {
     constructor(
         readonly state: ICoreState,
+        // 注册时传入的目标图层，用来和回调参数比较
         readonly targetLayer: IMapLayer
     ) {}
 

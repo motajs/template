@@ -6,30 +6,6 @@
 
 阅读前需要会基础语法：`class`、`new`、`import`，以及装饰器写法 `@名字(...)`。装饰器的基础写法见[代码基础](../intermediate/code-basics.md)。
 
-## 先看模板
-
-标记加在<strong>你自己的、会改状态的方法</strong>上。商店插件是现成的例子，它的 `ShopSystem` 在 `src/data/plugin/shop/system.ts` 里给开店、关店、购买、出售都加了标记：
-
-```ts
-import { shouldReplay } from '@user/data-common';
-import { IShopSystem, ShopTradeResult } from './types';
-
-// 商店插件节选：完整类结构，未展示的成员用注释省略
-export class ShopSystem implements IShopSystem {
-    // ... 其他成员
-
-    // 购买会改变金币与商店库存，必须计入录像
-    @shouldReplay('Buying items should be replayed.')
-    buyItem(item: number | string, count: number): ShopTradeResult {
-        // ... 原有的购买逻辑
-    }
-}
-```
-
-装饰器紧贴方法声明上方，中间不要隔别的成员。`shouldReplay` 从 `@user/data-common` 引入；商店插件的文件顶部已经有这行 `import`，新文件才需要自己补。同一个插件里，`openShop`、`closeShop`、`sellItem` 也都按同样方式标注。
-
-<strong>`@shouldReplay` 与 `@ignoreReplay` 只在数据端使用。</strong>录像验证只跑数据端，渲染端不参与重放，也不在安全检查的覆盖范围内；不要在渲染端代码里加这两个装饰器。
-
 ## 什么该记
 
 同一条录像，重放两次必须得到同样的数据端结果；否则录像验证就失去了意义。要做到这一点，只能靠「录像里记下的操作，恰好覆盖了所有会改变游戏状态的行为」。
@@ -51,6 +27,34 @@ export class ShopSystem implements IShopSystem {
 三个答案都是「是」，就加 `@shouldReplay`。如果你暂时判断不了，最稳妥的做法是：<strong>把所有「修改了游戏状态、且该状态可能导致结果改变」的方法都加上标记</strong>。漏标的代价是录像悄悄错掉；多标的代价只是告警里多一条路径，前者难查得多。
 
 只读查询、纯计算、展示与搜索路径不要标。它们不改变游戏状态，标了只会让告警列表变长，把真正的漏记埋进噪声里。
+
+## 给会改状态的方法加标记
+
+标记加在<strong>你自己的、会改状态的方法</strong>上。如果你不确定该把标记写在哪里，可以参考下面的模板：它把一个会改状态的公开方法标成「应计入录像」，其余成员用注释省略。商店插件是现成的例子，它的 `ShopSystem` 在 `src/data/plugin/shop/system.ts` 里给开店、关店、购买、出售都加了标记：
+
+```ts
+// shouldReplay 从数据端公共包引入
+import { shouldReplay } from '@user/data-common';
+import { IShopSystem, ShopTradeResult } from './types';
+
+// 商店插件节选：完整类结构，未展示的成员用注释省略
+export class ShopSystem implements IShopSystem {
+    // ... 其他成员
+
+    // 购买会改变金币与商店库存，必须计入录像
+    // 装饰器参数是写给人看的说明，出现在告警里
+    @shouldReplay('Buying items should be replayed.')
+    buyItem(item: number | string, count: number): ShopTradeResult {
+        // ... 原有的购买逻辑
+    }
+}
+```
+
+这个模板声明了 `ShopSystem` 类，实现 `IShopSystem` 接口；`@shouldReplay` 紧贴在 `buyItem` 方法上方，装饰的是这个方法。你需要改的是：把类与方法换成你真正会改状态的那一个，把 `message` 写成这个方法改变了什么状态；同一个类里还有其它会改状态的入口时，按同样方式逐个标注。
+
+装饰器紧贴方法声明上方，中间不要隔别的成员。`shouldReplay` 从 `@user/data-common` 引入；商店插件的文件顶部已经有这行 `import`，新文件才需要自己补。同一个插件里，`openShop`、`closeShop`、`sellItem` 也都按同样方式标注。
+
+<strong>`@shouldReplay` 与 `@ignoreReplay` 只在数据端使用。</strong>录像验证只跑数据端，渲染端不参与重放，也不在安全检查的覆盖范围内；不要在渲染端代码里加这两个装饰器。
 
 ## 两个装饰器
 
