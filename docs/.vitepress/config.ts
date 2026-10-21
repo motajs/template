@@ -184,9 +184,43 @@ export default defineConfig({
                     ]
                 },
                 {
-                    text: '高级 II · 系统实现',
-                    collapsed: true,
-                    items: []
+                    text: '高级 II · 深入定制',
+                    collapsed: false,
+                    items: [
+                        { text: '高级 II 导览', link: '/advanced/ii/' },
+                        {
+                            text: '自定义范围对象',
+                            link: '/advanced/ii/custom-range'
+                        },
+                        {
+                            text: '静态图块与动态图块',
+                            link: '/advanced/ii/static-vs-dynamic-tiles'
+                        },
+                        {
+                            text: '勇士的装备系统',
+                            link: '/advanced/ii/equipment-system'
+                        },
+                        {
+                            text: '自定义录像指令',
+                            link: '/advanced/ii/custom-replay-command'
+                        },
+                        {
+                            text: '自动寻路',
+                            link: '/advanced/ii/pathfinding'
+                        },
+                        {
+                            text: '新增勇士属性',
+                            link: '/advanced/ii/adding-hero-attribute'
+                        },
+                        {
+                            text: '新增怪物属性',
+                            link: '/advanced/ii/adding-enemy-attribute'
+                        },
+                        {
+                            text: '怪物上下文与战斗深入',
+                            link: '/advanced/ii/enemy-context-and-combat'
+                        }
+                    ]
                 },
                 {
                     text: '高级 III · 原理与架构',
