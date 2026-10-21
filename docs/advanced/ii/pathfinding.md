@@ -139,10 +139,12 @@ function replacePathCost(state: ICoreState, cost: PathCostFunction): void {
 
 `PathCostFunction` 接收一个 `ILayerLocation`，返回进入该格的代价。不注入时每格代价为 `1`。损失函数只读取位置信息，不修改地图：
 
-- `block.tile`：该格静态图块的数字；
+- `block.tile`：该格静态图块的数字，空格为 `0`；
 - `block.locator`：该格坐标；
-- `block.static`：静态图块实例，空格为 `null`；
+- `block.static`：该格静态图块实例，只要坐标在地图内就非 `null`，空格时实例的 `num()` 为 `0`；
 - `block.dynamics`：该格的动态图块集合。
+
+判断空格要用 `block.tile === 0`，不要用 `block.static === null`：图层按坐标缓存静态图块实例，空地上 `layer.getTile()` 同样返回实例。
 
 返回值必须是有限数或 `Infinity`。`Infinity` 是合法的「不可进入」代价；`NaN` 与负数会被视为非法，告警后回退为 `1`。
 

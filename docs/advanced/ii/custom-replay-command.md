@@ -37,9 +37,13 @@ export const enum ReplayCode {
     /** 卸下装备 */
     Unequip,
     /** 使用技能（本篇新增） */
-    UseSkill
+    UseSkill,
+    /** 技能特效的被动步（本篇新增） */
+    SkillEffect
 }
 ```
+
+本篇新增两个码：`UseSkill` 是主动步，`SkillEffect` 是紧跟其后的被动步；两者都要在 `registerCommand` 里注册，否则沙盒按指令码查表时会中止播放。
 
 新增一项意味着修改 `packages-user` 的引擎内容，而不是只改 `src`。`registerCommand` 收的是普通 `number`，跳过枚举直接写数字也能注册；但引擎之后分配新码时可能撞号，所以正式做法仍然是在枚举末尾追加。
 

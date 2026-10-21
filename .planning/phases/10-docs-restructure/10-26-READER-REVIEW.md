@@ -112,3 +112,17 @@
 - `pathfinding.md`：`InvalidInput` 的原因补充「缺少方向处理器」。
 
 **验证**：prettier 格式化通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 通过。
+
+### 第 3 轮复查（2026-10-21）
+
+复查第 3 轮提出的 5 个非阻断项，全部对照源码修正，构建通过。
+
+**非阻断**
+
+- `pathfinding.md`：`block.static` 原先写成「空格为 `null`」与 `ILayerLocation` / `IMapLayer.getLocationData` 不符——只要坐标在地图内就返回缓存的 `IStaticTile`，空格时 `num()` 为 `0`。改为说明 `static` 非 `null`、判断空格用 `block.tile === 0`，与 `static-vs-dynamic-tiles.md` 对齐。
+- `custom-replay-command.md`：被动示例使用 `ReplayCode.SkillEffect`，但指令码枚举只列了 `UseSkill`，复制后无法编译。在枚举末尾补 `SkillEffect`，并说明它对应紧随其后的被动步、两个码都要注册。
+- `equipment-system.md`：`compareEquip` 的逐键回退原先只有三条文字列表。改为 3 行表格（两侧都提供 / 仅 A 提供 / 仅 B 提供），并在表下给出「空槽模拟」与 `this.attribute.getFinalAttribute(key)` 回退的来源。
+- `static-vs-dynamic-tiles.md`：「刚读出来的图块默认是干净的」不成立：`StaticTile.loadState` 先 `restoreDefaultEvents()`，再按存档 `clear()` + `set()`，后者不调用 `markPure()`；带自定义事件的存档读回后 `dirty()` 仍为 `true`。改为区分「新建」与「读档」。
+- `adding-hero-attribute.md` / `adding-enemy-attribute.md`：护甲边界改为「夹紧后 `≥ 100`」——此时最终伤害为 `0`（勇士侧）或勇士每回合伤害为 `0`、怪物无法被击败（怪物侧），负值夹到 `0`；不再表述为「大于 100 会变成治疗」。
+
+**验证**：prettier 格式化通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 通过。
