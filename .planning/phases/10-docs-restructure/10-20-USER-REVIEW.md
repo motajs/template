@@ -171,5 +171,21 @@
 
 **构建：** `pnpm exec prettier --check docs/advanced/plugin-system.md docs/advanced/declarative-vs-imperative.md` 通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
 
+### 第 4 轮处置（存档 / 录像 / Store / 钩子 / 导览）
+
+**修改方式：** 内联执行（执行器直接编辑），仅修改 `docs/advanced/saveable-content.md`、`docs/advanced/replay-consistency.md`、`docs/advanced/data-stores.md`、`docs/advanced/hooks-in-depth.md`、`docs/advanced/index.md` 与本职记录。
+
+| #     | 处置                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| U4-07 | 四篇改为先模板后解释：`saveable-content` 先给 `state.ts` / `types.ts` / `plugin.ts` 完整骨架，再逐项解释存档形状、`saveState` / `loadState`、注册时机与压缩；`replay-consistency` 先把带 `@shouldReplay` 的 `ShopSystem` 模板提到开头；`data-stores` 先给一次读取五个 Store 的完整模板；`hooks-in-depth` 先给图层钩子类 + 注册函数的完整模板。                                                     |
+| U4-09 | 删除「存档和读档都按注册顺序遍历」「先注册被引用者」等顺序保证；明确写为「顺序不做保证」，执行器只保证当前对象已恢复。跨对象引用压缩为一段：存 id 或键，读档后或真正需要时再重建 / 查找，并注明该场景极其少见、不展开。验证只保留一次「存档 → 改状态 → 读档」检查，删除三档压缩验证、注册检查、缺键 / 多键告警验证与跨对象引用检查（这些内容来自 `__test__`，不属于发布文档）。                 |
+| U4-10 | `replay-consistency` 在模板之后明确写出 `@shouldReplay` 与 `@ignoreReplay` 只在数据端使用，渲染端不参与重放与安全检查；「边界与注意」与小结同步该说法。                                                                                                                                                                                                                                             |
+| U4-11 | `data-stores` 删除五个 Store 括号里的 `ITileStore` / `IItemStore` / `IMapStore` / `IEnemyStore` / `IGameEventStore` 标识；字段与接口说明改为叙述，只保留 Store 能做什么，细节（如 `effect` / `equip` 必填）移到「边界与注意」。                                                                                                                                                                    |
+| U4-12 | 删除「逐个看接口」大节，把五个 Store 平铺为五个二级节；每节先讲「存什么」，再讲自身接口能做什么，不再只讲 Store 对象本身。                                                                                                                                                                                                                                                                       |
+| U4-13 | `hooks-in-depth` 改为「建议一个对象一个实例」；明确共享实例允许但不建议，除非明确了解钩子内部实现与后果，并注明本篇不展开共享用法；边界与小结同步。                                                                                                                                                                                                                                               |
+| U4-11 / U4-12 / U4-13 | `index.md` 同步：录像行注明「数据端」、Store 行改为「五个 Store 各存什么、能做什么」、钩子行改为「建议一个对象一个钩子实例」，「改内容或机制」路径与「读完这一层」同步措辞。                                                                                                                                                                                                         |
+
+**构建：** `pnpm exec prettier --write` 后 `--check` 五篇通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
+
 **状态：处理中**
 

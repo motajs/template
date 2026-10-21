@@ -1,30 +1,20 @@
 # 钩子深入
 
-中级教程的[钩子](../intermediate/hooks.md)回答的是「什么需求该用哪个钩子」；这一篇讲另一件事：怎么把钩子限定到你关心的那个对象上。结论只有一句——<strong>一个钩子对象，对应一个钩子实例</strong>。
+中级教程的[钩子](../intermediate/hooks.md)回答的是「什么需求该用哪个钩子」；这一篇讲另一件事：怎么把钩子限定到你关心的那个对象上。做法很简单——<strong>建议一个对象一个钩子实例</strong>。共享实例是允许的，但不建议；除非你明确了解钩子的内部实现与后果，否则不要这样做。
 
-钩子接口本身不难，容易出错的是「挂上去了，触发的却不只是你想管的那张地图、那个图层」。下面先讲实例与对象的关系，再用两个例子分别处理图层级与地图级的限定，最后是注册、移除与异步的接口事实。
+钩子接口本身不难，容易出错的是「挂上去了，触发的却不只是你想管的那张地图、那个图层」。下面先给一个完整模板，再解释实例与对象的关系，最后是注册、移除与异步的接口事实。
 
 阅读前需要会基础语法：`class`、`new`、`import`、`async` / `await`。本篇只讲数据端，示例都按当前源码里的接口书写。
 
-## 一个对象，一个钩子实例
+## 先看模板
 
-一个钩子类只是模板。真正参与事件的是你用 `new` 创建出来的<strong>实例</strong>，以及它被注册到的那个对象实例。
-
-`Hookable` 的钩子列表是实例字段：每个地图、每个图层、每个移动器各自持有一份，而不是整个类共享一份。所以：
-
-- 同一个钩子类可以 `new` 出多个实例，分别注册到不同对象；
-- 给图层 A 注册的钩子，不会出现在图层 B 上；
-- 一个实例只应注册到一个对象。
-
-以图层为例，`GameMap.addLayer(alias)` 每次调用都会创建一个新的 `MapLayer`。同一张地图的 `ground` 与 `wall` 是两个不同的 `MapLayer` 实例，各自有独立的钩子列表。地图对象本身也是 `Hookable`，但它的钩子列表与图层完全分开，接收的是另一套接口（`IGameMapHooks` 与 `IMapLayerHooks`），事件也从不同对象发出。
-
-「一个对象一个实例」把身份固定在注册处：钩子在哪个对象上被触发，就是因为它注册在哪个对象上。多数钩子方法因此不需要再判断「这次是不是我要的对象」。
-
-## 示例：只处理一个图层
-
-有些图层钩子方法的参数里没有图层身份，例如 `onUpdateBlock(block, x, y)` 只有坐标与图块数字。这类钩子只能靠注册位置限定：注册到哪个图层，就只服务哪个图层。
+图层级钩子最典型的写法是：钩子类只处理注册它的那个图层，注册函数负责找到目标图层并把实例挂上去。
 
 ```ts
+import { IMapLayer, IMapLayerHooks } from '@user/data-base';
+import { ICoreState } from '@user/data-state';
+
+// 图层级钩子：只处理注册它的那个图层
 export class GroundBlockHooks implements IMapLayerHooks {
     constructor(
         readonly state: ICoreState,
@@ -39,23 +29,22 @@ export class GroundBlockHooks implements IMapLayerHooks {
 }
 ```
 
-`readonly layer` 的作用是让钩子能访问目标图层本身（读宽高、调用图层方法），不是用来比较一个不存在的参数。
-
-注册时找到目标图层，把实例挂到它上面：
-
 ```ts
+import { IMapLayerHookController } from '@user/data-base';
 import { ICoreState } from '@user/data-state';
 import { GroundBlockHooks } from './ground-block-hooks';
 
 // 找到目标图层后注册；通常放在插件的 afterLoad 里
-export function registerGroundHooks(state: ICoreState) {
+export function registerGroundHooks(
+    state: ICoreState
+): IMapLayerHookController | null {
     const map = state.maps.getMap('floor-1');
     if (!map) {
         // afterLoad 时楼层未必已经构造出来，不要静默跳过
         state.emitTip('floor-1 尚未构造，钩子未注册');
         return null;
     }
-    const layer = [...map.layerList].find(l => l.alias === 'ground');
+    const layer = [...map.layerList].find(v => v.alias === 'ground');
     if (!layer) {
         state.emitTip('ground 图层不存在');
         return null;
@@ -66,7 +55,21 @@ export function registerGroundHooks(state: ICoreState) {
 }
 ```
 
-`afterLoad` 时楼层未必已经由加载流程构造出来（取决于内容加载方式与插件顺序），`state.maps.getMap('floor-1')` 可能返回 `null`；这时至少要把原因报出来，或者把注册推迟到楼层创建之后。另外，`onUpdateBlock` 只在图块数字真的变化时触发，设置成相同数字不会触发。
+模板里的 `readonly layer` 让钩子能访问目标图层本身（读宽高、调用图层方法），不是用来比较一个不存在的参数。`afterLoad` 时楼层未必已经由加载流程构造出来（取决于内容加载方式与插件顺序），`state.maps.getMap('floor-1')` 可能返回 `null`；这时至少要把原因报出来，或者把注册推迟到楼层创建之后。另外，`onUpdateBlock` 只在图块数字真的变化时触发，设置成相同数字不会触发。
+
+## 建议一个对象一个实例
+
+一个钩子类只是模板。真正参与事件的是你用 `new` 创建出来的<strong>实例</strong>，以及它被注册到的那个对象实例。
+
+`Hookable` 的钩子列表是实例字段：每个地图、每个图层、每个移动器各自持有一份，而不是整个类共享一份。所以：
+
+- 同一个钩子类可以 `new` 出多个实例，分别注册到不同对象；
+- 给图层 A 注册的钩子，不会出现在图层 B 上；
+- 一个实例只应注册到一个对象。
+
+以图层为例，`GameMap.addLayer(alias)` 每次调用都会创建一个新的 `MapLayer`。同一张地图的 `ground` 与 `wall` 是两个不同的 `MapLayer` 实例，各自有独立的钩子列表。地图对象本身也是 `Hookable`，但它的钩子列表与图层完全分开，接收的是另一套接口（`IGameMapHooks` 与 `IMapLayerHooks`），事件也从不同对象发出。
+
+把实例固定在一个对象上，身份就固定在注册处：钩子在哪个对象上被触发，就是因为它注册在哪个对象上。多数钩子方法因此不需要再判断「这次是不是我要的对象」。把同一个实例注册到多个对象是允许的，但回调里就得自己区分触发者，还要承担共享状态带来的后果；除非你明确了解钩子的内部实现，否则不要这样做，本篇也不展开这种用法。
 
 如果钩子要在构造时保持通用、注册时才确定图层，可以在 `awake` 里取控制器。`MapLayer` 的控制器是 `IMapLayerHookController`，带 `layer` 字段与 `getMapData()`：
 
@@ -94,6 +97,9 @@ export class UniversalBlockHooks implements IMapLayerHooks {
 地图级钩子挂在 `map` 上，仍然是一个地图一个实例。但 `IGameMapHooks.onResizeLayer(layer, width, height)` 会收到<strong>该地图每个图层</strong>的尺寸变化——事件来自多个图层，对象却只有一个。这种回调里要自己筛掉不关心的图层：
 
 ```ts
+import { IGameMapHooks, IMapLayer } from '@user/data-base';
+import { ICoreState } from '@user/data-state';
+
 export class TargetLayerResizeHooks implements IGameMapHooks {
     constructor(
         readonly state: ICoreState,
@@ -121,7 +127,7 @@ export function registerTargetLayerHooks(state: ICoreState): void {
         state.emitTip('floor-1 尚未构造，钩子未注册');
         return;
     }
-    const targetLayer = [...map.layerList].find(l => l.alias === 'ground');
+    const targetLayer = [...map.layerList].find(v => v.alias === 'ground');
     if (!targetLayer) {
         state.emitTip('ground 图层不存在');
         return;
@@ -138,19 +144,9 @@ export function registerTargetLayerHooks(state: ICoreState): void {
 `addHook` 会创建控制器、把钩子写入内部映射与列表、调用 `awake`，最后返回控制器。控制器最重要的方法是 `unload()`：
 
 ```ts
-import { ICoreState } from '@user/data-state';
-import { IMapLayer, IMapLayerHookController } from '@user/data-base';
-import { GroundBlockHooks } from './ground-block-hooks';
+import { IMapLayerHookController } from '@user/data-base';
 
-// 注册，保存返回的控制器
-export function addGroundBlockHooks(
-    state: ICoreState,
-    layer: IMapLayer
-): IMapLayerHookController {
-    return layer.addHook(new GroundBlockHooks(state, layer));
-}
-
-// 之后需要撤掉时
+// 保存注册时返回的控制器，之后需要撤掉时调用
 export function removeGroundBlockHooks(
     controller: IMapLayerHookController
 ): void {
@@ -193,7 +189,7 @@ export function removeGroundBlockHooks(
 ## 边界与注意
 
 - <strong>把地图级钩子挂到图层上</strong>。`layer.addHook` 接收的是 `IMapLayerHooks`，地图级方法名对不上，永远不会被调用；反过来把图层钩子挂到地图上也不会收到图层事件。
-- <strong>把同一个实例注册到多个对象</strong>。接口允许，但回调里就得自己区分触发者；一个对象一个实例更简单。
+- <strong>把同一个实例注册到多个对象</strong>。接口允许，但不建议；除非你明确了解钩子的内部实现与后果，否则回调里区分触发者、共享状态带来的问题都会由你自己承担。
 - <strong>重复注册同一个实例</strong>。`addHook` 不去重，实例会被多次调用，旧控制器还留在内部列表里。
 - <strong>移除时 new 了一个新实例</strong>。`removeHook` 按引用查找，新实例不会匹配，也不会报错；保存注册时的实例或控制器。
 - <strong>在 awake 里等自己触发的事件</strong>。`awake` 调用时钩子还不在已加载列表里，`forEachHook` 遍历不到它。
@@ -202,7 +198,7 @@ export function removeGroundBlockHooks(
 
 ## 小结
 
-- 一个钩子对象对应一个钩子实例：实例注册到哪个对象，就只服务那个对象。
+- 建议一个对象一个钩子实例：实例注册到哪个对象，就只服务那个对象。共享允许但不建议，除非明确了解内部实现与后果。
 - 参数里没有图层身份的钩子（如 `onUpdateBlock`）靠注册位置限定；地图级钩子收到多图层事件时，用 `===` 比较回调传来的对象。
 - `addHook` 返回控制器，`removeHook` 要传原实例；`awake` 在加入已加载列表前调用，`destroy` 在移除时调用。
 - `addHook` 不去重，`forEachHook` 顺序不保证，异步钩子用 `Promise.all` 并发等待。

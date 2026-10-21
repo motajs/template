@@ -6,6 +6,30 @@
 
 阅读前需要会基础语法：`class`、`new`、`import`，以及装饰器写法 `@名字(...)`。装饰器的基础写法见[代码基础](../intermediate/code-basics.md)。
 
+## 先看模板
+
+标记加在<strong>你自己的、会改状态的方法</strong>上。商店插件是现成的例子，它的 `ShopSystem` 在 `src/data/plugin/shop/system.ts` 里给开店、关店、购买、出售都加了标记：
+
+```ts
+import { shouldReplay } from '@user/data-common';
+import { IShopSystem, ShopTradeResult } from './types';
+
+// 商店插件节选：完整类结构，未展示的成员用注释省略
+export class ShopSystem implements IShopSystem {
+    // ... 其他成员
+
+    // 购买会改变金币与商店库存，必须计入录像
+    @shouldReplay('Buying items should be replayed.')
+    buyItem(item: number | string, count: number): ShopTradeResult {
+        // ... 原有的购买逻辑
+    }
+}
+```
+
+装饰器紧贴方法声明上方，中间不要隔别的成员。`shouldReplay` 从 `@user/data-common` 引入；商店插件的文件顶部已经有这行 `import`，新文件才需要自己补。同一个插件里，`openShop`、`closeShop`、`sellItem` 也都按同样方式标注。
+
+<strong>`@shouldReplay` 与 `@ignoreReplay` 只在数据端使用。</strong>录像验证只跑数据端，渲染端不参与重放，也不在安全检查的覆盖范围内；不要在渲染端代码里加这两个装饰器。
+
 ## 什么该记
 
 同一条录像，重放两次必须得到同样的数据端结果；否则录像验证就失去了意义。要做到这一点，只能靠「录像里记下的操作，恰好覆盖了所有会改变游戏状态的行为」。
@@ -55,27 +79,7 @@
 
 所以它不能用来「消掉某条告警」。你消掉的是整段检查，真正的漏记会被一起放过。它只适合确实不该计入录像的路径，例如异步内容、延迟回调这类不会立刻改变状态的方法。源码注释也明确写了这层意思，并提醒不要用它规避告警。`reason` 目前不会出现在告警输出里，写它是为了后来的人知道这里为什么可以忽略。
 
-## 在自己的方法上加标记
-
-标记加在<strong>你自己的、会改状态的方法</strong>上。商店插件是现成的例子，它的 `ShopSystem` 在 `src/data/plugin/shop/system.ts` 里给开店、关店、购买、出售都加了标记：
-
-```ts
-import { shouldReplay } from '@user/data-common';
-
-export class ShopSystem implements IShopSystem {
-    // ... 其他成员
-
-    // 购买会改变金币与商店库存，必须计入录像
-    @shouldReplay('Buying items should be replayed.')
-    buyItem(item: number | string, count: number): ShopTradeResult {
-        // ... 原有的购买逻辑
-    }
-}
-```
-
-装饰器紧贴方法声明上方，中间不要隔别的成员。`shouldReplay` 从 `@user/data-common` 引入；商店插件的文件顶部已经有这行 `import`，新文件才需要自己补。
-
-同一个插件里，`openShop`、`closeShop`、`sellItem` 也都按同样方式标注。入口方法与被它调用的内部方法可以都标：安全检查会按调用嵌套组织路径，越靠里越接近真正改变状态的位置。但把标记集中在真正改状态的那一层，告警会更短、更好读。
+同一个插件里，入口方法与被它调用的内部方法可以都标：安全检查会按调用嵌套组织路径，越靠里越接近真正改变状态的位置。但把标记集中在真正改状态的那一层，告警会更短、更好读。
 
 ## 能保证什么，不能保证什么
 
@@ -106,6 +110,7 @@ export class ShopSystem implements IShopSystem {
 
 ## 边界与注意
 
+- <strong>在渲染端加标记</strong>。`@shouldReplay` 只用于数据端；渲染端不参与录像验证，加了也不会进入检查。
 - <strong>读档期间录像被禁用</strong>。`CoreState.loadState` 在恢复每个可存档对象之前调用 `replaySystem.disable()`，之后调用 `revert()`，所以读档本身不会被记进录像。
 - <strong>执行器不在保护范围内</strong>。`bindSaveableExecuter` 绑定的 `afterLoad` 在该对象 `loadState` 之后立即运行，此时录像已经恢复可用。在执行器里操作会影响成绩的状态要格外小心，细节见[可存档内容](./saveable-content.md)。
 - <strong>装饰器只认类的方法</strong>。写在普通函数、对象属性、箭头函数上都不会生效。
@@ -121,7 +126,7 @@ export class ShopSystem implements IShopSystem {
 
 - 录像一致性只要求一件事：玩家直接产生、会影响最终成绩的行为，一条都不能少记。
 - 该不该记通常靠分析；判断不了时，把所有会改状态、可能影响结果的方法都加上 `@shouldReplay`。
-- `@shouldReplay` 只登记路径，`@ignoreReplay` 把整段检查标记为忽略；两者都不写录像。
+- `@shouldReplay` 只用于数据端，只登记路径；`@ignoreReplay` 把整段检查标记为忽略；两者都不写录像。
 - 带标记的方法执行了却没有录像记录时，控制台会输出「录像记录缺失」警告。
 - 检查不管逻辑、参数、顺序与一一对应，这些要自己核对。
 - 读档期间录像被临时禁用，执行器不在保护范围内。
