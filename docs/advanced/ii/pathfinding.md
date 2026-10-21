@@ -298,3 +298,5 @@ async function verifyPathfinding(
 - **`interrupt()` 会等待底层移动停止**：它返回 `Promise`，需要确保停止后再开始新的移动。
 
 渲染端如何表现寻路移动不在本篇范围内。 <!-- TODO(renderer): 寻路移动动画与瞬移表现 -->
+
+返回[高级 II 导览](./index.md)。

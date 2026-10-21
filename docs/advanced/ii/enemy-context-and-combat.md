@@ -290,3 +290,5 @@ function verifyBuildup(state: ICoreState, view: IEnemyView<IEnemyAttr>): void {
 - **查询效果不是内置内容**：`initializeEnemy` 只注册光环转换器、最终效果、战斗脚本与钩子，没有注册任何查询。查询需要自己注册后才会参与构建。
 - **开发环境的优先级告警不是致命错误**：它会跳过不合法的增删，但通常说明阶段依赖设计有问题，应该调整优先级而不是忽略告警。
 - **`clear()` 与 `destroy()` 的时机不同**：`clear()` 清空怪物与运行状态，保留注册项；`destroy()` 会连伤害系统、地图伤害与所有注册项一起清掉。销毁后不应继续使用该上下文。
+
+返回[高级 II 导览](./index.md)。

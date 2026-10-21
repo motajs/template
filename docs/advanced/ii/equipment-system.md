@@ -334,3 +334,5 @@ function verifyEquipment(state: ICoreState): void {
 - **`getModifiers()` 会触发构建**：首次调用有副作用（构建修饰器并触发一次 `onChangeModifier`），不要把它当纯查询频繁调用。
 
 编辑器与状态栏的展示不在本篇范围内。 <!-- TODO(editor): 装备栏与状态栏展示 -->
+
+返回[高级 II 导览](./index.md)。

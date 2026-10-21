@@ -296,3 +296,5 @@ async function verifyTileConversion(
 - **同一格多个动态图块的顺序不保证**：`getDynamicTilesAt` 返回的是集合语义的迭代器；依赖先后顺序时，请先取出数组并自行排序。
 - **`syncTileEvent` 会覆盖目标**：它先清空目标再复制，目标原有的图块事件不会保留。只想追加一条事件时，用 `tileEvent().set(priority, eventId)`，不要用 `syncTileEvent`。
 - **点事件与图块事件共用优先级概念但不是同一张表**：同一格可以同时有优先级 `5` 的点事件与优先级 `5` 的图块事件，两者互不冲突；冲突只发生在同一个事件视图内部。
+
+返回[高级 II 导览](./index.md)。
