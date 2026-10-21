@@ -37,6 +37,25 @@
 - `index.md`：高级 III 占位表述；「优先插件，必要时改内置包」与本层多篇直接改 `packages-user` 的张力。
 - `custom-range`：`radius` 需为整数，否则 `iterateLoc` 产生非整数索引。
 
+## 第 2 轮 · 问题清单
+
+### 阻断性（2）
+
+| #    | 问题                                                                                            | 定位                                            |
+| ---- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| B-13 | 护甲验证预期方向写反：护甲 50→0 时回合数减半，总伤害应大致减半，而非翻倍                        | `adding-enemy-attribute.md`「怎么验证」         |
+| B-14 | 装备对比建议「比较对象应放在目标槽之外」与「别的槽会重复计入」自相矛盾；`-1` 的基线语义也未说清 | `equipment-system.md`「装备对比」「边界与注意」 |
+
+### 非阻断（7）
+
+- `custom-replay-command`：主动步调用 `next(Success)` 后读取流何时推进、`execute` 应返回什么；`next(Failed)` 是否会中止播放。
+- `enemy-context-and-combat`：`refreshEnemy` 是否重跑特殊光环的 `applySpecial` 与特殊属性。
+- `equipment-system`：`getModifiers()` 懒构建与 `add` 时构建的关系；`equip` 是否会触发懒构建。
+- `adding-hero-attribute`：统一「默认值只保证类型完整、运行时只来自 core.jsonc」的表述。
+- `adding-enemy-attribute`：默认模板何时被使用；内容条目不与模板合并。
+- `adding-hero-attribute`：自爆并非完全不受护甲影响。
+- `pathfinding`：`InvalidInput` 的原因补充「缺少方向处理器」。
+
 ## 迭代记录
 
 ### 第 1 轮修复（2026-10-21）
@@ -71,3 +90,25 @@
 - `custom-range.md`：`radius` 必须为整数，示例统一截断。
 
 **验证**：prettier 格式化通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 通过（仅 VitePress chunk 体积警告）。
+
+### 第 2 轮修复（2026-10-21）
+
+对照当前源码逐条修复，构建通过。
+
+**阻断性**
+
+- B-13 `adding-enemy-attribute.md`：验证预期改为 `armor` 50→0 后勇士每回合伤害翻倍、回合数大致减半、总伤害大致减半，并给出 `damage = (turn - 1) * enemyPerDamage` 的依据。
+- B-14 `equipment-system.md`：重写「装备对比」。明确模拟基线是「当前属性减去目标槽现役装备」；A/B 只能是目标槽上的现役装备或完全未装备，不能穿在别的槽上（否则会重复计入）。补充 `compareEquip` 的逐键回退规则与 `-1` 的实际语义。
+    - **与审阅建议的差异**：审阅建议称目标槽有装备时传 `-1` 得到「相对空槽」。核对 `HeroEquipment.compareEquip` 源码后，缺失的一侧在差值阶段回退到 `this.attribute.getFinalAttribute(key)`，即当前真实最终属性（含目标槽现役装备）；因此文中按源码写为「相对现役装备」。现有测试 `compareEquip(axe, bow, 0).atk === 7`（axe +12、sword +5 现役）也验证了这一点。
+
+**非阻断**
+
+- `custom-replay-command.md`：说明 `next(Success)` / `next(Ignored)` 在调用时即推进读取流并触发 `onStep`；`next(Failed)` 不推进也不自行中止；主动步 `execute` 的返回值才决定回放是否继续，`next` 返回 `void` 无法传递失败。
+- `enemy-context-and-combat.md`：明确 `refreshEnemy` 会重跑命中该怪物的特殊光环 `applySpecial`、特殊查询与常规查询，但不重建 `sortedAura` / `convertedAura` 拓扑；新增或删除特殊属性产生的光环只告警（code 101），不会进入本轮排序表。
+- `equipment-system.md`：`add` 与 `loadState` 都会立即 `buildModifiers()`，正常实例的 `getModifiers()` 不会再次构建，`equip` 也不会触发懒构建；只有直接 `new EquipmentState(...)` 才可能触发兜底构建。
+- `adding-hero-attribute.md`：统一为 `HERO_DEFAULT_ATTRIBUTE` 只保证类型完整，运行时初始值仅来自 `core.jsonc`，它不是兜底；同步修正验证与边界表述。
+- `adding-enemy-attribute.md`：说明默认模板只以 `enemy-default` 配置供编辑器/校验使用，运行时 `enemyStore` 只读内容条目，不会与模板合并。
+- `adding-hero-attribute.md`：更正自爆与护甲的关系：护甲先缩放，自爆只把低于 `hp - 1` 的结果抬到下限，下限本身不缩放。
+- `pathfinding.md`：`InvalidInput` 的原因补充「缺少方向处理器」。
+
+**验证**：prettier 格式化通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 通过。

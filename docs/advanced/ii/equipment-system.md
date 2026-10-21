@@ -70,7 +70,7 @@ function grantEquipment(state: ICoreState, id: string): number {
 
 - `setValue(name, value)` 与 `getValue(name)`：数值加成，对应 `ValueModifier`；
 - `setPercentage(name, value)` 与 `getPercentage(name)`：百分比加成，对应 `PercentageModifier`；
-- `getModifiers()`：输出 `[属性名, 修饰器]`，首次调用会自动 `buildModifiers()`。
+- `getModifiers()`：输出 `[属性名, 修饰器]`；实例尚未构建时会先调用 `buildModifiers()` 兜底。
 
 把加成设为 `0` 会删除对应条目与修饰器，而不是留下一个值为 0 的修饰器；读取不存在的属性返回 `0`。
 
@@ -178,9 +178,19 @@ this.attribute.addModifier(name, modifier, false);
 
 ## 装备对比
 
-`compareEquip(equipA, equipB, slot)` 返回「装备 A 时属性减装备 B 时属性」的差值。`equipA` 与 `equipB` 传实例 `uid`，传 `-1` 表示该侧为空；`slot` 只接受槽位索引。
+`compareEquip(equipA, equipB, slot)` 返回「装备 A 时属性减装备 B 时属性」的差值。`equipA` 与 `equipB` 传实例 `uid`，传 `-1` 表示该侧没有装备；`slot` 只接受槽位索引。
 
-内部会克隆当前属性，先移除该槽现有装备的修饰器，再分别模拟 A、B，最后逐键相减。真实属性不会被修改。返回值只包含 A 或 B 涉及到的属性键：
+内部会克隆当前属性，先移除该槽现有装备的修饰器，再把 A、B 分别挂到这个克隆上模拟。真实属性不会被修改。返回值的键只包含 A 或 B 涉及的属性。
+
+差值并不总是两份模拟直接相减：某一侧没有提供某个键时，该侧会回退到**当前真实最终属性**（仍包含目标槽上的现役装备）。因此：
+
+- 两侧都提供同一个键：差值是「空槽 + A」减「空槽 + B」；
+- 只有 A 提供该键：差值是「空槽 + A」减当前状态（含目标槽现役装备）；
+- 只有 B 提供该键：差值是当前状态减「空槽 + B」。
+
+目标槽为空时，当前状态就是空槽基线，三种情况都退化为 A − B。传 `-1` 表示该侧没有装备：目标槽为空时，`compareEquip(a, -1, slot)` 是 A 相对空槽的提升；目标槽已有装备 X 时，它得到的是 A 相对 X 的差值（A − X），**不是**相对空槽。反过来 `compareEquip(-1, b, slot)` 会得到 X − B，符号容易看反，按需要的方向选择参数顺序。
+
+A 与 B 要么就是目标槽上的现役装备，要么完全不装备。**不要把它们穿在另一个槽上**：那样它们的修饰器会同时留在基线（当前属性）和模拟里，被重复计入。
 
 ```ts
 import { IHeroAttr } from '@user/data-common';
@@ -199,7 +209,7 @@ function compareWeapons(state: ICoreState, a: number, b: number): void {
 }
 ```
 
-某件装备没有涉及的属性不会出现在结果里。比较「某件装备相对空槽」时，传 `-1` 作为 B：结果就是该装备相对当前状态的提升。
+返回值里不会出现 A、B 都没涉及的属性；某一侧缺失的键按上面的回退规则处理。需要「某件装备相对空槽」的差值时，先确保目标槽为空，再传 `-1` 作为另一侧。
 
 ## 排序器
 
@@ -267,8 +277,8 @@ function watchEquipment(state: ICoreState, uid: number): void {
 
 `IItemRawData.equip.loadEvent` 与 `unloadEvent` 不是自动钩子。引擎不会在穿戴或卸下时执行它们，目前它们只是数据字段。**引擎也没有内置「装备穿上/卸下」钩子**；`onChangeModifier` 不能替代它：
 
-- 如果装备实例在 `add` 时已经 `buildModifiers()`，之后 `equip` 只是把已有修饰器挂到属性上，不会触发 `onChangeModifier`；
-- 如果实例是在别的时机才首次 `getModifiers()`，`equip` 可能顺带触发一次懒构建，但那是构建副作用，不是稳定的穿戴信号；
+- `HeroEquipsStore.add` 在创建实例后会立即调用 `buildModifiers()`，`loadState` 重建实例后也会调用。因此正常获得的实例在 `equip` 时已经构建完毕，`equip` 只是把已有修饰器挂到属性上，不会触发 `onChangeModifier`；
+- 只有绕过 `add`、直接 `new EquipmentState(...)` 且从未调用过 `getModifiers()` 时，`equip` 才可能顺带触发一次懒构建；那是兜底副作用，不是稳定的穿戴信号；
 - 强化或改值同样会触发它，即使没有穿戴。
 
 需要「穿上后触发」的行为，就在调用 `equip` / `unequip` 的统一入口里处理，或者包装一个自己的装备服务：
@@ -289,7 +299,7 @@ function equipWithCallback(
 }
 ```
 
-`onChangeModifier` 在 `buildModifiers()` 时也会触发一次。实例在 `add` 时就已经构建过修饰器，所以之后才 `addHook` 的监听者收不到这次初始构建，只会收到后续变化。
+`onChangeModifier` 在 `buildModifiers()` 时也会触发一次。经 `add` / `loadState` 得到的实例在建立时就已构建，所以之后才 `addHook` 的监听者收不到那次初始构建，只会收到后续变化；对这些实例，`equip` 不会触发再次构建。
 
 ## 怎么验证
 
@@ -356,9 +366,9 @@ function verifyEquipment(state: ICoreState): void {
 - **不要缩短已使用的 `slots`**：`equips` 以槽位索引为键，缩短数组会留下看不见但仍生效的槽位。先卸下再改。
 - **读档会重建实例**：`HeroEquipsStore.loadState` 先清空再按存档重建，旧实例对象不再代表当前状态。读档后按 `uid` 重新 `get`，不要长期缓存实例引用。
 - **`compareEquip` 两侧都为空时**返回 `{}` 并告警（code 195），不会抛错；`slot` 只接受索引。
-- **`compareEquip` 的基线是当前属性**：如果 A 或 B 已经穿在别的槽上，它的修饰器仍在基线里，再模拟会重复计入。比较对象应放在目标槽之外。
+- **`compareEquip` 的基线是当前属性减去目标槽现役装备**：A 或 B 可以就是目标槽上的现役装备，也可以完全未装备；**不要**把它们穿在另一个槽上，否则修饰器会在基线里再算一次。缺失的一侧回退到当前真实最终属性，所以目标槽有装备时，`-1` 得到的是「相对现役装备」而不是「相对空槽」。
 - **排序器不影响装备槽**：它只决定 `instances()` 与 `instancesOf()` 的展示顺序；`getEquipped` 与 `getEquips` 永远按槽位顺序。
-- **`getModifiers()` 会触发构建**：首次调用有副作用（构建修饰器并触发一次 `onChangeModifier`），不要把它当纯查询频繁调用。
+- **`getModifiers()` 只在未构建时兜底构建**：正常经 `add` / `loadState` 得到的实例已经构建过，调用它不会再次触发 `onChangeModifier`；它返回的是实时迭代器，不要长期保存到回调之外。
 
 编辑器与状态栏的展示不在本篇范围内。 <!-- TODO(editor): 装备栏与状态栏展示 -->
 

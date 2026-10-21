@@ -65,12 +65,12 @@ function bindPathfindingLayer(state: ICoreState): void {
 
 `IPathfindingResult` 只有两个字段：`status` 与 `path`。`path` 仅在状态为 `Success` 时非空。
 
-| 状态                             | 含义                                                   | 处理建议                       |
-| -------------------------------- | ------------------------------------------------------ | ------------------------------ |
-| `PathfindingStatus.Success`      | 找到路径                                               | 读取 `path`，交给移动器        |
-| `PathfindingStatus.InvalidInput` | 输入不合法：未绑定移动器、图层或谓词，或起点不在地图内 | 检查绑定与起点坐标             |
-| `PathfindingStatus.NoPath`       | 从起点出发无法到达目标点                               | 不要移动；先检查通行谓词与图层 |
-| `PathfindingStatus.TargetUnder`  | 目标点就在起点脚下                                     | 不需要移动                     |
+| 状态                             | 含义                                                               | 处理建议                       |
+| -------------------------------- | ------------------------------------------------------------------ | ------------------------------ |
+| `PathfindingStatus.Success`      | 找到路径                                                           | 读取 `path`，交给移动器        |
+| `PathfindingStatus.InvalidInput` | 输入不合法：未绑定移动器、图层、谓词或方向处理器，或起点不在地图内 | 检查绑定与起点坐标             |
+| `PathfindingStatus.NoPath`       | 从起点出发无法到达目标点                                           | 不要移动；先检查通行谓词与图层 |
+| `PathfindingStatus.TargetUnder`  | 目标点就在起点脚下                                                 | 不需要移动                     |
 
 每一步是 `IPathfindingStep`，包含 `dir`（移动方向）、`from`（出发位置）与 `to`（到达位置）。`from` 与 `to` 都是只读的坐标对象；路径按起点到终点的顺序排列。
 

@@ -105,7 +105,13 @@ graph TD
 - `view.markDirty()` 把视图加入 `dirtyEnemy`，同时让伤害系统删掉这只怪物的缓存；
 - `context.requestRefresh(view)` 决定怎么刷新：若 `needTotallyRefresh` 命中该视图，或上下文本身已标记为需要更新，就回到全量 `buildup()`；否则调用 `refreshEnemy(view)`，只重算命中该怪物的光环与查询。
 
-`refreshEnemy` 会先 `reset()` 该视图，然后按优先级重新判断「哪些光环命中这个位置」「哪些特殊查询作用于这只怪物」，再执行基础光环、常规查询与最终效果。它不会重建光环拓扑，因此比全量构建便宜。
+`refreshEnemy` 会先 `reset()` 该视图，再按上一次全量构建留下的 `sortedAura` 与特殊查询表逐优先级重算：
+
+- 对每条 `couldApplySpecial` 的光环重新调用 `applySpecial`，并通过 `refreshSpecialModifier` 就地增删、修改这只怪物的特殊属性；同一优先级下再重跑特殊查询；
+- 然后按优先级执行命中的基础光环；
+- 最后执行常规查询与最终效果。
+
+所以特殊属性与特殊查询都会在这只怪物身上重跑，并不只是基础属性。但它**不重建光环拓扑**：`sortedAura` 与 `convertedAura` 仍是上次 `buildupSpecials()` 的结果。局部刷新期间新产生的特殊属性即使能转换成光环，也只会在开发环境告警（code 101），不会加入排序表；被删除特殊属性对应的旧光环也不会从排序表移除。要让新光环参与构建，必须走一次全量 `buildup()`（通过 `needTotallyRefresh` / `needUpdate` 触发）。
 
 `requestedCommonContext` 记录的是「查询过上下文」的怪物：常规查询调用 `query()` 时会登记。局部刷新某只怪物时，上下文会把这些依赖外部状态的怪物一并重算，避免它们读到过期的周围环境。这也是[怪物查询](../../intermediate/enemy-query.md)强调「必须用 `query()` 而不是 `handler.context`」的原因：绕过 `query()` 就不会被登记，周围变化后它不会重算。
 
