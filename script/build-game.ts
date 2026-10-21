@@ -3,7 +3,7 @@ import legacy from '@vitejs/plugin-legacy';
 import { resolve } from 'path';
 import { copy, emptyDir, ensureDir } from 'fs-extra';
 import { readdir, readFile, stat } from 'fs/promises';
-import { dataIsolationPlugin } from './build-plugin';
+import { dataIsolationPlugin, replayDecoratorPlugin } from './build-plugin';
 import { buildContent } from './build-resource';
 import { formatSize } from './utils';
 
@@ -75,6 +75,7 @@ async function buildClient(outDir: string) {
     );
     const resolved = mergeConfig(config?.config ?? {}, {
         plugins: [
+            replayDecoratorPlugin(),
             legacy({
                 targets: [
                     'Chrome >= 56',
@@ -131,7 +132,7 @@ async function buildData(outDir: string, entry: string) {
         configFile
     );
     const resolved = mergeConfig(config?.config ?? {}, {
-        plugins: [dataIsolationPlugin()],
+        plugins: [dataIsolationPlugin(), replayDecoratorPlugin()],
         build: {
             outDir,
             copyPublicDir: false,

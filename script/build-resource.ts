@@ -1,10 +1,16 @@
 import Fontmin from 'fontmin';
 import { copy } from 'fs-extra';
 import { mkdir, readdir, readFile, writeFile } from 'fs/promises';
-import { dirname, extname, join } from 'path';
+import { basename, dirname, extname, join } from 'path';
 
 /** 需要经 fontmin 做字形子集化的字体扩展名 */
 const FONT_EXTENSIONS = ['.ttf', '.otf', '.woff', '.woff2'];
+
+/** 子目录中声明保留素材的清单文件名，清单自身始终会压缩输出 */
+const LIST_FILE_NAME = '.list.jsonc';
+
+/** 永远全量输出、不参与清单过滤的素材目录名 */
+const DEFAULTS_DIRECTORY = 'defaults';
 
 export interface IContentBuildOptions {
     /** content 素材的源目录 */
@@ -43,6 +49,48 @@ export function minifyJSONC(text: string): string {
 }
 
 /**
+ * 读取清单文件并收集其中声明的全部文件标识，清单中的注释会先被去除。
+ * @param listFile 清单文件路径
+ */
+async function readListNames(listFile: string): Promise<Set<string>> {
+    const text = await readFile(listFile, 'utf-8');
+    const names = new Set<string>();
+    collectListedNames(JSON.parse(minifyJSONC(text)), names);
+    return names;
+}
+
+/**
+ * 递归收集清单值中的全部字符串标识，数字、布尔与空值会被忽略。
+ * @param value 清单中的任意值
+ * @param output 收集结果
+ */
+function collectListedNames(value: unknown, output: Set<string>): void {
+    if (typeof value === 'string') {
+        output.add(value);
+    } else if (Array.isArray(value)) {
+        for (const item of value) {
+            collectListedNames(item, output);
+        }
+    } else if (value && typeof value === 'object') {
+        for (const item of Object.values(value)) {
+            collectListedNames(item, output);
+        }
+    }
+}
+
+/**
+ * 判断文件名是否被清单保留，只支持完整文件名与去扩展名主文件名两种精确匹配。
+ * @param name 待判断的文件名
+ * @param names 清单声明的名称集合
+ */
+function isListedFile(name: string, names: Set<string>): boolean {
+    if (names.has(name)) return true;
+    const extension = extname(name);
+    const stem = name.slice(0, name.length - extension.length);
+    return names.has(stem);
+}
+
+/**
  * 将单个字体文件按给定字符集做字形子集化，输出到目标目录并保留原文件名。
  * @param source 字体源文件
  * @param target 目标文件路径
@@ -65,17 +113,34 @@ async function processDirectory(
     sourceDir: string,
     outputDir: string,
     chars: string,
-    counter: IContentBuildCounter
+    counter: IContentBuildCounter,
+    isRoot: boolean = false
 ) {
     await mkdir(outputDir, { recursive: true });
     const entries = await readdir(sourceDir, { withFileTypes: true });
+    const isDefaults = basename(sourceDir) === DEFAULTS_DIRECTORY;
+    const filterEnabled = !isRoot && !isDefaults;
+    const listEntry = filterEnabled
+        ? entries.find(entry => entry.isFile() && entry.name === LIST_FILE_NAME)
+        : undefined;
+    const names = listEntry
+        ? await readListNames(join(sourceDir, listEntry.name))
+        : null;
 
     for (const entry of entries) {
         const source = join(sourceDir, entry.name);
         const target = join(outputDir, entry.name);
 
         if (entry.isDirectory()) {
-            await processDirectory(source, target, chars, counter);
+            await processDirectory(source, target, chars, counter, false);
+            continue;
+        }
+
+        if (
+            names &&
+            entry.name !== LIST_FILE_NAME &&
+            !isListedFile(entry.name, names)
+        ) {
             continue;
         }
 
@@ -106,7 +171,8 @@ export async function buildContent(
         options.sourceDir,
         options.outputDir,
         options.chars,
-        counter
+        counter,
+        true
     );
 
     if (counter.fonts === 0) {
