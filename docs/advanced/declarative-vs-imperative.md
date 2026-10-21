@@ -24,12 +24,16 @@
 ```ts
 // 旧样板示意（伪代码，不可照抄）
 // 事件脚本执行到这里时，直接遍历周围怪物，改写它们“当下”的攻击力
-for (const enemy of nearbyEnemies) {
-    enemy.atk = enemy.atk + 10;
+function strengthenNearbyEnemies(nearbyEnemies: IEnemyState[]): void {
+    for (const enemy of nearbyEnemies) {
+        enemy.atk = enemy.atk + 10;
+    }
 }
 
 // 另一段脚本里，勇士回血也是直接改当前数值
-hero.hp = hero.hp + 50;
+function healHero(hero: IHeroState<IHeroAttr>): void {
+    hero.hp = hero.hp + 50;
+}
 ```
 
 这种写法的执行时机非常直观：代码走到哪，效果就发生到哪。但它会带来几个后果：
@@ -97,8 +101,13 @@ const aura: ISpecial23Value = {
 <strong>引擎在哪个时机执行</strong>：对应动作发生时。主对象会通过 `forEachHook` 依次通知挂在自己身上的钩子。你只需要注册一次：
 
 ```ts
+import { ICoreState } from '@user/data-state';
+import { MyHeroAttributeHooks } from './hero-attribute-hooks';
+
 // 注册钩子：new 一个钩子实例，挂到关心的主对象上
-state.hero.attribute.addHook(new MyHeroAttributeHooks(state));
+export function registerHeroAttributeHooks(state: ICoreState): void {
+    state.hero.attribute.addHook(new MyHeroAttributeHooks(state));
+}
 ```
 
 不需要时可以用 `removeHook` 摘掉。内置钩子已经在初始化时注册好，你自己写的钩子才需要 `addHook`。
@@ -136,12 +145,38 @@ state.hero.attribute.addHook(new MyHeroAttributeHooks(state));
 看一个反例：
 
 ```ts
+import { ICoreState } from '@user/data-state';
+import { IEnemyAttr, IHeroAttr } from '@user/data-common';
+import {
+    CriticalableHeroStatus,
+    IDamageCalculator,
+    IEnemyDamageInfoBase,
+    IReadonlyDamageHandler
+} from '@user/data-system';
+
 // [反例] 有副作用的计算器：算出结果的同时，还改了外部状态
-calculate(handler) {
-    const damage = 100; // 这里只是示意，真实公式会读 handler
-    // 副作用：把这次结果写进 flag
-    this.state.flags.setField('lastDamage', damage);
-    return { damage, turn: 1 };
+export class BadDamageCalculator implements IDamageCalculator<
+    IEnemyAttr,
+    IHeroAttr
+> {
+    constructor(private readonly state: ICoreState) {}
+
+    calculate(
+        handler: IReadonlyDamageHandler<IEnemyAttr, IHeroAttr>
+    ): IEnemyDamageInfoBase {
+        const damage = 100; // 这里只是示意，真实公式会读 handler
+        // 副作用：把这次结果写进 flag
+        this.state.flags.setField('lastDamage', damage);
+        return { damage, turn: 1 };
+    }
+
+    // 临界计算同样会被反复调用，这里只保留结构
+    getCriticalLimit(
+        handler: IReadonlyDamageHandler<IEnemyAttr, IHeroAttr>,
+        attribute: CriticalableHeroStatus<IHeroAttr>
+    ): number {
+        return 0;
+    }
 }
 ```
 

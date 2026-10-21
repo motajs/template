@@ -72,8 +72,6 @@ Store 在<strong>加载 / 初始化阶段</strong>被填一次，之后整个游
 - `getMap(floorId)`：原始地图数据，查不到返回 `null`；
 - `addMap(map)`：登记一份原始数据，同一个 `floorId` 直接覆盖，不告警。
 
-这份原始数据不会自己变成可玩的地图。运行时楼层由 `state.maps.fromRaw(raw)` 构造：它按 `width` 与 `map` 算出高度、建图层、铺图块、挂事件。从原始数据到运行时对象只有这一次转换。
-
 ### enemyStore：怪物原始数据
 
 以怪物图块数字为键，存 `IEnemyRawData`：`num`、`attribute`（怪物属性）、`special`（特殊属性，键为特殊属性编号、值为参数）。
@@ -96,38 +94,43 @@ Store 在<strong>加载 / 初始化阶段</strong>被填一次，之后整个游
 
 1. <strong>它不进存档</strong>。五个 Store 都不是可存档对象——`addSaveableContent` 注册的是 `hero`、`flags`、`maps`、`enemyManager`、`replaySystem`，没有 Store。读档不会恢复你的改动，也不会把它退回原样。
 2. <strong>它不进录像</strong>。`add*` 没有 `@shouldReplay` 标记，录像里不会有「登记这条定义」这一步。重放时这条定义从什么时候开始生效，与原始游玩并不一致。
-3. <strong>它不保证更新已经存在的对象</strong>。有的运行时对象每次都现查 Store（静态图块的 `raw()`、事件派发），有的在构造时就把定义缓存下来（动态图块、背包道具、运行时楼层）。改完之后谁变了、谁没变，取决于取用方式。
-4. <strong>它绕过了检查</strong>。定义改了，存档、录像、内存里的对象三者可能各是各的；差异不会立刻报错，而是在某个不确定的时机表现出来。
+3. <strong>它绕过了检查</strong>。定义改了，存档、录像、内存里的对象三者可能各是各的；差异不会立刻报错，而是在某个不确定的时机表现出来。
 
 所以规则很简单：<strong>登记只在加载期做一次，运行期只读</strong>。
 
 至于登记这件事本身，绝大多数情况也不用你动手：`add*` 是给数据端自己用的接口——内容加载还没写完，写完后由数据端统一登记，不在你的代码里。日常你只需要按下面这样读：
 
 ```ts
-// 先按图块 id 查数字，再取完整定义；没有登记时 num 为 undefined
-const num = state.tileStore.num('my-tile');
-if (num !== undefined) {
-    // raw 为 null 表示这条定义不存在
-    const raw = state.tileStore.getData(num);
-    console.log(raw, state.tileStore.getType(num));
-}
+import { ICoreState } from '@user/data-state';
 
-// 道具、地图、怪物同样按各自的键查
-const item = state.itemStore.getData('my-item');
-const map = state.mapStore.getMap('my-floor');
-const enemy = state.enemyStore.getEnemy('my-enemy');
+// 读示例：放进能拿到 state 的方法里
+export function readStores(state: ICoreState): void {
+    // 先按图块 id 查数字，再取完整定义；没有登记时 num 为 undefined
+    const num = state.tileStore.num('my-tile');
+    if (num !== undefined) {
+        // raw 为 null 表示这条定义不存在
+        const raw = state.tileStore.getData(num);
+        console.log(raw, state.tileStore.getType(num));
+    }
+
+    // 道具、地图、怪物同样按各自的键查
+    const item = state.itemStore.getData('my-item');
+    const map = state.mapStore.getMap('my-floor');
+    const enemy = state.enemyStore.getEnemy('my-enemy');
+    console.log(item, map, enemy);
+}
 ```
 
 读 Store 随时可以：查表、算数、拼提示文本、给界面提供数据，都是正常用法。查表不会改变任何东西，也不产生录像步。唯一要注意的是<strong>不要就地修改返回的对象</strong>：`getData` / `getMap` / `getEvent` 返回的多是 Store 里存着的那个实例（`tileStore.getEvent` 例外，它每次新建一个 `Map`），就地改它等于绕过 `add*` 改了注册表。
 
 ## 边界与注意
 
-- <strong>确实要补几条定义</strong>。把调用集中放在插件的一个时机方法里（`awake` / `initialize` / `afterLoad`，见[插件系统](./plugin-system.md)），只在启动流程里执行一次；不要放进玩家动作、事件回调、每帧逻辑或战斗结算。
-- <strong>登记不会创建运行时对象</strong>。`addMap` 只是把原始数据放进注册表，要可玩还得自己调用 `state.maps.fromRaw(raw)`；`addTile` 也只影响之后构造的图层，图层已经建好就不会自动补进去。
-- <strong>重复登记同一个 `num` 会覆盖</strong>。图块告警 `133` / `134`，道具与怪物告警 `181`，事件告警 `170`；不撞键才是安全的登记。
+- <strong>需要自己补充 Store 定义的情况非常少见</strong>。`add*` 是数据端自用的登记接口：内容加载还没有写完，写完后由数据端统一登记。绝大多数情况下你只需要读，不需要自己补定义。确实需要补时，属于后续高级教程的内容（`高级 II · 加载与插件生命周期`，待编写），并且要把调用集中放在插件的一个时机方法里（见[插件系统](./plugin-system.md)），只在启动流程里执行一次。
 - <strong>返回值不是副本</strong>。改 `getData` / `getMap` / `getEvent` 的返回值等于改注册表；需要不同的定义就登记新的，不要改旧的。
 - <strong>读档不会恢复 Store</strong>。改过的定义不会随存档保存，读档也不会把它退回去。
 - <strong>`eventStore.getEvent` 给的是实例本身</strong>，不要在上面做缓存并当成快照。
+
+<!-- TODO(advanced-II): 在初始化阶段补充 Store 定义 -->
 
 ## 小结
 
@@ -135,6 +138,5 @@ const enemy = state.enemyStore.getEnemy('my-enemy');
 - 键分别是图块数字、道具图块数字、`floorId`、怪物图块数字、事件 id。
 - 读随时可以；返回的通常是注册表里的实例，不要就地修改。
 - 登记由数据端负责，绝大多数情况不需要自己调用 `add*`，运行期尤其不要写。
-- 运行时楼层由 `state.maps.fromRaw(raw)` 一次性构造；改 Store 不会重建它。
 
 返回[高级 I 导览](./index.md)。

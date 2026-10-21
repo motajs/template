@@ -44,20 +44,26 @@ export class GroundBlockHooks implements IMapLayerHooks {
 注册时找到目标图层，把实例挂到它上面：
 
 ```ts
-const map = state.maps.getMap('floor-1');
-if (!map) {
-    // afterLoad 时楼层未必已经构造出来，不要静默跳过
-    state.emitTip('floor-1 尚未构造，钩子未注册');
-    return;
-}
-const layer = [...map.layerList].find(l => l.alias === 'ground');
-if (!layer) {
-    state.emitTip('ground 图层不存在');
-    return;
-}
+import { ICoreState } from '@user/data-state';
+import { GroundBlockHooks } from './ground-block-hooks';
 
-// 注册到 layer，不是 map；保存控制器以便之后卸载
-const controller = layer.addHook(new GroundBlockHooks(state, layer));
+// 找到目标图层后注册；通常放在插件的 afterLoad 里
+export function registerGroundHooks(state: ICoreState) {
+    const map = state.maps.getMap('floor-1');
+    if (!map) {
+        // afterLoad 时楼层未必已经构造出来，不要静默跳过
+        state.emitTip('floor-1 尚未构造，钩子未注册');
+        return null;
+    }
+    const layer = [...map.layerList].find(l => l.alias === 'ground');
+    if (!layer) {
+        state.emitTip('ground 图层不存在');
+        return null;
+    }
+
+    // 注册到 layer，不是 map；返回控制器以便之后卸载
+    return layer.addHook(new GroundBlockHooks(state, layer));
+}
 ```
 
 `afterLoad` 时楼层未必已经由加载流程构造出来（取决于内容加载方式与插件顺序），`state.maps.getMap('floor-1')` 可能返回 `null`；这时至少要把原因报出来，或者把注册推迟到楼层创建之后。另外，`onUpdateBlock` 只在图块数字真的变化时触发，设置成相同数字不会触发。
@@ -65,8 +71,21 @@ const controller = layer.addHook(new GroundBlockHooks(state, layer));
 如果钩子要在构造时保持通用、注册时才确定图层，可以在 `awake` 里取控制器。`MapLayer` 的控制器是 `IMapLayerHookController`，带 `layer` 字段与 `getMapData()`：
 
 ```ts
-awake(controller: IMapLayerHookController): void {
-    // controller.layer 就是注册这个钩子的图层
+import { ICoreState } from '@user/data-state';
+import { IMapLayerHookController, IMapLayerHooks } from '@user/data-base';
+
+// 节选：awake 同样写在类里，通过控制器拿到注册它的图层
+export class UniversalBlockHooks implements IMapLayerHooks {
+    constructor(readonly state: ICoreState) {}
+
+    awake(controller: IMapLayerHookController): void {
+        // controller.layer 就是注册这个钩子的图层
+        console.log(controller.layer.alias);
+    }
+
+    onUpdateBlock(block: number, x: number, y: number): void {
+        this.state.emitTip(`图层更新：(${x}, ${y}) -> ${block}`);
+    }
 }
 ```
 
@@ -92,18 +111,24 @@ export class TargetLayerResizeHooks implements IGameMapHooks {
 注册到 `map`，不是 `layer`：
 
 ```ts
-const map = state.maps.getMap('floor-1');
-if (!map) {
-    state.emitTip('floor-1 尚未构造，钩子未注册');
-    return;
-}
-const targetLayer = [...map.layerList].find(l => l.alias === 'ground');
-if (!targetLayer) {
-    state.emitTip('ground 图层不存在');
-    return;
-}
+import { ICoreState } from '@user/data-state';
+import { TargetLayerResizeHooks } from './target-layer-resize-hooks';
 
-map.addHook(new TargetLayerResizeHooks(state, targetLayer));
+// 注册到 map，不是 layer
+export function registerTargetLayerHooks(state: ICoreState): void {
+    const map = state.maps.getMap('floor-1');
+    if (!map) {
+        state.emitTip('floor-1 尚未构造，钩子未注册');
+        return;
+    }
+    const targetLayer = [...map.layerList].find(l => l.alias === 'ground');
+    if (!targetLayer) {
+        state.emitTip('ground 图层不存在');
+        return;
+    }
+
+    map.addHook(new TargetLayerResizeHooks(state, targetLayer));
+}
 ```
 
 这里的比较用对象引用（`===`）。`onResizeLayer` 能拿到 layer，是因为 `GameMap.addLayer` 给每个图层装了内部转发器，把图层的 `onResize` 转发到地图级钩子并带上具体图层。调用 `map.resizeLayer(30, 30, true)` 时每个图层都会触发一次，你的处理只应在目标图层上生效。
@@ -113,11 +138,24 @@ map.addHook(new TargetLayerResizeHooks(state, targetLayer));
 `addHook` 会创建控制器、把钩子写入内部映射与列表、调用 `awake`，最后返回控制器。控制器最重要的方法是 `unload()`：
 
 ```ts
-const hook = new GroundBlockHooks(state, layer);
-const controller = layer.addHook(hook);
+import { ICoreState } from '@user/data-state';
+import { IMapLayer, IMapLayerHookController } from '@user/data-base';
+import { GroundBlockHooks } from './ground-block-hooks';
+
+// 注册，保存返回的控制器
+export function addGroundBlockHooks(
+    state: ICoreState,
+    layer: IMapLayer
+): IMapLayerHookController {
+    return layer.addHook(new GroundBlockHooks(state, layer));
+}
 
 // 之后需要撤掉时
-controller.unload();
+export function removeGroundBlockHooks(
+    controller: IMapLayerHookController
+): void {
+    controller.unload();
+}
 ```
 
 几条接口事实：
