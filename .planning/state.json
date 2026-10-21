@@ -47,12 +47,17 @@
       "number": "9",
       "name": "最小浏览器可运行版本",
       "status": "in_progress"
+    },
+    {
+      "number": "10",
+      "name": "文档重构",
+      "status": "in_progress"
     }
   ],
   "next": {
     "command": "/gsd:progress --next",
     "label": "Advance to the next step",
-    "reason": "Phase 9 of 9 · executing"
+    "reason": "Phase 10 of 10 · in progress（中级 + 高级 I 已收尾）"
   },
-  "updated_at": "2026-10-14T06:06:22.109Z"
+  "updated_at": "2026-10-20T00:00:00.000Z"
 }

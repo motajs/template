@@ -547,37 +547,46 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
 | 9. 最小浏览器可运行版本 | 15/16 | In Progress|  |
-| 10. 文档重构 | 0/20 | Planned | - |
+| 10. 文档重构 | 17/27 | In Progress | - |
 
 ### Phase 10: 文档重构
 
-**Goal:** 重构过老、结构不佳、新人难懂的项目文档，面向多背景读者（完全新手 / 不懂代码的作者 / 有基础的作者 / AI Agent）提供分层指南。本阶段采用「伞阶段 + 增量派发」：每次只规划执行一个已派发的具体小任务。**第一批已派发 = 中级教程（`docs/intermediate/`，24 篇中文 markdown）+ 在 VitePress 站点注册它们 + 旧内容清空（D-04 并入本批）**（D-01..D-44）。**第二批已派发 = 高级教程 I（`docs/advanced/`，7 篇数据端文档）+ 站点注册 + 独立读者人格审阅 + 用户主导修订循环**（D-53..D-57）。
-**Requirements**: （无专属需求 ID；以 `10-CONTEXT.md` 的 D-01..D-57 为需求基线，验收锚在 D-09：用户人工审阅 + 链接全部有效 + 构建通过）
+**Goal:** 重构过老、结构不佳、新人难懂的项目文档，面向多背景读者（完全新手 / 不懂代码的作者 / 有基础的作者 / AI Agent）提供分层指南。本阶段采用「伞阶段 + 增量派发」：每次只规划执行一个已派发的具体小任务。**第一批已派发 = 中级教程（`docs/intermediate/`，24 篇中文 markdown）+ 在 VitePress 站点注册它们 + 旧内容清空（D-04 并入本批）**（D-01..D-44）。**第二批已派发 = 高级教程 I（`docs/advanced/`，7 篇数据端文档）+ 站点注册 + 独立读者人格审阅 + 用户主导修订循环**（D-53..D-57）。**第三批已规划（暂定，待用户批准后执行）= 高级教程 II「深入定制」（`docs/advanced/ii/`，9 篇数据端文档）+ 站点注册 + 独立读者人格审阅 + 用户主导修订循环**（D-67）。
+**Requirements**: （无专属需求 ID；以 `10-CONTEXT.md` 的 D-01..D-67 为需求基线，验收锚在 D-09：用户人工审阅 + 链接全部有效 + 构建通过）
 **Depends on:** Phase 9
-**Plans:** 20 plans（第一批：中级教程 24 篇 + 站点注册 + D-09 复审修订；第二批：高级 I 7 篇 + 注册 + 读者审阅 + 用户修订循环）
+**Plans:** 17/27 completed（第一批：中级教程 24 篇 + 站点注册 + D-09 复审修订；第二批：高级 I 7 篇 + 注册 + 读者审阅 + 用户修订循环；第三批：高级 II 9 篇 + 注册 + 读者审阅 + 用户修订循环）。**未完成 10 个**：`10-06`（中级全批验收）、`10-11`（中级读者审阅）、`10-12`（中级最终验收）——其范围已被后续 D-09 修订与高级 I 期间的最终状态覆盖，缺独立 SUMMARY，待补跑或并入后续验收；`10-21`..`10-27`（高级 II）为暂定规划，待用户确认文件名、侧边栏分组名后执行。
 
 Plans:
-- [ ] 10-01-PLAN.md — Wave 0：旧内容清空 + 站点注册（删除 `docs/guide`、`docs/dev`、`docs/logger`、`docs/api` 与首页 `docs/index.md`；清理 `config.ts` 旧 nav/sidebar 键并解除 apiSidebar/api 依赖；`api.ts` 加缺失目录守卫；新增 nav 入口 + `sidebar['/intermediate/']` 4 组/24 条；报告并等待 checkpoint）
-- [ ] 10-02-PLAN.md — 概念与导航 4 篇（`data-vs-render` / `src-tour` / `code-basics` / `hooks`）
-- [ ] 10-03-PLAN.md — 基础接口 8 篇（`data-state-overview` … `flags`）
-- [ ] 10-04-PLAN.md — 战斗 9 篇（`combat-overview` + 8 篇子系统；N-1/N-2/N-3/N-7 留余地）
-- [ ] 10-05-PLAN.md — 其他 3 篇（`events` / `replay-commands` / `data-plugins`）
+- [x] 10-01-PLAN.md — Wave 0：旧内容清空 + 站点注册（删除 `docs/guide`、`docs/dev`、`docs/logger`、`docs/api` 与首页 `docs/index.md`；清理 `config.ts` 旧 nav/sidebar 键并解除 apiSidebar/api 依赖；`api.ts` 加缺失目录守卫；新增 nav 入口 + `sidebar['/intermediate/']` 4 组/24 条；报告并等待 checkpoint）
+- [x] 10-02-PLAN.md — 概念与导航 4 篇（`data-vs-render` / `src-tour` / `code-basics` / `hooks`）
+- [x] 10-03-PLAN.md — 基础接口 8 篇（`data-state-overview` … `flags`）
+- [x] 10-04-PLAN.md — 战斗 9 篇（`combat-overview` + 8 篇子系统；N-1/N-2/N-3/N-7 留余地）
+- [x] 10-05-PLAN.md — 其他 3 篇（`events` / `replay-commands` / `data-plugins`）
 - [ ] 10-06-PLAN.md — 全批验收（构建通过 + 链接有效 + 交付 D-09 人工审阅）
-- [ ] 10-07-PLAN.md — 目标性修正：D-09 复审 finding 1/3/4（讲清 `state` 获取、清除 legacy 泄漏 + 全批扫描、纠正修饰器定位；仅改 4 篇）
-- [ ] 10-08-PLAN.md — 战斗组引导式·入门友好重写 finding 2/5（`combat-overview` 讲清「计算后怪物 / 为什么要 buildup / 为什么分阶段」+ 7 篇子系统；8 篇）
-- [ ] 10-09-PLAN.md — 概念组 + 「其他」组引导式重写 finding 5（`src-tour`/`code-basics`/`hooks`/`events`/`replay-commands`/`data-plugins`；6 篇）
-- [ ] 10-10-PLAN.md — 基础接口组引导式重写 finding 5（`hero-items`/`hero-equipment`/`hero-location`/`map-structure`/`map-tiles`/`flags`；6 篇）
+- [x] 10-07-PLAN.md — 目标性修正：D-09 复审 finding 1/3/4（讲清 `state` 获取、清除 legacy 泄漏 + 全批扫描、纠正修饰器定位；仅改 4 篇）
+- [x] 10-08-PLAN.md — 战斗组引导式·入门友好重写 finding 2/5（`combat-overview` 讲清「计算后怪物 / 为什么要 buildup / 为什么分阶段」+ 7 篇子系统；8 篇）
+- [x] 10-09-PLAN.md — 概念组 + 「其他」组引导式重写 finding 5（`src-tour`/`code-basics`/`hooks`/`events`/`replay-commands`/`data-plugins`；6 篇）
+- [x] 10-10-PLAN.md — 基础接口组引导式重写 finding 5（`hero-items`/`hero-equipment`/`hero-location`/`map-structure`/`map-tiles`/`flags`；6 篇）
 - [ ] 10-11-PLAN.md — 读者视角审阅（persona 子代理）→ 问题清单 → 迭代修正（≤3 轮）→ 复审清零
 - [ ] 10-12-PLAN.md — 最终验收：修订后重跑全批验收 + D-09 复审（重跑 10-06 Task 2 门禁）
-- [ ] 10-13-PLAN.md — 高级 I 第一篇：声明式 vs 命令式接口（地基；旧样板命令式 vs 新样板声明式 + 通用模板）
-- [ ] 10-14-PLAN.md — 高级 I 第二篇：插件系统（自定义插件、插件互调、依赖排序、生命周期、id 稳定性与迁移）
-- [ ] 10-15-PLAN.md — 高级 I 第三篇：可存档内容（`ISaveableContent`、三级压缩、注册、存档顺序 / 执行器、跨对象引用、structured-cloneable）
-- [ ] 10-16-PLAN.md — 高级 I 第四、五篇：录像一致性（`@shouldReplay` / `@ignoreReplay`）+ data-common 的 Store（内容层原始数据、运行时只读）
-- [ ] 10-17-PLAN.md — 高级 I 第六篇：钩子深入（多对象 / 身份校验 / 复用 / 注册移除 / 异步钩子）
-- [ ] 10-18-PLAN.md — 高级 I 导览 + 站点注册（`docs/advanced/index.md`、`config.ts` 的 nav / sidebar、六篇互链收口 + 全量构建）
-- [ ] 10-19-PLAN.md — 高级 I 独立读者人格审阅（不同于中级人格）→ 问题清单 → 迭代修正（≤3 轮）→ 复审清零
-- [ ] 10-20-PLAN.md — 高级 I 用户主导修订循环 → 用户确认 → 最终格式 / 构建 / SUMMARY 收尾
+- [x] 10-13-PLAN.md — 高级 I 第一篇：声明式 vs 命令式接口（地基；旧样板命令式 vs 新样板声明式 + 通用模板）
+- [x] 10-14-PLAN.md — 高级 I 第二篇：插件系统（自定义插件、插件互调、依赖排序、生命周期、id 稳定性与迁移）
+- [x] 10-15-PLAN.md — 高级 I 第三篇：可存档内容（`ISaveableContent`、三级压缩、注册、存档顺序 / 执行器、跨对象引用、structured-cloneable）
+- [x] 10-16-PLAN.md — 高级 I 第四、五篇：录像一致性（`@shouldReplay` / `@ignoreReplay`）+ data-common 的 Store（内容层原始数据、运行时只读）
+- [x] 10-17-PLAN.md — 高级 I 第六篇：钩子深入（多对象 / 身份校验 / 复用 / 注册移除 / 异步钩子）
+- [x] 10-18-PLAN.md — 高级 I 导览 + 站点注册（`docs/advanced/index.md`、`config.ts` 的 nav / sidebar、六篇互链收口 + 全量构建）
+- [x] 10-19-PLAN.md — 高级 I 独立读者人格审阅（不同于中级人格）→ 问题清单 → 迭代修正（≤3 轮）→ 复审清零
+- [x] 10-20-PLAN.md — 高级 I 用户主导修订循环 → 用户确认 → 最终格式 / 构建 / SUMMARY 收尾
+- [ ] 10-21-PLAN.md — 高级 II 基础篇：自定义范围对象（`IRange` / 参数 / 绑定宿主）+ 静态与动态图块（含点事件与图块事件）
+- [ ] 10-22-PLAN.md — 高级 II 系统篇：勇士的装备系统（实例仓 / 修饰器 / 排序器 / `compareEquip` / 装备事件）+ 自定义录像指令（指令码 / `IReplayCommand` / 主动被动 / 沙盒）
+- [ ] 10-23-PLAN.md — 高级 II 流程与属性篇：自动寻路（只讲流程）+ 新增勇士属性（攻速 / 护甲接入伤害计算）
+- [ ] 10-24-PLAN.md — 高级 II 怪物篇：新增怪物属性 + 怪物上下文与战斗深入（buildup / 优先级 / 脏标记 / 伤害系统）
+- [ ] 10-25-PLAN.md — 高级 II 导览 + 侧边栏注册（`/advanced/ii/` 九篇、分组名待用户确认）+ 互链与全量构建
+- [ ] 10-26-PLAN.md — 高级 II 独立读者人格审阅（高代码能力人格，不同于高级 I）→ 问题清单 → 迭代修正（≤3 轮）→ 复审清零
+- [ ] 10-27-PLAN.md — 高级 II 用户主导修订循环 → 用户确认 → 最终格式 / 构建 / SUMMARY 收尾
 
 **说明：** 每篇中级教程遵循 `10-CONTEXT.md` D-21..D-44 的逐篇要点与阅读顺序（4/8/9/3）。**旧内容删除已并入本批（D-04，Wave 0 / 10-01）**：删除 `docs/guide/*`、`docs/dev/*`、`docs/logger/*`、`docs/api/*` 与首页 `docs/index.md`，并清理 `docs/.vitepress/config.ts` 的旧 `nav`/`sidebar` 键。文档改动为 `docs/intermediate/*.md`（新增）、`docs/.vitepress/config.ts` 与 `docs/.vitepress/api.ts`（缺失目录守卫，保留按包生成机制）。构建命令 `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`；`init.ts` 在 `docs/api/` 缺失时安全跳过。本机 PowerShell 禁止 `pnpm.ps1`，命令经 `cmd /c "..."` 执行。
 
 **高级 I 说明：** 第二批（10-13..10-20）只写**数据端**内容，不含渲染端；七篇文件名与侧边栏显示名以各计划 Task 0 的用户确认为准（D-13）。指向高级 II / III 的内容一律使用代码 span 或 HTML 注释占位，不写真实链接（D-47）。每篇保留「怎么验证」小节，并按 D-48 六步 / D-49 改内置优先 / D-50 模板独立 / D-51 落点与副作用 / D-52 加粗边界执行。构建命令同上；10-18 负责站点注册与全量链接收口，10-19 / 10-20 分别执行独立读者人格审阅与用户主导修订循环，**用户明确确认后方可收尾**（D-46 第 2 阶段 / D-57）。
+
+**高级 II 说明（暂定）：** 第三批（10-21..10-27）按 D-67 定位为「深入定制」难度层，只写**数据端**内容；拟建 `docs/advanced/ii/` 九篇（导览 + 8 个主题），文件名与侧边栏分组名以各计划 Task 0 的用户确认为准（D-13），当前建议分组名为「高级 II · 深入定制」。写作按 D-59 库文档风格（不套用中级六步）、D-60 简洁、D-61 主干与边界分离、D-62 代码块完整、D-63 模板顺序、D-64 只在需实现接口时给模板、D-65 注释充足、D-66 并列功能分开示例；不写中级特有的「改内置还是自己写」提示（D-58），新增系统优先插件（D-55）。渲染端、编辑器、状态栏与怪物图鉴按 D-47 用非断链占位；高级 III 只用代码 span 或 `TODO(advanced-III)` 注释。10-25 负责导览、站点注册与全量链接收口；10-26 使用比高级 I 更高的独立读者人格（能读懂引擎源码、想做系统级定制但不熟悉具体系统实现），10-27 执行用户主导修订循环，**用户明确确认后方可收尾**（D-46 第 2 阶段）。构建命令同上。

@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.0
-current_phase: 9
-current_phase_name: 最小浏览器可运行版本
+current_phase: 10
+current_phase_name: 文档重构
 status: executing
-stopped_at: Phase 08 complete, ready to plan Phase 1
-last_updated: "2026-10-09T06:58:38.694Z"
-last_activity: 2026-10-08
-last_activity_desc: Phase 08 complete, transitioned to Phase 1
+stopped_at: Phase 10 进行中：中级教程 24 篇 + 高级 I 7 篇已收尾；10-06/10-11/10-12 待补
+last_updated: "2026-10-20T00:00:00.000Z"
+last_activity: 2026-10-20
+last_activity_desc: 高级 I（docs/advanced 7 篇）完成并经用户确认收尾
 state_head: dbbcf533dce2f22078a82d26817f36b85865da62
 progress:
-  total_phases: 9
+  total_phases: 10
   completed_phases: 3
-  total_plans: 102
-  completed_plans: 97
+  total_plans: 122
+  completed_plans: 114
 milestone_name: milestone
 ---
 
@@ -24,16 +24,16 @@ milestone_name: milestone
 See: .planning/PROJECT.md (updated 2026-09-17)
 
 **Core value:** 引擎能完整跑通一部魔塔——开局到结局，存档、战斗、地图、事件、剧情全链路可玩。
-**Current focus:** Phase 08 — 测试重构与接口对齐
+**Current focus:** Phase 10 — 文档重构
 
 ## Current Position
 
-Phase: 9 (最小浏览器可运行版本) — READY TO EXECUTE
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-10-08 — Phase 08 complete, transitioned to Phase 1
+Phase: 10 (文档重构) — IN PROGRESS
+Plan: 第一批（中级教程 24 篇）与第二批（高级 I 7 篇）已收尾；10-06 / 10-11 / 10-12 待补
+Status: In Progress
+Last activity: 2026-10-20 — 高级 I 完成并经用户确认收尾
 
-Progress: [████░░░░░░] 38%
+Progress: Phase 10 · 17/20 plans（中级 + 高级 I 已收尾；总览 / 初级 / 高级 II·III / API / Agent 参考仍待推进）
 
 ## Performance Metrics
 
@@ -266,6 +266,7 @@ Recent decisions affecting current work:
 - Phases 4/5/6 marked obsolete (2026-10-08): 渲染适配与双布局 / Legacy 移植 / 单元测试 的原规划不再合理，由 Phase 9 承接；仅文本标注，未删除阶段目录、已执行 PLAN/SUMMARY 或代码
 - Phase 9 added (2026-10-08): 最小浏览器可运行版本（在已完成且 Node 可运行/回放验证的数据端之上完成渲染端框架，并验证可在浏览器上运行）；Depends on Phase 8
 - Phase 10 added (2026-10-14): 文档重构（重构过老、结构不佳、新人难懂的项目文档，面向新人/不懂代码的作者/有基础作者等多背景读者提供分层指南，并专门为 AI Agent 编写参考文档）；Depends on Phase 9
+- Phase 10 第一批（中级教程 24 篇 + 旧内容清空 + 站点注册 + D-09 修订 + 读者/用户修订循环）已完成并收尾（2026-10-20）；第二批（高级 I 7 篇 + 站点注册 + 独立读者审阅 + 用户 6 轮修订）已完成并经用户确认收尾（2026-10-20）。遗留 `10-06` / `10-11` / `10-12` 缺独立 SUMMARY，其范围已被后续修订覆盖
 
 ### Pending Todos
 
