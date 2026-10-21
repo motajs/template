@@ -227,4 +227,31 @@
 
 **状态：已处理**
 
+---
+
+## 第 6 轮
+
+**时间：** 2026-10-20
+**用户意见：**
+
+- `data-stores.md` 内容太少：要求讲「存的内容 + 接口」，结果每个 Store 只有两段文字。
+- 必须写清 `tileStore` 存的是 `ITileRawData`、常用成员有哪些，并用示例讲。
+- **Store 的示例不要写在一块**：每个 Store 单独写，示例与功能直接对应。
+- 适用于后续所有教程文档（杂类功能示例按功能分开写，D-66）。
+
+### 第 6 轮处置
+
+**修改方式：** 内联执行（执行器直接编辑），仅修改 `docs/advanced/data-stores.md` 与本职记录。
+
+| # | 处置 |
+|---|------|
+| 存的内容 + 接口太少 | 五个 Store 各扩为独立小节：先写存的数据类型，再列常用成员（字段含义用叙述性列表），然后讲自身查询 / 登记接口。`tileStore` 写明存 `ITileRawData`，逐项说明 `num` / `id` / `events` / `type` / `pass` / `eventPass`；`itemStore` 写明 `IItemRawData<IHeroAttr>` 与 `effect` / `equip`；`mapStore` 写明 `IMapRawData` 的 `map` / `layerAlias` / `events` 三层结构；`enemyStore` 写明 `IEnemyRawData<IHeroAttr>` 的 `attribute` / `special`；`eventStore` 写明存 `IReadonlyGameEvent` 实例及其 `trigger` / `rawEvent` / `compiled` / `execute`。 |
+| 每个 Store 单独示例（D-66） | 删除原先「一次读出五个 Store」的合并示例，改为五个独立示例：`inspectTile`（图块换算、定义、类型、默认事件、通行位）、`canUseItem`（道具定义、分类、`canUse`）、`readFloorTile`（地图宽度、行优先下标、图层别名、位置事件）、`previewEnemy`（怪物模板与特殊属性编号）、`runStoredEvent`（事件实例泛型与执行）。每个示例只使用对应 Store，并带解释性注释（D-65）。 |
+| 保留项 | 保留「Store 是什么」「为什么运行期只读」「边界与注意」、D-47 的 `高级 II · 加载与插件生命周期` 占位与 `<!-- TODO(advanced-II) -->`、D-55 相关指向与小结；未写 `__test__` 内容。 |
+| 边界整理（D-61） | `mapStore` 没有列出全部楼层的接口、查询需先判空、`tileStore.getEvent` 返回新 `Map` 等边界仍集中在文末「边界与注意」。 |
+
+**构建：** `pnpm exec prettier --write docs/advanced/data-stores.md` 后 `--check` 通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
+
+**状态：已处理**
+
 
