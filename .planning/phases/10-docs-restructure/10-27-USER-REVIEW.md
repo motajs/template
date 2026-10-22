@@ -51,3 +51,16 @@
 - U6-09：`equipment-system.md` 明确 `loadEvent` / `unloadEvent` 尚未实现，当前只是数据字段，也没有内置穿戴/卸下钩子。
 
 **验证：** `pnpm exec prettier --write`（含新文档）→ `pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 构建通过，无死链告警。
+
+### 批次 B（U6-10..U6-17）执行记录（2026-10-22）
+
+- U6-10：`custom-replay-command.md` 的 `ReplayCode` 示例不再列出内置录像码，改为一行注释省略；正文删去「内置的移动、瞬移、使用道具、装备都是主动录像」这类以内置行为举例的说法。
+- U6-11：被动录像改用「选择框」案例：主动步让选择框出现，选择框系统在框出现后通过 `getPassive()` 读取录像里的选择；不再用技能特效作被动示例。
+- U6-12：主动/被动推进收敛为「主动步实现 `execute`；被动步处理完必须 `next`，不调用则再次 `getPassive()` 仍是同一步」，删去 `next(Success/Ignored/Failed)` 的细分说明。
+- U6-13：补充被动步为什么必须紧跟主动步、且在主动步返回前被取走并 `next` 完；主动步需要被动步而下一步不是被动步时 `getPassive()` 返回 `null` 并报错。
+- U6-14：「注册」改为推荐写在插件的 `awake` 里，安装插件即可带上指令，只需补 `ReplayCode` 码；`initializeReplay` 只留不属于任何插件的引擎内容。
+- U6-15：`@shouldReplay` 改标在 `apply` 上，`open` 只是调用 `apply` 且带不可用时的提示与提前返回；正文说明为什么不必标在 `open`。
+- U6-16：删除「沙盒播放」整节（含 `ReplayReseter` / `playReplay` / 播放控制表）；验证段说明沙盒播放由样板内置、作者一般不用自己写，且必须启用录制。
+- U6-17：补充忘记 `next` 不会停住整条播放，只是不读下一个录像；主动步返回后沙盒会告警并跳过该被动步继续播放。
+
+**验证：** `node node_modules/prettier/bin/prettier.cjs --write docs/advanced/ii/custom-replay-command.md` → CRLF、单 H1；`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` 退出 0、`build complete`、无 dead link。

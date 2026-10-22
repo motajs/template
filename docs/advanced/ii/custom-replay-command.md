@@ -2,16 +2,16 @@
 
 高级 I 的[录像一致性](../replay-consistency.md)讲的是「已有行为该不该记」，回答方式是给方法加 `@shouldReplay`。还有一种情况它覆盖不到：行为本身不在引擎里，录像里没有对应的指令码，回放时根本无从执行。这时需要新增一条录像指令。
 
-本篇讲一条自定义指令从指令码、指令对象、注册、记录到沙盒回放的完整路径。新增指令码会修改 `packages-user` 下的引擎内容，升级时要预期合并成本；如果只是给已有行为补标记，回到[录像一致性](../replay-consistency.md)即可，不必新增指令。
+本篇讲一条自定义指令从指令码、指令对象、注册到记录的完整路径，并用选择框讲清主动步与被动步怎么配合。新增指令码会修改 `packages-user` 下的引擎内容，升级时要预期合并成本；如果只是给已有行为补标记，回到[录像一致性](../replay-consistency.md)即可，不必新增指令。
 
 ## 什么时候需要自定义指令
 
 判断标准回到那条核心原则：玩家直接产生、会影响最终成绩的行为必须可复现。
 
-- 行为已经由引擎内置指令覆盖（移动、瞬移、使用道具、装备、卸下），只缺记录，补 `@shouldReplay` 与 `record`。
-- 行为是玩家操作，但引擎没有对应指令（技能、商店交易、自定义交互），需要一条新指令，让回放时能把这一步重新执行。
+- 行为已经有引擎内置指令覆盖，只缺记录：给入口补 `@shouldReplay` 与 `record`。
+- 行为是玩家操作，但引擎没有对应指令（自定义交互、技能、商店交易等），需要一条新指令，让回放时能把这一步重新执行。
 
-中级教程的[录像指令](../../intermediate/replay-commands.md)已经讲过主动与被动、`IReplayCommand` 的主体结构；本篇不重复这些，直接进入「怎么把一条新指令接进引擎」。
+中级教程的[录像指令](../../intermediate/replay-commands.md)已经讲过主动与被动、`IReplayCommand` 的主体结构；本篇从指令码、指令对象和注册开始，把一条新指令接进引擎，并讲清被动步在回放时怎么被消费。
 
 ## 指令码是格式的一部分
 
@@ -20,30 +20,16 @@
 ```ts
 /** 录像指令码，数值属于录像格式的一部分 */
 export const enum ReplayCode {
-    /** 向上移动一步 */
-    Up,
-    /** 向右移动一步 */
-    Right,
-    /** 向下移动一步 */
-    Down,
-    /** 向左移动一步 */
-    Left,
-    /** 自动寻路瞬移至目标点 */
-    Teleport,
-    /** 使用道具 */
-    UseItem,
-    /** 装备物品 */
-    Equip,
-    /** 卸下装备 */
-    Unequip,
-    /** 使用技能（本篇新增） */
-    UseSkill,
-    /** 技能特效的被动步（本篇新增） */
-    SkillEffect
+    // ...已有录像码省略
+
+    /** 打开选择框（本篇新增） */
+    OpenChoice,
+    /** 玩家在选择框中的选择，紧跟主动步的被动步（本篇新增） */
+    ChoiceSelect
 }
 ```
 
-本篇新增两个码：`UseSkill` 是主动步，`SkillEffect` 是紧跟其后的被动步；两者都要在 `registerCommand` 里注册，否则沙盒按指令码查表时会中止播放。
+本篇新增两个码：`OpenChoice` 是主动步，`ChoiceSelect` 是紧跟其后的被动步；两者都要在 `registerCommand` 里注册，否则沙盒按指令码查表时会中止播放。
 
 新增一项意味着修改 `packages-user` 的引擎内容，而不是只改 `src`。`registerCommand` 收的是普通 `number`，跳过枚举直接写数字也能注册；但引擎之后分配新码时可能撞号，所以正式做法仍然是在枚举末尾追加。
 
@@ -77,13 +63,22 @@ function useUint16ReplayCodes(state: ICoreState): void {
 - `Failed`：这一步失败，播放中止；
 - `Ignored`：失败但可以忽略，控制台输出信息后继续。
 
-`finalize` 在两种时机被调用：下一步换了另一条指令，或整条录像已经播完。它没有参数，但**有返回值**：`Promise<ReplayCommandResult>`。返回 `Success` 继续，返回 `Ignored` 记录后继续，返回 `Failed` 会中止播放。需要跨步保存的数据要放在指令对象的成员里。典型用途是「连续多步移动后，统一启动一次动画」：每步只更新目标，最后一步结束时再提交。
+`finalize` 在两种时机被调用：下一步换了另一条指令，或整条录像已经播完。它没有参数，但**有返回值**：`Promise<ReplayCommandResult>`。返回 `Success` 继续，返回 `Ignored` 记录后继续，返回 `Failed` 会中止播放。需要跨步保存的数据要放在指令对象的成员里。典型用途是「连续多步操作后统一收尾」：每步只更新暂存状态，最后一步结束时再提交。
 
 ## 主动录像与被动录像
 
-`ReplayCommandType.Active` 的指令自己执行逻辑，是最常见的形式。内置的移动、瞬移、使用道具、装备都是主动录像。
+`ReplayCommandType.Active` 的指令自己执行逻辑，实现 `execute` 即可，是最常见的形式。
 
-`ReplayCommandType.Passive` 的指令不执行任何逻辑。沙盒在主动步执行期间把下一步暴露给 `IReplaySandbox.getPassive()`，由主动步取走参数，处理完后调用 `next(status)` 才会推进。适合「需要渲染端配合、耗时不可预测」的行为：数据端只负责给出参数，什么时候处理完由外部决定。
+被动步不执行自己的逻辑，它的参数要由知道「什么时候该用它」的那一方来取。最典型的例子是选择框：玩家打开选择框并选择一项。录像无法提前知道这里会弹出什么选择框、有哪些选项，只能等选择框出现后，由选择框系统自己读录像里的选择。
+
+回放时，主动步负责让选择框出现并等它结束；选择框系统在框出现后取被动步，用录下来的选择代替玩家点击，然后调用 `next` 推进。这样，选择框什么时候弹、弹出什么，都由当时运行的界面决定，录像只负责回答「玩家选了什么」。
+
+被动步有两个硬性约束：
+
+- **必须紧跟在一个主动步之后**。`getPassive()` 只在当前主动步执行期间把下一步暴露出来；一个主动步只对应一个紧随其后的被动步。
+- **必须在主动步完成前被取走并 `next` 完**。被动步一定源于某个主动操作：主动操作让界面出现，界面再读选择。主动步一旦返回，这一步就不会再作为被动步交给任何人；沙盒会告警并跳过它，等待这一步结果的界面也就永远等不到。所以不要把 `next` 留到主动步返回之后。反过来，主动步预期有被动步、但下一步不是被动步时，`getPassive()` 会返回 `null` 并报错。
+
+取到 handler 后只有一个推进动作：处理完调用 `next`。确实可能需要在多个地方分别取用，但每一处用完都要 `next`；不调用的话，再次 `getPassive()` 拿到的还是同一步。
 
 `getPassive()` 返回的是 `IReplayPassiveHandler | null`，结构为：
 
@@ -96,51 +91,101 @@ export interface IReplayPassiveHandler {
 }
 ```
 
-**`next(status)` 在这个 handler 上，不在 `IReplayCommand` 上，也不在 `getPassive()` 的返回值之外**。完整链路是：
+:::info 忘记 next 会怎样
+忘记 `next` 不会让整条录像停住，只是这一步没有读到下一个录像。主动步返回后，沙盒发现这条被动录像没被消费，会告警并跳过它，然后继续播放后面的录像。
+:::
 
-1. 玩家入口先 `record` 主动指令，再紧接着 `record` 被动指令——两个录像步必须相邻：
+下面这个选择框系统同时处理正常游玩与回放：
 
-    ```ts
-    this.state.replaySystem.record(ReplayCode.UseSkill, skillId, x, y);
-    // 紧随其后的被动步，给渲染端播放技能特效
-    this.state.replaySystem.record(ReplayCode.SkillEffect, skillId);
-    ```
+```ts
+import {
+    ReplayCode,
+    ReplayCommandResult,
+    shouldReplay
+} from '@user/data-common';
+import { ICoreState } from '@user/data-state';
 
-2. 回放时，主动指令的 `execute` 在自己的执行期间取被动 handler：
+/** 选择框服务：由作者自己的选择框系统实现，引擎不内置 */
+export interface IChoiceService {
+    /** 打开选择框并返回选择结果；回放时返回录像里的选择 */
+    open(choiceId: number): Promise<number>;
+}
 
-    ```ts
-    const passive = this.state.replaySystem.sandbox?.getPassive();
-    if (passive) {
-        // 参数在 passive.step.params；先确认它确实是预期的那条被动指令
-        const [effectSkill] = passive.step.params as [number];
-        console.log('播放技能特效', effectSkill);
-        // 渲染端处理完后推进；不调用 next 就不会进入下一步
-        await passive.next(ReplayCommandResult.Success);
+/** 选择框系统：正常游玩时等玩家点击，回放时读被动录像 */
+export class ChoiceSystem implements IChoiceService {
+    constructor(private readonly state: ICoreState) {}
+
+    async open(choiceId: number): Promise<number> {
+        if (!this.canOpen(choiceId)) {
+            // 不可用时直接提示并返回，不记录录像
+            this.state.emitTip('当前不能打开这个选择框');
+            return -1;
+        }
+
+        // 先让选择框出现；数据端只给出选项 id，显示交给渲染端
+        this.show(choiceId);
+
+        // 有沙盒说明正在回放，此时没有玩家点击，由选择框系统自己读被动录像
+        const sandbox = this.state.replaySystem.sandbox;
+        if (sandbox) {
+            const passive = sandbox.getPassive();
+            if (!passive) {
+                // 主动步预期有被动步，但下一步不是被动步；getPassive 已经报错
+                return -1;
+            }
+
+            // 被动步的参数就是玩家当时的选择
+            const [selected] = passive.step.params as [number];
+            // 用完必须 next，否则再次 getPassive 还是这一步
+            await passive.next(ReplayCommandResult.Success);
+            this.apply(choiceId, selected);
+            return selected;
+        }
+
+        // 正常游玩：等待玩家点击
+        const selected = await this.waitForPlayer(choiceId);
+        // 主动步与紧跟其后的被动步必须相邻
+        this.state.replaySystem.record(ReplayCode.OpenChoice, choiceId);
+        this.state.replaySystem.record(ReplayCode.ChoiceSelect, selected);
+        this.apply(choiceId, selected);
+        return selected;
     }
-    ```
 
-3. `next` 推进读取流并触发 `onStep`；重复调用 `getPassive()` 在推进前会拿到同一个 handler / 同一步。
+    /** 真正修改状态的地方，@shouldReplay 写在这里 */
+    @shouldReplay('Applying a choice should be replayed.')
+    apply(choiceId: number, selected: number): void {
+        // ...把选择结果写进游戏状态
+    }
 
-`next(Success)` 与 `next(Ignored)` 会在调用时立刻读入被动步之后的一步，并触发被动步的 `onStep`；推进发生在 `next` 里，不等主动步 `execute` 返回。`next(Failed)` 则只记录 code 72 错误、保持读取位置不变，它本身不会中止播放。
+    private canOpen(choiceId: number): boolean {
+        // ...判断当前能否打开这个选择框
+        return true;
+    }
 
-被动步的成败不直接决定回放是否继续；主动步 `execute` 的返回值才是决定因素：
+    private show(choiceId: number): void {
+        // ...渲染端弹出选择框
+    }
 
-- 主动步返回 `Success`（推荐）：播放继续。若被动步没有推进，下一轮 `replayStep` 会把这条未消费的被动步按 code 194 告警并跳过，播放继续但该步效果丢失；
-- 主动步返回 `Failed`：整条播放中止，即使被动步已经推进，后续步骤也不会执行。
+    private waitForPlayer(choiceId: number): Promise<number> {
+        // ...等待玩家点击并返回选项索引
+        return Promise.resolve(0);
+    }
+}
+```
 
-因此主动步在 `await passive.next(...)` 之后通常应返回 `Success`。`next` 的返回类型是 `Promise<void>`，主动步无法从它得知被动步是成功还是失败；如果某种被动失败必须中止回放，要在主动步里根据业务结果自行返回 `Failed`，不能依赖 `next(Failed)`。
+主动步的 `execute` 返回值决定播放是否继续；被动步的 `next` 只负责推进读取。通常应在 `await passive.next(...)` 之后返回 `Success`。
 
-被动指令本身只需要声明类型并注册，`execute` 不会被沙盒调用：
+被动步的指令对象只用来声明类型和参数，`execute` 不会被沙盒调用：
 
 ```ts
 import { ReplayCommandResult, ReplayCommandType } from '@user/data-common';
 import { BaseReplayCommand } from './commands';
 
-/** 技能特效的被动步：参数由主动步通过 getPassive 取走。 */
-export class ReplaySkillEffect extends BaseReplayCommand {
+/** 玩家在选择框中的选择：被动步 */
+export class ReplayChoiceSelect extends BaseReplayCommand {
     readonly type: ReplayCommandType = ReplayCommandType.Passive;
 
-    protected readonly name: string = 'skill-effect';
+    protected readonly name: string = 'choice-select';
     protected readonly paramTypes: readonly string[] = ['number'];
 
     async wrappedExecute(): Promise<ReplayCommandResult> {
@@ -150,9 +195,7 @@ export class ReplaySkillEffect extends BaseReplayCommand {
 }
 ```
 
-被动步必须紧跟在某个主动步之后，并在那个主动步的 `execute` 返回前被取走。没有及时消费的被动步不会让播放永远卡住：下一次 `replayStep` 发现它是 `Passive` 时会告警 code 194 并跳过，但这一步对应的效果就丢了。被动步对应的指令对象仍然要注册，沙盒要靠它判断 `type`；它的 `execute` 不会被调用。一个主动步只对应一个紧随其后的被动步，不要连续排两个。
-
-渲染端的播放表现按渲染端教程处理，本篇只写数据端。 <!-- TODO(renderer): 被动录像的渲染端消费 -->
+渲染端的播放表现按渲染端教程处理，本篇只写数据端。 <!-- TODO(renderer): 选择框的渲染端消费 -->
 
 ## 用基类减少样板
 
@@ -162,7 +205,7 @@ export class ReplaySkillEffect extends BaseReplayCommand {
 - `paramTypes`：参数类型名数组，取值只能是 `'number'`、`'string'`、`'boolean'`、`'bigint'`；
 - `wrappedExecute(step)`：真正的执行逻辑，不需要再校验参数类型。
 
-下面是一条 `ReplayUseSkill`：参数为 `[number skillId, number x, number y]`，技能不可用时返回 `Failed`。
+下面这条 `ReplayOpenChoice`：参数为 `[number choiceId]`，`open` 返回负数时判定为失败。
 
 ```ts
 import {
@@ -172,32 +215,21 @@ import {
 } from '@user/data-common';
 import { IStateSystem } from '@user/data-system';
 import { BaseReplayCommand } from './commands';
-
-/** 技能服务：由作者自己的技能系统实现，引擎不内置 */
-export interface ISkillService {
-    /** 判断技能能否在目标点使用 */
-    canUse(skillId: number, x: number, y: number): boolean;
-    /** 执行技能效果；回放时也走这里，注意不要在这里写录像 */
-    apply(skillId: number, x: number, y: number): void;
-}
+import { IChoiceService } from './choice';
 
 /**
- * 使用技能。
- * 参数顺序必须与 paramTypes 一致：技能 id、目标横坐标、目标纵坐标。
+ * 打开选择框。
+ * 参数：选择框 id。
  */
-export class ReplayUseSkill extends BaseReplayCommand {
+export class ReplayOpenChoice extends BaseReplayCommand {
     readonly type: ReplayCommandType = ReplayCommandType.Active;
 
-    protected readonly name: string = 'use-skill';
-    protected readonly paramTypes: readonly string[] = [
-        'number',
-        'number',
-        'number'
-    ];
+    protected readonly name: string = 'open-choice';
+    protected readonly paramTypes: readonly string[] = ['number'];
 
     constructor(
         state: IStateSystem,
-        private readonly skills: ISkillService
+        private readonly choices: IChoiceService
     ) {
         super(state);
     }
@@ -206,14 +238,15 @@ export class ReplayUseSkill extends BaseReplayCommand {
         step: IReplayStepHandler
     ): Promise<ReplayCommandResult> {
         // 参数已由基类校验过，这里可以直接断言类型
-        const [skillId, x, y] = step.params as [number, number, number];
+        const [choiceId] = step.params as [number];
 
-        // 技能不可用时不继续播放，避免后续步骤建立在错误状态上
-        if (!this.skills.canUse(skillId, x, y)) {
+        // 打开选择框；回放时选择框系统会在框出现后读取被动录像
+        const selected = await this.choices.open(choiceId);
+        if (selected < 0) {
+            // 没有读到选择，后续步骤无法继续
             return ReplayCommandResult.Failed;
         }
 
-        this.skills.apply(skillId, x, y);
         return ReplayCommandResult.Success;
     }
 }
@@ -221,239 +254,74 @@ export class ReplayUseSkill extends BaseReplayCommand {
 
 `BaseReplayCommand` 的 `execute` 会先校验参数再调用 `wrappedExecute`。因此不要在 `wrappedExecute` 里重复写 `typeof` 判断；参数个数或类型错了，基类已经返回 `Failed`。
 
-如果技能效果是异步的，要在 `wrappedExecute` 里 `await` 完再返回 `Success`，否则后续录像步可能在效果完成前就开始执行。
+如果打开选择框是异步的，要在 `wrappedExecute` 里 `await` 完再返回 `Success`，否则后续录像步可能在选择结果落地前就开始执行。
 
 ## 注册
 
-指令必须在沙盒开始播放之前注册。沙盒每一步都通过 `state.replaySystem.getCommand(code)` 查表；查不到时告警并中止播放。
-
-内置指令在 `src/data/replay/initialize.ts` 的 `initializeReplay` 中注册。新增一条指令，就在同一个函数里加一行：
+推荐把注册写进插件。插件在 `awake` 里注册自己带来的指令；别人安装这个插件时，指令会随插件一起就位，不需要再改 `initializeReplay`，只需要在 `ReplayCode` 里补上对应的码（如果这个码还不存在）。
 
 ```ts
 import { ReplayCode } from '@user/data-common';
-import { IDataPluginDefine, ICoreState } from '@user/data-state';
-import { ISkillService, ReplayUseSkill } from './commands';
+import { ICoreState, IDataPluginDefine } from '@user/data-state';
+import { ChoiceSystem, IChoiceService } from './choice';
+import { ReplayChoiceSelect, ReplayOpenChoice } from './commands';
 
 /**
- * 技能插件：既提供技能服务，也具备数据端插件生命周期。
- * 如果你的技能系统不是插件，换成自己的取得方式即可。
+ * 选择框插件：指令随插件一起注册。
+ * 把插件加进 src/data/plugin/list.ts 的 dataPlugins 后，它会随数据端一起初始化。
  */
-export interface ISkillPlugin extends IDataPluginDefine, ISkillService {}
+export class DataChoicePlugin implements IDataPluginDefine {
+    readonly id: string = 'data-choice-plugin';
+    readonly dataDeps: string[] = [];
 
-/**
- * 初始化录像指令。
- * 注册必须发生在第一次创建沙盒之前。
- */
-export function initializeReplay(state: ICoreState): void {
-    const replay = state.replaySystem;
+    /** 选择框服务：主动步通过它打开选择框 */
+    choice!: IChoiceService;
 
-    // ...内置指令的注册保持不变
+    awake(state: ICoreState): void {
+        this.choice = new ChoiceSystem(state);
 
-    const skillPlugin = state.getDataPlugin<ISkillPlugin>('skill');
-    if (skillPlugin) {
-        replay.registerCommand(
-            ReplayCode.UseSkill,
-            new ReplayUseSkill(state, skillPlugin.plugin)
+        // 注册必须发生在第一次创建沙盒之前；插件的 awake 满足这个时机
+        state.replaySystem.registerCommand(
+            ReplayCode.OpenChoice,
+            new ReplayOpenChoice(state, this.choice)
+        );
+        state.replaySystem.registerCommand(
+            ReplayCode.ChoiceSelect,
+            new ReplayChoiceSelect(state)
         );
     }
+
+    async initialize(): Promise<void> {}
+
+    async afterLoad(): Promise<void> {}
 }
 ```
 
-同一指令码只能注册一次。重复注册会告警（code 163）并保留先注册的对象，后注册的不会生效；因此不要在插件初始化与主初始化里各注册一遍。
-
-如果技能系统不是插件，就换成你自己的取得方式；只要保证注册发生在第一次 `createReplaySandbox` 之前即可。
+同一指令码只能注册一次。重复注册会告警（code 163）并保留先注册的对象，后注册的不会生效；因此不要在插件初始化与主初始化里各注册一遍。只有确实不属于任何插件的引擎内容，才放在 `src/data/replay/initialize.ts` 的 `initializeReplay` 里。
 
 ## 记录
 
-注册只让回放认识这条指令，录制仍要在行为入口写入。高级 I 已经讲过 `@shouldReplay` 的规则，这里只给与自定义指令配合的写法：
+注册只让回放认识这条指令，录制仍要在行为入口写入。选择框系统里，`open` 负责记录：先 `record` 主动步，再 `record` 紧跟其后的被动步，两个录像步必须相邻；回放时走沙盒分支，只读被动步，不再记录。
 
-```ts
-import { ReplayCode, shouldReplay } from '@user/data-common';
-import { ICoreState } from '@user/data-state';
+`@shouldReplay` 写在 `apply` 上，而不是 `open` 上：真正可能修改状态的是 `apply`，`open` 只是调用它；而且 `open` 里的 `if` 在不可用时会直接提示并返回，不会走到记录。把标记写在 `apply` 上，任何调用 `apply` 的路径都会被检查到。
 
-/** 技能系统：玩家入口写录像，回放入口只执行效果 */
-export class SkillSystem implements ISkillService {
-    constructor(private readonly state: ICoreState) {}
-
-    canUse(skillId: number, x: number, y: number): boolean {
-        // ...判断技能是否可用
-        return true;
-    }
-
-    @shouldReplay('Using a skill should be replayed.')
-    use(skillId: number, x: number, y: number): void {
-        if (!this.canUse(skillId, x, y)) return;
-
-        // 先记录，再执行；参数顺序必须与 paramTypes 一致
-        this.state.replaySystem.record(ReplayCode.UseSkill, skillId, x, y);
-        this.apply(skillId, x, y);
-    }
-
-    apply(skillId: number, x: number, y: number): void {
-        // ...真正的技能效果；回放时由 ReplayUseSkill 调用这里
-    }
-}
-```
-
-把「记录 + 执行」的玩家入口与「只执行」的回放入口分开，可以避免同一次技能被记两遍。如果某个被动触发的路径会调用带记录的入口，用 `disable()` 与 `revert()` 把那段包住，并且必须配对。
-
-## 沙盒播放
-
-`createReplaySandbox` 创建播放沙盒：
-
-```ts
-import { IReplayArray, IStateReseter } from '@user/data-common';
-import { ICoreState } from '@user/data-state';
-
-/**
- * 演示用重置器：把游戏恢复到录像开始前的状态。
- * 恢复逻辑由项目的新游戏或读档入口提供，通过构造函数注入。
- */
-export class ReplayReseter implements IStateReseter {
-    constructor(
-        private readonly restore: (save?: Map<string, unknown>) => void
-    ) {}
-
-    reset(save?: Map<string, unknown>): void {
-        // 传入存档时恢复到该存档；不传时回到新游戏初始状态
-        this.restore(save);
-    }
-}
-
-/**
- * 播放一条录像。
- * restore 由项目自己的读档或新游戏流程实现。
- */
-async function playReplay(
-    state: ICoreState,
-    route: IReplayArray,
-    restore: (save?: Map<string, unknown>) => void
-): Promise<void> {
-    const replay = state.replaySystem;
-
-    // 从创建沙盒开始就禁用录制：
-    // 创建时会立刻重置状态，播放时还会执行各条指令，这些都不应写回录像
-    replay.disable();
-    try {
-        // 创建沙盒时会立刻调用 reseter.reset(save)，把状态恢复到起始点
-        const sandbox = replay.createReplaySandbox({
-            route,
-            reseter: new ReplayReseter(restore),
-            // 从第几步开始播放，默认为 0
-            startIndex: 0
-        });
-
-        // 先挂结束钩子，再开始播放
-        const stopped = new Promise<void>(resolve => {
-            sandbox.addHook({ onStopReplay: () => resolve() });
-        });
-
-        sandbox.play();
-        await stopped;
-    } finally {
-        replay.revert();
-        replay.releaseSandbox();
-    }
-}
-```
-
-`reseter` 负责把游戏状态重置到录像的起点；不重置的话，回放会叠加在当前状态上，结果与原始游玩对不上。`createReplaySandbox` 在创建时就会调用一次 `reset`，不是在 `play` 时。
-
-`reset` 收到的 `save` 来自沙盒配置的 `save` 字段（`IReplaySandboxConfig.save`，可选）。`ReplaySystem.createReplaySandbox` 实际执行的是 `config.reseter.reset(config.save)`；不传 `save` 就是 `reset(undefined)`。如果录像要从某个存档点开始回放，把该存档读出的 `Map<string, unknown>` 传给 `save`，`reset` 就用它恢复起点；`ReplayReseter` 里注入的 `restore` 只是项目自己的「新游戏 / 读档」实现。
-
-播放控制由 `IReplaySandbox` 提供：
-
-| 成员            | 作用                                                        |
-| --------------- | ----------------------------------------------------------- |
-| `play()`        | 连续播放                                                    |
-| `step()`        | 单步播放，返回该步是否成功                                  |
-| `pause()`       | 暂停，返回的 Promise 在真正暂停后兑现                       |
-| `resume()`      | 从暂停恢复                                                  |
-| `stop()`        | 停止播放                                                    |
-| `getReplayed()` | 已读取的录像步数量，不含当前正在播放的一步                  |
-| `pausing`       | 是否处于暂停状态                                            |
-| `ended`         | 是否已经播放完毕                                            |
-| `playing`       | 是否处于播放状态                                            |
-| `getPassive()`  | 取下一步的 `IReplayPassiveHandler`，不是被动步时返回 `null` |
-
-`ended` 由连续播放的循环在结束时置为 `true`。只用 `step()` 一步步走到末尾时，沙盒会完成 `finalize` 并停止推进，但不会因此设置 `ended`；需要观察结束状态时，用 `play()` 或 `resume()` 跑完循环。
-
-`onStep` 钩子可以在每一步完成后观察进度。它接收当前步的 `command`、`params` 与 `index`；`step()` 与连续播放都会触发。
+把「记录 + 执行」的玩家入口与「只读取 / 只执行」的回放入口分开，可以避免同一次选择被记两遍。如果某个被动触发的路径会调用带记录的入口，用 `disable()` 与 `revert()` 把那段包住，并且必须配对。
 
 ## 怎么验证
 
-先准备固定地图与固定英雄属性；技能依赖地图时，这一步不能省。然后构造一条只含 `UseSkill` 的录像，分别验证单步与连续播放：
+录一段包含选择框的录像，再用样板内置的沙盒播放验证：回放时选择框会出现，并按录像里的选择自动选中，而不是等你点击；结束后检查选择带来的状态变化（例如 Flag 或道具数量）是否与录制时一致，并确认没有出现「选择录像缺失」的提示。
 
-```ts
-import { IReplayArray, IReplaySandbox, IStateReseter } from '@user/data-common';
-import { ReplayCode } from '@user/data-common';
-import { ICoreState } from '@user/data-state';
-
-/** 等待沙盒自然结束。 */
-function waitForReplayEnd(sandbox: IReplaySandbox): Promise<void> {
-    return new Promise(resolve => {
-        sandbox.addHook({ onStopReplay: () => resolve() });
-    });
-}
-
-/**
- * 验证 UseSkill：技能 1，目标 (5, 6)。
- * reseter 由调用方提供，负责把状态恢复到录像起点。
- */
-async function verifyUseSkill(
-    state: ICoreState,
-    route: IReplayArray,
-    reseter: IStateReseter
-): Promise<void> {
-    const replay = state.replaySystem;
-
-    // 只放一条技能录像
-    route.add(ReplayCode.UseSkill, [1, 5, 6]);
-
-    // 单步：确认这一步执行成功，且读取进度为 1
-    replay.disable();
-    try {
-        const single = replay.createReplaySandbox({ route, reseter });
-        const ok = await single.step();
-        console.log('单步结果', ok, '已播放', single.getReplayed());
-    } finally {
-        replay.revert();
-        replay.releaseSandbox();
-    }
-
-    // 连续播放：确认能自然结束
-    replay.disable();
-    try {
-        const player = replay.createReplaySandbox({ route, reseter });
-        const stopped = waitForReplayEnd(player);
-        player.play();
-        await stopped;
-        console.log('是否结束', player.ended);
-    } finally {
-        replay.revert();
-        replay.releaseSandbox();
-    }
-}
-```
-
-预期现象：
-
-- 单步调用返回 `true`，`getReplayed()` 为 `1`，技能效果（例如目标怪物掉血、勇士属性变化）已经发生；
-- 连续播放能走到结束，`ended` 为 `true`；
-- 整个过程中录像长度不变；若变长，说明播放期间没有禁用录制。
+播放时不要禁用录制。沙盒播放本身也是一遍真实运行；禁用录制的话，这一遍不会留下任何录像，既不能重播，也无法拿它和原录像对比。样板的播放入口已经处理好播放流程，作者一般不需要自己写。
 
 ## 边界与注意
 
 - **不要复用已删除的旧指令码**：数值属于录像格式，旧录像会按旧值解码。新语义一律追加新值。
 - **`Uint8` 下不要超过 255**：写入会截断，产生无法回放的录像。需要更多码时切 `Uint16`，并把它当成格式变更处理。
 - **参数类型必须与 `paramTypes` 一致**：只支持 `number`、`string`、`boolean`、`bigint`。传对象等无法编码的值会被丢弃，参数个数随之变化，基类会判为失败。
-- **被动步忘记 `next` 不会推进**：沙盒不会自己前进；重复调用 `getPassive()` 会得到同一个 handler / 同一步。被动步没有在主动步期间取走时，下一次 `replayStep` 会告警 code 194 并跳过它——播放不会永远卡住，但这一步的效果丢了。`next(Failed)` 同样不推进，也不会自行中止回放；中止与否取决于主动步 `execute` 随后返回的状态。
-- **`finalize` 返回 `Failed` 会中止播放**：它返回的是 `Promise<ReplayCommandResult>`，和 `execute` 一样会中断后续步骤，不要在里面吞掉错误。
-- **指令对象跨回放复用**：指令对象在注册时创建一次，之后每次回放都用同一个实例。成员变量不会自动清空；如果 `execute` 里累积了跨步状态，要在每次 `execute` 开头重置，或在 `finalize` 末尾清理，否则第二次回放会带着上一次的残留。
+- **被动步必须在主动步期间消费**：`getPassive()` 只在当前主动步执行期间暴露下一步；主动步返回后，未消费的被动步会被沙盒告警并按 code 194 跳过，等待它的代码会一直等下去。取到 handler 后一定要 `next`；忘记 `next` 不会让整条录像停住，只是不会读到下一个录像，沙盒随后会跳过这一步继续播放。
+- **`finalize` 返回 `Failed` 会中止播放**：它返回的是 `Promise<ReplayCommandResult>`，和 `execute` 一样会中断后续步骤，不要在里面吞掉错误。它需要跨步状态时，只能把数据保存在指令对象的成员里；指令对象在注册时创建一次，之后复用。
+- **指令对象跨回放复用**：成员变量不会自动清空；如果 `execute` 里累积了跨步状态，要在每次 `execute` 开头重置，或在 `finalize` 末尾清理，否则第二次回放会带着上一次的残留。
 - **重复注册不会覆盖**：同一指令码重复注册会告警（code 163）并保留先注册的对象。确认注册只发生一次。
 - **未知指令码会中止播放**：沙盒查不到指令时告警并停止，不会跳过继续。
-- **播放期间必须禁用录制**：否则回放执行的行为会写回同一条录像，并让读取流过期。用 `disable()` 与 `revert()` 包住播放，且保证配对。
-- **不要在播放期间修改 `route`**：追加、插入或删除都会让读取流过期，播放随即停止。
-- **`finalize` 需要跨步状态**：它没有参数，连续步骤的信息只能保存在指令对象的成员里；指令对象在注册时创建一次，之后复用。
 
 返回[高级 II 导览](./index.md)。
