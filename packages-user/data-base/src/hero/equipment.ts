@@ -293,18 +293,16 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
         const keys = new Set<SelectKey<THero, number>>();
 
         const modifiersA = stateA ? [...stateA.getModifiers()] : [];
-        const addedA: typeof modifiersA = [];
         for (const [name, modifier] of modifiersA) {
             const copy = modifier.clone();
             // @ts-expect-error 泛型无法推导
             clone.addModifier(name, copy);
-            addedA.push([name, copy]);
         }
         for (const [name] of modifiersA) {
             attrA[name] = clone.getFinalAttribute(name);
             keys.add(name);
         }
-        for (const [name, copy] of addedA) {
+        for (const [name, copy] of modifiersA) {
             // @ts-expect-error 泛型无法推导
             clone.deleteModifier(name, copy);
         }
@@ -319,13 +317,15 @@ export class HeroEquipment<THero> implements IHeroEquipment<THero> {
             attrB[name] = clone.getFinalAttribute(name);
             keys.add(name);
         }
-
-        // 第二次没必要再删除了，因为这个 clone 对象不会再被使用到
+        for (const [name, copy] of modifiersB) {
+            // @ts-expect-error 泛型无法推导
+            clone.deleteModifier(name, copy);
+        }
 
         // 然后收集键名并对比
         const diff: Partial<THero> = {};
         for (const key of keys) {
-            const final = this.attribute.getFinalAttribute(key);
+            const final = clone.getFinalAttribute(key);
             const valueA = (attrA[key] as number) ?? final;
             const valueB = (attrB[key] as number) ?? final;
             diff[key] = (valueA - valueB) as THero[SelectKey<THero, number>];
