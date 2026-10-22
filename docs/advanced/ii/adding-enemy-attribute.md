@@ -96,7 +96,7 @@ function loadEnemySave(state: ICoreState, save: Map<string, unknown>): void {
 }
 ```
 
-只补 `@system/enemy` 还不够：勇士属性也可能从旧档读入，两个存档键都要按各自的新字段做一次迁移。勇士侧的写法见[新增勇士属性](./adding-hero-attribute.md)的「旧存档迁移」。
+只补 `@system/enemy` 还不够：勇士属性也可能从旧档读入，两个存档键都要按各自的新字段做一次迁移。勇士侧的写法见[新增勇士属性的「旧存档迁移」](./adding-hero-attribute.md#旧存档迁移)。
 
 ## 读取与修改
 
@@ -123,7 +123,7 @@ function setArmor(view: IEnemyView<IEnemyAttr>): void {
 }
 ```
 
-直接改原始怪物后必须 `markDirty()`。少了这一步，`getComputedEnemy()` 仍然返回旧结果，伤害也不会变。更完整的刷新时机见[怪物上下文与战斗深入](./enemy-context-and-combat.md)。
+直接改原始怪物后必须 `markDirty()`。少了这一步，`getComputedEnemy()` 仍然返回旧结果，伤害也不会变。更完整的刷新时机见[怪物上下文与战斗深入的「局部刷新与全量重建」](./enemy-context-and-combat.md#局部刷新与全量重建)。
 
 ## 接入伤害计算
 
@@ -338,7 +338,7 @@ export class ArmorFinalEffect implements IEnemyFinalEffect<
 state.enemyContext.registerFinalEffect(new ArmorFinalEffect());
 ```
 
-内置的 `MainEnemyFinalEffect`（`src/data/enemy/final.ts`）已经在 `initializeEnemy` 里注册；自写效果是追加执行，不是替换。最终效果与光环、查询的时序关系见[怪物上下文与战斗深入](./enemy-context-and-combat.md)。
+内置的 `MainEnemyFinalEffect`（`src/data/enemy/final.ts`）已经在 `initializeEnemy` 里注册；自写效果是追加执行，不是替换。最终效果与光环、查询的时序关系见[怪物上下文与战斗深入的「与光环、查询、最终的交互」](./enemy-context-and-combat.md#与光环、查询、最终的交互)。
 
 ## 编辑器与图鉴
 

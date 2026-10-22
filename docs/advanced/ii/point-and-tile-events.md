@@ -63,7 +63,7 @@ async function moveTileAndObserveEvents(
 }
 ```
 
-`keepEvent` 只决定是否把源静态图块的图块事件复制到动态实例；不论取值如何，源静态图块的图块事件都会被清空。细节见[静态图块与动态图块](./static-vs-dynamic-tiles.md)的「双向转换」。
+`keepEvent` 只决定是否把源静态图块的图块事件复制到动态实例；不论取值如何，源静态图块的图块事件都会被清空。细节见[静态图块与动态图块的「双向转换」](./static-vs-dynamic-tiles.md#双向转换)。
 
 ## 事件视图接口
 

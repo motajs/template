@@ -206,7 +206,7 @@ async function verifyTileConversion(
 - 落点出现同数字的静态图块；
 - 如果落点已有静态图块，`toStaticIfSafe` 会返回 `null`，落点不会变化，动态图块仍停在落点。想看到完整结果，先把落点清空，或换一个空格测试。
 
-图块事件在转换中的复制结果由 `keepEvent` 决定，具体验证见[点事件与图块事件](./point-and-tile-events.md)。
+图块事件在转换中的复制结果由 `keepEvent` 决定，具体验证见[点事件与图块事件的「怎么验证」](./point-and-tile-events.md#怎么验证)。
 
 ## 边界与注意
 
