@@ -11,8 +11,6 @@ import {
     IHotkeySystem
 } from './type';
 
-// TODO: 优先级阻断
-
 interface IHotkeyScope {
     /** 作用域唯一标识符 */
     readonly symbol: symbol;
@@ -346,13 +344,15 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
         const index = this.holding.indexOf(key);
         this.holding.splice(index, 1);
 
+        const toEmit: IHotkeyCommandPending[] = [];
+
         // 需要快照
         for (const [command, pending] of new Map(this.holdingCmds)) {
             // 对于 KeyUp，如果有可以触发的，那么按规则触发
             if (command.mode === HotkeyEmitMode.KeyUp) {
                 const emit = this.matchKeyUp(pending.keys, key);
                 if (emit) {
-                    this.emit(pending);
+                    toEmit.push(pending);
                     this.holdingCmds.delete(command);
                 }
             } else {
@@ -377,6 +377,22 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
                         pending.keys = keys;
                     }
                 }
+            }
+        }
+
+        // 抬起事件要看优先级
+        toEmit.sort((a, b) => b.command.priority - a.command.priority);
+
+        let blocking = -Infinity;
+        for (const pending of toEmit) {
+            if (pending.command.priority < blocking) break;
+            if (pending.command.block) {
+                blocking = pending.command.priority;
+            }
+            if (pending.command.timeout === 0) {
+                this.emit(pending);
+            } else {
+                this.waitTimeout.add(pending);
             }
         }
 

@@ -53,7 +53,7 @@ export interface IHotkeyEmitInfo {
 }
 
 export interface IHotkeyCommandInit {
-    /** 按键指令优先级 */
+    /** 按键指令优先级，目前仅对抬起触发的按键生效 */
     readonly priority: number;
     /** 默认按键组合，可设置多组 */
     readonly defaults: KeyCode[][];
@@ -72,7 +72,7 @@ export interface IHotkeyCommandInit {
 export interface IHotkeyCommand {
     /** 按键指令的标识符 */
     readonly command: string;
-    /** 按键指令优先级，越高越先执行，如果同优先级，则无法保证顺序 */
+    /** 按键指令优先级，越高越先执行，如果同优先级，则无法保证顺序，目前仅对抬起触发的按键生效 */
     readonly priority: number;
     /** 触发后，是否阻断优先级比当前优先级更低的按键的触发 */
     readonly block: boolean;
