@@ -157,7 +157,6 @@ export class RingRange extends BaseRange<IRingRangeParam> {
 
 ```ts
 // RingRange 即上一节定义的自定义范围类
-// 范围对象提到模块级复用；引擎风格不建议在调用处内联 new
 const ringRange = new RingRange();
 
 const loc = state.hero.getLocation();
@@ -206,7 +205,6 @@ function collectRing(
 `scanRange` 只返回范围内的怪物，所以验证要摆好怪物，而不是只看格子。先以勇士为中心，在中心、曼哈顿距离 `1`、距离 `2` 的位置各放一只测试怪，再执行：
 
 ```ts
-// 同样复用模块级范围实例，不要在调用处内联 new
 const ringRange = new RingRange();
 
 state.enemyContext.bindHero(state.hero.getAttribute());

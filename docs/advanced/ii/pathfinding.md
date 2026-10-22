@@ -65,12 +65,12 @@ function bindPathfindingLayer(state: ICoreState): void {
 
 `IPathfindingResult` 只有两个字段：`status` 与 `path`。`path` 仅在状态为 `Success` 时非空。
 
-| 状态                             | 含义                                                               | 处理建议                       |
-| -------------------------------- | ------------------------------------------------------------------ | ------------------------------ |
-| `PathfindingStatus.Success`      | 找到路径                                                           | 读取 `path`，交给移动器        |
-| `PathfindingStatus.InvalidInput` | 输入不合法：未绑定移动器、图层、谓词或方向处理器，或起点不在地图内 | 检查绑定与起点坐标             |
-| `PathfindingStatus.NoPath`       | 从起点出发无法到达目标点                                           | 不要移动；先检查通行谓词与图层 |
-| `PathfindingStatus.TargetUnder`  | 目标点就在起点脚下                                                 | 不需要移动                     |
+| 状态                             | 含义                                                               | 处理建议                |
+| -------------------------------- | ------------------------------------------------------------------ | ----------------------- |
+| `PathfindingStatus.Success`      | 找到路径                                                           | 读取 `path`，交给移动器 |
+| `PathfindingStatus.InvalidInput` | 输入不合法：未绑定移动器、图层、谓词或方向处理器，或起点不在地图内 | 检查绑定与起点坐标      |
+| `PathfindingStatus.NoPath`       | 找不到可行路径，例如目标被怪物挡住                                 | 正常结果，不需要处理    |
+| `PathfindingStatus.TargetUnder`  | 目标点就在起点脚下                                                 | 不需要移动              |
 
 每一步是 `IPathfindingStep`，包含 `dir`（移动方向）、`from`（出发位置）与 `to`（到达位置）。`from` 与 `to` 都是只读的坐标对象；路径按起点到终点的顺序排列。
 
@@ -298,7 +298,7 @@ async function verifyPathfinding(
 }
 ```
 
-预期英雄沿最小损失路径到达目标点；目标不可达时 `status` 为 `NoPath`，不会发生移动。若状态是 `InvalidInput`，按顺序检查移动器、图层、通行谓词与方向处理器是否都已绑定。
+预期英雄沿最小损失路径到达目标点；目标不可达时 `status` 为 `NoPath`，不会发生移动，这是正常结果（例如被怪物挡住）。若状态是 `InvalidInput`，按顺序检查移动器、图层、通行谓词与方向处理器是否都已绑定。
 
 ## 边界与注意
 
@@ -306,7 +306,7 @@ async function verifyPathfinding(
 - **`moveTo` 与 `teleportTo` 只在 `Success` 时启动**：`NoPath`、`TargetUnder`、`InvalidInput` 都会返回 `null`。
 - **上一次移动未结束时返回 `null`**：连续调用 `moveTo` 前先等 `controller.onEnd`，或显式 `interrupt()`。
 - **目标点在脚下不会移动**：`find` 在起点与终点相同时直接返回 `TargetUnder`。
-- **目标格必须可达**：图只包含从起点沿可通行边能到达的节点，不可达区域不会进入图。
+- **`NoPath` 是正常结果**：图只包含从起点沿可通行边能到达的节点；目标被怪物挡住或不可达时返回 `NoPath`，不会移动，也不需要特殊处理。
 - **谓词的 `shouldHit` 会标记终端节点**：终端节点只能作为路径终点，不能作为中间点；目标点不可达时优先检查 `canPass` 与 `shouldHit` 的组合。
 - **换楼层要重新绑定**：`useMapLayer` 绑定的是具体图层对象，旧楼层失效后必须换成新楼层的图层。
 - **图层必须属于同一个数据端对象**：`useMapLayer` 会校验图层来源，不属于当前状态时告警并忽略这次绑定。

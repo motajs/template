@@ -90,7 +90,7 @@
 | U7-07 | `NoPath` 是正常输出，不是错误；被怪物挡着去不了很正常。当前「NoPath 处理建议」不对，只需说明「找不到可行路径」，无需处理 | `pathfinding.md` |
 | U7-08 | 假定编辑器已完成：不要写「编辑器就位前改文件、就位后用编辑器」。需要编辑器的地方只写「需要编辑器」标识，不讲没有编辑器时怎么做。所有 `.jsonc` 都由编辑器负责，涉及部分先写占位（长期规范 D-73） | 全部 |
 
-**状态：执行中**（批次 D 已完成 U7-01、U7-03、U7-04；其余待执行）
+**状态：第 2 轮已全部处理**（U7-01..U7-08）
 
 ### 批次 D（U7-01、U7-03、U7-04）执行记录（2026-10-22）
 
@@ -101,4 +101,14 @@
 **待报告（D-72）：** `mapLayer.transferToDynamic` 的方法注释称「不论是否保留，此格的静态图块事件都会被清空」，但当前实现仅在 `keepEvent` 为 `true` 的分支内调用 `staticTile.tileEvent().clear()`；`keepEvent` 为 `false` 时，若该坐标的静态图块实例已存在，其事件不会被清空。现有单测未覆盖「先 `getTile` 再以 `false` 转换」的情形，因此未暴露。文档按注释书写。
 
 **验证：** `node node_modules/prettier/bin/prettier.cjs --write` 两篇文档 → CRLF、单 H1；`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` 退出 0、`build complete in 19.04s`、无 dead link。
+
+### 批次 E（U7-02、U7-05、U7-06、U7-07、U7-08）执行记录（2026-10-22）
+
+- U7-02：`custom-range.md` 删去「范围对象提到模块级复用；引擎风格不建议在调用处内联 new」与「同样复用模块级范围实例，不要在调用处内联 new」两处说明性注释；代码仍保留模块级常量写法。
+- U7-05：`custom-replay-command.md` 删去位宽整节（`Uint8` / `Uint16` 切换、`setCommandWidth` 示例与格式变更说明），改为一句「指令码默认能容纳 255 个，99.9% 的项目都用不完；若确实可能超过，参考 `高级 III · 录像格式与指令码位宽`」；边界条目同步删除。
+- U7-06：选择框只保留为被动步的概念示例，并注明一般由样板内置、作者通常不需要自己实现；代码示例恢复为技能示例（`UseSkill` / `SkillEffect`、`ReplayUseSkill`、`ReplaySkillEffect`、`DataSkillPlugin`、`SkillSystem`），注册仍在插件 `awake`，`@shouldReplay` 仍在 `apply`。
+- U7-07：`pathfinding.md` 的 `NoPath` 由「错误 / 先检查通行谓词与图层」改为「找不到可行路径，例如被怪物挡住；正常结果，不需要处理」；验证段与边界条目同步。
+- U7-08/D-73：`adding-hero-attribute.md` 与 `adding-enemy-attribute.md` 删除「编辑器就位前 / 接入前 / 在它们实现之前 / 尚未接入」等过渡说法；`core.jsonc`、`enemy.jsonc`、默认模板与装备内容的示例改为 `> **需要编辑器**：...` 占位；编辑器与状态栏 / 图鉴章节只保留「需要编辑器」标识。
+
+**验证：** `node node_modules/prettier/bin/prettier.cjs --write` 五个文件 → CRLF、单 H1；`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` 退出 0、`build complete in 14.56s`、无 dead link。
 

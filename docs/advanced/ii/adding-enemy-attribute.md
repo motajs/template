@@ -2,7 +2,7 @@
 
 怪物属性和勇士属性一样，不只是数据表里多一列。属性对象要在接口、默认模板、内容数据与伤害计算之间保持一致；只在接口里加字段，读取处会拿到 `undefined`，参与运算后变成 `NaN`。新增属性真正要补的，是这条链路上的每一处。
 
-本篇以攻速（`atkSpeed`，怪物每回合的伤害按百分比缩放）与护甲（`armor`，怪物受到的伤害按百分比减免）为例，走完「改接口 → 补数据 → 读取与修改 → 接入伤害、光环、查询与最终效果」的数据端流程。它与[新增勇士属性](./adding-hero-attribute.md)构成对照：勇士属性偏重修饰器与装备，怪物属性偏重上下文构建时的计算顺序。编辑器新增属性项与怪物图鉴属于对应端的实现，本篇只留占位。
+本篇以攻速（`atkSpeed`，怪物每回合的伤害按百分比缩放）与护甲（`armor`，怪物受到的伤害按百分比减免）为例，走完「改接口 → 补数据 → 读取与修改 → 接入伤害、光环、查询与最终效果」的数据端流程。它与[新增勇士属性](./adding-hero-attribute.md)构成对照：勇士属性偏重修饰器与装备，怪物属性偏重上下文构建时的计算顺序。编辑器新增属性项与怪物图鉴属于对应端的实现，需要编辑器的部分只留占位。
 
 ## 怪物属性在哪里
 
@@ -31,9 +31,9 @@ export interface IEnemyAttr {
 
 具体数值来自 `IEnemyRawData.attribute`：怪物模板由 `num`（图块数字）、`attribute`（属性对象）与 `special`（特殊属性）组成。默认模板写在 `src/content/defaults/enemy.jsonc`，实际内容写在 `src/content/enemy.jsonc`。内容文件里每个怪物条目都有一份自己的 `attribute`，不会与默认模板合并。
 
-默认模板在运行时不会被用来补全内容条目：加载器只是把它以 `enemy-default` 的标识读进配置表，供编辑器/校验端新建条目、核对字段形状；`enemyStore` 构建怪物时只读 `enemy.jsonc` 里的条目。因此它既不是新游戏内容的兜底值，也不会参与读档迁移。编辑器接入前，可以把它当作字段清单与类型示例。
+默认模板在运行时不会被用来补全内容条目：加载器只是把它以 `enemy-default` 的标识读进配置表，供编辑器/校验端新建条目、核对字段形状；`enemyStore` 构建怪物时只读 `enemy.jsonc` 里的条目。因此它既不是新游戏内容的兜底值，也不会参与读档迁移。
 
-`guard` 与其他字段不同：它是运行时由支援光环写入的集合（`GuardAura.apply` 会把来源怪物视图 `add` 进去），不是内容文件里手填的普通数值。改接口时不要把它当成内容字段，也不要在 `enemy.jsonc` 里补它。
+`guard` 与其他字段不同：它是运行时由支援光环写入的集合（`GuardAura.apply` 会把来源怪物视图 `add` 进去），不是内容文件里手填的普通数值。改接口时不要把它当成内容字段，也不要通过编辑器给它填值。
 
 ## 改接口
 
@@ -56,53 +56,19 @@ export interface IEnemyAttr {
 
 ## 补数据
 
-接口增加字段后，默认模板与每一条怪物内容都要补齐。默认模板 `src/content/defaults/enemy.jsonc` 的 `attribute` 是单个对象：
+接口增加字段后，默认模板与每一条怪物内容都要补齐。默认模板 `src/content/defaults/enemy.jsonc` 的 `attribute` 是单个对象。
 
-```jsonc
-{
-    "num": "@required",
-    "attribute": {
-        "name": "新怪物",
-        "hp": 0,
-        "atk": 0,
-        "def": 0,
-        "money": 0,
-        "exp": 0,
-        "point": 0,
-        "atkSpeed": 100,
-        "armor": 0
-    },
-    "special": {}
-}
-```
+> **需要编辑器**：在默认怪物模板的 `attribute` 中补齐 `atkSpeed` 与 `armor`。
 
-`src/content/enemy.jsonc` 是一个数组，每个怪物条目也要补同样的两个键：
+`src/content/enemy.jsonc` 是一个数组，每个怪物条目也要补同样的两个键。
 
-```jsonc
-[
-    {
-        "num": 130,
-        "attribute": {
-            "name": "怪王",
-            "hp": 100,
-            "atk": 120,
-            "def": 0,
-            "money": 10,
-            "exp": 0,
-            "point": 0,
-            "atkSpeed": 100,
-            "armor": 0
-        },
-        "special": {}
-    }
-]
-```
+> **需要编辑器**：在每条怪物内容的 `attribute` 中补齐 `atkSpeed` 与 `armor`。
 
-内容对象不会与默认模板合并，缺键就是缺键。读取到 `undefined` 后，`armor / 100` 与 `atkSpeed / 100` 都会变成 `NaN`，伤害与回合数随之失真。新增属性后，最好全局搜索一遍 `"attribute"`，确认每个模板入口都补齐。
+内容对象不会与默认模板合并，缺键就是缺键。读取到 `undefined` 后，`armor / 100` 与 `atkSpeed / 100` 都会变成 `NaN`，伤害与回合数随之失真。新增属性后，确认编辑器里的默认模板与每条怪物内容都补齐了这两个键。
 
 ### 旧存档迁移
 
-新游戏补 `enemy.jsonc` 与默认模板即可；旧存档不会自动补键。`state.loadState(save, compression)` 读取 `@system/enemy` 时，会把每个脏模板的 `attrs` 原样交给怪物模板，缺失的键不会从内容配置或默认模板回填。迁移点在调用 `loadState` 之前：
+新游戏通过编辑器补齐怪物内容与默认模板即可；旧存档不会自动补键。`state.loadState(save, compression)` 读取 `@system/enemy` 时，会把每个脏模板的 `attrs` 原样交给怪物模板，缺失的键不会从内容配置或默认模板回填。迁移点在调用 `loadState` 之前：
 
 ```ts
 import { IEnemyAttr, SaveCompression } from '@user/data-common';
@@ -340,7 +306,7 @@ export class PackAtkSpeedQuery implements IEnemyCommonQueryEffect<
 state.enemyContext.registerCommonQueryEffect(40, new PackAtkSpeedQuery());
 ```
 
-注册只决定「拥有 code 40 的怪物会执行哪条查询」，**不会让任何怪物自动拥有 40**。常规查询的执行条件是怪物身上有对应特殊属性：在 `src/content/enemy.jsonc` 的 `special` 里写 `"40": ...`，或在运行时用 `enemy.addSpecial(...)` 添加。只注册效果、不给怪物 code，查询一次也不会触发。
+注册只决定「拥有 code 40 的怪物会执行哪条查询」，**不会让任何怪物自动拥有 40**。常规查询的执行条件是怪物身上有对应特殊属性：在编辑器里给怪物挂上特殊属性 40，或在运行时用 `enemy.addSpecial(...)` 添加。只注册效果、不给怪物 code，查询一次也不会触发。
 
 查询效果需要 `registerCommonQueryEffect` 注册；引擎的 `src/data/enemy/initialize.ts` **没有注册任何查询实现**，不注册就不会执行。如果要增删或改写目标拥有的特殊属性，应使用特殊查询 `IEnemySpecialQueryEffect`，写法见[怪物查询](../../intermediate/enemy-query.md)，本篇不重复。
 
@@ -378,12 +344,12 @@ state.enemyContext.registerFinalEffect(new ArmorFinalEffect());
 
 编辑器需要在怪物属性面板增加攻速与护甲两个输入项；怪物图鉴需要显示它们的当前值。两处都属于对应端的实现，不在本篇范围内：
 
-- `编辑器 · 新增怪物属性项`
+- `需要编辑器 · 新增怪物属性项`
 - `怪物图鉴`
 
 <!-- TODO(advanced-II): 编辑器属性项与怪物图鉴 -->
 
-数据端完成后，这两个入口只需要读取计算后怪物的 `atkSpeed` 与 `armor`。在它们实现之前，先用控制台或调试脚本确认数值正确。
+数据端完成后，这两个入口只需要读取计算后怪物的 `atkSpeed` 与 `armor`。
 
 ## 怎么验证
 
@@ -451,7 +417,7 @@ function verifyEnemyAttribute(
 
 ## 边界与注意
 
-- **接口、内容条目、默认模板都要补键**：接口决定类型，内容条目决定运行时取值，默认模板只供编辑器/校验对照。内容对象不会与默认模板合并，运行时缺键就是 `undefined`。
+- **接口、内容条目、默认模板都要补键**：接口决定类型，内容条目决定运行时取值，默认模板只供编辑器/校验对照；内容条目与默认模板由编辑器维护。内容对象不会与默认模板合并，运行时缺键就是 `undefined`。
 - **`guard` 不要写进内容**：它是运行时由支援光环维护的集合，手填会与运行时行为冲突。
 - **百分数统一用整数存储**：`20` 表示 20%，计算时再除以 `100`；不要一处存 `0.2`、另一处存 `20`。
 - **新增字段会进入怪物存档**：读旧档时缺失的键不会自动补齐，需要按上文「旧存档迁移」在 `state.loadState` 之前给默认值。
@@ -459,6 +425,6 @@ function verifyEnemyAttribute(
 - **直接改原始怪物要标脏**：`getModifiableEnemy()` 的修改不会自动同步，必须 `markDirty()` 后调用 `state.enemyContext.requestRefresh(view)`，再重新读取计算后怪物与伤害。
 - **护甲要夹在有效区间**：计算器先把护甲夹到 `0`–`100`；夹紧后 `≥ 100` 时勇士每回合伤害为 `0`、怪物无法被击败，负值会被夹到 `0`，不会放大伤害。
 - **攻速改动会影响回合数**：凡是依赖 `turn` 的逻辑（支援、先攻、状态持续时间）都要跟着复核，不能只改伤害数字。
-- **编辑器与图鉴尚未接入**：在对应端实现之前，不要假设属性会自动出现在界面上。
+- **编辑器与图鉴读取计算后怪物**：它们不属于本篇的数据端流程。
 
 返回[高级 II 导览](./index.md)。

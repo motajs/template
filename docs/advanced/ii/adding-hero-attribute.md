@@ -2,7 +2,7 @@
 
 勇士属性不只是数据表里多一列。一个属性会同时被类型常量、内容配置、修饰器、伤害计算、装备与界面读取；只在接口里加字段，读取处会拿到 `undefined`，参与运算后变成 `NaN`。新增属性真正要补的，是这条链路上的每一处。
 
-本篇以攻速（`atkSpeed`，每回合造成的伤害按百分比缩放）与护甲（`armor`，按百分比减免最终伤害）为例，走完「改接口 → 补默认值与初始值 → 读取与修饰 → 接入伤害计算」的数据端流程。编辑器负责新增属性项与内容配置，状态栏负责显示；这些都属于对应端的实现，本篇只留占位。
+本篇以攻速（`atkSpeed`，每回合造成的伤害按百分比缩放）与护甲（`armor`，按百分比减免最终伤害）为例，走完「改接口 → 补默认值与初始值 → 读取与修饰 → 接入伤害计算」的数据端流程。编辑器负责新增属性项与内容配置，状态栏负责显示；这些都属于对应端的实现，需要编辑器的部分只留占位。
 
 ## 新增属性要改哪五处
 
@@ -10,7 +10,7 @@
 | -------- | ---------------------------------------- | -------------------------------------- |
 | 类型     | `packages-user/data-common/src/types.ts` | 在 `IHeroAttr` 中增加字段              |
 | 默认值   | `packages-user/data-state/src/shared.ts` | 补齐 `HERO_DEFAULT_ATTRIBUTE`          |
-| 初始值   | `src/content/core.jsonc`                 | 补齐 `init.hero.attribute`             |
+| 初始值   | `src/content/core.jsonc`                 | 由编辑器补齐 `init.hero.attribute`     |
 | 计算接入 | `src/data/enemy/calculator.ts` 等读取处  | 让属性真正影响伤害或其他运算           |
 | 显示     | 编辑器与渲染端                           | 编辑器属性项、状态栏显示（本篇不实现） |
 
@@ -86,26 +86,11 @@ export const HERO_DEFAULT_ATTRIBUTE: IHeroAttr = {
 };
 ```
 
-实际进入游戏的初始值来自内容配置 `src/content/core.jsonc` 的 `init.hero.attribute`，由 `src/data/initialize.ts` 的 `afterLoad` 调用 `state.hero.createAttribute(coreConfig.init.hero.attribute)`，直接交给 `HeroAttribute` 构造。它不会与默认值合并，缺键就是缺键；`HERO_DEFAULT_ATTRIBUTE` 不会在运行时兜底：
+实际进入游戏的初始值来自内容配置 `src/content/core.jsonc` 的 `init.hero.attribute`，由 `src/data/initialize.ts` 的 `afterLoad` 调用 `state.hero.createAttribute(coreConfig.init.hero.attribute)`，直接交给 `HeroAttribute` 构造。它不会与默认值合并，缺键就是缺键；`HERO_DEFAULT_ATTRIBUTE` 不会在运行时兜底。
 
-```jsonc
-"attribute": {
-    "name": "勇士",
-    "level": 0,
-    "hp": 10000,
-    "atk": 100,
-    "def": 100,
-    "mdef": 0,
-    "mana": 0,
-    "manamax": 0,
-    "money": 0,
-    "exp": 0,
-    "atkSpeed": 100,
-    "armor": 0
-}
-```
+> **需要编辑器**：在 `core.jsonc` 的 `init.hero.attribute` 中补齐 `atkSpeed` 与 `armor`。
 
-这两项不是可选项。内容配置通常由编辑器维护；样板里的 `.jsonc` 只保留文件开头那段系统前缀注释，加载器会按前缀切开后直接 `JSON.parse`，所以后面不能再写注释。编辑器就位前可以直接改文件，就位后按编辑器的方式补字段。
+这两项不是可选项。`core.jsonc` 的 `init.hero.attribute` 由编辑器维护，必须补齐这两个键。
 
 若只在接口与默认值里加、忘了内容配置，`getBaseAttribute('atkSpeed')` 会返回 `undefined`，`atkSpeed / 100` 随之变成 `NaN`，伤害与回合数都会失真。
 
@@ -390,27 +375,9 @@ export class MainDamageCalculator implements IDamageCalculator<
 
 ## 与装备和道具的关系
 
-装备的 `value` 与 `percentage` 是按属性名索引的记录，新属性不需要额外注册。只要 `IHeroAttr` 里有这个数值字段，内容层的装备定义就能直接写（`category: 4` 即 `ItemCategory.Equipment`）：
+装备的 `value` 与 `percentage` 是按属性名索引的记录，新属性不需要额外注册。只要 `IHeroAttr` 里有这个数值字段，装备定义就能直接配置（`category: 4` 即 `ItemCategory.Equipment`）。
 
-```jsonc
-{
-    "num": 120,
-    "category": 4,
-    "name": "疾风剑",
-    "text": "攻击速度 +15%",
-    "hideInToolbox": false,
-    "equip": {
-        "slots": ["weapon"],
-        "animate": "equip",
-        "value": {},
-        "percentage": { "atkSpeed": 0.15 },
-        "loadEvent": null,
-        "unloadEvent": null
-    }
-}
-```
-
-内容层是 JSONC，直接写在 `src/content/item.jsonc` 里即可（同样由编辑器维护，开头之外不能写注释）。
+> **需要编辑器**：在装备内容里把 `percentage.atkSpeed` 设为 `0.15`。
 
 装备实例会把这些记录转成 `ValueModifier` 与 `PercentageModifier`，穿戴时挂到勇士属性，卸下时移除。基础攻速 `100` 配上 `percentage.atkSpeed = 0.15`，最终攻速就是 `115`。注意属性本身按百分数存储（`15` 表示 15%），而装备的 `percentage` 是倍率（`0.15` 表示 15%），两者写法不同。
 
@@ -420,17 +387,17 @@ export class MainDamageCalculator implements IDamageCalculator<
 
 编辑器需要在英雄属性面板增加攻速与护甲两个输入项，并负责维护 `core.jsonc` 里的内容配置；状态栏需要在合适的位置显示它们的当前值。这些都属于对应端的实现，不在本篇范围内：
 
-- `编辑器 · 新增英雄属性项`
-- `编辑器 · 内容配置`
+- `需要编辑器 · 新增英雄属性项`
+- `需要编辑器 · 内容配置`
 - `渲染端 · 状态栏`
 
 <!-- TODO(advanced-II): 编辑器属性项、内容配置与状态栏显示 -->
 
-数据端完成后，编辑器与状态栏只需要读取 `getFinalAttribute('atkSpeed')` 与 `getFinalAttribute('armor')`。在它们实现之前，先用控制台或调试脚本确认数值正确。
+数据端完成后，编辑器与状态栏只需要读取 `getFinalAttribute('atkSpeed')` 与 `getFinalAttribute('armor')`。
 
 ## 怎么验证
 
-先准备一只属性固定的怪物，避免光环、支援或随机因素干扰。把内容配置里的 `atkSpeed` 设为 `100`、`armor` 设为 `0`，读取最终属性，再穿上一件 +15% 攻速的装备，最后观察伤害变化：
+先准备一只属性固定的怪物，避免光环、支援或随机因素干扰。在编辑器里把内容配置的 `atkSpeed` 设为 `100`、`armor` 设为 `0`，读取最终属性，再穿上一件 +15% 攻速的装备，最后观察伤害变化：
 
 ```ts
 import { IEnemyAttr } from '@user/data-common';
@@ -462,7 +429,7 @@ function verifyHeroAttribute(
 - 穿上 +15% 攻速的装备后，最终攻速变为 `115`，同一只怪物的战斗回合数下降；
 - 把护甲调高后，`damage` 随护甲上升而下降，`turn` 不变。
 
-若最终攻速是 `NaN`，先检查 `core.jsonc` 的 `init.hero.attribute` 是否补了键；`HERO_DEFAULT_ATTRIBUTE` 只影响类型检查，补了它也不会在运行时兜底。若装备穿上后数值不变，检查装备定义的键名是否与接口字段完全一致。
+若最终攻速是 `NaN`，先检查编辑器里 `core.jsonc` 的 `init.hero.attribute` 是否补了键；`HERO_DEFAULT_ATTRIBUTE` 只影响类型检查，补了它也不会在运行时兜底。若装备穿上后数值不变，检查装备定义的键名是否与接口字段完全一致。
 
 ## 边界与注意
 
@@ -474,7 +441,7 @@ function verifyHeroAttribute(
 - **`save = true` 的修饰器要注册类型**：读档按 `type` 查构造器，未注册的修饰器会被静默跳过，数值看起来「读档后消失了」。
 - **护甲要夹在有效区间**：计算器先把护甲夹到 `0`–`100`；夹紧后 `≥ 100` 时最终伤害为 `0`，不是治疗，负值会被夹到 `0`，不会放大伤害。
 - **攻速改动会影响回合数**：凡是依赖 `turn` 的逻辑（支援、先攻、状态持续时间）都要跟着复核，不能只改伤害数字。
-- **编辑器与状态栏尚未接入**：在对应端实现之前，不要假设属性会自动出现在界面上。
+- **编辑器与状态栏读取最终属性**：它们不属于本篇的数据端流程。
 
 渲染端如何展示这两个属性不在本篇范围内。 <!-- TODO(renderer): 攻速与护甲的状态栏显示 -->
 
