@@ -6,17 +6,17 @@
 
 ## 两种事件的区别
 
-| 项目       | 点事件                                                                | 图块事件                             |
-| ---------- | --------------------------------------------------------------------- | ------------------------------------ |
-| 归属       | 坐标                                                                  | 图块实例                             |
-| 获取方式   | `layer.event(x, y)`、`layer.getPointEvent(x, y)`、`tile.pointEvent()` | `tile.tileEvent()`                   |
-| 换图块后   | 仍留在原坐标                                                          | 由 `set(num)` 恢复为该图块的默认事件 |
-| 图块移动后 | 不跟随                                                                | 跟随图块实例                         |
-| 典型用途   | 「勇士踩进这一格」「进入这一区域」                                    | 「可推动的石头自带的事件」           |
+| 项目       | 点事件                                                                | 图块事件                                  |
+| ---------- | --------------------------------------------------------------------- | ----------------------------------------- |
+| 归属       | 坐标                                                                  | 图块实例                                  |
+| 获取方式   | `layer.event(x, y)`、`layer.getPointEvent(x, y)`、`tile.pointEvent()` | `tile.tileEvent()`                        |
+| 换图块后   | 仍留在原坐标                                                          | 由 `tile.set(num)` 恢复为该图块的默认事件 |
+| 图块移动后 | 不跟随                                                                | 跟随图块实例                              |
+| 典型用途   | 「勇士踩进这一格」「进入这一区域」                                    | 「可推动的石头自带的事件」                |
 
 点事件属于**坐标**。同一坐标换掉图块、清空图块，点事件都还在。`layer.event(x, y)` 按坐标取可写视图；坐标不在地图内时返回 `null`。`layer.getPointEvent(x, y)` 不是视图，它只是 `event(x, y)?.get()` 的简写，返回只读映射，不能用来修改事件。
 
-图块事件属于**图块实例**。静态图块与动态图块各自持有一个事件视图，通过 `tile.tileEvent()` 读写。图块实例被销毁时，它的事件也随之消失；静态图块转动态、动态图块转静态时是否保留，由转换接口的 `keepEvent` 决定。
+图块事件属于**图块实例**。静态图块与动态图块各自持有一个事件视图，通过 `tile.tileEvent()` 读写。图块实例被销毁时，它的事件也随之消失。静态图块转动态时，`keepEvent` 决定是否把源实例的事件复制到动态实例；无论是否复制，源静态图块的事件都会被清空。动态图块转静态时，`keepEvent` 决定动态实例的事件是否写回静态图块。
 
 `tile.pointEvent()` 容易让人误会：它并不拥有事件，只是按图块**当前**的 `locator` 去取那个坐标的点事件视图。动态图块移动后，它读到的是新坐标的点事件，而不是出发地的事件。
 
@@ -25,7 +25,7 @@
 动态图块移动时，移动器只更新它的 `locator` 与图层索引，不会触碰事件：
 
 - **点事件不跟随**：事件仍按原坐标缓存。图块离开后，原坐标的点事件还在；新坐标的点事件与它无关。`dynamic.pointEvent()` 只是按新坐标重新查一次视图，所以移动后通常读到空事件。
-- **图块事件跟随**：事件保存在图块实例自己身上，`locator` 变了，事件视图不变。静态转动态时 `keepEvent` 为 `true`（默认）会把源实例的事件复制过来；动态转静态时同理。
+- **图块事件跟随**：事件保存在图块实例自己身上，`locator` 变了，事件视图不变。静态转动态时 `keepEvent` 为 `true`（默认）会把源实例的事件复制过来；不论取值如何，源实例的事件在转换后都会被清空。动态转静态时，`keepEvent` 决定是否把事件写回静态图块。
 
 ```ts
 import { FaceDirection } from '@user/data-common';
@@ -63,7 +63,7 @@ async function moveTileAndObserveEvents(
 }
 ```
 
-注意 `keepEvent` 为 `false` 时，静态图块的事件不会被复制，但源静态图块实例本身也不会被清空。这个不对称行为在[静态图块与动态图块](./static-vs-dynamic-tiles.md)的「双向转换」里有详细说明。
+`keepEvent` 只决定是否把源静态图块的图块事件复制到动态实例；不论取值如何，源静态图块的图块事件都会被清空。细节见[静态图块与动态图块](./static-vs-dynamic-tiles.md)的「双向转换」。
 
 ## 事件视图接口
 
@@ -85,7 +85,9 @@ async function moveTileAndObserveEvents(
 | `clear()`              | 清空当前事件                                       |
 | `markPure()`           | 把当前事件标记为新的参考基准                       |
 
-`set` 的 `event` 参数是**事件 id**，不是事件对象。这个 id 必须已经在 `state.eventStore` 中注册过（`state.eventStore.addEvent(id, event)`）；否则执行到这里时找不到对应事件。同一个优先级只能挂一个事件，重复设置会覆盖并告警 code 136。
+`set` 必须同时给出 `priority` 与 `event` 两个参数，没有只传优先级的写法，它也不会顺带把当前事件恢复为默认事件。`event` 是**事件 id**，不是事件对象。这个 id 必须已经在 `state.eventStore` 中注册过（`state.eventStore.addEvent(id, event)`）；否则执行到这里时找不到对应事件。同一个优先级只能挂一个事件，重复设置会覆盖并告警 code 136。
+
+要恢复图块的默认事件，用 `tile.set(num)` 或 `tile.restoreDefaultEvents()`；事件视图的 `reset()` 回到的是参考基准，不一定是图块的默认事件。
 
 `ref()` 与 `markPure()` 是样板内部的优化接口：前者暴露参考基准，后者把当前状态设为新的基准，存档压缩与脏标记靠它们工作。一般不要调用，除非你清楚自己在做什么。日常读写只需要 `get`、`set`、`delete`、`clear`。
 
@@ -136,7 +138,7 @@ function setTileEvent(
     const tile = layer.getTile(x, y);
     if (!tile) return;
 
-    // 优先级 10；set(num) 会把它重置为该图块的默认事件
+    // 优先级 10；同一优先级已有事件时覆盖并告警
     tile.tileEvent().set(10, eventId);
     console.log(tile.tileEvent().get(10)); // eventId
 }
@@ -224,7 +226,7 @@ function verifyEventPersistence(layer: IMapLayer, x: number, y: number): void {
 
 - **点事件与图块事件不是同一张表**：同一格可以同时有优先级 `5` 的点事件与优先级 `5` 的图块事件，两者互不冲突；冲突只发生在同一个事件视图内部。
 - **`getPointEvent` 返回只读映射**：它不能修改事件；要写入请用 `layer.event(x, y)` 或 `tile.pointEvent()`。
-- **`set(num)` 会重置图块事件**：静态图块与动态图块的 `set(num)` 都会调用 `restoreDefaultEvents()`。想保留自定义事件，应在 `set` 之后再挂，或用 `syncTileEvent` 从别的实例复制。
+- **`tile.set(num)` 会重置图块事件**：静态图块与动态图块的 `set(num)` 都会调用 `restoreDefaultEvents()`。想保留自定义事件，应在 `set` 之后再挂，或用 `syncTileEvent` 从别的实例复制。
 - **`layer.setBlock` 不会重置图块事件**：它只改图块数字；同一坐标缓存着的静态图块实例会继续持有旧事件。要重置事件，用 `tile.set(num)` 或 `tile.restoreDefaultEvents()`。
 - **`syncTileEvent` 会覆盖目标**：它先清空目标再复制，目标原有的图块事件不会保留。
 - **动态图块移动后 `pointEvent()` 读的是新坐标**：想确认出发地的事件，直接用 `layer.getPointEvent(oldX, oldY)`，不要用移动后的图块去反查。

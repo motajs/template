@@ -39,7 +39,7 @@ class StaticTile {
 | 同格多个 | 每格最多一个   | 可以有多个                        |
 | 转换     | `toDynamic()`  | `toStatic()` / `toStaticIfSafe()` |
 
-`set(num)` 会把图块换成另一个数字，并把**图块事件**重置为该图块定义的默认事件。静态图块与动态图块都是如此；如果你在 `set` 之前挂过自定义图块事件，换图块后需要重新设置。
+`tile.set(num)` 会把图块换成另一个数字，并把**图块事件**重置为该图块定义的默认事件。静态图块与动态图块都是如此；如果你在 `set` 之前挂过自定义图块事件，换图块后需要重新设置。
 
 ## 创建与获取
 
@@ -84,12 +84,12 @@ function inspectLayer(layer: IMapLayer): void {
 3. 用这个数字创建一个动态图块；
 4. 按 `keepEvent` 决定是否把原静态图块的**图块事件**复制到动态图块。
 
-`keepEvent` 默认是 `true`。两种取值对源静态图块的影响并不对称：
+`keepEvent` 默认是 `true`，它只决定是否把原静态图块的**图块事件**复制到动态实例；**不论取值如何，源静态图块的图块事件都会被清空**：
 
 - `true`：先把源静态图块的图块事件复制到动态实例，再调用 `staticTile.tileEvent().clear()` 清空源实例的事件；
-- `false`：动态实例按图块定义重建默认事件，但**源静态图块实例完全不被触碰**，它缓存里原来的图块事件仍然保留。
+- `false`：动态实例按图块定义重建默认事件，源实例的事件同样被清空。
 
-因此「不保留」不等于「源事件被清空」。之后如果又往这一格写静态图块，`layer.setBlock(num, x, y)` 不会重置该坐标缓存实例的事件（只有 `StaticTile.set(num)` 会调用 `restoreDefaultEvents()`），旧的图块事件就可能被新图块继承。想确保干净，转换后用 `source.tileEvent().clear()` 或 `source.restoreDefaultEvents()` 显式清一次，之后再用 `tile.set(num)` 换图块。
+因此转换完成后，原坐标缓存的静态图块实例不再持有原来的自定义事件；之后再往这一格写静态图块，也不会带出旧事件。
 
 ```ts
 import { IMapLayer } from '@user/data-base';
@@ -144,11 +144,17 @@ async function shiftRight(
 }
 ```
 
+### 移动器 mover
+
+`transferToDynamic` 得到的动态图块已经带有自己的 `mover`，之后的位置变更都由它发起；`step` 只是 mover 上的单步便捷入口。`mover` 的接口、速度与路径配置、`onEnd` 等待等细节属于高级 I 的内容，见 `高级 I · 移动 Mover`，本篇不重复。
+
+<!-- TODO(advanced-I): 移动 Mover -->
+
 ### moveBlock 简写
 
-`layer.moveBlock(x, y, direction, count?, time?, keepEvent?)` 是「转动态 → 移动 → 转回静态」的完整简写。它按顺序调用 `transferToDynamic`、`mover.speed(time).step(direction, count)`、等待移动结束、`transferToStatic`。
+`layer.moveBlock(x, y, direction, count?, time?, keepEvent?)` 是「转动态 → 移动 → 转回静态」的完整简写。它按顺序调用 `transferToDynamic`、`mover.speed(time).step(direction, count)`，再用 `mover.start()` 启动并等待 `onEnd`，最后调用 `transferToStatic`。
 
-它适合「把一块石头往某个方向推几格」这类简单场景，但无法配置移动过程中的钩子、分段路径或中途转向。需要这些能力时，按上一节手动操作 `mover`，不要用 `moveBlock`。
+它适合「把一块石头往某个方向推几格」这类简单场景，但无法配置移动过程中的钩子、分段路径或中途转向。需要这些能力时，直接操作 `mover`（见上一节「移动器 mover」），不要用 `moveBlock`。
 
 ### 转换的失败条件
 
@@ -205,7 +211,7 @@ async function verifyTileConversion(
 ## 边界与注意
 
 - **动态图块不写回图层数组**：图层数组只保存静态图块数字。判断某一格有没有动态图块要用 `getDynamicTilesAt` / `iterateDynamicTiles`，不要只读 `getBlock`。
-- **`keepEvent` 为 `false` 时事件不是「丢了」**：目标图块会回到该图块定义的默认事件，这是设计行为，不是转换失败。需要保留自定义事件就显式传 `true`，并在转换前确认源实例的事件已经设置好。
+- **`keepEvent` 为 `false` 时目标图块回到默认事件**：这是设计行为，不是转换失败。需要保留自定义事件就显式传 `true`，并在转换前确认源实例的事件已经设置好。
 - **同一格多个动态图块的顺序不保证**：`getDynamicTilesAt` 返回的是集合语义的迭代器；依赖先后顺序时，请先取出数组并自行排序。
 
 返回[高级 II 导览](./index.md)。

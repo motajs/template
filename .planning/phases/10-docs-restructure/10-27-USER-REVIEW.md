@@ -74,3 +74,31 @@
 - U6-22：`enemy-context-and-combat.md` 删去 `setFloor` / `resize` / `bindHero` 的手动置脏操作说明，改为「正常换图流程已处理好」；`getComputedEnemy()` 改为「读取时按需刷新」的说法；「局部刷新与全量重建」由 41 行压到 7 行（约 1/6），只保留「日常自动刷新、少数直接改模板才 `markDirty`、新光环需全量重建、`query()` 登记依赖」四点；收束示例与验证示例删去 `requestRefresh`，边界条目同步。
 
 **验证：** `node node_modules/prettier/bin/prettier.cjs --write` 三篇文档 → CRLF、单 H1；`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` 退出 0、`build complete in 18.09s`、无 dead link。
+
+---
+
+## 第 2 轮（2026-10-22，待执行）
+
+| # | 用户意见 | 落点 |
+|---|----------|------|
+| U7-01 | 事件视图说法有误：`eventView.set(num)` 不会重置为默认事件，它要求第二个 `event` 参数必填；该注释来源不明，需修正 | `point-and-tile-events.md`（及事件相关） |
+| U7-02 | 不要在文档里写「模块级复用 / 不要在调用处内联 new」这类说明；用户只是要求改写法，读者不需要知道这些细节 | `custom-range.md` |
+| U7-03 | `transferToDynamic` 的 `keepEvent` 说明有误：**以引擎方法注释为准**——「不论是否 keepEvent，源图块的图块事件都会被清空」。若注释与实现不一致，按注释写，并**向用户报告**（长期规范 D-72） | `static-vs-dynamic-tiles.md` |
+| U7-04 | 动态图块的 `mover` 未讲却讲了 `moveBlock`。应先用**引用**指向高级 I 的 mover 文档（不重复讲概念/接口），再讲 `moveBlock`；顺序必须 mover 在前、moveBlock 在后 | `static-vs-dynamic-tiles.md` |
+| U7-05 | 指令码位宽在高级 II 不需要讲，只提一嘴：99.9% 情况用不完 255 个指令码；如有极小概率超过，参考高级 III 指定文档。细节放高级 III | `custom-replay-command.md` |
+| U7-06 | 录像的典型例子「选择框」不是让你改成代码示例；原来的代码示例很好，改回去。选择框一般内置 | `custom-replay-command.md` |
+| U7-07 | `NoPath` 是正常输出，不是错误；被怪物挡着去不了很正常。当前「NoPath 处理建议」不对，只需说明「找不到可行路径」，无需处理 | `pathfinding.md` |
+| U7-08 | 假定编辑器已完成：不要写「编辑器就位前改文件、就位后用编辑器」。需要编辑器的地方只写「需要编辑器」标识，不讲没有编辑器时怎么做。所有 `.jsonc` 都由编辑器负责，涉及部分先写占位（长期规范 D-73） | 全部 |
+
+**状态：执行中**（批次 D 已完成 U7-01、U7-03、U7-04；其余待执行）
+
+### 批次 D（U7-01、U7-03、U7-04）执行记录（2026-10-22）
+
+- U7-01：`point-and-tile-events.md` 删去「`set(num)` 会重置为默认事件」的错误注释，改为「同一优先级已有事件时覆盖并告警」；正文明确 `ILayerEventView.set(priority, event)` 两个参数都必填、不会顺带恢复默认事件，并说明恢复默认事件应使用 `tile.set(num)` / `tile.restoreDefaultEvents()`。表内与边界条目中的 `set(num)` 统一写作 `tile.set(num)`，避免与事件视图的 `set` 混淆。
+- U7-03：`static-vs-dynamic-tiles.md` 按 `IMapLayer.transferToDynamic` 的方法注释改写（D-72）：`keepEvent` 只决定是否把源静态图块的图块事件复制到动态实例，**不论取值如何，源静态图块的图块事件都会被清空**；删去原「`false` 时源实例完全不被触碰、旧事件仍保留」的不对称说法。`point-and-tile-events.md` 中同一处描述与交叉引用同步修正，避免两篇互相矛盾。
+- U7-04：`static-vs-dynamic-tiles.md` 在 `moveBlock` 之前新增「移动器 mover」小节，用 D-47 非断链占位 `高级 I · 移动 Mover` 指向待补的高级 I 文档，不重复 mover 的概念与接口；随后才讲 `moveBlock`，并补上 `mover.start()` / `onEnd` 的实际调用顺序。
+
+**待报告（D-72）：** `mapLayer.transferToDynamic` 的方法注释称「不论是否保留，此格的静态图块事件都会被清空」，但当前实现仅在 `keepEvent` 为 `true` 的分支内调用 `staticTile.tileEvent().clear()`；`keepEvent` 为 `false` 时，若该坐标的静态图块实例已存在，其事件不会被清空。现有单测未覆盖「先 `getTile` 再以 `false` 转换」的情形，因此未暴露。文档按注释书写。
+
+**验证：** `node node_modules/prettier/bin/prettier.cjs --write` 两篇文档 → CRLF、单 H1；`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` 退出 0、`build complete in 19.04s`、无 dead link。
+
