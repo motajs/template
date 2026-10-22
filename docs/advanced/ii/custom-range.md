@@ -57,6 +57,18 @@ export interface IRangeHost {
 
 `BaseRange` 已经实现了 `inRangeIndex`、`iterate`、`scan`、`autoDetect`。继承它时通常只需要实现三个方法：`estimatePointCount`、`iterateLoc`、`inRange`。
 
+### estimatePointCount 的取舍
+
+`autoDetect` 每次调用时都会先执行一遍 `estimatePointCount`，再拿结果和 `list.size` 比较。因此这个估算的耗时会计入每一次范围查询——`scanRange`、光环、地图伤害等所有走 `autoDetect` 的地方都受影响。
+
+它只需要「尽量快地估出一个大致数量」，不需要精确：
+
+- 估算结果只决定 `autoDetect` 走 `scan` 还是 `iterate`，不影响最终命中哪些格；
+- 估大或估小最多让选型变差，不会让结果出错；
+- 为了准确去遍历格子、读取地图或做复杂计算，反而会让每一次查询都变慢，代价远大于偶尔选错路径。
+
+建议直接用参数算一个近似值，例如 `RectRange` 用 `w * h`、`ManhattanRange` 用与 `radius` 相关的二次式；不要为了追求精确而牺牲速度。内置范围都是常数时间的估算，可以参考它们的写法。
+
 ## 内置范围与参数
 
 以下范围都从 `@motajs/common` 导出：
@@ -133,7 +145,7 @@ export class RingRange extends BaseRange<IRingRangeParam> {
 
 三个实现各有分工：
 
-- `estimatePointCount` 只服务 `autoDetect`，返回值偏大或偏小都只会让选型变差，不会改变命中结果；
+- `estimatePointCount` 只服务 `autoDetect`，返回值偏大或偏小都只会让选型变差，不会改变命中结果；实现时要尽量快，不要为了精确去遍历格子；
 - `iterateLoc` 决定「枚举时输出哪些格」，必须和 `inRange` 使用同一套判定；
 - `inRange` 决定「单个点算不算命中」，越界必须先由 `inBound` 收口，不能只比较距离。
 
@@ -144,8 +156,12 @@ export class RingRange extends BaseRange<IRingRangeParam> {
 系统会自己调用 `bindHost`，你只需要把范围对象与参数传进去。以怪物上下文为例：
 
 ```ts
+// RingRange 即上一节定义的自定义范围类
+// 范围对象提到模块级复用；引擎风格不建议在调用处内联 new
+const ringRange = new RingRange();
+
 const loc = state.hero.getLocation();
-const hits = state.enemyContext.scanRange(new RingRange(), {
+const hits = state.enemyContext.scanRange(ringRange, {
     cx: loc.x,
     cy: loc.y,
     radius: 2
@@ -190,11 +206,14 @@ function collectRing(
 `scanRange` 只返回范围内的怪物，所以验证要摆好怪物，而不是只看格子。先以勇士为中心，在中心、曼哈顿距离 `1`、距离 `2` 的位置各放一只测试怪，再执行：
 
 ```ts
+// 同样复用模块级范围实例，不要在调用处内联 new
+const ringRange = new RingRange();
+
 state.enemyContext.bindHero(state.hero.getAttribute());
 
 const loc = state.hero.getLocation();
 const hits = [
-    ...state.enemyContext.scanRange(new RingRange(), {
+    ...state.enemyContext.scanRange(ringRange, {
         cx: loc.x,
         cy: loc.y,
         radius: 2
@@ -235,7 +254,7 @@ console.log('环上格子数', cells.length); // 未被地图边缘裁剪时最�
 
 - **越界必须返回 `false`**：`inRange` 先调用 `inBound`，再比较距离。只比较距离会让地图外的坐标也命中。
 - **`iterateLoc` 与 `inRange` 必须同源**：两者判定不一致时，`scan` 会按范围枚举出一批格，再用另一套规则判断，结果就会漏格或多格。写完自定义范围后，用同一组参数分别跑 `iterateLoc` 与逐点 `inRange` 对照一次。
-- **`estimatePointCount` 只是估算**：它不参与命中判定，也不需要考虑地图裁剪。估得不准只会让 `autoDetect` 选错路径，不会改变结果。
+- **`estimatePointCount` 只是估算**：它不参与命中判定，也不需要考虑地图裁剪。估得不准只会让 `autoDetect` 选错路径，不会改变结果；但它每次查询都会执行，必须保持廉价，不要为了准确去遍历格子。
 - **负半径按绝对值处理**：这是本篇示例的约定；如果你希望负半径表示「无效」，要在 `inRange` 与 `iterateLoc` 里同时改，不能只改一处。
 - **绑定后的范围实例不要跨地图共用**：`bindHost` 是可变状态，同一个实例先后绑定不同尺寸的宿主时，后一次会覆盖前一次。需要并行处理多张地图时，每张地图各用一个实例，或在每次使用前重新绑定。
 - **`radius: 0` 是中心单点**：环形范围在半径为 0 时没有「边框」可枚举，按距离恰好为 0 处理，只命中中心。

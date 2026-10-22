@@ -2,7 +2,7 @@
 
 装备也是道具（`ItemCategory.Equipment`），但它和钥匙、药水不是一套流程。道具表只提供装备的原始定义；玩家实际拥有的每一件装备都是一个独立实例，穿在哪一栏又由另一套接口管理。这套拆分让「同一件装备可以有多份、每份强化不同」成为可能。
 
-本篇讲装备实例仓、实例修饰器、装备槽、存档约定、对比与排序。中级教程的[勇士装备](../../intermediate/hero-equipment.md)已经讲过常用调用，这里补齐实例、修饰器与读档恢复之间的关系。
+本篇讲装备实例仓、实例修饰器、装备槽、对比、排序与装备事件，最后说明修饰器与存档的内部约定。中级教程的[勇士装备](../../intermediate/hero-equipment.md)已经讲过常用调用，这里补齐实例、修饰器与读档恢复之间的关系。
 
 ## 装备与道具的区别
 
@@ -25,7 +25,9 @@ export interface IItemEquipData<THero> {
 }
 ```
 
-`category` 为 `Equipment` 的道具才会走装备系统。`equip.value` 与 `equip.percentage` 只是新实例的初始值；`loadEvent` 与 `unloadEvent` 目前只是数据字段，引擎不会自动执行，详见下文「装备事件」。`animate` 是渲染端读取的动画 id，动画如何播放属于 `渲染端教程 · 装备动画`。 <!-- TODO(renderer): 装备动画 -->
+`category` 为 `Equipment` 的道具才会走装备系统。`equip.value` 与 `equip.percentage` 只是新实例的初始值。
+
+`loadEvent` 与 `unloadEvent` **尚未实现**，详见下文「装备事件」。`animate` 是渲染端读取的动画 id，动画如何播放属于 `渲染端教程 · 装备动画`。 <!-- TODO(renderer): 装备动画 -->
 
 装备需要实例，是因为「定义」与「持有」不是一回事：两把同样的剑可以分别强化到不同数值，卸下再穿上也要记住各自的状态。实例用自增的 `uid` 区分，装备槽只保存 `uid`。
 
@@ -70,7 +72,7 @@ function grantEquipment(state: ICoreState, id: string): number {
 
 - `setValue(name, value)` 与 `getValue(name)`：数值加成，对应 `ValueModifier`；
 - `setPercentage(name, value)` 与 `getPercentage(name)`：百分比加成，对应 `PercentageModifier`；
-- `getModifiers()`：输出 `[属性名, 修饰器]`；实例尚未构建时会先调用 `buildModifiers()` 兜底。
+- `getModifiers()`：用于获取该实例的全部装备修饰器。
 
 把加成设为 `0` 会删除对应条目与修饰器，而不是留下一个值为 0 的修饰器；读取不存在的属性返回 `0`。
 
@@ -88,16 +90,9 @@ function strengthenEquipment(state: ICoreState, uid: number): void {
     equip.setValue('atk', 5);
     equip.setPercentage('def', 0.1);
 
-    // 遍历该实例产生的全部修饰器
+    // 获取该实例的全部装备修饰器
     for (const [name, modifier] of equip.getModifiers()) {
-        console.log(
-            '属性',
-            name,
-            '修饰器',
-            modifier.type,
-            '参数',
-            modifier.value
-        );
+        console.log('属性', name, '修饰器', modifier);
     }
 }
 ```
@@ -125,7 +120,9 @@ function strengthenEquipment(state: ICoreState, uid: number): void {
 | `getEquipped(slot)`             | 取指定索引槽上的 `uid`                                         |
 | `getEquips()`                   | 按槽位顺序取所有已装备实例，空槽为 `null`                      |
 
-`slot` 可以传索引或名称，但写法必须与装备定义里的 `slots` 一致：定义写 `[0]` 就传索引，定义写 `['weapon']` 就传名称。混用会在 `canEquipTo` 的第一道判定就被判成 `CannotEquip`。
+`slot` 可以传索引，也可以传名称。`hero.equip.slots` 本身是字符串数组，但 `slot` 参数同时接受 `number | string`：索引是最精确的寻址方式，名称只是粗略描述——多个槽同名时，传名称只能落到第一个可用槽，无法指定具体是哪一个。
+
+装备定义里的 `equip.slots` 决定这件装备能装到哪些槽。`canEquipTo` 的第一道判定是 `equip.slots.includes(slot)`：定义里列了索引就传索引，列了名称就传名称；想让两种写法都可用，就把两种都列进去（如 `[0, 'weapon']`）。
 
 `autoUnload` 只处理「同一件装备已经戴在另一个槽」的情况：为 `true` 时先从原槽卸下再穿到目标槽；为 `false` 时直接放弃这次穿戴。它不会替你处理目标槽上原有的装备——目标槽被占用时，`equip` 总会替换，并把旧装备的 `uid` 返回。
 
@@ -157,24 +154,6 @@ function unequipSlot(state: ICoreState, index: number): number | undefined {
 ```
 
 `getEquipped` 与 `unequip` 都只接受索引。按名称操作时，先用 `slots.indexOf(name)` 换成索引；`indexOf` 返回 `-1` 表示该名称不存在。
-
-## 修饰器与存档的关键约定
-
-装备修饰器以 `save = false` 加入勇士属性：
-
-```ts
-this.attribute.addModifier(name, modifier, false);
-```
-
-第三个参数表示不进属性存档。读档时 `HeroAttribute.loadState` 会清空所有修饰器，只重建存档里保存的那些；装备修饰器不在其中，因此读档后的勇士暂时没有任何装备加成。
-
-恢复发生在 `HeroEquipment.loadState`：它先清空 `equips` 映射，再按存档逐个调用 `equip` 重新穿戴。重新穿戴会把实例的修饰器重新挂到属性上，装备加成就回来了。整个过程在 `replaySystem.disable()` 与 `revert()` 之间进行，不会被记进录像。
-
-`HeroState.loadState` 的顺序保证这条路径可行：属性 → 位置 → 道具（装备实例仓）→ 装备槽。实例仓先按存档重建，装备槽随后才能按 `uid` 找到它们。
-
-由此得到一条实践规则：装备加成只能由 `equip` 与 `unequip` 维护。绕过装备槽，直接把装备修饰器 `addModifier(name, modifier)` 到勇士属性上，读档后这些修饰器会被清掉；如果给它们 `save = true`，读档时属性会先恢复一份，重新穿戴又会再加一份，数值翻倍。需要长期存在的非装备修饰器，应该由拥有它的系统自己负责存档，参见[勇士属性](../../intermediate/hero-attribute.md)。
-
-正确的顺序是：先 `add` 得到实例、改好实例数值，再 `equip` 穿戴。读档时不要手动重挂修饰器，`loadState` 已经处理。
 
 ## 装备对比
 
@@ -252,7 +231,7 @@ function useAtkSort(state: ICoreState): void {
 
 ## 装备事件
 
-`EquipmentState` 提供 `IEquipmentStateHooks.onChangeModifier`，但它监听的是**修饰器变化**，不是穿戴。`setValue`、`setPercentage`、`buildModifiers` 以及删除条目都会触发它；`equip` 与 `unequip` 本身不会触发。它适合做「装备强化后重算某个系统」这类联动：
+`EquipmentState` 提供 `IEquipmentStateHooks.onChangeModifier`，但它监听的是**修饰器变化**，不是穿戴。`setValue`、`setPercentage` 以及删除条目都会触发它；`equip` 与 `unequip` 本身不会触发。它适合做「装备强化后重算某个系统」这类联动：
 
 ```ts
 import { ICoreState } from '@user/data-state';
@@ -264,7 +243,7 @@ function watchEquipment(state: ICoreState, uid: number): void {
 
     const controller = equip.addHook({
         onChangeModifier(modifiers) {
-            // 改变 setValue / setPercentage / buildModifiers 时触发
+            // 改变 setValue / setPercentage 时触发
             // modifiers 是实时迭代器，不要保存到回调之外
             for (const [name, modifier] of modifiers) {
                 console.log('装备属性变化', name, modifier.value);
@@ -277,13 +256,7 @@ function watchEquipment(state: ICoreState, uid: number): void {
 }
 ```
 
-`IItemRawData.equip.loadEvent` 与 `unloadEvent` 不是自动钩子。引擎不会在穿戴或卸下时执行它们，目前它们只是数据字段。**引擎也没有内置「装备穿上/卸下」钩子**；`onChangeModifier` 不能替代它：
-
-- `HeroEquipsStore.add` 在创建实例后会立即调用 `buildModifiers()`，`loadState` 重建实例后也会调用。因此正常获得的实例在 `equip` 时已经构建完毕，`equip` 只是把已有修饰器挂到属性上，不会触发 `onChangeModifier`；
-- 只有绕过 `add`、直接 `new EquipmentState(...)` 且从未调用过 `getModifiers()` 时，`equip` 才可能顺带触发一次懒构建；那是兜底副作用，不是稳定的穿戴信号；
-- 强化或改值同样会触发它，即使没有穿戴。
-
-需要「穿上后触发」的行为，就在调用 `equip` / `unequip` 的统一入口里处理，或者包装一个自己的装备服务：
+`IItemRawData.equip.loadEvent` 与 `unloadEvent` **尚未实现**：它们不是自动钩子，引擎不会在穿戴或卸下时执行它们，目前只是数据字段。**引擎也没有内置「装备穿上/卸下」钩子**，`onChangeModifier` 不能替代它。需要「穿上后触发」的行为，就在调用 `equip` / `unequip` 的统一入口里处理，或者包装一个自己的装备服务：
 
 ```ts
 import { ICoreState } from '@user/data-state';
@@ -301,7 +274,19 @@ function equipWithCallback(
 }
 ```
 
-`onChangeModifier` 在 `buildModifiers()` 时也会触发一次。经 `add` / `loadState` 得到的实例在建立时就已构建，所以之后才 `addHook` 的监听者收不到那次初始构建，只会收到后续变化；对这些实例，`equip` 不会触发再次构建。
+## 修饰器与存档的内部实现
+
+此章节讲解一下装备修饰器与存档的内部实现。
+
+装备修饰器以 `this.attribute.addModifier(name, modifier, false)` 加入勇士属性，第三个参数表示不进属性存档。读档时 `HeroAttribute.loadState` 会清空所有修饰器，只重建存档里保存的那些；装备修饰器不在其中，因此读档后的勇士暂时没有任何装备加成。
+
+恢复发生在 `HeroEquipment.loadState`：它先清空 `equips` 映射，再按存档逐个调用 `equip` 重新穿戴。重新穿戴会把实例的修饰器重新挂到属性上，装备加成就回来了。整个过程在 `replaySystem.disable()` 与 `revert()` 之间进行，不会被记进录像。
+
+`HeroState.loadState` 的顺序保证这条路径可行：属性 → 位置 → 道具（装备实例仓）→ 装备槽。实例仓先按存档重建，装备槽随后才能按 `uid` 找到它们。
+
+由此得到一条实践规则：装备加成只能由 `equip` 与 `unequip` 维护。绕过装备槽，直接把装备修饰器 `addModifier(name, modifier)` 到勇士属性上，读档后这些修饰器会被清掉；如果给它们 `save = true`，读档时属性会先恢复一份，重新穿戴又会再加一份，数值翻倍。需要长期存在的非装备修饰器，应该由拥有它的系统自己负责存档，参见[勇士属性](../../intermediate/hero-attribute.md)。
+
+正确的顺序是：先 `add` 得到实例、改好实例数值，再 `equip` 穿戴。读档时不要手动重挂修饰器，`loadState` 已经处理。
 
 ## 怎么验证
 
@@ -361,7 +346,7 @@ function verifyEquipment(state: ICoreState): void {
 ## 边界与注意
 
 - **`add` 失败返回 `-1`**：图块 id 不存在，或该图块没有道具定义。`add` 不检查 `category`，传非装备道具可能得到无法使用的实例；调用方应先确认它是装备。
-- **槽位写法必须与定义一致**：定义用索引就传索引，定义用名称就传名称。混用会在 `canEquipTo` 里直接返回 `CannotEquip`。
+- **索引最精确，名称是粗略描述**：`slot` 可以传索引或名称；同名槽只能靠索引区分。装备定义 `equip.slots` 决定可装备的槽位，`canEquipTo` 会先检查定义里是否包含你传入的写法。
 - **`autoUnload` 为 `false` 时不会搬移**：同一件装备已经戴在别的槽时，`equip` 会直接放弃，不做任何修改。
 - **`unequip` 只接受索引**：按名称卸下要先 `slots.indexOf(name)`；`-1` 不会卸下任何东西。
 - **不要删掉已穿戴的实例**：`delete(uid)` 只移除实例仓里的记录，不会解除装备槽的引用，也不会移除已经挂到属性上的修饰器。先 `unequip` 再 `delete`。
@@ -370,7 +355,7 @@ function verifyEquipment(state: ICoreState): void {
 - **`compareEquip` 两侧都为空时**返回 `{}` 并告警（code 195），不会抛错；`slot` 只接受索引。
 - **`compareEquip` 的基线是当前属性减去目标槽现役装备**：A 或 B 可以就是目标槽上的现役装备，也可以完全未装备；**不要**把它们穿在另一个槽上，否则修饰器会在基线里再算一次。缺失的一侧回退到当前真实最终属性，所以目标槽有装备时，`-1` 得到的是「相对现役装备」而不是「相对空槽」。
 - **排序器不影响装备槽**：它只决定 `instances()` 与 `instancesOf()` 的展示顺序；`getEquipped` 与 `getEquips` 永远按槽位顺序。
-- **`getModifiers()` 只在未构建时兜底构建**：正常经 `add` / `loadState` 得到的实例已经构建过，调用它不会再次触发 `onChangeModifier`；它返回的是实时迭代器，不要长期保存到回调之外。
+- **`getModifiers()` 返回实时迭代器**：不要把它保存到回调之外；需要留存时先转成数组。
 
 编辑器与状态栏的展示不在本篇范围内。 <!-- TODO(editor): 装备栏与状态栏展示 -->
 

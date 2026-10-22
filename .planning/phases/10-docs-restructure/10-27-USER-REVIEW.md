@@ -38,4 +38,16 @@
 
 ## 迭代记录
 
-（待执行后追加）
+### 批次 A（U6-01..U6-09）执行记录（2026-10-22）
+
+- U6-01：`custom-range.md` 的 `new RingRange()` 已提为模块级常量，调用处复用；验证段同步。
+- U6-02：新增「estimatePointCount 的取舍」小节，强调只需快速估算、不要为精确牺牲性能；正文与边界条目同步。
+- U6-03/D-70：`static-vs-dynamic-tiles.md` 中孤立的 `num()` 方法体已包进完整 `StaticTile` 类上下文；其余代码块检查为完整函数/类。
+- U6-04：新增 `point-and-tile-events.md`；把原「事件的两类归属」「事件视图接口」「在代码里操作事件」迁入并扩写（区别、跟随移动、作者可设置、存档恢复）；`static-vs-dynamic-tiles.md` 保留简短指引；侧边栏 9→10，`index.md` 同步为十篇。
+- U6-05：`markPure` / `ref` 在事件文档与图块文档中均只作「样板内部优化接口，一般不要调用」的简短说明。
+- U6-06：`equipment-system.md` 不再讲 `getModifiers` 的懒构建等实现细节，只说明它用于获取装备修饰器；示例与边界条目相应收敛。
+- U6-07：改写「槽位写法必须与定义一致/不能混用」；明确索引最精确、名称是粗略描述（同名槽无法指定），并说明 `equip.slots.includes` 的实际判定。
+- U6-08/D-69：「修饰器与存档的内部实现」移至文档靠后（装备事件之后、验证之前），开头写明「此章节讲解一下……的内部实现」。
+- U6-09：`equipment-system.md` 明确 `loadEvent` / `unloadEvent` 尚未实现，当前只是数据字段，也没有内置穿戴/卸下钩子。
+
+**验证：** `pnpm exec prettier --write`（含新文档）→ `pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 构建通过，无死链告警。

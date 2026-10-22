@@ -197,6 +197,10 @@ export default defineConfig({
                             link: '/advanced/ii/static-vs-dynamic-tiles'
                         },
                         {
+                            text: '点事件与图块事件',
+                            link: '/advanced/ii/point-and-tile-events'
+                        },
+                        {
                             text: '勇士的装备系统',
                             link: '/advanced/ii/equipment-system'
                         },
