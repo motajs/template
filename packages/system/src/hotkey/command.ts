@@ -24,20 +24,20 @@ export class HotkeyCommand implements IHotkeyCommand {
     dt: number;
     length: number;
 
-    /** 指令标识符，用于告警信息 */
-    private readonly command: string;
     /** 按键组合列表，长度与 {@link length} 保持一致 */
-    private combinations: KeyCode[][];
+    private keys: KeyCode[][] = [];
 
-    constructor(command: string, init: IHotkeyCommandInit) {
+    constructor(
+        readonly command: string,
+        init: IHotkeyCommandInit
+    ) {
         this.command = command;
         this.priority = init.priority;
-        this.block = init.block;
+        this.block = init.block ?? false;
         this.mode = init.mode ?? HotkeyEmitMode.KeyUp;
         this.timeout = init.timeout ?? 0;
         this.interval = init.interval ?? 0;
         this.dt = init.dt ?? 0;
-        this.combinations = [];
         this.length = 0;
         this.setKeys(init.defaults.length);
         init.defaults.forEach((keys, index) =>
@@ -46,69 +46,78 @@ export class HotkeyCommand implements IHotkeyCommand {
     }
 
     setKeys(count: number): void {
-        if (!Number.isInteger(count) || count < 0) return;
-        while (this.combinations.length < count) {
-            this.combinations.push([]);
+        if (!Number.isInteger(count)) {
+            logger.warn(207, 'float');
+            return;
         }
-        if (this.combinations.length > count) {
-            this.combinations.length = count;
+        if (count <= 0) {
+            logger.warn(207, 'negative integer');
+            return;
         }
-        this.length = this.combinations.length;
+        if (count > this.keys.length) {
+            while (count > this.keys.length) {
+                this.keys.push([]);
+            }
+        } else if (count < this.keys.length) {
+            while (count < this.keys.length) {
+                this.keys.pop();
+            }
+        }
+        this.length = this.keys.length;
     }
 
     setKeyCombination(index: number, keys: KeyCode[]): void {
-        if (
-            !Number.isInteger(index) ||
-            index < 0 ||
-            index >= this.combinations.length
-        ) {
+        if (!Number.isInteger(index)) {
+            logger.warn(206, 'float');
             return;
         }
-        const copy = keys.slice();
-        this.combinations[index] = copy;
+        if (index < 0) {
+            logger.warn(206, 'negetive integer');
+            return;
+        }
+        if (index >= this.keys.length) {
+            logger.warn(206, 'integer but exceeds combination count');
+            return;
+        }
+        this.keys[index] = keys.slice();
         if (this.mode === HotkeyEmitMode.KeyUp) {
-            const regular = copy.filter(v => !isAuxiliaryKey(v));
+            const regular = keys.filter(v => !isAuxiliaryKey(v));
             if (regular.length >= 2) {
                 logger.warn(203, this.command);
             }
         }
     }
 
-    getKeyCombination(index: number): KeyCode[] {
-        const keys = this.combinations[index];
-        return keys ? keys.slice() : [];
+    getKeyCombination(index: number): readonly KeyCode[] {
+        return this.keys[index]?.slice() ?? [];
     }
 
-    *iterateKeyCombinations(): Iterable<[index: number, key: KeyCode[]]> {
-        for (let i = 0; i < this.combinations.length; i++) {
-            yield [i, this.combinations[i].slice()];
+    *iterateKeyCombinations(): Iterable<
+        [index: number, key: readonly KeyCode[]]
+    > {
+        for (let i = 0; i < this.keys.length; i++) {
+            yield [i, this.keys[i].slice()];
         }
     }
 
-    keyUp(timeout?: number): void {
+    keyUp(timeout: number = 0): void {
         this.mode = HotkeyEmitMode.KeyUp;
-        if (timeout !== undefined) this.timeout = timeout;
-        const invalid = this.combinations.some(
-            keys => keys.filter(v => !isAuxiliaryKey(v)).length >= 2
-        );
-        if (invalid) logger.warn(203, this.command);
+        this.timeout = timeout;
     }
 
-    once(timeout?: number): void {
+    once(timeout: number = 0): void {
         this.mode = HotkeyEmitMode.Once;
-        if (timeout !== undefined) this.timeout = timeout;
+        this.timeout = timeout;
     }
 
-    continuous(interval?: number, timeout?: number): void {
+    continuous(
+        interval: number = 0,
+        dt: number = 0,
+        timeout: number = 0
+    ): void {
         this.mode = HotkeyEmitMode.Continuous;
-        if (interval !== undefined) this.interval = interval;
-        if (timeout !== undefined) this.timeout = timeout;
-    }
-
-    throttle(dt: number, interval?: number, timeout?: number): void {
-        this.mode = HotkeyEmitMode.Throttle;
+        this.interval = interval;
         this.dt = dt;
-        if (interval !== undefined) this.interval = interval;
-        if (timeout !== undefined) this.timeout = timeout;
+        this.timeout = timeout;
     }
 }

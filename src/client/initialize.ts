@@ -6,17 +6,20 @@ import {
     IClientPluginDefine
 } from '@user/client-modules';
 import { ICoreStateCoreConfig } from '@user/data-state';
-import {
-    DEBUG_DIVIDER,
-    DEBUG_VARIATOR,
-    DIVIDER_DEBUG_DIVIDER,
-    VARIATOR_DEBUG_SPEED
-} from '../constant';
 import { ExcitationVariator } from '@motajs/animate';
+import { SaveCompression } from '@user/data-common';
+import { IClientHotkeySave } from '@user/client-base';
+import {
+    DEBUG_VARIATOR,
+    VARIATOR_DEBUG_SPEED,
+    DEBUG_DIVIDER,
+    DIVIDER_DEBUG_DIVIDER
+} from './constant';
 
 export class MainClientPlugin implements IClientPluginDefine {
     id: string = 'main-client-plugin';
     clientDeps: readonly string[] = [];
+    dataDeps: readonly string[] = [];
 
     awake(state: IClientCore): void {
         // 渲染调试配置
@@ -50,5 +53,12 @@ export class MainClientPlugin implements IClientPluginDefine {
 
         // 存档初始化
         state.save.init(`@game/${core.name}`);
+
+        // 按键不是跟随存档的，而是跟随游戏的，所以不进 state 的 addSaveableContent，而是单独调用 global
+        const hotkey =
+            await state.save.getGlobal<IClientHotkeySave>('@system/hotkey');
+        if (hotkey) {
+            state.hotkey.loadState(hotkey, SaveCompression.NoCompression);
+        }
     }
 }

@@ -11,6 +11,7 @@ import { ICoreState } from '@user/data-state';
 import { ISaveSystem } from './save';
 import { ITextureManager } from './material';
 import { IMapRenderer, IMapExtensionManager } from './map';
+import { IClientHotkey } from './hotkey';
 
 export interface IGameUIPropsBase<
     T extends UIComponent = UIComponent
@@ -47,6 +48,8 @@ export interface IClientBase extends ICoreState {
     readonly sceneController: IUIController<IGameUIPropsBase>;
     /** 主界面的 UI 控制器，管理游戏主界面的 UI 显示 */
     readonly mainUIController: IUIController<IGameUIPropsBase>;
+    /** 渲染端主按键系统 */
+    readonly hotkey: IClientHotkey;
 }
 
 export interface IClientBaseExtended {

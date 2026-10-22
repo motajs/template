@@ -1,10 +1,9 @@
-import { IExcitable, IExcitableController, IExcitation } from '@motajs/animate';
-import { logger } from '@motajs/common';
+import { IExcitable, IExcitation } from '@motajs/animate';
+import { logger, matchArray } from '@motajs/common';
 import { HotkeyCommand, isAuxiliaryKey } from './command';
 import { EVENT_KEY_CODE_MAP, KeyCode } from './keyCodes';
 import {
     HotkeyEmitMode,
-    HotkeyEmitType,
     IHotkeyCommand,
     IHotkeyCommandInit,
     IHotkeyEmitContext,
@@ -12,99 +11,95 @@ import {
     IHotkeySystem
 } from './type';
 
-type HotkeyHandler = (ctx: IHotkeyEmitInfo) => void;
-
-type HotkeyListener = (event: KeyboardEvent) => void;
+// TODO: 优先级阻断
 
 interface IHotkeyScope {
     /** 作用域唯一标识符 */
-    symbol: symbol;
+    readonly symbol: symbol;
+    /** 作用域内已实现的按键指令 */
+    readonly implements: Map<IHotkeyCommand, (info: IHotkeyEmitInfo) => void>;
     /** 作用域条件，为 `null` 时视为始终满足 */
     condition: (() => boolean) | null;
-    /** 作用域内已实现的按键指令 */
-    handlers: Map<string, HotkeyHandler>;
 }
 
-interface IHotkeyMatch {
-    /** 指令标识符 */
-    id: string;
-    /** 指令对象 */
-    command: IHotkeyCommand;
-    /** 命中的按键组合索引 */
-    index: number;
-    /** 命中的按键组合 */
-    keys: KeyCode[];
-    /** 指令实现 */
-    handler: HotkeyHandler;
-    /** 关联的待触发项 */
-    entry?: IHotkeyPending;
-}
-
-interface IHotkeyPending {
-    /** 指令标识符 */
-    id: string;
-    /** 指令对象 */
-    command: IHotkeyCommand;
-    /** 命中的按键组合索引 */
-    index: number;
-    /** 命中的按键组合 */
-    keys: KeyCode[];
-    /** 指令实现 */
-    handler: HotkeyHandler;
-    /** 触发方式 */
-    type: HotkeyEmitType;
-    /** 触发此指令的按键 */
-    key: KeyCode;
-    /** 入队时的作用域 */
-    scope: symbol;
-    /** 入队时的触发方式快照 */
-    mode: HotkeyEmitMode;
-    /** 入队时的首次触发延迟快照 */
-    timeout: number;
-    /** 入队时的首次与第二次触发最小间隔快照 */
-    interval: number;
-    /** 入队时的节流间隔快照 */
-    dt: number;
-    /** 入队时刻 */
-    time: number;
-    /** 上一次真正触发的时刻 */
-    last: number;
-    /** 已触发的次数 */
-    fired: number;
+interface IHotkeyCommandPending {
+    /** 按键指令对象 */
+    readonly command: IHotkeyCommand;
+    /** 按键组合被按下的时刻 */
+    start: number;
+    /** 按键组合的索引 */
+    keyIndex: number;
+    /** 触发此指令的按键组合 */
+    keys: readonly KeyCode[];
+    /** 按键触发上下文 */
+    context: IHotkeyEmitContext;
+    /** 当前已经触发了几次 */
+    emitted: number;
+    /** 上一次的触发时刻 */
+    lastEmit: number;
 }
 
 export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
     listening: HTMLElement | null = null;
+    holding: KeyCode[] = [];
 
     /** 指令注册表 */
     private commands: Map<string, IHotkeyCommand> = new Map();
     /** 作用域栈 */
     private scopes: IHotkeyScope[] = [];
-    /** 当前按下的按键，按按下顺序排列 */
-    private holding: KeyCode[] = [];
-    /** 待触发项 */
-    private pending: IHotkeyPending[] = [];
-    /** 最近一次激励负载 */
-    private now: number = 0;
-    /** 当前激励源控制器 */
-    private controller: IExcitableController<number> | null = null;
-    /** 键盘按下处理器 */
-    private keyDownListener: HotkeyListener = event => {
-        if (event.repeat) return;
-        const key = this.resolveKeyCode(event.keyCode);
-        if (key === null) return;
-        if (this.down(key)) event.preventDefault();
-    };
-    /** 键盘抬起处理器 */
-    private keyUpListener: HotkeyListener = event => {
-        const key = this.resolveKeyCode(event.keyCode);
-        if (key === null) return;
-        if (this.up(key)) event.preventDefault();
-    };
 
-    //#region 基础
+    /** 当前使用的激励源 */
+    private excitation: IExcitation<number> | null = null;
 
-    /** 获取当前栈顶作用域 */
+    /** 当前正在按下的按键组成的集合 */
+    private holdingSet: Set<KeyCode> = new Set();
+    /** 如果按键指令都是按下时触发，那么当前的按键组合下，有可能触发哪些按键 */
+    private holdingCmds: Map<IHotkeyCommand, IHotkeyCommandPending> = new Map();
+    /** 需要等待 `timeout` 进行一次触发的指令集合 */
+    private waitTimeout: Set<IHotkeyCommandPending> = new Set();
+
+    /** 键盘按下监听器 */
+    private keyDownListener: (ev: KeyboardEvent) => void;
+    /** 键盘抬起监听器 */
+    private keyUpListener: (ev: KeyboardEvent) => void;
+
+    constructor() {
+        const keyDown = (event: KeyboardEvent) => {
+            const key = this.resolveKeyCode(event.keyCode);
+            if (this.holding.includes(key)) return;
+            if (key === KeyCode.Unknown) return;
+            const emitted = this.down(key);
+            if (emitted) event.preventDefault();
+        };
+        const keyUp = (event: KeyboardEvent) => {
+            const key = this.resolveKeyCode(event.keyCode);
+            if (key === KeyCode.Unknown) return;
+            const emitted = this.up(key);
+            if (emitted) event.preventDefault();
+        };
+        this.keyDownListener = keyDown;
+        this.keyUpListener = keyUp;
+    }
+
+    /**
+     * 将浏览器事件的按键码映射为按键枚举，部分浏览器的 Meta 键需要本地映射
+     * @param eventKeyCode 浏览器事件的按键码
+     */
+    private resolveKeyCode(eventKeyCode: number): KeyCode {
+        if (
+            eventKeyCode === 91 ||
+            eventKeyCode === 92 ||
+            eventKeyCode === 224
+        ) {
+            return KeyCode.Meta;
+        }
+        const key = EVENT_KEY_CODE_MAP[eventKeyCode];
+        return key ?? KeyCode.Unknown;
+    }
+
+    /**
+     * 获取当前栈顶作用域
+     */
     private getScope(): IHotkeyScope | null {
         return this.scopes.at(-1) ?? null;
     }
@@ -114,253 +109,73 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
      * @param type 触发方式
      * @param key 触发此指令的按键
      */
-    private createContext(
-        type: HotkeyEmitType,
-        key: KeyCode
-    ): IHotkeyEmitContext {
-        const holding = this.holding.slice();
+    private createContext(): IHotkeyEmitContext {
         return {
-            type,
-            key,
-            holding,
-            ctrl: holding.includes(KeyCode.Ctrl),
-            shift: holding.includes(KeyCode.Shift),
-            alt: holding.includes(KeyCode.Alt),
-            meta: holding.includes(KeyCode.Meta)
+            holding: this.holding,
+            ctrl: this.holdingSet.has(KeyCode.Ctrl),
+            shift: this.holdingSet.has(KeyCode.Shift),
+            alt: this.holdingSet.has(KeyCode.Alt),
+            meta: this.holdingSet.has(KeyCode.Meta)
         };
     }
 
-    //#endregion
-
-    //#region 组合匹配
-
     /**
      * 判断按键组合是否与按键抬起事件匹配
-     * @param keys 按键组合
+     * @param keys 当前的按键组合
      * @param key 抬起的按键
      */
-    private matchKeyUp(keys: KeyCode[], key: KeyCode): boolean {
+    private matchKeyUp(keys: readonly KeyCode[], key: KeyCode): boolean {
         if (keys.length === 0) return false;
-        const regular = keys.filter(v => !isAuxiliaryKey(v));
-        if (regular.length > 1) return false;
-        if (regular.length === 0) {
-            return keys.length === 1 && keys[0] === key;
+        // 抬起按键仅允许一个非辅助按键
+        const [main, auxiliary] = matchArray(keys, v => isAuxiliaryKey(v));
+        if (main.length > 1) return false;
+
+        // 如果只有一个按键，那么可以触发，哪怕它是辅助按键
+        if (main.length === 0) {
+            return auxiliary.length === 1 && auxiliary[0] === key;
         }
-        if (regular[0] !== key) return false;
-        return keys
-            .filter(v => isAuxiliaryKey(v))
-            .every(v => this.holding.includes(v));
+
+        // 否则需要判断触发的按键
+        if (main[0] !== key) return false;
+        return auxiliary.every(v => this.holdingSet.has(v));
     }
 
     /**
-     * 判断按键组合是否被当前按下的按键所满足
+     * 判断一个按键组合当前是否满足
      * @param keys 按键组合
      */
-    private matchKeyDown(keys: KeyCode[]): boolean {
-        if (keys.length === 0) return false;
-        return keys.every(v => this.holding.includes(v));
+    private matchKeys(keys: readonly KeyCode[]) {
+        return keys.every(v => this.holdingSet.has(v));
     }
-
-    //#endregion
-
-    //#region 待触发
-
-    /**
-     * 判断一个待触发项是否已经到期
-     * @param item 待触发项
-     * @param payload 当前激励负载
-     */
-    private isPendingDue(item: IHotkeyPending, payload: number): boolean {
-        if (item.fired === 0) {
-            return payload - item.time >= item.timeout;
-        }
-        if (item.fired === 1) {
-            return payload - item.last >= item.interval;
-        }
-        if (item.mode === HotkeyEmitMode.Throttle) {
-            return payload - item.last >= item.dt;
-        }
-        return true;
-    }
-
-    /** 触发所有已经到期的待触发项 */
-    private flushPending(): void {
-        this.dropPending();
-        const due: IHotkeyPending[] = [];
-        const rest: IHotkeyPending[] = [];
-        for (const item of this.pending) {
-            if (this.isPendingDue(item, this.now)) {
-                due.push(item);
-            } else {
-                rest.push(item);
-            }
-        }
-        this.pending = rest;
-        due.sort((a, b) => b.command.priority - a.command.priority);
-        let blocked = -Infinity;
-        for (const item of due) {
-            const priority = item.command.priority;
-            if (priority < blocked) continue;
-            item.handler({
-                command: item.id,
-                index: item.index,
-                keys: item.keys.slice(),
-                context: this.createContext(item.type, item.key)
-            });
-            item.last = this.now;
-            item.fired += 1;
-            if (item.command.block) blocked = priority;
-            if (
-                item.mode === HotkeyEmitMode.Once ||
-                item.mode === HotkeyEmitMode.KeyUp
-            ) {
-                continue;
-            }
-            this.pending.push(item);
-        }
-    }
-
-    /** 丢弃已经失效的待触发项 */
-    private dropPending(): void {
-        const scope = this.getScope();
-        const symbol = scope ? scope.symbol : null;
-        this.pending = this.pending.filter(item => {
-            if (item.scope !== symbol) return false;
-            if (item.command.mode !== item.mode) return false;
-            if (
-                item.mode !== HotkeyEmitMode.KeyUp &&
-                !this.matchKeyDown(item.keys)
-            ) {
-                return false;
-            }
-            return true;
-        });
-    }
-
-    //#endregion
-
-    //#region 派发
-
-    /**
-     * 执行一批已经按优先级降序排列的匹配项
-     * @param matches 匹配项
-     * @param type 触发方式
-     * @param key 触发此指令的按键
-     */
-    private runMatches(
-        matches: IHotkeyMatch[],
-        type: HotkeyEmitType,
-        key: KeyCode
-    ): boolean {
-        const scope = this.getScope();
-        if (!scope) return false;
-        let blocked = -Infinity;
-        let triggered = false;
-        for (const item of matches) {
-            const priority = item.command.priority;
-            if (priority < blocked) break;
-            const mode = item.command.mode;
-            const timeout = item.command.timeout;
-            const immediate = timeout <= 0;
-            if (immediate) {
-                item.handler({
-                    command: item.id,
-                    index: item.index,
-                    keys: item.keys,
-                    context: this.createContext(type, key)
-                });
-            }
-            triggered = true;
-            const continuous =
-                mode === HotkeyEmitMode.Continuous ||
-                mode === HotkeyEmitMode.Throttle;
-            if (!immediate || continuous) {
-                this.pending.push({
-                    id: item.id,
-                    command: item.command,
-                    index: item.index,
-                    keys: item.keys.slice(),
-                    handler: item.handler,
-                    type,
-                    key,
-                    scope: scope.symbol,
-                    mode,
-                    timeout,
-                    interval: item.command.interval,
-                    dt: item.command.dt,
-                    time: this.now,
-                    last: immediate ? this.now : 0,
-                    fired: immediate ? 1 : 0
-                });
-            }
-            if (item.command.block) blocked = priority;
-        }
-        return triggered;
-    }
-
-    /**
-     * 派发一次按键事件
-     * @param type 触发方式
-     * @param key 触发此指令的按键
-     */
-    private dispatch(type: HotkeyEmitType, key: KeyCode): boolean {
-        const scope = this.getScope();
-        if (!scope) return false;
-        if (scope.condition !== null && !scope.condition()) return false;
-        const matches: IHotkeyMatch[] = [];
-        for (const [id, handler] of scope.handlers) {
-            const command = this.commands.get(id);
-            if (!command) continue;
-            const keyDown = command.mode !== HotkeyEmitMode.KeyUp;
-            if (keyDown !== (type === HotkeyEmitType.KeyDown)) continue;
-            let index = -1;
-            let keys: KeyCode[] = [];
-            for (const [i, combination] of command.iterateKeyCombinations()) {
-                const hit =
-                    type === HotkeyEmitType.KeyUp
-                        ? this.matchKeyUp(combination, key)
-                        : this.matchKeyDown(combination);
-                if (hit) {
-                    index = i;
-                    keys = combination;
-                    break;
-                }
-            }
-            if (index < 0) continue;
-            matches.push({ id, command, index, keys, handler });
-        }
-        matches.sort((a, b) => b.command.priority - a.command.priority);
-        return this.runMatches(matches, type, key);
-    }
-
-    //#endregion
 
     //#region 作用域
 
     enterScope(): symbol {
         const symbol = Symbol();
-        this.scopes.push({ symbol, condition: null, handlers: new Map() });
-        this.dropPending();
+        this.scopes.push({ symbol, condition: null, implements: new Map() });
+        this.holdingCmds.clear();
+        this.waitTimeout.clear();
         return symbol;
     }
 
     leaveScope(sym?: symbol): void {
-        if (sym === undefined) {
+        if (!sym) {
             if (this.scopes.length === 0) {
                 logger.warn(205);
                 return;
             }
             this.scopes.pop();
-            this.dropPending();
-            return;
+            this.holdingCmds.clear();
+            this.waitTimeout.clear();
         }
         const index = this.scopes.findIndex(v => v.symbol === sym);
         if (index < 0) {
             logger.warn(205);
             return;
         }
-        this.scopes.length = index + 1;
-        this.dropPending();
+        this.scopes.splice(index + 1);
+        this.holdingCmds.clear();
+        this.waitTimeout.clear();
     }
 
     when(func: () => boolean): this {
@@ -373,17 +188,18 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
         return this;
     }
 
-    implement(command: string, func: HotkeyHandler): this {
+    implement(command: string, func: (ctx: IHotkeyEmitInfo) => void): this {
         const scope = this.getScope();
         if (!scope) {
             logger.warn(201);
             return this;
         }
-        if (!this.commands.has(command)) {
+        const obj = this.commands.get(command);
+        if (!obj) {
             logger.warn(202, command);
             return this;
         }
-        scope.handlers.set(command, func);
+        scope.implements.set(obj, func);
         return this;
     }
 
@@ -407,80 +223,235 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
     }
 
     deleteCommand(command: string): void {
-        if (!this.commands.delete(command)) return;
-        this.scopes.forEach(scope => scope.handlers.delete(command));
-        this.pending = this.pending.filter(item => item.id !== command);
+        const obj = this.commands.get(command);
+        if (!obj) return;
+        this.commands.delete(command);
+        this.scopes.forEach(scope => scope.implements.delete(obj));
+        this.holdingCmds.delete(obj);
+        const toDeleteWait = new Set<IHotkeyCommandPending>();
+        this.waitTimeout.forEach(v => {
+            if (v.command === obj) {
+                toDeleteWait.add(v);
+            }
+        });
+        toDeleteWait.forEach(v => {
+            this.waitTimeout.delete(v);
+        });
     }
 
-    *iterateCommands(): Iterable<IHotkeyCommand> {
-        yield* this.commands.values();
+    iterateCommands(): Iterable<IHotkeyCommand> {
+        return this.commands.values();
     }
 
     //#endregion
 
     //#region 按下与抬起
 
+    /**
+     * 触发指定按键指令
+     * @param command 按键指令对象
+     * @param pending 按键指令的 pending 信息
+     */
+    private emit(pending: IHotkeyCommandPending) {
+        const command = pending.command;
+        const scope = this.getScope();
+        if (!scope) return;
+        const impl = scope.implements.get(command);
+        if (!impl) return;
+        const info: IHotkeyEmitInfo = {
+            mode: command.mode,
+            command,
+            index: pending.keyIndex,
+            keys: pending.keys,
+            context: pending.context
+        };
+        impl(info);
+        pending.emitted++;
+        pending.lastEmit = this.excitation?.payload() ?? 0;
+    }
+
+    /**
+     * 获取首个能够触发按键指令的按键组合
+     * @param command 按键指令
+     */
+    private findMatchKeys(
+        command: IHotkeyCommand
+    ): [index: number, readonly KeyCode[]] | [] {
+        for (const [index, keys] of command.iterateKeyCombinations()) {
+            const match = keys.every(v => this.holdingSet.has(v));
+            if (match) return [index, keys];
+        }
+        return [];
+    }
+
+    /**
+     * 添加可能触发的按键指令
+     * @param command 按键指令对象
+     * @param index 触发的按键索引
+     * @param keys 按键组合
+     */
+    private addPending(
+        command: IHotkeyCommand,
+        index: number,
+        keys: readonly KeyCode[]
+    ) {
+        const pending: IHotkeyCommandPending = {
+            command,
+            start: this.excitation?.payload() ?? 0,
+            keyIndex: index,
+            keys,
+            context: this.createContext(),
+            lastEmit: -Infinity,
+            emitted: 0
+        };
+        this.holdingCmds.set(command, pending);
+        if (command.timeout <= 0 && command.mode !== HotkeyEmitMode.KeyUp) {
+            // 如果没有 timeout，那么需要立即触发一次
+            this.emit(pending);
+        }
+    }
+
     down(key: KeyCode): boolean {
-        if (this.holding.includes(key)) return false;
-        this.holding.push(key);
-        return this.dispatch(HotkeyEmitType.KeyDown, key);
+        if (this.holdingSet.has(key)) {
+            // 如果有按键可能触发，那么返回 true 来 preventDefault
+            return this.holdingCmds.size > 0 || this.waitTimeout.size > 0;
+        } else {
+            this.holding.push(key);
+            this.holdingSet.add(key);
+        }
+        for (const command of this.commands.values()) {
+            const match = this.findMatchKeys(command);
+            if (match.length === 0) continue;
+            const [index, keys] = match;
+            const pending = this.holdingCmds.get(command);
+
+            if (pending) {
+                // 如果之前有过这个按键指令，那么直接修改现有状态
+                pending.keyIndex = index;
+                pending.keys = keys;
+                pending.context = this.createContext();
+            } else {
+                // 如果之前没有这个按键指令，那么加入执行列表
+                this.addPending(command, index, keys);
+                continue;
+            }
+        }
+        // 如果有按键可能触发，那么返回 true 来 preventDefault
+        return this.holdingCmds.size > 0 || this.waitTimeout.size > 0;
     }
 
     up(key: KeyCode): boolean {
+        if (!this.holdingSet.has(key)) return false;
+        this.holdingSet.delete(key);
         const index = this.holding.indexOf(key);
-        if (index < 0) return false;
         this.holding.splice(index, 1);
-        this.dropPending();
-        return this.dispatch(HotkeyEmitType.KeyUp, key);
+
+        // 需要快照
+        for (const [command, pending] of new Map(this.holdingCmds)) {
+            // 对于 KeyUp，如果有可以触发的，那么按规则触发
+            if (command.mode === HotkeyEmitMode.KeyUp) {
+                const emit = this.matchKeyUp(pending.keys, key);
+                if (emit) {
+                    this.emit(pending);
+                    this.holdingCmds.delete(command);
+                }
+            } else {
+                // 对于其他按键，如果一个按下组合按键不再满足，那么需要删除或加入 timeout
+                if (!this.matchKeys(pending.keys)) {
+                    // 松开一个按键，那么并不一定会导致按下指令不再触发
+                    const newMatch = this.findMatchKeys(command);
+                    if (newMatch.length === 0) {
+                        // 没有新的匹配，分两种情况
+                        if (pending.emitted === 0) {
+                            // 还没触发过，加入 timeout
+                            this.waitTimeout.add(pending);
+                        } else {
+                            // 已经触发过了，直接删除
+                            this.holdingCmds.delete(command);
+                        }
+                    } else {
+                        // 如果有新的匹配，那么直接修改状态
+                        const [index, keys] = newMatch;
+                        pending.context = this.createContext();
+                        pending.keyIndex = index;
+                        pending.keys = keys;
+                    }
+                }
+            }
+        }
+
+        // 如果有按键可能触发，那么返回 true 来 preventDefault
+        return this.holdingCmds.size > 0 || this.waitTimeout.size > 0;
     }
 
     //#endregion
 
     //#region 激励
 
-    excitedBy(excitation: IExcitation<number>): void {
-        if (this.controller) {
-            this.controller.revoke();
+    excitedBy(excitation: IExcitation<number> | null): void {
+        if (this.excitation) {
+            this.excitation.remove(this);
         }
-        this.controller = excitation.add(this);
+        this.excitation = excitation;
+        if (excitation) {
+            excitation.add(this);
+        }
     }
 
     excited(payload: number): void {
-        this.now = payload;
-        this.flushPending();
+        // 先判定 timeout，需要快照
+        for (const pending of new Set(this.waitTimeout)) {
+            const dt = payload - pending.start;
+            if (dt >= pending.command.timeout) {
+                this.emit(pending);
+                this.waitTimeout.delete(pending);
+            }
+        }
+
+        // 再看 holding，这个不会删，所以不需要快照
+        for (const [command, pending] of this.holdingCmds) {
+            // 抬起不会在这里触发
+            if (command.mode === HotkeyEmitMode.KeyUp) continue;
+            // 首次触发
+            const dt = payload - pending.start;
+            const dt2 = payload - pending.lastEmit;
+            if (pending.emitted === 0 && dt < command.timeout) {
+                this.emit(pending);
+            }
+            if (command.mode === HotkeyEmitMode.Continuous) {
+                if (pending.emitted === 1) {
+                    // 先看第二次触发
+                    if (dt2 >= command.interval) {
+                        this.emit(pending);
+                    }
+                } else {
+                    // 其他的要看 dt 了
+                    if (dt2 >= command.dt) {
+                        this.emit(pending);
+                    }
+                }
+            }
+        }
     }
 
     //#endregion
 
     //#region 监听
 
-    /**
-     * 将浏览器事件的按键码映射为按键枚举，部分浏览器的 Meta 键需要本地映射
-     * @param eventKeyCode 浏览器事件的按键码
-     */
-    private resolveKeyCode(eventKeyCode: number): KeyCode | null {
-        if (
-            eventKeyCode === 91 ||
-            eventKeyCode === 92 ||
-            eventKeyCode === 224
-        ) {
-            return KeyCode.Meta;
-        }
-        const key = EVENT_KEY_CODE_MAP[eventKeyCode];
-        return key ? key : null;
-    }
-
     listen(target: HTMLElement | null): void {
         if (this.listening === target) return;
+
         if (this.listening) {
             this.listening.removeEventListener('keydown', this.keyDownListener);
             this.listening.removeEventListener('keyup', this.keyUpListener);
         }
-        this.listening = target;
+
         if (target) {
             target.addEventListener('keydown', this.keyDownListener);
             target.addEventListener('keyup', this.keyUpListener);
         }
+
+        this.listening = target;
     }
 
     //#endregion

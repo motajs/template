@@ -25,7 +25,9 @@ import {
     TextureManager,
     ISaveSystem,
     SaveSystem,
-    IGameUIPropsBase
+    IGameUIPropsBase,
+    ClientHotkey,
+    IClientHotkey
 } from '@user/client-base';
 import {
     IMapRenderer,
@@ -59,6 +61,7 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly mainMapExtension: IMapExtensionManager;
     readonly sceneController: IUIController<IGameUIPropsBase>;
     readonly mainUIController: IUIController<IGameUIPropsBase>;
+    readonly hotkey: IClientHotkey;
 
     // Layer 5 渲染顶层 - 目前没东西
 
@@ -79,6 +82,7 @@ export class ClientCore extends CoreState implements IClientCore {
             config.tilesetReserve,
             config.tilesetUnit
         );
+        this.hotkey = new ClientHotkey();
 
         this.rafExcitation = new RafExcitation();
         this.excitationDivider = new ExcitationDivider<number>();
