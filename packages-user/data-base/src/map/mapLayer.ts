@@ -358,12 +358,12 @@ export class MapLayer
         }
         this.setBlock(0, x, y);
         const tile = this.createDynamic(num, x, y);
-        if (keepEvent) {
-            const staticTile = this.getTile(x, y);
-            if (staticTile) {
+        const staticTile = this.getTile(x, y);
+        if (staticTile) {
+            if (keepEvent) {
                 tile.syncTileEvent(staticTile);
-                staticTile.tileEvent().clear();
             }
+            staticTile.tileEvent().clear();
         }
         return tile;
     }
