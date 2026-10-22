@@ -15,14 +15,7 @@
 - `getEnemyByLoc(x, y)` / `getEnemyByLocator(locator)` / `getEnemyLocatorByView(view)`：按位置或视图互查；
 - `getDamageSystem()` / `getMapDamage()`：取绑定到上下文的伤害系统与地图伤害。
 
-上下文本身不进入存档。切楼层时由外部调用 `setFloor`；地图尺寸变化时调用 `resize`，它会清空当前上下文中的所有怪物与运行状态，并把 `needUpdate` 置为真。`clear()` 只清空怪物与运行状态（以及无来源全局光环列表），保留转换器、查询、最终效果等注册项；`destroy()` 还会解绑伤害系统、地图伤害并清空所有注册项。
-
-**`setFloor` 只改 `floor` 字段，不会把 `needUpdate` 置为真。** 如果只调用 `setFloor`，下一次 `buildup()` 会直接返回，计算后怪物与伤害都不会重建。切楼层时必须同时做一次会置脏的动作：
-
-- 正常换图流程调用 `resize(新地图宽, 新地图高)`，它会清空旧怪物并置 `needUpdate`，随后重新放入新楼层的怪物；
-- 如果尺寸没变、只想让已有视图重算，可以重新 `bindHero(state.hero.getAttribute())`（它也会置 `needUpdate`），或触发任一注册/增删接口，再调用 `buildup()`。
-
-不要只写 `setFloor` 就期待上下文刷新。
+上下文本身不进入存档。切楼层与地图尺寸变化由外部维护：`setFloor` 只改 `floor` 字段，`resize` 会清空当前怪物与运行状态，并让下一次 `buildup()` 重建。正常换图流程已经处理好这些，不需要自己手动刷新。`clear()` 只清空怪物与运行状态（以及无来源全局光环列表），保留转换器、查询、最终效果等注册项；`destroy()` 还会解绑伤害系统、地图伤害并清空所有注册项。
 
 ## 三种怪物对象
 
@@ -30,11 +23,11 @@
 
 - `getBaseEnemy()`：原始模板，只读。它来自怪物数据，是所有计算的起点。
 - `getComputedEnemy()`：计算后怪物，只读。光环、查询、最终效果的结果都写在这份副本上；伤害与地图伤害读的也是它。
-- `getModifiableEnemy()`：可修改的原始怪物。它返回的其实是 `getBaseEnemy()` 的可写版本，修改后不会自动同步，必须手动 `markDirty()`。
+- `getModifiableEnemy()`：可修改的原始怪物。它返回的其实是 `getBaseEnemy()` 的可写版本，修改后不会自动同步；这是少数需要手动 `markDirty()` 的情况。
 
 视图内部还有一份「正在计算中的怪物」（`getComputingEnemy()`），只供上下文在构建过程中使用，外部不应调用。
 
-`getComputedEnemy()` 并不是单纯返回一个字段：它会先调用 `context.requestRefresh(this)`，再返回计算后对象。也就是说，读取计算后怪物本身就是一次「按需刷新」的时机。`reset()` 则把计算后怪物退回原始模板的状态，全量重建开始时会统一调用它：
+`getComputedEnemy()` 并不是单纯返回一个字段：读取它本身就会按需刷新这只怪物，然后返回计算后对象。`reset()` 则把计算后怪物退回原始模板的状态，全量重建开始时会统一调用它：
 
 ```ts
 import { IEnemyAttr } from '@user/data-common';
@@ -100,47 +93,13 @@ graph TD
 
 ## 局部刷新与全量重建
 
-全量 `buildup()` 会重算所有怪物。日常更常见的是只改了一只怪物，这时走局部刷新：
+全量 `buildup()` 会重算所有怪物。日常不需要手动更新：怪物增删、注册效果、绑定勇士等操作都会自己置脏，读取 `getComputedEnemy()` 或伤害时会自动完成局部刷新。
 
-- `view.markDirty()` 把视图加入 `dirtyEnemy`，同时让伤害系统删掉这只怪物的缓存；
-- `context.requestRefresh(view)` 决定怎么刷新：若 `needTotallyRefresh` 命中该视图，或上下文本身已标记为需要更新，就回到全量 `buildup()`；否则调用 `refreshEnemy(view)`，只重算命中该怪物的光环与查询。
+只有绕过构建流程、直接改原始模板时，才需要 `view.markDirty()`。它把这只怪物加入待刷新集合，同时清掉伤害缓存；之后再读计算后怪物或伤害就会更新。这是少数情况，不要把它当成常态流程。
 
-`refreshEnemy` 会先 `reset()` 该视图，再按上一次全量构建留下的 `sortedAura` 与特殊查询表逐优先级重算：
+局部刷新不会重建光环拓扑：新产生的特殊属性即使能转成光环，也只在开发环境告警（code 101），不会加入排序表。要让新光环参与构建，必须走一次全量 `buildup()`。
 
-- 对每条 `couldApplySpecial` 的光环重新调用 `applySpecial`，并通过 `refreshSpecialModifier` 就地增删、修改这只怪物的特殊属性；同一优先级下再重跑特殊查询；
-- 然后按优先级执行命中的基础光环；
-- 最后执行常规查询与最终效果。
-
-所以特殊属性与特殊查询都会在这只怪物身上重跑，并不只是基础属性。但它**不重建光环拓扑**：`sortedAura` 与 `convertedAura` 仍是上次 `buildupSpecials()` 的结果。局部刷新期间新产生的特殊属性即使能转换成光环，也只会在开发环境告警（code 101），不会加入排序表；被删除特殊属性对应的旧光环也不会从排序表移除。要让新光环参与构建，必须走一次全量 `buildup()`（通过 `needTotallyRefresh` / `needUpdate` 触发）。
-
-`requestedCommonContext` 记录的是「查询过上下文」的怪物：常规查询调用 `query()` 时会登记。局部刷新某只怪物时，上下文会把这些依赖外部状态的怪物一并重算，避免它们读到过期的周围环境。这也是[怪物查询](../../intermediate/enemy-query.md)强调「必须用 `query()` 而不是 `handler.context`」的原因：绕过 `query()` 就不会被登记，周围变化后它不会重算。
-
-不能只改字段不刷新。计算后怪物是一份独立副本，伤害系统还会缓存计算结果；改了原始怪物却既不标脏也不申请刷新，后续读到的仍然是旧副本与旧伤害。
-
-```ts
-import { IEnemyAttr } from '@user/data-common';
-import { ICoreState } from '@user/data-state';
-import { IEnemyView } from '@user/data-system';
-
-/** 修改原始怪物后，按正确顺序刷新并重新取伤害。 */
-function modifyAndRefresh(
-    state: ICoreState,
-    view: IEnemyView<IEnemyAttr>
-): void {
-    // 1. 改原始怪物（getModifiableEnemy 返回的是模板，不会自动同步）
-    view.getModifiableEnemy().setAttribute('armor', 20);
-
-    // 2. 标脏：加入待刷新集合，并清掉这只怪物的伤害缓存
-    view.markDirty();
-
-    // 3. 申请刷新：没有拓扑变化时只重算这一只
-    state.enemyContext.requestRefresh(view);
-
-    // 4. 重新取伤害；此时读到的是新结果
-    const info = state.enemyContext.getDamageSystem()?.getDamageInfo(view);
-    console.log('伤害', info?.damage, '回合', info?.turn);
-}
-```
+若某只怪物在常规查询里调用了 `query()`，它就会被记为依赖上下文：周围怪物更新时，它也要更新。这正是[怪物查询](../../intermediate/enemy-query.md)强调必须用 `query()` 而不是 `handler.context` 的原因——绕过 `query()` 不会被登记，周围变化后读到的仍是旧值。
 
 ## 伤害系统与缓存
 
@@ -153,7 +112,7 @@ function modifyAndRefresh(
 
 `markDirty(view)` 只删除这一只怪物的缓存，`markAllDirty()` 清空全部缓存。`getCriticalLimit` 只用于临界计算的上界，不参与普通伤害结算；它不会被缓存，也不负责刷新。
 
-「改了怪物属性，但伤害没变」通常有两个原因：要么改的是原始怪物而没标脏，查询仍在读旧的计算后副本；要么伤害缓存没有被清掉。按上一节的顺序 `markDirty` → `requestRefresh` → `getDamageInfo` 就能排除这两种情况。
+「改了怪物属性，但伤害没变」通常有两个原因：要么改的是原始怪物而没标脏，查询仍在读旧的计算后副本；要么伤害缓存没有被清掉。按 `markDirty` → `getDamageInfo` 的顺序就能排除这两种情况。
 
 光环、查询与最终效果在构建过程中改的是计算后怪物，`buildup()` 结束时已经统一清空缓存，所以它们不需要额外标脏。需要手动标脏的只有「绕过构建流程、直接改原始怪物」的场景。
 
@@ -242,10 +201,9 @@ function inspectAfterBuildup(
     const before = ctx.getDamageSystem()?.getDamageInfo(view);
     console.log('构建后伤害', before?.damage, '回合', before?.turn);
 
-    // 直接改模板，再走局部刷新
+    // 直接改模板后标脏；再次读取时会自动完成局部刷新
     view.getModifiableEnemy().setAttribute('armor', 20);
     view.markDirty();
-    ctx.requestRefresh(view);
 
     const after = ctx.getDamageSystem()?.getDamageInfo(view);
     console.log('刷新后伤害', after?.damage, '回合', after?.turn);
@@ -281,7 +239,6 @@ function verifyBuildup(state: ICoreState, view: IEnemyView<IEnemyAttr>): void {
     // 修改模板护甲并标脏，缓存应失效
     view.getModifiableEnemy().setAttribute('armor', 50);
     view.markDirty();
-    ctx.requestRefresh(view);
 
     const second = damageSystem?.getDamageInfo(view);
     console.log('修改后伤害', second?.damage);
@@ -300,8 +257,8 @@ function verifyBuildup(state: ICoreState, view: IEnemyView<IEnemyAttr>): void {
 - **未绑定勇士时 `buildup()` 会告警并返回**：光环与最终效果可能读取勇士属性，构建前必须 `bindHero`。`initializeEnemy` 已经绑定过。
 - **`needUpdate` 为假时 `buildup()` 直接返回**：没有变化就不会重算。注册效果、放置怪物、绑定勇士都会把它置为真。
 - **`getModifiableEnemy()` 的修改不会自动同步**：它返回原始模板，改完必须 `markDirty()`。
-- **`needTotallyRefresh` 表示拓扑变化**：特殊属性增删导致光环集合变化时，局部刷新会升级为全量构建。不要在这种情况下强行只改一只。
-- **不要在高频循环里反复全量 `buildup()`**：全量构建会重置并重算所有怪物，开销随怪物数量增长；单只变化优先用 `markDirty` + `requestRefresh`。
+- **新光环需要全量重建**：特殊属性增删会改变光环集合，局部刷新处理不了，下一次读取会回到全量 `buildup()`。
+- **不要在高频循环里反复全量 `buildup()`**：全量构建会重置并重算所有怪物，开销随怪物数量增长；单只变化只需 `markDirty()`，读取时会按需局部刷新。
 - **`getComputingEnemy()` 是内部接口**：它暴露正在构建中的可写怪物，外部调用会绕过刷新与脏标记。
 - **查询效果不是内置内容**：`initializeEnemy` 只注册光环转换器、最终效果、战斗脚本与钩子，没有注册任何查询。查询需要自己注册后才会参与构建。
 - **`buildupSpecials` 在没有光环时提前返回**：它先加入全局光环、转换特殊属性光环，然后执行 `if (sortedAura.size === 0) return;`。如果只注册了特殊查询而场上没有任何光环，这个提前返回会让特殊查询也不执行。需要特殊查询时，至少保证存在一条光环（全局或转换出的都算）。

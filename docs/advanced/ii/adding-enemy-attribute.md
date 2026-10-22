@@ -69,9 +69,7 @@ export interface IEnemyAttr {
         "money": 0,
         "exp": 0,
         "point": 0,
-        // 攻速以百分数存储：100 是正常速度
         "atkSpeed": 100,
-        // 护甲同样以百分数存储：0 是不减伤
         "armor": 0
     },
     "special": {}

@@ -146,28 +146,25 @@ function replacePathCost(state: ICoreState, cost: PathCostFunction): void {
 
 判断空格要用 `block.tile === 0`，不要用 `block.static === null`：图层按坐标缓存静态图块实例，空地上 `layer.getTile()` 同样返回实例。
 
-返回值必须是有限数或 `Infinity`。`Infinity` 是合法的「不可进入」代价；`NaN` 与负数会被视为非法，告警后回退为 `1`。
+返回值应是非负的有限数。`NaN` 与负数会被视为非法，告警后回退为 `1`。**不可进入的点由通行谓词控制，不要用 `Infinity` 去标记不可达**——那不属于损失函数的职责，也不是标准用法。
 
 ```ts
 import { PathCostFunction } from '@user/data-system';
 
 /** 沼泽图块的数字，按自己的内容配置替换 */
 const SWAMP_TILE = 21;
-/** 墙图块的数字 */
-const WALL_TILE = 1;
 
 /**
- * 进入沼泽花费 3，普通地面花费 1，墙不可进入。
- * 代价只影响选路，不改变一步能否通行；通行仍由 usePassPredicate 决定。
+ * 进入沼泽花费 3，普通地面花费 1。
+ * 墙等不可进入的格子交给通行谓词排除，损失函数不会看到它们。
  */
 export const terrainCost: PathCostFunction = block => {
-    if (block.tile === WALL_TILE) return Infinity;
     if (block.tile === SWAMP_TILE) return 3;
     return 1;
 };
 ```
 
-损失函数参与的是「进入节点的总代价」，起点自身不计费。目标格的代价也会被计入，所以给目标格设置 `Infinity` 会让它变成不可达。若某种图块在通行谓词里已经禁止进入，损失函数根本不会看到它；两者分工不同，不要只改其中一边就期待通行判定变化。
+损失函数参与的是「进入节点的总代价」，起点自身不计费，目标格的代价同样计入。若某种图块在通行谓词里已经禁止进入，损失函数根本不会看到它；两者分工不同，不要只改其中一边就期待通行判定变化。
 
 ## 自定义瞬移策略
 
@@ -313,7 +310,7 @@ async function verifyPathfinding(
 - **谓词的 `shouldHit` 会标记终端节点**：终端节点只能作为路径终点，不能作为中间点；目标点不可达时优先检查 `canPass` 与 `shouldHit` 的组合。
 - **换楼层要重新绑定**：`useMapLayer` 绑定的是具体图层对象，旧楼层失效后必须换成新楼层的图层。
 - **图层必须属于同一个数据端对象**：`useMapLayer` 会校验图层来源，不属于当前状态时告警并忽略这次绑定。
-- **损失函数的非法返回值会回退**：`NaN` 与负数告警后按 `1` 处理；`Infinity` 合法，表示不可进入。
+- **损失函数的非法返回值会回退**：`NaN` 与负数告警后按 `1` 处理；不可达由通行谓词控制，不要用 `Infinity` 标记。
 - **策略只影响 `teleportTo`**：`moveTo` 永远逐步移动，不会询问回退策略。
 - **瞬移会跳过途经格**：途经的踩踏事件不会触发；需要补触发时用 `onBeforeTeleportTo` 或 `onAfterTeleportTo`。
 - **`onAfterTeleportTo` 不是瞬移专用**：它挂在移动控制器结束回调上，逐步移动结束时同样会触发。

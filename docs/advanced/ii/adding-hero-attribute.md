@@ -2,7 +2,7 @@
 
 勇士属性不只是数据表里多一列。一个属性会同时被类型常量、内容配置、修饰器、伤害计算、装备与界面读取；只在接口里加字段，读取处会拿到 `undefined`，参与运算后变成 `NaN`。新增属性真正要补的，是这条链路上的每一处。
 
-本篇以攻速（`atkSpeed`，每回合造成的伤害按百分比缩放）与护甲（`armor`，按百分比减免最终伤害）为例，走完「改接口 → 补默认值与初始值 → 读取与修饰 → 接入伤害计算」的数据端流程。编辑器新增属性项与状态栏显示属于对应端的实现，本篇只留占位。
+本篇以攻速（`atkSpeed`，每回合造成的伤害按百分比缩放）与护甲（`armor`，按百分比减免最终伤害）为例，走完「改接口 → 补默认值与初始值 → 读取与修饰 → 接入伤害计算」的数据端流程。编辑器负责新增属性项与内容配置，状态栏负责显示；这些都属于对应端的实现，本篇只留占位。
 
 ## 新增属性要改哪五处
 
@@ -100,47 +100,50 @@ export const HERO_DEFAULT_ATTRIBUTE: IHeroAttr = {
     "manamax": 0,
     "money": 0,
     "exp": 0,
-    // 攻速以百分数存储：100 是正常速度
     "atkSpeed": 100,
-    // 护甲同样以百分数存储：0 是不减伤
     "armor": 0
 }
 ```
 
-`core.jsonc` 允许注释，但这两项不是可选项。若只在接口与默认值里加、忘了内容配置，`getBaseAttribute('atkSpeed')` 会返回 `undefined`，`atkSpeed / 100` 随之变成 `NaN`，伤害与回合数都会失真。
+这两项不是可选项。内容配置通常由编辑器维护；样板里的 `.jsonc` 只保留文件开头那段系统前缀注释，加载器会按前缀切开后直接 `JSON.parse`，所以后面不能再写注释。编辑器就位前可以直接改文件，就位后按编辑器的方式补字段。
+
+若只在接口与默认值里加、忘了内容配置，`getBaseAttribute('atkSpeed')` 会返回 `undefined`，`atkSpeed / 100` 随之变成 `NaN`，伤害与回合数都会失真。
 
 ### 旧存档迁移
 
-新游戏只需要改 `core.jsonc`；旧存档不会和它合并。`state.loadState(save, compression)` 会把 `@system/hero` 里的 `attribute.values` 原样交给 `HeroAttribute.loadState`，缺的键不会被补。迁移点在调用 `loadState` 之前，直接改存档映射：
+新游戏只需要改内容配置；旧存档不会和它合并。`state.loadState(save, compression)` 会把 `@system/hero` 里的 `attribute.values` 原样交给 `HeroAttribute.loadState`，缺的键不会被补。需要兼容旧档时，**建议实现一个 `ISaveableExecutor` 并绑定到 `@system/hero`**：它在读档完成后执行，正是为这类迁移准备的。
 
 ```ts
-import { IHeroAttr, SaveCompression } from '@user/data-common';
-import { ICoreState } from '@user/data-state';
+import { IHeroAttr } from '@user/data-common';
+import { IHeroState } from '@user/data-base';
+import { ISaveableExecutor } from '@user/data-state';
 
-/** 在 state.loadState 之前补齐旧档缺失的勇士属性键。 */
-function migrateHeroSave(save: Map<string, unknown>): void {
-    const hero = save.get('@system/hero') as
-        | { attribute?: { values?: Partial<IHeroAttr> } }
-        | undefined;
-    const values = hero?.attribute?.values;
-    if (!values) return;
+/**
+ * 读档后补齐旧档缺失的勇士属性键。
+ * Executor 在对应可存档对象读档完成后执行，不包在录像禁用范围内。
+ */
+export class HeroAttributeSaveExecutor implements ISaveableExecutor<
+    IHeroState<IHeroAttr>
+> {
+    afterLoad(data: IHeroState<IHeroAttr>): void {
+        const attribute = data.getModifiableAttribute();
+        const values = attribute.toStructured();
 
-    // 旧档没有这两个键；补成与新游戏一致的默认值
-    values.atkSpeed ??= 100;
-    values.armor ??= 0;
-}
-
-/** 读档入口：先迁移，再交给数据端统一读档。 */
-function loadWithMigration(
-    state: ICoreState,
-    save: Map<string, unknown>
-): void {
-    migrateHeroSave(save);
-    state.loadState(save, SaveCompression.NoCompression);
+        // 只在旧档确实缺键时补默认值；set 会顺带重算最终值
+        if (!Object.hasOwn(values, 'atkSpeed')) attribute.set('atkSpeed', 100);
+        if (!Object.hasOwn(values, 'armor')) attribute.set('armor', 0);
+    }
 }
 ```
 
-也可以给 `'@system/hero'` 绑定一个 `ISaveableExecutor`，在 `afterLoad` 里用 `state.hero.getModifiableAttribute().set('armor', 0)` 补值。但 `afterLoad` 发生在属性读档之后，已经算过一轮最终值，补完还要依赖 `set` 触发重算；直接在 `loadState` 前改映射更干净。
+把执行器绑定在可存档对象注册之后（例如 `initialize` 的 `awake` 里）：
+
+```ts
+state.addSaveableContent('@system/hero', state.hero);
+state.bindSaveableExecuter('@system/hero', new HeroAttributeSaveExecutor());
+```
+
+读档后 `set` 会立刻重算最终值，不需要再手动刷新。新增属性需要存档迁移时，优先用 Executor，而不是在 `loadState` 前后手工改存档映射。
 
 ## 读取与修饰
 
@@ -398,20 +401,16 @@ export class MainDamageCalculator implements IDamageCalculator<
     "hideInToolbox": false,
     "equip": {
         "slots": ["weapon"],
-        // 动画 id 由内容层定义，这里换成你自己的装备动画
         "animate": "equip",
-        // 数值加成：攻速只走百分比，不额外加固定值
         "value": {},
-        // 百分比加成：沿用装备系统的约定，0.15 表示 15%
         "percentage": { "atkSpeed": 0.15 },
-        // 这两个字段目前只是数据，引擎不会自动执行
         "loadEvent": null,
         "unloadEvent": null
     }
 }
 ```
 
-内容层是 JSONC，不会经过 TypeScript 的 `Record` 检查。如果你要在 TS 里手写 `IItemEquipData<IHeroAttr>` 对象字面量，注意 `value` 与 `percentage` 的类型是 `Record<SelectKey<IHeroAttr, number>, number>`，它会要求补齐**全部**数值属性键；只写 `{ atkSpeed: 0.15 }` 无法通过类型检查。最省事的做法仍然是写在 `src/content/item.jsonc` 里。
+内容层是 JSONC，直接写在 `src/content/item.jsonc` 里即可（同样由编辑器维护，开头之外不能写注释）。
 
 装备实例会把这些记录转成 `ValueModifier` 与 `PercentageModifier`，穿戴时挂到勇士属性，卸下时移除。基础攻速 `100` 配上 `percentage.atkSpeed = 0.15`，最终攻速就是 `115`。注意属性本身按百分数存储（`15` 表示 15%），而装备的 `percentage` 是倍率（`0.15` 表示 15%），两者写法不同。
 
@@ -419,14 +418,15 @@ export class MainDamageCalculator implements IDamageCalculator<
 
 ## 编辑器与状态栏
 
-编辑器需要在英雄属性面板增加攻速与护甲两个输入项；状态栏需要在合适的位置显示它们的当前值。两处都属于对应端的实现，不在本篇范围内：
+编辑器需要在英雄属性面板增加攻速与护甲两个输入项，并负责维护 `core.jsonc` 里的内容配置；状态栏需要在合适的位置显示它们的当前值。这些都属于对应端的实现，不在本篇范围内：
 
 - `编辑器 · 新增英雄属性项`
+- `编辑器 · 内容配置`
 - `渲染端 · 状态栏`
 
-<!-- TODO(advanced-II): 编辑器属性项与状态栏显示 -->
+<!-- TODO(advanced-II): 编辑器属性项、内容配置与状态栏显示 -->
 
-数据端完成后，这两个入口只需要读取 `getFinalAttribute('atkSpeed')` 与 `getFinalAttribute('armor')`。在它们实现之前，先用控制台或调试脚本确认数值正确。
+数据端完成后，编辑器与状态栏只需要读取 `getFinalAttribute('atkSpeed')` 与 `getFinalAttribute('armor')`。在它们实现之前，先用控制台或调试脚本确认数值正确。
 
 ## 怎么验证
 
