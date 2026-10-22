@@ -660,6 +660,9 @@ importers:
 
   packages/system:
     dependencies:
+      '@motajs/animate':
+        specifier: workspace:*
+        version: link:../animate
       '@motajs/common':
         specifier: workspace:*
         version: link:../common

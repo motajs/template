@@ -291,6 +291,11 @@
         "198": "Duplicate shop id '$1', old shop will be overwritten.",
         "199": "A shop state instance and a hero state instance binding is needed before buy or sell items.",
         "200": "Cannot buy or sell item since target item '$1' does not exist.",
+        "201": "Cannot set hotkey condition or implement command since no scope is active.",
+        "202": "Cannot implement nonexistent hotkey command '$1'.",
+        "203": "Hotkey command '$1' has an invalid KeyUp combination: at most one non-auxiliary key is allowed.",
+        "204": "Duplicate hotkey command '$1', the existing command will be used.",
+        "205": "Cannot leave nonexistent hotkey scope.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }
