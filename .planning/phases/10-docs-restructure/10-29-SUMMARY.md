@@ -12,9 +12,9 @@ provides:
 affects: [10-30 sidebar registration]
 
 actuals:
-    tokens: 5000
+    tokens: 4568
     tasks: 3
-    commits: 2
+    commits: 3
     plan_head_before: ce3cd3660a958a2bae7e9528bc3a2a710cf7609c
 
 tech-stack:
@@ -133,7 +133,8 @@ status: complete
 ## Task Commits
 
 1. **Task 1: 编写 face-handler.md 正文** — `3c61984`（docs）
-2. **Task 2: 源码核对、格式与构建收口** — 本提交（docs，含本 SUMMARY）
+2. **Task 2: 源码核对、格式与构建收口** — `56bbe73`（docs，含本 SUMMARY）
+3. **收尾：按文档字符数校正实测 token 值** — 本提交（docs）
 
 ## Files Created/Modified
 
@@ -181,4 +182,4 @@ _Completed: 2026-10-23_
 
 - docs/advanced/face-handler.md 存在
 - 10-29-SUMMARY.md 存在
-- 提交 3c61984 与本次收口提交存在
+- 提交 3c61984、56bbe73 与本次收尾提交存在
