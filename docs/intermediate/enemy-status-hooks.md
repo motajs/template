@@ -105,7 +105,7 @@ map.set(
 );
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **第一步：在战斗钩子里「挂上状态」。** 加在 `EnemyCombatHooks.onAfterCombat` 末尾——
 
@@ -157,7 +157,7 @@ if (double) {
 
 三处都在内置类里，所以不必注册；如果你确实另写了钩子或脚本类，才需要在 `initializeEnemy` 里 `addHook` / `addCombatScript`（见下一节）。
 
-状态里用到的临时加减或百分比，优先用修饰器实现，概念与 `save` 参数见[勇士属性](./hero-attribute.md)。
+状态里用到的临时加减或百分比，优先用修饰器实现，概念与 `save` 参数见[勇士属性](./hero-attribute.md#save-参数与读档一致性)。
 
 ## 自己写钩子类
 
@@ -204,7 +204,7 @@ state.combat.addHook(new XxxHooks(state));
 
 ### 示例：蓄力（下次战斗伤害乘二）
 
-下面仍以「蓄力」为例，演示自写类的形态。它只是填空示范，不是模板本身：一个钩子负责挂状态，一个脚本负责消费（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）。
+下面仍以「蓄力」为例，演示自写类的形态。它只是填空示范，不是模板本身：一个钩子负责挂状态，一个脚本负责消费（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md#包从哪来-src、packages-user-与-packages) 的「包从哪来」）。
 
 ```ts
 // [需改] 类名
@@ -250,7 +250,7 @@ state.combat.addHook(new ChargedHooks(state));
 state.combat.addCombatScript(new ConsumeDoubleScript(state));
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：编号（`45`）、类名、flag 名、`priority` 与翻倍写法换成你自己的。第三步「计算器只读」与上面改内置的写法完全相同，不再重复。
 

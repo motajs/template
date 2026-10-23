@@ -57,7 +57,7 @@ attr.addModifier('def', defDown);
 attr.deleteModifier('def', defDown);
 ```
 
-> 复制说明：片段已省略 `import`（`ValueModifier`、`PercentageModifier` 来自 `@user/data-base`）；文件顶部通常已有，不要再粘，报缺少时再补（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`（`ValueModifier`、`PercentageModifier` 来自 `@user/data-base`）；文件顶部通常已有，不要再粘，报缺少时再补（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 想要一段**临时**加成时，就先 `addModifier(...)` 挂上修饰器，在不再需要时用 `deleteModifier(...)` 把它移除，加成随即消失；反之，只要一直不移除，它就是永久加成。
 
@@ -100,7 +100,7 @@ const weaken = new PercentageModifier(-0.2);
 state.hero.getModifiableAttribute().addModifier('def', weaken);
 ```
 
-> 复制说明：片段已省略 `import`（`PercentageModifier` 来自 `@user/data-base`）；文件顶部通常已有，不要再粘，报缺少时再补（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`（`PercentageModifier` 来自 `@user/data-base`）；文件顶部通常已有，不要再粘，报缺少时再补（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：把 `'atk'`、`'def'` 换成你要改的属性名，把 `15`、`-0.2` 换成你的数值（`-0.2` 即 -20%）。
 

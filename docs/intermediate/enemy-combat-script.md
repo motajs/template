@@ -80,7 +80,7 @@ async before(
 }
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：`hasSpecial(18)` 的判断与提示文字换成你自己的。
 
@@ -109,7 +109,7 @@ async after(
 }
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：回复量 `20` 与回复的属性换成你自己的。如果希望回血发生在奖励结算**之前**，就把这段放在 `after` 开头而不是末尾。
 
@@ -180,7 +180,7 @@ state.combat.addCombatScript(new XxxCombatScript());
 
 ### 示例：拥有某特殊属性时无法战斗
 
-下面的脚本检查怪物是否拥有 code 18 的特殊属性（无敌，编号见[特殊属性](./enemy-specials.md)的「内置属性编号表」），有则直接放弃战斗（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）。代码中用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
+下面的脚本检查怪物是否拥有 code 18 的特殊属性（无敌，编号见[特殊属性](./enemy-specials.md#内置属性编号表)的「内置属性编号表」），有则直接放弃战斗（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md#包从哪来-src、packages-user-与-packages) 的「包从哪来」）。代码中用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
 
 **目标**：带「无敌」（code 18）的怪物不能被打，点它时直接放弃战斗并给出提示。
 
@@ -218,7 +218,7 @@ export class SealCombatScript implements ICombatScript<IEnemyAttr, IHeroAttr> {
 state.combat.addCombatScript(new SealCombatScript());
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：`priority`（本示例 `100`，越大越先执行，内置脚本是 `0`）、`hasSpecial(18)` 的判断与提示文字换成你自己的。
 
@@ -264,7 +264,7 @@ export class HealAfterCombatScript implements ICombatScript<
 state.combat.addCombatScript(new HealAfterCombatScript());
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：`priority`（本示例 `-10`，设成负值排在内置脚本之后）、回复量 `20` 与回复的属性换成你自己的。
 

@@ -115,7 +115,7 @@ export class MainHeroAttributeHooks implements IHeroAttributeHooks<IHeroAttr> {
 }
 ```
 
-> 复制说明：这段就是内置类的现有代码，不需要新增文件；若编辑器提示缺少某个名字，再在文件顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：这段就是内置类的现有代码，不需要新增文件；若编辑器提示缺少某个名字，再在文件顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：把 `void name;` / `void value;` 换成你的处理；示例只是提示，也可以改成加属性、记 flag、触发事件等。
 
@@ -163,7 +163,7 @@ const hook = new MyHeroAttributeHooks(state);
 const controller = state.hero.attribute.addHook(hook);
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：类名、`implements` 后面的钩子族接口、方法名（对照上两张表），以及 `addHook` 前面的目标主对象。
 

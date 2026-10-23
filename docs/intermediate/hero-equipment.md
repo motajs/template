@@ -37,7 +37,7 @@ state.hero.equip.equip(uid, 0);
 const off = state.hero.equip.unequip(0);
 ```
 
-> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员，一般无需额外引入）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员，一般无需额外引入）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：把 `'sword'` 换成你的装备 id 或图块数字；把 `0`（槽位）换成目标槽的索引或名称；`uid`、`off` 不需要时可省去接收。
 
@@ -63,7 +63,7 @@ const total = state.hero.items.equipment.count('sword');
 
 ## 装备的加成
 
-每件装备实例（`IEquipmentState`）对勇士属性提供**数值加成**与**百分比加成**，分别通过 `getValue` / `getPercentage` 读取，`setValue` / `setPercentage` 修改。这两类加成本质上就是[勇士属性](./hero-attribute.md)中的修饰器：装备时把对应的 `ValueModifier` / `PercentageModifier` 挂到勇士属性上，卸下时移除，因此不必手动维护加成数值。
+每件装备实例（`IEquipmentState`）对勇士属性提供**数值加成**与**百分比加成**，分别通过 `getValue` / `getPercentage` 读取，`setValue` / `setPercentage` 修改。这两类加成本质上就是[勇士属性](./hero-attribute.md#修饰器-数值与百分比加成)中的修饰器：装备时把对应的 `ValueModifier` / `PercentageModifier` 挂到勇士属性上，卸下时移除，因此不必手动维护加成数值。
 
 ```ts
 const equipState = state.hero.items.equipment.get(uid);

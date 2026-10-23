@@ -501,7 +501,7 @@ export function checkMyPlugin(state: ICoreState): void {
 
 `PluginStatus` 与 `ICoreState` 从 `@user/data-state` 引入，`IMyPlugin` 是你写在插件 `types.ts` 里的对外接口。`status` 应为 `Loaded`，`plugin` 应是你 `new` 的那个实例。如果是 `null`，先检查 `list.ts` 有没有真的 `new` 并放进数组。
 
-想确认依赖阻断，可以把 `dataDeps` 里的某个 id 改成一个不存在的名字再启动：控制台应报缺失依赖错误（`77`，带插件 id 与缺失的依赖 id），并且你的插件没有任何时机输出。插件注册的存档内容如何验证，见[可存档内容](./saveable-content.md)的「验证」一节。
+想确认依赖阻断，可以把 `dataDeps` 里的某个 id 改成一个不存在的名字再启动：控制台应报缺失依赖错误（`77`，带插件 id 与缺失的依赖 id），并且你的插件没有任何时机输出。插件注册的存档内容如何验证，见[可存档内容](./saveable-content.md#验证)的「验证」一节。
 
 ## 边界与注意
 

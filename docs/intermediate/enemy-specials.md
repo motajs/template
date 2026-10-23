@@ -57,7 +57,7 @@
 - 参数是数字：`enemy.getSpecial<number>(4)`，之后 `value` 就是 `number`，可以直接参与计算；
 - 参数是对象：`enemy.getSpecial<ISpecial23Value>(23)`，之后 `value.range`、`value.hpBuff` 等字段都能直接读取。
 
-`T` 也可以省略（写成 `getSpecial(4)`）。但省略后引擎推断不出具体类型，`value` 会退化为一个取不到具体类型的宽泛类型，必须自己断言之后才能当数字或对象用。因此读取已知属性时，建议把 `<T>` 显式写出来。`T` 的写法（尖括号里填类型）就是[代码基础](./code-basics.md)里讲的泛型。
+`T` 也可以省略（写成 `getSpecial(4)`）。但省略后引擎推断不出具体类型，`value` 会退化为一个取不到具体类型的宽泛类型，必须自己断言之后才能当数字或对象用。因此读取已知属性时，建议把 `<T>` 显式写出来。`T` 的写法（尖括号里填类型）就是[代码基础](./code-basics.md#泛型-类型的「函数」)里讲的泛型。
 
 每个特殊属性对象实现 `ISpecial<T>`，常用成员是 `code`、`value` 与 `getDescription()`：
 
@@ -117,7 +117,7 @@ map.set(
 - 写字符串时，这段文字是固定的，例如坚固永远显示「坚固」；
 - 写函数时，引擎会在需要显示时把这条特殊属性对象传进来（就是参数 `special`），你就能用它的 `value` 拼出动态文字——上面的连击在 `value` 为 2 时显示「2连击」，为 3 时显示「3连击」。
 
-函数这种「接收参数、返回结果」的写法，见[代码基础](./code-basics.md)的函数一节。
+函数这种「接收参数、返回结果」的写法，见[代码基础](./code-basics.md#函数)的函数一节。
 
 参数可以不只是数字。比如吸血用对象保存比例与是否加到自身：
 
@@ -218,13 +218,13 @@ map.set(
 );
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：先搜一遍 `special.ts` 中已有的 `map.set(...)`，确认这个 code 没被占用；再把编号、名称、默认值与颜色换成你自己的。有参数且参数是对象时，还要按上面的步骤在顶部补一个 `ISpecial{code}Value` 参数接口。
 
 **怎么验证**：把这条新属性挂到怪物上（在怪物数据里填上 code 50 与参数），编辑器应能识别并显示名称与描述；再按「属性实现位置」实现的效果应在战斗中生效。
 
-**注意**：别破坏编辑器识别约定——`//#region` 标记、`// {code} - {name}` 与 `/** {code} - {name} */` 注释、参数接口名 `ISpecial{code}Value`（见下方「编辑器识别约定」）。刷新上下文通常无需手动：重建由怪物上下文惰性处理（放 / 移怪物、注册效果、绑定勇士都会自动标记），读取计算后怪物时自动重算；只有绕开正常流程、直接改怪物对象时才需要手动 `state.enemyContext.markDirty(view)`（必要时 `state.enemyContext.buildup()` 全量重建）。详见[战斗总览](./combat-overview.md)的「什么时候重建」。
+**注意**：别破坏编辑器识别约定——`//#region` 标记、`// {code} - {name}` 与 `/** {code} - {name} */` 注释、参数接口名 `ISpecial{code}Value`（见下方「编辑器识别约定」）。刷新上下文通常无需手动：重建由怪物上下文惰性处理（放 / 移怪物、注册效果、绑定勇士都会自动标记），读取计算后怪物时自动重算；只有绕开正常流程、直接改怪物对象时才需要手动 `state.enemyContext.markDirty(view)`（必要时 `state.enemyContext.buildup()` 全量重建）。详见[战斗总览](./combat-overview.md#什么时候重建)的「什么时候重建」。
 
 `createSpecials(state)` 返回 `Map<number, SpecialCreation<any>>`。`initializeEnemy`（`src/data/enemy/initialize.ts`，数据端集中注册内置怪物功能的入口函数）会遍历这个 Map，逐个调用 `state.enemyManager.registerSpecial(code, cons)`。也就是说，内置属性与你自己新增的属性走的是同一套注册流程：只要把新属性放进这个 Map，它就会随 `initializeEnemy` 一起完成注册。
 

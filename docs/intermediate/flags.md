@@ -88,7 +88,7 @@ const times = state.flags.getOrInsert('open-count', 0);
 times.add(1);
 ```
 
-> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：把 `'boss-defeated'`、`'open-count'` 换成你的字段名，把 `true`、`1` 换成你的值。只需一次读写的开关用「值」那组更简单；要反复增减的计数，用 `getOrInsert` 拿到字段对象后再 `add` 更省事。
 

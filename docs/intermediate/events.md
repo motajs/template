@@ -6,7 +6,7 @@
 
 ## 内建函数（BuiltInFunction）
 
-事件里能调用的每一个动作都叫**内建函数**，接口为 `BuiltInFunction`（来自 `@motajs/anon-tokyo`——引擎里负责把事件脚本解释执行的包，其归属层级见 [src 导览](./src-tour.md) 的「包从哪来」）：
+事件里能调用的每一个动作都叫**内建函数**，接口为 `BuiltInFunction`（来自 `@motajs/anon-tokyo`——引擎里负责把事件脚本解释执行的包，其归属层级见 [src 导览](./src-tour.md#包从哪来-src、packages-user-与-packages) 的「包从哪来」）：
 
 ```ts
 interface BuiltInFunction<P, E> {
@@ -121,7 +121,7 @@ export class EventSetFlag implements BuiltInFunction<
 }
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 再把新类加进注册数组：
 
@@ -138,7 +138,7 @@ export function createEventRegistrations(): BuiltInFunction[] {
 
 **怎么验证**：在事件语句里写一句 `setFlag(...)` 调用它，运行后读对应 Flag，应能看到写入的值（Flag 的读写见 [Flag 变量](./flags.md)）。
 
-**注意**：`BuiltInFunction` 来自 `@motajs/anon-tokyo`、`IBlockEventEnv` 来自 `@user/data-system`（包名含义见 [src 导览](./src-tour.md) 的「包从哪来」），顶部缺哪个再补哪个；参数接口建议放进 `src/data/event/types.ts`，与内置参数放在一起。
+**注意**：`BuiltInFunction` 来自 `@motajs/anon-tokyo`、`IBlockEventEnv` 来自 `@user/data-system`（包名含义见 [src 导览](./src-tour.md#包从哪来-src、packages-user-与-packages) 的「包从哪来」），顶部缺哪个再补哪个；参数接口建议放进 `src/data/event/types.ts`，与内置参数放在一起。
 
 ## 示例：勇士回血
 
@@ -166,7 +166,7 @@ export class EventHealHero implements BuiltInFunction<
 }
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：把 `'healHero'` 换成你的事件名；把 `add('hp', param.hp)` 换成你要调整的属性与数值。
 

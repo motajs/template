@@ -28,9 +28,9 @@ state.enemyContext.registerFinalEffect(effect);
 
 内置方法体的结构很简单：先取出勇士的最终攻防，然后按 code 依次判断，命中就改怪物的基础属性。加一条新效果，就是在这串判断后面再接一段。
 
-以「仿攻」为例：让怪物的攻击力等于勇士的最终攻击力。它与内置的模仿类似，区别是只改攻击、不改防御（这里的 code 32 是示例自选的未占用编号；内置的最终效果是坚固 code 3、模仿 code 8，内置编号见[特殊属性](./enemy-specials.md)）。
+以「仿攻」为例：让怪物的攻击力等于勇士的最终攻击力。它与内置的模仿类似，区别是只改攻击、不改防御（这里的 code 32 是示例自选的未占用编号；内置的最终效果是坚固 code 3、模仿 code 8，内置编号见[特殊属性](./enemy-specials.md#内置属性编号表)）。
 
-示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。下面代码用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
+示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md#包从哪来-src、packages-user-与-packages) 的「包从哪来」。下面代码用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
 
 **目标**：让带「仿攻」（code 32）的怪物，攻击力始终等于勇士的最终攻击力。
 
@@ -51,7 +51,7 @@ map.set(
 );
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 再在 `final.ts` 的 `apply` 末尾接一个分支——
 
@@ -171,7 +171,7 @@ export class AttackCopyFinal implements IEnemyFinalEffect<
 state.enemyContext.registerFinalEffect(new AttackCopyFinal());
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：编号（`32`）、类名、`priority` 与 `apply` 里的效果换成你自己的。
 

@@ -58,7 +58,7 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 
 - 只是让怪物某项属性更高：不要改计算器，放进光环、查询或最终效果，让 `enemy.getAttribute(...)` 读到新值即可；
 - 要让属性按回合数累积、按条件改变倍率、或增加新的伤害分支：在 `calculate` 的对应段落里改公式；
-- 只是给勇士一侧加临时数值：用[勇士属性](./hero-attribute.md)里的修饰器，计算器会自动读到最终属性。
+- 只是给勇士一侧加临时数值：用[勇士属性](./hero-attribute.md#修饰器-数值与百分比加成)里的修饰器，计算器会自动读到最终属性。
 
 ## 示例：等差数列属性
 
@@ -66,7 +66,7 @@ state.enemyContext.getDamageSystem()?.useCalculator(new MainDamageCalculator());
 
 「等差数列属性」指怪物攻击每回合按固定值递增。属性本身在一次计算中是常量，所以不能靠给 `atk` 加值实现；要在 `calculate` 里把「每回合伤害」按等差数列求和：
 
-示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」。下面用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
+示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md#包从哪来-src、packages-user-与-packages) 的「包从哪来」。下面用 `[模板]` 标出可原样照抄的行，用 `[需改]` 标出必须按需求改的行。
 
 **目标**：让怪物的每回合伤害按固定公差逐回合递增（本示例公差为 5）。
 
@@ -102,7 +102,7 @@ calculate(
 }
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：`step`（公差，本示例为 `5`）换成你要的递增规则。注意 `turn` 在内置方法里已经算过，插入时不要重复声明同名变量——把新增两行放在 `damage += (turn - 1) * enemyPerDamage;` 之后即可。
 
@@ -211,7 +211,7 @@ export class ArithmeticCalculator implements IDamageCalculator<
 state.enemyContext.getDamageSystem()?.useCalculator(new ArithmeticCalculator());
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：`step`（公差，本示例为 `5`）与 `base` 的算法换成你要的递增规则。
 

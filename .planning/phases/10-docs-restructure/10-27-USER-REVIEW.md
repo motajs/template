@@ -135,3 +135,18 @@
 **验证：** prettier（CRLF、单 H1）→ `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` 退出 0、`build complete`、无 dead link（含新增锚点）。
 
 **待报告（源码细节）：** `compareEquip` 的实现仍保留逐键回退：某一侧未提供某个键时，该侧取 `this.attribute.getFinalAttribute(key)`（真实最终属性）。目标槽非空且只有单侧提供该键时，结果会受现役装备影响，与「按空槽比较」的语义不完全一致；文档按用户明确的空槽语义书写。
+
+### 批次 G（D-74 高级 I / 中级链接锚点）执行记录（2026-10-23）
+
+- D-74/U8-01：扫描 `docs/intermediate/*.md`、`docs/advanced/*.md`、`docs/advanced/ii/*.md` 的全部 217 条跨文档链接，为明确指向具体章节的 55 处链接补上标题锚点；指向整篇文档的链接保持原样。分布如下：
+    - `[代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」` → `./code-basics.md#照抄教程里的代码时-怎么处理-import`（33 处，分布在 19 篇中级文档）；
+    - `[src 导览](./src-tour.md) 的「包从哪来」` → `./src-tour.md#包从哪来-src、packages-user-与-packages`（11 处，分布在 9 篇中级文档）；
+    - `[怪物光环](./enemy-aura.md)的「光环、计算后怪物与『读写外部』」` → `#光环、计算后怪物与「读写外部」`（2 处：`enemy-map-damage.md`、`enemy-query.md`）；
+    - 内置特殊属性编号引用 → `./enemy-specials.md#内置属性编号表`（2 处：`enemy-combat-script.md`、`enemy-final.md`）；
+    - `[代码基础]` 的泛型、函数章节引用 → `#泛型-类型的「函数」`、`#函数`（各 1 处，`enemy-specials.md`）；
+    - `enemy-specials.md` → `./combat-overview.md#什么时候重建`（1 处）；
+    - `enemy-calculator.md`、`hero-equipment.md` 的修饰器章节引用 → `./hero-attribute.md#修饰器-数值与百分比加成`（2 处）；
+    - `enemy-status-hooks.md` 的 `save` 参数引用 → `./hero-attribute.md#save-参数与读档一致性`（1 处）；
+    - `advanced/plugin-system.md` → `./saveable-content.md#验证`（1 处）。
+    - `hooks.md` 的「切换楼层前后」指向「需求 → 钩子对照表」中的表格行而非标题，无对应锚点，保持原样。
+- **验证：** prettier（CRLF、全部 unchanged）→ `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` 退出 0、`build complete in 20.29s`；逐项检查 `public/_docs` 生成 HTML 的 `id`，本次新增锚点与此前批次 F 的 5 个锚点全部可解析。

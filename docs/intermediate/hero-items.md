@@ -47,7 +47,7 @@ state.hero.items.useItem('yellow-key');
 const count = state.hero.items.itemCount('yellow-key');
 ```
 
-> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员，一般无需额外引入）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员，一般无需额外引入）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：把 `'yellow-key'` 换成你的道具 id 或图块数字；只用得到哪几行就留哪几行，不必全抄。
 
@@ -88,7 +88,7 @@ export const item200: ItemEffect = {
 };
 ```
 
-> 复制说明：片段已省略 `import`（`ItemEffect` 等类型来自内容层）；这是**内容层**文件，不是你平时写逻辑的 `src/data`。若编辑器提示缺少名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`（`ItemEffect` 等类型来自内容层）；这是**内容层**文件，不是你平时写逻辑的 `src/data`。若编辑器提示缺少名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：把 `item200` 的编号换成你的道具编号；把 `useEffect` 里的效果换成你要的（这里是把 `+5` 攻击与提示文字改成你的）。
 

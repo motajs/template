@@ -74,7 +74,7 @@ const ground = [...map.layerList].find(layer => layer.alias === 'ground');
 const second = [...map.layerList].find(layer => layer.zIndex === 2);
 ```
 
-> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`（这里用到的都是 `state` 上的成员）；若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：把 `'floor-1'` 换成你的楼层 id；把 `'ground'` / `2` 换成你要找的别名或纵深；只保留你要用的那种找法。
 

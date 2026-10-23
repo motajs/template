@@ -34,14 +34,14 @@ awake（装配）→ initialize（加载前）→ afterLoad（加载后）
 
 ## 注册插件
 
-插件在 `src/data/plugin/list.ts` 的 `dataPlugins` 数组中登记；`IDataPluginDefine` 来自 `@user/data-state`（包名含义见 [src 导览](./src-tour.md) 的「包从哪来」）：
+插件在 `src/data/plugin/list.ts` 的 `dataPlugins` 数组中登记；`IDataPluginDefine` 来自 `@user/data-state`（包名含义见 [src 导览](./src-tour.md#包从哪来-src、packages-user-与-packages) 的「包从哪来」）：
 
 ```ts
 /** 数据端插件列表 */
 export const dataPlugins: IDataPluginDefine[] = [new DataShopPlugin()];
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 数据端启动时按这个列表加装插件。把你自己写的插件 `new` 出来加进数组即可（插件目录见[源码导览](./src-tour.md)）。
 

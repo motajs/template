@@ -55,7 +55,7 @@ state.enemyContext.registerSpecialQueryEffect(new AssimilationQueryEffect());
 
 常规查询与特殊查询的 `priority` 和光环共用同一套优先级，从高到低处理。高优先级的效果先执行，低优先级能看到它留下的结果；反过来不行。查询新增的光环只能影响之后的阶段，规则与[怪物光环](./enemy-aura.md)一致。
 
-查询属于「依赖外部、但只改自己」的那一类。如果一种属性确实同时需要「依赖外部」与「修改外部」，不要把它硬做成一种查询或一种光环，而应拆成查询 + 光环两个效果，再用一个新怪物属性桥接（见[怪物光环](./enemy-aura.md)的「光环、计算后怪物与『读写外部』」）。
+查询属于「依赖外部、但只改自己」的那一类。如果一种属性确实同时需要「依赖外部」与「修改外部」，不要把它硬做成一种查询或一种光环，而应拆成查询 + 光环两个效果，再用一个新怪物属性桥接（见[怪物光环](./enemy-aura.md#光环、计算后怪物与「读写外部」)的「光环、计算后怪物与『读写外部』」）。
 
 ## 查询上下文 ctx
 
@@ -199,7 +199,7 @@ state.enemyContext.registerSpecialQueryEffect(new XxxSpecialQueryEffect());
 
 ## 示例：抱团
 
-「抱团」的规则是：范围内每有一个带同种特殊属性的怪物，自身攻击力就增加固定值。它只需要读周围、改自己的攻击，所以用常规查询实现（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md) 的「包从哪来」）。
+「抱团」的规则是：范围内每有一个带同种特殊属性的怪物，自身攻击力就增加固定值。它只需要读周围、改自己的攻击，所以用常规查询实现（示例里的 `@motajs/*`、`@user/*` 是包名，含义见 [src 导览](./src-tour.md#包从哪来-src、packages-user-与-packages) 的「包从哪来」）。
 
 **目标**：带「抱团」（示例 code 40）的怪物，范围内每多一个同种特殊属性的怪物，自身攻击加固定值。
 
@@ -252,7 +252,7 @@ export class GroupQueryEffect implements IEnemyCommonQueryEffect<
 state.enemyContext.registerCommonQueryEffect(40, new GroupQueryEffect());
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：`priority`、触发用的 `special.code` 与注册时的 code（本示例 40）、`radius` / `atk` 的读法换成你自己的。
 
@@ -353,7 +353,7 @@ export class AssimilationQueryEffect implements IEnemySpecialQueryEffect<
 state.enemyContext.registerSpecialQueryEffect(new AssimilationQueryEffect());
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：`priority`、`shouldQuery` 里的判断（本示例 `hasSpecial(41)`）、`add` / `modify` 的合并逻辑换成你自己的。
 
@@ -398,7 +398,7 @@ export class HornQueryEffect implements IEnemyCommonQueryEffect<
 state.enemyContext.registerCommonQueryEffect(42, new HornQueryEffect());
 ```
 
-> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md) 的「照抄教程里的代码时，怎么处理 import」）。
+> 复制说明：片段已省略 `import`；文件顶部通常已有，不要再粘。若编辑器提示缺少某个名字，再在顶部补对应的 `import`（详见 [代码基础](./code-basics.md#照抄教程里的代码时-怎么处理-import) 的「照抄教程里的代码时，怎么处理 import」）。
 
 **改什么**：`priority`、注册时的 code（本示例 42）、`special.value` 的用法换成你自己的。
 
