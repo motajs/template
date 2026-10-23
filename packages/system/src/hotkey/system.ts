@@ -1,6 +1,6 @@
 import { IExcitable, IExcitation } from '@motajs/animate';
-import { logger, matchArray } from '@motajs/common';
-import { HotkeyCommand, isAuxiliaryKey } from './command';
+import { logger } from '@motajs/common';
+import { HotkeyCommand } from './command';
 import { EVENT_KEY_CODE_MAP, KeyCode } from './keyCodes';
 import {
     HotkeyEmitMode,
@@ -23,7 +23,7 @@ interface IHotkeyScope {
 interface IHotkeyCommandPending {
     /** 按键指令对象 */
     readonly command: IHotkeyCommand;
-    /** 按键组合被按下的时刻 */
+    /** 本次触发计时的起点，按下触发时为按下时刻，KeyUp 触发时为抬起时刻 */
     start: number;
     /** 按键组合的索引 */
     keyIndex: number;
@@ -31,6 +31,8 @@ interface IHotkeyCommandPending {
     keys: readonly KeyCode[];
     /** 按键触发上下文 */
     context: IHotkeyEmitContext;
+    /** 按键组合匹配时刻的条件判定结果 */
+    matchedWhen: boolean;
     /** 当前已经触发了几次 */
     emitted: number;
     /** 上一次的触发时刻 */
@@ -124,18 +126,9 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
      */
     private matchKeyUp(keys: readonly KeyCode[], key: KeyCode): boolean {
         if (keys.length === 0) return false;
-        // 抬起按键仅允许一个非辅助按键
-        const [main, auxiliary] = matchArray(keys, v => isAuxiliaryKey(v));
-        if (main.length > 1) return false;
-
-        // 如果只有一个按键，那么可以触发，哪怕它是辅助按键
-        if (main.length === 0) {
-            return auxiliary.length === 1 && auxiliary[0] === key;
-        }
-
-        // 否则需要判断触发的按键
-        if (main[0] !== key) return false;
-        return auxiliary.every(v => this.holdingSet.has(v));
+        // 最后一个按键为主按键，其余为辅助按键
+        if (keys.at(-1) !== key) return false;
+        return keys.slice(0, -1).every(v => this.holdingSet.has(v));
     }
 
     /**
@@ -165,6 +158,7 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
             this.scopes.pop();
             this.holdingCmds.clear();
             this.waitTimeout.clear();
+            return;
         }
         const index = this.scopes.findIndex(v => v.symbol === sym);
         if (index < 0) {
@@ -209,13 +203,17 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
         return this.commands.get(command) ?? null;
     }
 
-    addCommand(command: string, init: IHotkeyCommandInit): IHotkeyCommand {
+    addCommand(
+        command: string,
+        name: string,
+        init: IHotkeyCommandInit
+    ): IHotkeyCommand {
         const existing = this.commands.get(command);
         if (existing) {
             logger.warn(204, command);
             return existing;
         }
-        const instance = new HotkeyCommand(command, init);
+        const instance = new HotkeyCommand(command, name, init);
         this.commands.set(command, instance);
         return instance;
     }
@@ -247,15 +245,16 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
 
     /**
      * 触发指定按键指令
-     * @param command 按键指令对象
      * @param pending 按键指令的 pending 信息
+     * @returns 是否成功执行指令
      */
-    private emit(pending: IHotkeyCommandPending) {
+    private emit(pending: IHotkeyCommandPending): boolean {
+        if (!pending.matchedWhen) return false;
         const command = pending.command;
         const scope = this.getScope();
-        if (!scope) return;
+        if (!scope) return false;
         const impl = scope.implements.get(command);
-        if (!impl) return;
+        if (!impl) return false;
         const info: IHotkeyEmitInfo = {
             mode: command.mode,
             command,
@@ -266,18 +265,33 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
         impl(info);
         pending.emitted++;
         pending.lastEmit = this.excitation?.payload() ?? 0;
+        return true;
     }
 
     /**
-     * 获取首个能够触发按键指令的按键组合
+     * 获取能够触发按键指令的按键组合，多组候选时仅返回辅助键精确匹配的那一组
      * @param command 按键指令
+     * @param holding 在按下触发的按键之前，有哪些按键正在被按下
+     * @param emit 按下的是哪个按键
      */
     private findMatchKeys(
-        command: IHotkeyCommand
+        command: IHotkeyCommand,
+        holding: Set<KeyCode>,
+        emit: KeyCode
     ): [index: number, readonly KeyCode[]] | [] {
+        const candidates: [index: number, readonly KeyCode[]][] = [];
         for (const [index, keys] of command.iterateKeyCombinations()) {
-            const match = keys.every(v => this.holdingSet.has(v));
-            if (match) return [index, keys];
+            if (keys.at(-1) !== emit) continue;
+            if (!keys.slice(0, -1).every(v => holding.has(v))) continue;
+            candidates.push([index, keys]);
+        }
+        if (candidates.length === 0) return [];
+        if (candidates.length === 1) return candidates[0];
+        // 多组候选时只认辅助键与当前按住键完全一致的那一组
+        for (const candidate of candidates) {
+            if (candidate[1].length - 1 === holding.size) {
+                return candidate;
+            }
         }
         return [];
     }
@@ -293,12 +307,15 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
         index: number,
         keys: readonly KeyCode[]
     ) {
+        const scope = this.getScope();
+        if (!scope) return;
         const pending: IHotkeyCommandPending = {
             command,
             start: this.excitation?.payload() ?? 0,
             keyIndex: index,
             keys,
             context: this.createContext(),
+            matchedWhen: scope.condition?.() ?? true,
             lastEmit: -Infinity,
             emitted: 0
         };
@@ -309,7 +326,23 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
         }
     }
 
+    /**
+     * 当前是否应该进行默认行为阻断
+     */
+    private shouldPrevent(): boolean {
+        const scope = this.getScope();
+        if (!scope) return false;
+        for (const [command] of this.holdingCmds) {
+            const impl = scope.implements.get(command);
+            if (impl) return true;
+        }
+        return false;
+    }
+
     down(key: KeyCode): boolean {
+        const scope = this.getScope();
+        if (!scope) return false;
+        const beforeHolding = new Set(this.holdingSet);
         if (this.holdingSet.has(key)) {
             // 如果有按键可能触发，那么返回 true 来 preventDefault
             return this.holdingCmds.size > 0 || this.waitTimeout.size > 0;
@@ -318,31 +351,30 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
             this.holdingSet.add(key);
         }
         for (const command of this.commands.values()) {
-            const match = this.findMatchKeys(command);
+            const match = this.findMatchKeys(command, beforeHolding, key);
             if (match.length === 0) continue;
             const [index, keys] = match;
             const pending = this.holdingCmds.get(command);
 
-            if (pending) {
-                // 如果之前有过这个按键指令，那么直接修改现有状态
-                pending.keyIndex = index;
-                pending.keys = keys;
-                pending.context = this.createContext();
-            } else {
-                // 如果之前没有这个按键指令，那么加入执行列表
+            if (!pending) {
+                // 如果之前没有这个按键指令，那么加入执行列表，如果有的话就不管了
                 this.addPending(command, index, keys);
                 continue;
             }
         }
         // 如果有按键可能触发，那么返回 true 来 preventDefault
-        return this.holdingCmds.size > 0 || this.waitTimeout.size > 0;
+        return this.shouldPrevent();
     }
 
     up(key: KeyCode): boolean {
+        const scope = this.getScope();
+        if (!scope) return false;
         if (!this.holdingSet.has(key)) return false;
         this.holdingSet.delete(key);
         const index = this.holding.indexOf(key);
         this.holding.splice(index, 1);
+
+        const beforeWait = this.waitTimeout.size;
 
         const toEmit: IHotkeyCommandPending[] = [];
 
@@ -350,32 +382,15 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
         for (const [command, pending] of new Map(this.holdingCmds)) {
             // 对于 KeyUp，如果有可以触发的，那么按规则触发
             if (command.mode === HotkeyEmitMode.KeyUp) {
-                const emit = this.matchKeyUp(pending.keys, key);
-                if (emit) {
-                    toEmit.push(pending);
-                    this.holdingCmds.delete(command);
-                }
+                if (!this.matchKeyUp(pending.keys, key)) continue;
+                toEmit.push(pending);
+                this.holdingCmds.delete(command);
             } else {
                 // 对于其他按键，如果一个按下组合按键不再满足，那么需要删除或加入 timeout
-                if (!this.matchKeys(pending.keys)) {
-                    // 松开一个按键，那么并不一定会导致按下指令不再触发
-                    const newMatch = this.findMatchKeys(command);
-                    if (newMatch.length === 0) {
-                        // 没有新的匹配，分两种情况
-                        if (pending.emitted === 0) {
-                            // 还没触发过，加入 timeout
-                            this.waitTimeout.add(pending);
-                        } else {
-                            // 已经触发过了，直接删除
-                            this.holdingCmds.delete(command);
-                        }
-                    } else {
-                        // 如果有新的匹配，那么直接修改状态
-                        const [index, keys] = newMatch;
-                        pending.context = this.createContext();
-                        pending.keyIndex = index;
-                        pending.keys = keys;
-                    }
+                if (this.matchKeys(pending.keys)) continue;
+                this.holdingCmds.delete(command);
+                if (pending.emitted === 0) {
+                    this.waitTimeout.add(pending);
                 }
             }
         }
@@ -386,18 +401,24 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
         let blocking = -Infinity;
         for (const pending of toEmit) {
             if (pending.command.priority < blocking) break;
+            if (!pending.matchedWhen) continue;
+            // 没有实现的按键不会进行阻断
+            const impl = scope.implements.get(pending.command);
+            if (!impl) continue;
             if (pending.command.block) {
                 blocking = pending.command.priority;
             }
             if (pending.command.timeout === 0) {
                 this.emit(pending);
             } else {
+                // KeyUp 的 timeout 从抬起时刻开始计时
+                pending.start = this.excitation?.payload() ?? 0;
                 this.waitTimeout.add(pending);
             }
         }
 
         // 如果有按键可能触发，那么返回 true 来 preventDefault
-        return this.holdingCmds.size > 0 || this.waitTimeout.size > 0;
+        return this.waitTimeout.size > beforeWait || this.shouldPrevent();
     }
 
     //#endregion
@@ -430,22 +451,18 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
             if (command.mode === HotkeyEmitMode.KeyUp) continue;
             // 首次触发
             const dt = payload - pending.start;
-            const dt2 = payload - pending.lastEmit;
-            if (pending.emitted === 0 && dt < command.timeout) {
-                this.emit(pending);
+            if (pending.emitted === 0) {
+                if (dt >= command.timeout) this.emit(pending);
+                continue;
             }
-            if (command.mode === HotkeyEmitMode.Continuous) {
-                if (pending.emitted === 1) {
-                    // 先看第二次触发
-                    if (dt2 >= command.interval) {
-                        this.emit(pending);
-                    }
-                } else {
-                    // 其他的要看 dt 了
-                    if (dt2 >= command.dt) {
-                        this.emit(pending);
-                    }
-                }
+            if (command.mode !== HotkeyEmitMode.Continuous) continue;
+            const dt2 = payload - pending.lastEmit;
+            if (pending.emitted === 1) {
+                // 先看第二次触发
+                if (dt2 >= command.interval) this.emit(pending);
+            } else {
+                // 其他的要看 dt 了
+                if (dt2 >= command.dt) this.emit(pending);
             }
         }
     }

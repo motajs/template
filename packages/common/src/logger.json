@@ -299,7 +299,8 @@
         "206": "Cannot set command key combination since delivered index is invalid: expected positive integer, found $1.",
         "207": "Key combination count needs to be a positive integer, but got $1.",
         "208": "Duplicate hotkey command group name: $1, old one will be overwritten.",
-        "209": "Cannot load key combinations for hotkey command $1 since no command named it.",
+        "209": "Cannot load key combinations for hotkey command '$1' since no command named it.",
+        "210": "Cannot add duplicate hotkey command '$1' to group '$2'.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }

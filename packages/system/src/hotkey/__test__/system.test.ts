@@ -1,10 +1,10 @@
-// 测试按键系统的注册表、作用域、KeyUp 与 KeyDown 派发、时序与监听行为
+// 测试按键系统的注册表、作用域、KeyUp 规则、holding、优先级、监听、条件与时序行为
 import { IExcitable, IExcitation } from '@motajs/animate';
 import { logger } from '@motajs/common';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { KeyCode } from '../keyCodes';
 import { HotkeySystem } from '../system';
-import { HotkeyEmitMode, HotkeyEmitType, IHotkeyCommandInit } from '../type';
+import { HotkeyEmitMode, IHotkeyCommand, IHotkeyCommandInit } from '../type';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
@@ -29,6 +29,15 @@ function createInit(
         defaults: [],
         ...overrides
     };
+}
+
+// 以指令标识符作为显示名称注册按键指令
+function addCommand(
+    system: HotkeySystem,
+    command: string,
+    init: IHotkeyCommandInit
+): IHotkeyCommand {
+    return system.addCommand(command, command, init);
 }
 
 // 最小化的假元素，记录注册的监听器并支持手动派发事件
@@ -87,33 +96,28 @@ function createKeyEvent(
     };
 }
 
-interface FakeExcitation extends IExcitation<number> {
-    controllers: { revoke: ReturnType<typeof vi.fn> }[];
-}
-
-// 构造一个可手动激励的假激励源，并记录创建的控制器
-function createExcitation(): FakeExcitation {
+// 构造一个可手动激励的假激励源，激励负载就是传入的时间值
+function createExcitation(): IExcitation<number> {
     const excitables = new Set<IExcitable<number>>();
-    const controllers: { revoke: ReturnType<typeof vi.fn> }[] = [];
+    let current = 0;
     return {
-        controllers,
-        payload: () => 0,
+        payload: () => current,
         excite: payload => {
+            current = payload;
             excitables.forEach(v => v.excited(payload));
         },
         add: object => {
             excitables.add(object);
-            const controller = {
+            return {
                 excitable: object,
-                revoke: vi.fn(() => {
+                revoke: () => {
                     excitables.delete(object);
-                }),
+                },
                 excite: (payload: number) => {
+                    current = payload;
                     object.excited(payload);
                 }
             };
-            controllers.push(controller);
-            return controller;
         },
         remove: object => excitables.delete(object),
         destroy: () => {
@@ -123,82 +127,55 @@ function createExcitation(): FakeExcitation {
 }
 
 describe('HotkeySystem', () => {
-    // 没有作用域时 when 发出告警 201 并返回自身
-    it('warns 201 when setting a condition without a scope', () => {
-        const system = new HotkeySystem();
-        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
-
-        expect(system.when(() => true)).toBe(system);
-        expect(warn).toHaveBeenCalledWith(201);
-    });
-
-    // 没有作用域时 implement 发出告警 201 并返回自身
-    it('warns 201 when implementing without a scope', () => {
-        const system = new HotkeySystem();
-        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
-
-        expect(system.implement('fire', () => {})).toBe(system);
-        expect(warn).toHaveBeenCalledWith(201);
-    });
-
-    // implement 未注册的指令发出告警 202
-    it('warns 202 when implementing a nonexistent command', () => {
-        const system = new HotkeySystem();
-        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
-        system.enterScope();
-
-        expect(system.implement('missing', () => {})).toBe(system);
-        expect(warn).toHaveBeenCalledWith(202, 'missing');
-    });
-
     // 重复注册同名指令发出告警 204 并返回已有对象
     it('warns 204 for duplicate commands and returns the existing one', () => {
         const system = new HotkeySystem();
         const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
         const init = createInit({ defaults: [[KeyCode.KeyS]] });
-        const first = system.addCommand('save', init);
+        const first = addCommand(system, 'save', init);
 
-        const second = system.addCommand('save', init);
+        const second = addCommand(system, 'save', init);
 
         expect(second).toBe(first);
         expect(warn).toHaveBeenCalledWith(204, 'save');
         expect([...system.iterateCommands()].length).toBe(1);
     });
 
-    // getCommand 对未注册的标识符返回 null
-    it('returns null for an unregistered command', () => {
+    // getCommand 对未注册的标识符返回 null，注册后返回同一对象
+    it('returns null for an unregistered command and the same object after adding', () => {
         const system = new HotkeySystem();
 
         expect(system.getCommand('missing')).toBeNull();
+
+        const command = addCommand(system, 'save', createInit());
+        expect(system.getCommand('save')).toBe(command);
     });
 
-    // iterateCommands 遍历所有已注册的指令
-    it('iterates every registered command', () => {
-        const system = new HotkeySystem();
-        const first = system.addCommand('save', createInit());
-        const second = system.addCommand('load', createInit());
-
-        expect([...system.iterateCommands()]).toEqual([first, second]);
-    });
-
-    // deleteCommand 移除指令并清理作用域中的实现
-    it('deletes a command and cleans its handler', () => {
+    // deleteCommand 移除指令、清理作用域实现与待触发项，未知标识符不抛错
+    it('deletes a command and drops its pending items', () => {
         const system = new HotkeySystem();
         const handler = vi.fn();
-        const command = system.addCommand(
-            'fire',
-            createInit({ defaults: [[KeyCode.KeyA]] })
-        );
+        addCommand(system, 'fire', createInit({ defaults: [[KeyCode.KeyA]] }));
         system.enterScope();
         system.implement('fire', handler);
-
-        expect(system.getCommand('fire')).toBe(command);
-        system.deleteCommand('fire');
         system.down(KeyCode.KeyA);
+
+        system.deleteCommand('fire');
         system.up(KeyCode.KeyA);
 
         expect(system.getCommand('fire')).toBeNull();
+        expect([...system.iterateCommands()]).toEqual([]);
         expect(handler).not.toHaveBeenCalled();
+        expect(() => system.deleteCommand('missing')).not.toThrow();
+    });
+
+    // iterateCommands 按注册顺序产出全部指令
+    it('iterates every registered command in registration order', () => {
+        const system = new HotkeySystem();
+        const first = addCommand(system, 'save', createInit());
+        const second = addCommand(system, 'load', createInit());
+
+        expect([...system.iterateCommands()]).toEqual([first, second]);
     });
 
     // enterScope 返回新作用域的标识符
@@ -208,12 +185,13 @@ describe('HotkeySystem', () => {
         expect(typeof system.enterScope()).toBe('symbol');
     });
 
-    // leaveScope 无参退出栈顶作用域并恢复上一级
-    it('leaves the top scope and restores the parent', () => {
+    // 无参 leaveScope 只弹出栈顶一级且不误发 205（修正 3 的直接回归）
+    it('pops exactly one scope on no-arg leaveScope without warning', () => {
         const system = new HotkeySystem();
+        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
         const parentHandler = vi.fn();
         const childHandler = vi.fn();
-        system.addCommand('fire', createInit({ defaults: [[KeyCode.KeyA]] }));
+        addCommand(system, 'fire', createInit({ defaults: [[KeyCode.KeyA]] }));
         system.enterScope();
         system.implement('fire', parentHandler);
         system.enterScope();
@@ -225,15 +203,25 @@ describe('HotkeySystem', () => {
 
         expect(childHandler).not.toHaveBeenCalled();
         expect(parentHandler).toHaveBeenCalledTimes(1);
+        expect(warn).not.toHaveBeenCalled();
     });
 
-    // leaveScope(sym) 保留指定作用域并删除其上方的作用域
+    // 空栈调用无参 leaveScope 发出告警 205 且不抛错
+    it('warns 205 when leaving with an empty scope stack', () => {
+        const system = new HotkeySystem();
+        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
+        expect(() => system.leaveScope()).not.toThrow();
+        expect(warn).toHaveBeenCalledWith(205);
+    });
+
+    // leaveScope(sym) 保留指定作用域并丢弃其上方的作用域
     it('leaves back to a specific scope and drops scopes above it', () => {
         const system = new HotkeySystem();
         const firstHandler = vi.fn();
         const secondHandler = vi.fn();
         const thirdHandler = vi.fn();
-        system.addCommand('fire', createInit({ defaults: [[KeyCode.KeyA]] }));
+        addCommand(system, 'fire', createInit({ defaults: [[KeyCode.KeyA]] }));
         const first = system.enterScope();
         system.implement('fire', firstHandler);
         system.enterScope();
@@ -250,64 +238,50 @@ describe('HotkeySystem', () => {
         expect(thirdHandler).not.toHaveBeenCalled();
     });
 
-    // leaveScope 指定不存在的作用域发出告警 205
-    it('warns 205 when leaving an unknown scope', () => {
+    // leaveScope 指定不存在的作用域发出告警 205 且栈顶实现仍然生效
+    it('warns 205 when leaving an unknown scope and keeps the top scope', () => {
         const system = new HotkeySystem();
         const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+        const handler = vi.fn();
+        addCommand(system, 'fire', createInit({ defaults: [[KeyCode.KeyA]] }));
         system.enterScope();
+        system.implement('fire', handler);
 
         system.leaveScope(Symbol());
-
-        expect(warn).toHaveBeenCalledWith(205);
-    });
-
-    // 空栈调用无参 leaveScope 发出告警 205
-    it('warns 205 when leaving with an empty scope stack', () => {
-        const system = new HotkeySystem();
-        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
-
-        system.leaveScope();
-
-        expect(warn).toHaveBeenCalledWith(205);
-    });
-
-    // 子作用域激活时父作用域的实现不生效，退出后恢复
-    it('uses only the top scope handlers and restores the parent', () => {
-        const system = new HotkeySystem();
-        const parentHandler = vi.fn();
-        const childHandler = vi.fn();
-        system.addCommand('fire', createInit({ defaults: [[KeyCode.KeyA]] }));
-        system.enterScope();
-        system.implement('fire', parentHandler);
-        system.enterScope();
-        system.implement('fire', childHandler);
-
         system.down(KeyCode.KeyA);
         system.up(KeyCode.KeyA);
 
-        expect(childHandler).toHaveBeenCalledTimes(1);
-        expect(parentHandler).not.toHaveBeenCalled();
+        expect(warn).toHaveBeenCalledWith(205);
+        expect(handler).toHaveBeenCalledTimes(1);
     });
 
-    // 栈顶作用域条件为 false 时按下与抬起都不触发实现
-    it('does not trigger when the top scope condition is false', () => {
+    // 没有作用域时 when 与 implement 各发出告警 201 并返回自身
+    it('warns 201 for when and implement without an active scope', () => {
         const system = new HotkeySystem();
-        const handler = vi.fn();
-        system.addCommand('fire', createInit({ defaults: [[KeyCode.KeyA]] }));
-        system.enterScope();
-        system.implement('fire', handler);
-        system.when(() => false);
+        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
-        expect(system.down(KeyCode.KeyA)).toBe(false);
-        expect(system.up(KeyCode.KeyA)).toBe(false);
-        expect(handler).not.toHaveBeenCalled();
+        expect(system.when(() => true)).toBe(system);
+        expect(system.implement('fire', () => {})).toBe(system);
+        expect(warn).toHaveBeenCalledTimes(2);
+        expect(warn).toHaveBeenCalledWith(201);
     });
 
-    // KeyUp 组合在辅助键仍按住时触发
+    // implement 未注册的指令发出告警 202 并返回自身
+    it('warns 202 when implementing a nonexistent command', () => {
+        const system = new HotkeySystem();
+        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+        system.enterScope();
+
+        expect(system.implement('missing', () => {})).toBe(system);
+        expect(warn).toHaveBeenCalledWith(202, 'missing');
+    });
+
+    // KeyUp 组合在辅助键仍按住时抬起主键触发，且上下文按活引用口径构造
     it('triggers a KeyUp combination while auxiliary keys are held', () => {
         const system = new HotkeySystem();
         const handler = vi.fn();
-        system.addCommand(
+        addCommand(
+            system,
             'save',
             createInit({ defaults: [[KeyCode.Ctrl, KeyCode.KeyS]] })
         );
@@ -319,13 +293,26 @@ describe('HotkeySystem', () => {
         system.up(KeyCode.KeyS);
 
         expect(handler).toHaveBeenCalledTimes(1);
+        const info = handler.mock.calls[0][0];
+        expect(info.mode).toBe(HotkeyEmitMode.KeyUp);
+        expect(info.index).toBe(0);
+        expect(info.keys).toEqual([KeyCode.Ctrl, KeyCode.KeyS]);
+        expect(info.command.command).toBe('save');
+        expect(info.command.mode).toBe(HotkeyEmitMode.KeyUp);
+        // holding 是活引用，仅修饰键布尔量是匹配时刻快照
+        expect(info.context.holding).toEqual([KeyCode.Ctrl]);
+        expect(info.context.ctrl).toBe(true);
+        expect(info.context.shift).toBe(false);
+        expect(info.context.alt).toBe(false);
+        expect(info.context.meta).toBe(false);
     });
 
-    // KeyUp 组合在辅助键已松开后不触发
+    // KeyUp 组合在辅助键先松开时抬起主键不触发
     it('does not trigger when an auxiliary key was released first', () => {
         const system = new HotkeySystem();
         const handler = vi.fn();
-        system.addCommand(
+        addCommand(
+            system,
             'save',
             createInit({ defaults: [[KeyCode.Ctrl, KeyCode.KeyS]] })
         );
@@ -340,11 +327,11 @@ describe('HotkeySystem', () => {
         expect(handler).not.toHaveBeenCalled();
     });
 
-    // 仅含一个辅助键的组合在该键抬起时触发
+    // 仅含一个辅助键的组合在该键抬起时触发，抬起后 holding 不再包含它
     it('triggers a single auxiliary key combination on release', () => {
         const system = new HotkeySystem();
         const handler = vi.fn();
-        system.addCommand('ctrl', createInit({ defaults: [[KeyCode.Ctrl]] }));
+        addCommand(system, 'ctrl', createInit({ defaults: [[KeyCode.Ctrl]] }));
         system.enterScope();
         system.implement('ctrl', handler);
 
@@ -352,13 +339,18 @@ describe('HotkeySystem', () => {
         system.up(KeyCode.Ctrl);
 
         expect(handler).toHaveBeenCalledTimes(1);
+        const info = handler.mock.calls[0][0];
+        // holding 是活引用，仅修饰键布尔量是匹配时刻快照
+        expect(info.context.holding).toEqual([]);
+        expect(info.context.ctrl).toBe(true);
     });
 
-    // 仅含两个辅助键的组合不会触发
-    it('does not trigger a combination of two auxiliary keys', () => {
+    // 两个辅助键的组合在最后一个键抬起时触发
+    it('triggers a combination of two auxiliary keys on releasing the last key', () => {
         const system = new HotkeySystem();
         const handler = vi.fn();
-        system.addCommand(
+        addCommand(
+            system,
             'both',
             createInit({ defaults: [[KeyCode.Ctrl, KeyCode.Shift]] })
         );
@@ -368,16 +360,23 @@ describe('HotkeySystem', () => {
         system.down(KeyCode.Ctrl);
         system.down(KeyCode.Shift);
         system.up(KeyCode.Shift);
-        system.up(KeyCode.Ctrl);
 
-        expect(handler).not.toHaveBeenCalled();
+        expect(handler).toHaveBeenCalledTimes(1);
+        const info = handler.mock.calls[0][0];
+        expect(info.keys).toEqual([KeyCode.Ctrl, KeyCode.Shift]);
+        // holding 是活引用，抬起后只保留仍按住的 Ctrl
+        expect(info.context.holding).toEqual([KeyCode.Ctrl]);
+
+        system.up(KeyCode.Ctrl);
     });
 
-    // 包含两个常规键的 KeyUp 组合告警后永不触发
-    it('never triggers a KeyUp combination with two regular keys', () => {
+    // 两个常规键的 KeyUp 组合在最后一个键抬起时触发且不告警
+    it('triggers a KeyUp combination with two regular keys', () => {
         const system = new HotkeySystem();
+        const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
         const handler = vi.fn();
-        system.addCommand(
+        addCommand(
+            system,
             'invalid',
             createInit({ defaults: [[KeyCode.KeyA, KeyCode.KeyB]] })
         );
@@ -389,7 +388,16 @@ describe('HotkeySystem', () => {
         system.up(KeyCode.KeyB);
         system.up(KeyCode.KeyA);
 
-        expect(handler).not.toHaveBeenCalled();
+        expect(warn).not.toHaveBeenCalled();
+        expect(system.getCommand('invalid')!.getKeyCombination(0)).toEqual([
+            KeyCode.KeyA,
+            KeyCode.KeyB
+        ]);
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(handler.mock.calls[0][0].keys).toEqual([
+            KeyCode.KeyA,
+            KeyCode.KeyB
+        ]);
     });
 
     // 空组合在 KeyUp 模式下不触发且不产生告警
@@ -397,7 +405,7 @@ describe('HotkeySystem', () => {
         const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
         const system = new HotkeySystem();
         const handler = vi.fn();
-        system.addCommand('empty', createInit({ defaults: [[]] }));
+        addCommand(system, 'empty', createInit({ defaults: [[]] }));
         system.enterScope();
         system.implement('empty', handler);
 
@@ -408,306 +416,33 @@ describe('HotkeySystem', () => {
         expect(warn).not.toHaveBeenCalled();
     });
 
-    // KeyUp 上下文不包含被抬起的按键且辅助键状态正确
-    it('builds the KeyUp context without the released key', () => {
+    // holding 按按下顺序排列，重复按下同一按键不改变顺序也不重复入栈
+    it('keeps holding ordered and de-duplicated', () => {
         const system = new HotkeySystem();
-        const handler = vi.fn();
-        system.addCommand(
-            'save',
-            createInit({ defaults: [[KeyCode.Ctrl, KeyCode.KeyS]] })
-        );
         system.enterScope();
-        system.implement('save', handler);
 
         system.down(KeyCode.Ctrl);
         system.down(KeyCode.KeyS);
-        system.up(KeyCode.KeyS);
+        system.down(KeyCode.Ctrl);
 
-        const info = handler.mock.calls[0][0];
-        expect(info.command).toBe('save');
-        expect(info.index).toBe(0);
-        expect(info.keys).toEqual([KeyCode.Ctrl, KeyCode.KeyS]);
-        expect(info.context.type).toBe(HotkeyEmitType.KeyUp);
-        expect(info.context.key).toBe(KeyCode.KeyS);
-        expect(info.context.holding).toEqual([KeyCode.Ctrl]);
-        expect(info.context.ctrl).toBe(true);
-        expect(info.context.shift).toBe(false);
-        expect(info.context.alt).toBe(false);
-        expect(info.context.meta).toBe(false);
+        expect(system.holding).toEqual([KeyCode.Ctrl, KeyCode.KeyS]);
     });
 
-    // 同一优先级下的所有已实现指令都会触发
-    it('triggers every implemented command at the same priority', () => {
-        const system = new HotkeySystem();
-        const first = vi.fn();
-        const second = vi.fn();
-        system.addCommand(
-            'first',
-            createInit({ priority: 5, defaults: [[KeyCode.KeyA]] })
-        );
-        system.addCommand(
-            'second',
-            createInit({ priority: 5, defaults: [[KeyCode.KeyA]] })
-        );
-        system.enterScope();
-        system.implement('first', first);
-        system.implement('second', second);
-
-        system.down(KeyCode.KeyA);
-        system.up(KeyCode.KeyA);
-
-        expect(first).toHaveBeenCalledTimes(1);
-        expect(second).toHaveBeenCalledTimes(1);
-    });
-
-    // 优先级更高的指令先执行
-    it('runs higher priority commands first', () => {
-        const system = new HotkeySystem();
-        const order: string[] = [];
-        system.addCommand(
-            'low',
-            createInit({ priority: 1, defaults: [[KeyCode.KeyA]] })
-        );
-        system.addCommand(
-            'high',
-            createInit({ priority: 10, defaults: [[KeyCode.KeyA]] })
-        );
-        system.enterScope();
-        system.implement('low', () => order.push('low'));
-        system.implement('high', () => order.push('high'));
-
-        system.down(KeyCode.KeyA);
-        system.up(KeyCode.KeyA);
-
-        expect(order).toEqual(['high', 'low']);
-    });
-
-    // block 指令阻断严格更低优先级的指令
-    it('blocks strictly lower priority commands', () => {
-        const system = new HotkeySystem();
-        const high = vi.fn();
-        const low = vi.fn();
-        system.addCommand(
-            'high',
-            createInit({
-                priority: 10,
-                block: true,
-                defaults: [[KeyCode.KeyA]]
-            })
-        );
-        system.addCommand(
-            'low',
-            createInit({ priority: 5, defaults: [[KeyCode.KeyA]] })
-        );
-        system.enterScope();
-        system.implement('high', high);
-        system.implement('low', low);
-
-        system.down(KeyCode.KeyA);
-        system.up(KeyCode.KeyA);
-
-        expect(high).toHaveBeenCalledTimes(1);
-        expect(low).not.toHaveBeenCalled();
-    });
-
-    // block 不阻断同优先级指令
-    it('does not block commands at the same priority', () => {
-        const system = new HotkeySystem();
-        const blocking = vi.fn();
-        const same = vi.fn();
-        system.addCommand(
-            'blocking',
-            createInit({ priority: 5, block: true, defaults: [[KeyCode.KeyA]] })
-        );
-        system.addCommand(
-            'same',
-            createInit({ priority: 5, defaults: [[KeyCode.KeyA]] })
-        );
-        system.enterScope();
-        system.implement('blocking', blocking);
-        system.implement('same', same);
-
-        system.down(KeyCode.KeyA);
-        system.up(KeyCode.KeyA);
-
-        expect(blocking).toHaveBeenCalledTimes(1);
-        expect(same).toHaveBeenCalledTimes(1);
-    });
-
-    // 匹配但未实现的指令不会阻断更低优先级
-    it('does not let an unimplemented command block lower priorities', () => {
-        const system = new HotkeySystem();
-        const low = vi.fn();
-        system.addCommand(
-            'high',
-            createInit({
-                priority: 10,
-                block: true,
-                defaults: [[KeyCode.KeyA]]
-            })
-        );
-        system.addCommand(
-            'low',
-            createInit({ priority: 5, defaults: [[KeyCode.KeyA]] })
-        );
-        system.enterScope();
-        system.implement('low', low);
-
-        system.down(KeyCode.KeyA);
-        system.up(KeyCode.KeyA);
-
-        expect(low).toHaveBeenCalledTimes(1);
-    });
-
-    // down 与 up 返回是否触发了已实现的指令
-    it('returns whether a release triggered an implemented command', () => {
-        const system = new HotkeySystem();
-        const handler = vi.fn();
-        system.addCommand('fire', createInit({ defaults: [[KeyCode.KeyA]] }));
-        system.enterScope();
-        system.implement('fire', handler);
-
-        expect(system.down(KeyCode.KeyA)).toBe(false);
-        expect(system.up(KeyCode.KeyA)).toBe(true);
-    });
-
-    // up 对未处于按下状态的按键返回 false
-    it('returns false when releasing a key that is not held', () => {
-        const system = new HotkeySystem();
-
-        expect(system.up(KeyCode.KeyA)).toBe(false);
-    });
-
-    // listen 将按下与抬起映射到按键，只在触发时阻止默认行为
-    it('listens to keydown and keyup and prevents default on triggers', () => {
-        const system = new HotkeySystem();
-        const handler = vi.fn();
-        const target = new FakeElement();
-        system.addCommand('fire', createInit({ defaults: [[KeyCode.KeyA]] }));
-        system.enterScope();
-        system.implement('fire', handler);
-        system.listen(target as unknown as HTMLElement);
-
-        const downEvent = createKeyEvent(65);
-        const upEvent = createKeyEvent(65);
-        target.dispatch('keydown', downEvent);
-        target.dispatch('keyup', upEvent);
-
-        expect(handler).toHaveBeenCalledTimes(1);
-        expect(downEvent.preventDefault).not.toHaveBeenCalled();
-        expect(upEvent.preventDefault).toHaveBeenCalledTimes(1);
-    });
-
-    // listen 忽略 repeat 事件的按下
-    it('ignores repeated keydown events', () => {
-        const system = new HotkeySystem();
-        const handler = vi.fn();
-        const target = new FakeElement();
-        system.addCommand('fire', createInit({ defaults: [[KeyCode.KeyA]] }));
-        system.enterScope();
-        system.implement('fire', handler);
-        system.listen(target as unknown as HTMLElement);
-
-        target.dispatch('keydown', createKeyEvent(65, true));
-        target.dispatch('keyup', createKeyEvent(65));
-        expect(handler).not.toHaveBeenCalled();
-
-        target.dispatch('keydown', createKeyEvent(65));
-        target.dispatch('keyup', createKeyEvent(65));
-        expect(handler).toHaveBeenCalledTimes(1);
-    });
-
-    // listen 将 91 / 92 / 224 映射为 Meta 并触发 Meta 组合
-    it('maps key codes 91, 92 and 224 to Meta', () => {
-        for (const code of [91, 92, 224]) {
-            const system = new HotkeySystem();
-            const handler = vi.fn();
-            const target = new FakeElement();
-            system.addCommand(
-                'meta',
-                createInit({ defaults: [[KeyCode.Meta]] })
-            );
-            system.enterScope();
-            system.implement('meta', handler);
-            system.listen(target as unknown as HTMLElement);
-
-            target.dispatch('keydown', createKeyEvent(code));
-            target.dispatch('keyup', createKeyEvent(code));
-
-            expect(handler).toHaveBeenCalledTimes(1);
-            expect(handler.mock.calls[0][0].context.key).toBe(KeyCode.Meta);
-        }
-    });
-
-    // listen(null) 解绑全部监听，后续事件不再触发
-    it('unbinds listeners when listening to null', () => {
-        const system = new HotkeySystem();
-        const handler = vi.fn();
-        const target = new FakeElement();
-        system.addCommand('fire', createInit({ defaults: [[KeyCode.KeyA]] }));
-        system.enterScope();
-        system.implement('fire', handler);
-
-        system.listen(target as unknown as HTMLElement);
-        expect(target.count()).toBe(2);
-        system.listen(null);
-        expect(target.count()).toBe(0);
-        target.dispatch('keydown', createKeyEvent(65));
-        target.dispatch('keyup', createKeyEvent(65));
-
-        expect(handler).not.toHaveBeenCalled();
-        expect(system.listening).toBeNull();
-    });
-
-    // 重复监听同一元素不会重复注册监听器
-    it('does not register duplicate listeners for the same element', () => {
-        const system = new HotkeySystem();
-        const target = new FakeElement();
-
-        system.listen(target as unknown as HTMLElement);
-        system.listen(target as unknown as HTMLElement);
-
-        expect(target.count()).toBe(2);
-        expect(system.listening).toBe(target);
-    });
-
-    // Once 模式下按下立即触发一次，重复按下不触发，抬起后可再次触发
-    it('triggers Once commands once per press', () => {
-        const system = new HotkeySystem();
-        const handler = vi.fn();
-        system.addCommand(
-            'once',
-            createInit({
-                mode: HotkeyEmitMode.Once,
-                defaults: [[KeyCode.KeyA]]
-            })
-        );
-        system.enterScope();
-        system.implement('once', handler);
-
-        expect(system.down(KeyCode.KeyA)).toBe(true);
-        expect(handler).toHaveBeenCalledTimes(1);
-        expect(system.down(KeyCode.KeyA)).toBe(false);
-        expect(handler).toHaveBeenCalledTimes(1);
-
-        system.up(KeyCode.KeyA);
-        system.down(KeyCode.KeyA);
-        expect(handler).toHaveBeenCalledTimes(2);
-    });
-
-    // KeyDown 组合需被 holding 满足，未写入组合的辅助键不构成限制
+    // KeyDown 组合按 holding 子集匹配，未写入组合的辅助键不构成限制
     it('matches KeyDown combinations as a subset of held keys', () => {
         const system = new HotkeySystem();
         const comboHandler = vi.fn();
         const plainHandler = vi.fn();
-        system.addCommand(
+        addCommand(
+            system,
             'combo',
             createInit({
                 mode: HotkeyEmitMode.Once,
                 defaults: [[KeyCode.Ctrl, KeyCode.KeyS]]
             })
         );
-        system.addCommand(
+        addCommand(
+            system,
             'plain',
             createInit({
                 mode: HotkeyEmitMode.Once,
@@ -727,85 +462,496 @@ describe('HotkeySystem', () => {
         expect(plainHandler).toHaveBeenCalledTimes(1);
     });
 
-    // Continuous 在 timeout 为 0 时当刻触发，之后每次激励都触发
-    it('triggers Continuous commands immediately and on excitation', () => {
+    // 只有一组候选时，即使还按着其它按键也直接触发
+    it('triggers a single candidate even with extra held keys', () => {
         const system = new HotkeySystem();
-        const excitation = createExcitation();
         const handler = vi.fn();
-        system.addCommand(
-            'continuous',
+        addCommand(
+            system,
+            'fire',
             createInit({
-                mode: HotkeyEmitMode.Continuous,
-                defaults: [[KeyCode.KeyA]]
+                mode: HotkeyEmitMode.Once,
+                defaults: [[KeyCode.KeyS]]
             })
         );
         system.enterScope();
-        system.implement('continuous', handler);
-        system.excitedBy(excitation);
+        system.implement('fire', handler);
 
-        system.down(KeyCode.KeyA);
+        system.down(KeyCode.Ctrl);
+        system.down(KeyCode.Alt);
+        system.down(KeyCode.KeyS);
+
         expect(handler).toHaveBeenCalledTimes(1);
-
-        excitation.excite(10);
-        expect(handler).toHaveBeenCalledTimes(2);
-        excitation.excite(20);
-        expect(handler).toHaveBeenCalledTimes(3);
+        const info = handler.mock.calls[0][0];
+        expect(info.index).toBe(0);
+        expect(info.keys).toEqual([KeyCode.KeyS]);
     });
 
-    // Continuous 的 timeout 到期前不触发，之后按 interval 触发第二次
-    it('waits for the Continuous timeout and then the interval', () => {
+    // 多组候选时只触发辅助键精确匹配的那一组
+    it('triggers only the exact combination among multiple candidates', () => {
+        const system = new HotkeySystem();
+        const handler = vi.fn();
+        addCommand(
+            system,
+            'fire',
+            createInit({
+                mode: HotkeyEmitMode.Once,
+                defaults: [[KeyCode.Ctrl, KeyCode.KeyS], [KeyCode.KeyS]]
+            })
+        );
+        system.enterScope();
+        system.implement('fire', handler);
+
+        system.down(KeyCode.Ctrl);
+        system.down(KeyCode.KeyS);
+
+        expect(handler).toHaveBeenCalledTimes(1);
+        const info = handler.mock.calls[0][0];
+        expect(info.index).toBe(0);
+        expect(info.keys).toEqual([KeyCode.Ctrl, KeyCode.KeyS]);
+    });
+
+    // 多组候选且没有精确匹配时不触发
+    it('does not trigger when multiple candidates have no exact match', () => {
+        const system = new HotkeySystem();
+        const handler = vi.fn();
+        addCommand(
+            system,
+            'fire',
+            createInit({
+                mode: HotkeyEmitMode.Once,
+                defaults: [[KeyCode.Ctrl, KeyCode.KeyS], [KeyCode.KeyS]]
+            })
+        );
+        system.enterScope();
+        system.implement('fire', handler);
+
+        system.down(KeyCode.Ctrl);
+        system.down(KeyCode.Alt);
+        system.down(KeyCode.KeyS);
+
+        expect(handler).not.toHaveBeenCalled();
+    });
+
+    // 返回值反映调用后仍存在的待触发项：KeyUp 按下为真，抬起触发后为假
+    it('returns whether pending items remain after down and up', () => {
+        const system = new HotkeySystem();
+        const handler = vi.fn();
+        addCommand(system, 'fire', createInit({ defaults: [[KeyCode.KeyA]] }));
+        system.enterScope();
+        system.implement('fire', handler);
+
+        expect(system.down(KeyCode.KeyA)).toBe(true);
+        expect(system.up(KeyCode.KeyA)).toBe(false);
+    });
+
+    // up 对未处于按下状态的按键返回 false
+    it('returns false when releasing a key that is not held', () => {
+        const system = new HotkeySystem();
+
+        expect(system.up(KeyCode.KeyC)).toBe(false);
+    });
+
+    // 优先级更高的指令先执行
+    it('runs higher priority commands first', () => {
+        const system = new HotkeySystem();
+        const order: string[] = [];
+        addCommand(
+            system,
+            'low',
+            createInit({ priority: 1, defaults: [[KeyCode.KeyA]] })
+        );
+        addCommand(
+            system,
+            'high',
+            createInit({ priority: 10, defaults: [[KeyCode.KeyA]] })
+        );
+        system.enterScope();
+        system.implement('low', () => order.push('low'));
+        system.implement('high', () => order.push('high'));
+
+        system.down(KeyCode.KeyA);
+        system.up(KeyCode.KeyA);
+
+        expect(order).toEqual(['high', 'low']);
+    });
+
+    // block 指令阻断严格更低优先级的指令
+    it('blocks strictly lower priority commands', () => {
+        const system = new HotkeySystem();
+        const high = vi.fn();
+        const low = vi.fn();
+        addCommand(
+            system,
+            'high',
+            createInit({
+                priority: 10,
+                block: true,
+                defaults: [[KeyCode.KeyA]]
+            })
+        );
+        addCommand(
+            system,
+            'low',
+            createInit({ priority: 5, defaults: [[KeyCode.KeyA]] })
+        );
+        system.enterScope();
+        system.implement('high', high);
+        system.implement('low', low);
+
+        system.down(KeyCode.KeyA);
+        system.up(KeyCode.KeyA);
+
+        expect(high).toHaveBeenCalledTimes(1);
+        expect(low).not.toHaveBeenCalled();
+    });
+
+    // block 不阻断同优先级指令
+    it('does not block commands at the same priority', () => {
+        const system = new HotkeySystem();
+        const blocking = vi.fn();
+        const same = vi.fn();
+        addCommand(
+            system,
+            'blocking',
+            createInit({ priority: 5, block: true, defaults: [[KeyCode.KeyA]] })
+        );
+        addCommand(
+            system,
+            'same',
+            createInit({ priority: 5, defaults: [[KeyCode.KeyA]] })
+        );
+        system.enterScope();
+        system.implement('blocking', blocking);
+        system.implement('same', same);
+
+        system.down(KeyCode.KeyA);
+        system.up(KeyCode.KeyA);
+
+        expect(blocking).toHaveBeenCalledTimes(1);
+        expect(same).toHaveBeenCalledTimes(1);
+    });
+
+    // listen 注册按下与抬起两个监听，只在 down 返回真时阻止默认行为
+    it('listens to keydown and keyup and prevents default only on down', () => {
+        const system = new HotkeySystem();
+        const handler = vi.fn();
+        const target = new FakeElement();
+        addCommand(system, 'fire', createInit({ defaults: [[KeyCode.KeyA]] }));
+        system.enterScope();
+        system.implement('fire', handler);
+        system.listen(target as unknown as HTMLElement);
+
+        const downEvent = createKeyEvent(65);
+        const upEvent = createKeyEvent(65);
+        target.dispatch('keydown', downEvent);
+        target.dispatch('keyup', upEvent);
+
+        expect(target.count()).toBe(2);
+        expect(handler).toHaveBeenCalledTimes(1);
+        // 当前实现：down 建立了待触发项返回真，KeyUp 抬起触发后已无待触发项返回假
+        expect(downEvent.preventDefault).toHaveBeenCalledTimes(1);
+        expect(upEvent.preventDefault).not.toHaveBeenCalled();
+    });
+
+    // 重复按下不会重复触发，抬起后仍只触发一次
+    it('ignores repeated keydown events and triggers once', () => {
+        const system = new HotkeySystem();
+        const handler = vi.fn();
+        const target = new FakeElement();
+        addCommand(system, 'fire', createInit({ defaults: [[KeyCode.KeyA]] }));
+        system.enterScope();
+        system.implement('fire', handler);
+        system.listen(target as unknown as HTMLElement);
+
+        target.dispatch('keydown', createKeyEvent(65));
+        target.dispatch('keydown', createKeyEvent(65, true));
+        target.dispatch('keyup', createKeyEvent(65));
+
+        expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    // listen 将 91 / 92 / 224 都映射为 Meta 并触发 Meta 组合
+    it('maps key codes 91, 92 and 224 to Meta', () => {
+        for (const code of [91, 92, 224]) {
+            const system = new HotkeySystem();
+            const handler = vi.fn();
+            const target = new FakeElement();
+            addCommand(
+                system,
+                'meta',
+                createInit({ defaults: [[KeyCode.Meta]] })
+            );
+            system.enterScope();
+            system.implement('meta', handler);
+            system.listen(target as unknown as HTMLElement);
+
+            target.dispatch('keydown', createKeyEvent(code));
+            target.dispatch('keyup', createKeyEvent(code));
+
+            expect(handler).toHaveBeenCalledTimes(1);
+            expect(handler.mock.calls[0][0].context.meta).toBe(true);
+        }
+    });
+
+    // 没有映射的按键码被跳过，既不进入 holding 也不触发
+    it('skips key codes without a mapping', () => {
+        const system = new HotkeySystem();
+        const handler = vi.fn();
+        const target = new FakeElement();
+        addCommand(system, 'fire', createInit({ defaults: [[KeyCode.KeyA]] }));
+        system.enterScope();
+        system.implement('fire', handler);
+        system.listen(target as unknown as HTMLElement);
+
+        target.dispatch('keydown', createKeyEvent(999));
+        target.dispatch('keyup', createKeyEvent(999));
+
+        expect(handler).not.toHaveBeenCalled();
+        expect(system.holding).toEqual([]);
+    });
+
+    // listen(null) 解绑全部监听，后续事件不再触发
+    it('unbinds listeners when listening to null', () => {
+        const system = new HotkeySystem();
+        const handler = vi.fn();
+        const target = new FakeElement();
+        addCommand(system, 'fire', createInit({ defaults: [[KeyCode.KeyA]] }));
+        system.enterScope();
+        system.implement('fire', handler);
+
+        system.listen(target as unknown as HTMLElement);
+        expect(target.count()).toBe(2);
+        system.listen(null);
+        expect(target.count()).toBe(0);
+        target.dispatch('keydown', createKeyEvent(65));
+        target.dispatch('keyup', createKeyEvent(65));
+
+        expect(handler).not.toHaveBeenCalled();
+        expect(system.listening).toBeNull();
+    });
+
+    // 同一元素重复 listen 不重复注册，切换到新元素时旧监听被解绑
+    it('does not register duplicate listeners and rebinds on a new element', () => {
+        const system = new HotkeySystem();
+        const target = new FakeElement();
+        const other = new FakeElement();
+
+        system.listen(target as unknown as HTMLElement);
+        system.listen(target as unknown as HTMLElement);
+        expect(target.count()).toBe(2);
+        expect(system.listening).toBe(target);
+
+        system.listen(other as unknown as HTMLElement);
+        expect(target.count()).toBe(0);
+        expect(other.count()).toBe(2);
+        expect(system.listening).toBe(other);
+    });
+
+    // KeyDown 按下时条件为假仍建立待触发项，随后的激励不会触发
+    it('tracks a KeyDown pending even when the condition is false', () => {
         const system = new HotkeySystem();
         const excitation = createExcitation();
         const handler = vi.fn();
-        system.addCommand(
-            'continuous',
+        const ok = false;
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'fire',
             createInit({
-                mode: HotkeyEmitMode.Continuous,
-                timeout: 100,
-                interval: 50,
+                mode: HotkeyEmitMode.Once,
+                timeout: 0,
                 defaults: [[KeyCode.KeyA]]
             })
         );
         system.enterScope();
-        system.implement('continuous', handler);
-        system.excitedBy(excitation);
+        system.implement('fire', handler);
+        system.when(() => ok);
 
         expect(system.down(KeyCode.KeyA)).toBe(true);
-        expect(handler).not.toHaveBeenCalled();
+        excitation.excite(10);
 
+        expect(handler).not.toHaveBeenCalled();
+    });
+
+    // KeyDown 条件为假且没有新的按键匹配时永远不会触发
+    it('never emits a KeyDown pending whose condition stays false', () => {
+        const system = new HotkeySystem();
+        const excitation = createExcitation();
+        const handler = vi.fn();
+        const ok = false;
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'fire',
+            createInit({
+                mode: HotkeyEmitMode.Once,
+                timeout: 0,
+                defaults: [[KeyCode.KeyA]]
+            })
+        );
+        system.enterScope();
+        system.implement('fire', handler);
+        system.when(() => ok);
+
+        system.down(KeyCode.KeyA);
+        excitation.excite(10);
+        excitation.excite(20);
+        system.up(KeyCode.KeyA);
+        excitation.excite(30);
+
+        expect(handler).not.toHaveBeenCalled();
+    });
+
+    // KeyDown 松键后条件恢复再按下可以再次触发且不重复
+    it('fires once after releasing and pressing again with the condition restored', () => {
+        const system = new HotkeySystem();
+        const excitation = createExcitation();
+        const handler = vi.fn();
+        let ok = false;
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'fire',
+            createInit({
+                mode: HotkeyEmitMode.Once,
+                timeout: 0,
+                defaults: [[KeyCode.KeyA]]
+            })
+        );
+        system.enterScope();
+        system.implement('fire', handler);
+        system.when(() => ok);
+
+        system.down(KeyCode.KeyA);
+        system.up(KeyCode.KeyA);
+        ok = true;
+        system.down(KeyCode.KeyA);
+
+        excitation.excite(10);
+        expect(handler).toHaveBeenCalledTimes(1);
+
+        excitation.excite(20);
+        expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    // KeyUp 抬起时不重新求值，匹配时刻条件为假就不触发
+    it('does not re-evaluate the condition when a KeyUp command is released', () => {
+        const system = new HotkeySystem();
+        const handler = vi.fn();
+        let ok = false;
+        addCommand(system, 'fire', createInit({ defaults: [[KeyCode.KeyS]] }));
+        system.enterScope();
+        system.implement('fire', handler);
+        system.when(() => ok);
+
+        expect(system.down(KeyCode.KeyS)).toBe(true);
+        ok = true;
+        system.up(KeyCode.KeyS);
+
+        expect(handler).not.toHaveBeenCalled();
+    });
+
+    // 条件为真时正常触发
+    it('triggers when the condition returns true', () => {
+        const system = new HotkeySystem();
+        const handler = vi.fn();
+        addCommand(system, 'fire', createInit({ defaults: [[KeyCode.KeyS]] }));
+        system.enterScope();
+        system.implement('fire', handler);
+        system.when(() => true);
+
+        system.down(KeyCode.KeyS);
+        system.up(KeyCode.KeyS);
+
+        expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    // 阻断线只由真的会触发的指令抬高，条件为假的高优先级指令不阻断低优先级
+    it('keeps blocking based only on commands that really fire', () => {
+        const system = new HotkeySystem();
+        const high = vi.fn();
+        const low = vi.fn();
+        let calls = 0;
+        addCommand(
+            system,
+            'high',
+            createInit({
+                priority: 10,
+                block: true,
+                defaults: [[KeyCode.KeyA]]
+            })
+        );
+        addCommand(
+            system,
+            'low',
+            createInit({ priority: 5, defaults: [[KeyCode.KeyA]] })
+        );
+        system.enterScope();
+        system.implement('high', high);
+        system.implement('low', low);
+        // 顺序化条件：先注册的 high 取到假，后注册的 low 取到真
+        system.when(() => {
+            calls++;
+            return calls > 1;
+        });
+
+        system.down(KeyCode.KeyA);
+        system.up(KeyCode.KeyA);
+
+        expect(calls).toBe(2);
+        expect(high).not.toHaveBeenCalled();
+        expect(low).toHaveBeenCalledTimes(1);
+    });
+
+    // Once 指令在 timeout 到期的那次激励才首次触发，之后不再触发
+    it('waits for the Once timeout before the first emit', () => {
+        const system = new HotkeySystem();
+        const excitation = createExcitation();
+        const handler = vi.fn();
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'fire',
+            createInit({
+                mode: HotkeyEmitMode.Once,
+                timeout: 100,
+                defaults: [[KeyCode.KeyA]]
+            })
+        );
+        system.enterScope();
+        system.implement('fire', handler);
+
+        system.down(KeyCode.KeyA);
         excitation.excite(99);
         expect(handler).not.toHaveBeenCalled();
 
         excitation.excite(100);
         expect(handler).toHaveBeenCalledTimes(1);
 
-        excitation.excite(120);
-        expect(handler).toHaveBeenCalledTimes(1);
-
         excitation.excite(150);
-        expect(handler).toHaveBeenCalledTimes(2);
-
-        excitation.excite(160);
-        expect(handler).toHaveBeenCalledTimes(3);
+        expect(handler).toHaveBeenCalledTimes(1);
     });
 
-    // Throttle 第二次触发需经过 interval，之后需经过 dt
-    it('applies interval and dt to Throttle commands', () => {
+    // Continuous 指令的第二次触发按 interval、其后按 dt
+    it('applies interval and dt to Continuous commands', () => {
         const system = new HotkeySystem();
         const excitation = createExcitation();
         const handler = vi.fn();
-        system.addCommand(
-            'throttle',
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'continuous',
             createInit({
-                mode: HotkeyEmitMode.Throttle,
+                mode: HotkeyEmitMode.Continuous,
+                timeout: 0,
                 interval: 50,
                 dt: 200,
                 defaults: [[KeyCode.KeyA]]
             })
         );
         system.enterScope();
-        system.implement('throttle', handler);
-        system.excitedBy(excitation);
+        system.implement('continuous', handler);
 
         system.down(KeyCode.KeyA);
         expect(handler).toHaveBeenCalledTimes(1);
@@ -823,12 +969,14 @@ describe('HotkeySystem', () => {
         expect(handler).toHaveBeenCalledTimes(3);
     });
 
-    // 松开按键后 Continuous 的待触发项被丢弃，不再随激励触发
-    it('stops Continuous commands after the key is released', () => {
+    // Continuous 的 interval 与 dt 都为 0 时每次激励都触发
+    it('emits on every excitation when interval and dt are zero', () => {
         const system = new HotkeySystem();
         const excitation = createExcitation();
         const handler = vi.fn();
-        system.addCommand(
+        system.excitedBy(excitation);
+        addCommand(
+            system,
             'continuous',
             createInit({
                 mode: HotkeyEmitMode.Continuous,
@@ -837,7 +985,97 @@ describe('HotkeySystem', () => {
         );
         system.enterScope();
         system.implement('continuous', handler);
+
+        system.down(KeyCode.KeyA);
+        expect(handler).toHaveBeenCalledTimes(1);
+
+        excitation.excite(10);
+        expect(handler).toHaveBeenCalledTimes(2);
+
+        excitation.excite(20);
+        expect(handler).toHaveBeenCalledTimes(3);
+    });
+
+    // Continuous 在 timeout 到期前不触发，且到期的那次激励只触发一次
+    it('waits for the Continuous timeout and emits once', () => {
+        const system = new HotkeySystem();
+        const excitation = createExcitation();
+        const handler = vi.fn();
         system.excitedBy(excitation);
+        addCommand(
+            system,
+            'continuous',
+            createInit({
+                mode: HotkeyEmitMode.Continuous,
+                timeout: 100,
+                defaults: [[KeyCode.KeyA]]
+            })
+        );
+        system.enterScope();
+        system.implement('continuous', handler);
+
+        system.down(KeyCode.KeyA);
+        expect(handler).not.toHaveBeenCalled();
+
+        excitation.excite(99);
+        expect(handler).not.toHaveBeenCalled();
+
+        excitation.excite(100);
+        expect(handler).toHaveBeenCalledTimes(1);
+
+        excitation.excite(110);
+        expect(handler).toHaveBeenCalledTimes(2);
+    });
+
+    // Continuous 未到 timeout 就松键时，在到期的那次激励补触发一次
+    it('fires a released Continuous command once at its timeout', () => {
+        const system = new HotkeySystem();
+        const excitation = createExcitation();
+        const handler = vi.fn();
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'continuous',
+            createInit({
+                mode: HotkeyEmitMode.Continuous,
+                timeout: 100,
+                defaults: [[KeyCode.KeyA]]
+            })
+        );
+        system.enterScope();
+        system.implement('continuous', handler);
+
+        system.down(KeyCode.KeyA);
+        excitation.excite(50);
+        expect(handler).not.toHaveBeenCalled();
+
+        system.up(KeyCode.KeyA);
+        excitation.excite(99);
+        expect(handler).not.toHaveBeenCalled();
+
+        excitation.excite(100);
+        expect(handler).toHaveBeenCalledTimes(1);
+
+        excitation.excite(200);
+        expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    // 松开按键后 Continuous 不再随激励触发
+    it('stops Continuous commands after the key is released', () => {
+        const system = new HotkeySystem();
+        const excitation = createExcitation();
+        const handler = vi.fn();
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'continuous',
+            createInit({
+                mode: HotkeyEmitMode.Continuous,
+                defaults: [[KeyCode.KeyA]]
+            })
+        );
+        system.enterScope();
+        system.implement('continuous', handler);
 
         system.down(KeyCode.KeyA);
         system.up(KeyCode.KeyA);
@@ -846,13 +1084,15 @@ describe('HotkeySystem', () => {
         expect(handler).toHaveBeenCalledTimes(1);
     });
 
-    // Once 的 timeout 未到就松键时不会触发
-    it('cancels a delayed Once command when the key is released', () => {
+    // 未触发的 Once 松键后转入待触发并在到期的那次激励触发一次（松键不是取消）
+    it('keeps a pending Once alive after release and fires it once', () => {
         const system = new HotkeySystem();
         const excitation = createExcitation();
         const handler = vi.fn();
-        system.addCommand(
-            'once',
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'fire',
             createInit({
                 mode: HotkeyEmitMode.Once,
                 timeout: 100,
@@ -860,200 +1100,226 @@ describe('HotkeySystem', () => {
             })
         );
         system.enterScope();
-        system.implement('once', handler);
-        system.excitedBy(excitation);
+        system.implement('fire', handler);
 
         system.down(KeyCode.KeyA);
         system.up(KeyCode.KeyA);
         excitation.excite(200);
+        expect(handler).toHaveBeenCalledTimes(1);
 
-        expect(handler).not.toHaveBeenCalled();
+        excitation.excite(300);
+        expect(handler).toHaveBeenCalledTimes(1);
     });
 
-    // excitedBy 切换激励源时先撤销旧控制器
-    it('revokes the previous excitation controller when switching sources', () => {
-        const system = new HotkeySystem();
-        const first = createExcitation();
-        const second = createExcitation();
-        system.excitedBy(first);
-
-        system.excitedBy(second);
-
-        expect(first.controllers[0].revoke).toHaveBeenCalledTimes(1);
-        expect(second.controllers.length).toBe(1);
-    });
-
-    // 未绑定激励源时延时触发的指令不会执行
-    it('never fires delayed commands without an excitation source', () => {
-        const system = new HotkeySystem();
-        const handler = vi.fn();
-        system.addCommand(
-            'once',
-            createInit({
-                mode: HotkeyEmitMode.Once,
-                timeout: 100,
-                defaults: [[KeyCode.KeyA]]
-            })
-        );
-        system.enterScope();
-        system.implement('once', handler);
-
-        system.down(KeyCode.KeyA);
-
-        expect(handler).not.toHaveBeenCalled();
-    });
-
-    // 指令模式切换后旧的待触发项被丢弃
-    it('drops pending items when the command mode changes', () => {
+    // KeyUp 延时项的上下文是活引用，派发时不含被抬起的主键
+    it('uses the live holding array for a delayed KeyUp command', () => {
         const system = new HotkeySystem();
         const excitation = createExcitation();
         const handler = vi.fn();
-        const command = system.addCommand(
-            'once',
-            createInit({
-                mode: HotkeyEmitMode.Once,
-                timeout: 100,
-                defaults: [[KeyCode.KeyA]]
-            })
-        );
-        system.enterScope();
-        system.implement('once', handler);
         system.excitedBy(excitation);
-        system.down(KeyCode.KeyA);
-
-        command.keyUp();
-        excitation.excite(200);
-
-        expect(handler).not.toHaveBeenCalled();
-    });
-
-    // 入队场景下 KeyDown 的 down 与 KeyUp 的 up 仍返回真
-    it('returns true when a command is enqueued', () => {
-        const downSystem = new HotkeySystem();
-        downSystem.addCommand(
-            'once',
-            createInit({
-                mode: HotkeyEmitMode.Once,
-                timeout: 100,
-                defaults: [[KeyCode.KeyA]]
-            })
-        );
-        downSystem.enterScope();
-        downSystem.implement('once', () => {});
-
-        const upSystem = new HotkeySystem();
-        upSystem.addCommand(
-            'up',
-            createInit({ timeout: 100, defaults: [[KeyCode.KeyB]] })
-        );
-        upSystem.enterScope();
-        upSystem.implement('up', () => {});
-
-        expect(downSystem.down(KeyCode.KeyA)).toBe(true);
-        expect(upSystem.down(KeyCode.KeyB)).toBe(false);
-        expect(upSystem.up(KeyCode.KeyB)).toBe(true);
-    });
-
-    // 延时触发时使用触发时刻的 holding 重建上下文
-    it('rebuilds the delayed context from the current holding', () => {
-        const system = new HotkeySystem();
-        const excitation = createExcitation();
-        const handler = vi.fn();
-        system.addCommand(
-            'continuous',
-            createInit({
-                mode: HotkeyEmitMode.Continuous,
-                timeout: 100,
-                defaults: [[KeyCode.KeyS]]
-            })
-        );
-        system.enterScope();
-        system.implement('continuous', handler);
-        system.excitedBy(excitation);
-
-        system.down(KeyCode.KeyS);
-        system.down(KeyCode.Digit1);
-        excitation.excite(100);
-
-        expect(handler).toHaveBeenCalled();
-        expect(handler.mock.calls[0][0].context.holding).toEqual([
-            KeyCode.KeyS,
-            KeyCode.Digit1
-        ]);
-    });
-
-    // 延时触发的 KeyUp 上下文不包含已经抬起的按键
-    it('rebuilds the delayed KeyUp context without the released key', () => {
-        const system = new HotkeySystem();
-        const excitation = createExcitation();
-        const handler = vi.fn();
-        system.addCommand(
-            'save',
+        addCommand(
+            system,
+            'fire',
             createInit({ timeout: 100, defaults: [[KeyCode.KeyS]] })
         );
         system.enterScope();
-        system.implement('save', handler);
-        system.excitedBy(excitation);
+        system.implement('fire', handler);
 
         system.down(KeyCode.KeyS);
         system.up(KeyCode.KeyS);
         expect(handler).not.toHaveBeenCalled();
 
-        system.down(KeyCode.Digit1);
-        excitation.excite(100);
+        excitation.excite(200);
 
-        const info = handler.mock.calls[0][0];
-        expect(info.context.key).toBe(KeyCode.KeyS);
-        expect(info.context.holding).toEqual([KeyCode.Digit1]);
+        expect(handler).toHaveBeenCalledTimes(1);
+        // holding 是活引用，仅修饰键布尔量是匹配时刻快照
+        expect(handler.mock.calls[0][0].context.holding).toEqual([]);
     });
 
-    // listen 在 KeyDown 模式下阻止默认行为，并把 Meta 映射进上下文
-    it('prevents default on KeyDown triggers and sets meta context', () => {
-        for (const code of [91, 92, 224]) {
-            const system = new HotkeySystem();
-            const handler = vi.fn();
-            const target = new FakeElement();
-            system.addCommand(
-                'meta',
-                createInit({
-                    mode: HotkeyEmitMode.Once,
-                    defaults: [[KeyCode.Meta]]
-                })
-            );
-            system.enterScope();
-            system.implement('meta', handler);
-            system.listen(target as unknown as HTMLElement);
-
-            const event = createKeyEvent(code);
-            target.dispatch('keydown', event);
-
-            expect(handler).toHaveBeenCalledTimes(1);
-            expect(event.preventDefault).toHaveBeenCalledTimes(1);
-            expect(handler.mock.calls[0][0].context.meta).toBe(true);
-        }
-    });
-
-    // 退出作用域后其中入队的待触发项被丢弃
-    it('drops pending items when their scope is left', () => {
+    // KeyUp 的 timeout 从抬起时刻开始计时
+    it('starts the KeyUp timeout at release', () => {
         const system = new HotkeySystem();
         const excitation = createExcitation();
         const handler = vi.fn();
-        system.addCommand(
-            'once',
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'fire',
+            createInit({ timeout: 100, defaults: [[KeyCode.KeyS]] })
+        );
+        system.enterScope();
+        system.implement('fire', handler);
+
+        system.down(KeyCode.KeyS);
+        excitation.excite(150);
+        expect(handler).not.toHaveBeenCalled();
+
+        system.up(KeyCode.KeyS);
+        excitation.excite(200);
+        expect(handler).not.toHaveBeenCalled();
+
+        excitation.excite(250);
+        expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    // KeyUp 带 timeout 且匹配时条件为假，抬起不触发也不会补发
+    it('drops a KeyUp pending captured with a false condition', () => {
+        const system = new HotkeySystem();
+        const excitation = createExcitation();
+        const handler = vi.fn();
+        const ok = false;
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'fire',
+            createInit({ timeout: 100, defaults: [[KeyCode.KeyS]] })
+        );
+        system.enterScope();
+        system.implement('fire', handler);
+        system.when(() => ok);
+
+        system.down(KeyCode.KeyS);
+        system.up(KeyCode.KeyS);
+        excitation.excite(200);
+
+        expect(handler).not.toHaveBeenCalled();
+    });
+
+    // KeyUp 带 timeout 且匹配时条件为真，到期前转假仍按捕获值触发一次
+    it('fires a delayed KeyUp pending with the captured condition', () => {
+        const system = new HotkeySystem();
+        const excitation = createExcitation();
+        const handler = vi.fn();
+        let ok = true;
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'fire',
+            createInit({ timeout: 100, defaults: [[KeyCode.KeyS]] })
+        );
+        system.enterScope();
+        system.implement('fire', handler);
+        system.when(() => ok);
+
+        system.down(KeyCode.KeyS);
+        system.up(KeyCode.KeyS);
+        ok = false;
+
+        excitation.excite(200);
+
+        expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    // excitedBy 切换激励源后只有新的激励源能驱动系统
+    it('honours only the latest excitation source', () => {
+        const system = new HotkeySystem();
+        const first = createExcitation();
+        const second = createExcitation();
+        const handler = vi.fn();
+        system.excitedBy(first);
+        addCommand(
+            system,
+            'continuous',
+            createInit({
+                mode: HotkeyEmitMode.Continuous,
+                defaults: [[KeyCode.KeyA]]
+            })
+        );
+        system.enterScope();
+        system.implement('continuous', handler);
+
+        system.down(KeyCode.KeyA);
+        expect(handler).toHaveBeenCalledTimes(1);
+
+        system.excitedBy(second);
+        first.excite(10);
+        expect(handler).toHaveBeenCalledTimes(1);
+
+        second.excite(10);
+        expect(handler).toHaveBeenCalledTimes(2);
+    });
+
+    // excitedBy(null) 后旧激励源不再驱动，系统本身仍能正常触发
+    it('stops excitation after unbinding the source', () => {
+        const system = new HotkeySystem();
+        const excitation = createExcitation();
+        const handler = vi.fn();
+        system.excitedBy(excitation);
+        addCommand(
+            system,
+            'continuous',
+            createInit({
+                mode: HotkeyEmitMode.Continuous,
+                defaults: [[KeyCode.KeyA]]
+            })
+        );
+        system.enterScope();
+        system.implement('continuous', handler);
+
+        system.down(KeyCode.KeyA);
+        system.excitedBy(null);
+        excitation.excite(10);
+        expect(handler).toHaveBeenCalledTimes(1);
+
+        system.up(KeyCode.KeyA);
+        system.down(KeyCode.KeyA);
+        expect(handler).toHaveBeenCalledTimes(2);
+    });
+
+    // 未绑定激励源时延时触发的指令永远不会执行
+    it('never fires delayed commands without an excitation source', () => {
+        const system = new HotkeySystem();
+        const handler = vi.fn();
+        addCommand(
+            system,
+            'fire',
             createInit({
                 mode: HotkeyEmitMode.Once,
                 timeout: 100,
                 defaults: [[KeyCode.KeyA]]
             })
         );
-        system.excitedBy(excitation);
         system.enterScope();
-        system.implement('once', handler);
+        system.implement('fire', handler);
+
         system.down(KeyCode.KeyA);
 
-        system.leaveScope();
-        excitation.excite(200);
-
         expect(handler).not.toHaveBeenCalled();
+    });
+
+    // 触发信息中的指令为对象，且上下文包含按下顺序的全部按键
+    it('delivers the command object and the full held keys', () => {
+        const system = new HotkeySystem();
+        const handler = vi.fn();
+        addCommand(
+            system,
+            'fire',
+            createInit({
+                mode: HotkeyEmitMode.Once,
+                defaults: [[KeyCode.KeyS]]
+            })
+        );
+        system.enterScope();
+        system.implement('fire', handler);
+
+        system.down(KeyCode.Ctrl);
+        system.down(KeyCode.Shift);
+        system.down(KeyCode.KeyS);
+
+        expect(handler).toHaveBeenCalledTimes(1);
+        const info = handler.mock.calls[0][0];
+        expect(info.command.command).toBe('fire');
+        expect(info.command.mode).toBe(HotkeyEmitMode.Once);
+        expect(info.index).toBe(0);
+        expect(info.keys).toEqual([KeyCode.KeyS]);
+        expect(info.context.holding).toEqual([
+            KeyCode.Ctrl,
+            KeyCode.Shift,
+            KeyCode.KeyS
+        ]);
+        expect(info.context.ctrl).toBe(true);
+        expect(info.context.shift).toBe(true);
+        expect(info.context.alt).toBe(false);
+        expect(info.context.meta).toBe(false);
     });
 });

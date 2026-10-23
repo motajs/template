@@ -4,28 +4,41 @@ import {
     IHotkeySystem,
     KeyCode
 } from '@motajs/system';
-import { IClientHotkey, IClientHotkeySave } from './types';
+import { IClientHotkey, IClientHotkeySave, IHotkeyCommandGroup } from './types';
 import { logger } from '@motajs/common';
 
 export class ClientHotkey implements IClientHotkey {
     system: IHotkeySystem = new HotkeySystem();
 
     /** 按键分组 */
-    private readonly groups: Map<string, IHotkeyCommand[]> = new Map();
+    private readonly groups: Map<string, IHotkeyCommandGroup> = new Map();
 
-    setGroup(group: string, commands: IHotkeyCommand[]): void {
+    setGroup(group: string, name: string, commands: IHotkeyCommand[]): void {
         if (commands.length > 0) {
             if (this.groups.has(group)) {
                 logger.warn(208, group);
             }
-            this.groups.set(group, commands);
+            this.groups.set(group, {
+                name,
+                commands
+            });
         } else {
             this.groups.delete(group);
         }
     }
 
-    getGroup(group: string): IHotkeyCommand[] {
-        return this.groups.get(group) ?? [];
+    addCommandToGroup(group: string, command: IHotkeyCommand): void {
+        const obj = this.groups.get(group);
+        if (!obj) return;
+        if (obj.commands.includes(command)) {
+            logger.warn(210, command.command, group);
+            return;
+        }
+        obj.commands.push(command);
+    }
+
+    getGroup(group: string): IHotkeyCommandGroup | null {
+        return this.groups.get(group) ?? null;
     }
 
     getUngrouped(): Iterable<IHotkeyCommand> {

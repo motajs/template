@@ -2,19 +2,6 @@ import { logger } from '@motajs/common';
 import { KeyCode } from './keyCodes';
 import { HotkeyEmitMode, IHotkeyCommand, IHotkeyCommandInit } from './type';
 
-/**
- * 判断按键是否为辅助按键，即 Ctrl / Shift / Alt / Meta 之一
- * @param key 按键码
- */
-export function isAuxiliaryKey(key: KeyCode): boolean {
-    return (
-        key === KeyCode.Ctrl ||
-        key === KeyCode.Shift ||
-        key === KeyCode.Alt ||
-        key === KeyCode.Meta
-    );
-}
-
 export class HotkeyCommand implements IHotkeyCommand {
     readonly priority: number;
     readonly block: boolean;
@@ -29,10 +16,11 @@ export class HotkeyCommand implements IHotkeyCommand {
 
     constructor(
         readonly command: string,
+        readonly name: string,
         init: IHotkeyCommandInit
     ) {
         this.command = command;
-        this.priority = init.priority;
+        this.priority = init.priority ?? 0;
         this.block = init.block ?? false;
         this.mode = init.mode ?? HotkeyEmitMode.KeyUp;
         this.timeout = init.timeout ?? 0;
@@ -50,7 +38,7 @@ export class HotkeyCommand implements IHotkeyCommand {
             logger.warn(207, 'float');
             return;
         }
-        if (count <= 0) {
+        if (count < 0) {
             logger.warn(207, 'negative integer');
             return;
         }
@@ -80,12 +68,6 @@ export class HotkeyCommand implements IHotkeyCommand {
             return;
         }
         this.keys[index] = keys.slice();
-        if (this.mode === HotkeyEmitMode.KeyUp) {
-            const regular = keys.filter(v => !isAuxiliaryKey(v));
-            if (regular.length >= 2) {
-                logger.warn(203, this.command);
-            }
-        }
     }
 
     getKeyCombination(index: number): readonly KeyCode[] {
@@ -100,24 +82,27 @@ export class HotkeyCommand implements IHotkeyCommand {
         }
     }
 
-    keyUp(timeout: number = 0): void {
+    keyUp(timeout: number = 0): this {
         this.mode = HotkeyEmitMode.KeyUp;
         this.timeout = timeout;
+        return this;
     }
 
-    once(timeout: number = 0): void {
+    once(timeout: number = 0): this {
         this.mode = HotkeyEmitMode.Once;
         this.timeout = timeout;
+        return this;
     }
 
     continuous(
         interval: number = 0,
         dt: number = 0,
         timeout: number = 0
-    ): void {
+    ): this {
         this.mode = HotkeyEmitMode.Continuous;
         this.interval = interval;
         this.dt = dt;
         this.timeout = timeout;
+        return this;
     }
 }

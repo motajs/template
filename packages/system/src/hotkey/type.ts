@@ -18,13 +18,13 @@ export const enum HotkeyEmitMode {
 export interface IHotkeyEmitContext {
     /**
      * 指令触发时，当前所有正在按下的按键，按照按下的顺序排列。如果是抬起事件触发的，那么这里面并不会包含触发事件的那个主要按键。
-     * 注意该成员的含义不是当前时刻的按下的按键，对于连续触发以及 `timeout`，依然会包含触发此指令的时刻按下的按键。
+     * 注意该成员的含义不是当前时刻的按下的按键，对于连续触发以及 `timeout`，会包含匹配时刻所有按下的按键。
      * 也就是说，它并不是当前时刻按下的按键，不要用它获取当前时刻正在按下的按键。参考时间线：
      *
      * ```txt
      * ----------|---------------|---------->
      *           |    timeout    |
-     *      指令触发时刻       指令延时触发
+     *      指令匹配时刻       指令延时触发
      *      记录的是这个        而不是这个
      * ```
      */
@@ -53,10 +53,17 @@ export interface IHotkeyEmitInfo {
 }
 
 export interface IHotkeyCommandInit {
-    /** 按键指令优先级，目前仅对抬起触发的按键生效 */
-    readonly priority: number;
-    /** 默认按键组合，可设置多组 */
+    /**
+     * 默认按键组合，可设置多组。每组中，最后一个按键为触发指令的主按键，前面的属于辅助按键，
+     * 必须先按下这些按键，再触发最后一个按键的按下或抬起才可能触发指令：
+     *
+     * - 对于按下事件，先按下主按键，再按下辅助按键不会触发。松开任意一个按键后，如果该指令的按键依然匹配，并不会继续触发。
+     * - 对于抬起事件，必须在按下所有的辅助按键和主按键后，松开主按键才可触发，松开辅助按键不会触发。
+     * - 如果触发一个主按键后，有多个按键组合对应的指令会被触发，那么只会触发辅助按键精确匹配的那一个。
+     */
     readonly defaults: KeyCode[][];
+    /** 按键指令优先级，目前仅对抬起触发的按键生效，默认为 0 */
+    readonly priority?: number;
     /** 是否阻断优先级精确比此按键指令更低的指令的执行，同优先级的会全部执行，并不会阻断，默认不阻断 */
     readonly block?: boolean;
     /** 按键触发方式，默认为抬起时触发 */
@@ -72,6 +79,9 @@ export interface IHotkeyCommandInit {
 export interface IHotkeyCommand {
     /** 按键指令的标识符 */
     readonly command: string;
+    /** 按键指令的名称，用于显示 */
+    readonly name: string;
+
     /** 按键指令优先级，越高越先执行，如果同优先级，则无法保证顺序，目前仅对抬起触发的按键生效 */
     readonly priority: number;
     /** 触发后，是否阻断优先级比当前优先级更低的按键的触发 */
@@ -117,13 +127,13 @@ export interface IHotkeyCommand {
      * 抬起后，在经过 `timeout` 时间后触发一次
      * @param timeout 抬起后距离首次触发的时间间隔，单位毫秒，默认为 0
      */
-    keyUp(timeout?: number): void;
+    keyUp(timeout?: number): this;
 
     /**
      * 按下后，在经过 `timeout` 时间后只触发一次，不会连续触发
      * @param timeout 按下后距离首次触发的时间间隔，单位毫秒，默认为 0
      */
-    once(timeout?: number): void;
+    once(timeout?: number): this;
 
     /**
      * 当按下后，在经过 `timeout` 时间后进行一次触发，之后在松开前，会按照激励源的激励触发
@@ -132,7 +142,7 @@ export interface IHotkeyCommand {
      * @param dt 节流间隔，默认为 0，即每次激励源的激励都会触发
      * @param timeout 按下后距离首次触发的时间间隔，单位号码，默认为 0
      */
-    continuous(interval?: number, dt?: number, timeout?: number): void;
+    continuous(interval?: number, dt?: number, timeout?: number): this;
 }
 
 export interface IHotkeySystem {
@@ -167,9 +177,14 @@ export interface IHotkeySystem {
     /**
      * 添加新的按键指令
      * @param command 按键指令标识符
+     * @param name 按键指令的名称，用于显示
      * @param init 指令初始化对象
      */
-    addCommand(command: string, init: IHotkeyCommandInit): IHotkeyCommand;
+    addCommand(
+        command: string,
+        name: string,
+        init: IHotkeyCommandInit
+    ): IHotkeyCommand;
 
     /**
      * 删除指定按键指令
