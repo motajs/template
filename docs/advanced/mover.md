@@ -113,7 +113,7 @@ async function walkRightThenDown(state: ICoreState): Promise<void> {
 
 ## 执行中追加、插入与停止
 
-`controller` 才是当前这次执行的入口。它的三个方法只在「仍在移动、没有调用过 `stop`、尚未 `done`」时生效，其余情况静默忽略：
+`controller` 才是当前这次执行的入口。`push` 与 `insert` 只在「仍在移动、没有调用过 `stop`、尚未 `done`」时生效，其余情况静默忽略；`stop()` 则总是把停止标记置真并返回本次的 `onEnd`：
 
 - `push(...steps)`：追加到本次队列末尾。
 - `insert(...steps)`：插到当前步之后。当前步已经从队列取出，所以实际是插到剩余队列的最前面；多个步骤按参数顺序排列。
@@ -312,7 +312,7 @@ export class SimpleMover<T extends IObjectMovable> extends ObjectMover<T> {
 - `onStepStart` 在每步开始前运行。此时基类已经更新过移动方向、朝向、速度与动画方向，但坐标还没变。它返回本步的结果码，供后面的逻辑与钩子使用。
 - `onStepEnd` 计算这一步的落点，返回一个 `ITileLocator`。基类拿它和当前坐标比较，不同才调用 `tile.setPos`。不要在这里自己写坐标。
 - `onStepSettled` 在坐标写入之后运行，参数里带着移动前坐标 `before` 与落点 `curr`。这里适合触发进入 / 离开 / 踩踏一类的事件，或者把朝向同步回对象。
-- 五个方法都是 `protected`，外部代码不能直接调用。对外只有链式方法、`start()` 与三个 setter。
+- 五个方法都是 `protected`，外部代码不能直接调用。对外是链式方法、`start()`、三个 setter 与几个只读状态。
 
 模板里的 `@shouldReplay` 标在会改状态的步进方法上，用来让这一步进入录像检查；如果你的移动不需要进录像，可以去掉，原因见下文「与录像、存档的关系」。
 
