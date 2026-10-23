@@ -149,4 +149,14 @@
     - `enemy-status-hooks.md` 的 `save` 参数引用 → `./hero-attribute.md#save-参数与读档一致性`（1 处）；
     - `advanced/plugin-system.md` → `./saveable-content.md#验证`（1 处）。
     - `hooks.md` 的「切换楼层前后」指向「需求 → 钩子对照表」中的表格行而非标题，无对应锚点，保持原样。
-- **验证：** prettier（CRLF、全部 unchanged）→ `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` 退出 0、`build complete in 20.29s`；逐项检查 `public/_docs` 生成 HTML 的 `id`，本次新增锚点与此前批次 F 的 5 个锚点全部可解析。
+    - **验证：** prettier（CRLF、全部 unchanged）→ `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` 退出 0、`build complete in 20.29s`；逐项检查 `public/_docs` 生成 HTML 的 `id`，本次新增锚点与此前批次 F 的 5 个锚点全部可解析。
+
+---
+
+## 最终确认（2026-10-23）
+
+用户原文：「已经没问题了」。
+
+用户最终确认：通过
+
+**最终状态：** 高级 II 十篇（原九篇 + `point-and-tile-events.md`）已按 U6-01..U6-22、U7-01..U7-08、U8-01..U8-02 全部处理完毕，无待处理条目；prettier `--check` 通过，`docs:build` 构建 green、`build complete`、无 dead link。
