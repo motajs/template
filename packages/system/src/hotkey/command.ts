@@ -1,6 +1,6 @@
 import { logger } from '@motajs/common';
 import { KeyCode } from './keyCodes';
-import { HotkeyEmitMode, IHotkeyCommand, IHotkeyCommandInit } from './type';
+import { HotkeyEmitMode, IHotkeyCommand, IHotkeyCommandInit } from './types';
 
 export class HotkeyCommand implements IHotkeyCommand {
     readonly priority: number;

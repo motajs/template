@@ -9,7 +9,7 @@ import {
     IHotkeyEmitContext,
     IHotkeyEmitInfo,
     IHotkeySystem
-} from './type';
+} from './types';
 
 interface IHotkeyScope {
     /** 作用域唯一标识符 */

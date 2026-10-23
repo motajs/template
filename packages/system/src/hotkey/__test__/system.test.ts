@@ -4,7 +4,7 @@ import { logger } from '@motajs/common';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { KeyCode } from '../keyCodes';
 import { HotkeySystem } from '../system';
-import { HotkeyEmitMode, IHotkeyCommand, IHotkeyCommandInit } from '../type';
+import { HotkeyEmitMode, IHotkeyCommand, IHotkeyCommandInit } from '../types';
 
 vi.hoisted(() => {
     vi.stubGlobal('main', { replayChecking: true });
