@@ -90,7 +90,7 @@ function targetOf(
     const handler = state.faceManager.get<FaceDirection>(FaceGroup.Dir8);
     if (!handler) return null;
 
-    // [需改] 把 direction 换成你要算的方向
+    // 把 direction 换算成一步的坐标偏移
     const { x, y } = handler.movement(direction);
     const loc = state.hero.getLocation();
     return { x: loc.x + x, y: loc.y + y };
@@ -143,7 +143,7 @@ import { ICoreState } from '@user/data-state';
 
 function bindFacingTiles(state: ICoreState): void {
     const binder = state.roleFace;
-    // [需改] 1 是主图块数字（朝下），2 是同一角色的另一张朝向图块
+    // 把图块 1 登记为朝下的主图块，再把图块 2 绑成它的朝右图
     binder.malloc(1, FaceDirection.Down);
     binder.bind(2, 1, FaceDirection.Right);
 
@@ -198,13 +198,13 @@ function bindFacingTiles(state: ICoreState): void {
 - `mapMovement` 必须包含 `Unknown` 及其零偏移，调用方靠这张表把每个方向都映射到偏移。
 - `dirOf` 匹配不到时返回 `Unknown`，不要抛错；只遍历本组自己的偏移表。
 
-下面以六边形布局为例：只认左右与四个斜向，上下不是邻接方向。偏移量按示例的行列坐标给出，换坐标系时替换成自己的增量。`[需改]` 标出需要按布局替换的部分：
+下面以六边形布局为例：只认左右与四个斜向，上下不是邻接方向。偏移量按示例的行列坐标给出，换成别的坐标系时增量随之改变：
 
 ```ts
 import { IFaceDescriptor, IFaceHandler } from '@motajs/common';
 import { FaceDirection } from '@user/data-common';
 
-// [需改] 降级表：六边形只认六个邻接方向，其余方向无法降级
+// 降级表：六边形只认六个邻接方向，其余方向无法降级
 const HEX_DEGRADE: ReadonlyMap<FaceDirection, FaceDirection> = new Map([
     [FaceDirection.Left, FaceDirection.Left],
     [FaceDirection.Right, FaceDirection.Right],
@@ -214,7 +214,7 @@ const HEX_DEGRADE: ReadonlyMap<FaceDirection, FaceDirection> = new Map([
     [FaceDirection.RightDown, FaceDirection.RightDown]
 ]);
 
-// [需改] 运动表：六个方向的单步偏移，必须包含 Unknown 的零偏移
+// 运动表：六个方向的单步偏移，必须包含 Unknown 的零偏移
 const HEX_MOVEMENTS: ReadonlyMap<FaceDirection, IFaceDescriptor> = new Map([
     [FaceDirection.Unknown, { x: 0, y: 0 }],
     [FaceDirection.Left, { x: -1, y: 0 }],

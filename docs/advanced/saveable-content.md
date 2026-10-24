@@ -28,7 +28,7 @@
 
 ## 写一个可存档对象
 
-可存档内容分两部分：一个实现 `ISaveableContent` 的对象，以及把它注册进存档系统的插件。如果你有一份自定义状态需要跟着存档走，可以参考下面的模板；模板把两部分一次写完，后面再逐项解释。
+可存档内容分两部分：一个实现 `ISaveableContent` 的对象，以及把它注册进存档系统的插件。如果你有一份自定义状态需要跟着存档走，可以参考下面的示例；示例把两部分一次写完，后面再逐项解释。
 
 ```ts
 // src/data/plugin/my-plugin/state.ts
@@ -41,10 +41,10 @@ export interface IMySave {
 
 // 可存档对象：实现 ISaveableContent，泛型参数是存档形状
 export class MySaveable implements ISaveableContent<IMySave> {
-    // 运行时的真实数据；换成你真正要保存的结构
+    // 运行时的真实数据：用 Map 保存键值对
     private readonly values: Map<string, number> = new Map();
 
-    // 对外方法按你的需求增删
+    // 对外方法：按 key 写入数值
     setValue(key: string, value: number): void {
         this.values.set(key, value);
     }
@@ -108,9 +108,9 @@ export class MyPlugin implements IMyPlugin {
 }
 ```
 
-模板一共声明了三样东西：`state.ts` 里的 `IMySave` 是存档形状，`MySaveable` 实现 `ISaveableContent<IMySave>`，负责在活对象与存档数据之间转换；`types.ts` 里的 `IMyPlugin` 继承 `IDataPluginDefine`，把可存档对象作为公开成员暴露出去；`plugin.ts` 里的 `MyPlugin` 实现 `IMyPlugin`，在 `awake` 里创建对象并调用 `addSaveableContent` 注册。
+示例一共声明了三样东西：`state.ts` 里的 `IMySave` 是存档形状，`MySaveable` 实现 `ISaveableContent<IMySave>`，负责在活对象与存档数据之间转换；`types.ts` 里的 `IMyPlugin` 继承 `IDataPluginDefine`，把可存档对象作为公开成员暴露出去；`plugin.ts` 里的 `MyPlugin` 实现 `IMyPlugin`，在 `awake` 里创建对象并调用 `addSaveableContent` 注册。
 
-你需要改的是：`IMySave` 的字段（只保留重建必需的数据）、`MySaveable` 里真正的状态与对外方法、插件 `id`、注册 id，以及把 `MySaveable` 换成你自己的类。`initialize` / `afterLoad` 在模板里是空的，需要等加载内容时再填。下面解释 `saveState` / `loadState` 的约束，以及注册时要注意什么。
+`IMySave` 的字段只保留重建必需的数据，`MySaveable` 里放真正的状态与对外方法，插件 `id` 与注册 id 分别命名。`initialize` / `afterLoad` 在示例里是空的，需要等加载内容时再填。下面解释 `saveState` / `loadState` 的约束，以及注册时要注意什么。
 
 ## saveState 与 loadState
 
@@ -203,7 +203,7 @@ export class BadSaveable implements ISaveableContent<BadSaveable> {
 
 ### 压缩参数可以省略
 
-`ISaveableContent` 声明的是 `saveState(compression)` / `loadState(state, compression)`，TypeScript 允许实现时少写参数。模板里就没有写 `compression`：调用方仍会按接口传两个实参，多出的那个被忽略。需要按压缩级别改变存法时，再把 `compression: SaveCompression` 加回来。
+`ISaveableContent` 声明的是 `saveState(compression)` / `loadState(state, compression)`，TypeScript 允许实现时少写参数。示例里就没有写 `compression`：调用方仍会按接口传两个实参，多出的那个被忽略。需要按压缩级别改变存法时，再把 `compression: SaveCompression` 加回来。
 
 `saveState` 里不要修改对象状态；`loadState` 不要假设旧数据还在。
 
@@ -341,7 +341,7 @@ import { SaveCompression } from '@user/data-common';
 import { ICoreState, PluginStatus } from '@user/data-state';
 import { IMyPlugin } from './types';
 
-// 验证：存档 → 改状态 → 读档；IMyPlugin / MySaveable 换成你自己的定义
+// 验证流程：存档 → 改状态 → 读档，确认恢复为存档时的值
 export function verifySaveLoad(state: ICoreState): void {
     const holder = state.getDataPlugin<IMyPlugin>('my-plugin');
     if (!holder || holder.status !== PluginStatus.Loaded) return;
@@ -371,7 +371,7 @@ export function verifySaveLoad(state: ICoreState): void {
 
 ## 小结
 
-- 先写可存档对象与插件注册模板，再逐项调整存档形状、返回值与注册时机。
+- 先写可存档对象与插件注册，再逐项调整存档形状、返回值与注册时机。
 - 只存重建必需的状态；缓存、派生数据与 L2 系统不进存档。
 - `ISaveableContent<T>` 的 `T` 是存档形状；`saveState` 必须返回独立于活对象的数据，顶层不会替你 `structuredClone`。
 - 存档数据必须能被结构化克隆；类实例会丢原型与方法，读档时要自己重建。

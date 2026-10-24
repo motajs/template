@@ -41,7 +41,7 @@ import { FaceDirection } from '@user/data-common';
 import { ICoreState } from '@user/data-state';
 
 async function heroStepRight(state: ICoreState): Promise<void> {
-    // [需改] 换成你要的方向与步数
+    // 向右走一格并开始执行，拿到本次执行的控制器
     const controller = state.hero.location.mover
         .step(FaceDirection.Right)
         .start();
@@ -64,7 +64,7 @@ async function pushTileRight(layer: IMapLayer): Promise<void> {
     const tile = layer.transferToDynamic(5, 5);
     if (!tile) return;
 
-    // [需改] 换成你要的方向与步数
+    // 向右推一格并开始执行，拿到本次执行的控制器
     const controller = tile.mover.step(FaceDirection.Right).start();
     await controller?.onEnd;
 }
@@ -133,7 +133,7 @@ async function walkRightThenDown(state: ICoreState): Promise<void> {
     const mover = state.hero.location.mover;
     const before = state.hero.getLocation();
 
-    // [需改] 按需求换成你要的步数与方向
+    // 链式排出三个步骤：向右两格、转向下、再向下一格
     mover
         .step(FaceDirection.Right, 2) // 向右两格
         .face(FaceDirection.Down) // 只转向，不移动
@@ -276,7 +276,7 @@ const { ignoreTerrain, autoSave } = state.hero.location.mover.getConfig();
 - `onStepEnd` 计算这一步的落点，返回一个 `ITileLocator`。基类拿它和当前坐标比较，不同才调用 `tile.setPos`。不要在这里自己写坐标。
 - `onStepSettled` 在坐标写入之后运行，参数里带着移动前坐标 `before` 与落点 `curr`。这里适合触发进入 / 离开 / 踩踏一类的事件，或者把朝向同步回对象。
 
-最小实现如下，`[需改]` 标出需要按需求替换的部分：
+最小实现如下：
 
 ```ts
 import {
@@ -297,7 +297,7 @@ const enum SimpleMoveCode {
     Blocked
 }
 
-// 只处理四方向与瞬移的最小移动器；T 换成你自己的可移动对象
+// 只处理四方向与瞬移的最小移动器；T 是可移动对象类型
 export class SimpleMover<T extends IObjectMovable> extends ObjectMover<T> {
     constructor(
         readonly tile: T,
@@ -314,7 +314,7 @@ export class SimpleMover<T extends IObjectMovable> extends ObjectMover<T> {
     protected async onStepStart(
         step: Readonly<ObjectMoveStep>
     ): Promise<number> {
-        // [需改] 在这里决定这一步能不能走
+        // 跳跃步骤判为不可执行，其余步骤放行
         return step.type === ObjectMoveType.Jump
             ? SimpleMoveCode.Blocked
             : SimpleMoveCode.Success;
@@ -349,7 +349,7 @@ export class SimpleMover<T extends IObjectMovable> extends ObjectMover<T> {
         }
     }
 
-    // [需改] 把朝向同步给对象；方法体里有写操作，所以要标 @shouldReplay
+    // 标 @shouldReplay：重放时也要执行这个会写朝向的方法
     @shouldReplay('Simple tile facing should be replayed.')
     protected async onStepSettled(
         before: ITileLocator,
@@ -407,7 +407,7 @@ export class NoLeftMoveTopImpl implements IHeroMoveTopImpl {
         this.base = new DefaultHeroMoveTopImpl(state);
         const inner = this.base.predicate();
         this.passPredicate = {
-            // [需改] 把这里换成你要拦的条件
+            // 与默认谓词组合：向左的步骤一律不允许
             canPass: handler =>
                 handler.direction !== FaceDirection.Left &&
                 inner.canPass(handler),

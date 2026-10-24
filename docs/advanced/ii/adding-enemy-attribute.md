@@ -158,7 +158,7 @@ export class EnemyAttributeCalculator implements IDamageCalculator<
         const monDef = enemy.getAttribute('def');
         const monHp = enemy.getAttribute('hp');
 
-        // [需改] 护甲是怪物受到的百分比减伤，先夹到 0 到 100
+        // 护甲是怪物受到的百分比减伤，先夹到 0 到 100
         // 夹紧可以避免负伤害，也避免超过 100 后变成「反向治疗」
         const armor = Math.min(Math.max(enemy.getAttribute('armor'), 0), 100);
         // 勇士每回合伤害：先减怪物防御，再乘护甲系数
@@ -171,7 +171,7 @@ export class EnemyAttributeCalculator implements IDamageCalculator<
         // 回合数随每回合伤害同步变化：护甲越高，需要的回合越多
         const turn = Math.ceil(monHp / heroPerDamage);
 
-        // [需改] 攻速缩放怪物每回合伤害；100 表示正常速度
+        // 攻速缩放怪物每回合伤害；100 表示正常速度
         // 用 Math.max 防止负数攻速把伤害变成治疗
         const atkSpeed = Math.max(enemy.getAttribute('atkSpeed'), 0);
         let enemyPerDamage = Math.max(monAtk - def, 0) * (atkSpeed / 100);
@@ -229,7 +229,7 @@ export class ArmorAura implements IAuraView<IEnemyAttr, void> {
         handler: IEnemyHandler<IEnemyAttr, IHeroAttr>,
         baseEnemy: IReadonlyEnemy<IEnemyAttr>
     ): void {
-        // [需改] 修改的是计算后怪物；光环的加成会进入伤害计算
+        // 修改的是计算后怪物；光环的加成会进入伤害计算
         handler.enemy.addAttribute('armor', 10);
 
         // 若光环要按目标原始值算百分比，应读取 baseEnemy，而不是 handler.enemy
@@ -275,7 +275,7 @@ export class PackAtkSpeedQuery implements IEnemyCommonQueryEffect<
         special: ISpecial<any>,
         query: () => IReadonlyEnemyContext<IEnemyAttr, IHeroAttr>
     ): void {
-        // [需改] 必须通过 query() 取上下文：
+        // 必须通过 query() 取上下文：
         // 它会把「这只怪物查询过外部状态」登记下来，局部刷新时才会重算它
         const ctx = query();
         let count = 0;
@@ -293,7 +293,7 @@ export class PackAtkSpeedQuery implements IEnemyCommonQueryEffect<
             }
         }
 
-        // [需改] 每有一个同类，攻速提高 5
+        // 每有一个同类，攻速提高 5
         handler.enemy.addAttribute('atkSpeed', count * 5);
     }
 }
@@ -302,7 +302,7 @@ export class PackAtkSpeedQuery implements IEnemyCommonQueryEffect<
 注册时把效果绑定到一个特殊属性 `code` 上：
 
 ```ts
-// [需改] code 换成触发这条查询的特殊属性编号（示例自选 40）
+// 把这条查询绑定到特殊属性 40；挂上该属性的怪物才会执行它
 state.enemyContext.registerCommonQueryEffect(40, new PackAtkSpeedQuery());
 ```
 
@@ -326,7 +326,7 @@ export class ArmorFinalEffect implements IEnemyFinalEffect<
     readonly priority = 0;
 
     apply(handler: IEnemyHandler<IEnemyAttr, IHeroAttr>): void {
-        // [需改] 最终阶段只改自身基础属性，不再查询上下文
+        // 最终阶段只改自身基础属性，不再查询上下文
         handler.enemy.addAttribute('armor', 5);
     }
 }

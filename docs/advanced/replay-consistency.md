@@ -30,7 +30,7 @@
 
 ## 给会改状态的方法加标记
 
-标记加在<strong>你自己的、会改状态的方法</strong>上。如果你不确定该把标记写在哪里，可以参考下面的模板：它把一个会改状态的公开方法标成「应计入录像」，其余成员用注释省略。商店插件是现成的例子，它的 `ShopSystem` 在 `src/data/plugin/shop/system.ts` 里给开店、关店、购买、出售都加了标记：
+标记加在<strong>你自己的、会改状态的方法</strong>上。如果你不确定该把标记写在哪里，可以参考下面的示例：它把一个会改状态的公开方法标成「应计入录像」，其余成员用注释省略。商店插件是现成的例子，它的 `ShopSystem` 在 `src/data/plugin/shop/system.ts` 里给开店、关店、购买、出售都加了标记：
 
 ```ts
 // shouldReplay 从数据端公共包引入
@@ -50,7 +50,7 @@ export class ShopSystem implements IShopSystem {
 }
 ```
 
-这个模板声明了 `ShopSystem` 类，实现 `IShopSystem` 接口；`@shouldReplay` 紧贴在 `buyItem` 方法上方，装饰的是这个方法。你需要改的是：把类与方法换成你真正会改状态的那一个，把 `message` 写成这个方法改变了什么状态；同一个类里还有其它会改状态的入口时，按同样方式逐个标注。
+这个示例声明了 `ShopSystem` 类，实现 `IShopSystem` 接口；`@shouldReplay` 紧贴在 `buyItem` 方法上方，装饰的是这个方法。`message` 应当写清这个方法改变了什么状态；同一个类里还有其它会改状态的入口时，按同样方式逐个标注。
 
 装饰器紧贴方法声明上方，中间不要隔别的成员。`shouldReplay` 从 `@user/data-common` 引入；商店插件的文件顶部已经有这行 `import`，新文件才需要自己补。同一个插件里，`openShop`、`closeShop`、`sellItem` 也都按同样方式标注。
 

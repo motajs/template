@@ -220,7 +220,7 @@ export class MainDamageCalculator implements IDamageCalculator<
         let heroPerDamage = 0;
         let enemyPerDamage = 0;
 
-        // [需改] 攻速缩放勇士每回合伤害。
+        // 攻速缩放勇士每回合伤害。
         // 插入点就是原来的 `heroPerDamage += atk - monDef`：
         // 必须在 `turn = Math.ceil(monHp / heroPerDamage)` 之前，
         // 也要在下面的 `<= 0` 早退之前，否则攻速为 0 时会除出 Infinity。
@@ -328,7 +328,7 @@ export class MainDamageCalculator implements IDamageCalculator<
             damage += handler.state.flags.getFieldValueDefaults('hatred', 0);
         }
 
-        // [需改] 护甲按最终伤害百分比减伤。
+        // 护甲按最终伤害百分比减伤。
         // 放在魔防、负伤归零、固伤、仇恨之后，因此这些部分都会被护甲缩放；
         // 放在自爆之前：自爆只把低于 hp - 1 的伤害抬到下限，下限本身不缩放。
         // 如果你希望固伤/仇恨绕过护甲，把这段移到固伤之前。

@@ -61,3 +61,15 @@
 - `mover.md`：新增首节「移动器模型」；删除正文中的使用概率与源码 / 实现差异叙述；保留 D-76 面朝朝向与移动朝向的语义区分。
 - `face-handler.md`：首节改为「朝向模型」，补齐五个组件与两条链路；删除源码级与实现 / 注释差异说明；自定义一节改为六边形布局示例（`HexFaceHandler`，六个邻接方向），注册改用字符串 id `hex`；验证段同步改为六方向检查。
 - 验证：`prettier --write` 两篇 unchanged；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete in 17.97s`，无 dead link；CRLF 与单 H1 保持。
+
+## 第 3 轮（2026-10-24）
+
+**用户意见：** 高级教程不要写「模板」「[需改]」等标记或模板章节（D-83）；提示性内容只保留注释说明下一行做什么；游戏领域的「怪物模板 / 原始模板 / 默认模板」术语保留。
+
+### 执行记录
+
+- 仅修改 `docs/advanced/**/*.md`；未改代码、配置、状态文件，未写 SUMMARY。
+- 移除全部 `[需改]` 标记（`mover.md`、`face-handler.md`、`ii/adding-enemy-attribute.md`、`ii/adding-hero-attribute.md`），对应注释改为说明下一行做什么。
+- 移除文档模板措辞：`hooks-in-depth.md`、`plugin-system.md`（含两个章节标题与代码注释）、`declarative-vs-imperative.md`、`replay-consistency.md`、`saveable-content.md`、`data-stores.md`；改用「示例」或直接去掉标签。
+- 保留游戏领域术语：`怪物模板`、`原始模板`、`默认模板`、`怪物属性模板` 等。
+- 验证：`prettier --write` 十篇 unchanged；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete in 18.62s`，无 dead link；CRLF 与单 H1 保持。

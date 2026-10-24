@@ -2,7 +2,7 @@
 
 中级教程的[钩子](../intermediate/hooks.md)回答的是「什么需求该用哪个钩子」；这一篇讲另一件事：怎么把钩子限定到你关心的那个对象上。做法很简单——<strong>建议一个对象一个钩子实例</strong>。共享实例是允许的，但不建议；除非你明确了解钩子的内部实现与后果，否则不要这样做。
 
-钩子接口本身不难，容易出错的是「挂上去了，触发的却不只是你想管的那张地图、那个图层」。下面先讲实例与对象的关系，再给一个完整模板，最后是注册、移除与异步的接口事实。
+钩子接口本身不难，容易出错的是「挂上去了，触发的却不只是你想管的那张地图、那个图层」。下面先讲实例与对象的关系，再给一个完整示例，最后是注册、移除与异步的接口事实。
 
 阅读前需要会基础语法：`class`、`new`、`import`、`async` / `await`。本篇只讲数据端，示例都按当前源码里的接口书写。
 
@@ -22,7 +22,7 @@
 
 ## 示例：图层级钩子
 
-如果你想给某个图层挂一个只处理它的钩子，可以参考下面的模板：钩子类只处理注册它的那个图层，注册函数负责找到目标图层并把实例挂上去。
+如果你想给某个图层挂一个只处理它的钩子，可以参考下面的示例：钩子类只处理注册它的那个图层，注册函数负责找到目标图层并把实例挂上去。
 
 ```ts
 import { IMapLayer, IMapLayerHooks } from '@user/data-base';
@@ -69,9 +69,9 @@ export function registerGroundHooks(
 }
 ```
 
-这个模板声明了 `GroundBlockHooks` 类，实现 `IMapLayerHooks`；`registerGroundHooks` 负责按 `alias` 找到目标图层，再调用 `layer.addHook` 注册实例。你需要改的是：目标楼层 id 与图层 `alias`、`onUpdateBlock` 的方法体，以及 `registerGroundHooks` 的调用位置（通常放在插件的 `afterLoad`）。
+这个示例声明了 `GroundBlockHooks` 类，实现 `IMapLayerHooks`；`registerGroundHooks` 负责按 `alias` 找到目标图层，再调用 `layer.addHook` 注册实例。
 
-模板里的 `readonly layer` 让钩子能访问目标图层本身（读宽高、调用图层方法），不是用来比较一个不存在的参数。`afterLoad` 时楼层未必已经由加载流程构造出来（取决于内容加载方式与插件顺序），`state.maps.getMap('floor-1')` 可能返回 `null`；这时至少要把原因报出来，或者把注册推迟到楼层创建之后。另外，`onUpdateBlock` 只在图块数字真的变化时触发，设置成相同数字不会触发。
+示例里的 `readonly layer` 让钩子能访问目标图层本身（读宽高、调用图层方法），不是用来比较一个不存在的参数。`afterLoad` 时楼层未必已经由加载流程构造出来（取决于内容加载方式与插件顺序），`state.maps.getMap('floor-1')` 可能返回 `null`；这时至少要把原因报出来，或者把注册推迟到楼层创建之后。另外，`onUpdateBlock` 只在图块数字真的变化时触发，设置成相同数字不会触发。
 
 如果钩子要在构造时保持通用、注册时才确定图层，可以在 `awake` 里取控制器。`MapLayer` 的控制器是 `IMapLayerHookController`，带 `layer` 字段与 `getMapData()`：
 

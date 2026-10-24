@@ -85,9 +85,9 @@ export const clientPlugins: IClientPluginDefine[] = [
 
 数据端插件实现 `IDataPluginDefine`（来自 `@user/data-state`），渲染端插件实现 `IClientPluginDefine`（来自 `@user/client-modules`）。两者都由 `id`、依赖声明与三个时机方法组成；渲染端多一份 `clientDeps`，生命周期方法也多一个依赖参数。
 
-如果你想新增一个插件，可以参考下面两个模板。数据端与渲染端各一份，目录、类名与公开成员换成你自己的，其余结构保持不变。
+如果你想新增一个插件，可以参考下面两个示例。数据端与渲染端各一份，结构相同。
 
-### 数据端插件模板
+### 数据端插件示例
 
 ```ts
 // src/data/plugin/my-plugin/types.ts
@@ -105,7 +105,7 @@ export interface IMyPlugin extends IDataPluginDefine {
 import { ICoreState, IDataPlugin } from '@user/data-state';
 import { IMyPlugin } from './types';
 
-// 数据端插件模板
+// 数据端插件类；注册表按 id 创建它
 export class MyPlugin implements IMyPlugin {
     // 插件标识符：在数据端注册表里唯一
     readonly id = 'my-plugin';
@@ -136,7 +136,7 @@ export class MyPlugin implements IMyPlugin {
 }
 ```
 
-### 渲染端插件模板
+### 渲染端插件示例
 
 ```ts
 import {
@@ -146,7 +146,7 @@ import {
 } from '@user/client-modules';
 import { IDataPlugin } from '@user/data-state';
 
-// 渲染端插件模板：写在 src/client/plugin/my-client/plugin.ts
+// 渲染端插件类，文件放在 src/client/plugin/my-client/plugin.ts
 export class MyClientPlugin implements IClientPluginDefine {
     // 插件标识符：在渲染端注册表里唯一
     readonly id = 'my-client-plugin';
@@ -180,7 +180,7 @@ export class MyClientPlugin implements IClientPluginDefine {
 }
 ```
 
-两个模板都声明了一个实现插件接口的类：数据端的 `MyPlugin` 实现 `IMyPlugin extends IDataPluginDefine`，渲染端的 `MyClientPlugin` 实现 `IClientPluginDefine`。它们都没有构造器，插件需要的对象要在 `awake` 里自己创建。你需要改的是：`id`（在对应端唯一）、依赖数组（没有就留空）、以及三个时机方法的方法体——`awake` 里装配对象、`initialize` 里做加载前的异步准备、`afterLoad` 里做依赖加载内容的初始化。数据端模板把对外接口放在 `types.ts`，是为了让依赖它的插件能按接口调用；渲染端模板暂时没有单独拆文件。
+两个示例都声明了一个实现插件接口的类：数据端的 `MyPlugin` 实现 `IMyPlugin extends IDataPluginDefine`，渲染端的 `MyClientPlugin` 实现 `IClientPluginDefine`。它们都没有构造器，插件需要的对象要在 `awake` 里自己创建。三个时机方法各管一段：`awake` 里装配对象、`initialize` 里做加载前的异步准备、`afterLoad` 里做依赖加载内容的初始化。数据端示例把对外接口放在 `types.ts`，是为了让依赖它的插件能按接口调用；渲染端示例暂时没有单独拆文件。
 
 ### 逐项说明
 
