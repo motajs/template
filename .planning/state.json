@@ -31,18 +31,33 @@
     {
       "number": "6",
       "name": "单元测试",
-      "status": "in_progress"
+      "status": "pending"
     },
     {
       "number": "7",
       "name": "数据端缺陷修复",
       "status": "complete"
+    },
+    {
+      "number": "8",
+      "name": "测试重构与接口对齐",
+      "status": "complete"
+    },
+    {
+      "number": "9",
+      "name": "最小浏览器可运行版本",
+      "status": "in_progress"
+    },
+    {
+      "number": "10",
+      "name": "文档重构",
+      "status": "in_progress"
     }
   ],
   "next": {
     "command": "/gsd:progress --next",
     "label": "Advance to the next step",
-    "reason": "Phase 07 of 7 · executing"
+    "reason": "Phase 10 of 10 · in progress（中级 + 高级 I + 高级 II 已收尾）"
   },
-  "updated_at": "2026-09-17T12:32:39.429Z"
+  "updated_at": "2026-10-23T00:00:00.000Z"
 }
