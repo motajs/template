@@ -24,7 +24,7 @@
 
 ## 拿到朝向处理器
 
-`state.faceManager` 是朝向处理器的注册表，有两种取法：按数字分组取，或按字符串 id 取。两者找不到时都返回 `null`：
+`state.faceManager` 是朝向处理器的注册表，有两种取法：按数字分组取，或按字符串 id 取。两者找不到时都返回 `null`。`get` 的泛型决定返回的 `IFaceHandler<T>` 里 `T` 是什么：不写泛型时 `T` 退化为 `number`，`degrade`、`opposite`、`next` 的静态类型都会是 `number`；需要 `FaceDirection` 的强类型时写 `get<FaceDirection>(...)`。
 
 ```ts
 import { FaceDirection, FaceGroup } from '@user/data-common';
@@ -32,7 +32,7 @@ import { ICoreState } from '@user/data-state';
 
 /** 取内置的八方向处理器，并算一步向上的偏移。 */
 function stepUp(state: ICoreState): void {
-    const dir8 = state.faceManager.get(FaceGroup.Dir8);
+    const dir8 = state.faceManager.get<FaceDirection>(FaceGroup.Dir8);
     if (!dir8) {
         // 启动期没有注册时才会走到这里
         console.log('八方向处理器未注册');
@@ -83,9 +83,9 @@ state.faceManager.registerById('dir8', dir8);
 
 `opposite` 与 `next` 都在本组内求解：先 `degrade`，再查本组的映射表，因此传入一个本组不认的方向时，结果取决于 `degrade` 的归并。`next` 的第二个参数是 `anticlockwise`，省略时为 `false`，即顺时针。
 
-`dirOf` 走的是相反方向：给你一个偏移量，问它是哪个方向。它不接收方向，也不会先 `degrade`；偏移量与表中某一项完全相等时才命中，多个方向共用同一偏移时只返回其中一个。
+`dirOf` 走的是相反方向：给你一个偏移量，问它是哪个方向。它不接收方向，也不会先 `degrade`；偏移量与表中某一项完全相等时才命中，多个方向共用同一偏移时只返回其中一个。它反查的是处理器内部的偏移表，命中顺序就是表的条目顺序。内置 `Dir4FaceHandler.dirOf` 实际遍历的是八方向偏移表，所以 `dir4.dirOf(1, 1)` 会返回 `RightDown`，而不是 `Unknown`；这与「四方向只认上下左右」的直觉不一致，属于实现与文档描述不一致的地方（按接口注释，`dirOf` 只承诺「多个符合时返回其中一个」，并不承诺只返回本组方向）。需要严格四方向结果时，用 `mapDirection()` 的成员集合过滤返回值。
 
-`mapDirection` 与 `mapMovement` 用于遍历。两者的结果都包含 `Unknown`，`mapMovement` 里 `Unknown` 对应的偏移是 `{ x: 0, y: 0 }`。寻路就是按 `mapMovement` 的条目扩展邻域的，所以处理器认哪些方向，直接决定图的分支数。
+`mapDirection` 与 `mapMovement` 用于遍历。两者的结果都包含 `Unknown`，`mapMovement` 里 `Unknown` 对应的偏移是 `{ x: 0, y: 0 }`。寻路就是按 `mapMovement` 的条目扩展邻域的，所以处理器认哪些方向，直接决定图的分支数。自己按 `mapMovement` 扩展邻域时，要跳过零偏移条目，否则对象会原地走一步；寻路的构图循环就是这样处理的。
 
 ## 两个内置处理器
 
@@ -96,9 +96,9 @@ state.faceManager.registerById('dir8', dir8);
 | `Dir8FaceHandler` | 八个方向         | 原样返回，不做归并                                 | 八方向移动、勇士与动态图块的默认 |
 | `Dir4FaceHandler` | 上下左右四个方向 | 四个正方向原样；四个斜向折到左右；其余为 `Unknown` | 只走四方向的地图与寻路           |
 
-`Dir8FaceHandler` 的 `degrade` 把八个方向原样保留；按接口约定，无法合理降级的方向（包括 `Unknown`）应返回 `Unknown`。查表失败时 `movement` 退回零偏移，`opposite` 与 `next` 退回 `Unknown`。
+`Dir8FaceHandler` 的 `degrade` 把八个方向原样保留；按接口注释的约定，无法合理降级的方向（包括 `Unknown`）应返回 `Unknown`。当前实现是把入参原样返回，所以 `degrade(999)` 得到 `999`——这是实现与注释不一致的地方，不要把这种返回值当作合法方向使用。查表失败时 `movement` 退回零偏移，`opposite` 与 `next` 退回 `Unknown`。
 
-`Dir4FaceHandler` 的归并需要记住一条：斜向折到左右，不是折到上下。
+`Dir4FaceHandler` 的归并需要记住一条：斜向折到左右，不是折到上下。上表说的是 `degrade` 与位移的方向集合；不要据此认为 `dirOf` 也只返回四个方向，原因见前文。
 
 | 输入         | `degrade` 结果 |
 | ------------ | -------------- |
@@ -127,7 +127,7 @@ function targetOf(
     state: ICoreState,
     direction: FaceDirection
 ): { x: number; y: number } | null {
-    const handler = state.faceManager.get(FaceGroup.Dir8);
+    const handler = state.faceManager.get<FaceDirection>(FaceGroup.Dir8);
     if (!handler) return null;
 
     const loc = state.hero.getLocation();
@@ -146,7 +146,7 @@ function oppositeOf(
     state: ICoreState,
     direction: FaceDirection
 ): FaceDirection | null {
-    const handler = state.faceManager.get(FaceGroup.Dir8);
+    const handler = state.faceManager.get<FaceDirection>(FaceGroup.Dir8);
     if (!handler) return null;
 
     // [需改] 把 direction 换成你要取反的方向
@@ -155,12 +155,12 @@ function oppositeOf(
 ```
 
 ```ts
-import { FaceGroup } from '@user/data-common';
+import { FaceDirection, FaceGroup } from '@user/data-common';
 import { ICoreState } from '@user/data-state';
 
 /** 列出四方向处理器认的所有方向与偏移，包含 Unknown。 */
 function listDir4Steps(state: ICoreState): void {
-    const handler = state.faceManager.get(FaceGroup.Dir4);
+    const handler = state.faceManager.get<FaceDirection>(FaceGroup.Dir4);
     if (!handler) return;
 
     for (const [dir, offset] of handler.mapMovement()) {
@@ -364,7 +364,11 @@ function bindFacingTiles(binder: IRoleFaceBinder): void {
 
 `bind` 有两个前置条件，任一不满足都会记一条错误日志并放弃绑定：`main` 没有 `malloc` 过，或绑定的朝向与主朝向相同。因此建组的顺序必须是先 `malloc` 主图块，再 `bind` 其余朝向。`getFaceOf` 与 `getMainFace` 找不到时返回 `null`；`getFaceDirection` 找不到时返回 `Unknown`，而不是 `null`。
 
-地图图层默认使用 `state.roleFace` 作为自己的朝向绑定器，所以图块转向时查的就是这份映射。`MapTileBase.setFaceDirection` 先按原方向查 `getFaceOf`，查不到时再用 `Dir4` 处理器的 `degrade` 折一次再查，仍然查不到就保持原图块数字。这就是两层结构在实现里的交汇点：朝向映射决定换哪张图，处理器决定斜向该往哪折。
+示例里的 `1` 与 `2` 只是占位，换图前先确认这两个图块数字在当前地图里没有被别的朝向组占用。`malloc` 会覆盖同一个图块数字原有的组，`bind` 会覆盖该组同一朝向的旧映射，所以要从地图的图块数据里取真实数字，不要照抄示例。
+
+地图图层默认使用 `state.roleFace` 作为自己的朝向绑定器，所以图块转向时查的就是这份映射。`MapTileBase.setFaceDirection` 先按原方向查 `getFaceOf`，查到就换图并返回新数字；查不到时，按方法注释的约定，再用 `Dir4` 处理器的 `degrade` 折一次、重新查一次，查到就换成折后的图块并返回，仍查不到则保持原图块数字。这就是两层结构在实现里的交汇点：朝向映射决定换哪张图，处理器决定斜向该往哪折。
+
+<strong>实现差异</strong>：当前 `setFaceDirection` 的降级分支只 `return next.identifier`，没有调用 `this.set(...)` 写回图块，所以折一次查到映射时，返回值变了但图块本身没换。本文按方法注释描述语义；这个不一致尚未修正，使用降级路径时不要假定图块已经换掉。
 
 ## 它们怎么串起来
 
@@ -395,8 +399,9 @@ function bindFacingTiles(binder: IRoleFaceBinder): void {
 - <strong>dirOf 可能有多解</strong>：偏移量相同、方向不同的情况只返回其中一个，不要用它反推「唯一方向」，也不要用它校验位移是否合法。
 - <strong>Unknown 的偏移是零</strong>：`movement` 与 `move` 对 `Unknown` 返回 `{ x: 0, y: 0 }`，`opposite` 与 `next` 返回 `Unknown`；把它当普通方向做位置运算，对象会原地不动。
 - <strong>bind 前必须 malloc</strong>：主图块没有分配朝向时，`bind` 会记错误并放弃；绑定的朝向与主朝向相同也会被拒绝。
-- <strong>重复 malloc 会覆盖</strong>：同一个图块数字再次 `malloc` 会重建该组的映射，之前 `bind` 进去的其它朝向不会被保留。
+- <strong>重复 malloc 会覆盖</strong>：同一个图块数字再次 `malloc` 会重建该组的映射，之前 `bind` 进去的其它朝向不会被保留；已经 `bind` 过的子图块仍持有旧映射表，`getFaceOf` 可能查到旧结果。重建整组后要重新 `bind` 所有子图块。
 - <strong>处理器是共享对象</strong>：不要在实例上保存「当前处理的是哪个对象」之类的状态；多个对象共用同一个处理器时，状态会互相覆盖。
+- <strong>处理器不随对象销毁</strong>：处理器是无状态的共享对象，注册一次即可，也没有卸载流程；真正持有它的是移动器、寻路 `finder` 与图块层，换处理器要改使用方的引用，而不是重新 `register`。
 - <strong>不同分组互不影响</strong>：`Dir4`、`Dir8` 与自定义分组各有一份处理器，换掉其中一个不会改动其余分组。
 - <strong>注册不替换已有实例</strong>：注册只影响之后取用它的代码；已经构造好的移动器仍持有构造时传入的处理器。
 - <strong>getMainFace 返回的是朝向</strong>：返回的 `IFaceData` 里，`identifier` 仍是你传入的图块数字，`face` 是它所属组的主朝向，不是主图块的数字。
@@ -411,8 +416,8 @@ import { ICoreState } from '@user/data-state';
 
 /** 打印内置处理器的关键结果，确认方向换算符合预期。 */
 function verifyFaceHandler(state: ICoreState): void {
-    const dir4 = state.faceManager.get(FaceGroup.Dir4);
-    const dir8 = state.faceManager.get(FaceGroup.Dir8);
+    const dir4 = state.faceManager.get<FaceDirection>(FaceGroup.Dir4);
+    const dir8 = state.faceManager.get<FaceDirection>(FaceGroup.Dir8);
     if (!dir4 || !dir8) {
         console.log('处理器未注册，检查 initialize.ts 的注册');
         return;

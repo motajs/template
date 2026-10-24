@@ -2,7 +2,7 @@
 
 对象移动是数据端最常见的动作之一：勇士走一步、动态图块被推走、NPC 沿路径巡逻。移动器把「想怎么走」和「实际怎么走」拆开：先用链式调用排出一串移动步骤，再调用 `start()` 按顺序执行；每一步落在哪一格，由移动器的子类决定。
 
-这样拆的好处是同一套执行流程可以服务不同对象。勇士的 `HeroMover` 负责边界、通行、踩踏与撞击，动态图块的 `DynamicTileMover` 只把方向换成落点。读这篇不需要先读它们的源码：先会用现成移动器，再看怎么扩展。
+这样拆的好处是同一套执行流程可以服务不同对象。勇士的 `HeroMover` 自己不判定能不能走，它把边界、通行、踩踏与撞击转发给顶层实现对象 `IHeroMoveTopImpl`；动态图块的 `DynamicTileMover` 只把方向换成落点。读这篇不需要先读它们的源码：先会用现成移动器，再看怎么扩展。
 
 数据端只维护坐标与状态，画面上的位移、动画与速度表现由渲染端读取这些状态后完成。渲染端内容用 `渲染端 · 移动表现` 占位。
 
@@ -39,7 +39,89 @@
 | `autoSave`      | 是否在特定时机触发自动存档 |
 | `allowOutBound` | 是否允许勇士到达地图之外   |
 
-`config` 只覆盖传入的字段，没传的保持原值；`getConfig` 返回当前配置的只读快照。`useTopImplementation` 用来替换勇士的顶层判定实现，通行、边界、踩踏与撞击都由它负责。
+`config` 只覆盖传入的字段，没传的保持原值；`getConfig` 返回当前配置的只读快照。
+
+### 勇士的顶层实现
+
+`useTopImplementation` 替换的是勇士这一层的行为，不是移动器本身。`IHeroMover` 没有 `stop()`，停止只发生在 `start()` 返回的控制器上。
+
+`HeroMover` 在每一步把信息打包成 `IHeroMoveTopHandler`，交给 `IHeroMoveTopImpl` 判断：
+
+| 方法                     | 返回             | 作用                                                   |
+| ------------------------ | ---------------- | ------------------------------------------------------ |
+| `predicate()`            | `IPassPredicate` | 返回通行性谓词，`HeroMover` 用它判断能否进入、是否撞击 |
+| `inBound(x, y, floorId)` | `boolean`        | 目标格是否在地图范围内                                 |
+| `enter(handler)`         | `Promise<void>`  | 正常进入目标格后触发                                   |
+| `leave(handler)`         | `Promise<void>`  | 离开当前格时触发                                       |
+| `hit(handler)`           | `Promise<void>`  | 撞到不可进入的目标格时触发                             |
+| `cannotEnter(handler)`   | `Promise<void>`  | 被判定为无法进入时触发                                 |
+
+`handler` 里带着 `currLoc`、`nextLoc`、`direction`、`floorId`、`face` 与 `state`，够你在判定里读位置、朝向与状态。引擎内置的 `DefaultHeroMoveTopImpl`（`src/data/hero/moverImpl.ts`）就是默认实现：它用通行谓词与事件系统完成边界判断、进出与撞击触发器。`MainDataPlugin` 在 `awake` 里把它装上：
+
+```ts
+// src/data/initialize.ts 的 awake 中
+const heroMoveTopImpl = new DefaultHeroMoveTopImpl(state);
+state.hero.location.mover.useTopImplementation(heroMoveTopImpl);
+```
+
+想保留默认行为、只改其中一环时，包一层并转发给默认实现，比从头写省事：
+
+```ts
+// src/data/hero/moverTop.ts
+import {
+    IHeroMoveTopHandler,
+    IHeroMoveTopImpl,
+    IPassPredicate
+} from '@user/data-base';
+import { IStateSystem } from '@user/data-system';
+import { DefaultHeroMoveTopImpl } from './moverImpl';
+
+/** 保留默认的边界、通行与事件，只给撞击加一条日志。 */
+export class MyHeroMoveTopImpl implements IHeroMoveTopImpl {
+    // 默认实现负责边界、通行谓词与四类事件派发
+    private readonly base: DefaultHeroMoveTopImpl;
+
+    constructor(state: IStateSystem) {
+        this.base = new DefaultHeroMoveTopImpl(state);
+    }
+
+    predicate(): IPassPredicate {
+        return this.base.predicate();
+    }
+
+    inBound(x: number, y: number, floorId: string | undefined): boolean {
+        return this.base.inBound(x, y, floorId);
+    }
+
+    enter(handler: IHeroMoveTopHandler): Promise<void> {
+        return this.base.enter(handler);
+    }
+
+    leave(handler: IHeroMoveTopHandler): Promise<void> {
+        return this.base.leave(handler);
+    }
+
+    hit(handler: IHeroMoveTopHandler): Promise<void> {
+        // [需改] 撞击时先做自己的事，再交给默认实现触发原有触发器
+        console.log('撞到', handler.nextLoc);
+        return this.base.hit(handler);
+    }
+
+    cannotEnter(handler: IHeroMoveTopHandler): Promise<void> {
+        // 默认实现的 cannotEnter 是空实现，没有参数
+        return this.base.cannotEnter();
+    }
+}
+```
+
+装配时把它换进勇士移动器：
+
+```ts
+// src/data/initialize.ts 的 awake 中，替换掉默认实现
+state.hero.location.mover.useTopImplementation(new MyHeroMoveTopImpl(state));
+```
+
+这就是勇士的扩展点：`HeroMover` 负责录像登记、坐标写入与步进流程，`IHeroMoveTopImpl` 负责「这一步能不能走、撞到什么、进出触发什么」。给勇士扩展时，优先实现 `IHeroMoveTopImpl` 并通过 `useTopImplementation` 装上；不要为了改通行规则去重写整个移动器，更不要从 `ObjectMover` 起手——`ObjectMover` 只算落点，边界、通行、踩踏、撞击和 `HeroMover` 的配置（含 `autoSave` 开关）都不在里面，勇士会失去这些行为。
 
 勇士位置对象的接口见[勇士位置](../intermediate/hero-location.md)；动态图块的创建、转换与移动见[静态图块与动态图块](./ii/static-vs-dynamic-tiles.md)。
 
@@ -69,7 +151,7 @@
 
 `speed` 与 `animDir` 只是写移动器状态，本身不产生位移。`speed` 的单位是毫秒每格，初始 `currentSpeed` 为 `100`；`animDir` 设置 `ObjectAnimDirection.Forward` 或 `Backward`。真正让速度与动画方向「看得见」的是渲染端。
 
-`push` 接收的是步骤对象数组，适合把循环生成或从别处收集来的步骤一次加入。`clear` 只清空尚未执行的队列，不影响正在执行的那一次。
+`mover.push(steps)` 接收的是步骤对象数组，适合把循环生成或从别处收集来的步骤一次加入；`controller.push(...steps)` 是可变参数，直接把步骤对象逐个传入。两者名字相同、形状不同，别把数组塞给控制器。`clear` 只清空尚未执行的队列，不影响正在执行的那一次。
 
 ## 执行与等待
 
@@ -105,7 +187,7 @@ async function walkRightThenDown(state: ICoreState): Promise<void> {
 }
 ```
 
-`onEnd` 是整次执行结束时兑现的 Promise，`done` 是同一时点的布尔查询。等待优先用 `await controller.onEnd`；`done` 适合在同步代码里快速判断。
+`onEnd` 是整次执行结束时兑现的 Promise，`done` 是同一时点的布尔查询。等待优先用 `await controller.onEnd`；`done` 适合在同步代码里快速判断。`onEnd` 只在整次执行正常跑完时才兑现，任何一步或任一钩子抛错都会让它永远悬着，见「边界与注意」。
 
 `start()` 会做三件事：把当前队列切片成本次执行的局部队列、清空移动器内部的待执行队列、把 `moveDirection` 重置为 `Unknown`。因此执行期间再用移动器规划，写的是「下一次」的队列，不是本次。
 
@@ -195,6 +277,10 @@ async function stopBeforeFirstStep(state: ICoreState): Promise<void> {
 | `faceHandler`   | 朝向处理器   | 构造时传入，负责方向与偏移的换算                       |
 
 <strong>面朝朝向（`faceDirection`）</strong>指对象「脸朝哪」，<strong>移动朝向（`moveDirection`）</strong>指「这一步往哪走」，两者是不同的概念，不要混用。`step` 会让两者一起更新；`stepFace` 与 `backward` 会让两者不同，例如向右走但脸朝上，或者朝下后退时移动朝向是上。`forward()` 沿的是面朝朝向，而不是移动朝向。
+
+`IObjectMover.forward` 的源码注释写的是「沿当前移动方向」，这里指的是**面朝朝向**：`forward` 读的是 `faceDirection`，不是 `moveDirection`。同理，`onSetMoveDir` 注释里的「设置朝向」指设置**移动朝向**。源码实现与这个理解一致，不要把它当成 bug 去改。
+
+`speed` 与 `animDir` 往队列里放的是步骤，真正写入 `currentSpeed`、`currAnimDir` 是在这一步执行时；执行后状态留在移动器上，`start()` 不会恢复默认值，所以会带到下一次移动。勇士的 `config` 也是立即写入且不重置。想每次都从默认值开始，就在排计划时显式写 `speed(100)`、`animDir(ObjectAnimDirection.Forward)` 与对应的 `config`。
 
 `setPos`、`setFaceDir`、`setMoveDir` 与链式规划不同：它们立即生效、不排队。`setPos` 直接写对象坐标，`setFaceDir` 直接改面朝朝向，`setMoveDir` 直接改移动朝向。三者分别触发 `onSetPos`、`onSetFaceDir`、`onSetMoveDir` 钩子。
 
@@ -447,7 +533,7 @@ export class SimpleMover extends ObjectMover<SimpleTile> {
 
 这段示例把「方向 → 偏移 → 落点」串了起来：`faceHandler.movement(this.moveDirection)` 给出单格的坐标偏移，加到 `tile.x`、`tile.y` 上就是落点；基类拿到落点后负责写入坐标。
 
-通行判断不在移动器里。`SimpleMover` 不检查目标格能不能进、有没有墙，也不触发踩踏事件。它只回答「这一步落到哪」。能不能走属于调用方的规则，`HeroMover` 就是把这件事交给顶层实现对象的。
+通行判断不在移动器基类里。`SimpleMover` 不检查目标格能不能进、有没有墙，也不触发踩踏事件，它只回答「这一步落到哪」。`HeroMover` 也一样：它登记录像、写坐标、跑流程，但自己不判定通行，而是把判定与进出/撞击事件转发给顶层实现对象（见前文「勇士的顶层实现」）。
 
 把对象与移动器接起来：
 
@@ -470,6 +556,22 @@ async function runSimpleMover(): Promise<void> {
 ```
 
 `faceHandler` 决定方向体系。四方向对象要配四方向处理器，八方向对象配八方向处理器；混用会让偏移与朝向对不上。朝向处理器本身的接口与自定义方式见[FaceHandler 系列](./face-handler.md)。
+
+## 接进插件与真实对象
+
+自定义移动器与朝向处理器都要在数据端插件的 `awake` 里装配，依赖加载后配置或已创建对象的放到 `afterLoad`。
+
+- <strong>处理器</strong>：`state.faceManager.register(...)` 放进 `awake`，见[FaceHandler 系列](./face-handler.md#实现自己的朝向处理器)。
+- <strong>勇士的规则</strong>：`state.hero.location.mover.useTopImplementation(...)` 是公开的替换点；移动器实例本身由 `createLocation` 创建，没有公开 setter。
+- <strong>动态图块</strong>：`mover` 在 `DynamicTile` 构造时随对象创建，只读；需要整套换掉时，在自己的对象创建流程里构造替代实例，而不是事后改字段。
+- <strong>生命周期</strong>：移动器与对象同生命周期，不需要卸载；钩子用 `unload()` 移除。移动器上的状态不进入存档，位置由 `IHeroLocationSave` 保存；自定义的额外状态要做成可存档内容，见[可存档内容](./saveable-content.md)。
+
+```ts
+// src/data/plugin/my-plugin/plugin.ts 的 awake 中
+state.hero.location.mover.useTopImplementation(new MyHeroMoveTopImpl(state));
+```
+
+这段放 `awake` 还是 `afterLoad` 取决于依赖：`DefaultHeroMoveTopImpl` 只用到 `state`，`awake` 就够；如果装配需要加载后的配置或已创建的对象，放到 `afterLoad`。
 
 ## 与录像、存档的关系
 
@@ -512,11 +614,12 @@ async function runSimpleMover(): Promise<void> {
 
 ## 边界与注意
 
-- <strong>start 返回 null</strong>：移动器已经在移动时不会接管。先等 `controller.onEnd`，或调用 `stop()` 后再排新计划。
+- <strong>start 返回 null</strong>：移动器已经在移动时不会接管，此时也没有新的控制器可操作。要等或要停，只能用上一次 `start()` 保存的 `controller`：`await controller.onEnd`，或调用 `controller.stop()`。`IHeroMover` 没有 `stop()`，不要在移动器上找。
 - <strong>moveDirection 被重置</strong>：`start()` 把移动朝向（`moveDirection`）设为 `Unknown`，面朝朝向（`faceDirection`）不受影响；`forward()` 用的是面朝朝向，不依赖这次重置。
 - <strong>执行期间链式方法无效</strong>：`mover.step`、`mover.face`、`mover.speed` 等写的是下一次的队列；执行中追加只能用 `controller.push` 或 `controller.insert`。
 - <strong>stop 不立刻中断</strong>：当前步会走完。第一步还没开始时调用，可能一步都不走。
 - <strong>不要在步进方法里 await stop</strong>：`stop()` 返回的 Promise 要等当前步结束才兑现，在步进方法或步进钩子里 `await` 会卡死整次移动。
+- <strong>步进方法或钩子抛错会卡住移动器</strong>：`ObjectMover` 没有为执行 Promise 兜底；任何一步或任一钩子抛错，`onEnd` 都不再兑现、`done` 保持假、`moving` 保持真，之后的 `start()` 会一直返回 `null`。自定义步进方法要把预期内的失败转成结果码，而不是抛错。
 - <strong>setPos 不触发步进钩子</strong>：移动器的 `setPos` 只触发 `onSetPos`，不触发 `onStepStart` / `onStepEnd`；移动过程中的落点写入也不会触发 `onSetPos`。
 - <strong>speed 与 animDir 只是状态</strong>：它们不产生位移。没有消费方读取时，设置速度与动画方向不会产生可见效果。
 - <strong>faceHandler 必须与对象方向体系一致</strong>：四方向对象配八方向处理器，或反过来，都会让偏移与朝向对不上。
@@ -526,7 +629,7 @@ async function runSimpleMover(): Promise<void> {
 
 ## 怎么验证
 
-先排一个固定的三步计划，观察坐标、`done` 与钩子顺序：
+先排一个固定的四步计划：向右两格、转向、向下一格，观察坐标、`done` 与钩子顺序：
 
 ```ts
 import { FaceDirection, IObjectMoverHooks } from '@user/data-common';
@@ -580,7 +683,7 @@ async function verifyPlan(state: ICoreState): Promise<void> {
 }
 ```
 
-预期：`done` 从假变真；坐标先水平移动两格，再向下移动一格；钩子顺序与表中一致，且每一步的 `onStepStart` 都在对应的 `onStepEnd` 之前。
+预期：`done` 从假变真；整次共四个步骤（`Dir`、`Dir`、`Face`、`Dir`），坐标先水平移动两格，再向下移动一格；钩子顺序与表中一致，且每一步的 `onStepStart` 都在对应的 `onStepEnd` 之前。
 
 再验证执行中追加：调用 `start()` 后立刻 `controller.push` 一个 `Dir` 步骤，观察最终坐标是否多走了这一步。如果改用 `mover.step` 追加，最终坐标不会包含它，因为那是下一次执行的队列。
 
