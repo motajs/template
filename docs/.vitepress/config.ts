@@ -180,6 +180,11 @@ export default defineConfig({
                         {
                             text: '钩子深入',
                             link: '/advanced/hooks-in-depth'
+                        },
+                        { text: '移动 Mover', link: '/advanced/mover' },
+                        {
+                            text: 'FaceHandler 系列',
+                            link: '/advanced/face-handler'
                         }
                     ]
                 },
