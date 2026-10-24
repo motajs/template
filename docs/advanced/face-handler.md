@@ -1,10 +1,10 @@
 # FaceHandler 系列
 
-方向在数据端有两个落点。一个是逻辑朝向 `FaceDirection`：勇士朝哪、动态图块这一步朝哪，都用它表示。另一个是图块数字：同一个角色可能有多张不同朝向的图，移动时需要按当前朝向换成对应的数字。
+方向在数据端有两个落点。一个是逻辑朝向 `FaceDirection`：勇士朝哪、动态图块这一步朝哪，都用它表示。另一个是图块数字：同一个角色可能有多张不同朝向的图，换方向时要换成对应的数字。
 
-两个落点之间夹着一套换算。四方向与八方向认的方向集合不同，斜向输入在四方向体系里必须先归并成某个方向，才有偏移和转向可言。`IFaceHandler` 负责这套换算，把任意朝向变成本组支持的方向、位移、反方向与旋转；`IRoleFaceBinder` 负责把朝向映射成图块数字。
+两个落点之间夹着一套换算。`IFaceHandler` 把任意朝向变成本组支持的方向、位移、反方向与旋转；`IRoleFaceBinder` 把朝向映射成图块数字。
 
-本篇只讲数据端。这些值最后怎么画、动画怎么播，由渲染端读取后完成（`渲染端 · 朝向图块绘制`）。
+本篇只讲数据端。这些值最后怎么画、动画怎么播，由渲染端读取后完成。
 
 <!-- TODO(renderer): 朝向图块绘制 -->
 
@@ -16,21 +16,20 @@
 | `FaceGroup`     | 方向组的编号，内置 `Dir4` 与 `Dir8`，表示「这一组认哪些方向」  | 从 `state.faceManager` 取处理器时作为 key |
 | `IFaceHandler`  | 朝向处理器，把任意方向换算成本组支持的方向、偏移、反方向与旋转 | 移动器构造、寻路邻域、图块转向            |
 
-`FaceDirection` 的成员依次是 `Unknown`、`Left`、`Up`、`Right`、`Down`，再加上四个斜向 `LeftUp`、`RightUp`、`LeftDown`、`RightDown`。它是 `const enum`，数值由声明顺序决定；不要按数值硬编码，一律写成员名。方向值为 `Unknown` 时表示没有方向，它也会出现在处理器的输入与输出里。
+`FaceDirection` 的成员依次是 `Unknown`、`Left`、`Up`、`Right`、`Down`，再加上四个斜向 `LeftUp`、`RightUp`、`LeftDown`、`RightDown`。它是 `const enum`，数值由声明顺序决定；不要按数值硬编码，一律写成员名。`Unknown` 表示没有方向，它也会出现在处理器的输入与输出里。
 
-`FaceGroup` 只有 `Dir4` 与 `Dir8` 两个成员，分别表示四方向（上下左右）与八方向（上下左右加斜向）。它本身不携带行为，只是一个编号；真正的换算逻辑在对应的 `IFaceHandler` 上。
+`FaceGroup` 只有 `Dir4` 与 `Dir8` 两个成员，分别表示四方向（上下左右）与八方向（上下左右加斜向）。它本身不携带行为，只是一个编号；真正的换算逻辑在对应的 `IFaceHandler` 上。取处理器时写 `FaceGroup.Dir4` / `FaceGroup.Dir8`，不要自己写 `0`、`1`。
 
 还有一个配套类型 `IFaceDescriptor`，它是只读的 `{ x, y }` 增量，处理器用它表示「朝这个方向走一步，坐标加多少」。它不是坐标，而是位移量。
 
 ## 拿到朝向处理器
 
-`state.faceManager` 是朝向处理器的注册表，有两种取法：按数字分组取，或按字符串 id 取。两者找不到时都返回 `null`。`get` 的泛型决定返回的 `IFaceHandler<T>` 里 `T` 是什么：不写泛型时 `T` 退化为 `number`，`degrade`、`opposite`、`next` 的静态类型都会是 `number`；需要 `FaceDirection` 的强类型时写 `get<FaceDirection>(...)`。
+`state.faceManager` 是朝向处理器的注册表，有两种取法：按数字分组取，或按字符串 id 取。两者找不到时都返回 `null`。
 
 ```ts
 import { FaceDirection, FaceGroup } from '@user/data-common';
 import { ICoreState } from '@user/data-state';
 
-/** 取内置的八方向处理器，并算一步向上的偏移。 */
 function stepUp(state: ICoreState): void {
     const dir8 = state.faceManager.get<FaceDirection>(FaceGroup.Dir8);
     if (!dir8) {
@@ -48,23 +47,15 @@ function stepUp(state: ICoreState): void {
 }
 ```
 
-注册发生在启动期，位于 `src/data/initialize.ts` 的 `awake` 中，四个内置注册分别是 `Dir4` + `'dir4'` 与 `Dir8` + `'dir8'`：
+`get` 的泛型决定返回的 `IFaceHandler<T>` 里 `T` 是什么：不写泛型时 `T` 退化为 `number`，`degrade`、`opposite`、`next` 的静态类型都会是 `number`；需要 `FaceDirection` 的强类型时写 `get<FaceDirection>(...)`。
 
-```ts
-// src/data/initialize.ts 的 awake 中，朝向组在启动期一次性注册
-const dir4 = new Dir4FaceHandler();
-const dir8 = new Dir8FaceHandler();
-state.faceManager.register(FaceGroup.Dir4, dir4);
-state.faceManager.registerById('dir4', dir4);
-state.faceManager.register(FaceGroup.Dir8, dir8);
-state.faceManager.registerById('dir8', dir8);
-```
+内置处理器在启动期注册（`src/data/initialize.ts` 的 `awake` 中），四方向与八方向各注册了数字 key 与字符串 id。启动之后按约定只读使用：运行期再注册只会影响之后取用它的地方，不会替换已经构造好的对象里保存的处理器。
 
-启动之后按约定只读使用：运行期再注册分组只会影响之后取用它的地方，不会替换已经构造好的对象里保存的处理器。自定义分组用未被占用的数字或字符串 id 都可以，见后文「实现自己的朝向处理器」。
+同一个角色的图块数字映射由 `state.roleFace` 负责，见下文「朝向图块映射」。
 
-## IFaceHandler 能做什么
+## 常用方法
 
-八个方法可以按「输入方向、输出什么」分成三组：降级与换算、遍历、由偏移反推。`degrade` 是一整套的核心，因为调用方可以传进任意方向值，包括本组不认的方向。
+八个方法可以按「输入方向、输出什么」分成三组：降级与换算、遍历、由偏移反推。`degrade` 是核心，因为调用方可以传进任意方向值，包括本组不认的方向。
 
 | 方法                        | 作用                                   | 输入先 `degrade`   | `Unknown` 的结果            |
 | --------------------------- | -------------------------------------- | ------------------ | --------------------------- |
@@ -77,48 +68,7 @@ state.faceManager.registerById('dir8', dir8);
 | `mapDirection()`            | 迭代本组支持的所有方向                 | 不接收方向         | 包含 `Unknown`              |
 | `mapMovement()`             | 迭代本组所有方向及其偏移               | 不接收方向         | 包含 `Unknown` 对应的零偏移 |
 
-`degrade` 决定这一组的归并策略：本组不认的方向该折成哪一个。后文会看到，内置的 `Dir4FaceHandler` 把斜向折到左右，而自定义处理器可以改成折到上下。
-
-`movement` 与 `move` 的区别只在步数。`move(dir, -2)` 等价于把 `movement(dir)` 的横纵分量都乘 `-2`，也就是朝反方向走两步，但它返回的仍是 `dir` 的位移乘以负数，不会先取 `opposite`。
-
-`opposite` 与 `next` 都在本组内求解：先 `degrade`，再查本组的映射表，因此传入一个本组不认的方向时，结果取决于 `degrade` 的归并。`next` 的第二个参数是 `anticlockwise`，省略时为 `false`，即顺时针。
-
-`dirOf` 走的是相反方向：给你一个偏移量，问它是哪个方向。它不接收方向，也不会先 `degrade`；偏移量与表中某一项完全相等时才命中，多个方向共用同一偏移时只返回其中一个。它反查的是处理器内部的偏移表，命中顺序就是表的条目顺序。内置 `Dir4FaceHandler.dirOf` 实际遍历的是八方向偏移表，所以 `dir4.dirOf(1, 1)` 会返回 `RightDown`，而不是 `Unknown`。这是内置实现的特例，不要照抄到自定义处理器里：自定义处理器的 `dirOf` 应该只遍历本组自己的表（后文模板就是这样），否则会返回本组不支持的方向。
-
-至于 `dirOf(1, 1) = RightDown` 能不能用：它在当前实现下可复现（表是模块级常量、遍历顺序固定），但不是接口承诺。按接口注释，`dirOf` 只承诺「多个符合时返回其中一个」，并不承诺只返回本组方向；它给出的又是四方向体系不支持的方向。所以不要拿它做四方向判定，需要严格四方向结果时，把返回值再用 `degrade` 折一次，或自己遍历 `mapMovement()` 里本组的条目。
-
-`mapDirection` 与 `mapMovement` 用于遍历。两者的结果都包含 `Unknown`，`mapMovement` 里 `Unknown` 对应的偏移是 `{ x: 0, y: 0 }`。寻路就是按 `mapMovement` 的条目扩展邻域的，所以处理器认哪些方向，直接决定图的分支数。自己按 `mapMovement` 扩展邻域时，要跳过零偏移条目，否则对象会原地走一步；寻路的构图循环就是这样处理的。
-
-## 两个内置处理器
-
-内置实现都在 `@user/data-common` 的 `faceManager.ts` 里。它们都实现 `IFaceHandler<FaceDirection>`，区别只在认哪些方向、以及斜向怎么归并：
-
-| 处理器            | 支持方向         | `degrade` 行为                                     | 典型用途                         |
-| ----------------- | ---------------- | -------------------------------------------------- | -------------------------------- |
-| `Dir8FaceHandler` | 八个方向         | 原样返回，不做归并                                 | 八方向移动、勇士与动态图块的默认 |
-| `Dir4FaceHandler` | 上下左右四个方向 | 四个正方向原样；四个斜向折到左右；其余为 `Unknown` | 只走四方向的地图与寻路           |
-
-`Dir8FaceHandler` 的 `degrade` 把八个方向原样保留；按接口注释的约定，无法合理降级的方向（包括 `Unknown`）应返回 `Unknown`。当前实现是把入参原样返回，所以 `degrade(999)` 得到 `999`——这是实现与注释不一致的地方，不要把这种返回值当作合法方向使用。查表失败时 `movement` 退回零偏移，`opposite` 与 `next` 退回 `Unknown`。
-
-`Dir4FaceHandler` 的归并需要记住一条：斜向折到左右，不是折到上下。上表说的是 `degrade` 与位移的方向集合；不要据此认为 `dirOf` 也只返回四个方向，原因见前文。
-
-| 输入         | `degrade` 结果 |
-| ------------ | -------------- |
-| `LeftUp`     | `Left`         |
-| `LeftDown`   | `Left`         |
-| `RightUp`    | `Right`        |
-| `RightDown`  | `Right`        |
-| 其余非正方向 | `Unknown`      |
-
-这一点决定了四方向体系里的实际手感：斜向输入不会让对象斜着走，也不会变成上下位移，而是变成横向一步。四方向地图上如果希望斜向折到上下，就需要自己写一个处理器（见下一节）。
-
-两个处理器在 `Unknown` 上的行为一致：`movement` 与 `move` 返回零偏移，`opposite` 与 `next` 返回 `Unknown`，`mapDirection` 与 `mapMovement` 会把它列出来。
-
-勇士与动态图块默认都走 `Dir8`：勇士的分组来自 `src/data/constant.ts` 的 `HERO_FACE`，由 `MainDataPlugin` 构造时传入；动态图块的分组来自 `data-base/src/shared.ts` 的 `DYNAMIC_MOVER_FACE`（同文件的 `HERO_MOVER_FACE` 也定义为 `Dir8`）。需要四方向时，改的是这些分组来源，而不是处理器本身的实现。
-
-## 用处理器算位置与方向
-
-处理器最常见的用法是「把方向换成坐标」。下面三段各自独立，分别算目标格、算反方向、遍历四方向。
+最常见的是「把方向换成坐标」：
 
 ```ts
 import { FaceDirection, FaceGroup } from '@user/data-common';
@@ -132,205 +82,42 @@ function targetOf(
     const handler = state.faceManager.get<FaceDirection>(FaceGroup.Dir8);
     if (!handler) return null;
 
-    const loc = state.hero.getLocation();
     // [需改] 把 direction 换成你要算的方向
     const { x, y } = handler.movement(direction);
+    const loc = state.hero.getLocation();
     return { x: loc.x + x, y: loc.y + y };
 }
 ```
 
-```ts
-import { FaceDirection, FaceGroup } from '@user/data-common';
-import { ICoreState } from '@user/data-state';
+`move` 适合一次算多格，例如 `handler.move(FaceDirection.Left, 3)` 得到 `{ x: -3, y: 0 }`；传负数就是反方向。`opposite` 与 `next` 都在本组内求解：先 `degrade`，再查本组的映射表，所以传入本组不认的方向时，结果取决于 `degrade` 的归并。`next` 的第二个参数是 `anticlockwise`，省略时为 `false`，即顺时针。
 
-/** 取某个方向在本组内的反方向。 */
-function oppositeOf(
-    state: ICoreState,
-    direction: FaceDirection
-): FaceDirection | null {
-    const handler = state.faceManager.get<FaceDirection>(FaceGroup.Dir8);
-    if (!handler) return null;
+`dirOf` 走的是相反方向：给你一个偏移量，问它是哪个方向。它不接收方向，也不会先 `degrade`；偏移量与表中某一项完全相等时才命中，多个方向共用同一偏移时只返回其中一个，命中顺序就是表的条目顺序。内置 `Dir4FaceHandler.dirOf` 实际遍历的是八方向偏移表，所以 `dir4.dirOf(1, 1)` 会返回 `RightDown`，而不是 `Unknown`。这是内置实现的特例，不要照抄到自定义处理器里，也不要拿它做四方向判定；需要严格四方向结果时，把返回值再用 `degrade` 折一次。
 
-    // [需改] 把 direction 换成你要取反的方向
-    return handler.opposite(direction);
-}
-```
+`mapDirection` 与 `mapMovement` 用于遍历，两者的结果都包含 `Unknown`，`mapMovement` 里 `Unknown` 对应的偏移是 `{ x: 0, y: 0 }`。自己按 `mapMovement` 扩展邻域时，要跳过零偏移条目，否则对象会原地走一步；寻路的构图循环就是这样处理的。
 
-```ts
-import { FaceDirection, FaceGroup } from '@user/data-common';
-import { ICoreState } from '@user/data-state';
+## 用在哪里
 
-/** 列出四方向处理器认的所有方向与偏移，包含 Unknown。 */
-function listDir4Steps(state: ICoreState): void {
-    const handler = state.faceManager.get<FaceDirection>(FaceGroup.Dir4);
-    if (!handler) return;
+### 移动器与寻路
 
-    for (const [dir, offset] of handler.mapMovement()) {
-        // dir 为 Unknown 时 offset 是 { x: 0, y: 0 }
-        console.log(dir, offset.x, offset.y);
-    }
-}
-```
+移动器构造时保存一个处理器，每一步用它把 `moveDirection` 换成落点偏移。内置的 `DynamicTile` 构造自己的 `DynamicTileMover` 时，从 `state.faceManager` 按 `DYNAMIC_MOVER_FACE`（即 `Dir8`）取处理器；自己写移动器时，处理器要作为构造参数传进去（见[移动 Mover](./mover.md#实现自己的移动器)）。处理器必须与对象的方向体系一致：四方向对象配八方向处理器，或反过来，偏移与朝向都会对不上。
 
-`move` 适合一次算多格，例如 `handler.move(FaceDirection.Left, 3)` 得到 `{ x: -3, y: 0 }`；传负数就是反方向。需要逐个方向处理时用 `mapMovement`，不要自己拼一份方向数组——自定义处理器换掉方向集合后，遍历写法仍然成立。
+寻路复用同一套方向规则。构建有向图时，它按 `mapMovement()` 的条目向相邻格扩展，所以处理器直接决定「能往哪几个方向走」：四方向处理器只扩展上下左右，八方向处理器会扩展到斜向。注入方式是 `finder.useFaceHandler(handler)`；没有注入时构图会失败（找不到图层、谓词或处理器都会失败），详见[自动寻路](./ii/pathfinding.md)。
 
-## 实现自己的朝向处理器
+因为「方向即偏移」被多处共用，改处理器的行为会同时影响移动与寻路：把四方向处理器的斜向归并改成折到上下，移动器的斜向输入和寻路的斜向分支会一起改变。只希望其中一处变化时，不要直接换掉共享的处理器，而是给那处单独注入一个处理器实例。
 
-需要自定义的场合有两类：仍然走四方向，但希望斜向换一种归并；或者方向数不是 4 与 8，需要一套自己的方向规则。两者都通过实现 `IFaceHandler` 完成。
+### 图块朝向
 
-实现时可以把「降级表」「运动表」「旋转表」放在模块顶层做共享常量，类只负责按契约查表。这样同一个处理器可以被多个对象共用，实例上不保存任何「当前对象」的状态。需要自己写一个时，可参考下述模板。
+地图图层默认使用 `state.roleFace` 作为自己的朝向绑定器，图块转向时查的就是这份映射。`MapTileBase.setFaceDirection(direction)` 的处理顺序是：
 
-### 模板：一个自定义朝向处理器
+1. 用当前图块数字与目标方向查 `getFaceOf`，查到就换图并返回新数字；
+2. 查不到时用 `Dir4` 处理器的 `degrade` 折一次，再查一次；
+3. 仍查不到则保持原图块数字。
 
-这个模板仍是四方向，但把斜向折到上下，用来演示 `degrade` 的策略作用。`[需改]` 标出需要替换的部分。
+第 2 步在数据端只返回折后查到的图块数字，没有把图块本身换掉。按方法注释的语义，降级路径用于「斜向折成四方向再取图」，但当前实现不会写回图块，所以使用降级路径时不要假定图块已经换掉。
 
-```ts
-import { IFaceDescriptor, IFaceHandler } from '@motajs/common';
-import { FaceDirection } from '@user/data-common';
+### 朝向图块映射
 
-// [需改] 降级表：决定本组认哪些方向、其余方向怎么归并
-const VERTICAL_DEGRADE: ReadonlyMap<FaceDirection, FaceDirection> = new Map([
-    [FaceDirection.Left, FaceDirection.Left],
-    [FaceDirection.Up, FaceDirection.Up],
-    [FaceDirection.Right, FaceDirection.Right],
-    [FaceDirection.Down, FaceDirection.Down],
-    // 斜向折到上下，这是与内置 Dir4FaceHandler 的唯一区别
-    [FaceDirection.LeftUp, FaceDirection.Up],
-    [FaceDirection.RightUp, FaceDirection.Up],
-    [FaceDirection.LeftDown, FaceDirection.Down],
-    [FaceDirection.RightDown, FaceDirection.Down]
-]);
-
-// [需改] 运动表：本组每个方向的单步偏移，必须包含 Unknown 的零偏移
-const VERTICAL_MOVEMENTS: ReadonlyMap<FaceDirection, IFaceDescriptor> = new Map(
-    [
-        [FaceDirection.Unknown, { x: 0, y: 0 }],
-        [FaceDirection.Left, { x: -1, y: 0 }],
-        [FaceDirection.Up, { x: 0, y: -1 }],
-        [FaceDirection.Right, { x: 1, y: 0 }],
-        [FaceDirection.Down, { x: 0, y: 1 }]
-    ]
-);
-
-// 顺时针旋转顺序，不含 Unknown
-const VERTICAL_CW: ReadonlyMap<FaceDirection, FaceDirection> = new Map([
-    [FaceDirection.Up, FaceDirection.Right],
-    [FaceDirection.Right, FaceDirection.Down],
-    [FaceDirection.Down, FaceDirection.Left],
-    [FaceDirection.Left, FaceDirection.Up]
-]);
-
-// 逆时针旋转顺序，不含 Unknown
-const VERTICAL_CCW: ReadonlyMap<FaceDirection, FaceDirection> = new Map([
-    [FaceDirection.Up, FaceDirection.Left],
-    [FaceDirection.Left, FaceDirection.Down],
-    [FaceDirection.Down, FaceDirection.Right],
-    [FaceDirection.Right, FaceDirection.Up]
-]);
-
-// 反方向表，只覆盖本组方向
-const VERTICAL_OPPOSITE: ReadonlyMap<FaceDirection, FaceDirection> = new Map([
-    [FaceDirection.Up, FaceDirection.Down],
-    [FaceDirection.Down, FaceDirection.Up],
-    [FaceDirection.Left, FaceDirection.Right],
-    [FaceDirection.Right, FaceDirection.Left]
-]);
-
-/** 四方向处理器：斜向一律折到上下。 */
-export class VerticalDir4FaceHandler implements IFaceHandler<FaceDirection> {
-    degrade(dir: number): FaceDirection {
-        // 表中没有的方向（含 Unknown 与任意非法值）一律视为无法降级
-        return (
-            VERTICAL_DEGRADE.get(dir as FaceDirection) ?? FaceDirection.Unknown
-        );
-    }
-
-    movement(dir: number): IFaceDescriptor {
-        // 先降级，再查表；查不到按零偏移处理
-        return VERTICAL_MOVEMENTS.get(this.degrade(dir)) ?? { x: 0, y: 0 };
-    }
-
-    move(dir: number, count: number): IFaceDescriptor {
-        // 等价于 movement 乘以 count；count 为负表示反向位移
-        const { x, y } = this.movement(dir);
-        return { x: x * count, y: y * count };
-    }
-
-    opposite(dir: number): FaceDirection {
-        const degraded = this.degrade(dir);
-        // 降级后仍查不到时返回 Unknown
-        return VERTICAL_OPPOSITE.get(degraded) ?? FaceDirection.Unknown;
-    }
-
-    next(dir: number, anticlockwise: boolean = false): FaceDirection {
-        const degraded = this.degrade(dir);
-        // Unknown 不参与旋转，原样返回
-        if (degraded === FaceDirection.Unknown) return FaceDirection.Unknown;
-
-        const map = anticlockwise ? VERTICAL_CCW : VERTICAL_CW;
-        return map.get(degraded) ?? FaceDirection.Unknown;
-    }
-
-    dirOf(dx: number, dy: number): FaceDirection {
-        // 只认本组的单步偏移；斜向偏移没有对应方向，返回 Unknown
-        for (const [dir, { x, y }] of VERTICAL_MOVEMENTS) {
-            if (x === dx && y === dy) return dir;
-        }
-        return FaceDirection.Unknown;
-    }
-
-    mapDirection(): Iterable<FaceDirection> {
-        return VERTICAL_MOVEMENTS.keys();
-    }
-
-    mapMovement(): Iterable<[FaceDirection, IFaceDescriptor]> {
-        return VERTICAL_MOVEMENTS.entries();
-    }
-}
-```
-
-模板的每个方法都对应一条契约，实现时要逐条满足：
-
-- 所有接收方向的入参，都要在方法内部先经过 `degrade`。`movement`、`move`、`opposite`、`next` 都是如此；`degrade` 本身就是降级，`dirOf`、`mapDirection`、`mapMovement` 不接收方向。
-- `Unknown` 不能被当成普通方向参与运算：`movement` 与 `move` 返回零偏移，`opposite` 与 `next` 返回 `Unknown`。
-- `mapMovement` 必须包含 `Unknown` 及其零偏移。处理器的方法可能返回 `Unknown`，调用方靠这张表把每个方向都映射到偏移；缺了它，`Unknown` 只能走各方法自己的兜底分支，行为就不再由表统一决定。
-- `next` 的第二个参数省略时表示顺时针；逆时针表要能与顺时针表首尾相接，转满一圈回到起点。
-- `dirOf` 匹配不到时要返回 `Unknown`，不要抛错；多个方向共用同一偏移时返回其中一个即可。只遍历本组自己的偏移表——内置 `Dir4FaceHandler` 遍历八方向表是特例（见前文），照抄会让你返回本组不支持的方向。
-- 表用 `ReadonlyMap` 这类共享常量即可，不要在处理器实例上记录「当前处理的是哪个对象」，处理器是共用的。
-
-注册时选一个未被内置占用的分组键，数字与字符串 id 都可以：
-
-```ts
-import { FaceDirection } from '@user/data-common';
-import { ICoreState } from '@user/data-state';
-import { VerticalDir4FaceHandler } from './vertical-face-handler';
-
-/** 注册自定义朝向组，并取回验证一次。 */
-function registerVerticalFace(state: ICoreState): void {
-    // 3 是当前空闲的数字键，不是保留区；自定义分组更推荐字符串 id
-    state.faceManager.register(3, new VerticalDir4FaceHandler());
-    // 也可以再按字符串 id 注册，便于配置里写 id
-    state.faceManager.registerById(
-        'vertical-dir4',
-        new VerticalDir4FaceHandler()
-    );
-
-    const handler = state.faceManager.get<FaceDirection>(3);
-    if (!handler) return;
-
-    // 斜向现在折到上下：LeftUp 的降级结果是 Up
-    console.log(handler.degrade(FaceDirection.LeftUp));
-    console.log(handler.movement(FaceDirection.LeftUp)); // { x: 0, y: -1 }
-}
-```
-
-分组键就是 `register` / `get` 的数字参数。内置的 `FaceGroup` 是 `const enum`：`Dir4` 为 `0`、`Dir8` 为 `1`，所以取内置处理器时写 `FaceGroup.Dir4` / `FaceGroup.Dir8`，不要自己写 `0`、`1`——字面量不会跟着枚举声明顺序变化。示例里的 `3` 只是当前没有被内置占用的一个数字，**不是保留给自定义分组的区间**：分组键由注册时传入，没有命名空间保护，将来内置新增分组时可能和 `3` 撞车，后注册的会覆盖先注册的。自定义分组更稳妥的做法是用 `registerById` 的字符串 id 并用 `getById` 取回；如果坚持用数字键，取用前先 `get(3)` 确认返回 `null`，升级后也复查一次。
-
-注册只往表里放处理器，不会替任何已有对象换掉手上的那一个。真正生效的地方是显式取用它的代码：构造移动器时把处理器传进去（见[移动 Mover](./mover.md#实现自己的移动器)），寻路时调用 `finder.useFaceHandler(handler)`。这些地方之后按新策略计算，已经构造好的移动器仍持有构造时的处理器。
-
-## 朝向图块：IRoleFaceBinder
-
-同一个角色可能有多张图，分别对应不同朝向。逻辑上的「朝右」需要换成「朝右那张图的图块数字」，这件事由 `state.roleFace` 完成。`IRoleFaceBinder` 只维护图块数字之间的对应关系，不关心对象在哪、移动器是什么。
+同一个角色可能有多张图，分别对应不同朝向。真正把「朝右」换成「朝右那张图的图块数字」的是 `IRoleFaceBinder`，地图图层通过 `state.roleFace` 使用它。
 
 | 方法                           | 作用                                 | 返回                |
 | ------------------------------ | ------------------------------------ | ------------------- |
@@ -343,26 +130,23 @@ function registerVerticalFace(state: ICoreState): void {
 `malloc` 是建组：`identifier` 作为主图块，`main` 是它的朝向（主朝向一般是朝下）。`bind` 把同组的另一张图块挂进来，`main` 必须是已经 `malloc` 过的图块数字。两者都只写映射，不发事件：
 
 ```ts
-import { FaceDirection, IRoleFaceBinder } from '@user/data-common';
+import { FaceDirection } from '@user/data-common';
+import { ICoreState } from '@user/data-state';
 
-/** 登记一组朝向图块，并读回映射结果。 */
-function bindFacingTiles(binder: IRoleFaceBinder): void {
+function bindFacingTiles(state: ICoreState): void {
+    const binder = state.roleFace;
     // [需改] 1 是主图块数字（朝下），2 是同一角色的另一张朝向图块
     binder.malloc(1, FaceDirection.Down);
     binder.bind(2, 1, FaceDirection.Right);
 
     // 传入组内任意一个图块数字，都能查到该朝向使用的图块
     console.log(binder.getFaceOf(1, FaceDirection.Right)); // { identifier: 2, face: Right }
-    console.log(binder.getFaceOf(2, FaceDirection.Right)); // { identifier: 2, face: Right }
 
     // 2 这张图自带的朝向
     console.log(binder.getFaceDirection(2)); // Right
 
     // 2 所属组的主朝向；返回的 identifier 仍是传入的图块数字
     console.log(binder.getMainFace(2)); // { identifier: 2, face: Down }
-
-    // 没有登记过的图块数字
-    console.log(binder.getFaceOf(999, FaceDirection.Right)); // null
 }
 ```
 
@@ -370,31 +154,152 @@ function bindFacingTiles(binder: IRoleFaceBinder): void {
 
 示例里的 `1` 与 `2` 只是占位，换图前先确认这两个图块数字在当前地图里没有被别的朝向组占用。`malloc` 会覆盖同一个图块数字原有的组，`bind` 会覆盖该组同一朝向的旧映射，所以要从地图的图块数据里取真实数字，不要照抄示例。
 
-地图图层默认使用 `state.roleFace` 作为自己的朝向绑定器，所以图块转向时查的就是这份映射。`MapTileBase.setFaceDirection` 先按原方向查 `getFaceOf`，查到就换图并返回新数字；查不到时，按方法注释的约定，再用 `Dir4` 处理器的 `degrade` 折一次、重新查一次，查到就换成折后的图块并返回，仍查不到则保持原图块数字。这就是两层结构在实现里的交汇点：朝向映射决定换哪张图，处理器决定斜向该往哪折。
+## 两个内置处理器
 
-<strong>实现差异</strong>：当前 `setFaceDirection` 的降级分支只 `return next.identifier`，没有调用 `this.set(...)` 写回图块，所以折一次查到映射时，返回值变了但图块本身没换。本文按方法注释描述语义；这个不一致尚未修正，使用降级路径时不要假定图块已经换掉。
+内置实现都在 `@user/data-common` 的 `faceManager.ts` 里。它们都实现 `IFaceHandler<FaceDirection>`，区别只在认哪些方向、以及斜向怎么归并：
 
-## 它们怎么串起来
+| 处理器            | 支持方向         | `degrade` 行为                                     | 典型用途                         |
+| ----------------- | ---------------- | -------------------------------------------------- | -------------------------------- |
+| `Dir8FaceHandler` | 八个方向         | 原样返回，不做归并                                 | 八方向移动、勇士与动态图块的默认 |
+| `Dir4FaceHandler` | 上下左右四个方向 | 四个正方向原样；四个斜向折到左右；其余为 `Unknown` | 只走四方向的地图与寻路           |
 
-一个方向值从产生到落地，会依次经过三层：
+`Dir4FaceHandler` 的归并需要记住一条：斜向折到左右，不是折到上下。
 
-- `FaceDirection` 是逻辑朝向。移动器、寻路步骤、图块对象都用它表示「朝哪」。
-- `IFaceHandler` 把逻辑朝向变成位移与转向。移动器构造时保存一个处理器，每一步用它把 `moveDirection` 换成落点偏移；寻路用它决定邻域分支。
-- `IRoleFaceBinder` 把逻辑朝向变成图块数字。动态图块取当前朝向时，走的是 `layer.faceBinder.getFaceDirection(tileNum)`；图块转向时反过来用朝向查数字。
+| 输入         | `degrade` 结果 |
+| ------------ | -------------- |
+| `LeftUp`     | `Left`         |
+| `LeftDown`   | `Left`         |
+| `RightUp`    | `Right`        |
+| `RightDown`  | `Right`        |
+| 其余非正方向 | `Unknown`      |
 
-具体到动态图块：`DynamicTile` 构造自己的 `DynamicTileMover` 时，从 `state.faceManager` 按 `DYNAMIC_MOVER_FACE`（即 `Dir8`）取处理器，并把图块当前朝向一起交给基类；单步结束时再用处理器把 `moveDirection` 换成坐标增量。处理器与初始朝向此后都保存在移动器实例上，换分组不会影响已经建好的实例。
+这一点决定了四方向体系里的实际手感：斜向输入不会让对象斜着走，也不会变成上下位移，而是变成横向一步。四方向地图上如果希望斜向折到上下，就需要自己写一个处理器（见下一节）。
 
-再往上就是渲染端：图块数字与坐标交给渲染端，由它决定画哪张图、播哪个朝向的动画（`渲染端 · 朝向图块绘制`）。数据端只保证「数字与朝向对得上」，不决定画面。
+两个处理器在 `Unknown` 上的行为一致：`movement` 与 `move` 返回零偏移，`opposite` 与 `next` 返回 `Unknown`，`mapDirection` 与 `mapMovement` 会把它列出来。查表失败时 `movement` 同样退回零偏移。
 
-<!-- TODO(renderer): 朝向图块绘制 -->
+**实现差异**：按接口注释的约定，无法合理降级的方向（包括 `Unknown`）应返回 `Unknown`；但当前 `Dir8FaceHandler.degrade` 把入参原样返回，所以传入非法值会得到一个非法方向。以注释为准，不要把这种返回值当作合法方向使用。
 
-## 与寻路、范围对象的关系
+勇士与动态图块默认都走 `Dir8`：勇士的分组来自 `src/data/constant.ts` 的 `HERO_FACE`，由 `MainDataPlugin` 构造时传入；动态图块的分组来自 `data-base/src/shared.ts` 的 `DYNAMIC_MOVER_FACE`（同文件的 `HERO_MOVER_FACE` 也定义为 `Dir8`）。需要四方向时，改的是这些分组来源，而不是处理器本身的实现。
 
-寻路复用同一套方向规则。构建有向图时，它按 `mapMovement()` 的条目向相邻格扩展，所以处理器直接决定「能往哪几个方向走」：四方向处理器只扩展上下左右，八方向处理器会扩展到斜向。注入方式是 `finder.useFaceHandler(handler)`，需要在绑定图层时一并设置；不注入时构图会失败，状态为 `InvalidInput`。详见[自动寻路](./ii/pathfinding.md)。
+## 实现自己的朝向处理器
 
-范围对象也复用方向这一层。射线范围 `RayRange` 的参数里，`dir` 是 `IFaceDescriptor[]`，每一项形如 `{ x: 0, y: -1 }`；它要的是偏移量，不是 `FaceDirection`。需要从方向得到偏移时，用处理器的 `movement` 转换即可。详见[自定义范围对象](./ii/custom-range.md)。
+这一节的使用概率很低。需要自定义的场合有两类：仍然走四方向，但希望斜向换一种归并；或者方向数不是 4 与 8，需要一套自己的方向规则。两者都通过实现 `IFaceHandler` 完成。
 
-因为「方向即偏移」被多处共用，改处理器的行为会同时影响移动与寻路：把四方向处理器的斜向归并改成折到上下，移动器的斜向输入和寻路的斜向分支会一起改变。只希望其中一处变化时，不要直接换掉共享的处理器，而是给那处单独注入一个处理器实例。
+实现时把「降级表」「运动表」「旋转顺序」放在模块顶层做共享常量，类只负责按契约查表。处理器是共享对象，实例上不保存任何「当前对象」的状态。几条契约要逐条满足：
+
+- 所有接收方向的入参，都要在方法内部先经过 `degrade`；`dirOf`、`mapDirection`、`mapMovement` 不接收方向。
+- `Unknown` 不能被当成普通方向参与运算：`movement` 与 `move` 返回零偏移，`opposite` 与 `next` 返回 `Unknown`。
+- `mapMovement` 必须包含 `Unknown` 及其零偏移，调用方靠这张表把每个方向都映射到偏移。
+- `dirOf` 匹配不到时返回 `Unknown`，不要抛错；只遍历本组自己的偏移表。
+
+下面这个模板仍是四方向，但把斜向折到上下，用来演示 `degrade` 的策略作用。`[需改]` 标出需要替换的部分：
+
+```ts
+import { IFaceDescriptor, IFaceHandler } from '@motajs/common';
+import { FaceDirection } from '@user/data-common';
+
+// [需改] 降级表：本组认哪些方向、其余方向怎么归并
+const DEGRADE: ReadonlyMap<number, FaceDirection> = new Map([
+    [FaceDirection.Left, FaceDirection.Left],
+    [FaceDirection.Up, FaceDirection.Up],
+    [FaceDirection.Right, FaceDirection.Right],
+    [FaceDirection.Down, FaceDirection.Down],
+    // 斜向折到上下，这是与内置 Dir4FaceHandler 的唯一区别
+    [FaceDirection.LeftUp, FaceDirection.Up],
+    [FaceDirection.RightUp, FaceDirection.Up],
+    [FaceDirection.LeftDown, FaceDirection.Down],
+    [FaceDirection.RightDown, FaceDirection.Down]
+]);
+
+// [需改] 运动表：本组每个方向的单步偏移，必须包含 Unknown 的零偏移
+const MOVEMENTS: ReadonlyMap<FaceDirection, IFaceDescriptor> = new Map([
+    [FaceDirection.Unknown, { x: 0, y: 0 }],
+    [FaceDirection.Left, { x: -1, y: 0 }],
+    [FaceDirection.Up, { x: 0, y: -1 }],
+    [FaceDirection.Right, { x: 1, y: 0 }],
+    [FaceDirection.Down, { x: 0, y: 1 }]
+]);
+
+// 顺时针顺序，不含 Unknown；逆时针与反方向都在这张表上取
+const CW: readonly FaceDirection[] = [
+    FaceDirection.Up,
+    FaceDirection.Right,
+    FaceDirection.Down,
+    FaceDirection.Left
+];
+
+/** 四方向处理器：斜向一律折到上下。 */
+export class VerticalDir4FaceHandler implements IFaceHandler<FaceDirection> {
+    degrade(dir: number): FaceDirection {
+        // 表中没有的方向（含 Unknown 与任意非法值）一律视为无法降级
+        return DEGRADE.get(dir) ?? FaceDirection.Unknown;
+    }
+
+    movement(dir: number): IFaceDescriptor {
+        // 先降级，再查表
+        return MOVEMENTS.get(this.degrade(dir)) ?? { x: 0, y: 0 };
+    }
+
+    move(dir: number, count: number): IFaceDescriptor {
+        // 等价于 movement 乘以 count；count 为负表示反向位移
+        const { x, y } = this.movement(dir);
+        return { x: x * count, y: y * count };
+    }
+
+    opposite(dir: number): FaceDirection {
+        const i = CW.indexOf(this.degrade(dir));
+        return i < 0 ? FaceDirection.Unknown : CW[(i + 2) % CW.length];
+    }
+
+    next(dir: number, anticlockwise: boolean = false): FaceDirection {
+        const i = CW.indexOf(this.degrade(dir));
+        if (i < 0) return FaceDirection.Unknown;
+
+        // 顺时针 +1，逆时针 -1，转满一圈回到起点
+        const step = anticlockwise ? -1 : 1;
+        return CW[(i + step + CW.length) % CW.length];
+    }
+
+    dirOf(dx: number, dy: number): FaceDirection {
+        // 只认本组的单步偏移；斜向偏移没有对应方向
+        for (const [dir, { x, y }] of MOVEMENTS) {
+            if (x === dx && y === dy) return dir;
+        }
+        return FaceDirection.Unknown;
+    }
+
+    mapDirection(): Iterable<FaceDirection> {
+        return MOVEMENTS.keys();
+    }
+
+    mapMovement(): Iterable<[FaceDirection, IFaceDescriptor]> {
+        return MOVEMENTS.entries();
+    }
+}
+```
+
+注册时选一个未被内置占用的分组键，数字与字符串 id 都可以。数字键没有命名空间保护，将来内置新增分组时可能撞车，后注册的会覆盖先注册的；自定义分组更推荐字符串 id：
+
+```ts
+import { FaceDirection } from '@user/data-common';
+import { ICoreState } from '@user/data-state';
+import { VerticalDir4FaceHandler } from './vertical-face-handler';
+
+function registerVerticalFace(state: ICoreState): void {
+    state.faceManager.registerById(
+        'vertical-dir4',
+        new VerticalDir4FaceHandler()
+    );
+
+    const handler = state.faceManager.getById<FaceDirection>('vertical-dir4');
+    if (!handler) return;
+
+    // 斜向现在折到上下：LeftUp 的降级结果是 Up
+    console.log(handler.movement(FaceDirection.LeftUp)); // { x: 0, y: -1 }
+}
+```
+
+注册只往表里放处理器，不会替任何已有对象换掉手上的那一个。真正生效的地方是显式取用它的代码：构造移动器时把处理器传进去，寻路时调用 `finder.useFaceHandler(handler)`。这些地方之后按新策略计算，已经构造好的移动器仍持有构造时的处理器。
 
 ## 边界与注意
 
@@ -404,10 +309,8 @@ function bindFacingTiles(binder: IRoleFaceBinder): void {
 - <strong>Unknown 的偏移是零</strong>：`movement` 与 `move` 对 `Unknown` 返回 `{ x: 0, y: 0 }`，`opposite` 与 `next` 返回 `Unknown`；把它当普通方向做位置运算，对象会原地不动。
 - <strong>bind 前必须 malloc</strong>：主图块没有分配朝向时，`bind` 会记错误并放弃；绑定的朝向与主朝向相同也会被拒绝。
 - <strong>重复 malloc 会覆盖</strong>：同一个图块数字再次 `malloc` 会重建该组的映射，之前 `bind` 进去的其它朝向不会被保留；已经 `bind` 过的子图块仍持有旧映射表，`getFaceOf` 可能查到旧结果。重建整组后要重新 `bind` 所有子图块。
-- <strong>处理器是共享对象</strong>：不要在实例上保存「当前处理的是哪个对象」之类的状态；多个对象共用同一个处理器时，状态会互相覆盖。
-- <strong>处理器不随对象销毁</strong>：处理器是无状态的共享对象，注册一次即可，也没有卸载流程；真正持有它的是移动器、寻路 `finder` 与图块层，换处理器要改使用方的引用，而不是重新 `register`。
-- <strong>不同分组互不影响</strong>：`Dir4`、`Dir8` 与自定义分组各有一份处理器，换掉其中一个不会改动其余分组。
-- <strong>注册不替换已有实例</strong>：注册只影响之后取用它的代码；已经构造好的移动器仍持有构造时传入的处理器。
+- <strong>处理器是共享对象</strong>：不要在实例上保存「当前处理的是哪个对象」之类的状态；多个对象共用同一个处理器时，状态会互相覆盖。注册一次即可，也没有卸载流程；换处理器要改使用方的引用，而不是重新 `register`。
+- <strong>不同分组互不影响</strong>：`Dir4`、`Dir8` 与自定义分组各有一份处理器，换掉其中一个不会改动其余分组；注册也不替换已经构造好的对象手里的实例。
 - <strong>getMainFace 返回的是朝向</strong>：返回的 `IFaceData` 里，`identifier` 仍是你传入的图块数字，`face` 是它所属组的主朝向，不是主图块的数字。
 
 ## 怎么验证
