@@ -75,3 +75,23 @@
 - `pnpm exec prettier --write docs/advanced/mover.md docs/advanced/face-handler.md docs/advanced/index.md`：通过（mover 有格式变动，其余 unchanged）。
 - `pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build`：`build complete in 15.06s`，无 dead link 报错。
 
+## 第 2 轮 · 复审（非阻断项）
+
+本轮仅改 `docs/advanced/mover.md`、`docs/advanced/face-handler.md`、`docs/advanced/index.md` 与本记录；未改生产代码与配置。以下结论均对照 `data-common/src/common/mover.ts`、`data-common/src/common/faceManager.ts`、`data-base/src/hero/mover.ts`、`data-base/src/hero/types.ts`、`data-base/src/map/types.ts`、`data-base/src/map/tile.ts`、`data-base/src/map/mover.ts`、`src/data/hero/moverImpl.ts` 与 `src/data/initialize.ts` 核对。
+
+| # | 项 | 处置 |
+|---|----|------|
+| 1 | `predicate()` / `IPassPredicate` | `mover.md` 新增「改通行规则：predicate() 与 IPassPredicate」：`canPass` / `shouldHit` 的职责、`IPassCheckHandler` 的 `currLoc` / `nextLoc` / `direction` / `map` / `state` 字段、`CannotMove` / `Hit` / 正常移动的判定顺序、`ignoreTerrain` 会跳过整个谓词、`predicate()` 要返回稳定实例；包装默认实现的示例改为「禁止向左走」，并说明寻路需通过 `usePassPredicate` 单独注入。 |
+| 2 | `start()` 返回 null 时的队列 | `mover.md`「执行与等待」与「边界与注意」补充：返回 `null` 时刚排的步骤没有被切片或清空，仍留在移动器里，下一次 `start()` 会执行；不要就用 `clear()` 丢掉。 |
+| 3 | 异常后的恢复 | `mover.md`「边界与注意」改写：抛错后 `onEnd` 不再兑现、`moving` 恒真、后续 `start()` 恒 `null`，并会产生未处理的 Promise 拒绝；`moving` 对外只读，没有重置或强制结束入口，运行期没有恢复路径，只能重建数据端；建议用 `try` / `catch` 把预期内的失败转成结果码。 |
+| 4 | `prepareStep` 与受保护成员 | `mover.md`「实现自己的移动器」明确：五个 `on*` 方法是 `protected` 抽象方法；`prepareStep` 与 `moveProgress` 是 `private`，不可覆写或调用；`faceHandler`、`moveDirection`、`faceDirection` 在接口上只读。 |
+| 5 | `get<FaceDirection>(3)` 的分组键 | `face-handler.md` 说明 `FaceGroup` 为 `const enum`（`Dir4 = 0`、`Dir8 = 1`），内置取用应写枚举成员；`3` 只是当前空闲数字、不是保留区，可能与未来内置分组冲突，自定义分组更推荐字符串 id，数字键取用前先 `get(3)` 判空。 |
+| 6 | `dirOf` 的内置特例 | `face-handler.md` 统一口径：内置 `Dir4FaceHandler.dirOf` 遍历八方向表属于实现特例，自定义处理器应只遍历本组表；`dirOf(1, 1) = RightDown` 在当前实现下可复现但不是接口承诺，且不是四方向结果，不能用于四方向判定，必要时用 `degrade` 或 `mapMovement()` 自行收敛。`dirOf` 契约条目与边界条目同步补充。 |
+| 7 | `cannotEnter(handler)` 签名 | `mover.md` 包装示例保留接口要求的 `handler` 参数，调用 `DefaultHeroMoveTopImpl.cannotEnter()` 时不转发（默认实现声明为无参空实现），并补一段说明；表格与示例一致。 |
+| 8 | `@shouldReplay` 放置 | `mover.md` 模板去掉 `onStepEnd` 上的标记（它只返回落点）；最小示例把标记移到实际写回朝向的 `onStepSettled`；「与录像、存档的关系」改为「标在方法体真正写状态的那一个」，并列出 `onStepEnd` / `onStepSettled` / `DynamicTileMover.onStepEnd` 三种情况。 |
+| 9 | `index.md` 主要主题 | 「高级 I · 扩展基础」行的主要主题补入「移动 Mover、FaceHandler 系列」，与九篇清单一致。 |
+
+### 本轮构建
+
+- `pnpm exec prettier --write docs/advanced/mover.md docs/advanced/face-handler.md docs/advanced/index.md`：通过（mover、index 有格式变动）。
+- `pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build`：`build complete in 19.98s`，无 dead link 报错。

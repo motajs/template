@@ -83,7 +83,9 @@ state.faceManager.registerById('dir8', dir8);
 
 `opposite` 与 `next` 都在本组内求解：先 `degrade`，再查本组的映射表，因此传入一个本组不认的方向时，结果取决于 `degrade` 的归并。`next` 的第二个参数是 `anticlockwise`，省略时为 `false`，即顺时针。
 
-`dirOf` 走的是相反方向：给你一个偏移量，问它是哪个方向。它不接收方向，也不会先 `degrade`；偏移量与表中某一项完全相等时才命中，多个方向共用同一偏移时只返回其中一个。它反查的是处理器内部的偏移表，命中顺序就是表的条目顺序。内置 `Dir4FaceHandler.dirOf` 实际遍历的是八方向偏移表，所以 `dir4.dirOf(1, 1)` 会返回 `RightDown`，而不是 `Unknown`；这与「四方向只认上下左右」的直觉不一致，属于实现与文档描述不一致的地方（按接口注释，`dirOf` 只承诺「多个符合时返回其中一个」，并不承诺只返回本组方向）。需要严格四方向结果时，用 `mapDirection()` 的成员集合过滤返回值。
+`dirOf` 走的是相反方向：给你一个偏移量，问它是哪个方向。它不接收方向，也不会先 `degrade`；偏移量与表中某一项完全相等时才命中，多个方向共用同一偏移时只返回其中一个。它反查的是处理器内部的偏移表，命中顺序就是表的条目顺序。内置 `Dir4FaceHandler.dirOf` 实际遍历的是八方向偏移表，所以 `dir4.dirOf(1, 1)` 会返回 `RightDown`，而不是 `Unknown`。这是内置实现的特例，不要照抄到自定义处理器里：自定义处理器的 `dirOf` 应该只遍历本组自己的表（后文模板就是这样），否则会返回本组不支持的方向。
+
+至于 `dirOf(1, 1) = RightDown` 能不能用：它在当前实现下可复现（表是模块级常量、遍历顺序固定），但不是接口承诺。按接口注释，`dirOf` 只承诺「多个符合时返回其中一个」，并不承诺只返回本组方向；它给出的又是四方向体系不支持的方向。所以不要拿它做四方向判定，需要严格四方向结果时，把返回值再用 `degrade` 折一次，或自己遍历 `mapMovement()` 里本组的条目。
 
 `mapDirection` 与 `mapMovement` 用于遍历。两者的结果都包含 `Unknown`，`mapMovement` 里 `Unknown` 对应的偏移是 `{ x: 0, y: 0 }`。寻路就是按 `mapMovement` 的条目扩展邻域的，所以处理器认哪些方向，直接决定图的分支数。自己按 `mapMovement` 扩展邻域时，要跳过零偏移条目，否则对象会原地走一步；寻路的构图循环就是这样处理的。
 
@@ -293,7 +295,7 @@ export class VerticalDir4FaceHandler implements IFaceHandler<FaceDirection> {
 - `Unknown` 不能被当成普通方向参与运算：`movement` 与 `move` 返回零偏移，`opposite` 与 `next` 返回 `Unknown`。
 - `mapMovement` 必须包含 `Unknown` 及其零偏移。处理器的方法可能返回 `Unknown`，调用方靠这张表把每个方向都映射到偏移；缺了它，`Unknown` 只能走各方法自己的兜底分支，行为就不再由表统一决定。
 - `next` 的第二个参数省略时表示顺时针；逆时针表要能与顺时针表首尾相接，转满一圈回到起点。
-- `dirOf` 匹配不到时要返回 `Unknown`，不要抛错；多个方向共用同一偏移时返回其中一个即可。
+- `dirOf` 匹配不到时要返回 `Unknown`，不要抛错；多个方向共用同一偏移时返回其中一个即可。只遍历本组自己的偏移表——内置 `Dir4FaceHandler` 遍历八方向表是特例（见前文），照抄会让你返回本组不支持的方向。
 - 表用 `ReadonlyMap` 这类共享常量即可，不要在处理器实例上记录「当前处理的是哪个对象」，处理器是共用的。
 
 注册时选一个未被内置占用的分组键，数字与字符串 id 都可以：
@@ -305,7 +307,7 @@ import { VerticalDir4FaceHandler } from './vertical-face-handler';
 
 /** 注册自定义朝向组，并取回验证一次。 */
 function registerVerticalFace(state: ICoreState): void {
-    // 3 是自定义分组键，内置只占用了 0（Dir4）与 1（Dir8）
+    // 3 是当前空闲的数字键，不是保留区；自定义分组更推荐字符串 id
     state.faceManager.register(3, new VerticalDir4FaceHandler());
     // 也可以再按字符串 id 注册，便于配置里写 id
     state.faceManager.registerById(
@@ -321,6 +323,8 @@ function registerVerticalFace(state: ICoreState): void {
     console.log(handler.movement(FaceDirection.LeftUp)); // { x: 0, y: -1 }
 }
 ```
+
+分组键就是 `register` / `get` 的数字参数。内置的 `FaceGroup` 是 `const enum`：`Dir4` 为 `0`、`Dir8` 为 `1`，所以取内置处理器时写 `FaceGroup.Dir4` / `FaceGroup.Dir8`，不要自己写 `0`、`1`——字面量不会跟着枚举声明顺序变化。示例里的 `3` 只是当前没有被内置占用的一个数字，**不是保留给自定义分组的区间**：分组键由注册时传入，没有命名空间保护，将来内置新增分组时可能和 `3` 撞车，后注册的会覆盖先注册的。自定义分组更稳妥的做法是用 `registerById` 的字符串 id 并用 `getById` 取回；如果坚持用数字键，取用前先 `get(3)` 确认返回 `null`，升级后也复查一次。
 
 注册只往表里放处理器，不会替任何已有对象换掉手上的那一个。真正生效的地方是显式取用它的代码：构造移动器时把处理器传进去（见[移动 Mover](./mover.md#实现自己的移动器)），寻路时调用 `finder.useFaceHandler(handler)`。这些地方之后按新策略计算，已经构造好的移动器仍持有构造时的处理器。
 
@@ -396,7 +400,7 @@ function bindFacingTiles(binder: IRoleFaceBinder): void {
 
 - <strong>四方向的斜向折左右</strong>：`Dir4FaceHandler.degrade` 把 `LeftUp` 与 `LeftDown` 折到 `Left`，`RightUp` 与 `RightDown` 折到 `Right`，不是折到上下。需要折上下时自建处理器。
 - <strong>get 与 getById 可能返回 null</strong>：自建分组、或在启动期之外取用处理器时，先判空再调用；直接对 `null` 调方法会在运行期报错。
-- <strong>dirOf 可能有多解</strong>：偏移量相同、方向不同的情况只返回其中一个，不要用它反推「唯一方向」，也不要用它校验位移是否合法。
+- <strong>dirOf 可能有多解</strong>：偏移量相同、方向不同的情况只返回其中一个，不要用它反推「唯一方向」，也不要用它校验位移是否合法。内置 `Dir4FaceHandler` 还会返回八方向结果（`dirOf(1, 1)` 为 `RightDown`），这是实现特例，不要当作四方向结果使用。
 - <strong>Unknown 的偏移是零</strong>：`movement` 与 `move` 对 `Unknown` 返回 `{ x: 0, y: 0 }`，`opposite` 与 `next` 返回 `Unknown`；把它当普通方向做位置运算，对象会原地不动。
 - <strong>bind 前必须 malloc</strong>：主图块没有分配朝向时，`bind` 会记错误并放弃；绑定的朝向与主朝向相同也会被拒绝。
 - <strong>重复 malloc 会覆盖</strong>：同一个图块数字再次 `malloc` 会重建该组的映射，之前 `bind` 进去的其它朝向不会被保留；已经 `bind` 过的子图块仍持有旧映射表，`getFaceOf` 可能查到旧结果。重建整组后要重新 `bind` 所有子图块。

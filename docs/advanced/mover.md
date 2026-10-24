@@ -47,14 +47,14 @@
 
 `HeroMover` 在每一步把信息打包成 `IHeroMoveTopHandler`，交给 `IHeroMoveTopImpl` 判断：
 
-| 方法                     | 返回             | 作用                                                   |
-| ------------------------ | ---------------- | ------------------------------------------------------ |
-| `predicate()`            | `IPassPredicate` | 返回通行性谓词，`HeroMover` 用它判断能否进入、是否撞击 |
-| `inBound(x, y, floorId)` | `boolean`        | 目标格是否在地图范围内                                 |
-| `enter(handler)`         | `Promise<void>`  | 正常进入目标格后触发                                   |
-| `leave(handler)`         | `Promise<void>`  | 离开当前格时触发                                       |
-| `hit(handler)`           | `Promise<void>`  | 撞到不可进入的目标格时触发                             |
-| `cannotEnter(handler)`   | `Promise<void>`  | 被判定为无法进入时触发                                 |
+| 方法                     | 返回             | 作用                                                                           |
+| ------------------------ | ---------------- | ------------------------------------------------------------------------------ |
+| `predicate()`            | `IPassPredicate` | 返回通行性谓词，`HeroMover` 用它判断能否进入、是否撞击（见下文「改通行规则」） |
+| `inBound(x, y, floorId)` | `boolean`        | 目标格是否在地图范围内                                                         |
+| `enter(handler)`         | `Promise<void>`  | 正常进入目标格后触发                                                           |
+| `leave(handler)`         | `Promise<void>`  | 离开当前格时触发                                                               |
+| `hit(handler)`           | `Promise<void>`  | 撞到不可进入的目标格时触发                                                     |
+| `cannotEnter(handler)`   | `Promise<void>`  | 被判定为无法进入时触发                                                         |
 
 `handler` 里带着 `currLoc`、`nextLoc`、`direction`、`floorId`、`face` 与 `state`，够你在判定里读位置、朝向与状态。引擎内置的 `DefaultHeroMoveTopImpl`（`src/data/hero/moverImpl.ts`）就是默认实现：它用通行谓词与事件系统完成边界判断、进出与撞击触发器。`MainDataPlugin` 在 `awake` 里把它装上：
 
@@ -64,10 +64,30 @@ const heroMoveTopImpl = new DefaultHeroMoveTopImpl(state);
 state.hero.location.mover.useTopImplementation(heroMoveTopImpl);
 ```
 
+### 改通行规则：predicate() 与 IPassPredicate
+
+`predicate()` 返回通行性谓词 `IPassPredicate`，真正「能不能走」的判定在它里面。`HeroMover` 先看边界；对方向步（`Dir`、`DirFace` 与 `Special`）再取一次谓词，用它决定本步的结果：
+
+| 方法                 | 作用                                                                  |
+| -------------------- | --------------------------------------------------------------------- |
+| `canPass(handler)`   | 能否从当前格进入目标格；返回 `false` 时本步不移动，走「无法进入」分支 |
+| `shouldHit(handler)` | 能进入但会产生撞击时返回 `true`；本步不移动，走「撞击」分支           |
+
+两个方法的参数都是 `IPassCheckHandler`，字段包括 `currLoc`、`nextLoc`、`direction`（本步移动朝向）、`map`（勇士当前地图，可能为 `null`）与 `state`。判定顺序固定：
+
+- `canPass` 为假 → `CannotMove`，不触发 `OnTouch` 撞击事件；
+- `canPass` 为真且 `shouldHit` 为真 → `Hit`，触发 `OnTouch`；
+- `canPass` 为真且 `shouldHit` 为假 → 正常移动。
+
+两个容易踩空的地方：`config({ ignoreTerrain: true })` 会让 `HeroMover` 跳过整个谓词判断、只剩边界检查，此时改谓词看不到效果；`predicate()` 在每个方向步都会被调用，要返回构造时建好的稳定实例，不要在方法里新建对象（内置实现就是把 `DefaultPassPredicateImpl` 存在字段里）。
+
+寻路用的是同一形状的谓词，但由 `state.pathfinding.finder.usePassPredicate(...)` 独立注入，不会自动跟随勇士的顶层实现。改了勇士的通行规则、又希望寻路一致时，要把同一个谓词再注入给 `finder`，详见[自动寻路](./ii/pathfinding.md)。
+
 想保留默认行为、只改其中一环时，包一层并转发给默认实现，比从头写省事：
 
 ```ts
 // src/data/hero/moverTop.ts
+import { FaceDirection } from '@user/data-common';
 import {
     IHeroMoveTopHandler,
     IHeroMoveTopImpl,
@@ -76,17 +96,27 @@ import {
 import { IStateSystem } from '@user/data-system';
 import { DefaultHeroMoveTopImpl } from './moverImpl';
 
-/** 保留默认的边界、通行与事件，只给撞击加一条日志。 */
+/** 保留默认的边界、通行与事件，只禁止向左走，并给撞击加一条日志。 */
 export class MyHeroMoveTopImpl implements IHeroMoveTopImpl {
     // 默认实现负责边界、通行谓词与四类事件派发
     private readonly base: DefaultHeroMoveTopImpl;
+    // 每步都会调用 predicate()，构造时建好一次，避免每步新建
+    private readonly passPredicate: IPassPredicate;
 
     constructor(state: IStateSystem) {
         this.base = new DefaultHeroMoveTopImpl(state);
+        const inner = this.base.predicate();
+        this.passPredicate = {
+            // [需改] 把这里换成你要拦的条件
+            canPass: handler =>
+                handler.direction !== FaceDirection.Left &&
+                inner.canPass(handler),
+            shouldHit: handler => inner.shouldHit(handler)
+        };
     }
 
     predicate(): IPassPredicate {
-        return this.base.predicate();
+        return this.passPredicate;
     }
 
     inBound(x: number, y: number, floorId: string | undefined): boolean {
@@ -108,11 +138,13 @@ export class MyHeroMoveTopImpl implements IHeroMoveTopImpl {
     }
 
     cannotEnter(handler: IHeroMoveTopHandler): Promise<void> {
-        // 默认实现的 cannotEnter 是空实现，没有参数
+        // 接口要求带 handler；默认实现是空实现、用不到它，所以这里不转发
         return this.base.cannotEnter();
     }
 }
 ```
+
+`cannotEnter` 在接口上要收 `IHeroMoveTopHandler`，而 `DefaultHeroMoveTopImpl` 的实现声明为无参空实现（它用不到 handler），所以包装类保留参数、调用基类时不传。要让「无法进入」也触发点什么，就在这个方法里读 `handler` 自己实现，不要指望默认实现。
 
 装配时把它换进勇士移动器：
 
@@ -156,6 +188,8 @@ state.hero.location.mover.useTopImplementation(new MyHeroMoveTopImpl(state));
 ## 执行与等待
 
 `start()` 把当前待执行队列取出来执行，并返回 `IMoverController`；如果移动器已经在移动，返回 `null`，不会接管当前移动。
+
+返回 `null` 时它连队列都没有动过：既不切片也不清空，你刚排的步骤原样留在移动器里。等当前这次结束后再调用 `start()`，它们会照常执行；不想执行就用 `clear()` 丢掉。不要以为 `start()` 失败会把刚排的步骤一起清掉。
 
 ```ts
 import { FaceDirection } from '@user/data-common';
@@ -323,8 +357,7 @@ import {
     IMoverController,
     IObjectMovable,
     ObjectMover,
-    ObjectMoveStep,
-    shouldReplay
+    ObjectMoveStep
 } from '@user/data-common';
 import { IFaceHandler, ITileLocator } from '@motajs/common';
 
@@ -368,7 +401,6 @@ export class SimpleMover<T extends IObjectMovable> extends ObjectMover<T> {
     }
 
     // [需改] 单步结束：返回这一步的落点；坐标由基类写入
-    @shouldReplay('Simple mover step should be replayed.')
     protected async onStepEnd(
         code: number,
         step: Readonly<ObjectMoveStep>,
@@ -383,7 +415,7 @@ export class SimpleMover<T extends IObjectMovable> extends ObjectMover<T> {
         return { x: tile.x, y: tile.y };
     }
 
-    // [需改] 单步已结束、坐标已写入之后执行
+    // [需改] 单步已结束、坐标已写入之后执行；要在这里写状态就补 @shouldReplay（见示例）
     protected async onStepSettled(
         before: ITileLocator,
         curr: ITileLocator,
@@ -400,9 +432,11 @@ export class SimpleMover<T extends IObjectMovable> extends ObjectMover<T> {
 - `onStepStart` 在每步开始前运行。此时基类已经更新过移动朝向、面朝朝向、速度与动画方向，但坐标还没变。它返回本步的结果码，供后面的逻辑与钩子使用。
 - `onStepEnd` 计算这一步的落点，返回一个 `ITileLocator`。基类拿它和当前坐标比较，不同才调用 `tile.setPos`。不要在这里自己写坐标。
 - `onStepSettled` 在坐标写入之后运行，参数里带着移动前坐标 `before` 与落点 `curr`。这里适合触发进入 / 离开 / 踩踏一类的事件，或者把朝向同步回对象。
-- 五个方法都是 `protected`，外部代码不能直接调用。对外是链式方法、`start()`、三个 setter 与几个只读状态。
+- 五个方法都是 `protected` 抽象方法，外部代码不能直接调用，子类必须实现。对外是链式方法、`start()`、三个 setter 与几个只读状态。
+- 基类里的 `prepareStep` 与 `moveProgress` 是 `private`，子类既不能覆写也不能调用。`prepareStep` 每步会把 `moveDirection`、`faceDirection`、`currAnimDir`、`currentSpeed` 按步骤更新好，子类读这些状态即可。
+- `faceHandler`、`moveDirection`、`faceDirection` 在 `IObjectMover` 接口上都是 `readonly`，按只读使用。手动改它们不会改变流程，还会被下一步的 `prepareStep` 覆盖。
 
-模板里的 `@shouldReplay` 标在会改状态的步进方法上，用来让这一步进入录像检查；如果你的移动不需要进录像，可以去掉，原因见下文「与录像、存档的关系」。
+模板本身不写状态，所以没有加 `@shouldReplay`。你的实现一旦在某个方法里改状态（写朝向、写对象、派发事件），就按示例把标记加在那个方法上；原因与放置规则见下文「与录像、存档的关系」。
 
 ## 示例：一个最小可移动对象
 
@@ -487,7 +521,6 @@ export class SimpleMover extends ObjectMover<SimpleTile> {
         return SimpleMoveCode.Success;
     }
 
-    @shouldReplay('Simple tile moving step should be replayed.')
     protected async onStepEnd(
         code: number,
         step: Readonly<ObjectMoveStep>,
@@ -518,6 +551,8 @@ export class SimpleMover extends ObjectMover<SimpleTile> {
         }
     }
 
+    // 这里写回朝向，属于状态变更，所以要标 @shouldReplay
+    @shouldReplay('Simple tile facing should be replayed.')
     protected async onStepSettled(
         before: ITileLocator,
         curr: ITileLocator,
@@ -575,9 +610,15 @@ state.hero.location.mover.useTopImplementation(new MyHeroMoveTopImpl(state));
 
 ## 与录像、存档的关系
 
-`HeroMover` 在 `onStepStart`、`onStepEnd`、`onStepSettled` 上标了 `@shouldReplay`；`DynamicTileMover` 标在 `onStepEnd`。这些方法会改变状态，所以移动会进入录像检查。自定义移动器同理：把 `@shouldReplay` 标在真正改状态的步进方法上，通常是 `onStepEnd` 或 `onStepSettled`，不要标在只读查询上。
+`HeroMover` 在 `onStepStart`、`onStepEnd`、`onStepSettled` 上都标了 `@shouldReplay`，因为这三个方法体里都有写入或副作用：`onStepStart` 登记录像码，`onStepEnd` 与 `onStepSettled` 会调用顶层实现触发事件。`DynamicTileMover` 只标 `onStepEnd`，因为它在那里面写回朝向并算出落点。
 
-标记的具体含义、检测能保证什么与不能保证什么，见[录像一致性](./replay-consistency.md)。
+自定义移动器同理：标在方法体里真正写状态的那一个，而不是「看起来最关键」的那一个。判断标准很直接：这个方法体里有没有写操作。
+
+- `onStepEnd` 只返回落点，坐标由基类在它返回后写入；方法体里没有写入时，标它没有意义。
+- 在 `onStepSettled` 里调用 `tile.setFaceDirection(...)` 把朝向写回对象，写入就在这里，要标 `onStepSettled`。
+- 方法体里既有落点计算又有写入（内置 `DynamicTileMover.onStepEnd` 就是这种），标 `onStepEnd`。
+
+不要标在只读查询上。标记的具体含义、检测能保证什么与不能保证什么，见[录像一致性](./replay-consistency.md)。
 
 位置本身是存档内容。`IHeroLocationSave` 保存 `x`、`y`、`direction`、`floorId`；移动过程不会为每一步写存档，读档后恢复的是位置结果，不是「正在走第几步」。因此不要在移动器里另存一份位置状态，否则读档后容易与对象本身不一致。
 
@@ -614,12 +655,12 @@ state.hero.location.mover.useTopImplementation(new MyHeroMoveTopImpl(state));
 
 ## 边界与注意
 
-- <strong>start 返回 null</strong>：移动器已经在移动时不会接管，此时也没有新的控制器可操作。要等或要停，只能用上一次 `start()` 保存的 `controller`：`await controller.onEnd`，或调用 `controller.stop()`。`IHeroMover` 没有 `stop()`，不要在移动器上找。
+- <strong>start 返回 null</strong>：移动器已经在移动时不会接管，此时也没有新的控制器可操作。要等或要停，只能用上一次 `start()` 保存的 `controller`：`await controller.onEnd`，或调用 `controller.stop()`。`IHeroMover` 没有 `stop()`，不要在移动器上找。返回 `null` 时刚排的步骤没有被消费，仍留在移动器里，下一次 `start()` 会执行；不要就用 `clear()`。
 - <strong>moveDirection 被重置</strong>：`start()` 把移动朝向（`moveDirection`）设为 `Unknown`，面朝朝向（`faceDirection`）不受影响；`forward()` 用的是面朝朝向，不依赖这次重置。
 - <strong>执行期间链式方法无效</strong>：`mover.step`、`mover.face`、`mover.speed` 等写的是下一次的队列；执行中追加只能用 `controller.push` 或 `controller.insert`。
 - <strong>stop 不立刻中断</strong>：当前步会走完。第一步还没开始时调用，可能一步都不走。
 - <strong>不要在步进方法里 await stop</strong>：`stop()` 返回的 Promise 要等当前步结束才兑现，在步进方法或步进钩子里 `await` 会卡死整次移动。
-- <strong>步进方法或钩子抛错会卡住移动器</strong>：`ObjectMover` 没有为执行 Promise 兜底；任何一步或任一钩子抛错，`onEnd` 都不再兑现、`done` 保持假、`moving` 保持真，之后的 `start()` 会一直返回 `null`。自定义步进方法要把预期内的失败转成结果码，而不是抛错。
+- <strong>步进方法或钩子抛错会卡住移动器，而且没有恢复入口</strong>：`ObjectMover` 没有为执行 Promise 兜底；任何一步或任一钩子抛错，`onEnd` 都不再兑现、`done` 保持假、`moving` 保持真，之后的 `start()` 会一直返回 `null`，这次拒绝也没有被捕获，会以未处理的 Promise 拒绝暴露出来。`moving` 对外是只读状态，`IHeroMover` / `IObjectMover` 没有重置或强制结束的方法；`controller.stop()` 只能置停止标记，无法兑现那个已经被拒绝的 Promise。结论是运行期没有恢复路径，只能重建数据端（重新创建对象与移动器）。要避免它：自定义步进方法与钩子把预期内的失败转成结果码或内部标记，用 `try` / `catch` 包住可能抛错的外部调用，不要让它冒泡。
 - <strong>setPos 不触发步进钩子</strong>：移动器的 `setPos` 只触发 `onSetPos`，不触发 `onStepStart` / `onStepEnd`；移动过程中的落点写入也不会触发 `onSetPos`。
 - <strong>speed 与 animDir 只是状态</strong>：它们不产生位移。没有消费方读取时，设置速度与动画方向不会产生可见效果。
 - <strong>faceHandler 必须与对象方向体系一致</strong>：四方向对象配八方向处理器，或反过来，都会让偏移与朝向对不上。
