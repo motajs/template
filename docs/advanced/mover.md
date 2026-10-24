@@ -6,11 +6,19 @@
 
 <!-- TODO(renderer): 移动动画与速度表现 -->
 
-## 移动器能做什么
+## 移动器模型
 
-一次移动分两步：**排队**与**执行**。`step`、`face`、`tp` 这些方法只往队列里放步骤，不会立刻移动对象；`start()` 才真正开始执行，并返回本次执行的句柄。用句柄的 `onEnd` 等这一整次移动结束。
+移动器（mover）把一个**可移动对象**和一份**移动计划**绑在一起，按计划逐步推动对象。
 
-移动相关的接口都在 `@user/data-common` 的 `mover.ts` 里，三个角色分工明确：
+- **可移动对象**实现 `IObjectMovable`，只提供坐标与朝向：`x`、`y`、`setPos`、`getCurrentFaceDirection`。勇士的位置对象与动态图块都是这种对象。
+- **移动计划**是一串步骤。一个步骤只描述一件小事：朝某个方向走、只转向、瞬移、跳跃、改速度或改动画方向。`step`、`face`、`tp` 这些规划方法只往队列里追加步骤，不会立刻移动对象。
+- **执行**由 `start()` 发起：它取出待执行队列并逐步执行，每一步算出落点，再把新坐标写回对象。`start()` 返回本次执行的控制器 `IMoverController`；用 `onEnd` 等待整次结束，用 `push` / `insert` 在执行中追加步骤，用 `stop` 提前收尾。
+
+整次执行里有两个方向：**面朝朝向**（`faceDirection`，对象脸朝哪）与**移动朝向**（`moveDirection`，这一步往哪走）。多数步骤让两者一致；侧身走、后退时两者会分开。二者的具体差别见后文「读取与设置状态」。
+
+移动器只负责「这一步落到哪」，不判断目标格能不能进入、撞到什么。通行规则、进入 / 离开 / 撞击事件与地图边界由调用方的规则层决定；勇士的规则见后文「勇士的顶层实现」。
+
+移动相关的接口由 `@user/data-common` 提供，三个角色分工明确：
 
 | 接口               | 角色           | 关键成员                                      |
 | ------------------ | -------------- | --------------------------------------------- |
@@ -18,7 +26,7 @@
 | `IObjectMover`     | 移动器         | 链式规划、`start()`、状态、钩子               |
 | `IMoverController` | 一次执行的句柄 | `done`、`onEnd`、`push`、`insert`、`stop`     |
 
-多数场景只需要碰后两者：拿现成的移动器排队、执行、等待。移动器只负责「这一步落到哪」，能不能走、撞到什么由调用方的规则决定；勇士的规则见后文「勇士的顶层实现」。
+多数场景只需要碰后两者：拿现成的移动器排队、执行、等待。
 
 ## 拿到现成的移动器
 
@@ -249,7 +257,7 @@ const { ignoreTerrain, autoSave } = state.hero.location.mover.getConfig();
 
 <strong>面朝朝向（`faceDirection`）</strong>指对象「脸朝哪」，<strong>移动朝向（`moveDirection`）</strong>指「这一步往哪走」，两者是不同的概念，不要混用。`step` 会让两者一起更新；`stepFace` 与 `backward` 会让两者不同，例如向右走但脸朝上，或者朝下后退时移动朝向是上。`forward()` 沿的是面朝朝向，而不是移动朝向。
 
-`IObjectMover.forward` 的源码注释写的是「沿当前移动方向」，这里指的是**面朝朝向**：`forward` 读的是 `faceDirection`，不是 `moveDirection`。同理，`onSetMoveDir` 注释里的「设置朝向」指设置**移动朝向**。源码实现与这个理解一致，不要把它当成 bug 去改。
+`forward` 沿的是**面朝朝向**（`faceDirection`），不是移动朝向（`moveDirection`）；`onSetMoveDir` 设置的是移动朝向，`onSetFaceDir` 设置的是面朝朝向。
 
 `speed` 与 `animDir` 往队列里放的是步骤，真正写入 `currentSpeed`、`currAnimDir` 是在这一步执行时；执行后状态留在移动器上，`start()` 不会恢复默认值，所以会带到下一次移动。
 
@@ -259,7 +267,7 @@ const { ignoreTerrain, autoSave } = state.hero.location.mover.getConfig();
 
 ## 实现自己的移动器
 
-这一节的使用概率很低：内置的 `HeroMover` 与 `DynamicTileMover` 已经覆盖勇士与动态图块。只有当你有一个新的可移动对象、并且它的落点规则与这两者都不同时，才需要自己写一个。
+内置的 `HeroMover` 与 `DynamicTileMover` 已经覆盖勇士与动态图块。只有当你有一个新的可移动对象、并且它的落点规则与这两者都不同时，才需要自己写一个。
 
 `ObjectMover` 是移动器基类，负责队列、控制器、状态更新、钩子分发与坐标回写。子类只需要实现五个 `protected` 方法：
 
@@ -375,7 +383,7 @@ export class SimpleMover<T extends IObjectMovable> extends ObjectMover<T> {
 
 `handler` 里带着 `currLoc`、`nextLoc`、`direction`、`floorId`、`face` 与 `state`，够你在判定里读位置、朝向与状态。`predicate()` 返回的谓词有两个方法：`canPass(handler)` 为假时本步不移动，走「无法进入」分支；`canPass` 为真且 `shouldHit(handler)` 为真时本步不移动，走「撞击」分支；两者都为真才正常移动。
 
-内置的 `DefaultHeroMoveTopImpl`（`src/data/hero/moverImpl.ts`）是默认实现，它用通行谓词与事件系统完成边界判断、进出与撞击触发器。想保留默认行为、只改其中一环时，包一层并转发给默认实现最省事：
+内置的 `DefaultHeroMoveTopImpl` 是默认实现，它用通行谓词与事件系统完成边界判断、进出与撞击触发器。想保留默认行为、只改其中一环时，包一层并转发给默认实现最省事：
 
 ```ts
 // src/data/hero/moverTop.ts
@@ -434,7 +442,7 @@ export class NoLeftMoveTopImpl implements IHeroMoveTopImpl {
 }
 ```
 
-装配时把它换进勇士移动器（`src/data/initialize.ts` 的 `awake` 中，默认实现就是这么装的）：
+装配时把它换进勇士移动器：
 
 ```ts
 // 依赖加载后才知道配置时，把这段放进 afterLoad
