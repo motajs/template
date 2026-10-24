@@ -17,7 +17,7 @@ import { linear } from 'mutate-animate';
 import { Background, Selection } from './misc';
 import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 import { KeyCode } from '@motajs/client-base';
-import { IGameUIPropsBase } from '../types';
+import { IGameUIPropsBase } from '../../../client-modules/src/types';
 
 export interface InputProps extends DefaultProps, Partial<TextContentProps> {
     /** 输入框的提示内容 */
@@ -142,7 +142,7 @@ export const Input = defineComponent<InputProps, InputEmits, keyof InputEmits>(
             } else {
                 ele = document.createElement('input');
             }
-            // See file://./../../../../../src/styles.less
+            // See src/styles.less
             ele.classList.add('motajs-input-element');
             listenInput();
         };

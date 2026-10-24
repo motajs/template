@@ -1,17 +1,18 @@
 import { ElementLocator, Font } from '@motajs/render';
 import { computed, defineComponent, reactive, ref } from 'vue';
-import { Background, Selection } from './misc';
-import { TextContent, TextContentProps } from './textbox';
-import { TextAlign } from './textboxTyper';
-import { Page, PageExpose } from './page';
+import { Background, Selection } from '@user/client-base';
+import {
+    TextContent,
+    TextContentProps,
+    TextAlign,
+    Page,
+    PageExpose
+} from '@user/client-base';
 import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
-// @ts-expect-error render/use.ts 按 D-54 留在实现层，本文件已移入系统层，按 D-68 暂以标注记录，不反向引用、不解耦
-import { useKey } from '../use';
 import { sleep } from 'mutate-animate';
-import { DefaultProps } from '@motajs/render-vue';
-import { IGameUIPropsBase } from '../types';
+import { IGameUIPropsBase, useKey } from '@user/client-base';
 
-export interface ConfirmBoxProps extends DefaultProps, TextContentProps {
+export interface ConfirmBoxProps extends IGameUIPropsBase, TextContentProps {
     /** 确认框的提示文本内容 */
     text: string;
     /** 确认框对话框的宽度 */
@@ -36,8 +37,8 @@ export interface ConfirmBoxProps extends DefaultProps, TextContentProps {
     color?: CanvasStyle;
     /** 对话框边框颜色，当未设置 winskin 时生效 */
     border?: CanvasStyle;
-    /** 按键作用域，如果需要同作用域按键，那么需要传入 */
-    scope?: symbol;
+    /** 是否使用全新的按键作用域，此时选择框的按键作用域不会包含原本的按键指令实现，默认会使用全新作用域 */
+    freshScope?: boolean;
 }
 
 export type ConfirmBoxEmits = {
@@ -59,7 +60,7 @@ const confirmBoxProps = {
         'defaultYes',
         'color',
         'border',
-        'scope'
+        'freshScope'
     ],
     emits: ['no', 'yes']
 } satisfies SetupComponentOptions<
@@ -149,13 +150,13 @@ export const ConfirmBox = defineComponent<
         noSize.value = [width, height];
     };
 
-    const [key] = useKey(false, props.scope);
-    key.realize('confirm', () => {
+    const key = useKey(props.state.hotkey.system, props.freshScope ?? true)!;
+    key.implement('@common/confirm', () => {
         if (selected.value) emit('yes');
         else emit('no');
     });
-    key.realize('moveLeft', () => void (selected.value = true));
-    key.realize('moveRight', () => void (selected.value = false));
+    key.implement('@common/select-left', () => void (selected.value = true));
+    key.implement('@common/select-right', () => void (selected.value = false));
 
     return () => (
         <container loc={loc.value}>
@@ -215,7 +216,7 @@ export type ChoiceItem<T extends ChoiceKey = ChoiceKey> = [
     text: string
 ];
 
-export interface ChoicesProps extends DefaultProps, TextContentProps {
+export interface ChoicesProps extends IGameUIPropsBase, TextContentProps {
     /** 选项数组 */
     choices: ChoiceItem[];
     /** 选择框对话框的位置 */
@@ -248,8 +249,8 @@ export interface ChoicesProps extends DefaultProps, TextContentProps {
     interval?: number;
     /** 默认选中的选项索引 */
     selected?: number;
-    /** 按键作用域，如果需要同作用域按键，那么需要传入，例如系统设置 UI */
-    scope?: symbol;
+    /** 是否使用全新的按键作用域，此时选择框的按键作用域不会包含原本的按键指令实现，默认会使用全新作用域 */
+    freshScope?: boolean;
 }
 
 export type ChoicesEmits = {
@@ -274,7 +275,7 @@ const choicesProps = {
         'pad',
         'interval',
         'selected',
-        'scope'
+        'freshScope'
     ],
     emits: ['choose']
 } satisfies SetupComponentOptions<
@@ -473,8 +474,8 @@ export const Choices = defineComponent<
         selected.value = 0;
     };
 
-    const [key] = useKey(false, props.scope);
-    key.realize('moveUp', () => {
+    const key = useKey(props.state.hotkey.system, props.freshScope)!;
+    key.implement('moveUp', () => {
         if (selected.value === 0) {
             if (pageCom.value?.now() !== 0) {
                 pageCom.value?.movePage(-1);
@@ -484,7 +485,7 @@ export const Choices = defineComponent<
             selected.value--;
         }
     });
-    key.realize('moveDown', () => {
+    key.implement('moveDown', () => {
         const page = pageCom.value?.now() ?? 0;
         if (selected.value === choiceCountPerPage.value - 1) {
             if (page < pages.value - 1) {
@@ -498,9 +499,9 @@ export const Choices = defineComponent<
             }
         }
     });
-    key.realize('moveLeft', () => pageCom.value?.movePage(-1));
-    key.realize('moveRight', () => pageCom.value?.movePage(1));
-    key.realize('confirm', () => {
+    key.implement('moveLeft', () => pageCom.value?.movePage(-1));
+    key.implement('moveRight', () => pageCom.value?.movePage(1));
+    key.implement('confirm', () => {
         const page = pageCom.value?.now() ?? 0;
         const index = page * choiceCountPerPage.value + selected.value;
         emit('choose', props.choices[index][0]);

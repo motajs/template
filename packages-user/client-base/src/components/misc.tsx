@@ -15,7 +15,7 @@ import { clamp } from 'lodash-es';
 // @ts-expect-error render/renderer 按 D-54 留在实现层，本文件已移入系统层，按 D-59 暂以标注记录，不反向引用、不解耦
 import { using } from '../renderer';
 import { cosh, CurveMode } from '@motajs/animate';
-import { IGameUIPropsBase } from '../types';
+import { IGameUIPropsBase } from '../../../client-modules/src/types';
 
 interface ProgressProps extends DefaultProps {
     /** 进度条的位置 */

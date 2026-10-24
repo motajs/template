@@ -159,8 +159,9 @@ export interface IHotkeySystem {
 
     /**
      * 进入新的按键作用域
+     * @param clearImpl 是否清空上一个作用域的按键实现，默认清空
      */
-    enterScope(): symbol;
+    enterScope(clearImpl?: boolean): symbol;
 
     /**
      * 离开按键作用域

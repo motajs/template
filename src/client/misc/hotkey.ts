@@ -10,7 +10,7 @@ export function initializeHotkey(state: IClientCore) {
     //#region 通用按键
 
     hotkey.setGroup('common', '通用按键', [
-        system.addCommand('@common/ok', '确认', {
+        system.addCommand('@common/confirm', '确认', {
             defaults: [[KeyCode.Enter], [KeyCode.Space], [KeyCode.KeyC]],
             priority: 0
         }),
@@ -24,6 +24,14 @@ export function initializeHotkey(state: IClientCore) {
         }),
         system.addCommand('@common/select-down', '下移选择光标', {
             defaults: [[KeyCode.DownArrow]],
+            priority: 0
+        }),
+        system.addCommand('@common/select-left', '左移选择光标', {
+            defaults: [[KeyCode.LeftArrow]],
+            priority: 0
+        }),
+        system.addCommand('@common/select-right', '右移选择光标', {
+            defaults: [[KeyCode.RightArrow]],
             priority: 0
         })
     ]);

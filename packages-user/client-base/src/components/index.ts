@@ -1,4 +1,4 @@
-export * from './choices';
+export * from '../../../../src/client/ui/choices';
 export * from './floorSelect';
 export * from './icons';
 export * from './input';

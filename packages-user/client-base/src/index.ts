@@ -5,6 +5,7 @@ export * from './layout';
 export * from './map';
 export * from './material';
 export * from './save';
+export * from './use';
 
 export * from './shared';
 export * from './types';

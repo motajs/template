@@ -141,9 +141,29 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
 
     //#region 作用域
 
-    enterScope(): symbol {
+    /**
+     * 获取下一个作用域的实现映射
+     * @param clear 是否清空作用域实现
+     */
+    private nextScopeImpl(
+        clear: boolean
+    ): Map<IHotkeyCommand, (info: IHotkeyEmitInfo) => void> {
+        const now = this.getScope();
+        if (!now) return new Map();
+        if (clear) {
+            return new Map();
+        } else {
+            return new Map(now.implements);
+        }
+    }
+
+    enterScope(clearImpl: boolean = true): symbol {
         const symbol = Symbol();
-        this.scopes.push({ symbol, condition: null, implements: new Map() });
+        this.scopes.push({
+            symbol,
+            condition: null,
+            implements: this.nextScopeImpl(clearImpl)
+        });
         this.holdingCmds.clear();
         this.waitTimeout.clear();
         return symbol;
@@ -190,6 +210,9 @@ export class HotkeySystem implements IHotkeySystem, IExcitable<number> {
         if (!obj) {
             logger.warn(202, command);
             return this;
+        }
+        if (scope.implements.has(obj)) {
+            logger.warn(212, command);
         }
         scope.implements.set(obj, func);
         return this;

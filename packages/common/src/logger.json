@@ -301,6 +301,8 @@
         "208": "Duplicate hotkey command group name: $1, old one will be overwritten.",
         "209": "Cannot load key combinations for hotkey command '$1' since no command named it.",
         "210": "Cannot add duplicate hotkey command '$1' to group '$2'.",
+        "211": "Expected a hotkey scope stored for a vue component, but no scope was found. This seems like a internal bug of engine, please report.",
+        "212": "Duplicate implements for hotkey command '$1', old one will be overwritten. This probably caused by unclearing implementation config, please check.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }
