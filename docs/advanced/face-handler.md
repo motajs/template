@@ -322,7 +322,7 @@ function registerVerticalFace(state: ICoreState): void {
 }
 ```
 
-注册只往表里放处理器，不会替任何已有对象换掉手上的那一个。真正生效的地方是显式取用它的代码：构造移动器时把处理器传进去（见 `移动 Mover`），寻路时调用 `finder.useFaceHandler(handler)`。这些地方之后按新策略计算，已经构造好的移动器仍持有构造时的处理器。
+注册只往表里放处理器，不会替任何已有对象换掉手上的那一个。真正生效的地方是显式取用它的代码：构造移动器时把处理器传进去（见[移动 Mover](./mover.md#实现自己的移动器)），寻路时调用 `finder.useFaceHandler(handler)`。这些地方之后按新策略计算，已经构造好的移动器仍持有构造时的处理器。
 
 ## 朝向图块：IRoleFaceBinder
 
@@ -434,3 +434,5 @@ function verifyFaceHandler(state: ICoreState): void {
 再验证朝向图块的登记与读取：先 `malloc` 主图块，再 `bind` 另一朝向，然后核对 `getFaceOf`、`getFaceDirection` 与 `getMainFace` 的返回值；把 `bind` 挪到 `malloc` 之前，应当看到错误日志且映射没有建立。
 
 最后验证自定义处理器：注册后取回，确认 `degrade(LeftUp)` 变成 `Up`、`movement(LeftUp)` 变成 `{ x: 0, y: -1 }`；再把它交给一个新建的移动器或 `finder.useFaceHandler`，重算一次目标格与一条路径，确认斜向输入按新策略归并。已构造好的移动器不会发生变化，若结果没变，先检查是否仍在用旧的处理器。
+
+返回[高级 I 导览](./index.md)。

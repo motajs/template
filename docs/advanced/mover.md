@@ -194,7 +194,7 @@ async function stopBeforeFirstStep(state: ICoreState): Promise<void> {
 | `currentSpeed`  | 当前每格耗时 | 单位毫秒，初始为 `100`                                 |
 | `faceHandler`   | 朝向处理器   | 构造时传入，负责方向与偏移的换算                       |
 
-**面朝朝向（`faceDirection`）**指对象「脸朝哪」，**移动朝向（`moveDirection`）**指「这一步往哪走」，两者是不同的概念，不要混用。`step` 会让两者一起更新；`stepFace` 与 `backward` 会让两者不同，例如向右走但脸朝上，或者朝下后退时移动朝向是上。`forward()` 沿的是面朝朝向，而不是移动朝向。
+<strong>面朝朝向（`faceDirection`）</strong>指对象「脸朝哪」，<strong>移动朝向（`moveDirection`）</strong>指「这一步往哪走」，两者是不同的概念，不要混用。`step` 会让两者一起更新；`stepFace` 与 `backward` 会让两者不同，例如向右走但脸朝上，或者朝下后退时移动朝向是上。`forward()` 沿的是面朝朝向，而不是移动朝向。
 
 `setPos`、`setFaceDir`、`setMoveDir` 与链式规划不同：它们立即生效、不排队。`setPos` 直接写对象坐标，`setFaceDir` 直接改面朝朝向，`setMoveDir` 直接改移动朝向。三者分别触发 `onSetPos`、`onSetFaceDir`、`onSetMoveDir` 钩子。
 
@@ -469,7 +469,7 @@ async function runSimpleMover(): Promise<void> {
 }
 ```
 
-`faceHandler` 决定方向体系。四方向对象要配四方向处理器，八方向对象配八方向处理器；混用会让偏移与朝向对不上。`FaceHandler 系列` 的接口与自定义方式由另一篇承担。
+`faceHandler` 决定方向体系。四方向对象要配四方向处理器，八方向对象配八方向处理器；混用会让偏移与朝向对不上。朝向处理器本身的接口与自定义方式见[FaceHandler 系列](./face-handler.md)。
 
 ## 与录像、存档的关系
 
@@ -627,3 +627,5 @@ async function verifyStop(state: ICoreState): Promise<void> {
 ```
 
 预期：坐标只变化一格，`done` 为真，控制器上的后续追加不再生效。
+
+返回[高级 I 导览](./index.md)。
