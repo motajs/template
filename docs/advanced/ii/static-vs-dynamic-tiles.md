@@ -146,9 +146,7 @@ async function shiftRight(
 
 ### 移动器 mover
 
-`transferToDynamic` 得到的动态图块已经带有自己的 `mover`，之后的位置变更都由它发起；`step` 只是 mover 上的单步便捷入口。`mover` 的接口、速度与路径配置、`onEnd` 等待等细节属于高级 I 的内容，见 `高级 I · 移动 Mover`，本篇不重复。
-
-<!-- TODO(advanced-I): 移动 Mover -->
+`transferToDynamic` 得到的动态图块已经带有自己的 `mover`，之后的位置变更都由它发起；`step` 只是 mover 上的单步便捷入口。`mover` 的接口、速度与路径配置、`onEnd` 等待等细节属于高级 I 的内容，见[高级 I · 移动 Mover](../mover.md)，本篇不重复。
 
 ### moveBlock 简写
 
