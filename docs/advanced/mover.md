@@ -47,23 +47,23 @@
 
 规划方法是链式的：每次调用追加一个或几个步骤，返回移动器本身，所以可以连着写。规划阶段不会移动对象，对象要等 `start()` 才动。
 
-| 方法                           | 追加的步骤          | 作用                                           |
-| ------------------------------ | ------------------- | ---------------------------------------------- |
-| `step(dir, count?)`            | `Dir`               | 朝 `dir` 走 `count` 格，同时更新移动方向与朝向 |
-| `stepFace(move, face, count?)` | `DirFace`           | 朝 `move` 走，朝向显式设为 `face`              |
-| `forward(count?)`              | `Special(Forward)`  | 沿当前移动方向前进                             |
-| `backward(count?)`             | `Special(Backward)` | 沿当前朝向的反方向后退，朝向不变               |
-| `face(dir)`                    | `Face`              | 只转向，不移动                                 |
-| `tp(x, y, rel?)`               | `Teleport`          | 瞬移到目标格                                   |
-| `jump(x, y, rel?)`             | `Jump`              | 跳跃到目标格                                   |
-| `speed(value)`                 | `Speed`             | 设置后续移动的每格耗时，单位 ms                |
-| `animDir(dir)`                 | `AnimDir`           | 设置后续步骤的动画播放方向                     |
-| `push(steps)`                  | 一组步骤            | 把预先拼好的 `ObjectMoveStep` 数组原样追加     |
-| `clear()`                      | 无                  | 清空尚未执行的队列                             |
+| 方法                           | 追加的步骤          | 作用                                               |
+| ------------------------------ | ------------------- | -------------------------------------------------- |
+| `step(dir, count?)`            | `Dir`               | 朝 `dir` 走 `count` 格，同时更新移动朝向与面朝朝向 |
+| `stepFace(move, face, count?)` | `DirFace`           | 朝 `move` 走，面朝朝向显式设为 `face`              |
+| `forward(count?)`              | `Special(Forward)`  | 沿当前面朝朝向前进                                 |
+| `backward(count?)`             | `Special(Backward)` | 沿当前面朝朝向的反方向后退，面朝朝向不变           |
+| `face(dir)`                    | `Face`              | 只转向，不移动                                     |
+| `tp(x, y, rel?)`               | `Teleport`          | 瞬移到目标格                                       |
+| `jump(x, y, rel?)`             | `Jump`              | 跳跃到目标格                                       |
+| `speed(value)`                 | `Speed`             | 设置后续移动的每格耗时，单位 ms                    |
+| `animDir(dir)`                 | `AnimDir`           | 设置后续步骤的动画播放方向                         |
+| `push(steps)`                  | 一组步骤            | 把预先拼好的 `ObjectMoveStep` 数组原样追加         |
+| `clear()`                      | 无                  | 清空尚未执行的队列                                 |
 
-`step` 的 `count` 默认是 1。传 2 会追加两个 `Dir` 步骤，逐步执行，不是把一步拆成两格。`stepFace` 把移动方向与朝向分开，适合「侧身走」这类表现。
+`step` 的 `count` 默认是 1。传 2 会追加两个 `Dir` 步骤，逐步执行，不是把一步拆成两格。`stepFace` 把移动朝向与面朝朝向分开，适合「侧身走」这类表现。
 
-`forward` 与 `backward` 是相对步。`backward` 以当前朝向的反方向为基准，并保持朝向不变，所以连续后退会一直沿同一条轴线，不会因为上一步写入的反方向而左右摆动。
+`forward` 与 `backward` 是相对步，都以当前的面朝朝向（`faceDirection`）为基准：`forward` 直接朝面朝朝向走，`backward` 朝面朝朝向的反方向走并保持朝向不变，所以连续后退会一直沿同一条轴线，不会因为上一步写入的反方向而左右摆动。
 
 `tp` 与 `jump` 的 `rel` 省略时为 `false`，`x`、`y` 是目标格坐标；`rel` 为 `true` 时，`x`、`y` 是相对当前位置的偏移。数据端上两者都是直接落到目标格，区别只在步骤类型，渲染端可以据此播放不同的表现。
 
@@ -109,7 +109,7 @@ async function walkRightThenDown(state: ICoreState): Promise<void> {
 
 `start()` 会做三件事：把当前队列切片成本次执行的局部队列、清空移动器内部的待执行队列、把 `moveDirection` 重置为 `Unknown`。因此执行期间再用移动器规划，写的是「下一次」的队列，不是本次。
 
-`moveDirection` 被重置这一点对相对步很关键：`forward()` 依赖当前移动方向，所以一个计划里如果要用 `forward()`，前面必须先有 `step` 或 `stepFace` 把移动方向确定下来。
+`moveDirection` 被重置这一点与 `forward()` 无关：`forward()` 沿的是面朝朝向（`faceDirection`），而面朝朝向不随 `start()` 清空。被清空的只有移动朝向（`moveDirection`），所以只有需要读 `moveDirection` 的自定义逻辑，才要先在本计划里用 `step` 或 `stepFace` 把它确定下来。
 
 ## 执行中追加、插入与停止
 
@@ -163,18 +163,18 @@ async function stopBeforeFirstStep(state: ICoreState): Promise<void> {
 
 规划方法只是往队列里放对象；移动器真正面对的是 `ObjectMoveStep` 联合类型。八种步骤对应 `ObjectMoveType` 的八个成员：
 
-| `type`                    | 字段                                                  | 效果                              |
-| ------------------------- | ----------------------------------------------------- | --------------------------------- |
-| `ObjectMoveType.Dir`      | `move`                                                | 走向 `move`，移动方向与朝向都更新 |
-| `ObjectMoveType.DirFace`  | `move`、`face`                                        | 走向 `move`，朝向设为 `face`      |
-| `ObjectMoveType.Speed`    | `value`                                               | 设置后续每格耗时                  |
-| `ObjectMoveType.Face`     | `value`                                               | 只改朝向                          |
-| `ObjectMoveType.Special`  | `direction`：`ObjectSpecialStep.Forward` / `Backward` | 前进或后退                        |
-| `ObjectMoveType.AnimDir`  | `dir`：`ObjectAnimDirection.Forward` / `Backward`     | 设置动画播放方向                  |
-| `ObjectMoveType.Teleport` | `x`、`y`、`rel`                                       | 瞬移                              |
-| `ObjectMoveType.Jump`     | `x`、`y`、`rel`                                       | 跳跃                              |
+| `type`                    | 字段                                                  | 效果                                  |
+| ------------------------- | ----------------------------------------------------- | ------------------------------------- |
+| `ObjectMoveType.Dir`      | `move`                                                | 走向 `move`，移动朝向与面朝朝向都更新 |
+| `ObjectMoveType.DirFace`  | `move`、`face`                                        | 走向 `move`，面朝朝向设为 `face`      |
+| `ObjectMoveType.Speed`    | `value`                                               | 设置后续每格耗时                      |
+| `ObjectMoveType.Face`     | `value`                                               | 只改面朝朝向                          |
+| `ObjectMoveType.Special`  | `direction`：`ObjectSpecialStep.Forward` / `Backward` | 前进或后退                            |
+| `ObjectMoveType.AnimDir`  | `dir`：`ObjectAnimDirection.Forward` / `Backward`     | 设置动画播放方向                      |
+| `ObjectMoveType.Teleport` | `x`、`y`、`rel`                                       | 瞬移                                  |
+| `ObjectMoveType.Jump`     | `x`、`y`、`rel`                                       | 跳跃                                  |
 
-`Speed` 与 `AnimDir` 不产生位移，`Face` 只改朝向。它们的状态更新由基类在每步开始前完成，自定义移动器只需要在计算落点时知道「这几类不移动」。
+`Speed` 与 `AnimDir` 不产生位移，`Face` 只改面朝朝向。它们的状态更新由基类在每步开始前完成，自定义移动器只需要在计算落点时知道「这几类不移动」。
 
 自定义移动器必须自己处理这些 `type`：至少要知道每个类型该返回什么落点。没有识别的类型不要抛错，原样返回当前坐标即可，这样未知步骤表现为原地不动。
 
@@ -188,15 +188,15 @@ async function stopBeforeFirstStep(state: ICoreState): Promise<void> {
 | --------------- | ------------ | ------------------------------------------------------ |
 | `moving`        | 是否正在移动 | `start()` 后为真，整次结束才回到假                     |
 | `tile`          | 绑定的对象   | 构造时传入                                             |
-| `faceDirection` | 当前朝向     | 由步骤或 `setFaceDir` 更新                             |
-| `moveDirection` | 当前移动方向 | 由步骤或 `setMoveDir` 更新，`start()` 重置为 `Unknown` |
+| `faceDirection` | 面朝朝向     | 由步骤或 `setFaceDir` 更新                             |
+| `moveDirection` | 移动朝向     | 由步骤或 `setMoveDir` 更新，`start()` 重置为 `Unknown` |
 | `currAnimDir`   | 当前动画方向 | 初始为 `ObjectAnimDirection.Forward`                   |
 | `currentSpeed`  | 当前每格耗时 | 单位毫秒，初始为 `100`                                 |
 | `faceHandler`   | 朝向处理器   | 构造时传入，负责方向与偏移的换算                       |
 
-`faceDirection` 与 `moveDirection` 是两件事：`faceDirection` 表示对象朝哪，`moveDirection` 表示这一步往哪走。`stepFace` 与 `backward` 下两者会不同，例如向右走但脸朝上，或者朝下后退时移动方向是上。
+**面朝朝向（`faceDirection`）**指对象「脸朝哪」，**移动朝向（`moveDirection`）**指「这一步往哪走」，两者是不同的概念，不要混用。`step` 会让两者一起更新；`stepFace` 与 `backward` 会让两者不同，例如向右走但脸朝上，或者朝下后退时移动朝向是上。`forward()` 沿的是面朝朝向，而不是移动朝向。
 
-`setPos`、`setFaceDir`、`setMoveDir` 与链式规划不同：它们立即生效、不排队。`setPos` 直接写对象坐标，`setFaceDir` 与 `setMoveDir` 直接改移动器状态。三者分别触发 `onSetPos`、`onSetFaceDir`、`onSetMoveDir` 钩子。
+`setPos`、`setFaceDir`、`setMoveDir` 与链式规划不同：它们立即生效、不排队。`setPos` 直接写对象坐标，`setFaceDir` 直接改面朝朝向，`setMoveDir` 直接改移动朝向。三者分别触发 `onSetPos`、`onSetFaceDir`、`onSetMoveDir` 钩子。
 
 移动过程中的落点写入由基类直接调用 `tile.setPos`，不经过移动器的 `setPos`，所以不会触发 `onSetPos`。`onSetPos` 只对应你显式调用移动器 `setPos` 的那一次。
 
@@ -213,6 +213,8 @@ async function stopBeforeFirstStep(state: ICoreState): Promise<void> {
 | `onSetPos`     | 调用移动器 `setPos` 时                | `x`、`y`、`tile`、`mover`       | 否   |
 | `onSetFaceDir` | 调用移动器 `setFaceDir` 时            | `dir`、`tile`、`mover`          | 否   |
 | `onSetMoveDir` | 调用移动器 `setMoveDir` 时            | `dir`、`tile`、`mover`          | 否   |
+
+`onSetFaceDir` 的 `dir` 是面朝朝向（`faceDirection`），`onSetMoveDir` 的 `dir` 是移动朝向（`moveDirection`）。
 
 几条与使用直接相关的时序：
 
@@ -309,7 +311,7 @@ export class SimpleMover<T extends IObjectMovable> extends ObjectMover<T> {
 五个方法的职责：
 
 - `onMoveStart` 与 `onMoveEnd` 包住整次执行，分别在第一步之前与最后一步之后运行，返回的 Promise 会被等待。
-- `onStepStart` 在每步开始前运行。此时基类已经更新过移动方向、朝向、速度与动画方向，但坐标还没变。它返回本步的结果码，供后面的逻辑与钩子使用。
+- `onStepStart` 在每步开始前运行。此时基类已经更新过移动朝向、面朝朝向、速度与动画方向，但坐标还没变。它返回本步的结果码，供后面的逻辑与钩子使用。
 - `onStepEnd` 计算这一步的落点，返回一个 `ITileLocator`。基类拿它和当前坐标比较，不同才调用 `tile.setPos`。不要在这里自己写坐标。
 - `onStepSettled` 在坐标写入之后运行，参数里带着移动前坐标 `before` 与落点 `curr`。这里适合触发进入 / 离开 / 踩踏一类的事件，或者把朝向同步回对象。
 - 五个方法都是 `protected`，外部代码不能直接调用。对外是链式方法、`start()`、三个 setter 与几个只读状态。
@@ -511,7 +513,7 @@ async function runSimpleMover(): Promise<void> {
 ## 边界与注意
 
 - <strong>start 返回 null</strong>：移动器已经在移动时不会接管。先等 `controller.onEnd`，或调用 `stop()` 后再排新计划。
-- <strong>moveDirection 被重置</strong>：`start()` 把它设为 `Unknown`。计划里要用 `forward()` 时，前面先放 `step` 或 `stepFace` 确定移动方向。
+- <strong>moveDirection 被重置</strong>：`start()` 把移动朝向（`moveDirection`）设为 `Unknown`，面朝朝向（`faceDirection`）不受影响；`forward()` 用的是面朝朝向，不依赖这次重置。
 - <strong>执行期间链式方法无效</strong>：`mover.step`、`mover.face`、`mover.speed` 等写的是下一次的队列；执行中追加只能用 `controller.push` 或 `controller.insert`。
 - <strong>stop 不立刻中断</strong>：当前步会走完。第一步还没开始时调用，可能一步都不走。
 - <strong>不要在步进方法里 await stop</strong>：`stop()` 返回的 Promise 要等当前步结束才兑现，在步进方法或步进钩子里 `await` 会卡死整次移动。
