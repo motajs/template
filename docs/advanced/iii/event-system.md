@@ -53,7 +53,7 @@
 
 事件对象由 `GameEvent` 实现。它保存 `trigger`、`rawEvent` 与 `compiled`：`compile()` 编译并缓存结果，`execute(param, env)` 优先使用缓存，`setRaw(raw)` 在替换原始语句时清空缓存，`setTrigger(trigger)` 修改触发器。只读侧 `IReadonlyGameEvent` 暴露 `interpreter`、`trigger`、`rawEvent`、`compiled` 与 `compile()`、`execute()`。
 
-## 收集：这一次该执行谁
+## 收集：这一次该执行谁 {#收集这一次该执行谁}
 
 `collectEvent(layer, trigger, x, y)` 先判断 `layer.inMap(x, y)`；坐标不在地图内直接返回空数组。
 
