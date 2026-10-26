@@ -32,12 +32,12 @@
 
 高级 II 假设你已经读完高级 I，尤其是下面四篇：
 
-- [声明式 vs 命令式接口](../declarative-vs-imperative.md)：决定你是在声明规则，还是写一次性脚本；
-- [插件系统](../plugin-system.md)：新增系统优先放在插件里，而不是直接改内置；
-- [可存档内容](../saveable-content.md)：新增状态要能进入存档，并在读档后恢复；
-- [录像一致性](../replay-consistency.md)：会改变游戏进程的方法要考虑是否登记录像。
+- [声明式 vs 命令式接口](../i/declarative-vs-imperative.md)：决定你是在声明规则，还是写一次性脚本；
+- [插件系统](../i/plugin-system.md)：新增系统优先放在插件里，而不是直接改内置；
+- [可存档内容](../i/saveable-content.md)：新增状态要能进入存档，并在读档后恢复；
+- [录像一致性](../i/replay-consistency.md)：会改变游戏进程的方法要考虑是否登记录像。
 
-同层的 [data-common 的 Store](../data-stores.md) 与 [钩子深入](../hooks-in-depth.md) 也会被反复引用：前者决定你从哪里读内容定义，后者决定你在什么时机插入行为。
+同层的 [data-common 的 Store](../i/data-stores.md) 与 [钩子深入](../i/hooks-in-depth.md) 也会被反复引用：前者决定你从哪里读内容定义，后者决定你在什么时机插入行为。
 
 中级教程里的相关篇目同样重要，按主题列在下面：
 
@@ -125,4 +125,4 @@
 - [新增怪物属性](./adding-enemy-attribute.md)
 - [怪物上下文与战斗深入](./enemy-context-and-combat.md)
 
-返回[高级 I 导览](../index.md)。
+返回[高级 I 导览](../i/index.md)。

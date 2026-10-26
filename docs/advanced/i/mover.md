@@ -49,7 +49,7 @@ async function heroStepRight(state: ICoreState): Promise<void> {
 }
 ```
 
-勇士位置对象本身的接口（坐标、楼层、朝向、存档）见[勇士位置](../intermediate/hero-location.md)。
+勇士位置对象本身的接口（坐标、楼层、朝向、存档）见[勇士位置](../../intermediate/hero-location.md)。
 
 ### 动态图块
 
@@ -70,7 +70,7 @@ async function pushTileRight(layer: IMapLayer): Promise<void> {
 }
 ```
 
-`layer.createDynamic(num, x, y)` 直接新建动态图块，`layer.getDynamicTilesAt(x, y)` 与 `layer.iterateDynamicTiles()` 用来找已存在的动态图块。只是推一格这类简单场景，用 `tile.step(dir, count)` 更省事，它内部就是 `mover.step(...)` 加 `mover.start()`。创建、转换与移动的完整说明见[静态图块与动态图块](./ii/static-vs-dynamic-tiles.md)。
+`layer.createDynamic(num, x, y)` 直接新建动态图块，`layer.getDynamicTilesAt(x, y)` 与 `layer.iterateDynamicTiles()` 用来找已存在的动态图块。只是推一格这类简单场景，用 `tile.step(dir, count)` 更省事，它内部就是 `mover.step(...)` 加 `mover.start()`。创建、转换与移动的完整说明见[静态图块与动态图块](../ii/static-vs-dynamic-tiles.md)。
 
 ### 其他可移动对象
 
@@ -453,7 +453,7 @@ state.hero.location.mover.useTopImplementation(new NoLeftMoveTopImpl(state));
 
 - `predicate()` 在每个方向步都会被调用，要返回构造时建好的稳定实例，不要在方法里新建对象（内置实现就是把 `DefaultPassPredicateImpl` 存在字段里）。
 - `config({ ignoreTerrain: true })` 会让 `HeroMover` 跳过整个谓词判断、只剩边界检查，此时改谓词看不到效果。
-- 寻路用的是同一形状的谓词，但由 `state.pathfinding.finder.usePassPredicate(...)` 独立注入，不会自动跟随勇士的顶层实现。改了勇士的通行规则、又希望寻路一致时，要把同一个谓词再注入给 `finder`，详见[自动寻路](./ii/pathfinding.md)。
+- 寻路用的是同一形状的谓词，但由 `state.pathfinding.finder.usePassPredicate(...)` 独立注入，不会自动跟随勇士的顶层实现。改了勇士的通行规则、又希望寻路一致时，要把同一个谓词再注入给 `finder`，详见[自动寻路](../ii/pathfinding.md)。
 
 ## 边界与注意
 

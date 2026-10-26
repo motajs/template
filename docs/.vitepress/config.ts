@@ -152,39 +152,40 @@ export default defineConfig({
                 }
             ],
             '/advanced/': [
+                { text: '高级教程总导览', link: '/advanced/' },
                 {
                     text: '高级 I · 扩展基础',
                     collapsed: false,
                     items: [
-                        { text: '高级 I 导览', link: '/advanced/' },
+                        { text: '高级 I 导览', link: '/advanced/i/' },
                         {
                             text: '声明式 vs 命令式接口',
-                            link: '/advanced/declarative-vs-imperative'
+                            link: '/advanced/i/declarative-vs-imperative'
                         },
                         {
                             text: '插件系统',
-                            link: '/advanced/plugin-system'
+                            link: '/advanced/i/plugin-system'
                         },
                         {
                             text: '可存档内容',
-                            link: '/advanced/saveable-content'
+                            link: '/advanced/i/saveable-content'
                         },
                         {
                             text: '录像一致性',
-                            link: '/advanced/replay-consistency'
+                            link: '/advanced/i/replay-consistency'
                         },
                         {
                             text: 'data-common 的 Store',
-                            link: '/advanced/data-stores'
+                            link: '/advanced/i/data-stores'
                         },
                         {
                             text: '钩子深入',
-                            link: '/advanced/hooks-in-depth'
+                            link: '/advanced/i/hooks-in-depth'
                         },
-                        { text: '移动 Mover', link: '/advanced/mover' },
+                        { text: '移动 Mover', link: '/advanced/i/mover' },
                         {
                             text: 'FaceHandler 系列',
-                            link: '/advanced/face-handler'
+                            link: '/advanced/i/face-handler'
                         }
                     ]
                 },

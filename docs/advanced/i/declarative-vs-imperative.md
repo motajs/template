@@ -41,7 +41,7 @@ function healHero(hero: IHeroState<IHeroAttr>): void {
 - <strong>只在执行到的那一瞬间生效</strong>。脚本没被触发，效果就不存在；触发第二次，效果就再来一次。
 - <strong>想重新计算只能重跑</strong>。怪物移动、周围条件变化之后，旧数值不会自动更新；再跑一遍脚本，又容易把加成叠加两次。
 - <strong>每条路径都要自己同步</strong>。存档、读档、录像回放、重新进入楼层，这些路径都可能绕开你写的那段脚本，于是状态对不上。
-- <strong>没法凭空给怪物加特殊属性</strong>。直接改 `atk` 只是改了一个数字，不能让怪物获得一条领域属性；特殊属性本身的写法见[特殊属性](../intermediate/enemy-specials.md)。
+- <strong>没法凭空给怪物加特殊属性</strong>。直接改 `atk` 只是改了一个数字，不能让怪物获得一条领域属性；特殊属性本身的写法见[特殊属性](../../intermediate/enemy-specials.md)。
 
 这不是说命令式一无是处。玩家点一下、走一步、用一次道具，本来就是「现在立刻发生」的动作，用命令式接口最直接。问题只出在：把<strong>持续生效的规则</strong>也写成了一次性命令。
 
@@ -90,7 +90,7 @@ export class MyDamageCalculator implements IDamageCalculator<
 
 <strong>为什么这比命令式更稳</strong>：你只描述 `f(enemy, hero)` 这一条规则，所有调用点共用同一份结果。不需要在「显示」和「结算」两处各写一遍公式，也不会出现显示一个数、实际打另一个数。代价是计算器<strong>必须无副作用</strong>，下面会单独解释。
 
-改公式与注册的完整做法见[伤害计算](../intermediate/enemy-calculator.md)。
+改公式与注册的完整做法见[伤害计算](../../intermediate/enemy-calculator.md)。
 
 ### 特殊属性与光环
 
@@ -98,7 +98,7 @@ export class MyDamageCalculator implements IDamageCalculator<
 
 <strong>引擎在哪个时机执行</strong>：构建「计算后怪物」时。`state.enemyContext.buildup()` 按固定顺序重建每只怪物，把特殊属性、查询与最终效果写进属性。
 
-<strong>为什么这比命令式更稳</strong>：每次重建都从模板的原始值出发，反复重建不会让加成越叠越多；你改的是注册表里的一条定义，所有读取计算后怪物的场景都会自动看到新结果；存档也只需要保存模板。更细的构建流程与特殊属性写法见[战斗总览](../intermediate/combat-overview.md)与[特殊属性](../intermediate/enemy-specials.md)。
+<strong>为什么这比命令式更稳</strong>：每次重建都从模板的原始值出发，反复重建不会让加成越叠越多；你改的是注册表里的一条定义，所有读取计算后怪物的场景都会自动看到新结果；存档也只需要保存模板。更细的构建流程与特殊属性写法见[战斗总览](../../intermediate/combat-overview.md)与[特殊属性](../../intermediate/enemy-specials.md)。
 
 ### 道具效果
 

@@ -2,7 +2,7 @@
 
 `@user/data-common` 是数据端的 Layer 0 公共层，上面挂着五个内容注册表：`tileStore`、`itemStore`、`mapStore`、`enemyStore`、`eventStore`。它们看起来像「数据表」，实际是<strong>内容层原始定义的注册表</strong>——图块、道具、地图、怪物的定义登记在这里，游戏运行时从这里查出来，再按定义构造自己的对象；事件则直接以实例登记。
 
-中级教程的[数据端总览](../intermediate/data-state-overview.md)列过这些入口，[图块存储](../intermediate/tile-store.md)讲了 `tileStore` 的日常用法。这一篇逐个讲每个 Store 存的是什么、有哪些常用成员、它自己能做什么，以及为什么运行期只该读。
+中级教程的[数据端总览](../../intermediate/data-state-overview.md)列过这些入口，[图块存储](../../intermediate/tile-store.md)讲了 `tileStore` 的日常用法。这一篇逐个讲每个 Store 存的是什么、有哪些常用成员、它自己能做什么，以及为什么运行期只该读。
 
 阅读前需要会基础语法：`class`、`new`、`Map`、`import`。
 
