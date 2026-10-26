@@ -8,7 +8,6 @@ import {
 } from '@motajs/animate';
 import { logger } from '@motajs/common';
 import { IRenderItem, IRenderTreeRoot } from '@motajs/render';
-import { Hotkey, gameKey } from '@motajs/system';
 import {
     ComponentInternalInstance,
     getCurrentInstance,
@@ -62,30 +61,6 @@ export function onOrientationChange(hook: OrientationHook) {
     onUnmounted(() => {
         orientationHooks.delete(hook);
     });
-}
-
-type KeyUsing = [Hotkey, symbol];
-
-/**
- * 在组件中定义按键操作
- * @param noScope 是否不创建新作用域
- * @param scope 指定作用域，如果 `noScope` 为 `true`，则此项无效
- */
-export function useKey(noScope: boolean = false, scope?: symbol): KeyUsing {
-    if (noScope) {
-        return [gameKey, gameKey.scope];
-    } else {
-        const sym = scope ?? Symbol();
-        if (sym === gameKey.scope) {
-            return [gameKey, gameKey.scope];
-        } else {
-            gameKey.use(sym);
-            onUnmounted(() => {
-                gameKey.dispose();
-            });
-            return [gameKey, sym];
-        }
-    }
 }
 
 export interface ITransitionedController<T> {

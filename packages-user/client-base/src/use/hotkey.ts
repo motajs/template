@@ -1,6 +1,6 @@
 import { IHotkeyEmitInfo, IHotkeySystem } from '@motajs/system';
 import { IHotkeyUsing } from './types';
-import { getCurrentInstance, onMounted, onUnmounted } from 'vue';
+import { getCurrentInstance, onBeforeMount, onUnmounted } from 'vue';
 import { logger } from '@motajs/common';
 
 class HotkeyUsing implements IHotkeyUsing {
@@ -21,7 +21,7 @@ class HotkeyUsing implements IHotkeyUsing {
         const { promise, resolve } = Promise.withResolvers<symbol>();
         this.scopePromise = promise;
 
-        onMounted(() => {
+        onBeforeMount(() => {
             this.mounted = true;
             const scope = system.enterScope(clearImpl);
             this.keyScope = scope;
