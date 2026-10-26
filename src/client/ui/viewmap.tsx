@@ -7,12 +7,7 @@ import {
     Font
 } from '@motajs/render';
 import { BaseProps } from '@motajs/render-vue';
-import {
-    GameUI,
-    IUIController,
-    SetupComponentOptions,
-    IUIDefaultPropsBase
-} from '@motajs/system';
+import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 import {
     computed,
     defineComponent,
@@ -26,7 +21,7 @@ import {
 import { FloorSelector } from '@user/client-base';
 import { clamp, mean } from 'lodash-es';
 import { StatisticsDataOneFloor } from './statistics';
-import { Tip, TipExpose, IGameUIPropsBase } from '@user/client-base';
+import { Tip, TipExpose, IGameUIPropsBase, useKey } from '@user/client-base';
 import {
     ENABLE_RIGHT_STATUS_BAR,
     FULL_LOC,
@@ -39,15 +34,14 @@ import {
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
 } from '@/client';
-import { useKey } from '@user/client-modules';
 
-export interface ViewMapProps extends IUIDefaultPropsBase, BaseProps {
+export interface ViewMapProps extends IGameUIPropsBase, BaseProps {
     loc: ElementLocator;
     floorId?: FloorIds;
 }
 
 const viewMapProps = {
-    props: ['loc', 'floorId', 'controller', 'instance']
+    props: ['loc', 'floorId', 'controller', 'instance', 'state']
 } satisfies SetupComponentOptions<ViewMapProps>;
 
 export const ViewMap = defineComponent<ViewMapProps>(props => {
@@ -90,23 +84,16 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
 
     //#region 按键实现
 
-    const [key] = useKey();
-    key.realize('@viewMap_up', () => changeFloor(1), { type: 'down-repeat' })
-        .realize('@viewMap_down', () => changeFloor(-1), {
-            type: 'down-repeat'
-        })
-        .realize('@viewMap_up_ten', () => changeFloor(10))
-        .realize('@viewMap_down_ten', () => changeFloor(-10))
-        .realize('@viewMap_book', () => openBook())
-        .realize('@viewMap_fly', () => fly())
-        // .realize('@viewMap_reset', () => resetCamera())
-        .realize('confirm', () => close())
-        .realize('exit', (_, code, assist) => {
-            // 如果按键不能触发怪物手册，则关闭界面，因为怪物手册和退出默认使用同一个按键，需要特判
-            if (!key.willEmit(code, assist, 'book')) {
-                props.controller.close(props.instance);
-            }
-        });
+    const key = useKey(props.state.hotkey.system)!;
+    key.implement('@ui/view-map-next', () => changeFloor(1));
+    key.implement('@ui/view-map-prev', () => changeFloor(-1));
+    key.implement('@ui/view-map-next-10', () => changeFloor(10));
+    key.implement('@ui/view-map-prev-10', () => changeFloor(-10));
+    key.implement('@ui/view-map-book', () => openBook());
+    key.implement('@ui/view-map-fly', () => fly());
+    // .realize('@viewMap_reset', () => resetCamera())
+    key.implement('@common/confirm', () => close());
+    key.implement('@common/exit', () => props.controller.close(props.instance));
 
     //#region 功能函数
 

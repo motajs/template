@@ -273,17 +273,17 @@ export function initializeHotkey(state: IClientCore) {
             mode: HotkeyEmitMode.Continuous,
             interval: 500
         }),
-        system.addCommand('@ui/save-up', '选择框向右', {
+        system.addCommand('@ui/save-right', '选择框向右', {
             defaults: [[KeyCode.RightArrow]],
             mode: HotkeyEmitMode.Continuous,
             interval: 500
         }),
-        system.addCommand('@ui/save-up', '选择框向下', {
+        system.addCommand('@ui/save-down', '选择框向下', {
             defaults: [[KeyCode.DownArrow]],
             mode: HotkeyEmitMode.Continuous,
             interval: 500
         }),
-        system.addCommand('@ui/save-up', '选择框向左', {
+        system.addCommand('@ui/save-left', '选择框向左', {
             defaults: [[KeyCode.LeftArrow]],
             mode: HotkeyEmitMode.Continuous,
             interval: 500
@@ -298,12 +298,12 @@ export function initializeHotkey(state: IClientCore) {
             mode: HotkeyEmitMode.Continuous,
             interval: 500
         }),
-        system.addCommand('@ui/save-page-prev', '向前十页', {
+        system.addCommand('@ui/save-page-prev-10', '向前十页', {
             defaults: [[KeyCode.Ctrl, KeyCode.PageUp]],
             mode: HotkeyEmitMode.Continuous,
             interval: 500
         }),
-        system.addCommand('@ui/save-page-next', '向后十页', {
+        system.addCommand('@ui/save-page-next-10', '向后十页', {
             defaults: [[KeyCode.Ctrl, KeyCode.PageDown]],
             mode: HotkeyEmitMode.Continuous,
             interval: 500
@@ -343,7 +343,8 @@ export function initializeHotkey(state: IClientCore) {
         }),
         system.addCommand('@ui/view-map-book', '怪物手册', {
             defaults: [[KeyCode.KeyX]],
-            priority: 10
+            priority: 10,
+            block: true
         }),
         system.addCommand('@ui/view-map-fly', '传送至', {
             defaults: [[KeyCode.KeyG]],
@@ -352,6 +353,16 @@ export function initializeHotkey(state: IClientCore) {
         system.addCommand('@ui/view-map-reset', '重置视角', {
             defaults: [[KeyCode.KeyR]],
             priority: 10
+        })
+    ]);
+
+    //#endregion
+
+    //#region 输入框
+
+    hotkey.setGroup('@ui/input', '输入框', [
+        system.addCommand('@ui/input-confirm', '输入框确认', {
+            defaults: [[KeyCode.Enter]]
         })
     ]);
 

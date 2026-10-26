@@ -7,7 +7,8 @@ import {
     ExitFullscreen,
     Fullscreen,
     SoundVolume,
-    triggerFullscreen
+    triggerFullscreen,
+    useKey
 } from '@user/client-base';
 import { saveLoad } from './save';
 import { MainSceneUI } from './main';
@@ -18,8 +19,7 @@ import {
     ITransitionedController,
     IUIPropsBase,
     transitioned,
-    transitionedColor,
-    useKey
+    transitionedColor
 } from '@user/client-modules';
 
 /** 标题图 */
@@ -268,47 +268,39 @@ export const GameTitle = defineComponent<GameTitleProps>(props => {
 
     const selected = ref(0);
 
-    const [key] = useKey();
-    key.realize(
-        '@start_up',
-        () => {
-            selected.value--;
-            if (selected.value < 0) {
-                selected.value = 0;
+    const key = useKey(props.state.hotkey.system)!;
+    key.implement('@ui/start-up', () => {
+        selected.value--;
+        if (selected.value < 0) {
+            selected.value = 0;
+        }
+        if (selectHard.value) {
+            enterHard(selected.value);
+        } else {
+            enterMain(selected.value);
+        }
+    });
+    key.implement('@ui/start-down', () => {
+        selected.value++;
+        if (selectHard.value) {
+            if (selected.value > hard.length - 1) {
+                selected.value = hard.length - 1;
             }
-            if (selectHard.value) {
-                enterHard(selected.value);
-            } else {
-                enterMain(selected.value);
+            enterHard(selected.value);
+        } else {
+            if (selected.value > buttons.length - 1) {
+                selected.value = buttons.length - 1;
             }
-        },
-        { type: 'down' }
-    )
-        .realize(
-            '@start_down',
-            () => {
-                selected.value++;
-                if (selectHard.value) {
-                    if (selected.value > hard.length - 1) {
-                        selected.value = hard.length - 1;
-                    }
-                    enterHard(selected.value);
-                } else {
-                    if (selected.value > buttons.length - 1) {
-                        selected.value = buttons.length - 1;
-                    }
-                    enterMain(selected.value);
-                }
-            },
-            { type: 'down' }
-        )
-        .realize('confirm', () => {
-            if (selectHard.value) {
-                clickButton(hard[selected.value].code, selected.value);
-            } else {
-                clickButton(buttons[selected.value].code, selected.value);
-            }
-        });
+            enterMain(selected.value);
+        }
+    });
+    key.implement('@common/confirm', () => {
+        if (selectHard.value) {
+            clickButton(hard[selected.value].code, selected.value);
+        } else {
+            clickButton(buttons[selected.value].code, selected.value);
+        }
+    });
 
     //#region 鼠标操作
 

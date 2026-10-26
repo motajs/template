@@ -1,16 +1,18 @@
 import { ElementLocator, Font } from '@motajs/render';
 import { computed, defineComponent, reactive, ref } from 'vue';
-import { Background, Selection } from '@user/client-base';
+import { Background } from './background';
 import {
     TextContent,
     TextContentProps,
-    TextAlign,
+    Selection,
     Page,
-    PageExpose
+    PageExpose,
+    TextAlign,
+    IGameUIPropsBase,
+    useKey
 } from '@user/client-base';
 import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 import { sleep } from 'mutate-animate';
-import { IGameUIPropsBase, useKey } from '@user/client-base';
 
 export interface ConfirmBoxProps extends IGameUIPropsBase, TextContentProps {
     /** 确认框的提示文本内容 */
@@ -60,7 +62,8 @@ const confirmBoxProps = {
         'defaultYes',
         'color',
         'border',
-        'freshScope'
+        'freshScope',
+        'state'
     ],
     emits: ['no', 'yes']
 } satisfies SetupComponentOptions<
@@ -275,7 +278,8 @@ const choicesProps = {
         'pad',
         'interval',
         'selected',
-        'freshScope'
+        'freshScope',
+        'state'
     ],
     emits: ['choose']
 } satisfies SetupComponentOptions<
@@ -475,7 +479,7 @@ export const Choices = defineComponent<
     };
 
     const key = useKey(props.state.hotkey.system, props.freshScope)!;
-    key.implement('moveUp', () => {
+    key.implement('@common/select-up', () => {
         if (selected.value === 0) {
             if (pageCom.value?.now() !== 0) {
                 pageCom.value?.movePage(-1);
@@ -485,7 +489,7 @@ export const Choices = defineComponent<
             selected.value--;
         }
     });
-    key.implement('moveDown', () => {
+    key.implement('@common/select-down', () => {
         const page = pageCom.value?.now() ?? 0;
         if (selected.value === choiceCountPerPage.value - 1) {
             if (page < pages.value - 1) {
@@ -499,9 +503,9 @@ export const Choices = defineComponent<
             }
         }
     });
-    key.implement('moveLeft', () => pageCom.value?.movePage(-1));
-    key.implement('moveRight', () => pageCom.value?.movePage(1));
-    key.implement('confirm', () => {
+    key.implement('@common/select-left', () => pageCom.value?.movePage(-1));
+    key.implement('@common/select-right', () => pageCom.value?.movePage(1));
+    key.implement('@common/confirm', () => {
         const page = pageCom.value?.now() ?? 0;
         const index = page * choiceCountPerPage.value + selected.value;
         emit('choose', props.choices[index][0]);

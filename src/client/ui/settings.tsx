@@ -8,7 +8,8 @@ import {
     ChoicesProps,
     getConfirm,
     waitbox,
-    IGameUIPropsBase
+    IGameUIPropsBase,
+    useKey
 } from '@user/client-base';
 import { gameKey, generateKeyboardEvent } from '@motajs/system';
 import { getInput } from '@user/client-base';
@@ -17,9 +18,12 @@ import { saveWithExist } from './save';
 import { compressToBase64 } from 'lz-string';
 import { ViewMapUI } from './viewmap';
 import { CENTER_LOC, FULL_LOC, MAIN_HEIGHT, POP_BOX_WIDTH } from '@/client';
-import { IUIPropsBase, useKey } from '@user/client-modules';
 
-export interface MainSettingsProps extends Partial<ChoicesProps>, IUIPropsBase {
+// 这个类型有点离谱了，换成新的设置系统之后要改
+export interface MainSettingsProps
+    extends
+        Partial<Omit<ChoicesProps, keyof IGameUIPropsBase>>,
+        IGameUIPropsBase {
     loc: ElementLocator;
 }
 
@@ -54,8 +58,8 @@ export const MainSettings = defineComponent<MainSettingsProps>(props => {
     ];
 
     const controller: IUIController<IGameUIPropsBase> = props.controller;
-    const [key, scope] = useKey();
-    key.realize('exit', () => props.controller.close(props.instance));
+    const key = useKey(props.state!.hotkey.system)!;
+    key.implement('@common/exit', () => props.controller.close(props.instance));
 
     const choose = async (key: ChoiceKey) => {
         switch (key) {
@@ -120,7 +124,8 @@ export const MainSettings = defineComponent<MainSettingsProps>(props => {
             onChoose={choose}
             maxHeight={MAIN_HEIGHT - 64}
             interval={8}
-            scope={scope}
+            freshScope={false}
+            state={props.state!}
         />
     );
 }, mainSettingsProps);
@@ -146,8 +151,8 @@ export const ReplaySettings = defineComponent<MainSettingsProps>(props => {
         [ReplayChoice.Back, '返回游戏']
     ];
 
-    const [key, scope] = useKey();
-    key.realize('exit', () => props.controller.close(props.instance));
+    const key = useKey(props.state!.hotkey.system)!;
+    key.implement('@common/exit', () => props.controller.close(props.instance));
 
     const choose = async (key: ChoiceKey) => {
         switch (key) {
@@ -241,7 +246,8 @@ export const ReplaySettings = defineComponent<MainSettingsProps>(props => {
             width={POP_BOX_WIDTH}
             onChoose={choose}
             interval={8}
-            scope={scope}
+            freshScope={false}
+            state={props.state!}
         />
     );
 }, mainSettingsProps);
@@ -265,8 +271,8 @@ export const GameInfo = defineComponent<MainSettingsProps>(props => {
         [GameInfoChoice.Back, '返回主菜单']
     ];
 
-    const [key, scope] = useKey();
-    key.realize('exit', () => props.controller.close(props.instance));
+    const key = useKey(props.state!.hotkey.system)!;
+    key.implement('@common/exit', () => props.controller.close(props.instance));
 
     const choose = async (key: ChoiceKey) => {
         switch (key) {
@@ -332,7 +338,8 @@ export const GameInfo = defineComponent<MainSettingsProps>(props => {
             width={POP_BOX_WIDTH}
             onChoose={choose}
             interval={8}
-            scope={scope}
+            freshScope={false}
+            state={props.state!}
         />
     );
 }, mainSettingsProps);
@@ -361,8 +368,8 @@ export const SyncSave = defineComponent<MainSettingsProps>(props => {
     ];
 
     const controller: IUIController<IGameUIPropsBase> = props.controller;
-    const [key, scope] = useKey();
-    key.realize('exit', () => props.controller.close(props.instance));
+    const key = useKey(props.state!.hotkey.system)!;
+    key.implement('@common/exit', () => props.controller.close(props.instance));
 
     const choose = async (key: ChoiceKey) => {
         switch (key) {
@@ -406,7 +413,8 @@ export const SyncSave = defineComponent<MainSettingsProps>(props => {
             choices={choices}
             onChoose={choose}
             interval={8}
-            scope={scope}
+            freshScope={false}
+            state={props.state!}
         />
     );
 }, mainSettingsProps);
@@ -418,8 +426,8 @@ export const SyncSaveSelect = defineComponent<MainSettingsProps>(props => {
         [SyncSaveChoice.Back, '返回上一级']
     ];
 
-    const [key, scope] = useKey();
-    key.realize('exit', () => props.controller.close(props.instance));
+    const key = useKey(props.state!.hotkey.system)!;
+    key.implement('@common/exit', () => props.controller.close(props.instance));
 
     const choose = async (key: ChoiceKey) => {
         switch (key) {
@@ -463,7 +471,8 @@ export const SyncSaveSelect = defineComponent<MainSettingsProps>(props => {
             choices={choices}
             onChoose={choose}
             interval={8}
-            scope={scope}
+            freshScope={false}
+            state={props.state!}
         />
     );
 }, mainSettingsProps);
@@ -475,8 +484,8 @@ export const DownloadSaveSelect = defineComponent<MainSettingsProps>(props => {
         [SyncSaveChoice.Back, '返回上一级']
     ];
 
-    const [key, scope] = useKey();
-    key.realize('exit', () => props.controller.close(props.instance));
+    const key = useKey(props.state!.hotkey.system)!;
+    key.implement('@common/exit', () => props.controller.close(props.instance));
 
     const choose = async (key: ChoiceKey) => {
         switch (key) {
@@ -536,7 +545,8 @@ export const DownloadSaveSelect = defineComponent<MainSettingsProps>(props => {
             choices={choices}
             onChoose={choose}
             interval={8}
-            scope={scope}
+            freshScope={false}
+            state={props.state!}
         />
     );
 }, mainSettingsProps);
@@ -548,8 +558,8 @@ export const ClearSaveSelect = defineComponent<MainSettingsProps>(props => {
         [SyncSaveChoice.Back, '返回上一级']
     ];
 
-    const [key, scope] = useKey();
-    key.realize('exit', () => props.controller.close(props.instance));
+    const key = useKey(props.state!.hotkey.system)!;
+    key.implement('@common/exit', () => props.controller.close(props.instance));
 
     const choose = async (key: ChoiceKey) => {
         switch (key) {
@@ -649,7 +659,8 @@ export const ClearSaveSelect = defineComponent<MainSettingsProps>(props => {
             choices={choices}
             onChoose={choose}
             interval={8}
-            scope={scope}
+            freshScope={false}
+            state={props.state!}
         />
     );
 }, mainSettingsProps);

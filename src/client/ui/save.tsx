@@ -15,11 +15,12 @@ import {
     Thumbnail,
     TipStore,
     IGameUIPropsBase,
-    MAP_BLOCK_WIDTH
+    MAP_BLOCK_WIDTH,
+    useKey
 } from '@user/client-base';
 import { HALF_HEIGHT, HALF_WIDTH, MAP_WIDTH, POP_BOX_WIDTH } from '@/client';
 import { adjustGrid, IGridLayoutData } from '@user/client-base';
-import { getSave, IUIPropsBase, SaveData, useKey } from '@user/client-modules';
+import { getSave, IUIPropsBase, SaveData } from '@user/client-modules';
 
 /** 存档缩略图尺寸 */
 export const SAVE_ITEM_SIZE = MAP_BLOCK_WIDTH * 10;
@@ -65,7 +66,7 @@ export type SaveEmits = {
 };
 
 const saveProps = {
-    props: ['loc', 'controller', 'instance', 'mode'],
+    props: ['loc', 'controller', 'instance', 'mode', 'state'],
     emits: ['delete', 'emit', 'exit']
 } satisfies SetupComponentOptions<SaveProps, SaveEmits, keyof SaveEmits>;
 
@@ -299,8 +300,8 @@ export const Save = defineComponent<SaveProps, SaveEmits, keyof SaveEmits>(
 
         // #region 按键实现
 
-        const [key] = useKey();
-        key.realize('confirm', () => {
+        const key = useKey(props.state.hotkey.system)!;
+        key.implement('@common/confirm', () => {
             if (selected.value === 0) {
                 emitSave(-1);
             } else {
@@ -308,92 +309,74 @@ export const Save = defineComponent<SaveProps, SaveEmits, keyof SaveEmits>(
                     (grid.value.count - 1) * now.value + selected.value - 1
                 );
             }
-        })
-            .realize('exit', exit)
-            .realize('save', () => {
-                if (props.mode === SaveMode.Save) exit();
-            })
-            .realize('load', () => {
-                if (props.mode === SaveMode.Load) exit();
-            })
-            .realize(
-                '@save_pageUp',
-                () => {
-                    pageRef.value?.movePage(1);
-                },
-                { type: 'down-repeat' }
-            )
-            .realize(
-                '@save_pageDown',
-                () => {
+        });
+        key.implement('@common/exit', exit);
+        key.implement('@ui/save', () => {
+            if (props.mode === SaveMode.Save) exit();
+        });
+        key.implement('@ui/load', () => {
+            if (props.mode === SaveMode.Load) exit();
+        });
+        key.implement('@ui/save-page-prev', () => {
+            pageRef.value?.movePage(-1);
+        });
+        key.implement('@ui/save-page-next', () => {
+            pageRef.value?.movePage(1);
+        });
+        key.implement('@ui/save-page-prev-10', () => {
+            pageRef.value?.movePage(-10);
+        });
+        key.implement('@ui/save-page-next-10', () => {
+            pageRef.value?.movePage(10);
+        });
+        key.implement('@ui/save-up', () => {
+            if (!pageRef.value) return;
+            const cols = grid.value.cols;
+            const count = grid.value.count;
+            if (selected.value >= cols) {
+                selected.value -= cols;
+            } else {
+                if (now.value === 0) {
+                    selected.value = 0;
+                } else {
+                    const selectedCol = selected.value % cols;
+                    selected.value = count - (cols - selectedCol);
                     pageRef.value?.movePage(-1);
-                },
-                { type: 'down-repeat' }
-            )
-            .realize(
-                '@save_up',
-                () => {
-                    if (!pageRef.value) return;
-                    const cols = grid.value.cols;
-                    const count = grid.value.count;
-                    if (selected.value >= cols) {
-                        selected.value -= cols;
-                    } else {
-                        if (now.value === 0) {
-                            selected.value = 0;
-                        } else {
-                            const selectedCol = selected.value % cols;
-                            selected.value = count - (cols - selectedCol);
-                            pageRef.value?.movePage(-1);
-                        }
-                    }
-                },
-                { type: 'down-repeat' }
-            )
-            .realize(
-                '@save_down',
-                () => {
-                    const cols = grid.value.cols;
-                    const count = grid.value.count;
-                    if (selected.value < count - cols) {
-                        selected.value += cols;
-                    } else {
-                        const selectedCol = selected.value % cols;
-                        selected.value = selectedCol;
-                        pageRef.value?.movePage(1);
-                    }
-                },
-                { type: 'down-repeat' }
-            )
-            .realize(
-                '@save_left',
-                () => {
-                    if (!pageRef.value) return;
-                    const count = grid.value.count;
-                    if (selected.value > 0) {
-                        selected.value--;
-                    } else {
-                        if (now.value > 0) {
-                            selected.value = count;
-                            pageRef.value?.movePage(-1);
-                        }
-                    }
-                },
-                { type: 'down-repeat' }
-            )
-            .realize(
-                '@save_right',
-                () => {
-                    const count = grid.value.count;
-                    if (selected.value < count) {
-                        selected.value++;
-                    } else {
-                        selected.value = 0;
-                        pageRef.value?.movePage(1);
-                    }
-                },
-                { type: 'down-repeat' }
-            );
+                }
+            }
+        });
+        key.implement('@ui/save-down', () => {
+            const cols = grid.value.cols;
+            const count = grid.value.count;
+            if (selected.value < count - cols) {
+                selected.value += cols;
+            } else {
+                const selectedCol = selected.value % cols;
+                selected.value = selectedCol;
+                pageRef.value?.movePage(1);
+            }
+        });
+        key.implement('@ui/save-left', () => {
+            if (!pageRef.value) return;
+            const count = grid.value.count;
+            if (selected.value > 0) {
+                selected.value--;
+            } else {
+                if (now.value > 0) {
+                    selected.value = count;
+                    pageRef.value?.movePage(-1);
+                }
+            }
+        });
+        key.implement('@ui/save-right', () => {
+            const count = grid.value.count;
+            if (selected.value < count) {
+                selected.value++;
+            } else {
+                selected.value = 0;
+                pageRef.value?.movePage(1);
+            }
+        });
 
         //#region 事件监听
 
