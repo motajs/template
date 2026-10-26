@@ -11,7 +11,6 @@ import {
     StepForward,
     ViewMapIcon
 } from '@user/client-base';
-import { gameKey, generateKeyboardEvent } from '@motajs/system';
 import { linear } from 'mutate-animate';
 import { KeyCode } from '@motajs/system';
 import { Progress } from '@user/client-base';
@@ -96,14 +95,14 @@ export const PlayingToolbar = defineComponent<
     const equip = () => core.openEquipbox(true);
     const shop = () => core.openQuickShop(true);
     const key = () => {
-        getVitualKeyOnce().then(value => {
-            gameKey.emitKey(
-                value.key,
-                value.assist,
-                'up',
-                generateKeyboardEvent(value.key, value.assist)
-            );
-        });
+        // getVitualKeyOnce().then(value => {
+        //     gameKey.emitKey(
+        //         value.key,
+        //         value.assist,
+        //         'up',
+        //         generateKeyboardEvent(value.key, value.assist)
+        //     );
+        // });
     };
     const undo = () => core.doSL('autoSave', 'load');
     const redo = () => core.doSL('autoSave', 'reload');
@@ -299,13 +298,13 @@ export const NumpadToolbar = defineComponent<
     };
 
     const clickNum = (num: number) => {
-        const bin = generateBinary([
-            ctrlEnabled.value,
-            shiftEnabled.value,
-            altEnabled.value
-        ]);
-        const code = (KeyCode.Digit0 + num) as KeyCode;
-        gameKey.emitKey(code, bin, 'up', generateKeyboardEvent(code, bin));
+        // const bin = generateBinary([
+        //     ctrlEnabled.value,
+        //     shiftEnabled.value,
+        //     altEnabled.value
+        // ]);
+        // const code = (KeyCode.Digit0 + num) as KeyCode;
+        // gameKey.emitKey(code, bin, 'up', generateKeyboardEvent(code, bin));
     };
 
     return () => (

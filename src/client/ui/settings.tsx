@@ -11,7 +11,6 @@ import {
     IGameUIPropsBase,
     useKey
 } from '@user/client-base';
-import { gameKey, generateKeyboardEvent } from '@motajs/system';
 import { getInput } from '@user/client-base';
 import { openStatistics } from './statistics';
 import { saveWithExist } from './save';
@@ -68,14 +67,14 @@ export const MainSettings = defineComponent<MainSettingsProps>(props => {
                 break;
             }
             case MainChoice.VirtualKey: {
-                getVitualKeyOnce().then(value => {
-                    gameKey.emitKey(
-                        value.key,
-                        value.assist,
-                        'up',
-                        generateKeyboardEvent(value.key, value.assist)
-                    );
-                });
+                // getVitualKeyOnce().then(value => {
+                //     gameKey.emitKey(
+                //         value.key,
+                //         value.assist,
+                //         'up',
+                //         generateKeyboardEvent(value.key, value.assist)
+                //     );
+                // });
                 break;
             }
             case MainChoice.ViewMap: {
