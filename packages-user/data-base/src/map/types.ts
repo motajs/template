@@ -877,7 +877,7 @@ export interface IPassCheckHandler extends IDataCommonExtended {
 
 export interface IPassPredicate {
     /**
-     * 检查在指定楼层中，能否从某一个移动入某一格，若会产生撞击，则此项应返回 `false`
+     * 检查在指定楼层中，能否从某一个移动入某一格，若会产生撞击，则此项应返回 `true`，且 `shouldHit` 也返回 `true`
      * @param handler 通行性检查信息对象
      */
     canPass(handler: IPassCheckHandler): boolean;

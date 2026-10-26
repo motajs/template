@@ -216,7 +216,7 @@ export interface IObjectMoverHooks<T extends IObjectMovable> extends IHookBase {
     onSetPos?(x: number, y: number, tile: T, mover: IObjectMover<T>): void;
 
     /**
-     * 当设置移动对象的朝向时触发，仅 `setFaceDir` 可以触发
+     * 当设置移动对象的朝向方向时触发，仅 `setFaceDir` 可以触发
      * @param dir 面朝朝向
      * @param tile 移动器绑定的图块
      * @param mover 当前移动器
@@ -224,7 +224,7 @@ export interface IObjectMoverHooks<T extends IObjectMovable> extends IHookBase {
     onSetFaceDir?(dir: FaceDirection, tile: T, mover: IObjectMover<T>): void;
 
     /**
-     * 当设置移动对象的朝向时触发，仅 `setMoveDir` 可以触发
+     * 当设置移动对象的移动方向时触发，仅 `setMoveDir` 可以触发
      * @param dir 移动朝向
      * @param tile 移动器绑定的图块
      * @param mover 当前移动器
@@ -301,7 +301,7 @@ export interface IObjectMover<T extends IObjectMovable> extends IHookable<
     stepFace(move: FaceDirection, face: FaceDirection, count?: number): this;
 
     /**
-     * 追加若干个前进步，沿当前移动方向移动
+     * 追加若干个前进步，沿当前朝向方向移动
      * @param count 追加次数，默认 1
      */
     forward(count?: number): this;

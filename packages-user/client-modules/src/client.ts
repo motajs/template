@@ -201,7 +201,7 @@ export class ClientCore extends CoreState implements IClientCore {
             }
             const dataDeps = this.getDataDependencies(plugin);
             const clientDeps = this.getClientDependencies(plugin);
-            await plugin.initialize(this, dataDeps, clientDeps);
+            await plugin.afterLoad(this, dataDeps, clientDeps);
             holder.status = PluginStatus.Loaded;
         }
     }

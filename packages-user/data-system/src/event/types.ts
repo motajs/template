@@ -36,7 +36,7 @@ export interface IBlockEventEnv extends IDataBaseExtended {
     readonly heroLocator: Readonly<ITileLocator>;
     /** 事件系统对象 */
     readonly system: IGameEventSystem;
-    /** 触发事件时玩家的位置 */
+    /** 触发事件时玩家所在的楼层 */
     readonly heroFloor: string | undefined;
     /** 触发事件时触发者的位置，有可能不存在 */
     readonly triggerLocator: Readonly<ITileLocator> | null;

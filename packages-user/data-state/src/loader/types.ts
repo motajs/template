@@ -32,7 +32,7 @@ export interface IMotaDataLoader extends IHookable<IMotaDataLoaderHooks> {
 
     /**
      * 添加核心配置文件，仅允许在加载前调用，之后调用无效。
-     * 文件必须放在 `src/content` 下，并填写相对于 `src/content` 文件夹的路径，文件包含如下要求：
+     * 文件必须放在 `src` 下，并填写相对于 `src` 文件夹的路径，文件包含如下要求：
      *
      * - 文件必须为 `jsonc` 格式
      * - 文件的注释必须全部集中在开头
@@ -45,7 +45,7 @@ export interface IMotaDataLoader extends IHookable<IMotaDataLoaderHooks> {
 
     /**
      * 添加额外配置文件，仅允许在 `onCoreConfigLoaded` 中调用或在加载前调用，加载中及加载后后调用无效。
-     * 文件必须放在 `src/content` 下，并填写相对于 `src/content` 文件夹的路径，文件包含如下要求：
+     * 文件必须放在 `src` 下，并填写相对于 `src` 文件夹的路径，文件包含如下要求：
      *
      * - 文件必须为 `jsonc` 格式
      * - 文件的注释必须全部集中在开头

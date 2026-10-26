@@ -83,6 +83,7 @@ export class MotaDataLoader
 
     async *start(): AsyncIterable<number> {
         if (this.loading || this.dataLoaded) return;
+        this.loading = true;
 
         // 首先加载核心配置
         const processor = new PrefixedJSONCProcessor<ICoreStateCoreConfig>(
@@ -100,14 +101,21 @@ export class MotaDataLoader
             coreTask.setProcessor(processor);
             coreTask.setStarter(this.starter);
             this.manager.addTask(coreTask);
+            coreTask.loaded().then(obj => {
+                if (this.configMap.has(id)) {
+                    logger.error(68, id);
+                    return;
+                }
+                this.configMap.set(id, obj);
+            });
         }
         yield* this.manager.load();
 
-        // 然后加载其他配置文件
         await Promise.all(
             this.forEachHook(hook => hook.onCoreConfigLoaded?.(this))
         );
 
+        // 然后加载其他配置文件
         for (const [id, url] of this.extraConfigs) {
             const task = new LoadTask({
                 identifier: id,
@@ -138,6 +146,7 @@ export class MotaDataLoader
 
         yield* this.manager.load();
 
+        this.dataLoaded = true;
         this.loadResolve();
     }
 

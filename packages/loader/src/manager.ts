@@ -51,7 +51,7 @@ export class LoadManager
     async *load(): AsyncIterable<number> {
         for (const task of this.addedTasks) {
             if (!task.contentLoaded) {
-                task.start();
+                Array.fromAsync(task.start());
             }
         }
         while (true) {
@@ -90,7 +90,7 @@ export class LoadManager
     }
 
     getTotalByte(): number {
-        return this.loaded;
+        return this.total;
     }
 
     getLoadedTasks(): number {
