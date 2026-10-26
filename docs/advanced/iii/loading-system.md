@@ -206,7 +206,7 @@ export class BaseURLLoadStarter implements ILoadTaskStarter {
 
 ## 进度
 
-`LoadManager` 是异步迭代器：`load()` 每推进一次，迭代值就是当前已加载的字节数。`MotaDataLoader.start()` 把同样的迭代值转发出来，所以 `for await` 迭代加载器就能跟着加载进度走。
+`LoadManager` 的 `load()` 返回异步迭代器：每推进一次，迭代值就是当前已加载的字节数。`MotaDataLoader.start()` 把同样的迭代值转发出来，所以 `for await` 迭代加载器就能跟着加载进度走。
 
 加载过程中可以读取这些计数：
 
