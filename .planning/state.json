@@ -57,7 +57,7 @@
   "next": {
     "command": "/gsd:progress --next",
     "label": "Advance to the next step",
-    "reason": "Phase 10 of 10 · in progress（中级 + 高级 I + 高级 II 已收尾）"
+    "reason": "Phase 10 of 10 · in progress（中级 + 高级 I 9 篇 + 高级 II 已收尾）"
   },
-  "updated_at": "2026-10-23T00:00:00.000Z"
+  "updated_at": "2026-10-24T00:00:00.000Z"
 }

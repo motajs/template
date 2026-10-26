@@ -547,14 +547,14 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. 数据端缺陷修复 | 15/16 | Complete（07-16 superseded） | - |
 | 8. 测试重构与接口对齐 | 11/11 | Complete    | 2026-10-08 |
 | 9. 最小浏览器可运行版本 | 15/16 | In Progress|  |
-| 10. 文档重构 | 24/27 | In Progress | - |
+| 10. 文档重构 | 29/32 | In Progress | - |
 
 ### Phase 10: 文档重构
 
-**Goal:** 重构过老、结构不佳、新人难懂的项目文档，面向多背景读者（完全新手 / 不懂代码的作者 / 有基础的作者 / AI Agent）提供分层指南。本阶段采用「伞阶段 + 增量派发」：每次只规划执行一个已派发的具体小任务。**第一批已派发 = 中级教程（`docs/intermediate/`，24 篇中文 markdown）+ 在 VitePress 站点注册它们 + 旧内容清空（D-04 并入本批）**（D-01..D-44）。**第二批已派发 = 高级教程 I（`docs/advanced/`，7 篇数据端文档）+ 站点注册 + 独立读者人格审阅 + 用户主导修订循环**（D-53..D-57）。**第三批已完成 = 高级教程 II「深入定制」（`docs/advanced/ii/`，10 篇数据端文档）+ 站点注册 + 独立读者人格审阅 + 用户主导修订循环**（D-67，2026-10-23 收尾）。
-**Requirements**: （无专属需求 ID；以 `10-CONTEXT.md` 的 D-01..D-74 为需求基线，验收锚在 D-09：用户人工审阅 + 链接全部有效 + 构建通过）
+**Goal:** 重构过老、结构不佳、新人难懂的项目文档，面向多背景读者（完全新手 / 不懂代码的作者 / 有基础的作者 / AI Agent）提供分层指南。本阶段采用「伞阶段 + 增量派发」：每次只规划执行一个已派发的具体小任务。**第一批已派发 = 中级教程（`docs/intermediate/`，24 篇中文 markdown）+ 在 VitePress 站点注册它们 + 旧内容清空（D-04 并入本批）**（D-01..D-44）。**第二批已派发 = 高级教程 I（`docs/advanced/`，7 篇数据端文档）+ 站点注册 + 独立读者人格审阅 + 用户主导修订循环**（D-53..D-57）。**第三批已完成 = 高级教程 II「深入定制」（`docs/advanced/ii/`，10 篇数据端文档）+ 站点注册 + 独立读者人格审阅 + 用户主导修订循环**（D-67，2026-10-23 收尾）。**第四批已完成 = 高级 I 补写（移动 Mover + FaceHandler 系列，`docs/advanced/`，2 篇）+ 站点注册 + 读者/用户修订**（D-75，2026-10-24 收尾）。
+**Requirements**: （无专属需求 ID；以 `10-CONTEXT.md` 的 D-01..D-83 为需求基线，验收锚在 D-09：用户人工审阅 + 链接全部有效 + 构建通过）
 **Depends on:** Phase 9
-**Plans:** 24/32 completed（第一批：中级教程 24 篇 + 站点注册 + D-09 复审修订；第二批：高级 I 7 篇 + 注册 + 读者审阅 + 用户修订循环；第三批：高级 II 10 篇 + 注册 + 读者审阅 + 用户修订循环；第四批：高级 I 补写 2 篇 + 注册 + 读者审阅 + 用户修订循环，待执行）。**未完成 3 个**（第一批遗留）：`10-06`（中级全批验收）、`10-11`（中级读者审阅）、`10-12`（中级最终验收）——其范围已被后续 D-09 修订与高级 I/II 期间的最终状态覆盖，缺独立 SUMMARY，待补跑或并入后续验收。
+**Plans:** 29/32 completed（第一批：中级教程 24 篇 + 站点注册 + D-09 复审修订；第二批：高级 I 7 篇 + 注册 + 读者审阅 + 用户修订循环；第三批：高级 II 10 篇 + 注册 + 读者审阅 + 用户修订循环；第四批：高级 I 补写 Mover + FaceHandler 2 篇 + 注册 + 读者/用户修订，已完成）。**未完成 3 个**（第一批遗留）：`10-06`（中级全批验收）、`10-11`（中级读者审阅）、`10-12`（中级最终验收）——其范围已被后续 D-09 修订与高级 I/II 期间的最终状态覆盖，缺独立 SUMMARY，待补跑或并入后续验收。
 
 Plans:
 - [x] 10-01-PLAN.md — Wave 0：旧内容清空 + 站点注册（删除 `docs/guide`、`docs/dev`、`docs/logger`、`docs/api` 与首页 `docs/index.md`；清理 `config.ts` 旧 nav/sidebar 键并解除 apiSidebar/api 依赖；`api.ts` 加缺失目录守卫；新增 nav 入口 + `sidebar['/intermediate/']` 4 组/24 条；报告并等待 checkpoint）
@@ -584,11 +584,11 @@ Plans:
 - [x] 10-25-PLAN.md — 高级 II 导览 + 侧边栏注册（`/advanced/ii/` 九篇、分组名待用户确认）+ 互链与全量构建
 - [x] 10-26-PLAN.md — 高级 II 独立读者人格审阅（高代码能力人格，不同于高级 I）→ 问题清单 → 迭代修正（≤3 轮）→ 复审清零
 - [x] 10-27-PLAN.md — 高级 II 用户主导修订循环 → 用户确认 → 最终格式 / 构建 / SUMMARY 收尾
-- [ ] 10-28-PLAN.md — 高级 I 补写：移动 Mover（三件套 / 移动计划与执行 / 控制器 / 步骤类型 / 钩子 / 自定义移动器）
-- [ ] 10-29-PLAN.md — 高级 I 补写：FaceHandler 系列（`FaceDirection` / `FaceGroup` / `IFaceHandler` / 内置处理器 / 自定义处理器 / `IRoleFaceBinder`）
-- [ ] 10-30-PLAN.md — 高级 I 导览 7 → 9 + 侧边栏注册 + 两篇互链收口 + 全量构建
-- [ ] 10-31-PLAN.md — 两篇补写内容的独立读者审阅（沿用高级 I 人格）→ 问题清单 → 迭代修正（≤3 轮）→ 复审清零
-- [ ] 10-32-PLAN.md — 两篇补写内容的用户主导修订循环 → 用户确认 → 最终格式 / 构建 / SUMMARY 收尾
+- [x] 10-28-PLAN.md — 高级 I 补写：移动 Mover（三件套 / 移动计划与执行 / 控制器 / 步骤类型 / 钩子 / 自定义移动器）
+- [x] 10-29-PLAN.md — 高级 I 补写：FaceHandler 系列（`FaceDirection` / `FaceGroup` / `IFaceHandler` / 内置处理器 / 自定义处理器 / `IRoleFaceBinder`）
+- [x] 10-30-PLAN.md — 高级 I 导览 7 → 9 + 侧边栏注册 + 两篇互链收口 + 全量构建
+- [x] 10-31-PLAN.md — 两篇补写内容的独立读者审阅（沿用高级 I 人格）→ 问题清单 → 迭代修正（≤3 轮）→ 复审清零
+- [x] 10-32-PLAN.md — 两篇补写内容的用户主导修订循环 → 用户确认 → 最终格式 / 构建 / SUMMARY 收尾
 
 **说明：** 每篇中级教程遵循 `10-CONTEXT.md` D-21..D-44 的逐篇要点与阅读顺序（4/8/9/3）。**旧内容删除已并入本批（D-04，Wave 0 / 10-01）**：删除 `docs/guide/*`、`docs/dev/*`、`docs/logger/*`、`docs/api/*` 与首页 `docs/index.md`，并清理 `docs/.vitepress/config.ts` 的旧 `nav`/`sidebar` 键。文档改动为 `docs/intermediate/*.md`（新增）、`docs/.vitepress/config.ts` 与 `docs/.vitepress/api.ts`（缺失目录守卫，保留按包生成机制）。构建命令 `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`；`init.ts` 在 `docs/api/` 缺失时安全跳过。本机 PowerShell 禁止 `pnpm.ps1`，命令经 `cmd /c "..."` 执行。
 
