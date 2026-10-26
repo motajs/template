@@ -73,3 +73,19 @@
 - 移除文档模板措辞：`hooks-in-depth.md`、`plugin-system.md`（含两个章节标题与代码注释）、`declarative-vs-imperative.md`、`replay-consistency.md`、`saveable-content.md`、`data-stores.md`；改用「示例」或直接去掉标签。
 - 保留游戏领域术语：`怪物模板`、`原始模板`、`默认模板`、`怪物属性模板` 等。
 - 验证：`prettier --write` 十篇 unchanged；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete in 18.62s`，无 dead link；CRLF 与单 H1 保持。
+
+## 最终确认（2026-10-24）
+
+**用户原文：**「可以，整体没有问题」
+
+**最终状态：** 两篇补写内容与高级 I 导览经三轮用户意见收敛（用法优先重构 → 系统模型与元信息清理 → 模板 / 需改标记移除），无待处理项，用户确认通过。
+
+用户最终确认：通过
+
+### 收尾记录
+
+- 待处理项：0。第 1 轮标记为 `状态：已执行`（2026-10-24）；第 2 轮 M1 / M2 / F1 / F2 / F3 全部 `状态：已处理`；第 3 轮为全量模板 / 需改标记清理。
+- 格式：`node node_modules/prettier/bin/prettier.cjs --write docs/advanced/mover.md docs/advanced/face-handler.md` 两篇均 `unchanged`。
+- 构建：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` 退出码 0，`build complete in 14.31s`，无 dead link。
+- 结构：两篇 CRLF、单 H1、kebab-case；各有「返回高级 I 导览」结尾；侧边栏高级 I 仍 9 个目标；正文无渲染端内容，渲染端 / 编辑器 / 高级 III 仍为占位。
+- 非阻断残项：无新增。低概率但按 D-75 仍须覆盖的内容（自定义处理器模板、勇士顶层实现示例、`IRoleFaceBinder` 细节）保留在末尾。

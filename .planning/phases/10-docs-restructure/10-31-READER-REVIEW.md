@@ -95,3 +95,35 @@
 
 - `pnpm exec prettier --write docs/advanced/mover.md docs/advanced/face-handler.md docs/advanced/index.md`：通过（mover、index 有格式变动）。
 - `pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build`：`build complete in 19.98s`，无 dead link 报错。
+
+## 复审收敛结论（收尾）
+
+对照首轮清单、第 1 轮修复记录、第 2 轮复审表与两篇正文现状，逐条核对结论如下。
+
+| # | 首轮问题 | 复审结论 | 依据 |
+| --- | --- | --- | --- |
+| B-01 | `start()` 返回 `null` 时该等谁、该停谁 | 已消除 | 「边界与注意」只用上一次 `start()` 保存的 `controller` 等 `onEnd` 或对它 `stop()`，写明 `IHeroMover` 没有 `stop()`；返回 `null` 时队列未被消费也一并说明 |
+| B-02 | 勇士 `useTopImplementation` 缺契约与示例 | 已消除 | 「勇士的顶层实现」列出 `IHeroMoveTopImpl` 六个方法与 `IHeroMoveTopHandler` 携带的字段，说明与 `DefaultHeroMoveTopImpl` 的关系，并给出包装默认实现的完整类 |
+| B-03 | `MapTileBase.setFaceDirection` 的降级语义与源码不一致 | 已消除 | 第 1 轮按方法注释口径改写；第 2 轮按 D-80 把实现差异移出正文，正文只留使用结论 |
+| B-04 | `Dir4FaceHandler.dirOf` 遍历八方向表 | 已消除 | 正文不再断言 Dir4 只返回上下左右；`dirOf` 收敛为「实现特例，可复现但不是接口承诺，不能用于四方向判定」 |
+
+- 非阻断项：首轮 13 项已全部在正文落地（见第 1 轮修复记录）；第 2 轮复审另提 9 项，全部已处理（见第 2 轮表格）。复审未新增阻断项。
+- 覆盖自查：两篇仍覆盖 D-75 要求的内容——移动三件套、步骤类型、控制器、钩子、`degrade` / `next` / `opposite` / `mapMovement`、`IRoleFaceBinder`、`useTopImplementation` 均仍在正文中。
+- 无「仍存在」的阻断项。
+
+**阻断性问题 = 0，审阅通过**
+
+**未复用中级人格**：本记录全程使用上文的高级 I 人格提示词（假设读者已读完中级教程、正在阅读高级教程 I），未复用 `10-11-READER-REVIEW.md` 的中级教程人格（该人格「不懂代码」，与本篇的前提不同）。
+
+### D-72 源码 / 注释差异（只在对话中报告，正文不保留）
+
+按 D-80，正文不写实现与注释的差异；以下三项在执行期间向用户报告过，未写进 `mover.md` / `face-handler.md`：
+
+1. `MapTileBase.setFaceDirection`：注释描述「降级后查到映射就换图」，实现降级分支只返回 `next.identifier`，未写回图块。
+2. `Dir4FaceHandler.dirOf`：遍历 `DIR8_MOVEMENTS`，`dirOf(1, 1)` 返回 `RightDown`；接口注释未承诺只返回本组方向。
+3. `Dir8FaceHandler.degrade`：原样返回入参，`degrade(999)` 为 `999`，与接口注释「无法降级时返回 `Unknown`」不一致。
+
+### 收尾构建
+
+- `node node_modules/prettier/bin/prettier.cjs --write docs/advanced/mover.md docs/advanced/face-handler.md`：两篇均 `unchanged`。
+- `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`：退出码 0，`build complete in 14.31s`，无 dead link。
