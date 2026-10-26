@@ -46,6 +46,10 @@ export class ClientHotkey implements IClientHotkey {
         return new Set([...this.system.iterateCommands()]).difference(grouped);
     }
 
+    iterateGroups(): Iterable<[id: string, group: IHotkeyCommandGroup]> {
+        return this.groups.entries();
+    }
+
     saveState(): IClientHotkeySave {
         const keys: Map<string, (readonly KeyCode[])[]> = new Map();
         for (const command of this.system.iterateCommands()) {

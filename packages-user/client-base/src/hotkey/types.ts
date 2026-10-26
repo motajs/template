@@ -42,4 +42,9 @@ export interface IClientHotkey extends ISaveableContent<IClientHotkeySave> {
      * 获取未分组的按键列表
      */
     getUngrouped(): Iterable<IHotkeyCommand>;
+
+    /**
+     * 迭代所有的按键分组
+     */
+    iterateGroups(): Iterable<[id: string, group: IHotkeyCommandGroup]>;
 }
