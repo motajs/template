@@ -161,4 +161,15 @@
 
 ## 迭代记录
 
-（Task 2 按阻断清单迭代修正，逐轮追加。）
+### 第 1 轮 · 修正记录
+
+仅改 `docs/advanced/iii/loading-system.md` 与本记录；未改 `config.ts`、高级 I / II 页面与源码。非阻断项本轮不修，按 D-14 留在清单。
+
+| # | 处置 | 说明 |
+| --- | --- | --- |
+| B-01 | 已修正 | 「一次加载的阶段」改写为以「对应收集循环是否跑过」判断窗口：`addExtraConfig` 只能在加载开始前或 `onCoreConfigLoaded` 中调用，放到 `onExtraConfigLoaded` 已太晚，本次加载不会再读取。 |
+| B-02 | 已修正 | 同段明确 `addCustomTask` 可在加载开始前、`onCoreConfigLoaded` 或 `onExtraConfigLoaded` 中调用；自定义任务阶段开始后或加载结束后追加不会被读取。并补「`start()` 只真正执行一次、错过窗口没有补读机会」。「边界与注意」同步改写 `addCustomTask` 条目，并新增 `addExtraConfig` 条目。 |
+
+- 源码依据：`packages-user/data-state/src/loader/loader.ts:84-85`（`start()` 只执行一次）、`:114-116`（`onCoreConfigLoaded` 在 `start()` 中途触发）、`:119-141`（额外配置循环先于 `onExtraConfigLoaded`）、`:143-147`（`onExtraConfigLoaded` 之后才收集自定义任务）。
+- 未把使用概率等元信息写入正文；未改写或新增任何「用户最终确认」标记；未删减已锁定要覆盖的内容。
+- 本轮构建：`node node_modules/prettier/bin/prettier.cjs --check docs/advanced/iii` 通过；`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` 退出码 0，`build complete in 19.57s`，无 dead link。

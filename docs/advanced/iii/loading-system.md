@@ -46,7 +46,12 @@ MotaDataLoader 按阶段把任务交给 LoadManager
 核心配置 → onCoreConfigLoaded → 额外配置 → onExtraConfigLoaded → 自定义任务 → 完成
 ```
 
-这个顺序决定了两条最常用的规则：`addExtraConfig` 必须在第 3 步开始前调用，`addCustomTask` 必须在第 5 步开始前调用。放在 `onCoreConfigLoaded` 或 `onExtraConfigLoaded` 里，或者在加载开始前调用，都来得及；等加载已经开始再追加，就不会再被本次加载读取。
+这个顺序决定了两条最常用的规则；判断「来不来得及」看的是对应的收集循环有没有跑过，而不是 `start()` 有没有被调用：
+
+- `addExtraConfig` 必须在第 3 步的收集循环之前：在加载开始前，或在 `onCoreConfigLoaded` 里调用。放到 `onExtraConfigLoaded` 里已经太晚，本次加载不会再读取它。
+- `addCustomTask` 必须在第 5 步的收集循环之前：在加载开始前，或在 `onCoreConfigLoaded` / `onExtraConfigLoaded` 里调用都可以。等到自定义任务已经开始加载，或加载结束后再追加，本次加载不会读取它。
+
+`start()` 只会真正执行一次，第二次调用会因为已经加载过而直接返回，所以错过窗口没有补读机会。
 
 [`CoreState.load()`](./core-state.md#加载管线) 在加载器外面又包了两层插件时机：插件的 `initialize()` 在 `loader.start()` 之前执行，`afterLoad()` 在加载完成之后执行。因此 `initialize` 适合追加配置或自定义任务，`afterLoad` 适合读取已经加载好的配置。插件三个时机的完整语义见[插件系统](../i/plugin-system.md#生命周期)。
 
@@ -237,7 +242,8 @@ state.loader.start()
 ## 边界与注意
 
 - <strong>配置 id 是键</strong>：同一个 id 只登记一份配置，后来用同一个 id 追加不会变成第二份。需要两份配置时使用不同 id。
-- <strong>addCustomTask 的调用时机</strong>：只能在加载开始前，或 `onCoreConfigLoaded` / `onExtraConfigLoaded` 中调用；加载已经开始或结束后再调用，本次加载不会读取它。
+- <strong>addCustomTask 的调用时机</strong>：只能在加载开始前，或 `onCoreConfigLoaded` / `onExtraConfigLoaded` 中调用；等到自定义任务已经开始加载或加载结束后再调用，本次加载不会读取它。
+- <strong>addExtraConfig 的调用时机</strong>：只能在加载开始前或 `onCoreConfigLoaded` 中调用；在 `onExtraConfigLoaded` 里追加已经错过本次加载。
 - <strong>前缀缺失或解析失败</strong>：加载器会报错并把该配置按空对象处理，整次加载继续。依赖这份配置的代码要能接受空内容。
 - <strong>自定义任务的路径</strong>：配置文件路径由加载器统一改写；自己构造的 `LoadTask` 地址不会被改写，需要按开发环境与构建产物分别给出正确路径。
 - <strong>自定义 starter 的返回契约</strong>：`start` 必须返回满足 `IResponseLike` 的对象；标准 `Response` 可以直接用。
