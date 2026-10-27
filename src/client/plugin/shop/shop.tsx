@@ -5,8 +5,8 @@ import { Scroll, TextContent } from '@user/client-base';
 import { IHeroState } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
 import { IUIPropsBase } from '@user/client-modules';
-import { IShopState, IShopSystem } from '@dp/shop';
-import { FULL_LOC, MAIN_WIDTH, RENDER_WIDTH } from '@/client';
+import { IShopState, IShopSystem } from '@/data/plugin/shop';
+import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH, RENDER_WIDTH } from '@/client';
 
 export interface IShopProps extends IUIPropsBase {
     /** 商店状态对象 */

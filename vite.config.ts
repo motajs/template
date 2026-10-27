@@ -26,14 +26,6 @@ const aliasesUser = glob.sync('packages-user/*/src').map((srcPath) => {
     };
 });
 
-const aliasesDP = glob.sync('src/data/plugin/*').map((srcPath) => {
-    const packageName = path.basename(path.dirname(srcPath));
-    return {
-        find: `@dp/${packageName}`,
-        replacement: path.resolve(__dirname, srcPath),
-    };
-});
-
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [
@@ -49,7 +41,6 @@ export default defineConfig({
         alias: [
             ...aliases,
             ...aliasesUser,
-            ...aliasesDP,
             {
                 find: '@/',
                 replacement: path.resolve(__dirname, 'src/')
