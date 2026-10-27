@@ -5,7 +5,11 @@ import {
     LoadDataType,
     LoadTask
 } from '@motajs/loader';
-import { IMotaDataLoader, IMotaDataLoaderHooks } from './types';
+import {
+    ICustomContentInit,
+    IMotaDataLoader,
+    IMotaDataLoaderHooks
+} from './types';
 import { PrefixedJSONCProcessor } from './jsoncProcessor';
 import { ICoreStateCoreConfig } from '../common';
 import {
@@ -62,7 +66,21 @@ export class MotaDataLoader
         this.extraConfigs.set(identifier, url);
     }
 
-    addCustomTask<T>(task: LoadTask<LoadDataType, T>): Promise<T> {
+    addCustomContent<T, L extends LoadDataType>(
+        init: ICustomContentInit<T, L>
+    ): Promise<T> {
+        const task = new LoadTask<L, T>({
+            identifier: init.identifier,
+            url: this.resolveURL(init.url),
+            dataType: init.dataType
+        });
+        task.setProcessor(init.processor);
+        task.setStarter(this.starter);
+        this.customTask.add(task);
+        return task.loaded();
+    }
+
+    addCustomTask<T>(task: ILoadTask<LoadDataType, T>): Promise<T> {
         this.customTask.add(task);
         return task.loaded();
     }

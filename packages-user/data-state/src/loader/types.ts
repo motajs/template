@@ -1,5 +1,21 @@
 import { IHookable, IHookBase } from '@motajs/common';
-import { ILoadManager, LoadDataType, LoadTask } from '@motajs/loader';
+import {
+    ILoadManager,
+    ILoadTask,
+    ILoadTaskProcessor,
+    LoadDataType
+} from '@motajs/loader';
+
+export interface ICustomContentInit<T, L extends LoadDataType> {
+    /** 加载任务的标识符，不能与已有加载任务重复 */
+    readonly identifier: string;
+    /** 自定义内容的文件路径，相对于 `src`。文件必须放到 `src` 文件夹下 */
+    readonly url: string;
+    /** 自定义内容的响应格式 */
+    readonly dataType: L;
+    /** 自定义内容的加载处理器 */
+    readonly processor: ILoadTaskProcessor<L, T>;
+}
 
 export interface IMotaDataLoaderHooks extends IHookBase {
     /**
@@ -34,7 +50,7 @@ export interface IMotaDataLoader extends IHookable<IMotaDataLoaderHooks> {
      * 添加核心配置文件，仅允许在加载前调用，之后调用无效。
      * 文件必须放在 `src` 下，并填写相对于 `src` 文件夹的路径，文件包含如下要求：
      *
-     * - 文件必须为 `jsonc` 格式
+     * - 文件必须为 `jsonc` 或 `json` 格式
      * - 文件的注释必须全部集中在开头
      * - 文件中的最后一行注释必须是 `// --- SYSTEM PREFIX END --- //`
      *
@@ -47,7 +63,7 @@ export interface IMotaDataLoader extends IHookable<IMotaDataLoaderHooks> {
      * 添加额外配置文件，仅允许在 `onCoreConfigLoaded` 中调用或在加载前调用，加载中及加载后后调用无效。
      * 文件必须放在 `src` 下，并填写相对于 `src` 文件夹的路径，文件包含如下要求：
      *
-     * - 文件必须为 `jsonc` 格式
+     * - 文件必须为 `jsonc` 或 `json` 格式
      * - 文件的注释必须全部集中在开头
      * - 文件中的最后一行注释必须是 `// --- SYSTEM PREFIX END --- //`
      *
@@ -57,12 +73,21 @@ export interface IMotaDataLoader extends IHookable<IMotaDataLoaderHooks> {
     addExtraConfig(identifier: string, url: string): void;
 
     /**
+     * 添加自定义加载内容，仅允许在 `onCoreConfigLoaded` 和 `onExtraConfigLoaded` 中调用或在加载前调用，
+     * 加载中及加载后后调用无效。文件必须放在 `src` 下，并填写相对于 `src` 文件夹的路径。对文件格式不做任何要求。
+     * @param init 自定义加载内容的配置对象
+     */
+    addCustomContent<T, L extends LoadDataType>(
+        init: ICustomContentInit<T, L>
+    ): Promise<T>;
+
+    /**
      * 添加自定义加载任务，仅允许在 `onCoreConfigLoaded` 和 `onExtraConfigLoaded` 中调用或在加载前调用，
      * 加载中及加载后后调用无效。所有的自定义加载任务都会在配置文件加载完毕后开始加载。
      * @param task 自定义加载任务实例
      * @returns 任务加载完毕后兑现，兑现值为经过加载处理器处理后的值
      */
-    addCustomTask<T>(task: LoadTask<LoadDataType, T>): Promise<T>;
+    addCustomTask<T>(task: ILoadTask<LoadDataType, T>): Promise<T>;
 
     /**
      * 获取指定配置文件，例如核心配置文件是 `core`，怪物配置文件是 `enemy` 等等
