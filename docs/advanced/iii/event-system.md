@@ -266,3 +266,5 @@ export function createEventRegistrations(): BuiltInFunction[] {
 - **多条事件是异步顺序执行**：不要假设它们并发，也不要依赖未声明的执行顺序。
 - **执行器状态是共享的**：`mode` 与 `reduce` 会影响后续执行，改完记得复位。
 - **事件注册属于内容配置**：序列化事件注册与地图事件 id 绑定由编辑器负责，本篇不展开。
+
+返回[高级 III 导览](./index.md)。

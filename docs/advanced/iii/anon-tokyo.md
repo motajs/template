@@ -163,3 +163,5 @@ console.log(await executable.exec({ value: 21 }, {})); // 42
 - **解释器不负责派发**：触发器过滤与坐标收集在事件系统，不在解释器。
 
 相关背景可看[高级 I 的 data-common Store](../i/data-stores.md)与[中级教程的自定义事件](../../intermediate/events.md)。
+
+返回[高级 III 导览](./index.md)。

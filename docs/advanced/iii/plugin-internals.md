@@ -119,3 +119,5 @@ export function useMyPlugin(state: ICoreState): void {
 - **数据端依赖与渲染端依赖是两套**：`dataDeps` 只写数据端插件 id，渲染端另有 `clientDeps`；两者不要混用。
 - **取回结果要判空并检查状态**：`getDataPlugin` 可能返回 `null`，也可能拿到尚未到达目标状态的插件。
 - **`orderPlugins` 不供读者调用**：它是构造期的内部机制；要控制顺序，声明依赖即可。
+
+返回[高级 III 导览](./index.md)。

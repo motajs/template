@@ -107,7 +107,7 @@ export function judgeStep(
 | 勇士移动 | `DefaultHeroMoveTopImpl` 构造时自己新建一个默认谓词 | 顶层实现的 `predicate()` 返回它     |
 | 寻路构图 | 数据端初始化时另建一个默认谓词                      | `finder.usePassPredicate(...)` 注入 |
 
-`DefaultHeroMoveTopImpl` 把谓词保存在字段里，`predicate()` 每次返回同一个实例。数据端初始化时又为寻路求解器新建了一个默认谓词，通过 `state.pathfinding.finder.usePassPredicate(...)` 注入。两者行为一致，因为它们由同一个类实现、读同一份地图数据；但它们没有共享状态，也没有自动同步。
+`DefaultHeroMoveTopImpl` 把谓词保存在字段里，`predicate()` 每次返回同一个实例。[数据端初始化时](./core-state.md)又为寻路求解器新建了一个默认谓词，通过 `state.pathfinding.finder.usePassPredicate(...)` 注入。两者行为一致，因为它们由同一个类实现、读同一份地图数据；但它们没有共享状态，也没有自动同步。
 
 因此，改勇士侧的谓词不会改变寻路侧，改寻路侧的谓词也不会改变勇士侧。要让两边保持一致，必须两边都换：要么把同一个谓词实例同时交给顶层实现和求解器，要么在两侧分别构造同一个自定义类。
 
@@ -247,3 +247,5 @@ state.pathfinding.finder.usePassPredicate(
 - 目标在脚下不移动：起点与终点相同时直接返回 `TargetUnder`。
 - 换楼层要重新绑定图层：绑定的是具体图层对象，换楼层后要换成新楼层的事件层。
 - 瞬移会跳过途经格：瞬移分支只落到终点，途经格的进入、离开与撞击都不会发生；需要补触发时用钩子，或用回退策略退回逐步移动。
+
+返回[高级 III 导览](./index.md)。

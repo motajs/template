@@ -48,7 +48,7 @@ MotaDataLoader 按阶段把任务交给 LoadManager
 
 这个顺序决定了两条最常用的规则：`addExtraConfig` 必须在第 3 步开始前调用，`addCustomTask` 必须在第 5 步开始前调用。放在 `onCoreConfigLoaded` 或 `onExtraConfigLoaded` 里，或者在加载开始前调用，都来得及；等加载已经开始再追加，就不会再被本次加载读取。
 
-`CoreState.load()` 在加载器外面又包了两层插件时机：插件的 `initialize()` 在 `loader.start()` 之前执行，`afterLoad()` 在加载完成之后执行。因此 `initialize` 适合追加配置或自定义任务，`afterLoad` 适合读取已经加载好的配置。插件三个时机的完整语义见[插件系统](../i/plugin-system.md#生命周期)。
+[`CoreState.load()`](./core-state.md#加载管线) 在加载器外面又包了两层插件时机：插件的 `initialize()` 在 `loader.start()` 之前执行，`afterLoad()` 在加载完成之后执行。因此 `initialize` 适合追加配置或自定义任务，`afterLoad` 适合读取已经加载好的配置。插件三个时机的完整语义见[插件系统](../i/plugin-system.md#生命周期)。
 
 ## 配置文件与处理器
 
@@ -244,3 +244,5 @@ state.loader.start()
 - <strong>自定义任务要设置 starter</strong>：任务不会自动继承加载器的 starter，漏设时任务不会开始加载。
 - <strong>字节进度可能不准</strong>：所有任务的总大小要等响应头都到达后才能确定，总量未知时字节比例只是近似值。
 - <strong>start 必须被迭代</strong>：调用 `loader.start()` 只是拿到异步迭代器，真正推进加载的是迭代过程。`CoreState.load()` 已经替你完成迭代；手动驱动时要自己消费完。
+
+返回[高级 III 导览](./index.md)。
