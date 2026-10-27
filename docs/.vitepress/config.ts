@@ -234,8 +234,38 @@ export default defineConfig({
                 },
                 {
                     text: '高级 III · 原理与架构',
-                    collapsed: true,
-                    items: []
+                    collapsed: false,
+                    items: [
+                        { text: '高级 III 导览', link: '/advanced/iii/' },
+                        {
+                            text: '加载系统',
+                            link: '/advanced/iii/loading-system'
+                        },
+                        {
+                            text: '录像系统底层',
+                            link: '/advanced/iii/replay-internals'
+                        },
+                        {
+                            text: '事件系统',
+                            link: '/advanced/iii/event-system'
+                        },
+                        {
+                            text: 'Anon-Tokyo 解释器',
+                            link: '/advanced/iii/anon-tokyo'
+                        },
+                        {
+                            text: '通行性谓词与寻路原理',
+                            link: '/advanced/iii/passability-and-pathfinding'
+                        },
+                        {
+                            text: 'CoreState 组装与初始化',
+                            link: '/advanced/iii/core-state'
+                        },
+                        {
+                            text: '插件内部机制',
+                            link: '/advanced/iii/plugin-internals'
+                        }
+                    ]
                 }
             ]
         },
