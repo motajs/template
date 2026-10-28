@@ -250,10 +250,6 @@ export default defineConfig({
                             link: '/advanced/iii/event-system'
                         },
                         {
-                            text: 'Anon-Tokyo 解释器',
-                            link: '/advanced/iii/anon-tokyo'
-                        },
-                        {
                             text: '通行性谓词与寻路原理',
                             link: '/advanced/iii/passability-and-pathfinding'
                         },
