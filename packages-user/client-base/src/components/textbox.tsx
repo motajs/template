@@ -161,13 +161,12 @@ export const TextContent = defineComponent<
 
     const updateLoc = () => {
         const height = getHeight();
-        if (props.autoHeight) {
-            const [x = 0, y = 0, width = props.width, , ax = 0, ay = 0] =
-                loc.value;
-            loc.value = [x, y, width, height, ax, ay];
-        }
+        const [x = 0, y = 0, , h = 0, ax = 0, ay = 0] = props.loc ?? loc.value;
+        loc.value = [x, y, props.width, props.autoHeight ? height : h, ax, ay];
         emit('updateHeight', height);
     };
+
+    watch(() => props.loc, updateLoc);
 
     expose<TextContentExpose>({ retype, showAll, getHeight });
 
