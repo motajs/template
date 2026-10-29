@@ -3,7 +3,6 @@ import type * as ClientBase from '@motajs/client-base';
 import type * as Common from '@motajs/common';
 import type * as LegacyCommon from '@motajs/legacy-common';
 import type * as LegacySystem from '@motajs/legacy-system';
-import type * as LegacyUI from '@motajs/legacy-ui';
 import type * as Render from '@motajs/render';
 import type * as RenderVue from '@motajs/render-vue';
 import type * as System from '@motajs/system';
@@ -24,7 +23,6 @@ interface ModuleInterface {
     '@motajs/common': typeof Common;
     '@motajs/legacy-common': typeof LegacyCommon;
     '@motajs/legacy-system': typeof LegacySystem;
-    '@motajs/legacy-ui': typeof LegacyUI;
     '@motajs/render': typeof Render;
     '@motajs/render-vue': typeof RenderVue;
     '@motajs/system': typeof System;
