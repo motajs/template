@@ -13,7 +13,6 @@ import type * as DataBase from '@user/data-base';
 import type * as DataSystem from '@user/data-system';
 import type * as DataState from '@user/data-state';
 // ---------- 必要的第三方库
-import type * as MutateAnimate from 'mutate-animate';
 import type * as Vue from 'vue';
 import type * as Lodash from 'lodash-es';
 
@@ -33,7 +32,6 @@ interface ModuleInterface {
     '@user/data-system': typeof DataSystem;
     '@user/data-state': typeof DataState;
     // ---------- 必要的第三方库
-    MutateAnimate: typeof MutateAnimate;
     Vue: typeof Vue;
     Lodash: typeof Lodash;
 }

@@ -3,7 +3,7 @@ import { logger } from '@motajs/common';
 import { computed, defineComponent, onUnmounted, ref } from 'vue';
 // @ts-expect-error render/use.ts 按 D-54 留在实现层，本文件已移入系统层，按 D-68 暂以标注记录，不反向引用、不解耦
 import { transitioned } from '../use';
-import { hyper } from 'mutate-animate';
+import { cosh } from '@motajs/animate';
 import { debounce } from 'lodash-es';
 import { texture } from '../elements';
 import { SetupComponentOptions } from '@motajs/system';
@@ -45,7 +45,7 @@ export const Tip = defineComponent<TipProps>((props, { expose }) => {
 
     const font = new Font('normal');
 
-    const alpha = transitioned(0, 500, hyper('sin', 'in-out'))!;
+    const alpha = transitioned(0, 500, cosh())!;
     const pad = computed(() => props.pad ?? [4, 4]);
     const locHeight = computed(() => props.loc[3] ?? 200);
     const hidden = computed(() => alpha.ref.value === 0);

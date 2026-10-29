@@ -1,6 +1,6 @@
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { computed, defineComponent, ref } from 'vue';
-import { Font } from '@motajs/render';
+import { ElementLocator, Font } from '@motajs/render';
 import { Scroll, TextContent } from '@user/client-base';
 import { IHeroItemState, IHeroState } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
@@ -100,6 +100,11 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
     /** 关闭当前道具栏界面 */
     const exit = () => props.controller.close(props.instance);
 
+    /** 生成道具行的点击处理器，点击后按再点规则选中或使用该道具 */
+    const getItemClick = (item: IHeroItemState<IHeroAttr>) => () => {
+        clickItem(item);
+    };
+
     return () => {
         const current = selectedItem.value;
         return (
@@ -121,110 +126,102 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                     fillStyle="gold"
                 />
                 <Scroll noscroll loc={[0, LIST_TOP, COLUMN_WIDTH, LIST_HEIGHT]}>
+                    {/* 每行行底、图标、名称与数量，直接作为 Scroll 子项 */}
                     {permItems.value.map((item, i) => {
+                        const y = i * ROW_HEIGHT;
                         const isSelected = item.num === selected.value;
-                        return (
-                            <container
-                                key={item.num}
-                                loc={[
-                                    0,
-                                    i * ROW_HEIGHT,
-                                    COLUMN_WIDTH,
-                                    ROW_HEIGHT
-                                ]}
+                        const cellLoc: ElementLocator = [
+                            4,
+                            y + 2,
+                            COLUMN_WIDTH - 8,
+                            ROW_HEIGHT - 4
+                        ];
+                        return [
+                            <g-rectr
+                                loc={cellLoc}
+                                circle={[4]}
+                                fill
+                                fillStyle={
+                                    isSelected
+                                        ? 'rgba(255, 204, 0, 0.28)'
+                                        : 'rgba(255, 255, 255, 0.05)'
+                                }
                                 cursor="pointer"
-                                onClick={() => clickItem(item)}
-                            >
-                                <g-rectr
-                                    loc={[
-                                        4,
-                                        2,
-                                        COLUMN_WIDTH - 8,
-                                        ROW_HEIGHT - 4
-                                    ]}
-                                    circle={[4]}
-                                    fill
-                                    fillStyle={
-                                        isSelected
-                                            ? 'rgba(255, 204, 0, 0.28)'
-                                            : 'rgba(255, 255, 255, 0.05)'
-                                    }
-                                />
-                                <icon
-                                    icon={item.num}
-                                    loc={[10, 7, ROW_ICON_SIZE, ROW_ICON_SIZE]}
-                                />
-                                <text
-                                    text={item.raw.name}
-                                    loc={[50, ROW_HEIGHT / 2]}
-                                    anc={[0, 0.5]}
-                                    font={itemFont}
-                                    fillStyle="#eeeeee"
-                                />
-                                <text
-                                    text={core.formatBigNumber(item.count)}
-                                    loc={[COLUMN_WIDTH - 8, ROW_HEIGHT / 2]}
-                                    anc={[1, 0.5]}
-                                    font={itemFont}
-                                    fillStyle="#cccccc"
-                                />
-                            </container>
-                        );
+                                onClick={getItemClick(item)}
+                            />,
+                            <icon
+                                icon={item.num}
+                                loc={[10, y + 7, ROW_ICON_SIZE, ROW_ICON_SIZE]}
+                                noevent
+                            />,
+                            <text
+                                text={item.raw.name}
+                                loc={[50, y + ROW_HEIGHT / 2]}
+                                anc={[0, 0.5]}
+                                font={itemFont}
+                                fillStyle="#eeeeee"
+                                noevent
+                            />,
+                            <text
+                                text={core.formatBigNumber(item.count)}
+                                loc={[COLUMN_WIDTH - 8, y + ROW_HEIGHT / 2]}
+                                anc={[1, 0.5]}
+                                font={itemFont}
+                                fillStyle="#cccccc"
+                                noevent
+                            />
+                        ];
                     })}
                 </Scroll>
                 <Scroll
                     noscroll
                     loc={[COLUMN_WIDTH, LIST_TOP, COLUMN_WIDTH, LIST_HEIGHT]}
                 >
+                    {/* 每行行底、图标、名称与数量，直接作为 Scroll 子项 */}
                     {consItems.value.map((item, i) => {
+                        const y = i * ROW_HEIGHT;
                         const isSelected = item.num === selected.value;
-                        return (
-                            <container
-                                key={item.num}
-                                loc={[
-                                    0,
-                                    i * ROW_HEIGHT,
-                                    COLUMN_WIDTH,
-                                    ROW_HEIGHT
-                                ]}
+                        const cellLoc: ElementLocator = [
+                            4,
+                            y + 2,
+                            COLUMN_WIDTH - 8,
+                            ROW_HEIGHT - 4
+                        ];
+                        return [
+                            <g-rectr
+                                loc={cellLoc}
+                                circle={[4]}
+                                fill
+                                fillStyle={
+                                    isSelected
+                                        ? 'rgba(255, 204, 0, 0.28)'
+                                        : 'rgba(255, 255, 255, 0.05)'
+                                }
                                 cursor="pointer"
-                                onClick={() => clickItem(item)}
-                            >
-                                <g-rectr
-                                    loc={[
-                                        4,
-                                        2,
-                                        COLUMN_WIDTH - 8,
-                                        ROW_HEIGHT - 4
-                                    ]}
-                                    circle={[4]}
-                                    fill
-                                    fillStyle={
-                                        isSelected
-                                            ? 'rgba(255, 204, 0, 0.28)'
-                                            : 'rgba(255, 255, 255, 0.05)'
-                                    }
-                                />
-                                <icon
-                                    icon={item.num}
-                                    loc={[10, 7, ROW_ICON_SIZE, ROW_ICON_SIZE]}
-                                />
-                                <text
-                                    text={item.raw.name}
-                                    loc={[50, ROW_HEIGHT / 2]}
-                                    anc={[0, 0.5]}
-                                    font={itemFont}
-                                    fillStyle="#eeeeee"
-                                />
-                                <text
-                                    text={core.formatBigNumber(item.count)}
-                                    loc={[COLUMN_WIDTH - 8, ROW_HEIGHT / 2]}
-                                    anc={[1, 0.5]}
-                                    font={itemFont}
-                                    fillStyle="#cccccc"
-                                />
-                            </container>
-                        );
+                                onClick={getItemClick(item)}
+                            />,
+                            <icon
+                                icon={item.num}
+                                loc={[10, y + 7, ROW_ICON_SIZE, ROW_ICON_SIZE]}
+                                noevent
+                            />,
+                            <text
+                                text={item.raw.name}
+                                loc={[50, y + ROW_HEIGHT / 2]}
+                                anc={[0, 0.5]}
+                                font={itemFont}
+                                fillStyle="#eeeeee"
+                                noevent
+                            />,
+                            <text
+                                text={core.formatBigNumber(item.count)}
+                                loc={[COLUMN_WIDTH - 8, y + ROW_HEIGHT / 2]}
+                                anc={[1, 0.5]}
+                                font={itemFont}
+                                fillStyle="#cccccc"
+                                noevent
+                            />
+                        ];
                     })}
                 </Scroll>
                 {/* 道具名称 */}
@@ -236,28 +233,25 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                     fillStyle="gold"
                 />
                 {/* 道具说明 */}
+                <text
+                    text="未选择道具"
+                    loc={[INFO_LEFT + 8, DESC_TOP + 4]}
+                    anc={[0, 0]}
+                    font={descFont}
+                    fillStyle="#888888"
+                    hidden={!!current}
+                />
                 <Scroll
                     noscroll
                     loc={[INFO_LEFT, DESC_TOP, COLUMN_WIDTH, DESC_HEIGHT]}
                 >
-                    {!current && (
-                        <text
-                            text="未选择道具"
-                            loc={[8, 4]}
-                            anc={[0, 0]}
-                            font={descFont}
-                            fillStyle="#888888"
-                        />
-                    )}
-                    {current && (
-                        <TextContent
-                            text={current.raw.text}
-                            width={COLUMN_WIDTH - 16}
-                            loc={[8, 4, COLUMN_WIDTH - 16, DESC_HEIGHT - 8]}
-                            font={descFont}
-                            fillStyle="#dddddd"
-                        />
-                    )}
+                    <TextContent
+                        text={current ? current.raw.text : ''}
+                        width={COLUMN_WIDTH - 16}
+                        loc={[8, 4, COLUMN_WIDTH - 16, DESC_HEIGHT - 8]}
+                        font={descFont}
+                        fillStyle="#dddddd"
+                    />
                 </Scroll>
                 {/* 右下角退出按钮 */}
                 <text

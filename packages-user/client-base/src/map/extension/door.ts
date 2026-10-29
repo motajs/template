@@ -5,7 +5,7 @@ import {
 } from '@user/data-base';
 import { IMapDoorRenderer } from './types';
 import { IMapRenderer } from '../types';
-import { sleep } from 'mutate-animate';
+import { sleep } from '@motajs/common';
 import { DOOR_ANIMATE_INTERVAL } from '../../shared';
 
 export class MapDoorRenderer implements IMapDoorRenderer {
