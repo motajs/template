@@ -1,6 +1,29 @@
 import { defineConfig } from 'vitepress';
 import { MermaidMarkdown, MermaidPlugin } from 'vitepress-plugin-mermaid';
+import vuejsx from '@vitejs/plugin-vue-jsx';
 import { join } from 'path';
+
+/** 文档站内的自定义渲染标签，与主站 vite.config.ts 保持一致 */
+const custom = [
+    'container',
+    'custom',
+    'text',
+    'image',
+    'shader',
+    'comment',
+    'custom-container',
+    'map-render',
+    'animate',
+    'damage',
+    'graphics',
+    'icon',
+    'winskin'
+];
+
+/** 判断一个标签是否为自定义渲染标签 */
+function isCustomElement(tag: string): boolean {
+    return custom.includes(tag) || tag.startsWith('g-');
+}
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -298,9 +321,29 @@ export default defineConfig({
             label: '中文'
         }
     },
+    vue: {
+        template: {
+            compilerOptions: {
+                isCustomElement
+            }
+        }
+    },
     vite: {
         // @ts-expect-error 类型错误
-        plugins: [MermaidPlugin()],
+        plugins: [MermaidPlugin(), vuejsx({ isCustomElement })],
+        resolve: {
+            alias: [
+                {
+                    find: /^@motajs\/(.+)$/,
+                    replacement: `${process.cwd()}/packages/$1/src`
+                },
+                {
+                    find: /^@user\/(.+)$/,
+                    replacement: `${process.cwd()}/packages-user/$1/src`
+                }
+            ],
+            dedupe: ['vue']
+        },
         optimizeDeps: {
             include: ['mermaid']
         },
