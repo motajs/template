@@ -1,7 +1,3 @@
-export * from '../../../../src/client/ui/choices';
-export * from '../../../../src/client/ui/background';
-export * from '../../../../src/client/ui/inputBox';
-export * from '../../../../src/client/ui/waitBox';
 export * from './floorSelect';
 export * from './icons';
 export * from './input';
