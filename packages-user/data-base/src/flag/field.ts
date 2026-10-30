@@ -1,3 +1,4 @@
+import { shouldReplay } from '@user/data-common';
 import { IFlagCommonField, IFlagSystem } from './types';
 import { logger } from '@motajs/common';
 
@@ -16,10 +17,12 @@ export class FlagCommonField<T> implements IFlagCommonField<T> {
         this.value = value;
     }
 
+    @shouldReplay('Flag field value set should be replayed.')
     set(value: T): void {
         this.value = value;
     }
 
+    @shouldReplay('Flag field value set should be replayed.')
     add(value: number): void {
         if (typeof this.value !== 'number') {
             logger.warn(111, String(this.key));

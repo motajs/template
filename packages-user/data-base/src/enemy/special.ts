@@ -2,15 +2,13 @@ import { isEqual } from 'lodash-es';
 import { SaveCompression } from '@user/data-common';
 import { ISpecial, SpecialCreation } from './types';
 
-// TODO: 颜色参数
-
 export interface ICommonSpecialConfig<T> {
     /** 获取特殊属性的名称 */
-    getSpecialName: (special: ISpecial<T>) => string;
+    name: string | ((special: ISpecial<T>) => string);
     /** 获取特殊属性的描述 */
-    getDescription: (special: ISpecial<T>) => string;
-    /** 从旧样板怪物对象获取此特殊属性对应的属性值 */
-    fromLegacyEnemy: (enemy: Enemy) => T;
+    desc: string | ((special: ISpecial<T>) => string);
+    /** 获取特殊属性的名称显示颜色 */
+    color: string | ((special: ISpecial<T>) => string);
 }
 
 export class CommonSerializableSpecial<T> implements ISpecial<T> {
@@ -28,16 +26,30 @@ export class CommonSerializableSpecial<T> implements ISpecial<T> {
         return this.value;
     }
 
+    /**
+     * 获取配置数据的值，是字面量则直接返回，是函数则返回其调用结果
+     * @param config 配置源数据
+     */
+    private getConfigValue(
+        config: string | ((special: ISpecial<T>) => string)
+    ) {
+        if (typeof config === 'string') {
+            return config;
+        } else {
+            return config(this);
+        }
+    }
+
     getSpecialName(): string {
-        return this.config.getSpecialName(this);
+        return this.getConfigValue(this.config.name);
     }
 
     getDescription(): string {
-        return this.config.getDescription(this);
+        return this.getConfigValue(this.config.desc);
     }
 
-    fromLegacyEnemy(enemy: Enemy): void {
-        this.value = this.config.fromLegacyEnemy(enemy);
+    getNameColor(): string {
+        return this.getConfigValue(this.config.color);
     }
 
     clone(): ISpecial<T> {
@@ -78,27 +90,41 @@ export class NonePropertySpecial implements ISpecial<void> {
         return void 0;
     }
 
+    /**
+     * 获取配置数据的值，是字面量则直接返回，是函数则返回其调用结果
+     * @param config 配置源数据
+     */
+    private getConfigValue(
+        config: string | ((special: ISpecial<void>) => string)
+    ) {
+        if (typeof config === 'string') {
+            return config;
+        } else {
+            return config(this);
+        }
+    }
+
     getSpecialName(): string {
-        return this.config.getSpecialName(this);
+        return this.getConfigValue(this.config.name);
     }
 
     getDescription(): string {
-        return this.config.getDescription(this);
+        return this.getConfigValue(this.config.desc);
     }
 
-    fromLegacyEnemy(_enemy: Enemy): void {
-        // unneeded
+    getNameColor(): string {
+        return this.getConfigValue(this.config.color);
     }
 
     clone(): ISpecial<void> {
         return new NonePropertySpecial(this.code, this.config);
     }
 
-    saveState(_compression: SaveCompression): void {
+    saveState(): void {
         return undefined;
     }
 
-    loadState(_state: void, _compression: SaveCompression): void {
+    loadState(): void {
         // 无属性，无需操作
     }
 
@@ -107,18 +133,18 @@ export class NonePropertySpecial implements ISpecial<void> {
     }
 }
 
-export function defineCommonSerializableSpecial<T, TAttr = any>(
+export function defineCommonSerializableSpecial<T>(
     code: number,
     value: T,
     config: ICommonSpecialConfig<T>
-): SpecialCreation<T, TAttr> {
+): SpecialCreation<T> {
     return () =>
         new CommonSerializableSpecial(code, structuredClone(value), config);
 }
 
-export function defineNonePropertySpecial<TAttr = any>(
+export function defineNonePropertySpecial(
     code: number,
     config: ICommonSpecialConfig<void>
-): SpecialCreation<void, TAttr> {
+): SpecialCreation<void> {
     return () => new NonePropertySpecial(code, config);
 }

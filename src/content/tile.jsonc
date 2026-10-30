@@ -1,2 +1,2824 @@
 // Type: packages-user/data-common/src/store/types ITileRawData
-{}
+// --- SYSTEM PREFIX END --- //
+[
+    {
+        "num": 1,
+        "id": "blueShopLeft",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 2,
+        "id": "blueShopRight",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 3,
+        "id": "pinkShopLeft",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 4,
+        "id": "pinkShopRight",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 5,
+        "id": "upFloor",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 6,
+        "id": "downFloor",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 7,
+        "id": "arrowUp",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 1,
+            "inPass": 14
+        }
+    },
+    {
+        "num": 8,
+        "id": "arrowDown",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 4,
+            "inPass": 11
+        }
+    },
+    {
+        "num": 9,
+        "id": "arrowLeft",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 8,
+            "inPass": 7
+        }
+    },
+    {
+        "num": 10,
+        "id": "arrowRight",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 2,
+            "inPass": 13
+        }
+    },
+    {
+        "num": 11,
+        "id": "light",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 12,
+        "id": "darkLight",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 13,
+        "id": "ski",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 14,
+        "id": "flower",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 15,
+        "id": "box",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 16,
+        "id": "boxed",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 17,
+        "id": "ground",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 18,
+        "id": "sWallT",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 14,
+            "inPass": 14
+        }
+    },
+    {
+        "num": 19,
+        "id": "sWallL",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 7,
+            "inPass": 7
+        }
+    },
+    {
+        "num": 20,
+        "id": "sWallR",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 13,
+            "inPass": 13
+        }
+    },
+    {
+        "num": 21,
+        "id": "sWallB",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 11,
+            "inPass": 11
+        }
+    },
+    {
+        "num": 22,
+        "id": "grass",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 23,
+        "id": "sWallTL",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 6,
+            "inPass": 6
+        }
+    },
+    {
+        "num": 24,
+        "id": "sWallBR",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 9,
+            "inPass": 9
+        }
+    },
+    {
+        "num": 25,
+        "id": "grass2",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 26,
+        "id": "sWallTR",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 12,
+            "inPass": 12
+        }
+    },
+    {
+        "num": 27,
+        "id": "sWallBL",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 3,
+            "inPass": 3
+        }
+    },
+    {
+        "num": 28,
+        "id": "ground2",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 29,
+        "id": "sWallTB",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 10,
+            "inPass": 10
+        }
+    },
+    {
+        "num": 30,
+        "id": "ground3",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 31,
+        "id": "sWallLR",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 5,
+            "inPass": 5
+        }
+    },
+    {
+        "num": 32,
+        "id": "sWallBLR",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 1,
+            "inPass": 1
+        }
+    },
+    {
+        "num": 33,
+        "id": "sWallTLR",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 4,
+            "inPass": 4
+        }
+    },
+    {
+        "num": 34,
+        "id": "sWallTBR",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 8,
+            "inPass": 8
+        }
+    },
+    {
+        "num": 35,
+        "id": "sWallTBL",
+        "events": {},
+        "type": 2,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 2,
+            "inPass": 2
+        }
+    },
+    {
+        "num": 36,
+        "id": "yellowWall",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 37,
+        "id": "whiteWall",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 38,
+        "id": "blueWall",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 39,
+        "id": "star",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 40,
+        "id": "lava",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 41,
+        "id": "ice",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 42,
+        "id": "lavaNet",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 43,
+        "id": "poisonNet",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 44,
+        "id": "weakNet",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 45,
+        "id": "curseNet",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 46,
+        "id": "blueLava",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 47,
+        "id": "water",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 48,
+        "id": "yellowDoor",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 49,
+        "id": "blueDoor",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 50,
+        "id": "redDoor",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 51,
+        "id": "greenDoor",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 52,
+        "id": "specialDoor",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 53,
+        "id": "steelDoor",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 54,
+        "id": "portal",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 55,
+        "id": "starPortal",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 56,
+        "id": "upPortal",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 57,
+        "id": "leftPortal",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 58,
+        "id": "downPortal",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 59,
+        "id": "rightPortal",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 60,
+        "id": "crystalUp",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 61,
+        "id": "crystalBottom",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 62,
+        "id": "fire",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 63,
+        "id": "switch",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 64,
+        "id": "magentaWall",
+        "events": {},
+        "type": 3,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 65,
+        "id": "yellowKey",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 66,
+        "id": "blueKey",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 67,
+        "id": "redKey",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 68,
+        "id": "greenKey",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 69,
+        "id": "steelKey",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 70,
+        "id": "bigKey",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 71,
+        "id": "redGem",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 72,
+        "id": "blueGem",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 73,
+        "id": "greenGem",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 74,
+        "id": "yellowGem",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 75,
+        "id": "redPotion",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 76,
+        "id": "bluePotion",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 77,
+        "id": "greenPotion",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 78,
+        "id": "yellowPotion",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 79,
+        "id": "sword1",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 80,
+        "id": "shield1",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 81,
+        "id": "sword2",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 82,
+        "id": "shield2",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 83,
+        "id": "sword3",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 84,
+        "id": "shield3",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 85,
+        "id": "sword4",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 86,
+        "id": "shield4",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 87,
+        "id": "sword5",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 88,
+        "id": "shield5",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 89,
+        "id": "book",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 90,
+        "id": "fly",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 91,
+        "id": "pickaxe",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 92,
+        "id": "icePickaxe",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 93,
+        "id": "bomb",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 94,
+        "id": "centerFly",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 95,
+        "id": "upFly",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 96,
+        "id": "downFly",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 97,
+        "id": "coin",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 98,
+        "id": "freezeBadge",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 99,
+        "id": "cross",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 100,
+        "id": "superPotion",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 101,
+        "id": "earthquake",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 102,
+        "id": "poisonWine",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 103,
+        "id": "weakWine",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 104,
+        "id": "curseWine",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 105,
+        "id": "superWine",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 106,
+        "id": "dagger",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 107,
+        "id": "pack",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 108,
+        "id": "amulet",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 109,
+        "id": "hammer",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 110,
+        "id": "lifeWand",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 111,
+        "id": "jumpShoes",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 112,
+        "id": "sword0",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 113,
+        "id": "shield0",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 114,
+        "id": "skill1",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 115,
+        "id": "wand",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 116,
+        "id": "I331",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 117,
+        "id": "I332",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 118,
+        "id": "I333",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 119,
+        "id": "I334",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 120,
+        "id": "I335",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 121,
+        "id": "I336",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 122,
+        "id": "I337",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 123,
+        "id": "I338",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 124,
+        "id": "I339",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 125,
+        "id": "I340",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 126,
+        "id": "I341",
+        "events": {},
+        "type": 4,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 127,
+        "id": "greenSlime",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 128,
+        "id": "redSlime",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 129,
+        "id": "blackSlime",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 130,
+        "id": "slimelord",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 131,
+        "id": "bat",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 132,
+        "id": "bigBat",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 133,
+        "id": "redBat",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 134,
+        "id": "vampire",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 135,
+        "id": "skeleton",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 136,
+        "id": "skeletonWarrior",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 137,
+        "id": "skeletonCaptain",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 138,
+        "id": "ghostSoldier",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 139,
+        "id": "zombie",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 140,
+        "id": "zombieKnight",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 141,
+        "id": "rock",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 142,
+        "id": "slimeman",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 143,
+        "id": "bluePriest",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 144,
+        "id": "redPriest",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 145,
+        "id": "brownWizard",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 146,
+        "id": "redWizard",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 147,
+        "id": "yellowGateKeeper",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 148,
+        "id": "blueGateKeeper",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 149,
+        "id": "redGateKeeper",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 150,
+        "id": "swordsman",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 151,
+        "id": "soldier",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 152,
+        "id": "yellowKnight",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 153,
+        "id": "redKnight",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 154,
+        "id": "darkKnight",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 155,
+        "id": "blackKing",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 156,
+        "id": "yellowKing",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 157,
+        "id": "greenKing",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 158,
+        "id": "blueKnight",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 159,
+        "id": "goldSlime",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 160,
+        "id": "poisonSkeleton",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 161,
+        "id": "poisonBat",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 162,
+        "id": "ironRock",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 163,
+        "id": "skeletonPriest",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 164,
+        "id": "skeletonKing",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 165,
+        "id": "skeletonPresbyter",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 166,
+        "id": "skeletonKnight",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 167,
+        "id": "evilHero",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 168,
+        "id": "devilWarrior",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 169,
+        "id": "demonPriest",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 170,
+        "id": "goldHornSlime",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 171,
+        "id": "redKing",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 172,
+        "id": "blueKing",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 173,
+        "id": "magicMaster",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 174,
+        "id": "silverSlime",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 175,
+        "id": "blademaster",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 176,
+        "id": "whiteHornSlime",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 177,
+        "id": "evilPrincess",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 178,
+        "id": "evilFairy",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 179,
+        "id": "yellowPriest",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 180,
+        "id": "redSwordsman",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 181,
+        "id": "whiteSlimeman",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 182,
+        "id": "poisonZombie",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 183,
+        "id": "dragon",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 184,
+        "id": "octopus",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 185,
+        "id": "fairyEnemy",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 186,
+        "id": "princessEnemy",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 187,
+        "id": "angel",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 188,
+        "id": "elemental",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 189,
+        "id": "steelGuard",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 190,
+        "id": "evilBat",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 191,
+        "id": "silverSlimelord",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 192,
+        "id": "goldSlimelord",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 193,
+        "id": "grayRock",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 194,
+        "id": "greenKnight",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 195,
+        "id": "bowman",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 196,
+        "id": "purpleBowman",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 197,
+        "id": "watcherSlime",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 198,
+        "id": "frostBat",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 199,
+        "id": "devilKnight",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 200,
+        "id": "grayPriest",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 201,
+        "id": "greenGateKeeper",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 202,
+        "id": "keiskeiFairy",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 203,
+        "id": "tulipFairy",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 204,
+        "id": "bearDown",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 205,
+        "id": "bearLeft",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 206,
+        "id": "bearRight",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 207,
+        "id": "bearUp",
+        "events": {},
+        "type": 5,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 208,
+        "id": "man",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 209,
+        "id": "trader",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 210,
+        "id": "thief",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 211,
+        "id": "fairy",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 212,
+        "id": "wizard",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 213,
+        "id": "recluse",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 214,
+        "id": "king",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 215,
+        "id": "youngMan",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 216,
+        "id": "sign",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 217,
+        "id": "expShop",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 218,
+        "id": "moneyShop",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 219,
+        "id": "princess",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 220,
+        "id": "npc0",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 221,
+        "id": "npc1",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 222,
+        "id": "npc2",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 223,
+        "id": "npc3",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 224,
+        "id": "greenMan",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 225,
+        "id": "blueTrader",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 226,
+        "id": "tallYellowDoor",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 227,
+        "id": "tallBlueDoor",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 228,
+        "id": "tallRedDoor",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 229,
+        "id": "tallGreenDoor",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 230,
+        "id": "tallSpecialDoor",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 231,
+        "id": "tallSteelDoor",
+        "events": {},
+        "type": 6,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 232,
+        "id": "autotile",
+        "events": {},
+        "type": 7,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 233,
+        "id": "autotile1",
+        "events": {},
+        "type": 7,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 234,
+        "id": "autotile2",
+        "events": {},
+        "type": 7,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    },
+    {
+        "num": 235,
+        "id": "autotile3",
+        "events": {},
+        "type": 7,
+        "eventPass": false,
+        "pass": {
+            "onlyEvents": true,
+            "outPass": 15,
+            "inPass": 15
+        }
+    }
+]

@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 11
+open_count: 12
 waived_count: 0
 fixed_count: 17
-total_count: 28
-last_updated: 2026-09-16T08:20:22.513Z
+total_count: 29
+last_updated: 2026-10-10T06:19:21.694Z
 ---
 
 # Broken Windows Ledger
@@ -43,6 +43,7 @@ last_updated: 2026-09-16T08:20:22.513Z
 | 26 | 06 | skipped-test | packages-user/data-base/src/hero/saveLoad.test.ts |  | 受阻塞缺口 G-06-09-B：HeroEquipment.saveState 未深拷贝 equipped/slots（#06-09-2），经 HeroState 容器三档恢复装备映射的正确预期用例保持 it.skip | fixed |  | 2026-09-15T03:31:01.000Z | 2026-09-15T12:33:33.035Z |
 | 27 | 06 | skipped-test | packages-user/data-system/src/combat/context.test.ts | 625 | 受阻塞缺口 G-06-01-D：deleteAura 后再次 buildup 不回到基础值（#06-15-1，与 #06-01-4 同根因），正确预期用例保持 it.skip 待用户确认 | fixed |  | 2026-09-15T05:23:29.159Z | 2026-09-15T09:05:03.731Z |
 | 28 | 06 | deviation | packages-user/data-state/test/saveablesReal.perf.ts |  | stage-1 fixture seeds the minimum 1 equipment instance (plan said no side load) because HeroEquipsStore.loadState raises error 58 with an empty equipment list | open |  | 2026-09-16T08:20:22.513Z |  |
+| 29 | 09 | unrun-verify | packages-user/client-modules/src/ui/statusBar.tsx |  | 09-05 Task 2 targeted vue-tsc gate could not execute in sandbox: node_modules symlinks fail with OS error 448 (untrusted mount point). Static B-gate, prettier --check, and CRLF gates pass; type errors not machine-verified. | open |  | 2026-10-10T06:19:21.694Z |  |
 
 ````json
 [
@@ -381,6 +382,19 @@ last_updated: 2026-09-16T08:20:22.513Z
     "reason": "",
     "recorded_at": "2026-09-16T08:20:22.513Z",
     "resolved_at": null
+  },
+  {
+    "id": 29,
+    "kind": "unrun-verify",
+    "phase": "09",
+    "file": "packages-user/client-modules/src/ui/statusBar.tsx",
+    "line": null,
+    "description": "09-05 Task 2 targeted vue-tsc gate could not execute in sandbox: node_modules symlinks fail with OS error 448 (untrusted mount point). Static B-gate, prettier --check, and CRLF gates pass; type errors not machine-verified.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-10T06:19:21.694Z",
+    "resolved_at": null,
+    "milestone": "v1.0"
   }
 ]
 ````

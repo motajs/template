@@ -1,6 +1,9 @@
-import { IGameUI, UIComponent } from './shared';
+import { IGameUI, UIComponent } from './types';
 
 export class GameUI<C extends UIComponent> implements IGameUI<C> {
+    // TODO: 这个静态成员是否可以考虑删除？
+
+    /** 当前的所有已声明 UI，用于全局性获取 */
     static list: Map<string, GameUI<UIComponent>> = new Map();
 
     constructor(

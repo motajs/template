@@ -283,8 +283,8 @@ interface Utils {
     formatBigNumber(x: number | string, onMap?: number | boolean): string;
 
     /**
-     * @deprecated 可使用，考虑换用 `mutate-animate` 库\
-     * 变速移动，完全可以用mutate-animate代替
+     * @deprecated 可使用，考虑换用 `@motajs/animate` 库\
+     * 变速移动，完全可以用@motajs/animate代替
      * @param mode 缓动模式
      */
     applyEasing(mode?: EaseMode): (x: number) => number;

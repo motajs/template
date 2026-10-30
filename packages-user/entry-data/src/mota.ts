@@ -3,7 +3,6 @@ import type * as ClientBase from '@motajs/client-base';
 import type * as Common from '@motajs/common';
 import type * as LegacyCommon from '@motajs/legacy-common';
 import type * as LegacySystem from '@motajs/legacy-system';
-import type * as LegacyUI from '@motajs/legacy-ui';
 import type * as Render from '@motajs/render';
 import type * as RenderVue from '@motajs/render-vue';
 import type * as System from '@motajs/system';
@@ -14,7 +13,6 @@ import type * as DataBase from '@user/data-base';
 import type * as DataSystem from '@user/data-system';
 import type * as DataState from '@user/data-state';
 // ---------- 必要的第三方库
-import type * as MutateAnimate from 'mutate-animate';
 import type * as Vue from 'vue';
 import type * as Lodash from 'lodash-es';
 
@@ -24,7 +22,6 @@ interface ModuleInterface {
     '@motajs/common': typeof Common;
     '@motajs/legacy-common': typeof LegacyCommon;
     '@motajs/legacy-system': typeof LegacySystem;
-    '@motajs/legacy-ui': typeof LegacyUI;
     '@motajs/render': typeof Render;
     '@motajs/render-vue': typeof RenderVue;
     '@motajs/system': typeof System;
@@ -35,7 +32,6 @@ interface ModuleInterface {
     '@user/data-system': typeof DataSystem;
     '@user/data-state': typeof DataState;
     // ---------- 必要的第三方库
-    MutateAnimate: typeof MutateAnimate;
     Vue: typeof Vue;
     Lodash: typeof Lodash;
 }

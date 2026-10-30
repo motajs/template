@@ -6,61 +6,317 @@ import {
 import {
     AutotileConnection,
     AutotileType,
-    BlockCls,
     IAutotileConnection,
     IAutotileProcessor,
-    IMaterialFramedData,
-    IMaterialManager
+    IMaterialFramedData
 } from './types';
+import { ICoreState } from '@user/data-state';
 import { isNil } from 'lodash-es';
+import { logger } from '@motajs/common';
 
-interface ConnectedAutotile {
+// 3x4 自动元件索引图
+//
+// | <- 当上下左右都没有连接时，会使用左上角的内容，其实等同于使用 [12, 17, 42, 47]
+// |-------|-------|-------| <- 当上左、上右、下左、下右有连接时，会使用右上角的内容
+// | 00 01 | 02 03 | 04 05 |
+// | 06 07 | 08 09 | 10 11 |
+// |-------|-------|-------| <- 分割线，上面用于控制无连接（左）以及十字连接（右），中间用于判断父子关系（特殊连接）
+// | 12 13 | 14 15 | 16 17 |
+// | 18 19 | 20 21 | 22 23 |
+// |-------|-------|-------| <- 当仅下方有连接时，会用第二行的内容
+// | 24 25 | 26 27 | 28 29 |
+// | 30 31 | 32 33 | 34 35 |
+// |-------|-------|-------| <- 当上下都有连接时，会用第三行的内容
+// | 36 37 | 38 39 | 40 41 |
+// | 42 43 | 44 45 | 46 47 |
+// |-------|-------|-------| <- 当仅上方有连接时，会用第四行的内容
+// |       |       |       |
+// |       |       |       | <- 左右和上下的连接会相互干扰，具体干扰方式间右上角内容的描述
+// |       |       | <- 当仅左方有连接时，会使用第三列的内容
+// |       | <- 当左右都有连接时，会使用第二列的内容
+// | <- 当仅右方有连接时，会用第一列的内容
+
+// 2x3 自动元件索引图
+//
+// |-------|-------|
+// | 00 01 | 02 03 |
+// | 04 05 | 06 07 |
+// |-------|-------| <- 分割线，上面用于控制无连接（左）以及十字连接（右），这种自动元件无法从图片获取父子关系
+// | 08 09 | 10 11 |
+// | 12 13 | 14 15 |
+// |-------|-------|
+// | 16 17 | 18 19 |
+// | 20 21 | 22 23 |
+// |-------|-------|
+// 此自动元件本质上是把 3x4 自动元件中间的 4x4 区域合并为了这里的 [13, 14, 17, 18]
+
+interface IConnectedAutotile {
+    /** 左上角 */
     readonly lt: Readonly<IRect>;
+    /** 右上角 */
     readonly rt: Readonly<IRect>;
+    /** 右下角 */
     readonly rb: Readonly<IRect>;
+    /** 左下角 */
     readonly lb: Readonly<IRect>;
 }
 
-export interface IAutotileData {
-    /** 图像源 */
-    readonly source: SizedCanvasImageSource;
-    /** 自动元件帧数 */
-    readonly frames: number;
-}
-
-/** 3x4 自动元件的连接映射，元组表示将对应大小的自动元件按照格子 1/4 大小切分后对应的索引位置 */
-const connectionMap3x4 = new Map<number, [number, number, number, number]>();
-/** 2x3 自动元件的连接映射，元组表示将对应大小的自动元件按照格子 1/4 大小切分后对应的索引位置 */
-const connectionMap2x3 = new Map<number, [number, number, number, number]>();
-/** 3x4 自动元件各方向连接的矩形映射 */
-const rectMap3x4 = new Map<number, ConnectedAutotile>();
-/** 2x3 自动元件各方向连接的矩形映射 */
-const rectMap2x3 = new Map<number, ConnectedAutotile>();
-/** 不重复连接映射，用于平铺自动元件，一共 48 种 */
-const distinctConnectionMap = new Map<number, number>();
-
 export class AutotileProcessor implements IAutotileProcessor {
-    /** 自动元件父子关系映射，子元件 -> 父元件 */
-    readonly parentMap: Map<number, number> = new Map();
-    /** 自动元件父子关系映射，父元件 -> 子元件列表 */
-    readonly childMap: Map<number, Set<number>> = new Map();
+    /** 自动元件特殊连接方式映射 */
+    private readonly spec: Map<number, Set<number>> = new Map();
 
-    constructor(readonly manager: IMaterialManager) {}
+    /** 3x4 自动元件的各方向连接索引 */
+    readonly conn3x4: Map<number, [number, number, number, number]> = new Map();
+    /** 2x3 自动元件的各方向连接索引 */
+    readonly conn2x3: Map<number, [number, number, number, number]> = new Map();
+    /** 不重复连接映射，用于平铺自动元件，一共 48 种 */
+    readonly distinct: Map<number, number> = new Map();
 
-    private ensureChildSet(num: number) {
-        const set = this.childMap.get(num);
-        if (set) return set;
-        const ensure = new Set<number>();
-        this.childMap.set(num, ensure);
-        return ensure;
+    constructor(readonly state: ICoreState) {
+        this.conn3x4 = this.mapAutotile(AutotileType.Big3x4);
+        this.conn2x3 = this.mapAutotile(AutotileType.Small2x3);
+        this.deduplicateConnection();
     }
 
-    setConnection(autotile: number, parent: number): void {
-        this.parentMap.set(autotile, parent);
-        const child = this.ensureChildSet(parent);
-        child.add(autotile);
+    /**
+     * 映射自动元件连接
+     * @param type 自动元件类型
+     */
+    private mapAutotile(type: AutotileType) {
+        // 这些常量非常 magic，可以参考文件开头的索引注释来理解
+        const h = type === AutotileType.Big3x4 ? 2 : 1; // 横向偏移因子
+        const v = type === AutotileType.Big3x4 ? 12 : 4; // 纵向偏移因子
+        const luo = type === AutotileType.Big3x4 ? 12 : 8; // leftup origin
+        const ruo = type === AutotileType.Big3x4 ? 17 : 11; // rightup origin
+        const ldo = type === AutotileType.Big3x4 ? 42 : 20; // leftdown origin
+        const rdo = type === AutotileType.Big3x4 ? 47 : 23; // rightdown origin
+        const luc = type === AutotileType.Big3x4 ? 4 : 2; // leftup corner
+        const ruc = type === AutotileType.Big3x4 ? 5 : 3; // rightup corner
+        const rdc = type === AutotileType.Big3x4 ? 11 : 7; // rightdown corner
+        const ldc = type === AutotileType.Big3x4 ? 10 : 6; // leftdown corner
+
+        const result = new Map<number, [number, number, number, number]>();
+
+        for (let i = 0; i <= 0b1111_1111; i++) {
+            // 自动元件由四个更小的矩形组合而成
+            // 初始状态下，四个矩形分别处在四个角的位置
+            // 而且对应角落的矩形只可能出现在每个大区块的对应角落
+
+            let lu = luo; // leftup
+            let ru = ruo; // rightup
+            let ld = ldo; // leftdown
+            let rd = rdo; // rightdown
+
+            // 先看四个方向，最后看斜角方向
+            if (i & 0b0000_0001) {
+                // 左侧有连接，左侧两个矩形向右偏移两个因子
+                lu += h * 2;
+                ld += h * 2;
+                // 如果右侧还有连接，那么右侧矩形和左侧矩形需要移动至中间
+                // 但是由于后面还处理了先右侧再左侧的情况，因此需要先向右偏移一个因子
+                // 结果就是先向右移动了一个因子，在后面又向左移动了两个因子，因此相当于向左移动了一个因子
+                if (i & 0b0001_0000) {
+                    ru += h;
+                    rd += h;
+                }
+            }
+            if (i & 0b0000_0100) {
+                // 下侧有连接，下侧两个矩形向上偏移两个因子
+                ld -= v * 2;
+                rd -= v * 2;
+                if (i & 0b0100_0000) {
+                    lu -= v;
+                    ru -= v;
+                }
+            }
+            if (i & 0b0001_0000) {
+                // 右侧有连接，右侧矩形向左移动两个因子
+                ru -= h * 2;
+                rd -= h * 2;
+                if (i & 0b0000_0001) {
+                    lu -= h;
+                    ld -= h;
+                }
+            }
+            if (i & 0b0100_0000) {
+                // 上侧有链接，上侧矩形向下移动两个因子
+                lu += v * 2;
+                ru += v * 2;
+                if (i & 0b0000_0100) {
+                    ld += v;
+                    rd += v;
+                }
+            }
+            // 斜角
+            // 如果左上仅与上和左连接
+            if ((i & 0b1100_0001) === 0b0100_0001) {
+                lu = luc;
+            }
+            // 如果右上仅与上和右连接
+            if ((i & 0b0111_0000) === 0b0101_0000) {
+                ru = ruc;
+            }
+            // 如果右下仅与右和下连接
+            if ((i & 0b0001_1100) === 0b0001_0100) {
+                rd = rdc;
+            }
+            // 如果左下仅与左和下连接
+            if ((i & 0b0000_0111) === 0b0000_0101) {
+                ld = ldc;
+            }
+            result.set(i, [lu, ru, rd, ld]);
+        }
+
+        return result;
     }
 
+    /**
+     * 初始化自动元件连接配置
+     */
+    private deduplicateConnection() {
+        const usedRect: [number, number, number, number][] = [];
+        let flag = 0;
+        // 2x3 和 3x4 的自动元件连接方式一样，因此没必要映射两次
+        this.conn2x3.forEach((conn, num) => {
+            const index = usedRect.findIndex(
+                used =>
+                    used[0] === conn[0] &&
+                    used[1] === conn[1] &&
+                    used[2] === conn[2] &&
+                    used[3] === conn[3]
+            );
+            if (index === -1) {
+                this.distinct.set(num, flag);
+                usedRect.push(conn.slice() as [number, number, number, number]);
+                flag++;
+            } else {
+                this.distinct.set(num, index);
+            }
+        });
+    }
+
+    /**
+     * 获取自动元件指定连接方式在原贴图上的裁剪位置
+     * @param connection 连接方式，八位二进制数字
+     * @param type 自动元件类型
+     * @param cw 自动元件的 tile 宽度的一半
+     * @param ch 自动元件的 tile 高度的一半
+     */
+    private getSliceRect(
+        connection: number,
+        type: AutotileType,
+        hw: number,
+        hh: number
+    ): IConnectedAutotile | null {
+        const map = type === AutotileType.Big3x4 ? this.conn3x4 : this.conn2x3;
+        const data = map.get(connection);
+        if (!data) return null;
+        // 每行的切块数量，可以参考开头的注释理解其含义
+        const n = type === AutotileType.Big3x4 ? 6 : 4;
+        const [ltd, rtd, rbd, lbd] = data;
+        const ltx = (ltd % n) * hw;
+        const lty = Math.floor(ltd / n) * hh;
+        const rtx = (rtd % n) * hw;
+        const rty = Math.floor(rtd / n) * hh;
+        const rbx = (rbd % n) * hw;
+        const rby = Math.floor(rbd / n) * hh;
+        const lbx = (lbd % n) * hw;
+        const lby = Math.floor(lbd / n) * hh;
+        const rect: IConnectedAutotile = {
+            lt: { x: ltx, y: lty, w: hw, h: hh },
+            rt: { x: rtx, y: rty, w: hw, h: hh },
+            rb: { x: rbx, y: rby, w: hw, h: hh },
+            lb: { x: lbx, y: lby, w: hw, h: hh }
+        };
+        return rect;
+    }
+
+    /**
+     * 获取自动元件的单个图块尺寸
+     * @param frameWidth 自动元件每帧的宽度
+     * @param height 自动元件的高度
+     * @param type 自动元件的类型
+     */
+    private getAutotileCellSize(
+        frameWidth: number,
+        height: number,
+        type: AutotileType
+    ): [width: number, height: number] {
+        if (type === AutotileType.Big3x4) {
+            if (frameWidth % 3 !== 0 || height % 4 !== 0) {
+                logger.warn(190, frameWidth.toString(), height.toString());
+                return [0, 0];
+            }
+            return [frameWidth / 3, height / 4];
+        } else {
+            if (frameWidth % 2 !== 0 || height % 3 !== 0) {
+                logger.warn(190, frameWidth.toString(), height.toString());
+                return [0, 0];
+            }
+            return [frameWidth / 2, height / 3];
+        }
+    }
+
+    flatten(
+        source: SizedCanvasImageSource,
+        type: AutotileType,
+        frames: number
+    ): SizedCanvasImageSource | null {
+        if (source.width % frames !== 0) {
+            logger.warn(189, source.width.toString(), frames.toString());
+            return null;
+        }
+        const { width, height } = source;
+        // frame width
+        const fw = width / frames;
+        // cell width, cell height
+        const [cw, ch] = this.getAutotileCellSize(fw, height, type);
+        if (cw % 2 !== 0 || ch % 2 !== 0) {
+            logger.warn(190, fw.toString(), height.toString());
+            return null;
+        }
+        // 画到画布上
+        const canvas = document.createElement('canvas');
+        canvas.width = cw * frames;
+        canvas.height = ch * 48;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+        // half width, half height
+        const hw = cw / 2;
+        const hh = ch / 2;
+        // 遍历每个组合
+        this.distinct.forEach((index, conn) => {
+            const rect = this.getSliceRect(conn, type, hw, hh)!;
+            const { lt, rt, rb, lb } = rect;
+            const y = index * ch;
+            for (let i = 0; i < frames; i++) {
+                const x = i * cw;
+                const ox = i * fw;
+                // prettier-ignore
+                ctx.drawImage(source, lt.x + ox, lt.y, lt.w, lt.h, x, y, hw, hh);
+                // prettier-ignore
+                ctx.drawImage(source, rt.x + ox, rt.y, rt.w, rt.h, x + hw, y, hw, hh);
+                // prettier-ignore
+                ctx.drawImage(source, rb.x + ox, rb.y, rb.w, rb.h, x + hw, y + hh, hw, hh);
+                // prettier-ignore
+                ctx.drawImage(source, lb.x + ox, lb.y, lb.w, lb.h, x, y + hh, hw, hh);
+            }
+        });
+
+        return canvas;
+    }
+
+    setConnection(autotile: number, target: number): void {
+        const set = this.spec.getOrInsertComputed(autotile, () => new Set());
+        set.add(target);
+    }
+
+    /**
+     * 判断地图边缘连接点
+     * @param length 地图面积，也就是地图数组的总长度
+     * @param index 目标位置索引
+     * @param width 地图宽度
+     */
     private connectEdge(length: number, index: number, width: number): number {
         // 最高位表示左上，低位依次顺时针旋转
 
@@ -132,10 +388,12 @@ export class AutotileProcessor implements IAutotileProcessor {
                 center: 0
             };
         }
-        let res: number = this.connectEdge(array.length, index, width);
-        const childList = this.childMap.get(block);
+        let res = this.connectEdge(array.length, index, width);
+        const spec = this.spec.get(block);
 
         // 最高位表示左上，低位依次顺时针旋转
+        // 在边缘时，在地图外的部分一定会连接上，所以哪怕索引可能导致串行，也对结果没有任何影响
+        // 例如在右边缘时，右侧一定连接，此时不论其与下一行的首个图块是否一个连接，都不会影响需要连接的结果
         const a7 = array[index - width - 1] ?? 0;
         const a6 = array[index - width] ?? 0;
         const a5 = array[index - width + 1] ?? 0;
@@ -147,7 +405,7 @@ export class AutotileProcessor implements IAutotileProcessor {
 
         // Benchmark https://www.measurethat.net/Benchmarks/Show/35271/0/convert-boolean-to-number
 
-        if (!childList || childList.size === 0) {
+        if (!spec || spec.size === 0) {
             // 不包含子元件，那么直接跟相同的连接
             res |=
                 +(a0 === block) |
@@ -160,14 +418,14 @@ export class AutotileProcessor implements IAutotileProcessor {
                 (+(a7 === block) << 7);
         } else {
             res |=
-                +childList.has(a0) |
-                (+childList.has(a1) << 1) |
-                (+childList.has(a2) << 2) |
-                (+childList.has(a3) << 3) |
-                (+childList.has(a4) << 4) |
-                (+childList.has(a5) << 5) |
-                (+childList.has(a6) << 6) |
-                (+childList.has(a7) << 7);
+                +spec.has(a0) |
+                (+spec.has(a1) << 1) |
+                (+spec.has(a2) << 2) |
+                (+spec.has(a3) << 3) |
+                (+spec.has(a4) << 4) |
+                (+spec.has(a5) << 5) |
+                (+spec.has(a6) << 6) |
+                (+spec.has(a7) << 7);
         }
 
         return {
@@ -182,7 +440,7 @@ export class AutotileProcessor implements IAutotileProcessor {
         target: number,
         direction: AutotileConnection
     ): number {
-        const childList = this.childMap.get(center);
+        const childList = this.spec.get(center);
         if (!childList || !childList.has(target)) {
             return connection & ~direction;
         } else {
@@ -190,40 +448,13 @@ export class AutotileProcessor implements IAutotileProcessor {
         }
     }
 
-    /**
-     * 检查贴图是否是一个自动元件
-     * @param tile 贴图数据
-     */
-    private checkAutotile(tile: IMaterialFramedData) {
-        if (tile.cls !== BlockCls.Autotile) return false;
-        const { texture, frames } = tile;
-        if (texture.width !== 96 * frames) return false;
-        if (texture.height === 128 || texture.height === 144) return true;
-        else return false;
-    }
-
-    render(autotile: number, connection: number): ITextureRenderable | null {
-        const tile = this.manager.getTile(autotile);
-        if (!tile) return null;
-        if (!this.checkAutotile(tile)) return null;
-        return this.renderWithoutCheck(tile, connection);
-    }
-
-    renderWith(
-        tile: IMaterialFramedData,
-        connection: number
-    ): ITextureRenderable | null {
-        if (!this.checkAutotile(tile)) return null;
-        return this.renderWithoutCheck(tile, connection);
-    }
-
-    renderWithoutCheck(
+    render(
         tile: IMaterialFramedData,
         connection: number
     ): ITextureRenderable | null {
         const { texture } = tile;
         const size = texture.height === 32 * 48 ? 32 : 48;
-        const index = distinctConnectionMap.get(connection);
+        const index = this.distinct.get(connection);
         if (isNil(index)) return null;
         const { rect } = texture.render();
         return {
@@ -233,22 +464,12 @@ export class AutotileProcessor implements IAutotileProcessor {
     }
 
     *renderAnimated(
-        autotile: number,
-        connection: number
-    ): Generator<ITextureRenderable, void> {
-        const tile = this.manager.getTile(autotile);
-        if (!tile) return;
-        yield* this.renderAnimatedWith(tile, connection);
-    }
-
-    *renderAnimatedWith(
         tile: IMaterialFramedData,
         connection: number
     ): Generator<ITextureRenderable, void> {
-        if (!this.checkAutotile(tile)) return;
         const { texture, frames } = tile;
         const size = texture.height === 128 ? 32 : 48;
-        const index = distinctConnectionMap.get(connection);
+        const index = this.distinct.get(connection);
         if (isNil(index)) return;
         for (let i = 0; i < frames; i++) {
             yield {
@@ -257,198 +478,4 @@ export class AutotileProcessor implements IAutotileProcessor {
             };
         }
     }
-
-    /**
-     * 将自动元件图片展平，平铺存储 48 种样式，此时可以只通过一次绘制来绘制出自动元件，不需要四次绘制
-     * @param image 原始自动元件图片
-     */
-    static flatten(image: IAutotileData): SizedCanvasImageSource | null {
-        const { source, frames } = image;
-        if (source.width !== frames * 96) return null;
-        if (source.height !== 128 && source.height !== 144) return null;
-        const type =
-            source.height === 128 ? AutotileType.Big3x4 : AutotileType.Small2x3;
-        const size = type === AutotileType.Big3x4 ? 32 : 48;
-        const width = frames * size;
-        const height = 48 * size;
-        // 画到画布上
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return null;
-        const half = size / 2;
-        const map = type === AutotileType.Big3x4 ? rectMap3x4 : rectMap2x3;
-        const used = new Set<number>();
-        // 遍历每个组合
-        distinctConnectionMap.forEach((index, conn) => {
-            if (used.has(conn)) return;
-            used.add(conn);
-            const { lt, rt, rb, lb } = map.get(conn)!;
-            const y = index * size;
-            for (let i = 0; i < frames; i++) {
-                const x = i * size;
-                // prettier-ignore
-                ctx.drawImage(source, lt.x + i * 96, lt.y, lt.w, lt.h, x, y, half, half);
-                // prettier-ignore
-                ctx.drawImage(source, rt.x + i * 96, rt.y, rt.w, rt.h, x + half, y, half, half);
-                // prettier-ignore
-                ctx.drawImage(source, rb.x + i * 96, rb.y, rb.w, rb.h, x + half, y + half, half, half);
-                // prettier-ignore
-                ctx.drawImage(source, lb.x + i * 96, lb.y, lb.w, lb.h, x, y + half, half, half);
-            }
-        });
-
-        return canvas;
-    }
-}
-
-/**
- * 映射自动元件连接
- * @param target 输出映射对象
- * @param mode 自动元件类型，1 表示 3x4，2 表示 2x3
- */
-function mapAutotile(
-    target: Map<number, [number, number, number, number]>,
-    mode: 1 | 2
-) {
-    const h = mode === 1 ? 2 : 1; // 横向偏移因子
-    const v = mode === 1 ? 12 : 4; // 纵向偏移因子
-    const luo = mode === 1 ? 12 : 8; // leftup origin
-    const ruo = mode === 1 ? 17 : 11; // rightup origin
-    const ldo = mode === 1 ? 42 : 20; // leftdown origin
-    const rdo = mode === 1 ? 47 : 23; // rightdown origin
-    const luc = mode === 1 ? 4 : 2; // leftup corner
-    const ruc = mode === 1 ? 5 : 3; // rightup corner
-    const rdc = mode === 1 ? 11 : 7; // rightdown corner
-    const ldc = mode === 1 ? 10 : 6; // leftdown corner
-
-    for (let i = 0; i <= 0b1111_1111; i++) {
-        // 自动元件由四个更小的矩形组合而成
-        // 初始状态下，四个矩形分别处在四个角的位置
-        // 而且对应角落的矩形只可能出现在每个大区块的对应角落
-
-        let lu = luo; // leftup
-        let ru = ruo; // rightup
-        let ld = ldo; // leftdown
-        let rd = rdo; // rightdown
-
-        // 先看四个方向，最后看斜角方向
-        if (i & 0b0000_0001) {
-            // 左侧有连接，左侧两个矩形向右偏移两个因子
-            lu += h * 2;
-            ld += h * 2;
-            // 如果右侧还有连接，那么右侧矩形和左侧矩形需要移动至中间
-            // 但是由于后面还处理了先右侧再左侧的情况，因此需要先向右偏移一个因子
-            // 结果就是先向右移动了一个因子，在后面又向左移动了两个因子，因此相当于向左移动了一个因子
-            if (i & 0b0001_0000) {
-                ru += h;
-                rd += h;
-            }
-        }
-        if (i & 0b0000_0100) {
-            // 下侧有连接，下侧两个矩形向上偏移两个因子
-            ld -= v * 2;
-            rd -= v * 2;
-            if (i & 0b0100_0000) {
-                lu -= v;
-                ru -= v;
-            }
-        }
-        if (i & 0b0001_0000) {
-            // 右侧有连接，右侧矩形向左移动两个因子
-            ru -= h * 2;
-            rd -= h * 2;
-            if (i & 0b0000_0001) {
-                lu -= h;
-                ld -= h;
-            }
-        }
-        if (i & 0b0100_0000) {
-            // 上侧有链接，上侧矩形向下移动两个因子
-            lu += v * 2;
-            ru += v * 2;
-            if (i & 0b0000_0100) {
-                ld += v;
-                rd += v;
-            }
-        }
-        // 斜角
-        // 如果左上仅与上和左连接
-        if ((i & 0b1100_0001) === 0b0100_0001) {
-            lu = luc;
-        }
-        // 如果右上仅与上和右连接
-        if ((i & 0b0111_0000) === 0b0101_0000) {
-            ru = ruc;
-        }
-        // 如果右下仅与右和下连接
-        if ((i & 0b0001_1100) === 0b0001_0100) {
-            rd = rdc;
-        }
-        // 如果左下仅与左和下连接
-        if ((i & 0b0000_0111) === 0b0000_0101) {
-            ld = ldc;
-        }
-        target.set(i, [lu, ru, rd, ld]);
-    }
-}
-
-export function createAutotile() {
-    mapAutotile(connectionMap3x4, 1);
-    mapAutotile(connectionMap2x3, 2);
-
-    connectionMap3x4.forEach((data, connection) => {
-        const [ltd, rtd, rbd, lbd] = data;
-        const ltx = (ltd % 6) * 16;
-        const lty = Math.floor(ltd / 6) * 16;
-        const rtx = (rtd % 6) * 16;
-        const rty = Math.floor(rtd / 6) * 16;
-        const rbx = (rbd % 6) * 16;
-        const rby = Math.floor(rbd / 6) * 16;
-        const lbx = (lbd % 6) * 16;
-        const lby = Math.floor(lbd / 6) * 16;
-        rectMap3x4.set(connection, {
-            lt: { x: ltx, y: lty, w: 16, h: 16 },
-            rt: { x: rtx, y: rty, w: 16, h: 16 },
-            rb: { x: rbx, y: rby, w: 16, h: 16 },
-            lb: { x: lbx, y: lby, w: 16, h: 16 }
-        });
-    });
-    connectionMap2x3.forEach((data, connection) => {
-        const [ltd, rtd, rbd, lbd] = data;
-        const ltx = (ltd % 4) * 24;
-        const lty = Math.floor(ltd / 4) * 24;
-        const rtx = (rtd % 4) * 24;
-        const rty = Math.floor(rtd / 4) * 24;
-        const rbx = (rbd % 4) * 24;
-        const rby = Math.floor(rbd / 4) * 24;
-        const lbx = (lbd % 4) * 24;
-        const lby = Math.floor(lbd / 4) * 24;
-        rectMap2x3.set(connection, {
-            lt: { x: ltx, y: lty, w: 24, h: 24 },
-            rt: { x: rtx, y: rty, w: 24, h: 24 },
-            rb: { x: rbx, y: rby, w: 24, h: 24 },
-            lb: { x: lbx, y: lby, w: 24, h: 24 }
-        });
-    });
-    const usedRect: [number, number, number, number][] = [];
-    let flag = 0;
-    // 2x3 和 3x4 的自动元件连接方式一样，因此没必要映射两次
-    connectionMap2x3.forEach((conn, num) => {
-        const index = usedRect.findIndex(
-            used =>
-                used[0] === conn[0] &&
-                used[1] === conn[1] &&
-                used[2] === conn[2] &&
-                used[3] === conn[3]
-        );
-        if (index === -1) {
-            distinctConnectionMap.set(num, flag);
-            usedRect.push(conn.slice() as [number, number, number, number]);
-            flag++;
-        } else {
-            distinctConnectionMap.set(num, index);
-        }
-    });
 }

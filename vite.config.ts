@@ -40,7 +40,11 @@ export default defineConfig({
     resolve: {
         alias: [
             ...aliases,
-            ...aliasesUser
+            ...aliasesUser,
+            {
+                find: '@/',
+                replacement: path.resolve(__dirname, 'src/')
+            }
         ]
     },
     test: {

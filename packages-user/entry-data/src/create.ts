@@ -13,6 +13,4 @@ export function create() {
     Mota.register('@user/data-base', DataBase);
     Mota.register('@user/data-system', DataSystem);
     Mota.register('@user/data-state', DataState);
-
-    DataBase.loading.emit('dataRegistered');
 }

@@ -117,6 +117,13 @@ export class Dir8FaceHandler implements IFaceHandler<FaceDirection> {
         return map.get(degraded) ?? FaceDirection.Unknown;
     }
 
+    dirOf(dx: number, dy: number): FaceDirection {
+        for (const [dir, { x, y }] of DIR8_MOVEMENTS) {
+            if (x === dx && y === dy) return dir;
+        }
+        return FaceDirection.Unknown;
+    }
+
     mapDirection(): Iterable<FaceDirection> {
         return DIR8_MOVEMENTS.keys();
     }
@@ -190,6 +197,13 @@ export class Dir4FaceHandler implements IFaceHandler<FaceDirection> {
         if (degraded === FaceDirection.Unknown) return FaceDirection.Unknown;
         const map = anticlockwise ? DIR4_CCW : DIR4_CW;
         return map.get(degraded) ?? FaceDirection.Unknown;
+    }
+
+    dirOf(dx: number, dy: number): FaceDirection {
+        for (const [dir, { x, y }] of DIR8_MOVEMENTS) {
+            if (x === dx && y === dy) return dir;
+        }
+        return FaceDirection.Unknown;
     }
 
     mapDirection(): Iterable<FaceDirection> {

@@ -1,5 +1,11 @@
-import { ITileLocator, logger } from '@motajs/common';
-import { IObjectMovable, IObjectMover } from '@user/data-common';
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    ITileLocator,
+    logger
+} from '@motajs/common';
+import { IObjectMovable, IObjectMover, shouldReplay } from '@user/data-common';
 import { IStateBase } from '@user/data-base';
 import { PathFinder } from './finder';
 import {
@@ -7,23 +13,34 @@ import {
     IPathfindingController,
     IPathfindingResult,
     IPathfindingSystem,
+    IPathfindingSystemHooks,
     PathFallbackPolicy,
     PathfindingStatus
 } from './types';
 
-export class PathfindingSystem implements IPathfindingSystem {
+export class PathfindingSystem
+    extends Hookable<IPathfindingSystemHooks>
+    implements IPathfindingSystem
+{
     /** 寻路求解器 */
     readonly finder: IPathFinder;
-
     /** 当前绑定的移动器 */
-    private mover: IObjectMover<IObjectMovable> | null = null;
+    mover: IObjectMover<IObjectMovable> | null = null;
+
     /** 注入的瞬移回退策略，未注入时必定回退为逐步寻路 */
     private policy: PathFallbackPolicy | null = null;
     /** 最近一次寻路移动的控制器包装 */
     private current: IPathfindingController | null = null;
 
     constructor(readonly state: IStateBase) {
+        super();
         this.finder = new PathFinder(state);
+    }
+
+    protected createController(
+        hook: Partial<IPathfindingSystemHooks>
+    ): IHookController<IPathfindingSystemHooks> {
+        return new HookController(this, hook);
     }
 
     useMover(mover: IObjectMover<IObjectMovable> | null): void {
@@ -66,6 +83,7 @@ export class PathfindingSystem implements IPathfindingSystem {
         if (teleport) {
             const last = array.at(-1)!;
             mover.tp(last.to.x, last.to.y);
+            this.forEachHook(hook => hook.onBeforeTeleportTo?.(path, this));
         } else {
             for (const step of array) {
                 mover.step(step.dir);
@@ -76,15 +94,22 @@ export class PathfindingSystem implements IPathfindingSystem {
         if (!controller) return null;
         const result: IPathfindingController = { controller, path };
         this.current = result;
+
+        controller.onEnd.then(() => {
+            this.forEachHook(hook => hook.onAfterTeleportTo?.(path, this));
+        });
+
         return result;
     }
 
+    @shouldReplay('Moving hero by path finding system should be replayed.')
     moveTo(target: ITileLocator): IPathfindingController | null {
         const path = this.getPath(target);
         if (path.status !== PathfindingStatus.Success) return null;
         return this.startMove(path, false);
     }
 
+    @shouldReplay('Teleporting hero by path finding system should be replayed.')
     teleportTo(target: ITileLocator): IPathfindingController | null {
         const path = this.getPath(target);
         if (path.status !== PathfindingStatus.Success) return null;

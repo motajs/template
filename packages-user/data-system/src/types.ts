@@ -1,5 +1,5 @@
 import { IStateBase } from '@user/data-base';
-import { IEnemyContext } from './combat';
+import { ICombatFlow, IEnemyContext } from './combat';
 import { IEnemyAttr, IHeroAttr } from '@user/data-common';
 import { IGameEventSystem } from './event';
 import { IPathfindingSystem } from './path';
@@ -7,6 +7,8 @@ import { IPathfindingSystem } from './path';
 export interface IStateSystem extends IStateBase {
     /** 怪物上下文 */
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
+    /** 怪物战斗流程对象 */
+    readonly combat: ICombatFlow<IEnemyAttr, IHeroAttr>;
     /** 游戏事件系统 */
     readonly eventSystem: IGameEventSystem;
     /** 已绑定勇士移动器的寻路系统 */

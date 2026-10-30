@@ -1,5 +1,10 @@
-import { logger } from '@motajs/common';
-import { ILoadProgressTotal, LoadProgressTotal } from '@motajs/loader';
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    logger
+} from '@motajs/common';
+import { ILoadManager, LoadManager } from '@motajs/loader';
 import {
     IRoleFaceBinder,
     IFaceManager,
@@ -9,10 +14,6 @@ import {
     SaveCompression,
     RoleFaceBinder,
     FaceManager,
-    Dir4FaceHandler,
-    Dir8FaceHandler,
-    FaceGroup,
-    FaceDirection,
     IHeroAttr,
     IEnemyAttr,
     GameEventStore,
@@ -23,60 +24,53 @@ import {
     MapStore,
     IReplaySystem,
     ReplaySystem,
-    ReplayCode
+    IDataCommonHooks,
+    IEnemyStore,
+    EnemyStore
 } from '@user/data-common';
 import {
     EnemyManager,
     IEnemyManager,
-    HeroAttribute,
     HeroState,
     IHeroState,
     IFlagSystem,
     FlagSystem,
-    IMotaDataLoader,
-    MotaDataLoader,
     IMapState,
     MapState
 } from '@user/data-base';
 import {
-    DamageSystem,
+    CombatFlow,
     EnemyContext,
     GameEventSystem,
+    ICombatFlow,
     IEnemyContext,
     IGameEventSystem,
-    MapDamage,
     IPathfindingSystem,
     PathfindingSystem
 } from '@user/data-system';
-import { ICoreState, ISaveableExecutor } from './types';
 import {
-    CommonAuraConverter,
-    EnemyLegacyBridge,
-    GuardAuraConverter,
-    MainDamageCalculator,
-    MainEnemyFinalEffect,
-    MainMapDamageConverter,
-    MainMapDamageReducer,
-    registerSpecials,
-    MainEnemyComparer
-} from './enemy';
-import { HERO_DEFAULT_ATTRIBUTE, TILE_HEIGHT, TILE_WIDTH } from './shared';
-import { DefaultHeroMoveTopImpl, DefaultPassPredicateImpl } from './hero';
-import { createEventRegistrations } from './event/registrations';
-import {
-    ReplayEquip,
-    ReplayMove,
-    ReplayTeleport,
-    ReplayUnequip,
-    ReplayUseItem
-} from './replay';
+    ICoreState,
+    ICoreStateConfig,
+    IDataPlugin,
+    IDataPluginDefine,
+    IPluginDefine,
+    IPluginBase,
+    ISaveableExecutor,
+    PluginStatus
+} from './types';
+import { IPluginOrderResult, orderPlugins } from './plugin';
+import { IMotaDataLoader, MotaDataLoader } from './loader';
 
-export class CoreState implements ICoreState {
+export class CoreState
+    extends Hookable<IDataCommonHooks>
+    implements ICoreState
+{
     // Layer 0 公共层，最底层的接口，不会依赖任何其他内容，一般是工具性接口及不需要存档的数据
     readonly roleFace: IRoleFaceBinder;
     readonly faceManager: IFaceManager;
     readonly tileStore: ITileStore;
     readonly itemStore: IItemStore<IHeroAttr>;
+    readonly enemyStore: IEnemyStore<IEnemyAttr>;
     readonly mapStore: IMapStore;
     readonly eventStore: IGameEventStore;
     readonly replaySystem: IReplaySystem;
@@ -89,12 +83,13 @@ export class CoreState implements ICoreState {
 
     // Layer 2 执行层，游戏逻辑对象都在这，包括一些需要操作数据层的逻辑系统等
     readonly enemyContext: IEnemyContext<IEnemyAttr, IHeroAttr>;
+    readonly combat: ICombatFlow<IEnemyAttr, IHeroAttr>;
     readonly eventSystem: IGameEventSystem;
     readonly pathfinding: IPathfindingSystem;
 
     // Layer 3 用户层，也就是最顶层的内容，一般仅用于初始化以及仅供渲染端调用的顶层模块
-    readonly loadProgress: ILoadProgressTotal;
-    readonly dataLoader: IMotaDataLoader;
+    readonly loader: IMotaDataLoader;
+    readonly loadManager: ILoadManager;
 
     /** 可存档对象映射 */
     private readonly saveables: Map<string, ISaveableContent<any>> = new Map();
@@ -106,143 +101,185 @@ export class CoreState implements ICoreState {
         ISaveableExecutor<any>
     > = new Map();
 
-    constructor() {
-        //#region L0 初始化
+    /** 已注册的数据端插件 */
+    private readonly dataPlugins: Map<string, IDataPlugin> = new Map();
+    /** 排序后的数据端插件 */
+    private readonly orderedDataPlugins: IPluginOrderResult;
 
-        // 朝向
+    constructor(config: Readonly<ICoreStateConfig>) {
+        super();
+        // L0 定义
         this.roleFace = new RoleFaceBinder();
         this.faceManager = new FaceManager();
-        const dir4 = new Dir4FaceHandler();
-        const dir8 = new Dir8FaceHandler();
-        this.faceManager.register(FaceGroup.Dir4, dir4);
-        this.faceManager.registerById('dir4', dir4);
-        this.faceManager.register(FaceGroup.Dir8, dir8);
-        this.faceManager.registerById('dir8', dir8);
-
-        // 图块
         this.tileStore = new TileStore();
-        // 道具
-        this.itemStore = new ItemStore<IHeroAttr>();
-        // 地图
+        this.itemStore = new ItemStore<IHeroAttr>(this.tileStore);
         this.mapStore = new MapStore();
-        // 游戏事件
         this.eventStore = new GameEventStore();
-
-        //#endregion
-
-        //#region L1 初始化
-
-        // Flag 系统
-        this.flags = new FlagSystem();
-
-        // 地图
-        this.maps = new MapState(this.tileStore, this);
-
-        // 勇士
-        const heroAttribute = new HeroAttribute(HERO_DEFAULT_ATTRIBUTE);
-        const heroState = new HeroState(this, dir8, heroAttribute);
-        this.hero = heroState;
-
-        this.loadProgress = new LoadProgressTotal();
-        this.dataLoader = new MotaDataLoader(this.loadProgress);
-
-        // 怪物管理器
-        const comparer = new MainEnemyComparer();
-        const enemyManager = new EnemyManager(new EnemyLegacyBridge());
-        enemyManager.attachEnemyComparer(comparer);
-        enemyManager.setAttributeDefaults('hp', 0);
-        enemyManager.setAttributeDefaults('atk', 0);
-        enemyManager.setAttributeDefaults('def', 0);
-        enemyManager.setAttributeDefaults('exp', 0);
-        enemyManager.setAttributeDefaults('money', 0);
-        enemyManager.setAttributeDefaults('point', 0);
-        registerSpecials(enemyManager);
-        this.enemyManager = enemyManager;
-
-        //#endregion
-
-        //#region L2 初始化
-
-        // 怪物上下文
-        const enemyContext = new EnemyContext<IEnemyAttr, IHeroAttr>(this);
-        const damageSystem = new DamageSystem(enemyContext);
-        const mapDamage = new MapDamage(enemyContext);
-        damageSystem.useCalculator(new MainDamageCalculator());
-        mapDamage.useReducer(new MainMapDamageReducer());
-        mapDamage.useConverter(new MainMapDamageConverter());
-        enemyContext.attachDamageSystem(damageSystem);
-        enemyContext.attachMapDamage(mapDamage);
-        enemyContext.registerAuraConverter(new CommonAuraConverter());
-        enemyContext.registerAuraConverter(new GuardAuraConverter());
-        enemyContext.registerFinalEffect(new MainEnemyFinalEffect());
-        enemyContext.resize(TILE_WIDTH, TILE_HEIGHT);
-        enemyContext.bindHero(heroAttribute);
-        this.enemyContext = enemyContext;
-
-        // 游戏事件系统
-        const eventSystem = new GameEventSystem(
-            this,
-            createEventRegistrations()
-        );
-        this.eventSystem = eventSystem;
-
-        // 录像系统
+        this.enemyStore = new EnemyStore(this.tileStore);
         this.replaySystem = new ReplaySystem();
 
-        // 寻路系统
+        // L1 定义
+        this.flags = new FlagSystem();
+        this.maps = new MapState(this);
+        this.hero = new HeroState(this);
+        this.enemyManager = new EnemyManager<IEnemyAttr>(this.tileStore);
+
+        // L2 定义
+        this.enemyContext = new EnemyContext<IEnemyAttr, IHeroAttr>(this);
+        this.combat = new CombatFlow(this);
+        this.eventSystem = new GameEventSystem(this, config.events);
         this.pathfinding = new PathfindingSystem(this);
-        this.pathfinding.useMover(this.hero.location.mover);
-        // 初始状态下勇士不在任何楼层，切换楼层后再具体设置
-        this.pathfinding.finder.useMapLayer(null);
-        const predicate = new DefaultPassPredicateImpl(this);
-        this.pathfinding.finder.usePassPredicate(predicate);
 
-        //#endregion
+        // L3 定义
+        this.loadManager = new LoadManager();
+        this.loader = new MotaDataLoader(this.loadManager, config.loadStarter);
 
-        //#region L3 初始化
+        this.loader.addCoreConfig('core', config.coreURL);
 
-        // 存档内容
-        this.addSaveableContent('@system/hero', this.hero);
-        this.addSaveableContent('@system/flags', this.flags);
-        this.addSaveableContent('@system/maps', this.maps);
-        this.addSaveableContent('@system/enemy', this.enemyManager);
-        this.addSaveableContent('@system/replay', this.replaySystem);
-
-        // 勇士顶层初始化
-        const heroMoveTopImpl = new DefaultHeroMoveTopImpl(this);
-        this.hero.location.mover.useTopImplementation(heroMoveTopImpl);
-
-        // 录像系统初始化注册
-        this.registerReplayCommands();
-
-        //#endregion
+        // 数据端插件注册表
+        for (const define of config.dataPlugins) {
+            if (this.dataPlugins.has(define.id)) {
+                logger.error(78, define.id);
+                continue;
+            }
+            this.dataPlugins.set(define.id, {
+                status: PluginStatus.NotAwakened,
+                plugin: define
+            });
+        }
+        const deps = new Map<string, readonly string[]>();
+        for (const [id, plugin] of this.dataPlugins) {
+            deps.set(id, plugin.plugin.dataDeps);
+        }
+        this.orderedDataPlugins = orderPlugins(deps);
+        this.awake();
     }
 
-    //#region 私有方法
+    protected createController(
+        hook: Partial<IDataCommonHooks>
+    ): IHookController<IDataCommonHooks> {
+        return new HookController(this, hook);
+    }
+
+    emitTip(tip: string, icon?: number): void {
+        this.forEachHook(hook => hook.onTip?.(tip, icon));
+    }
+
+    //#region 插件方法
 
     /**
-     * 注册全部录像指令
+     * 检查插件加载状态
+     * @param plugin 插件状态对象
+     * @param expected 预期的插件加载状态
      */
-    private registerReplayCommands() {
-        const replay = this.replaySystem;
+    protected checkPluginStatus(
+        plugin: IPluginDefine<IPluginBase>,
+        expected: PluginStatus
+    ) {
+        if (plugin.status === expected) {
+            return true;
+        } else {
+            logger.error(
+                80,
+                plugin.plugin.id,
+                expected.toString(),
+                plugin.status.toString()
+            );
+            return false;
+        }
+    }
 
-        const up = new ReplayMove(this, FaceDirection.Up);
-        const right = new ReplayMove(this, FaceDirection.Right);
-        const down = new ReplayMove(this, FaceDirection.Down);
-        const left = new ReplayMove(this, FaceDirection.Left);
-        const teleport = new ReplayTeleport(this);
-        const useItem = new ReplayUseItem(this);
-        const equip = new ReplayEquip(this);
-        const unequip = new ReplayUnequip(this);
+    /**
+     * 获取指定插件的所有数据端插件依赖对象
+     * @param plugin 目标插件定义对象
+     */
+    protected getDataDependencies(plugin: IPluginBase): IDataPlugin[] {
+        const dependencies: IDataPlugin[] = [];
+        for (const dependency of plugin.dataDeps) {
+            const plugin = this.dataPlugins.get(dependency);
+            if (plugin) dependencies.push(plugin);
+        }
+        return dependencies;
+    }
 
-        replay.registerCommand(ReplayCode.Up, up);
-        replay.registerCommand(ReplayCode.Right, right);
-        replay.registerCommand(ReplayCode.Down, down);
-        replay.registerCommand(ReplayCode.Left, left);
-        replay.registerCommand(ReplayCode.Teleport, teleport);
-        replay.registerCommand(ReplayCode.UseItem, useItem);
-        replay.registerCommand(ReplayCode.Equip, equip);
-        replay.registerCommand(ReplayCode.Unequip, unequip);
+    /**
+     * 插件同步初始化
+     */
+    protected awake(): void {
+        const result = this.orderedDataPlugins;
+        if (result.cyclic.size > 0) {
+            logger.error(76, [...result.cyclic].join(', '));
+        }
+        for (const [pluginId, lacked] of result.missing) {
+            for (const dependency of lacked) {
+                logger.error(77, pluginId, dependency);
+            }
+        }
+        for (const id of result.order) {
+            const holder = this.dataPlugins.get(id)!;
+            const plugin = holder.plugin;
+            if (!this.checkPluginStatus(holder, PluginStatus.NotAwakened)) {
+                continue;
+            }
+            const dependencies = this.getDataDependencies(plugin);
+            plugin.awake(this, dependencies);
+            holder.status = PluginStatus.Awakened;
+        }
+    }
+
+    /**
+     * 插件异步初始化
+     */
+    protected async initialize(): Promise<void> {
+        const result = this.orderedDataPlugins;
+        for (const id of result.order) {
+            const holder = this.dataPlugins.get(id)!;
+            const plugin = holder.plugin;
+            if (!this.checkPluginStatus(holder, PluginStatus.Awakened)) {
+                continue;
+            }
+            const dependencies = this.getDataDependencies(plugin);
+            await plugin.initialize(this, dependencies);
+            holder.status = PluginStatus.Initialized;
+        }
+    }
+
+    /**
+     * 插件加载初始化
+     */
+    protected async afterLoad(): Promise<void> {
+        const result = this.orderedDataPlugins;
+        for (const id of result.order) {
+            const holder = this.dataPlugins.get(id)!;
+            const plugin = holder.plugin;
+            if (!this.checkPluginStatus(holder, PluginStatus.Initialized)) {
+                continue;
+            }
+            const dependencies = this.getDataDependencies(plugin);
+            await plugin.afterLoad(this, dependencies);
+            holder.status = PluginStatus.Loaded;
+        }
+    }
+
+    getDataPlugin<T extends IDataPluginDefine>(
+        id: string
+    ): Readonly<IDataPlugin<T>> | null {
+        return (this.dataPlugins.get(id) as IDataPlugin<T>) ?? null;
+    }
+
+    //#endregion
+
+    //#region 初始化方法
+
+    async *load(): AsyncGenerator<number, void> {
+        await this.initialize();
+        yield* this.loader.start();
+        await this.afterLoad();
+        for (const plugin of this.dataPlugins.values()) {
+            if (plugin.status !== PluginStatus.Loaded) {
+                logger.error(81, plugin.plugin.id);
+            }
+        }
     }
 
     //#endregion
@@ -322,8 +359,4 @@ export class CoreState implements ICoreState {
     }
 
     //#endregion
-}
-
-export function createCoreState(): CoreState {
-    return new CoreState();
 }
