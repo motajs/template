@@ -425,12 +425,6 @@ importers:
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
-      '@motajs/legacy-common':
-        specifier: workspace:*
-        version: link:../../packages/legacy-common
-      '@motajs/legacy-ui':
-        specifier: workspace:*
-        version: link:../../packages/legacy-ui
       '@motajs/render':
         specifier: workspace:*
         version: link:../../packages/render
@@ -536,15 +530,9 @@ importers:
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
-      '@motajs/legacy-common':
-        specifier: workspace:*
-        version: link:../../packages/legacy-common
       '@motajs/legacy-system':
         specifier: workspace:*
         version: link:../../packages/legacy-system
-      '@motajs/legacy-ui':
-        specifier: workspace:*
-        version: link:../../packages/legacy-ui
       '@motajs/render':
         specifier: workspace:*
         version: link:../../packages/render
@@ -563,9 +551,6 @@ importers:
 
   packages-user/entry-data:
     dependencies:
-      '@motajs/legacy-common':
-        specifier: workspace:*
-        version: link:../../packages/legacy-common
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
@@ -602,35 +587,8 @@ importers:
 
   packages/common: {}
 
-  packages/legacy-common:
-    dependencies:
-      '@motajs/common':
-        specifier: workspace:*
-        version: link:../common
-
   packages/legacy-system:
     dependencies:
-      '@motajs/system':
-        specifier: workspace:*
-        version: link:../system
-
-  packages/legacy-ui:
-    dependencies:
-      '@motajs/client':
-        specifier: workspace:*
-        version: link:../client
-      '@motajs/client-base':
-        specifier: workspace:*
-        version: link:../client-base
-      '@motajs/common':
-        specifier: workspace:*
-        version: link:../common
-      '@motajs/legacy-system':
-        specifier: workspace:*
-        version: link:../legacy-system
-      '@motajs/render':
-        specifier: workspace:*
-        version: link:../render
       '@motajs/system':
         specifier: workspace:*
         version: link:../system
