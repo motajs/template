@@ -1,7 +1,6 @@
 import { Mota } from '@user/entry-data';
 import * as Client from '@motajs/client';
 import * as ClientBase from '@motajs/client-base';
-import * as LegacySystem from '@motajs/legacy-system';
 import * as Render from '@motajs/render';
 import * as RenderVue from '@motajs/render-vue';
 import * as System from '@motajs/system';
@@ -13,7 +12,6 @@ import * as Lodash from 'lodash-es';
 export function create() {
     Mota.register('@motajs/client', Client);
     Mota.register('@motajs/client-base', ClientBase);
-    Mota.register('@motajs/legacy-system', LegacySystem);
     Mota.register('@motajs/render', Render);
     Mota.register('@motajs/render-vue', RenderVue);
     Mota.register('@motajs/system', System);

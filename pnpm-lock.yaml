@@ -530,9 +530,6 @@ importers:
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
-      '@motajs/legacy-system':
-        specifier: workspace:*
-        version: link:../../packages/legacy-system
       '@motajs/render':
         specifier: workspace:*
         version: link:../../packages/render
@@ -586,12 +583,6 @@ importers:
   packages/client-base: {}
 
   packages/common: {}
-
-  packages/legacy-system:
-    dependencies:
-      '@motajs/system':
-        specifier: workspace:*
-        version: link:../system
 
   packages/loader:
     dependencies:
