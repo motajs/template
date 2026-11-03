@@ -6,8 +6,6 @@
         "@motajs/common": "workspace:*",
         "@motajs/render": "workspace:*",
         "@motajs/render-vue": "workspace:*",
-        "@motajs/legacy-common": "workspace:*",
-        "@motajs/legacy-ui": "workspace:*",
         "@motajs/types": "workspace:*",
         "@motajs/system": "workspace:*",
         "@user/client-base": "workspace:*",
