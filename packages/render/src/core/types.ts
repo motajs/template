@@ -915,6 +915,30 @@ export interface IGraphicPath extends IGraphicRenderItem {
     addPath(path: Path2D): void;
 }
 
+export interface IGraphicRectR extends IGraphicRenderItem {
+    /** 圆角属性，四元素数组，每个元素是一个二元素数组，表示这个角的半径，顺序为 左上，右上，右下，左下 */
+    readonly corner: [radiusX: number, radiusY: number][];
+
+    /**
+     * 设置圆角半径
+     * @param x 横向半径
+     * @param y 纵向半径
+     */
+    setRadius(x: number, y: number, corner: RectRCorner): void;
+
+    /**
+     * 设置圆形圆角参数
+     * @param circle 圆形圆角参数
+     */
+    setCircle(circle: RectRCircleParams): void;
+
+    /**
+     * 设置椭圆圆角参数
+     * @param ellipse 椭圆圆角参数
+     */
+    setEllipse(ellipse: RectREllipseParams): void;
+}
+
 export const enum RectRCorner {
     TopLeft,
     TopRight,
