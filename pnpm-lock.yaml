@@ -467,9 +467,6 @@ importers:
       '@motajs/loader':
         specifier: workspace:*
         version: link:../../packages/loader
-      '@motajs/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@user/data-common':
         specifier: workspace:*
         version: link:../data-common
@@ -491,9 +488,9 @@ importers:
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
-      '@motajs/types':
+      '@motajs/loader':
         specifier: workspace:*
-        version: link:../../packages/types
+        version: link:../../packages/loader
       '@user/data-base':
         specifier: workspace:*
         version: link:../data-base
@@ -595,8 +592,6 @@ importers:
       '@motajs/common':
         specifier: workspace:*
         version: link:../common
-
-  packages/types: {}
 
   src:
     dependencies:
