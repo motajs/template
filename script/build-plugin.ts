@@ -7,10 +7,8 @@ const SPECIFIER_BANS: ReadonlyArray<readonly [RegExp, string]> = [
     [/^@user\/client-/, '@user/client-'],
     [/^@user\/entry-client(?:\/|$)/, '@user/entry-client'],
     [/^@motajs\/render(?:[/-]|$)/, '@motajs/render'],
-    [/^@motajs\/client(?:[/-]|$)/, '@motajs/client'],
     [/^@motajs\/system(?:[/-]|$)/, '@motajs/system'],
     [/^@motajs\/audio(?:[/-]|$)/, '@motajs/audio'],
-    [/^@motajs\/legacy-/, '@motajs/legacy-'],
     [/^vue(?:\/|$)/, 'vue'],
     [/^@vue\//, '@vue/'],
     [/^ant-design-vue(?:\/|$)/, 'ant-design-vue'],
@@ -19,13 +17,11 @@ const SPECIFIER_BANS: ReadonlyArray<readonly [RegExp, string]> = [
 
 /** 数据端构建中禁止出现的渲染端模块解析路径，第一项为匹配规则，第二项为报错时的命中标记 */
 const PATH_BANS: ReadonlyArray<readonly [RegExp, string]> = [
-    [/[/\\]packages-user[/\\]client-/, 'packages-user/client-'],
     [/[/\\]packages[/\\]render(?:[/\\-]|$)/, 'packages/render'],
     [/[/\\]packages[/\\]render-vue(?:[/\\-]|$)/, 'packages/render-vue'],
     [/[/\\]packages[/\\]client(?:[/\\-]|$)/, 'packages/client'],
     [/[/\\]packages[/\\]system(?:[/\\-]|$)/, 'packages/system'],
     [/[/\\]packages[/\\]audio(?:[/\\-]|$)/, 'packages/audio'],
-    [/[/\\]packages[/\\]legacy-/, 'packages/legacy-'],
     [/[/\\]src[/\\]client(?:[/\\]|$)/, 'src/client'],
     [
         /[/\\]node_modules[/\\](?:vue|@vue|ant-design-vue|@ant-design)(?:[/\\]|$)/,

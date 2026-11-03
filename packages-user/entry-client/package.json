@@ -1,8 +1,6 @@
 {
     "name": "@user/entry-client",
     "dependencies": {
-        "@motajs/client": "workspace:*",
-        "@motajs/client-base": "workspace:*",
         "@motajs/common": "workspace:*",
         "@motajs/render": "workspace:*",
         "@motajs/render-vue": "workspace:*",

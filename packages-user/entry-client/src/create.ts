@@ -1,22 +1,14 @@
 import { Mota } from '@user/entry-data';
-import * as Client from '@motajs/client';
-import * as ClientBase from '@motajs/client-base';
 import * as Render from '@motajs/render';
 import * as RenderVue from '@motajs/render-vue';
 import * as System from '@motajs/system';
 import * as UserClientBase from '@user/client-base';
 import * as ClientModules from '@user/client-modules';
-import * as Vue from 'vue';
-import * as Lodash from 'lodash-es';
 
 export function create() {
-    Mota.register('@motajs/client', Client);
-    Mota.register('@motajs/client-base', ClientBase);
     Mota.register('@motajs/render', Render);
     Mota.register('@motajs/render-vue', RenderVue);
     Mota.register('@motajs/system', System);
     Mota.register('@user/client-base', UserClientBase);
     Mota.register('@user/client-modules', ClientModules);
-    Mota.register('Vue', Vue);
-    Mota.register('Lodash', Lodash);
 }

@@ -389,9 +389,6 @@ importers:
       '@motajs/audio':
         specifier: workspace:*
         version: link:../../packages/audio
-      '@motajs/client-base':
-        specifier: workspace:*
-        version: link:../../packages/client-base
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
@@ -413,15 +410,18 @@ importers:
       '@user/data-state':
         specifier: workspace:*
         version: link:../data-state
+      '@user/data-system':
+        specifier: workspace:*
+        version: link:../data-system
 
   packages-user/client-modules:
     dependencies:
       '@motajs/animate':
         specifier: workspace:*
         version: link:../../packages/animate
-      '@motajs/client-base':
+      '@motajs/audio':
         specifier: workspace:*
-        version: link:../../packages/client-base
+        version: link:../../packages/audio
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
@@ -434,9 +434,6 @@ importers:
       '@motajs/system':
         specifier: workspace:*
         version: link:../../packages/system
-      '@motajs/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@user/client-base':
         specifier: workspace:*
         version: link:../client-base
@@ -521,12 +518,6 @@ importers:
 
   packages-user/entry-client:
     dependencies:
-      '@motajs/client':
-        specifier: workspace:*
-        version: link:../../packages/client
-      '@motajs/client-base':
-        specifier: workspace:*
-        version: link:../../packages/client-base
       '@motajs/common':
         specifier: workspace:*
         version: link:../../packages/common
@@ -573,14 +564,6 @@ importers:
       '@motajs/loader':
         specifier: workspace:*
         version: link:../loader
-
-  packages/client:
-    dependencies:
-      '@motajs/client-base':
-        specifier: workspace:*
-        version: link:../client-base
-
-  packages/client-base: {}
 
   packages/common: {}
 

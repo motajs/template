@@ -1,5 +1,3 @@
-import type * as Client from '@motajs/client';
-import type * as ClientBase from '@motajs/client-base';
 import type * as Common from '@motajs/common';
 import type * as Render from '@motajs/render';
 import type * as RenderVue from '@motajs/render-vue';
@@ -10,13 +8,8 @@ import type * as DataCommon from '@user/data-common';
 import type * as DataBase from '@user/data-base';
 import type * as DataSystem from '@user/data-system';
 import type * as DataState from '@user/data-state';
-// ---------- 必要的第三方库
-import type * as Vue from 'vue';
-import type * as Lodash from 'lodash-es';
 
 interface ModuleInterface {
-    '@motajs/client': typeof Client;
-    '@motajs/client-base': typeof ClientBase;
     '@motajs/common': typeof Common;
     '@motajs/render': typeof Render;
     '@motajs/render-vue': typeof RenderVue;
@@ -27,9 +20,6 @@ interface ModuleInterface {
     '@user/data-base': typeof DataBase;
     '@user/data-system': typeof DataSystem;
     '@user/data-state': typeof DataState;
-    // ---------- 必要的第三方库
-    Vue: typeof Vue;
-    Lodash: typeof Lodash;
 }
 
 export interface IMota {
