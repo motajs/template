@@ -11,7 +11,7 @@ import {
 export class Container extends RenderItem {
     sortedChildren: RenderItem[] = [];
 
-    private needSort: boolean = false;
+    protected needSort: boolean = false;
 
     protected render(
         canvas: MotaOffscreenCanvas2D,
@@ -84,7 +84,7 @@ export class Container extends RenderItem {
         }
     }
 
-    private sortChildren() {
+    protected sortChildren() {
         this.sortedChildren = [...this.children]
             .filter(v => !v.isComment)
             .sort((a, b) => a.zIndex - b.zIndex);
@@ -131,6 +131,10 @@ export class CustomContainer extends Container {
         canvas: MotaOffscreenCanvas2D,
         transform: Transform
     ): void {
+        if (this.needSort) {
+            this.sortChildren();
+            this.needSort = false;
+        }
         if (!this.renderFn) {
             super.render(canvas, transform);
         } else {
