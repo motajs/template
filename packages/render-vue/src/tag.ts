@@ -65,7 +65,7 @@ export class RenderTagManager implements IRenderTagManager {
             this.createStandardElement(false, Container)
         );
         this.registerTag(
-            'custom-container',
+            'container-custom',
             this.createStandardElement(true, CustomContainer)
         );
         this.registerTag('g-rect', this.createStandardElement(false, Rect));
