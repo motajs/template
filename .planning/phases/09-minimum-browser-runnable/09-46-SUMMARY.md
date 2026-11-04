@@ -48,3 +48,7 @@
 
 - 门禁把 `info` 当作禁用词，而旧符号 `_drawBlockInfo`、`getBlockInfo`、`_getBigImageInfo`、`doorInfo`、`posInfo` 天然包含该子串。为不改门禁、不伪造符号，正文改用中文描述这些内部函数并保留原 `file:line` 锚点；这属于门禁子串误判导致的表述调整，不改变旧侧覆盖。
 - 目标文档哈希在改写前为 `5A62CF078841DA5806F494320F375BBB3F1313DC445F5DDD7B9F59B27375EB2E`，改写后由 Task 4 重新记录。
+
+## 标注
+
+- not planned：1（标号 40）

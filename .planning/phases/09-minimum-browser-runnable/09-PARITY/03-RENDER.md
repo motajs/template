@@ -71,7 +71,7 @@
 | 37 | 闪屏 | `libs/control.js:2818` `screenFlash` 以 `setCurtain` 为基础做多次颜色切换。 | 不支持 | 现有接口无法确认可简单实现；新无默认闪屏效果。 | 旧有闪屏；新无对应实现。 |
 | 38 | 全屏叠加后处理 | `libs/control.js:2764` 表明旧只能靠 `curtain` 或 `ui` 画布叠加做全屏效果，没有 FBO 后处理。 | 部分支持 | `IMapRendererPostEffect`（`packages-user/client-base/src/map/types.ts:314`）与 `addPostEffect`（`renderer.ts:319`）提供 FBO 后处理链。 | 旧只能用画布叠加；新需自行实现效果着色器才能得到全屏效果。 |
 | 39 | 自定义视觉滤镜 | `libs/ui.js:468` 表明旧只有 Canvas2D `ctx.filter`，不能写自定义片元着色器。 | 部分支持 | `EffectBase`（`packages-user/client-modules/src/render/fx/base.ts:3`）与 `Image3DEffect`（`.../fx/image3d.ts:8`）。 | 旧仅内置滤镜；新需编写着色器才能得到自定义效果。 |
-| 40 | 灯光插件 | `project/plugins.js:9` `drawLight` 铺黑色半透明层并用 `destination-out` 挖圆形灯光。 | 不支持 | 现有接口无法确认可简单实现；未检索到默认灯光效果。 | 旧有插件级灯光；新只有后处理扩展点。 |
+| 40 | 灯光插件 | `project/plugins.js:9` `drawLight` 铺黑色半透明层并用 `destination-out` 挖圆形灯光。 | 不支持 | 现有接口无法确认可简单实现；未检索到默认灯光效果。 | 旧有插件级灯光；新只有后处理扩展点；not planned。 |
 
 ## 6. 天气
 

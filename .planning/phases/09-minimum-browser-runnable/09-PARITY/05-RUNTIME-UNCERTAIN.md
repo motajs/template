@@ -32,17 +32,17 @@
 | 序号 | 旧样板功能 | 旧样板行为 | 新样板判定 | 新样板如何实现 | 差异 / 说明 |
 | --- | --- | --- | --- | --- | --- |
 | 1 | 插件初始化钩子 | 在所有资源加载后、游戏开始前执行 `_afterLoadResources`（`project/plugins.js:4`） | 支持 | `packages-user/data-state/src/types.ts:39` 的 `IDataPluginDefine` 提供 `afterLoad` 阶段 | 旧按对象键顺序执行，新按依赖拓扑排序，时序语义等价 |
-| 2 | 灯光与漆黑层 | 铺黑色半透明层并用 `destination-out` 挖圆形灯光（`project/plugins.js:9`） | 不支持 | 无默认灯光层，`packages-user/client-base/src/map/renderer.ts:319` 的 `addPostEffect` 只是扩展点 | 需自行实现合成，属于直接底层绘制 |
+| 2 | 灯光与漆黑层 | 铺黑色半透明层并用 `destination-out` 挖圆形灯光（`project/plugins.js:9`） | 不支持 | 无默认灯光层，`packages-user/client-base/src/map/renderer.ts:319` 的 `addPostEffect` 只是扩展点 | 需自行实现合成，属于直接底层绘制；not planned |
 | 3 | 全局商店 | 事件选项加 `need` 表达式打开商店（`project/plugins.js:70`） | 部分支持 | `src/data/plugin/list.ts:5` 的 `DataShopPlugin` 与 `src/client/plugin/list.ts:5` 的 `ClientShopPlugin` 提供库存买卖 | 旧事件选项与 `need` 脚本模型无对应 |
-| 4 | 分区删除楼层地图 | 高层塔按分区删图，不入存档、不可浏览或飞行（`project/plugins.js:265`） | 不支持 | 无运行时删楼层接口，地图内容由内容表加载 | 旧按分区动态裁剪并隔离存档与浏览，需自行实现复杂状态处理 |
+| 4 | 分区删除楼层地图 | 高层塔按分区删图，不入存档、不可浏览或飞行（`project/plugins.js:265`） | 支持 | 新用楼层激活与未激活状态实现相同效果：`IMapState.setMapActiveStatus`、`IMapState.activeArea` / `deactiveArea`、`IGameMap.setActiveStatus`。 | 旧按分区动态裁剪，新按激活状态隔离；能力等价。 |
 | 5 | 五图层模式 | 启用 `bg2` 与 `fg2` 两层，共五图层（`project/plugins.js:352`） | 支持 | `packages-user/data-state/src/shared.ts:13` 已内置 bg、bg2、fg、fg2 五层纵深 | 旧需插件开启，新默认具备五图层 |
 | 6 | 道具商店事件块 | `item` 为 true 加 `choices` 的道具买卖（`project/plugins.js:506`） | 部分支持 | `src/data/plugin/shop/types.ts:18` 的道具买卖字段覆盖库存交易 | 新无事件块与回收脚本入口 |
-| 7 | 怪物境界显示 | 怪物手册显示怪物境界（`project/plugins.js:812`） | 不支持 | 无境界或等级显示字段与手册扩展点 | 旧插件在怪物手册追加境界，新需自定义渲染与数据扩展 |
-| 8 | 多角色 | 多角色初始数据与切换（`project/plugins.js:898`） | 不支持 | 无多角色数据与切换接口 | 旧插件的多角色初始数据与切换需自行实现 |
+| 7 | 怪物境界显示 | 怪物手册显示怪物境界（`project/plugins.js:812`） | 不支持 | 无境界或等级显示字段与手册扩展点 | 旧插件在怪物手册追加境界，新需自定义渲染与数据扩展；not planned |
+| 8 | 多角色 | 多角色初始数据与切换（`project/plugins.js:898`） | 不支持 | 无多角色数据与切换接口 | 旧插件的多角色初始数据与切换需自行实现；not planned |
 | 9 | 勇士四帧动画 | 勇士与跟随者使用 4 帧动画（`project/plugins.js:1044`） | 支持 | `packages-user/client-base/src/map/extension/hero.ts:167` 使用 frames 为 4 的帧数据与状态机 | 旧按绘制帧取模，新由状态机推进 |
-| 10 | 录像路线修正 | 录像路线修正与折叠（`project/plugins.js:1097`） | 不支持 | 无路线修正或折叠接口 | 旧插件对录像路线做折叠修正，属复杂算法 |
-| 11 | 仿 RM 数字键盘 | 整数输入面板，支持负数与音效（`project/plugins.js:1188`） | 部分支持 | `src/client/ui/toolbar.tsx:244` 已有 `NumpadToolbar` 布局，`src/client/ui/inputBox.tsx:324` 提供数字输入 | 数字键发送在 `src/client/ui/toolbar.tsx:298` 仍为注释，未接线 |
-| 12 | canvas sprite 化 | 把 canvas 内容 sprite 化（`project/plugins.js:1363`） | 不支持 | 无 sprite 插件等价，渲染层只有通用绘制项 | 旧插件把 canvas 内容 sprite 化，需自行实现底层合成 |
+| 10 | 录像路线修正 | 录像路线修正与折叠（`project/plugins.js:1097`） | 不支持 | 无路线修正或折叠接口 | 旧插件对录像路线做折叠修正，属复杂算法；not planned |
+| 11 | 仿 RM 数字键盘 | 整数输入面板，支持负数与音效（`project/plugins.js:1188`） | 部分支持 | `src/client/ui/toolbar.tsx:244` 已有 `NumpadToolbar` 布局，`src/client/ui/inputBox.tsx:324` 提供数字输入 | 数字键发送在 `src/client/ui/toolbar.tsx:298` 仍为注释，未接线；not planned |
+| 12 | canvas sprite 化 | 把 canvas 内容 sprite 化（`project/plugins.js:1363`） | 不支持 | 无 sprite 插件等价，渲染层只有通用绘制项 | 旧插件把 canvas 内容 sprite 化，需自行实现底层合成；not planned |
 | 13 | 运行时热重载 | 监测文件改动并刷新页面（`project/plugins.js:1555`） | 不支持 | 无运行时热重载接口，构建期刷新不算运行时能力 | 旧插件监听文件改动并刷新页面，新未见对应实现 |
 
 ## 3. 扩展加载
@@ -51,9 +51,9 @@
 
 | 序号 | 旧样板功能 | 旧样板行为 | 新样板判定 | 新样板如何实现 | 差异 / 说明 |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 文件式本地存档 | 覆写 localForage，把存档压缩后写入 `_saves` 目录（`extensions/localSave.js:1`） | 部分支持 | `packages-user/client-base/src/save/system.ts:41` 的 `SaveSystem` 用 Dexie 与 IndexedDB 持久化 | 旧把存档写成文件，新无文件后端，存储介质不同 |
-| 2 | 运行时地图编辑器 | 游戏内显示 ID、改图改怪并保存（`extensions/dynamicMapEditor.js:1`） | 不支持 | 无运行时地图编辑器，目录扫描与动态脚本机制也未检索到 | 需自行实现完整编辑器与脚本加载 |
-| 3 | UI 编辑器加载 | 条件式 import 编辑器并注入 CSS（`extensions/ui-editor.js:1`） | 不支持 | 无动态脚本注入与样式注入接口 | 旧扩展条件式加载编辑器，新未见等价机制 |
+| 1 | 文件式本地存档 | 覆写 localForage，把存档压缩后写入 `_saves` 目录（`extensions/localSave.js:1`） | 部分支持 | `packages-user/client-base/src/save/system.ts:41` 的 `SaveSystem` 用 Dexie 与 IndexedDB 持久化 | 旧把存档写成文件，新无文件后端，存储介质不同；not planned |
+| 2 | 运行时地图编辑器 | 游戏内显示 ID、改图改怪并保存（`extensions/dynamicMapEditor.js:1`） | 不支持 | 无运行时地图编辑器，目录扫描与动态脚本机制也未检索到 | 需自行实现完整编辑器与脚本加载；not planned |
+| 3 | UI 编辑器加载 | 条件式 import 编辑器并注入 CSS（`extensions/ui-editor.js:1`） | 不支持 | 无动态脚本注入与样式注入接口 | 旧扩展条件式加载编辑器，新未见等价机制；not planned |
 
 ## 4. 资源加载与 loader
 
@@ -65,7 +65,7 @@
 | 2 | 更新加载进度数值 | 写进度条宽度百分比（`libs/loader.js:17`） | 支持 | `packages/loader/src/types.ts:268` 的 `ILoadManagerHooks.onProgress` | 新按任务与字节聚合进度，旧手写百分比 |
 | 3 | 更新加载提示文本 | 写加载提示文本（`libs/loader.js:22`） | 部分支持 | `src/client/ui/load.tsx:73` 的加载场景显示任务与字节文本 | 新无任意提示文本 setter，文案由场景组件生成 |
 | 4 | 资源加载总入口 | 按压缩开关串联资源、动画与音乐加载（`libs/loader.js:26`） | 支持 | `packages-user/data-state/src/loader/loader.ts:102` 的 `start` 三段式加载 | 旧按压缩开关分同步与异步，新统一异步 |
-| 5 | 同步加载入口 | 同步脚本式加载入口（`libs/loader.js:34`） | 不支持 | 新只有异步迭代加载 | 旧同步脚本式加载无等价入口 |
+| 5 | 同步加载入口 | 同步脚本式加载入口（`libs/loader.js:34`） | 不支持 | 新只有异步迭代加载 | 旧同步脚本式加载无等价入口；not planned |
 | 6 | 异步加载入口 | 异步加载并聚合各类进度（`libs/loader.js:46`） | 支持 | `packages-user/data-state/src/loader/loader.ts:102` 的 `start` 异步迭代 | 旧回调聚合进度，新异步迭代器 |
 | 7 | 同步加载 materials | 同步加载 materials 图片（`libs/loader.js:94`） | 支持 | `packages-user/client-modules/src/loader/hook.ts:14` 的纹理清单加载 | 旧遍历目录名数组，新按清单声明 |
 | 8 | 异步加载 materials | 从 `materials.h5data` 异步取图并报进度（`libs/loader.js:102`） | 部分支持 | `packages/loader/src/manager.ts:44` 的 `LoadManager.addTask` 支持异步与进度 | 新无 h5data 资源包入口 |
@@ -80,7 +80,7 @@
 | 17 | tilesets 加载后处理 | 加载后处理 tilesets（`libs/loader.js:207`） | 部分支持 | `packages/render/src/assets/store.ts` 的纹理缓存 | 加载后处理未逐项对齐 |
 | 18 | 批量加载图片 | 批量加载图片到对象（`libs/loader.js:222`） | 支持 | `packages/loader/src/manager.ts:44` 的批量 `addTask` | 旧批量函数，新任务集合 |
 | 19 | 单图加载 | 单图加载（`libs/loader.js:246`） | 支持 | `packages/loader/src/task.ts` 的单个 `LoadTask` | 单图加载任务化 |
-| 20 | 从 zip 批量取图 | 从 zip 批量取图（`libs/loader.js:271`） | 不支持 | 新无运行时 zip 资源包入口 | 旧从 h5data 批量取图，需自行解包 |
+| 20 | 从 zip 批量取图 | 从 zip 批量取图（`libs/loader.js:271`） | 不支持 | 新无运行时 zip 资源包入口 | 旧从 h5data 批量取图，需自行解包；maybe |
 | 21 | 同步加载动画 | 同步加载动画（`libs/loader.js:304`） | 支持 | `packages/render/src/assets/animater.ts` 的动画清单解析 | 旧同步脚本，新清单加 `Animater` |
 | 22 | 异步加载动画 | 异步加载动画（`libs/loader.js:333`） | 支持 | `packages/render/src/assets/composer.ts` 的动画合成 | 异步加载入口等价 |
 | 23 | 解析单个动画 | 解析单个 `.animate` JSON（`libs/loader.js:346`） | 支持 | `packages/render/src/assets/composer.ts` 的 `TextureComposer` | 旧解析 `.animate`，新按动画清单解析自有格式 |
@@ -137,10 +137,10 @@
 
 | 序号 | 旧样板功能 | 旧样板行为 | 新样板判定 | 新样板如何实现 | 差异 / 说明 |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 静态文件服务 | 按扩展名返回 JS、CSS、HTML 与音频（`server.js:56`；`server.py:66`） | 不支持 | 新仓库无 `server.js` 或 `server.py` | 旧按扩展名返回文件，新由构建产物或宿主提供 |
-| 2 | 楼层与动画打包 | 合并 `project/floors` 与动画文件减少请求（`server.js:80`） | 不支持 | 无服务端合并接口 | 旧服务端合并楼层与动画，新需构建期处理 |
-| 3 | 文件读写与目录操作 | 供编辑器读写 `project` 与 `_saves`（`server.js:121`） | 不支持 | 无服务端文件读写路由 | 旧供编辑器读写目录，新无等价 |
-| 4 | 热重载 | 监听 libs、main、index、css、floors 并推送刷新（`server.js:295`） | 不支持 | 无服务端 watch 与 reload 路由 | 构建期刷新不算运行时服务端能力 |
+| 1 | 静态文件服务 | 按扩展名返回 JS、CSS、HTML 与音频（`server.js:56`；`server.py:66`） | 支持 | 由 Vite 开发服务器以及外部编辑器 / ToolKit 提供静态服务。 | 能力由开发工具链承担，不属于引擎运行时。 |
+| 2 | 楼层与动画打包 | 合并 `project/floors` 与动画文件减少请求（`server.js:80`） | 不支持 | 无服务端合并接口 | 旧服务端合并楼层与动画，新需构建期处理；not planned |
+| 3 | 文件读写与目录操作 | 供编辑器读写 `project` 与 `_saves`（`server.js:121`） | 不支持 | 无服务端文件读写路由 | 旧供编辑器读写目录，新无等价；not planned |
+| 4 | 热重载 | 监听 libs、main、index、css、floors 并推送刷新（`server.js:295`） | 支持 | 由 Vite 热重载实现。 | 能力由开发工具链承担。 |
 | 5 | 录像上传与校验排行 | 保存录像、校验、读取状态与存档（`server.js:410`） | 不支持 | 无服务端录像接口 | 旧上传校验排行需外部服务，新无等价 |
 | 6 | 存档同步服务端 | 客户端 POST `/games/sync.php`，依赖外部 PHP 服务（`libs/control.js:2179`） | 不支持 | 无 sync 路由或服务端实现 | 旧依赖外部 PHP 同步，新仅客户端无实现 |
 
@@ -152,7 +152,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 1 | 自由文本日志 | 大量 `console.error` 与 `console.warn` 输出自由文本（`libs/core.js:471`） | 支持 | `packages/common/src/logger.ts:117` 的 `logger.error` 与 `warn` | 新为数字码加参数插值，旧为自由文本 |
 | 2 | 调试模式 | `core.debug` 置 flag，按住 Ctrl 穿墙并禁止上传成绩（`libs/control.js:2605`） | 不支持 | 无对应 flag 或穿墙开关 | 旧用 flag 加输入处理，新无等价 |
-| 3 | 游戏与编辑器模式 | `main.mode` 控制 play 与 editor 分支（`main.js:84`） | 不支持 | 无 `main.mode` 运行时提供者 | 新代码仍引用 `main.mode`，但只有声明 |
+| 3 | 游戏与编辑器模式 | `main.mode` 控制 play 与 editor 分支（`main.js:84`） | 不支持 | 无 `main.mode` 运行时提供者 | 新代码仍引用 `main.mode`，但只有声明；not planned |
 | 4 | 竞赛模式 | `isCompetition` 开关影响成绩与校验（`main.js:15`） | 不支持 | 无竞赛模式开关 | 旧竞赛模式影响成绩校验，新无等价 |
 
 ## 9. 全局入口与构建
@@ -162,11 +162,11 @@
 | 序号 | 旧样板功能 | 旧样板行为 | 新样板判定 | 新样板如何实现 | 差异 / 说明 |
 | --- | --- | --- | --- | --- | --- |
 | 1 | 模块顺序启动 | 动态加载 13 个模块并按序实例化（`main.js:85`） | 支持 | `src/bootstrap.ts:12` 与 `src/client/entry.ts:23` 的有序装配 | 旧脚本按 13 模块顺序注入，新 ESM 入口按依赖装配 |
-| 2 | 运行时脚本注入 | 创建 script 标签按 version 查询串注入，支持 `.min`（`main.js:341`） | 不支持 | 无运行时脚本注入或版本查询串 | 新用静态 ESM 与构建工具，旧可热加载外部模块 |
+| 2 | 运行时脚本注入 | 创建 script 标签按 version 查询串注入，支持 `.min`（`main.js:341`） | 不支持 | 无运行时脚本注入或版本查询串 | 新用静态 ESM 与构建工具，旧可热加载外部模块；not planned |
 | 3 | 页面入口 | 先加载第三方脚本，再 `main.init` 与 `main.listen`（`index.html:195`） | 支持 | `index.html:25` 的模块脚本入口 | 旧先加载第三方脚本，新由 bootstrap 统一启动 |
-| 4 | 全局 core 转发 | `_forwardFunc` 把模块公开方法挂到全局 `core`（`libs/core.js:516`） | 不支持 | 无全局 `core` 运行时创建者 | 新以显式接口替代，旧内容与插件不能直接迁移 |
-| 5 | 全局 main | 版本、模式、DOM 与启动 BGM 等全局状态（`main.js:2`） | 不支持 | 无 `main` 运行时创建者，仅 `src/types/declaration/core.d.ts:1297` 声明 | 旧全局状态与 DOM 入口无等价 |
-| 6 | 渲染进程包裹 | 录像验证时跳过渲染与交互代码（`libs/control.js` 的分散判断） | 部分支持 | `packages-user/entry-data/src/mota.ts:90` 的 `r` 与 `rf` 包裹 | 接口存在，但依赖未见运行时提供者的 `main` |
+| 4 | 全局 core 转发 | `_forwardFunc` 把模块公开方法挂到全局 `core`（`libs/core.js:516`） | 不支持 | 无全局 `core` 运行时创建者 | 新以显式接口替代，旧内容与插件不能直接迁移；not planned |
+| 5 | 全局 main | 版本、模式、DOM 与启动 BGM 等全局状态（`main.js:2`） | 不支持 | 无 `main` 运行时创建者，仅 `src/types/declaration/core.d.ts:1297` 声明 | 旧全局状态与 DOM 入口无等价；not planned |
+| 6 | 渲染进程包裹 | 录像验证时跳过渲染与交互代码（`libs/control.js` 的分散判断） | 部分支持 | `packages-user/entry-data/src/mota.ts:90` 的 `r` 与 `rf` 包裹 | 接口存在，但依赖未见运行时提供者的 `main`；not planned |
 
 ## 10. 回放播放控制
 
@@ -185,16 +185,18 @@
 
 | 域 | 支持 | 部分支持 | 不支持 | 合计 |
 | --- | --- | --- | --- | --- |
-| 插件系统 | 3 | 3 | 7 | 13 |
+| 插件系统 | 4 | 3 | 6 | 13 |
 | 扩展加载 | 0 | 1 | 2 | 3 |
 | 资源加载与 loader | 23 | 6 | 2 | 31 |
 | 音频、BGM 与音效 | 8 | 4 | 3 | 15 |
 | 存档、存储与同步 | 5 | 3 | 1 | 9 |
-| 服务端与网络 | 0 | 0 | 6 | 6 |
+| 服务端与网络 | 2 | 0 | 4 | 6 |
 | 错误、日志与调试 | 1 | 0 | 3 | 4 |
 | 全局入口与构建 | 2 | 1 | 3 | 6 |
 | 回放播放控制 | 3 | 3 | 0 | 6 |
-| 合计 | 45 | 21 | 27 | 93 |
+| 合计 | 48 | 21 | 24 | 93 |
+
+> not planned：17（§2：2、7、8、10、11、12；§3：1、2、3；§4：5；§7：2、3；§8：3；§9：2、4、5、6）；maybe：1（§4：20）。
 
 ## 12. 边界说明
 

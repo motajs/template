@@ -5,7 +5,7 @@
 - 旧样板快照：`D:/github/mota-js`，分支 `master`，HEAD `3efb548e407ad2b8007b498cb98401e2012a0b55`，工作树干净。
 - 新样板快照：`D:/github/template`，分支 `refine/data-client`，HEAD `5af3ab378b4d65dc5cf1fbcb621fd9a776608dd7`，工作树 159 行改动。
 - 采样时间：2026-11-03 21:30（UTC+8）。工作树会持续变动，本文件只对上述快照负责，不回滚任何外部改动。
-- 行数：旧侧内容表原有 620 行，移除 4 行新样板独有的 0 号与 26 号特殊属性、客户端配置与默认值后，保留 616 行。
+- 行数：旧侧内容表原有 620 行，移除 4 行新样板独有的 0 号与 26 号特殊属性、客户端配置与默认值后为 616 行；再删除 2 行旧样板不存在的误列（254、255）后，保留 614 行。
 - 判定：`支持` 表示用现有接口、标签或组件做组合、配置或简单映射即可；`部分支持` 表示核心能力存在但要适配，或只覆盖旧行为的一部分；`不支持` 表示没有等价能力，或需要复杂逻辑、算法、直接底层调用。现有接口无法确认可以简单实现时一律判 `不支持`，并在差异列写明已检索范围。
 - 锚点：旧侧写 `file:line` 与短句行为，新侧写路径、符号或内容字段；不复制大段原文。
 
@@ -29,12 +29,12 @@
 | 10 | 怪物模板字段 n | 旧在 project/enemys.js:10 使用该字段：`project/enemys.js:10`（vampire/冥灵魔王）；`project/functions.js:499` | 支持 | 作为新 `special` 4 的 `value`（`src/data/enemy/special.ts:143-153`）。 | 旧顶层字段改为特殊属性参数。 |
 | 11 | 怪物模板字段 range | 旧在 project/functions.js:508 使用该字段：`project/functions.js:508`（领域）、`:518`（光环） | 支持 | 作为新 `special` 13 或 23 的 `value.range`（`src/data/enemy/special.ts:252-267,358-367`）。 | 旧顶层字段改为特殊属性参数。 |
 | 12 | 怪物模板字段 zoneSquare | 旧在 project/functions.js:508 使用该字段：`project/functions.js:508,511,520` | 支持 | 作为新 `special` 13 或 23 的 `value.square`（`src/data/enemy/special.ts:252-267,358-367`）。 | 旧顶层字段改为特殊属性参数。 |
-| 13 | 怪物模板字段 bigImage | 旧在 `libs/maps.js:1010-1037` 的大图绘制流程使用该字段 | 不支持 | 无等价数据字段。 | 渲染用大图由素材决定，`ITileRawData`（`packages-user/data-common/src/store/types.ts:47-68`）不含该字段。 |
+| 13 | 怪物模板字段 bigImage | 旧在 `libs/maps.js:1010-1037` 的大图绘制流程使用该字段 | 不支持 | 无等价数据字段。 | 渲染用大图由素材决定，`ITileRawData`（`packages-user/data-common/src/store/types.ts:47-68`）不含该字段；not planned。 |
 | 14 | 怪物模板字段 atkValue | 旧在 project/functions.js:514 使用该字段：`project/functions.js:514`（退化） | 支持 | 作为新 `special` 19 的 `value.atkValue`（`src/data/enemy/special.ts:300-308`）。 | 旧顶层字段改为特殊属性参数。 |
 | 15 | 怪物模板字段 defValue | 旧在 project/functions.js:514 使用该字段：`project/functions.js:514`（退化） | 支持 | 作为新 `special` 19 的 `value.defValue`（`src/data/enemy/special.ts:300-308`）。 | 旧顶层字段改为特殊属性参数。 |
 | 16 | 怪物模板字段 add | 旧在 project/functions.js:504 使用该字段：`project/functions.js:504`（吸血是否加到自身） | 支持 | 作为新 `special` 9 的 `value.add`（`src/data/enemy/special.ts:16-22`）。 | 旧顶层字段改为特殊属性参数。 |
 | 17 | 怪物模板字段 notBomb | 旧在 libs/ui.js:2348 使用该字段：`libs/ui.js:2348` `if (enemy.notBomb) damage += "[b]"` | 不支持 | 无等价数据字段。 | `IEnemyAttr` 与 `IEnemyRawData` 均无不可炸标记，现有接口无法确认可简单实现。 |
-| 18 | 怪物模板字段 faceIds | 旧在 libs/maps.js:223-226 使用该字段：`libs/maps.js:223-226` 给怪物图块补 `faceIds` | 不支持 | 无等价数据字段。 | 朝向素材由渲染层按图块决定，数据层无字段。 |
+| 18 | 怪物模板字段 faceIds | 旧在 libs/maps.js:223-226 使用该字段：`libs/maps.js:223-226` 给怪物图块补 `faceIds` | 支持 | `IRoleFaceBinder`（`packages-user/data-common/src/common/types.ts:27`）承担图块朝向分配与绑定；图块通过 `faceBinder` 取得对应朝向。 | 旧 `faceIds` 由角色朝向绑定接口承接。 |
 | 19 | 怪物模板字段 vampire | 旧在 project/functions.js:504 使用该字段：`project/functions.js:504`（吸血比例，`enemy.vampire`） | 支持 | 作为新 `special` 9 的 `value.vampire`（`src/data/enemy/special.ts:16-22`）。 | 旧顶层字段改为特殊属性参数。 |
 | 20 | 怪物模板字段 breakArmor | 旧在 project/functions.js:500 使用该字段：`project/functions.js:500`（破甲比例） | 支持 | 作为新 `special` 5 的 `value`（`src/data/enemy/special.ts:152-161`）。 | 旧为比例，新为百分比，按数值换算。 |
 | 21 | 怪物模板字段 counterAttack | 旧在 project/functions.js:501 使用该字段：`project/functions.js:501`（反击比例） | 支持 | 作为新 `special` 6 的 `value`（`src/data/enemy/special.ts:164-173`）。 | 旧为比例，新为百分比，按数值换算。 |
@@ -57,7 +57,7 @@
 | 33 | 怪物模板字段体系 | D:/github/mota-js/project/enemys.js:3  每个怪物用字符串键 + 8 个基础字段描述，无 schema | 支持 | `IEnemyAttr`（`packages-user/data-common/src/types.ts:13-30`）加 `IEnemyRawData`（`packages-user/data-common/src/store/types.ts:324-331`），内容写在 `src/content/enemy.jsonc`。 | 旧无 schema，新为穷举字段；基础 8 字段一一对应。 |
 | 34 | 怪物字符串键与数字标识 | D:/github/mota-js/project/enemys.js:3 ；`libs/enemys.js` 以字符串键索引 怪物以字符串键（如 greenSlime）作为唯一标识 | 支持 | `IEnemyStore.getEnemy(token: number / string)`（`packages-user/data-common/src/store/types.ts:333-345`）同时接受数字与字符串。 | 旧以字符串键为主，新以图块 num 为主，仍可按 id 查询。 |
 | 35 | 怪物特殊属性承载 | D:/github/mota-js/project/functions.js:493-500  `special` 为数字数组，参数散落在怪物顶层字段或全局 values | 支持 | `IEnemyRawData.special`（`packages-user/data-common/src/store/types.ts:324-331`）加 `src/data/enemy/special.ts:84-476` 注册表。 | 编号整体重排，参数改由 special 的 value 承载。 |
-| 36 | 怪物额外渲染字段 | D:/github/mota-js/libs/maps.js:223-226  `faceIds` / `bigImage` 直接从怪物模板读取用于绘制 | 不支持 | 无等价数据字段。 | `faceIds` 与 `bigImage` 属渲染层，数据层没有承载点。 |
+| 36 | 怪物额外渲染字段 | D:/github/mota-js/libs/maps.js:223-226  `faceIds` / `bigImage` 直接从怪物模板读取用于绘制 | 支持 | `faceIds` 由 `IRoleFaceBinder` 承接；`bigImage` 按设计不再需要，无需对应接口。 | `faceIds` 已支持；`bigImage` 不再需要（not planned），不构成缺口。 |
 
 ### 2.3 81 条怪物模板
 
@@ -269,7 +269,7 @@
 | 214 | 道具提示文本 | D:/github/mota-js/libs/items.js:67 拾取时按表达式替换并提示 | 不支持 | 无等价数据字段。 | 新道具 schema 无提示字段。 |
 | 215 | 道具隐藏开关 | D:/github/mota-js/project/items.js:312 `hideInToolbox` 与 `hideInReplay` 分别控制道具栏与录像栏 | 部分支持 | `IItemRawData.hideInToolbox`（`packages-user/data-common/src/store/types.ts:181-198`）。 | 道具栏隐藏有字段，录像栏隐藏无字段。 |
 | 216 | 道具图标 | D:/github/mota-js/project/items.js:371 旧内容可带 `icon` 字段（研究口径列出；实际 51 条未出现） | 支持 | `IItemRawData.num`（`packages-user/data-common/src/store/types.ts:181-198`）绑定图块，贴图清单在 `src/content/texture/.list.jsonc`。 | 旧内容实际没有 icon 字段，新以 num 绑素材。 |
-| 217 | 道具售卖字段 | D:/github/mota-js/project/items.js:3 研究口径列出 `canSale`/`sell`（实际 51 条未出现） | 部分支持 | 商店状态由 `src/data/plugin/shop` 承载，商品价格写在商店配置。 | 道具级售卖字段不存在，价格改由商店状态表达。 |
+| 217 | 道具售卖字段 | D:/github/mota-js/project/items.js:3 研究口径列出 `canSale`/`sell`（实际 51 条未出现） | 部分支持 | 商店状态由 `src/data/plugin/shop` 承载，商品价格写在商店配置。 | 道具级售卖字段不存在，价格改由商店状态表达；not planned。 |
 | 218 | 即捡即用道具 | D:/github/mota-js/libs/items.js:29-59 `cls: items` 在拾取时直接执行效果且不计数量 | 支持 | `ItemCategory.Pick`（`packages-user/data-common/src/store/types.ts:130-141`）加 `packages-user/data-base/src/hero/items.ts` 的拾取执行点。 | 类别与拾取执行均存在，内容需把即捡即用道具改为 Pick。 |
 
 ## 5. 装备槽与实例（10 项）
@@ -323,12 +323,11 @@
 | 247 | 图块字段 event | 旧在 libs/maps.js:864 使用。 | 支持 | `ITileRawData.events`（`packages-user/data-common/src/store/types.ts:47-68`）填事件 id。 | 旧内联事件对象改为事件 id。 |
 | 248 | 图块字段 门信息字段 | 旧在 libs/maps.js:1966 使用。 | 部分支持 | `TileType.Animate`（`packages-user/data-common/src/store/types.ts:6-25`）加事件配置。 | 旧 time/openSound/closeSound/keys 无独立字段，需用事件表达。 |
 | 249 | 图块字段 animate | 旧在 libs/maps.js:248-250 使用。 | 支持 | `TileType.Animate`（`packages-user/data-common/src/store/types.ts:6-25`）加 `src/content/animation/.list.jsonc`。 | 旧帧数字段改为动画清单。 |
-| 250 | 图块字段 faceIds | 旧在 libs/maps.js:223-226 使用。 | 不支持 | 无等价数据字段。 | 朝向素材由渲染层按图块决定。 |
+| 250 | 图块字段 faceIds | 旧在 libs/maps.js:223-226 使用。 | 支持 | `IRoleFaceBinder`（`packages-user/data-common/src/common/types.ts:27`）承担图块朝向分配与绑定。 | 朝向素材由朝向绑定接口承接。 |
 | 251 | 图块字段 height | 旧在 libs/maps.js:251-253 使用。 | 部分支持 | 高度由素材尺寸与 `TileType` 推导，无数据字段。 | 旧 32/48 字段不再需要，但也没有显式配置点。 |
-| 252 | 图块字段 bigImage | 旧在 libs/maps.js:1010-1037 使用。 | 不支持 | 无等价数据字段。 | 大图属渲染层。 |
+| 252 | 图块字段 bigImage | 旧在 libs/maps.js:1010-1037 使用。 | 支持 | `bigImage` 按设计不再需要，无需对应接口。 | `bigImage` 不再需要（not planned），不构成缺口。 |
 | 253 | 图块字段 enable | 旧在 libs/maps.js:134 使用。 | 不支持 | 无等价数据字段。 | 旧 enable 属于楼层事件项，新事件无开关。 |
-| 254 | 图块字段 bg | 旧`project/maps.js`、`libs/maps.js` 检索不到图块级 bg 字段（楼层级只有 `bgmap`） 使用。 | 不支持 | 无等价数据字段。 | 图块级 bg 在旧引擎也未出现，新侧无字段。 |
-| 255 | 图块字段 fg | 旧`project/maps.js`、`libs/maps.js` 检索不到图块级 fg 字段（楼层级只有 `fgmap`） 使用。 | 不支持 | 无等价数据字段。 | 图块级 fg 在旧引擎也未出现，新侧无字段。 |
+> 254、255 已删除：旧样板不存在图块级 `bg` / `fg` 字段，不作为缺口。
 
 ### 6.3 224 条图块
 
@@ -570,7 +569,7 @@
 | 484 | 图块事件触发 | D:/github/mota-js/libs/maps.js:242-246 `trigger` 决定撞上触发还是走上去触发，默认按 cls 推断 | 支持 | `ITileRawData.events` 与 `eventPass`（`packages-user/data-common/src/store/types.ts:47-68`）。 | 旧 trigger 字符串改为事件映射加触发方式布尔。 |
 | 485 | 门图块 | D:/github/mota-js/project/maps.js:71 门用 time、openSound、closeSound、keys 描述 | 部分支持 | `TileType.Animate`（`packages-user/data-common/src/store/types.ts:6-25`）加事件配置。 | 旧 门信息字段 的 time/openSound/closeSound/keys 无独立字段。 |
 | 486 | 图块脚本与内联事件 | D:/github/mota-js/libs/maps.js:864 | 支持 | `ITileRawData.events`（`packages-user/data-common/src/store/types.ts:47-68`）填事件 id。 | 旧内联脚本与事件改为事件 id。 |
-| 487 | 图块破坏与大图 | D:/github/mota-js/project/items.js:371 `canBreak` 控制破墙镐；`bigImage`/`faceIds`/`height` 控制绘制 | 不支持 | 无等价数据字段。 | canBreak/bigImage/faceIds/height 在数据层均无字段。 |
+| 487 | 图块破坏与大图 | D:/github/mota-js/project/items.js:371 `canBreak` 控制破墙镐；`bigImage`/`faceIds`/`height` 控制绘制 | 部分支持 | `canBreak` 无独立字段；`faceIds` 由 `IRoleFaceBinder` 承接；`bigImage` 不再需要；`height` 由素材尺寸推导。 | `canBreak` 无字段；其余按已确认方式处理。 |
 
 ## 7. 楼层字段（29 项）
 
@@ -587,10 +586,10 @@
 | 494 | 楼层字段 cannotViewMap | 旧在 D:/github/mota-js/project/floors/MT0.js:9 使用。 | 不支持 | 无等价数据字段。 | 现有接口无法确认可简单实现，地图查看过滤只在旧 UI。 |
 | 495 | 楼层字段 defaultGround | 旧在 D:/github/mota-js/project/floors/MT0.js:10 使用。 | 不支持 | 无等价数据字段。 | 现有接口无法确认可简单实现。 |
 | 496 | 楼层字段 images | 旧在 D:/github/mota-js/project/floors/MT0.js:11 使用。 | 不支持 | 无等价楼层字段。 | 素材清单按贴图全局管理，没有楼层级图片配置。 |
-| 497 | 楼层字段 ratio | 旧在 D:/github/mota-js/project/floors/MT0.js:12 使用。 | 不支持 | 无等价楼层字段。 | 画布缩放与楼层倍率不是同一能力。 |
+| 497 | 楼层字段 ratio | 旧在 D:/github/mota-js/project/floors/MT0.js:12 使用。 | 不支持 | 无等价楼层字段。 | 楼层级宝石/血瓶数值倍率，新无楼层级倍率配置。 |
 | 498 | 楼层字段 map | 旧在 D:/github/mota-js/project/floors/MT0.js:13 使用。 | 支持 | `IMapRawData.map`（`packages-user/data-common/src/store/types.ts:265-276`）。 | 字段名一致，二维数组按图层存放。 |
 | 499 | 楼层字段 firstArrive | 旧在 D:/github/mota-js/project/floors/MT0.js:28 使用。 | 不支持 | 无等价字段。 | 现有接口无法确认可简单实现，首达事件没有楼层配置点。 |
-| 500 | 楼层字段 parallelDo | 旧在 D:/github/mota-js/project/floors/MT0.js:29 使用。 | 不支持 | 无等价字段。 | 现有接口无法确认可简单实现。 |
+| 500 | 楼层字段 parallelDo | 旧在 D:/github/mota-js/project/floors/MT0.js:29 使用。 | 不支持 | 无等价字段。 | 现有接口无法确认可简单实现；not planned。 |
 | 501 | 楼层字段 events | 旧在 D:/github/mota-js/project/floors/MT0.js:30 使用。 | 支持 | `IMapRawData.events`（`packages-user/data-common/src/store/types.ts:265-276`）。 | 旧坐标到事件数组，新为图层到位置到优先级到事件 id。 |
 | 502 | 楼层字段 changeFloor | 旧在 D:/github/mota-js/project/floors/MT0.js:31 使用。 | 部分支持 | `IChangeFloorData`（`packages-user/data-common/src/store/types.ts:249-263`）加 `IMapRawData.events`。 | 切换能力存在，楼层级 changeFloor 表改为事件配置。 |
 | 503 | 楼层字段 afterBattle | 旧在 D:/github/mota-js/project/floors/MT0.js:32 使用。 | 部分支持 | `EventTrigger.OnAfterBattle`（`packages-user/data-common/src/event/types.ts:17-19`）加 `IMapRawData.events`。 | 触发器存在，楼层级表改为事件配置。 |
@@ -598,15 +597,15 @@
 | 505 | 楼层字段 afterOpenDoor | 旧在 D:/github/mota-js/project/floors/MT0.js:34 使用。 | 部分支持 | `EventTrigger.OnAfterOpenDoor`（`packages-user/data-common/src/event/types.ts:23`）加 `IMapRawData.events`。 | 触发器存在，楼层级表改为事件配置。 |
 | 506 | 楼层字段 cannotMove | 旧在 D:/github/mota-js/project/floors/MT0.js:35 使用。 | 不支持 | 无等价字段。 | 现有接口无法确认可简单实现。 |
 | 507 | 楼层字段 bgmap | 旧在 D:/github/mota-js/project/floors/MT0.js:36 使用。 | 部分支持 | `IGameMap.setBackground` 与 `getBackground`（`packages-user/data-base/src/map/gameMap.ts:108-117`）。 | 旧二维背景数组改为单个背景图块数字。 |
-| 508 | 楼层字段 fgmap | 旧在 D:/github/mota-js/project/floors/MT0.js:39 使用。 | 不支持 | 无等价字段。 | 现有接口无法确认可简单实现，前景图没有对应字段。 |
+| 508 | 楼层字段 fgmap | 旧在 D:/github/mota-js/project/floors/MT0.js:39 使用。 | 不支持 | 无等价字段。 | 现有接口无法确认可简单实现，前景图没有对应字段；not planned。 |
 | 509 | 楼层字段 width | 旧在 D:/github/mota-js/project/floors/MT0.js:42 使用。 | 支持 | `IMapRawData.width`（`packages-user/data-common/src/store/types.ts:265-276`）。 | 字段名一致。 |
 | 510 | 楼层字段 height | 旧在 D:/github/mota-js/project/floors/MT0.js:43 使用。 | 部分支持 | `IGameMap.height` 由地图内容推导（`packages-user/data-base/src/map/types.ts:664-667`）。 | 旧显式高度改为推导值。 |
-| 511 | 楼层字段 autoEvent | 旧在 D:/github/mota-js/project/floors/MT0.js:44 使用。 | 不支持 | 无等价字段。 | 现有接口无法确认可简单实现。 |
+| 511 | 楼层字段 autoEvent | 旧在 D:/github/mota-js/project/floors/MT0.js:44 使用。 | 不支持 | 无等价字段。 | 现有接口无法确认可简单实现；not planned。 |
 | 512 | 楼层字段 bgm | 旧在 D:/github/mota-js/project/floors/sample0.js:11 使用。 | 不支持 | 无等价楼层字段。 | 音频播放能力存在，但没有按楼层切换的配置字段。 |
 | 513 | 楼层字段 beforeBattle | 旧在 D:/github/mota-js/project/floors/sample0.js:257 使用。 | 部分支持 | `EventTrigger.OnBeforeBattle`（`packages-user/data-common/src/event/types.ts:17`）加 `IMapRawData.events`。 | 触发器存在，楼层级表改为事件配置。 |
-| 514 | 楼层字段 cannotMoveIn | 旧在 D:/github/mota-js/project/floors/sample0.js:258 使用。 | 不支持 | 无等价字段。 | 现有接口无法确认可简单实现。 |
+| 514 | 楼层字段 cannotMoveIn | 旧在 D:/github/mota-js/project/floors/sample0.js:258 使用。 | 不支持 | 无等价字段。 | 现有接口无法确认可简单实现；not planned。 |
 | 515 | 楼层字段 weather | 旧在 D:/github/mota-js/project/floors/sample1.js:18 使用。 | 不支持 | 无等价楼层字段。 | 天气在渲染层，数据层没有楼层天气字段。 |
-| 516 | 楼层字段 upFloor | 旧在 D:/github/mota-js/project/floors/sample2.js:80 使用。 | 不支持 | 无等价楼层字段。 | 上楼只作为图块 id 出现，不是楼层字段。 |
+| 516 | 楼层字段 upFloor | 旧在 D:/github/mota-js/project/floors/sample2.js:80 使用。 | 不支持 | 无等价楼层字段。 | 上楼只作为图块 id 出现，不是楼层字段；not planned。 |
 
 ## 8. 地图与事件存储（10 项）
 
@@ -623,7 +622,7 @@
 | 523 | 事件存储 | D:/github/mota-js/libs/events.js:945-959 事件按类型字符串分发（`_action_*`） | 支持 | `IGameEventStore.addEvent` 与 `getEvent`（`packages-user/data-common/src/store/types.ts:296-318`），事件实现为脚本 AST。 | 旧 JSON 事件数组加类型分发改为事件 id 加脚本 AST。 |
 | 524 | 事件触发器 | D:/github/mota-js/libs/maps.js:242-246 触发器是字符串：battle/getItem/openDoor/changeFloor/pushBox/ski/action/custom/null | 支持 | `EventTrigger` 十一项（`packages-user/data-common/src/event/types.ts:7-30`）。 | 旧字符串触发器改为枚举，旧 custom 无同名成员。 |
 | 525 | 点事件 | D:/github/mota-js/project/floors/MT0.js:40 前景/背景与楼层事件共同决定格上表现 | 支持 | `IMapLayer.pointEvents`（`packages-user/data-base/src/map/types.ts:470-476`）。 | 点事件容器存在，旧前景图层由新图层配置表达。 |
-| 526 | 地图伤害画布 | D:/github/mota-js/libs/core.js:114 damage 画布用于绘制伤害数字/区域 | 不支持 | 无等价数据字段。 | 伤害画布属渲染扩展，本文件不判渲染实现。 |
+| 526 | 地图伤害画布 | 旧用 `core.bigmap.canvas` 中的 damage 专用画布；`core.status.damage` 保存伤害数字/区域数据，`control.drawDamage` 用 `fillBoldText` 绘制，带视口裁剪与透明度 | 不支持 | 无专用伤害画布或等价数据字段；自行组合文字/图形接口需维护数字生命周期、位置、透明度与裁剪 | 按用户确认仍判不支持。 |
 
 ## 9. 内容表
 
@@ -653,19 +652,19 @@
 | 539 | main 配置 bgms | D:/github/mota-js/project/data.js:26 定义该键。 | 支持 | `src/content/audio/.list.jsonc`。 | 音频清单独立。 |
 | 540 | main 配置 sounds | D:/github/mota-js/project/data.js:29 定义该键。 | 支持 | `src/content/audio/.list.jsonc`。 | 音频清单独立。 |
 | 541 | main 配置 fonts | D:/github/mota-js/project/data.js:52 定义该键。 | 支持 | `src/content/font/.list.jsonc`。 | 字体清单独立。 |
-| 542 | main 配置 nameMap | D:/github/mota-js/project/data.js:53 定义该键。 | 不支持 | 无等价配置。 | 现有接口无法确认可简单实现。 |
+| 542 | main 配置 nameMap | D:/github/mota-js/project/data.js:53 定义该键。 | 不支持 | 无等价配置。 | 现有接口无法确认可简单实现；not planned。 |
 | 543 | main 配置 levelChoose | D:/github/mota-js/project/data.js:79 定义该键。 | 不支持 | 无等价配置。 | 现有接口无法确认可简单实现。 |
 | 544 | main 配置 equipName | D:/github/mota-js/project/data.js:122 定义该键。 | 支持 | `src/content` 下的 `core` 配置 的 `init.hero.equipSlots`。 | 名称数组一致。 |
 | 545 | main 配置 startBgm | D:/github/mota-js/project/data.js:126 定义该键。 | 部分支持 | `packages/audio/src/bgm.ts:29-149` 提供播放能力。 | 没有起始音乐配置字段，需要事件或启动逻辑调用。 |
-| 546 | main 配置 styles | D:/github/mota-js/project/data.js:127 定义该键。 | 不支持 | 无等价配置。 | 现有接口无法确认可简单实现。 |
+| 546 | main 配置 styles | D:/github/mota-js/project/data.js:127 定义该键。 | 不支持 | 无等价配置。 | 现有接口无法确认可简单实现；not planned。 |
 | 547 | main 配置 splitImages | D:/github/mota-js/project/data.js:156 定义该键。 | 支持 | `src/content/texture/.list.jsonc`。 | 拆分图改为贴图清单。 |
 | 548 | firstData 配置 title | D:/github/mota-js/project/data.js:166 定义该键。 | 支持 | `src/content` 下的 `core` 配置 的 `title`。 | 字段名一致。 |
 | 549 | firstData 配置 name | D:/github/mota-js/project/data.js:167 定义该键。 | 支持 | `src/content` 下的 `core` 配置 的 `name`。 | 字段名一致。 |
 | 550 | firstData 配置 version | D:/github/mota-js/project/data.js:168 定义该键。 | 支持 | `src/content` 下的 `core` 配置 的 `version`。 | 字段名一致。 |
 | 551 | firstData 配置 floorId | D:/github/mota-js/project/data.js:169 定义该键。 | 支持 | `src/content` 下的 `core` 配置 的 `init.hero.floorId`。 | 起始楼层改为勇者初始位置。 |
 | 552 | firstData 配置 hero | D:/github/mota-js/project/data.js:170 定义该键。 | 支持 | `src/content` 下的 `core` 配置 的 `init.hero.attribute`。 | 初始属性字段一致。 |
-| 553 | firstData 配置 startCanvas | D:/github/mota-js/project/data.js:199 定义该键。 | 不支持 | 无等价配置。 | 现有接口无法确认可简单实现。 |
-| 554 | firstData 配置 startText | D:/github/mota-js/project/data.js:551 定义该键。 | 不支持 | 无等价配置。 | 现有接口无法确认可简单实现。 |
+| 553 | firstData 配置 startCanvas | D:/github/mota-js/project/data.js:199 定义该键。 | 不支持 | 无等价配置。 | 现有接口无法确认可简单实现；not planned。 |
+| 554 | firstData 配置 startText | D:/github/mota-js/project/data.js:551 定义该键。 | 不支持 | 无等价配置。 | 现有接口无法确认可简单实现；not planned。 |
 | 555 | firstData 配置 shops | D:/github/mota-js/project/data.js:559 定义该键。 | 支持 | `src/content` 下的 `core` 配置 的 `init.shop`。 | 商店配置保留。 |
 | 556 | firstData 配置 levelUp | D:/github/mota-js/project/data.js:679 定义该键。 | 不支持 | 无等价配置。 | 现有接口无法确认可简单实现。 |
 | 557 | values 配置 lavaDamage | D:/github/mota-js/project/data.js:721 定义该键。 | 不支持 | 无等价数值。 | 现有接口无法确认可简单实现，岩浆伤害需由地图伤害模块按内容配置。 |
@@ -727,8 +726,8 @@
 
 | 序号 | 旧样板功能 | 旧样板行为 | 新样板判定 | 新样板如何实现 | 差异 / 说明 |
 | --- | --- | --- | --- | --- | --- |
-| 606 | 公共事件 `加点事件` | D:/github/mota-js/project/events.js:4 有 2 条语句。 | 支持 | `BlockEventType.CommonEvent`（`packages-user/data-system/src/event/types.ts:18`）加 `IGameEventStore`（`packages-user/data-common/src/store/types.ts:296-318`）。 | 引擎能力存在，内容尚未迁移同名公共事件。 |
-| 607 | 公共事件 `回收钥匙商店` | D:/github/mota-js/project/events.js:48 有 4 条语句。 | 支持 | `BlockEventType.CommonEvent`（`packages-user/data-system/src/event/types.ts:18`）加 `IGameEventStore`（`packages-user/data-common/src/store/types.ts:296-318`）。 | 引擎能力存在，内容尚未迁移同名公共事件。 |
+| 606 | 公共事件 `加点事件` | D:/github/mota-js/project/events.js:4 有 2 条语句。 | 不支持 | 公共事件容器存在，但需要按新事件脚本重写原有逻辑。 | 不属于简单组合，判不支持；not planned。 |
+| 607 | 公共事件 `回收钥匙商店` | D:/github/mota-js/project/events.js:48 有 4 条语句。 | 不支持 | 公共事件容器存在，但需要按新事件脚本重写原有逻辑。 | 不属于简单组合，判不支持；not planned。 |
 
 ## 10. 存档结构（9 项）
 
@@ -748,6 +747,6 @@
 
 ## 11. 覆盖说明
 
-本文件覆盖 `project/enemys.js` 的 81 条怪物、`project/items.js` 的 51 条道具、`project/maps.js` 的 224 条图块、`project/floors/*.js` 的 29 个字段、`project/data.js` 的 63 个键、`project/icons.js` 的 9 类素材与 `project/events.js` 的 2 个公共事件。合并或拆分记录：无，所有条目按旧侧粒度逐条保留。
+本文件覆盖 `project/enemys.js` 的 81 条怪物、`project/items.js` 的 51 条道具、`project/maps.js` 的 224 条图块、`project/floors/*.js` 的 29 个字段、`project/data.js` 的 63 个键、`project/icons.js` 的 9 类素材与 `project/events.js` 的 2 个公共事件。合并或拆分记录：删除旧样板不存在的 254、255 两行；其余按旧侧粒度逐条保留。
 
 旧内容只在声明文件里出现的能力不计为支持；渲染、玩法语义与存储后端细节分别在对应分册判定。
