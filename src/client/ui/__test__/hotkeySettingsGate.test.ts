@@ -4,6 +4,7 @@ import typesSource from '../../../../packages-user/client-base/src/hotkey/types.
 import implSource from '../../../../packages-user/client-base/src/hotkey/hotkey.ts?raw';
 import settingsSource from '../settings.tsx?raw';
 import uiIndexSource from '../index.ts?raw';
+import listSource from '../../../../packages-user/client-base/src/components/list.tsx?raw';
 
 // 抹掉块注释、JSX 注释与行注释，避免说明性文字让否定断言假红
 function stripComments(source: string): string {
@@ -97,9 +98,15 @@ describe('热键设置源码闸门', () => {
         expect(hotkeySource).toContain('iterateKeyCombinations(');
     });
 
-    // 关闭路径使用公共退出命令与返回文本
-    it('closes through the common exit command and the back text', () => {
+    // 关闭路径使用公共退出命令，关闭文本由 ListPage 内置的「关闭」提供
+    it('closes through the common exit command and the ListPage close text', () => {
         expect(hotkeySource).toContain('@common/exit');
-        expect(hotkeySource).toContain('返回');
+        expect(hotkeySource).toContain('ListPage');
+        expect(/<ListPage[^>]*\sclose(?=[\s>])/.test(hotkeySource)).toBe(true);
+        expect(hotkeySource).toContain('closeLoc={CLOSE_LOC}');
+        expect(hotkeySource).toContain('onClose={close}');
+        expect(hotkeySource).not.toContain('text="返回"');
+        expect(hotkeySource).not.toContain('text="关闭"');
+        expect(listSource).toContain('text="关闭"');
     });
 });

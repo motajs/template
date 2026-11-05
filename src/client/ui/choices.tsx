@@ -12,7 +12,7 @@ import {
     useKey
 } from '@user/client-base';
 import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
-import { sleep } from 'mutate-animate';
+import { sleep } from '@motajs/common';
 
 export interface ConfirmBoxProps extends IGameUIPropsBase, TextContentProps {
     /** 确认框的提示文本内容 */

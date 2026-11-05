@@ -15,7 +15,7 @@ import { IClientHotkey } from './hotkey';
 
 export interface IGameUIPropsBase<
     T extends UIComponent = UIComponent
-> extends IUIDefaultPropsBase<T> {
+> extends IUIDefaultPropsBase<T, IGameUIPropsBase<T>> {
     readonly state: IClientBase;
 }
 

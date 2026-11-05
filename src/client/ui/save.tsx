@@ -20,7 +20,7 @@ import {
 } from '@user/client-base';
 import { HALF_HEIGHT, HALF_WIDTH, MAP_WIDTH, POP_BOX_WIDTH } from '@/client';
 import { adjustGrid, IGridLayoutData } from '@user/client-base';
-import { getSave, IUIPropsBase, SaveData } from '@user/client-modules';
+import { getSave, SaveData } from '@user/client-modules';
 
 /** 存档缩略图尺寸 */
 export const SAVE_ITEM_SIZE = MAP_BLOCK_WIDTH * 10;
@@ -43,7 +43,7 @@ const enum SaveMode {
     Other
 }
 
-export interface SaveProps extends IUIPropsBase, DefaultProps {
+export interface SaveProps extends IGameUIPropsBase, DefaultProps {
     loc: ElementLocator;
     mode: SaveMode;
 }

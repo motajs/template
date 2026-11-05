@@ -1,7 +1,12 @@
 import { Font, MotaOffscreenCanvas2D, CustomRenderItem } from '@motajs/render';
 // import { WeatherController } from '../weather';
 import { defineComponent, ref } from 'vue';
-import { Textbox, TextboxProps, Tip } from '@user/client-base';
+import {
+    IGameUIPropsBase,
+    Textbox,
+    TextboxProps,
+    Tip
+} from '@user/client-base';
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import {
     ENABLE_RIGHT_STATUS_BAR,
@@ -15,9 +20,10 @@ import {
 } from '@/client';
 import { LeftStatusBar, RightStatusBar } from './statusBar';
 import { isNil } from 'lodash-es';
-import { IUIPropsBase, using } from '@user/client-modules';
+import { using } from '@user/client-modules';
+import { DefaultProps } from '@motajs/render-vue';
 
-interface MainSceneProps extends IUIPropsBase {}
+interface MainSceneProps extends IGameUIPropsBase, DefaultProps {}
 
 const mainSceneProps = {
     props: ['controller', 'instance', 'state']

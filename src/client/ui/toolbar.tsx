@@ -11,10 +11,8 @@ import {
     StepForward,
     ViewMapIcon
 } from '@user/client-base';
-import { linear } from 'mutate-animate';
-import { KeyCode } from '@motajs/system';
+import { linear } from '@motajs/animate';
 import { Progress } from '@user/client-base';
-import { generateBinary } from '@motajs/legacy-common';
 import { SetupComponentOptions } from '@motajs/system';
 import { saveSave, saveLoad } from './save';
 import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '@/client';

@@ -6,6 +6,7 @@ import { ElementLocator, Font } from '@motajs/render';
 import {
     ExitFullscreen,
     Fullscreen,
+    IGameUIPropsBase,
     SoundVolume,
     triggerFullscreen,
     useKey
@@ -17,7 +18,6 @@ import { cosh, CurveMode, linear } from '@motajs/animate';
 import { sleep } from '@motajs/common';
 import {
     ITransitionedController,
-    IUIPropsBase,
     transitioned,
     transitionedColor
 } from '@user/client-modules';
@@ -65,7 +65,7 @@ interface ButtonOption {
     colorTrans: ITransitionedController<string>;
 }
 
-export interface GameTitleProps extends DefaultProps, IUIPropsBase {}
+export interface GameTitleProps extends DefaultProps, IGameUIPropsBase {}
 
 const gameTitleProps = {
     props: ['controller', 'instance', 'state']

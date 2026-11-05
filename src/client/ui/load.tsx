@@ -7,7 +7,8 @@ import { cosh, CurveMode, linear } from '@motajs/animate';
 import { clamp } from 'lodash-es';
 import { sleep } from '@motajs/common';
 import { GameTitleUI } from './title';
-import { IUIPropsBase, transitioned } from '@user/client-modules';
+import { transitioned } from '@user/client-modules';
+import { IGameUIPropsBase } from '@user/client-base';
 
 /** 加载界面的任务进度条半径 */
 export const LOAD_TASK_RADIUS = Math.min(MAIN_WIDTH, MAIN_HEIGHT) / 6;
@@ -28,7 +29,7 @@ export const LOAD_UNLOADED_COLOR = '#ccc';
 /** 加载界面的文字颜色 */
 export const LOAD_FONT_COLOR = '#fff';
 
-export interface ILoadProps extends IUIPropsBase, DefaultProps {}
+export interface ILoadProps extends IGameUIPropsBase, DefaultProps {}
 
 const loadSceneProps = {
     props: ['controller', 'instance', 'state']

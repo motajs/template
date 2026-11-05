@@ -5,15 +5,11 @@ import {
     IUIDefaultPropsBase
 } from '@motajs/system';
 import { defineComponent } from 'vue';
-import {
-    waitbox,
-    ListPage,
-    TextContent,
-    IGameUIPropsBase
-} from '@user/client-base';
+import { ListPage, TextContent, IGameUIPropsBase } from '@user/client-base';
 import { DefaultProps } from '@motajs/render-vue';
 // @ts-expect-error 需要重构
 import { ItemState } from '@user/data-state';
+import { waitbox } from './waitBox';
 
 // 未完工
 

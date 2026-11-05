@@ -16,7 +16,7 @@ export interface IGridLayoutData {
 }
 
 /**
- * 网格布局
+ * 网格布局，如果是指定元素的数量，那么用 `adjustGrid2`
  * @param width 总宽度
  * @param height 总高度
  * @param itemWidth 每个元素的宽度
@@ -52,6 +52,49 @@ export function adjustGrid(
         cols,
         rows,
         count: cols * rows,
+        width: rawWidth,
+        height: rawHeight,
+        locs
+    };
+}
+
+/**
+ * 网格布局，如果是指定元素宽高，那么用 `adjustGrid`
+ * @param width 总宽度
+ * @param height 总高度
+ * @param xCount 横向有多少个元素
+ * @param yCount 纵向有多少个元素
+ * @param intervalX 元素的横向间隔
+ * @param intervalY 元素的纵向间隔，不填时等于横向间隔
+ * @returns 网格布局信息
+ */
+export function adjustGrid2(
+    width: number,
+    height: number,
+    xCount: number,
+    yCount: number,
+    intervalX: number,
+    intervalY: number = intervalX
+) {
+    const itemWidth = (width - intervalX * (xCount - 1)) / xCount;
+    const itemHeight = (height - intervalY * (yCount - 1)) / yCount;
+    const rawWidth = (itemWidth + intervalX) * xCount - intervalX;
+    const rawHeight = (itemHeight + intervalY) * yCount - intervalY;
+
+    const locs: ElementLocator[] = [];
+
+    for (let y = 0; y < yCount; y++) {
+        const iy = (intervalY + itemHeight) * y;
+        for (let x = 0; x < xCount; x++) {
+            const ix = (intervalX + itemWidth) * x;
+            locs.push([ix, iy, itemWidth, itemHeight, 0, 0]);
+        }
+    }
+
+    return {
+        cols: xCount,
+        rows: yCount,
+        count: xCount * yCount,
         width: rawWidth,
         height: rawHeight,
         locs

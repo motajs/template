@@ -24,11 +24,14 @@ export type SetupComponentOptions<
 
 export type UIComponent = DefineSetupFnComponent<any> | DefineComponent;
 
-export interface IUIDefaultPropsBase<T extends UIComponent = UIComponent> {
+export interface IUIDefaultPropsBase<
+    T extends UIComponent = UIComponent,
+    PB extends IUIDefaultPropsBase<any> = IUIDefaultPropsBase<any, any>
+> {
     /** 当前打开的 UI 所属的控制器 */
-    readonly controller: IUIController<this>;
+    readonly controller: IUIController<PB>;
     /** 当前 UI 实例对象 */
-    readonly instance: IUIInstance<T, this>;
+    readonly instance: IUIInstance<T, PB>;
 }
 
 export interface IGameUI<C extends UIComponent = UIComponent> {

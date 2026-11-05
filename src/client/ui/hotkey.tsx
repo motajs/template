@@ -6,9 +6,9 @@ import {
     KeyCodeUtils,
     SetupComponentOptions
 } from '@motajs/system';
-import { Font } from '@motajs/render';
+import { ElementLocator, Font } from '@motajs/render';
 import { computed, defineComponent, onUnmounted, ref, shallowRef } from 'vue';
-import { IGameUIPropsBase, Scroll, Selection, useKey } from '@user/client-base';
+import { IGameUIPropsBase, ListPage, Scroll, useKey } from '@user/client-base';
 import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '@/client/uiConstant';
 
 /** 界面左侧与顶部的内边距 */
@@ -16,22 +16,48 @@ const LEFT_PAD = 16;
 const TOP_PAD = 16;
 /** 左侧分组列表的宽度 */
 const GROUP_WIDTH = 180;
+/** 左侧分组列表占整个界面的宽度比例，交给 ListPage 决定列表区宽度 */
+const GROUP_BASIS = GROUP_WIDTH / MAIN_WIDTH;
+/** ListPage 内容区的宽度，即界面总宽减去左栏所占的比例 */
+const CONTENT_WIDTH = MAIN_WIDTH * (1 - GROUP_BASIS);
+/** 右栏指令区域的宽度，左右各留出一份内边距 */
+const COMMAND_WIDTH = CONTENT_WIDTH - LEFT_PAD * 3;
 /** 左侧每一行分组的高度 */
 const GROUP_ROW_HEIGHT = 24;
 /** 左侧列表区域的起始纵坐标 */
 const LIST_TOP = TOP_PAD + 32;
-/** 右侧指令区域的起始横坐标 */
-const RIGHT_LEFT = GROUP_WIDTH + LEFT_PAD * 2;
-/** 右侧指令区域的宽度 */
-const RIGHT_WIDTH = MAIN_WIDTH - RIGHT_LEFT - LEFT_PAD;
 /** 左右两栏列表区域的高度，底部留出返回按钮的空间 */
 const LIST_HEIGHT = MAIN_HEIGHT - LIST_TOP - 48;
+/** 右栏指令区域在 ListPage 内容区内的定位，叠加内容区原点后与原有绝对位置一致 */
+const COMMAND_SCROLL_LOC: ElementLocator = [
+    LEFT_PAD * 2,
+    LIST_TOP,
+    COMMAND_WIDTH,
+    LIST_HEIGHT
+];
+/** 关闭按钮的定位，放在界面左下角，文本由 ListPage 内置渲染 */
+const CLOSE_LOC: ElementLocator = [
+    LEFT_PAD,
+    MAIN_HEIGHT - LEFT_PAD,
+    void 0,
+    void 0,
+    0,
+    1
+];
 /** 单个按键框的宽度 */
 const KEY_BOX_WIDTH = 180;
 /** 单个按键框的高度 */
 const KEY_BOX_HEIGHT = 24;
 /** 指令之间的纵向间隔 */
 const COMMAND_GAP = 12;
+/** 按键框左边缘的横坐标 */
+const BOX_LEFT = COMMAND_WIDTH - KEY_BOX_WIDTH - LEFT_PAD;
+/** 按键框命中矩形的高度，比整框少 4 像素以保留边框间隙 */
+const BOX_FILL_HEIGHT = KEY_BOX_HEIGHT - 4;
+/** 指令名的文本起始横坐标 */
+const COMMAND_TEXT_LEFT = 8;
+/** 指令名相对所在行顶部的纵向偏移 */
+const COMMAND_TEXT_TOP = 12;
 /** 界面内所有文本共用的字体 */
 const CONTENT_FONT = Font.defaults({ size: 13 });
 
@@ -42,11 +68,23 @@ const hotkeySettingsProps = {
     props: ['controller', 'instance', 'state']
 } satisfies SetupComponentOptions<HotkeySettingsProps>;
 
+interface ICommandRow {
+    /** 该行对应的指令 */
+    readonly command: IHotkeyCommand;
+    /** 该行顶部纵坐标 */
+    readonly top: number;
+}
+
 /** 热键设置界面，左栏切换分组，右栏为每条指令的每个按键组合显示一个可点击框 */
 export const HotkeySettings = defineComponent<HotkeySettingsProps>(props => {
     const hotkey = props.state.hotkey;
     const groups = Array.from(hotkey.iterateGroups());
     const selectedGroup = ref(groups.length > 0 ? groups[0][0] : '');
+    /** 分组列表的显示项，第一项为分组 id，第二项为分组名称 */
+    const groupItems: [string, string][] = groups.map(([id, group]) => [
+        id,
+        group.name
+    ]);
     const commands = computed(() => {
         const group = hotkey.getGroup(selectedGroup.value);
         return group ? group.commands : [];
@@ -75,28 +113,18 @@ export const HotkeySettings = defineComponent<HotkeySettingsProps>(props => {
         combinationLists.value = lists;
     };
 
-    /** 计算一条指令占用的高度，同一指令的多个组合纵向堆叠 */
-    const getCommandHeight = (command: IHotkeyCommand): number => {
-        return Math.max(command.length, 1) * KEY_BOX_HEIGHT + COMMAND_GAP;
-    };
-
-    /** 计算第 index 条指令的顶部纵坐标 */
-    const getCommandTop = (index: number): number => {
+    // 一次遍历预计算每条指令的顶部纵坐标，避免逐行求和
+    const commandRows = computed<ICommandRow[]>(() => {
+        const rows: ICommandRow[] = [];
         let top = 0;
-        for (let i = 0; i < index; i++) {
-            top += getCommandHeight(commands.value[i]);
-        }
-        return top;
-    };
-
-    /** 计算当前分组全部指令占用的总高度，作为滚动区域的内容高度 */
-    const getContentHeight = (): number => {
-        let height = 0;
         for (const command of commands.value) {
-            height += getCommandHeight(command);
+            const height =
+                Math.max(command.length, 1) * KEY_BOX_HEIGHT + COMMAND_GAP;
+            rows.push({ command, top });
+            top += height;
         }
-        return height;
-    };
+        return rows;
+    });
 
     /** 移除文档上的按键监听 */
     const removeCapture = (): void => {
@@ -126,6 +154,11 @@ export const HotkeySettings = defineComponent<HotkeySettingsProps>(props => {
         selectedIndex.value = index;
         document.addEventListener('keydown', onKeyDown, true);
         document.addEventListener('keyup', onKeyUp, true);
+    };
+
+    /** 生成按键框的点击处理器，捕获该框对应的指令与组合下标 */
+    const getKeyClick = (command: IHotkeyCommand, index: number) => () => {
+        selectKey(command, index);
     };
 
     /** 捕获阶段处理按下事件，忽略重复与无法映射的按键 */
@@ -173,164 +206,91 @@ export const HotkeySettings = defineComponent<HotkeySettingsProps>(props => {
         props.controller.close(props.instance);
     };
 
-    return () => (
-        <container loc={FULL_LOC}>
-            <text
-                text="返回"
-                loc={[LEFT_PAD, TOP_PAD]}
-                cursor="pointer"
-                onClick={close}
-                font={CONTENT_FONT}
-                fillStyle="#ffffff"
-            />
-            <Scroll loc={[LEFT_PAD, LIST_TOP, GROUP_WIDTH, LIST_HEIGHT]}>
-                <container
-                    loc={[
-                        0,
-                        0,
-                        GROUP_WIDTH,
-                        Math.max(groups.length, 1) * GROUP_ROW_HEIGHT
-                    ]}
-                >
-                    {groups.map(([id, group], groupIndex) => {
-                        const isSelected = id === selectedGroup.value;
-                        return (
-                            <container
-                                key={id}
-                                loc={[
-                                    0,
-                                    groupIndex * GROUP_ROW_HEIGHT,
-                                    GROUP_WIDTH,
-                                    GROUP_ROW_HEIGHT
-                                ]}
+    /** 渲染右栏指令区，作为 ListPage 默认插槽的内容 */
+    const renderCommands = () => (
+        <Scroll loc={COMMAND_SCROLL_LOC}>
+            {/* 每条指令名与它的每个按键框、组合文本，展开为同级子项 */}
+            {commandRows.value.map((row, i) => {
+                const list = combinationLists.value[i] ?? [];
+                const nameLoc: ElementLocator = [
+                    COMMAND_TEXT_LEFT,
+                    row.top + COMMAND_TEXT_TOP
+                ];
+                return [
+                    <text
+                        text={row.command.name}
+                        loc={nameLoc}
+                        anc={[0, 0]}
+                        font={CONTENT_FONT}
+                        fillStyle="#ffffff"
+                        noevent
+                    />,
+                    ...list.map((keys, j) => {
+                        const boxTop = row.top + j * KEY_BOX_HEIGHT;
+                        const isSelected =
+                            selectedCommand.value === row.command &&
+                            selectedIndex.value === j;
+                        const showing =
+                            isSelected && heldKeys.value.length > 0
+                                ? heldKeys.value
+                                : keys;
+                        const boxLoc: ElementLocator = [
+                            BOX_LEFT,
+                            boxTop,
+                            KEY_BOX_WIDTH,
+                            BOX_FILL_HEIGHT
+                        ];
+                        const textLoc: ElementLocator = [
+                            BOX_LEFT + KEY_BOX_WIDTH / 2,
+                            boxTop + BOX_FILL_HEIGHT / 2
+                        ];
+                        // 每个组合展开为按键框与文本两个同级子项
+                        return [
+                            // 选中按键框同样只切换这个既有矩形的描边
+                            <g-rectr
+                                loc={boxLoc}
+                                circle={[4]}
+                                fill
+                                stroke
+                                fillStyle="rgba(255, 255, 255, 0.08)"
+                                strokeStyle={
+                                    isSelected ? 'gold' : 'transparent'
+                                }
+                                lineWidth={isSelected ? 2 : 1}
                                 cursor="pointer"
-                                onClick={() => selectGroup(id)}
-                            >
-                                {isSelected && (
-                                    <Selection
-                                        loc={[
-                                            0,
-                                            0,
-                                            GROUP_WIDTH,
-                                            GROUP_ROW_HEIGHT
-                                        ]}
-                                        border="gold"
-                                        noevent
-                                    />
-                                )}
-                                <text
-                                    text={group.name}
-                                    loc={[8, GROUP_ROW_HEIGHT / 2]}
-                                    anc={[0, 0.5]}
-                                    font={CONTENT_FONT}
-                                    fillStyle={isSelected ? 'gold' : '#ffffff'}
-                                />
-                            </container>
-                        );
-                    })}
-                </container>
-            </Scroll>
-            <Scroll loc={[RIGHT_LEFT, LIST_TOP, RIGHT_WIDTH, LIST_HEIGHT]}>
-                <container loc={[0, 0, RIGHT_WIDTH, getContentHeight()]}>
-                    {commands.value.map((command, commandIndex) => {
-                        const list = combinationLists.value[commandIndex] ?? [];
-                        return (
-                            <container
-                                key={command.command}
-                                loc={[
-                                    0,
-                                    getCommandTop(commandIndex),
-                                    RIGHT_WIDTH,
-                                    getCommandHeight(command)
-                                ]}
-                            >
-                                <text
-                                    text={command.name}
-                                    loc={[8, 12]}
-                                    anc={[0, 0]}
-                                    font={CONTENT_FONT}
-                                    fillStyle="#ffffff"
-                                />
-                                <container
-                                    loc={[
-                                        RIGHT_WIDTH - KEY_BOX_WIDTH - LEFT_PAD,
-                                        0,
-                                        KEY_BOX_WIDTH,
-                                        list.length * KEY_BOX_HEIGHT
-                                    ]}
-                                >
-                                    {list.map((keys, index) => {
-                                        const isSelected =
-                                            selectedCommand.value === command &&
-                                            selectedIndex.value === index;
-                                        const showing =
-                                            isSelected &&
-                                            heldKeys.value.length > 0
-                                                ? heldKeys.value
-                                                : keys;
-                                        return (
-                                            <container
-                                                key={index}
-                                                loc={[
-                                                    0,
-                                                    index * KEY_BOX_HEIGHT,
-                                                    KEY_BOX_WIDTH,
-                                                    KEY_BOX_HEIGHT
-                                                ]}
-                                                cursor="pointer"
-                                                onClick={() =>
-                                                    selectKey(command, index)
-                                                }
-                                            >
-                                                <g-rectr
-                                                    loc={[
-                                                        0,
-                                                        0,
-                                                        KEY_BOX_WIDTH,
-                                                        KEY_BOX_HEIGHT - 4
-                                                    ]}
-                                                    circle={[4]}
-                                                    fill
-                                                    fillStyle="rgba(255, 255, 255, 0.08)"
-                                                />
-                                                {isSelected && (
-                                                    <Selection
-                                                        loc={[
-                                                            0,
-                                                            0,
-                                                            KEY_BOX_WIDTH,
-                                                            KEY_BOX_HEIGHT - 4
-                                                        ]}
-                                                        border="gold"
-                                                        noevent
-                                                    />
-                                                )}
-                                                <text
-                                                    text={formatCombination(
-                                                        showing
-                                                    )}
-                                                    loc={[
-                                                        KEY_BOX_WIDTH / 2,
-                                                        (KEY_BOX_HEIGHT - 4) / 2
-                                                    ]}
-                                                    anc={[0.5, 0.5]}
-                                                    font={CONTENT_FONT}
-                                                    fillStyle={
-                                                        isSelected
-                                                            ? 'gold'
-                                                            : '#ffffff'
-                                                    }
-                                                />
-                                            </container>
-                                        );
-                                    })}
-                                </container>
-                            </container>
-                        );
-                    })}
-                </container>
-            </Scroll>
-        </container>
+                                onClick={getKeyClick(row.command, j)}
+                            />,
+                            <text
+                                text={formatCombination(showing)}
+                                loc={textLoc}
+                                anc={[0.5, 0.5]}
+                                font={CONTENT_FONT}
+                                fillStyle={isSelected ? 'gold' : '#ffffff'}
+                                noevent
+                            />
+                        ];
+                    })
+                ];
+            })}
+        </Scroll>
+    );
+
+    return () => (
+        <ListPage
+            loc={FULL_LOC}
+            basis={GROUP_BASIS}
+            list={groupItems}
+            selected={selectedGroup.value}
+            lineHeight={GROUP_ROW_HEIGHT}
+            font={CONTENT_FONT}
+            close
+            closeLoc={CLOSE_LOC}
+            onUpdate={selectGroup}
+            onClose={close}
+            nocache
+        >
+            {{ default: () => renderCommands() }}
+        </ListPage>
     );
 }, hotkeySettingsProps);
 

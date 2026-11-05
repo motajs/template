@@ -427,7 +427,7 @@ export interface IDamageCalculator<TEnemy, THero> {
 
 export interface IDamageContext<TEnemy, THero> extends IDataBaseExtended {
     /**
-     * 获取战斗伤害信息
+     * 获取战斗伤害信息，会使用怪物的计算后属性计算伤害，等价于 `getDamageInfoByComputed(view.getComputedEnemy)`
      * @param enemy 怪物视图
      */
     getDamageInfo(

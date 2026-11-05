@@ -17,7 +17,7 @@ import {
     STATUS_BAR_HEIGHT,
     STATUS_BAR_WIDTH
 } from '@/client';
-import { IUIPropsBase } from '@user/client-modules';
+import { IGameUIPropsBase } from '@user/client-base';
 import { DefaultProps } from '@motajs/render-vue';
 
 export interface ILeftHeroStatus {
@@ -99,7 +99,7 @@ interface KeyLikeInfo {
     readonly items: KeyLikeItem[];
 }
 
-interface StatusBarProps extends IUIPropsBase, DefaultProps {
+interface StatusBarProps extends IGameUIPropsBase, DefaultProps {
     loc: ElementLocator;
     hidden: boolean;
 }

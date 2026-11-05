@@ -4,11 +4,12 @@ import { Font } from '@motajs/render';
 import { Scroll, TextContent } from '@user/client-base';
 import { IHeroState } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
-import { IUIPropsBase } from '@user/client-modules';
+import { IGameUIPropsBase } from '@user/client-base';
 import { IShopState, IShopSystem } from '@/data/plugin/shop';
 import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH, RENDER_WIDTH } from '@/client';
+import { DefaultProps } from '@motajs/render-vue';
 
-export interface IShopProps extends IUIPropsBase {
+export interface IShopProps extends IGameUIPropsBase, DefaultProps {
     /** 商店状态对象 */
     shop: IShopState;
     /** 勇士状态对象 */

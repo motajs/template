@@ -12,5 +12,3 @@ export * from './title';
 export * from './toolbar';
 export * from './toolbox';
 export * from './viewmap';
-
-export * from './constant';
