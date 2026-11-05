@@ -728,13 +728,13 @@ export class TextContentParser {
     }
 
     private parseFillStyle(pointer: number) {
-        const [param, end] = this.getChildableTagParam(pointer + 2);
-        if (!param) {
+        const [param, end] = this.getChildableTagParam(pointer);
+        if (param === '/c') {
             // 参数为空或没有参数，视为标签结束
             const color = this.fillStyleStack.pop();
             if (this.resolved.length > 0) this.addTextNode(pointer, false);
             if (!color) {
-                logger.warn(54, '\\r', pointer.toString());
+                logger.warn(54, '[/c]', pointer.toString());
                 return end;
             }
             this.status.fillStyle = color;
@@ -743,19 +743,19 @@ export class TextContentParser {
             // 标签开始
             this.fillStyleStack.push(this.status.fillStyle);
             if (this.resolved.length > 0) this.addTextNode(pointer, false);
-            this.status.fillStyle = param;
+            this.status.fillStyle = param.slice(2);
             return end;
         }
     }
 
     private parseFontSize(pointer: number) {
-        const [param, end] = this.getChildableTagParam(pointer + 2);
-        if (!param) {
+        const [param, end] = this.getChildableTagParam(pointer);
+        if (param === '/s') {
             // 参数为空或没有参数，视为标签结束
             const size = this.fontSizeStack.pop();
             if (this.resolved.length > 0) this.addTextNode(pointer, false);
             if (!size) {
-                logger.warn(54, '\\c', pointer.toString());
+                logger.warn(54, '[/s]', pointer.toString());
                 return end;
             }
             this.status.fontSize = size;
@@ -765,20 +765,20 @@ export class TextContentParser {
             // 标签开始
             this.fontSizeStack.push(this.status.fontSize);
             if (this.resolved.length > 0) this.addTextNode(pointer, false);
-            this.status.fontSize = parseFloat(param);
+            this.status.fontSize = parseFloat(param.slice(2));
             this.font = this.buildFont();
             return end;
         }
     }
 
     private parseFontFamily(pointer: number) {
-        const [param, end] = this.getChildableTagParam(pointer + 2);
-        if (!param) {
+        const [param, end] = this.getChildableTagParam(pointer);
+        if (param === '/f') {
             // 参数为空或没有参数，视为标签结束
             const font = this.fontFamilyStack.pop();
             if (this.resolved.length > 0) this.addTextNode(pointer, false);
             if (!font) {
-                logger.warn(54, '\\g', pointer.toString());
+                logger.warn(54, '[/f]', pointer.toString());
                 return end;
             }
             this.status.fontFamily = font;
@@ -788,7 +788,7 @@ export class TextContentParser {
             // 标签开始
             this.fontFamilyStack.push(this.status.fontFamily);
             if (this.resolved.length > 0) this.addTextNode(pointer, false);
-            this.status.fontFamily = param;
+            this.status.fontFamily = param.slice(2);
             this.font = this.buildFont();
             return end;
         }
@@ -808,9 +808,12 @@ export class TextContentParser {
 
     private parseWait(pointer: number) {
         if (this.resolved.length > 0) this.addTextNode(pointer, false);
-        const [param, end] = this.getTagParam(pointer + 2);
-        if (!param) {
-            logger.warn(55, '\\z');
+        const [header, end] = this.getTagParam(pointer);
+        const equalIndex = header.indexOf('=');
+        const name = header.slice(0, equalIndex);
+        const param = header.slice(equalIndex + 1);
+        if (name !== 'w' || !param) {
+            logger.warn(55, '[w=…]');
             return pointer;
         }
         const time = parseInt(param);
@@ -820,9 +823,12 @@ export class TextContentParser {
 
     private parseIcon(pointer: number) {
         if (this.resolved.length > 0) this.addTextNode(pointer, false);
-        const [param, end] = this.getTagParam(pointer + 2);
-        if (!param) {
-            logger.warn(55, '\\i');
+        const [header, end] = this.getTagParam(pointer);
+        const equalIndex = header.indexOf('=');
+        const name = header.slice(0, equalIndex);
+        const param = header.slice(equalIndex + 1);
+        if (name !== 'icon' || !param) {
+            logger.warn(55, '[icon=…]');
             return pointer;
         }
         if (/^\d+$/.test(param)) {
@@ -932,29 +938,6 @@ export class TextContentParser {
                         pointer++;
                         break;
                     }
-                    case 'r':
-                        pointer = this.parseFillStyle(pointer);
-                        break;
-                    case 'c':
-                        pointer = this.parseFontSize(pointer);
-                        break;
-                    case 'g':
-                        pointer = this.parseFontFamily(pointer);
-                        break;
-                    case 'd':
-                        this.parseFontWeight(pointer);
-                        pointer++;
-                        break;
-                    case 'e':
-                        this.parseFontItalic(pointer);
-                        pointer++;
-                        break;
-                    case 'z':
-                        pointer = this.parseWait(pointer);
-                        break;
-                    case 'i':
-                        pointer = this.parseIcon(pointer);
-                        break;
                     case 'n':
                         // 在这里预先将换行处理为多个 node，会比在分行时再处理更方便
                         pointer++;
@@ -962,8 +945,52 @@ export class TextContentParser {
                         break;
                 }
                 continue;
-            } else if (char === '\r') {
-                pointer = this.parseFillStyle(pointer);
+            } else if (char === '[') {
+                const next = text[pointer + 1];
+                if (next === '[') {
+                    this.resolved += '[';
+                    pointer++;
+                    continue;
+                }
+                if (next === ' ') {
+                    this.resolved += '[';
+                    continue;
+                }
+                const end = this.text.indexOf(']', pointer);
+                if (end === -1) {
+                    this.resolved += '[';
+                    continue;
+                }
+                const header = this.text.slice(pointer + 1, end);
+                if (header === 'b') {
+                    this.parseFontWeight(pointer);
+                } else if (header === 'i') {
+                    this.parseFontItalic(pointer);
+                } else if (header.startsWith('w=') && header !== 'w=') {
+                    this.parseWait(pointer);
+                } else if (header.startsWith('icon=') && header !== 'icon=') {
+                    this.parseIcon(pointer);
+                } else if (
+                    header === '/c' ||
+                    (header.startsWith('c=') && header !== 'c=')
+                ) {
+                    this.parseFillStyle(pointer);
+                } else if (
+                    header === '/s' ||
+                    (header.startsWith('s=') && header !== 's=')
+                ) {
+                    this.parseFontSize(pointer);
+                } else if (
+                    header === '/f' ||
+                    (header.startsWith('f=') && header !== 'f=')
+                ) {
+                    this.parseFontFamily(pointer);
+                } else {
+                    this.resolved += this.text.slice(pointer, end + 1);
+                    pointer = end;
+                    continue;
+                }
+                pointer = end;
                 continue;
             } else if (char === '$') {
                 // 表达式
@@ -977,6 +1004,13 @@ export class TextContentParser {
             } else if (char === '\n') {
                 // 在这里预先将换行处理为多个 node，会比在分行时再处理更方便
                 this.addTextNode(pointer + 1, true);
+                continue;
+            } else if (char === ']') {
+                const next = text[pointer + 1];
+                if (next === ']') {
+                    pointer++;
+                }
+                this.resolved += ']';
                 continue;
             }
 
@@ -1101,7 +1135,7 @@ export class TextContentParser {
         }
         return {
             type: TextContentType.Wait,
-            raw: '\\z[0]',
+            raw: '[w=0]',
             wait: 0
         };
     }
