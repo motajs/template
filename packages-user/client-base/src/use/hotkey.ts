@@ -13,6 +13,8 @@ class HotkeyUsing implements IHotkeyUsing {
     private keyScope: symbol | null = null;
     /** 当前的按键实现对象 */
     private impl: Map<string, (info: IHotkeyEmitInfo) => void> = new Map();
+    /** 当前设置的 `when` 判断函数 */
+    private whenFunc: (() => boolean) | null = null;
 
     constructor(
         readonly system: IHotkeySystem,
@@ -26,6 +28,7 @@ class HotkeyUsing implements IHotkeyUsing {
             const scope = system.enterScope(clearImpl);
             this.keyScope = scope;
             resolve(scope);
+            if (this.whenFunc) system.when(this.whenFunc);
             for (const [command, func] of this.impl) {
                 system.implement(command, func);
             }
@@ -43,6 +46,15 @@ class HotkeyUsing implements IHotkeyUsing {
 
     scope(): Promise<symbol> {
         return this.scopePromise;
+    }
+
+    when(func: () => boolean): this {
+        if (this.mounted) {
+            this.system.when(func);
+        } else {
+            this.whenFunc = func;
+        }
+        return this;
     }
 
     implement(command: string, func: (info: IHotkeyEmitInfo) => void): this {
