@@ -144,7 +144,7 @@ export class ClientCore extends CoreState implements IClientCore {
     /**
      * 插件同步初始化
      */
-    protected awake(): void {
+    awake(): void {
         super.awake();
         const result = this.orderedClientPlugins;
         if (result.cyclic.size > 0) {

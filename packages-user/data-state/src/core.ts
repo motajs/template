@@ -152,7 +152,6 @@ export class CoreState
             deps.set(id, plugin.plugin.dataDeps);
         }
         this.orderedDataPlugins = orderPlugins(deps);
-        this.awake();
     }
 
     protected createController(
@@ -205,7 +204,7 @@ export class CoreState
     /**
      * 插件同步初始化
      */
-    protected awake(): void {
+    awake(): void {
         const result = this.orderedDataPlugins;
         if (result.cyclic.size > 0) {
             logger.error(76, [...result.cyclic].join(', '));

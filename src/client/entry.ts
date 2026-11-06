@@ -44,5 +44,6 @@ export function createClientCoreConfig(
 export function createClientCore(starter: ILoadTaskStarter): IClientCore {
     const config = createClientCoreConfig(starter);
     const state = new ClientCore(config);
+    state.awake();
     return state;
 }

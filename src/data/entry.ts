@@ -28,5 +28,6 @@ export function createCoreStateConfig(
 export function createCoreState(starter: ILoadTaskStarter): ICoreState {
     const config = createCoreStateConfig(starter);
     const state = new CoreState(config);
+    state.awake();
     return state;
 }
