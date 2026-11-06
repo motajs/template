@@ -84,7 +84,7 @@ export interface CustomProps extends BaseProps {
     /** 自定义的渲染函数 */
     render?: CustomRenderFunction;
     /** 更新绑定，当数组中的任意一项更新时将会自动更新此元素的渲染 */
-    bindings?: Ref<any>[];
+    bindings?: readonly unknown[];
 }
 
 export interface ContainerProps extends BaseProps {}

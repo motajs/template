@@ -1,4 +1,9 @@
-import { ITileLocator, IFaceHandler } from '@motajs/common';
+import {
+    ITileLocator,
+    IFaceHandler,
+    IHookBase,
+    IHookable
+} from '@motajs/common';
 import {
     IDataBaseExtended,
     ILayerLocation,
@@ -156,9 +161,32 @@ export interface IPathFinder extends IDataBaseExtended {
  */
 export type PathFallbackPolicy = (path: readonly IPathfindingStep[]) => boolean;
 
-export interface IPathfindingSystem extends IDataBaseExtended {
+export interface IPathfindingSystemHooks extends IHookBase {
+    /**
+     * 在瞬移自动寻路前触发
+     * @param path 瞬移的寻路路径
+     */
+    onBeforeTeleportTo?(
+        path: IPathfindingResult,
+        system: IPathfindingSystem
+    ): void;
+
+    /**
+     * 在自动寻路之后触发
+     * @param path 瞬移的寻路路径
+     */
+    onAfterTeleportTo?(
+        path: IPathfindingResult,
+        system: IPathfindingSystem
+    ): void;
+}
+
+export interface IPathfindingSystem
+    extends IDataBaseExtended, IHookable<IPathfindingSystemHooks> {
     /** 寻路求解器 */
     readonly finder: IPathFinder;
+    /** 当前正在使用的移动寻路器 */
+    readonly mover: IObjectMover<IObjectMovable> | null;
 
     /**
      * 绑定寻路移动器，可绑定勇士或任意 `IObjectMover`，如动态图块移动器

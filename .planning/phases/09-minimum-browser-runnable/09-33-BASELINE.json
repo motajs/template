@@ -1,0 +1,32 @@
+{
+    "head": "f5f83229851c910b05db33834d7e0f65d7b5120b",
+    "hashes": {
+        "packages-user/client-base/src/setting/index.ts": "fcb073fefcd6bebc8afd726f830e66828ebc5e90",
+        "packages-user/client-base/src/index.ts": "3904bbe873a1fc1fe448529708dda15232271019",
+        "packages-user/client-base/src/types.ts": "cdf7224dc39118665b00a9697c31e6f5ae7c4f84",
+        "packages-user/client-base/package.json": "3e9b20220568df6244bbbceadb16e5c3b2a3e874",
+        "packages-user/client-base/src/hotkey/types.ts": "d1cdf0c25530950a46bce801df63ed975665b451",
+        "packages-user/data-common/src/save/types.ts": "06b37a622a5e26abb91cc6332c49ca65c6691204",
+        "packages/system/src/ui/types.ts": "2a24550a6a3f8dade44524f7be2564f7d7957551"
+    },
+    "dirty": [
+        "packages-user/client-base/src/index.ts",
+        "packages-user/client-base/src/map/__test__/rendererGate.test.ts",
+        "packages-user/client-base/src/map/renderer.ts",
+        "packages-user/client-base/src/map/shader/map.frag",
+        "packages-user/client-base/src/map/status.ts",
+        "packages-user/client-base/src/map/types.ts",
+        "packages-user/client-base/src/map/vertex.ts",
+        "packages-user/client-base/src/setting/index.ts",
+        "packages-user/client-base/src/setting/types.ts",
+        "src/client/ui/__test__/hotkeySettingsGate.test.ts",
+        "src/client/ui/__test__/uiContainerGate.test.ts",
+        "src/client/ui/book.tsx",
+        "src/client/ui/bookDetail.tsx",
+        "src/client/ui/equipbox.tsx",
+        "src/client/ui/hotkey.tsx",
+        "src/client/ui/toolbox.tsx"
+    ],
+    "typecheck": [],
+    "typecheckTotal": 159
+}

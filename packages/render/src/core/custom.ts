@@ -1,7 +1,6 @@
 import { RenderItem } from './item';
 import { MotaOffscreenCanvas2D } from './canvas2d';
 import { CustomRenderFunction } from './types';
-import { Ref } from 'vue';
 
 export class CustomRenderItem extends RenderItem {
     renderFn: CustomRenderFunction;
@@ -29,7 +28,7 @@ export class CustomRenderItem extends RenderItem {
 
     protected handleProps(
         key: string,
-        prevValue: any,
+        _prevValue: any,
         nextValue: any
     ): boolean {
         switch (key) {
@@ -39,20 +38,7 @@ export class CustomRenderItem extends RenderItem {
                 return true;
             case 'bindings':
                 if (!this.assertType(nextValue, Array, key)) return false;
-                if (nextValue !== prevValue) {
-                    this.update();
-                } else if (nextValue.length !== prevValue.length) {
-                    this.update();
-                } else {
-                    const arr: Ref<any>[] = nextValue as Ref<any>[];
-                    const prev: Ref<any>[] = prevValue as Ref<any>[];
-                    for (let i = 0; i < nextValue.length; i++) {
-                        if (arr[i].value !== prev[i].value) {
-                            this.update();
-                            break;
-                        }
-                    }
-                }
+                this.update();
                 return true;
         }
         return false;

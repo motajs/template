@@ -20,3 +20,27 @@ export function cumsum(seq: Iterable<number>): number[] {
     }
     return result;
 }
+
+/**
+ * 判断一个数组的所有项，符合的项组成 `match`，不符合的组成 `unmatch`，返回 `[match, unmatch]`
+ * @param array 要判断的数组
+ * @param filter 判断函数
+ * @example matchArray([1, 2, 3, 4], v => v < 2); // [[1], [2, 3, 4]]
+ */
+export function matchArray<T>(
+    array: readonly T[],
+    filter: (v: T, i: number, a: readonly T[]) => boolean
+): [match: T[], unmatch: T[]] {
+    const match: T[] = [];
+    const unmatch: T[] = [];
+
+    array.forEach((v, i, a) => {
+        if (filter(v, i, a)) {
+            match.push(v);
+        } else {
+            unmatch.push(v);
+        }
+    });
+
+    return [match, unmatch];
+}

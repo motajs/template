@@ -16,7 +16,8 @@ import {
     CircleParams,
     EllipseParams,
     RectRCircleParams,
-    RectREllipseParams
+    RectREllipseParams,
+    IGraphicRectR
 } from './types';
 
 const enum GraphicModeProp {
@@ -413,14 +414,14 @@ export class Ellipse extends GraphicItemBase implements IGraphicEllipse {
     }
 
     /**
-     * 设置椭圆的横纵轴长度
-     * @param x 横轴长度
-     * @param y 纵轴长度
+     * 设置椭圆的横纵轴半径
+     * @param x 横轴半径
+     * @param y 纵轴半径
      */
     setRadius(x: number, y: number) {
         this.radiusX = x;
         this.radiusY = y;
-        this.size(x, y);
+        this.size(x * 2, y * 2);
         this.pathDirty = true;
         this.update();
     }
@@ -720,18 +721,6 @@ export class QuadraticCurve
         return path;
     }
 
-    protected render(
-        canvas: MotaOffscreenCanvas2D,
-        _transform: Transform
-    ): void {
-        const ctx = canvas.ctx;
-        this.setCanvasState(canvas);
-        ctx.beginPath();
-        ctx.moveTo(this.sx, this.sy);
-        ctx.quadraticCurveTo(this.cpx, this.cpy, this.ex, this.ey);
-        ctx.stroke();
-    }
-
     /**
      * 设置起始点坐标
      */
@@ -862,7 +851,7 @@ export class Path extends GraphicItemBase implements IGraphicPath {
     }
 }
 
-export class RectR extends GraphicItemBase {
+export class RectR extends GraphicItemBase implements IGraphicRectR {
     /** 圆角属性，四元素数组，每个元素是一个二元素数组，表示这个角的半径，顺序为 左上，右上，右下，左下 */
     readonly corner: [radiusX: number, radiusY: number][] = [
         [0, 0],

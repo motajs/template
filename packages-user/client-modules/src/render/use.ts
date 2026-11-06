@@ -8,8 +8,6 @@ import {
 } from '@motajs/animate';
 import { logger } from '@motajs/common';
 import { IRenderItem, IRenderTreeRoot } from '@motajs/render';
-import { Hotkey, gameKey } from '@motajs/system';
-import { loading } from '@user/data-base';
 import {
     ComponentInternalInstance,
     getCurrentInstance,
@@ -63,42 +61,6 @@ export function onOrientationChange(hook: OrientationHook) {
     onUnmounted(() => {
         orientationHooks.delete(hook);
     });
-}
-
-/**
- * 当游戏加载完成时执行函数，如果调用此函数时游戏已经加载，那么会立刻调用传入的钩子函数
- * @param hook 当游戏加载完成时执行的函数
- */
-export function onLoaded(hook: () => void) {
-    if (!loading.loaded) {
-        loading.once('loaded', hook);
-    } else {
-        hook();
-    }
-}
-
-type KeyUsing = [Hotkey, symbol];
-
-/**
- * 在组件中定义按键操作
- * @param noScope 是否不创建新作用域
- * @param scope 指定作用域，如果 `noScope` 为 `true`，则此项无效
- */
-export function useKey(noScope: boolean = false, scope?: symbol): KeyUsing {
-    if (noScope) {
-        return [gameKey, gameKey.scope];
-    } else {
-        const sym = scope ?? Symbol();
-        if (sym === gameKey.scope) {
-            return [gameKey, gameKey.scope];
-        } else {
-            gameKey.use(sym);
-            onUnmounted(() => {
-                gameKey.dispose();
-            });
-            return [gameKey, sym];
-        }
-    }
 }
 
 export interface ITransitionedController<T> {

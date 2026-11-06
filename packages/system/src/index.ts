@@ -1,2 +1,2 @@
-export * from './action';
+export * from './hotkey';
 export * from './ui';

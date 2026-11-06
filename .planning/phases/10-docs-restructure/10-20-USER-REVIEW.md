@@ -1,0 +1,271 @@
+# 高级 I 用户修订记录
+
+## 第 1 轮
+
+**时间：** 2026-10-20
+**用户意见：** 按 D-59 修订全部 7 篇高级 I 文档：删除中级教程式的「目标 / 改哪里 / 复制什么 / 改什么 / 怎么验证 / 注意」六步实操块，改为正常库文档风格——用带注释的完整示例讲解，概念与验证写成叙述，不再手把手分步。
+**修改方式：** 派发子代理执行（只改 `docs/advanced/*.md`）。
+**状态：已处理**
+
+### 逐篇处置
+
+| 篇目                           | 处置                                                                                                                                                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.md`                     | 本身没有六步块；把「怎么验证你读懂了」改为「读完这一层应该能做什么」，保留分层、阅读路径与 D-55 取舍原则。                                                                                                |
+| `declarative-vs-imperative.md` | 「给怪物加一条光环」改为叙述 + 带注释的 `special` 示例（说明键、范围、矩形/十字与三项百分比），验证改为叙述；保留 `ISpecial23Value`、`aura.ts` 转换器与叠加告警。                                         |
+| `plugin-system.md`             | 模板六步改为「示例：一个完整插件」：完整 `MyPlugin` 类（含 `import`、生命周期与注释）→ `list.ts` 追加注册示例；删除 `[模板]` / `[需改]` 标记，验证改为叙述，保留 id 唯一性、依赖串/对象两种形态与错误码。 |
+| `saveable-content.md`          | 模板六步改为「示例：一个可存档对象」完整类 + 「示例：把可存档对象接到插件里」；删除 `[模板]` / `[需改]` 标记；`structuredClone`、压缩参数省略、注册时机等说明保留，验证改为叙述。                         |
+| `replay-consistency.md`        | 「给一个内置方法补录像标记」的六步改为叙述 + 装饰器片段 + 收集区间示例；保留 `getOrInsert` 练习、错误码 `161`、去标记后告警消失的解释，验证改为叙述。                                                     |
+| `data-stores.md`               | 「模板：登记一条原始定义」与「把一批自定义内容注册进 Store」两处六步改为带注释的 `addTile` 示例与批量登记示例；保留四个 Store 的字段、错误码与 `fromRaw` / `addLayer` 时机说明，验证改为叙述。            |
+| `hooks-in-depth.md`            | 「只处理指定图层」「地图级钩子里筛图层」两处六步改为完整钩子类 + 注册片段；保留 `===` 身份比较、`alias` 不是身份、`afterLoad` 可能取不到楼层时的显式提示，验证改为叙述。                                  |
+
+### 其他
+
+- 所有高级 I 文档中的 `[模板]` / `[需改]` 代码注释标记一并移除，改为普通解释性注释。
+- D-47 占位（`高级 II · …` / `高级 III · …` 与 `<!-- TODO(advanced-*) -->`）保留。
+- D-55（新增系统优先用插件）与 D-58（不强制模板章节）保持原样。
+- 未修改 `config.ts`、生产代码与渲染端内容。
+
+### 构建
+
+- `cmd /c "pnpm exec prettier --write docs/advanced/*.md"`：七篇全部 unchanged。
+- `cmd /c "node node_modules/prettier/bin/prettier.cjs --check ..."`：全部通过。
+- `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`：`build complete`，无 dead link。
+
+---
+
+## 第 2 轮
+
+**时间：** 2026-10-20
+**用户意见（17 条）：**
+
+| #     | 意见                                                                                                                                                                        | 落点                           |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| U2-01 | 不要用 `content`（`src/content`）中的内容举例——那是编辑器负责的，没人会直接改文件                                                                                           | 全部                           |
+| U2-02 | 地图伤害按「计算后怪物」结算，中级教程已讲过，高级教程不必重提                                                                                                              | 相关篇目                       |
+| U2-03 | 「声明式 vs 命令式」的验证节可以不加——本篇是概念性描述                                                                                                                      | `declarative-vs-imperative.md` |
+| U2-04 | 用户已修改插件系统结构：**渲染端可以依赖数据端插件，反之不行**；需重新适配文档                                                                                              | `plugin-system.md`（及相关）   |
+| U2-05 | 存档顶层**不会**自动 `structuredClone`；必须在 `saveState` 调用端保证返回对象独立、不与任何其他对象同引用（妥协：大存档 `structuredClone` 很慢）                            | `saveable-content.md`          |
+| U2-06 | 存档执行器可举例：读档后勇士需切换至目标楼层 → 用执行器调用 `changeFloor`（实际内部实现不同，仅示例）                                                                       | `saveable-content.md`          |
+| U2-07 | 「该不该记录」不是试出来的，通常是分析出来的；若不知如何分析，就把所有「修改了游戏状态且该状态可能导致结果改变」的方法都加上 `@shouldReplay`                                | `replay-consistency.md`        |
+| U2-08 | `@shouldReplay` 应明确：方法执行了但没探测到录像记录 → 控制台输出「录像记录缺失」警告；此说明要提前，不要脱节；不讲工作原理（留高级 II/III）                                | `replay-consistency.md`        |
+| U2-09 | 不讲 `beginReplaySafetyCollection` / `endReplaySafetyCollection`（太底层；调用后续会补；作者绝大多数情况不需要自己写）                                                      | `replay-consistency.md`        |
+| U2-10 | 示例应讲「在自己的方法上加标记」，而不是给内置方法补录；可用商店插件举例                                                                                                    | `replay-consistency.md`        |
+| U2-11 | 四个 Store 一览表太挤，改为无序列表                                                                                                                                         | `data-stores.md`               |
+| U2-12 | Store 登记是因为数据端未写完；说明「绝大多数情况下不需要自己登记」即可                                                                                                      | `data-stores.md`               |
+| U2-13 | `EnemyStore` 之前漏了，现已补上；同步文档                                                                                                                                   | `data-stores.md`               |
+| U2-14 | 模板允许在初始化期间登记内容，但现阶段不必讲（极少遇到），需要讲也放后面                                                                                                    | `data-stores.md`               |
+| U2-15 | 不要到处讲「改内置还是自己写」——像 Store 几乎不可能需要自定义，不要为它专门开一节；该要求仅针对中级教程                                                                     | 全部（尤其 `data-stores.md`）  |
+| U2-16 | 验证不必每篇都有；Store 只需讲怎么用接口。文档核心目的是让读者知道怎么用接口；几乎不可能自定义的 Store 用内置接口即可，无需验证                                             | `data-stores.md` 及相关        |
+| U2-17 | 「钩子深入」给人感觉怪：一般不会多个钩子对象共用一个钩子，通常一个钩子对象对应一个钩子实例。不必讲共用；只教「一个对象一个实例」，身份来源、不要用 alias 判断身份等内容可删 | `hooks-in-depth.md`            |
+
+### 第 2 轮处置（`plugin-system` / `saveable-content` / `replay-consistency`）
+
+**修改方式：** 内联执行，仅修改上述三篇与本职记录。
+
+| #           | 处置                                                                                                                                                                                                         |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| U2-04       | 按当前 `IDataPluginDefine` / `IClientPluginDefine` 源码把 `dependencies` 属性统一改为 `dataDeps`；新增「数据端与渲染端」小节，说明渲染端可依赖数据端、数据端不能依赖渲染端，并删去数据端文档中的渲染端细节。 |
+| U2-05       | 重写「返回值必须独立」一节：明确 `CoreState.saveState` 只负责收集返回值、顶层不再 `structuredClone`；`saveState` 必须自行返回独立对象，并说明大存档深拷贝的性能取舍。                                        |
+| U2-06       | 在「存档顺序与执行器」中加入 `HeroFloorExecutor` 示例：读档后按 `location.floorId` 取楼层并调用 `hero.changeFloor`；注明仅示意、实际内部实现不同，且执行器接口是同步的。                                     |
+| U2-07       | 把「该不该记」改为分析式判断（能否被玩家触发 / 是否改状态 / 是否可能影响结果）；判断不了时，给所有「改状态且可能影响结果」的方法都加 `@shouldReplay`。                                                       |
+| U2-08       | 在「两个装饰器」之后提前加入「录像记录缺失」警告说明：带标记的方法执行了却没有录像记录时，控制台会告警；不展开内部机制。                                                                                     |
+| U2-09       | 删除 `beginReplaySafetyCollection` / `endReplaySafetyCollection` 及相关收集区间、错误码、`logReplaySafetyDetail` 内容；验证改为回放对比与告警观察。                                                          |
+| U2-10       | 删除给内置 `FlagSystem.getOrInsert` 补标记的示例，改为商店插件 `ShopSystem.buyItem` 上添加 `@shouldReplay` 的示例。                                                                                          |
+| U2-15       | 删除三篇中的「改内置还是自己写 / 改现有插件还是新建插件」专门小节；仅保留插件承载新系统的正向说明。                                                                                                          |
+| D-60 / D-61 | 三篇按简洁优先删去重复示例与过度解释；常见错误统一收束为文末「边界与注意」小节，主干不再混入边界情况。                                                                                                       |
+
+**构建：** `pnpm exec prettier --check` 三篇通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
+
+### 第 2 轮处置（Store / 钩子 / 声明式 / 导览）
+
+**修改方式：** 派发子代理执行，仅修改上述四篇与本职记录。
+
+| #           | 处置                                                                                                                                                                                        |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| U2-01       | 删除全部 `src/content` 示例：光环改为 `ISpecial23Value` 类型的参数片段（并注明定义在 `src/data/enemy/special.ts`），道具效果只讲 `IItemEffect` 接口，不再指向内容文件。                     |
+| U2-02       | 删除「地图伤害按计算后怪物结算」整节；命令式局限里也只保留「无法凭空给怪物加特殊属性」。                                                                                                    |
+| U2-03       | 删除「验证」节。                                                                                                                                                                            |
+| U2-11       | 四个 Store 一览表改为无序列表。                                                                                                                                                             |
+| U2-12       | 不再写「你需要自己登记」；明确 `add*` 是数据端自用接口、内容加载写完后由数据端统一登记，绝大多数情况只需读。                                                                                |
+| U2-13       | 补入 `enemyStore`：`IDataCommon.enemyStore`、`IEnemyStore<IEnemyAttr>`、`getEnemy(token)` / `addEnemy`（重复 `num` 告警 `181`），并入五个 Store 的列表、逐项说明与小结。                    |
+| U2-14       | 删除「正确注册位置」表与两段批量登记示例；只在文末「边界与注意」用一条说明初始化阶段登记。                                                                                                  |
+| U2-15       | 删除 `data-stores`、`hooks-in-depth`、`declarative-vs-imperative` 的「改内置还是自己写」小节；`index.md` 保留 D-55 取舍原则，仅把 Store 行改为「通过 `state.*Store` 的接口读」。            |
+| U2-16       | 删除 `data-stores` 的「验证」节，改为讲读接口并给一段读示例。                                                                                                                               |
+| U2-17       | 重写 `hooks-in-depth`：删掉身份来源表、「不要用 alias 判断身份」、「做法 A / B」与共享实例表，统一为「一个对象一个钩子实例」；保留图层级（靠注册限定）与地图级（用 `===` 筛图层）两个示例。 |
+| D-60 / D-61 | 四篇按简洁优先删去重复示例与过度解释；残留的特殊情况收敛到文末「边界与注意」。`index.md` 同步 Store 数量、钩子表述与 `saveState` 返回独立对象的说法。                                       |
+
+**构建：** `pnpm exec prettier --write` 后 `--check` 四篇通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
+
+**状态：已处理**
+
+---
+
+## 第 3 轮
+
+**时间：** 2026-10-20
+**用户意见（5 条）：**
+
+| #     | 意见                                                                                                                                            | 落点                         |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| U3-01 | 插件系统应同时讲**渲染端插件**（渲染端虽未完成，但渲染端插件系统已几乎定稿）；不要讲排序细节（作者根本不需要知道，用到该接口的可能性几乎为零）  | `plugin-system.md`           |
+| U3-02 | 明确写出「需要自己补充 Store 定义非常少见」，放进「边界与注意」，并指向后续高级教程；不要写「登记不是创建运行时对象」这类当前阶段不必了解的内容 | `data-stores.md`             |
+| U3-03 | `MainDataPlugin` 的 `afterLoad` 代码未包裹 class，导致高亮出错；应改成完整结构。之后统一注意：代码块必须是完整结构，不要单独写某个类或成员      | `plugin-system.md`（及全部） |
+| U3-04 | 录像一致性里指向 logger 的调用可以保留——教读者如何查看详细信息是必要的；函数调用方式可能会变，之后可能要改                                      | `replay-consistency.md`      |
+| U3-05 | 高级教程不只包含数据端，也包含渲染端（只是渲染端未完成、暂时无法写）；导览里**不要写「不要求懂渲染端」**                                        | `index.md`                   |
+
+### 第 3 轮处置
+
+**修改方式：** 内联执行，仅修改 `docs/advanced/*.md` 与本职记录（本轮执行因断电中断后继续完成，未重做前两轮内容）。
+
+| #     | 处置                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| U3-01 | `plugin-system` 新增「渲染端插件接口」小节：按 `packages-user/client-modules/src/types.ts` 的 `IClientPluginDefine` 列出 `id` / `dataDeps` / `clientDeps` 与三个时机参数，给出完整的 `MyClientPlugin` 类与 `src/client/plugin/list.ts`、`src/client/entry.ts`、`state.getClientPlugin` 的注册取用方式；删除「dataDeps 与排序」整节（`orderPlugins` 的 `order` / `cyclic` / `missing` 字段），依赖执行语义并入「状态与顺序」。 |
+| U3-02 | `data-stores` 在「边界与注意」首条写明<strong>需要自己补充 Store 定义的情况非常少见</strong>，并指向 `高级 II · 加载与插件生命周期`；删除 `state.maps.fromRaw(raw)` 与「从原始数据到运行时对象只有这一次转换」整段、以及「它不保证更新已经存在的对象……静态图块 / 动态图块缓存」一条（列表重新编号），小结中同源的 `fromRaw` 一句一并删除。                                                                                    |
+| U3-03 | `plugin-system` 的 `MainDataPlugin` 片段补成完整类（`implements IDataMainPlugin`、字段、构造器、`afterLoad` 方法体，其余成员用注释省略）；复查七篇代码块，把 `hooks-in-depth` 中两段脱离上下文的注册 / 卸载语句包成完整函数，其余代码块均以 `import`、完整类 / 接口或完整声明开头。                                                                                                                                           |
+| U3-04 | `replay-consistency` 在「录像记录缺失」警告框中保留并说明警告附带的 `Mota.require('@user/data-common').logReplaySafetyDetail(0);` 调用，注明可粘到控制台展开调用路径、调用形式之后可能调整；验证节同步指向该调用。未恢复底层收集机制。                                                                                                                                                                                        |
+| U3-05 | `index.md` 删去「不要求你懂渲染端实现」，改为高级教程同时覆盖数据端与渲染端、渲染端尚未完工所以当前只收录数据端内容；篇目表第 3 行与「本层不覆盖什么」同步该说法。                                                                                                                                                                                                                                                            |
+| D-62  | 七篇代码块统一复查：不再出现单独的方法成员、顶层 `return` 或缺失类 / 函数外壳的语句。                                                                                                                                                                                                                                                                                                                                         |
+
+**构建：** `pnpm exec prettier --write docs/advanced/*.md` 后 `--check` 七篇通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
+
+**状态：已处理**
+
+---
+
+## 第 4 轮
+
+**时间：** 2026-10-20
+**用户意见（13 条）：**
+
+| # | 意见 | 落点 |
+|---|------|------|
+| U4-01 | 删除「声明式 vs 命令式」里「怪物特殊属性与光环」的例子——不合适，不可能有作者手写特殊属性对象 | `declarative-vs-imperative.md` |
+| U4-02 | 插件系统里数据端与渲染端应**并列**写，不要在「插件接口」一节只写数据端、后面才补「数据端与渲染端」 | `plugin-system.md` |
+| U4-03 | 示例插件不要写 `dataDeps[0]?.plugin as IShopPlugin \| undefined`；直接 `dataDeps[0].plugin` 或 `const [{ plugin: dataShop }] = dataDeps;`。依赖已加载完毕，不需要非空判断 | `plugin-system.md` |
+| U4-04 | 数据端与渲染端插件是**平等关系**；不能只写注册到 dataPlugin。补全渲染端插件的注册与目录；「注册与目录」应放到文档开头 | `plugin-system.md` |
+| U4-05 | 删除「插件 id 稳定性与版本迁移」——对普通作者无用，发布相关信息应放到插件库的说明里 | `plugin-system.md` |
+| U4-06 | 接口以 `I` 开头的约定文档也要遵守（作者可不遵守，但文档必须规范）；`getDataPlugin<PluginA>` 的 `PluginA` 应改为 `IPluginA` 形式 | `plugin-system.md` |
+| U4-07 | **先写模板，再解释每个方法**；高级教程也需要模板，但与中级不同 | 全部 |
+| U4-08 | 插件可以在插件之外调用（如钩子里）；不是只有插件内部才能调用插件 | `plugin-system.md` |
+| U4-09 | `saveState` / `loadState` **不保证顺序**（Map 存储一律不保证），删除「保证被引用对象先注册」；跨存档引用只说「存 id，读档或需要时再新建」，该场景极其少见，不必展开；存读档验证不需要复杂告警验证；**不要把 `__test__` 的内容写进文档** | `saveable-content.md`（及全部验证） |
+| U4-10 | 明确写明 `@shouldReplay` **仅用于数据端** | `replay-consistency.md` |
+| U4-11 | 五个 Store 的 inline-code 密度太高；删掉括号里的 `IInterface` 标识；说明改成文字，只讲这个 Store 能干什么，细节后置 | `data-stores.md` |
+| U4-12 | Store 要讲**里面存的数据**，不能只讲 Store 本身；不要单开「逐个看接口」大节，直接把五个 Store 平铺，每个讲「存什么 + 自身接口」 | `data-stores.md` |
+| U4-13 | 钩子写成「建议一个对象一个实例」；共享允许但不建议，除非明确了解原理与后果；不展开共享实例 | `hooks-in-depth.md` |
+
+### 第 4 轮处置（声明式 / 插件系统）
+
+**修改方式：** 派发子代理执行（内联编辑），仅修改 `docs/advanced/declarative-vs-imperative.md`、`docs/advanced/plugin-system.md` 与本职记录。
+
+| #     | 处置                                                                                                                                                                                                                                                                                                   |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| U4-01 | 删除手写 `special` 对象的示例（`ISpecial23Value` 片段）；保留概念，改为说明特殊属性在 `src/data/enemy/special.ts` 的 `createSpecials` 中统一注册、光环通过 `registerAuraConverter` 注册，怪物数据只写编号与参数。                                                                                      |
+| U4-02 | 合并原「数据端与渲染端」与「插件接口」两节：接口一节先并列给出数据端、渲染端完整模板，再用同一组条目逐项说明，不再先写数据端、后面另起一节补渲染端。                                                                                                                                                   |
+| U4-03 | 依赖示例改为直接解构后取 `.plugin`（`const [{ plugin }] = dependencies;`），删除 `dataDeps[0]?.plugin as IShopPlugin \| undefined` 与非空判断；在「逐项说明」和「边界与注意」明确依赖已在插件执行前解析完毕。                                                                                          |
+| U4-04 | 「注册与目录」移到文档开头：并列给出 `src/data/plugin/` 与 `src/client/plugin/` 目录、`dataPlugins` 与 `clientPlugins` 两个列表、两个入口的拼接方式；渲染端插件与数据端按同等篇幅覆盖，并补充 `ClientShopPlugin` 的说明。                                                                              |
+| U4-05 | 删除「插件 id 稳定性与版本迁移」整节，以及小结里对应的 id 契约条目。                                                                                                                                                                                                                                   |
+| U4-06 | 示例泛型统一使用接口名：`getDataPlugin<IMyPlugin>`、`getDataPlugin<IShopPlugin>`，不再出现 `getDataPlugin<MyPlugin>`；插件对外接口统一用 `I` 前缀，数据端模板把 `IMyPlugin` 放进 `types.ts`。                                                                                                     |
+| U4-07 | 改为先模板后解释：插件系统先列数据端 `types.ts` / `plugin.ts` 与渲染端 `plugin.ts` 模板，再逐项解释 `id` / `dataDeps` / `clientDeps` / `awake` / `initialize` / `afterLoad`；声明式篇的伤害计算器与钩子也改成先给完整示例、再解释时机与原因。                                                       |
+| U4-08 | 新增「插件之外也能调用」小节：以钩子为例，通过 `state.getDataPlugin` 取回插件并调用其公开成员，明确调用方不必是插件。                                                                                                                                                                                  |
+
+**构建：** `pnpm exec prettier --check docs/advanced/plugin-system.md docs/advanced/declarative-vs-imperative.md` 通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
+
+### 第 4 轮处置（存档 / 录像 / Store / 钩子 / 导览）
+
+**修改方式：** 内联执行（执行器直接编辑），仅修改 `docs/advanced/saveable-content.md`、`docs/advanced/replay-consistency.md`、`docs/advanced/data-stores.md`、`docs/advanced/hooks-in-depth.md`、`docs/advanced/index.md` 与本职记录。
+
+| #     | 处置                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| U4-07 | 四篇改为先模板后解释：`saveable-content` 先给 `state.ts` / `types.ts` / `plugin.ts` 完整骨架，再逐项解释存档形状、`saveState` / `loadState`、注册时机与压缩；`replay-consistency` 先把带 `@shouldReplay` 的 `ShopSystem` 模板提到开头；`data-stores` 先给一次读取五个 Store 的完整模板；`hooks-in-depth` 先给图层钩子类 + 注册函数的完整模板。                                                     |
+| U4-09 | 删除「存档和读档都按注册顺序遍历」「先注册被引用者」等顺序保证；明确写为「顺序不做保证」，执行器只保证当前对象已恢复。跨对象引用压缩为一段：存 id 或键，读档后或真正需要时再重建 / 查找，并注明该场景极其少见、不展开。验证只保留一次「存档 → 改状态 → 读档」检查，删除三档压缩验证、注册检查、缺键 / 多键告警验证与跨对象引用检查（这些内容来自 `__test__`，不属于发布文档）。                 |
+| U4-10 | `replay-consistency` 在模板之后明确写出 `@shouldReplay` 与 `@ignoreReplay` 只在数据端使用，渲染端不参与重放与安全检查；「边界与注意」与小结同步该说法。                                                                                                                                                                                                                                             |
+| U4-11 | `data-stores` 删除五个 Store 括号里的 `ITileStore` / `IItemStore` / `IMapStore` / `IEnemyStore` / `IGameEventStore` 标识；字段与接口说明改为叙述，只保留 Store 能做什么，细节（如 `effect` / `equip` 必填）移到「边界与注意」。                                                                                                                                                                    |
+| U4-12 | 删除「逐个看接口」大节，把五个 Store 平铺为五个二级节；每节先讲「存什么」，再讲自身接口能做什么，不再只讲 Store 对象本身。                                                                                                                                                                                                                                                                       |
+| U4-13 | `hooks-in-depth` 改为「建议一个对象一个实例」；明确共享实例允许但不建议，除非明确了解钩子内部实现与后果，并注明本篇不展开共享用法；边界与小结同步。                                                                                                                                                                                                                                               |
+| U4-11 / U4-12 / U4-13 | `index.md` 同步：录像行注明「数据端」、Store 行改为「五个 Store 各存什么、能做什么」、钩子行改为「建议一个对象一个钩子实例」，「改内容或机制」路径与「读完这一层」同步措辞。                                                                                                                                                                                                         |
+
+**构建：** `pnpm exec prettier --write` 后 `--check` 五篇通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
+
+**状态：处理中**
+
+---
+
+## 第 5 轮
+
+**时间：** 2026-10-20
+**用户意见（7 条，多为长期结构规范）：**
+
+| # | 意见 | 落点 |
+|---|------|------|
+| U5-01 | 「插件解决什么问题」与「注册与目录」对调顺序 | `plugin-system.md` |
+| U5-02 | 数据端有 `getDataPlugin`，渲染端有 `getClientPlugin`，后者没讲 | `plugin-system.md` |
+| U5-03 | 模板不能只是把代码放那：先有描述（「如果想要…，可参考下述模板」）→ 模板 → 讲解它干了什么、声明了什么类、实现了什么接口、需要自己改什么 | 全部 |
+| U5-04 | 模板不放在文档最开头：先讲理念（能解决什么问题、可做哪些扩展），再展示模板，再围绕模板讲解 | 全部 |
+| U5-05 | Store 是纯接口讲解，不需要模板；模板只用于需要自己实现接口或注册的场景，纯接口只给示例 | `data-stores.md`（长期规范） |
+| U5-06 | Store 可以、也必须讲清楚存的对象类型，只是之前的写法读起来难受 | `data-stores.md` |
+| U5-07 | 示例代码注释太少；示例注释越多越好，以降低理解难度 | 全部 |
+
+### 第 5 轮处置
+
+**修改方式：** 内联执行（执行器直接编辑），仅修改 `docs/advanced/*.md` 与本职记录。
+
+| #     | 处置                                                                                                                                                                                                                                                                                                                                                     |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| U5-01 | `plugin-system` 把「插件解决什么问题」移到「注册与目录」之前：开篇先讲插件解决什么问题、能承载哪些扩展，再看目录结构与注册位置。                                                                                                                                                                                                                        |
+| U5-02 | `plugin-system` 将「用 getDataPlugin 取回」改为「用 getDataPlugin / getClientPlugin 取回」：数据端与渲染端各给一段完整示例（`state.getDataPlugin` / `state.getClientPlugin`），说明两者都返回只读包装对象、判空与状态检查一致。                                                                                                                     |
+| U5-03 | 全部模板补齐三段结构：引导语（「如果想……，可以参考下面的模板」）→ 模板代码 → 说明声明了什么类、实现了什么接口、需要自己改什么。涉及插件两端模板、可存档三文件模板、录像 `ShopSystem` 模板、图层钩子模板、伤害计算器模板。                                                                                                                             |
+| U5-04 | 模板不再出现在文档开头：`plugin-system` 先讲理念再看目录与注册，`saveable-content` 先讲「什么该存」再给模板，`replay-consistency` 先讲「什么该记」再给标记模板，`hooks-in-depth` 先讲「一个对象一个实例」再给图层钩子模板。                                                                                                                              |
+| U5-05 | `data-stores` 去掉「模板」定位：读 Store 一节明确 Store 是纯接口使用、不是需要读者实现或注册的模板，只给一段读取示例（按 D-64 处理）。                                                                                                                                                                                                                                                        |
+| U5-06 | 五个 Store 的「存什么」改为分段叙述：每条记录以什么为键、包含哪些字段、`eventPass` 等字段的含义，都在正文里讲清，不再用密集 inline-code 罗列。                                                                                                                                                                                                          |
+| U5-07 | 六篇示例补足解释性注释：`plugin-system` 的 `MyPlugin` / `MyClientPlugin` / `DataShopPlugin` / `MainDataPlugin` / 消费者插件，`saveable-content` 的 `MySaveable` / `MyPlugin` / `ShopManager`，`replay-consistency` 的 `ShopSystem`，`hooks-in-depth` 的图层与地图钩子，`data-stores` 的读取示例，`declarative-vs-imperative` 的伤害计算器与钩子注册。 |
+| D-63 | 按上下文中的长期规范落实模板顺序：理念 → 引导语 → 模板 → 解释，适用于后续所有文档。                                                                                                                                                                                                                                                                      |
+| D-64 | 按上下文中的长期规范落实模板范围：只有需要读者实现接口或注册内容时才给模板；纯接口使用（如 Store）只给示例。                                                                                                                                                                                                                                              |
+| D-65 | 按上下文中的长期规范补足示例注释：示例必须带解释性注释，注释越多越好。                                                                                                                                                                                                                                                                                  |
+
+**构建：** `pnpm exec prettier --write docs/advanced/*.md` 后 `--check` 七篇通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
+
+**状态：已处理**
+
+---
+
+## 第 6 轮
+
+**时间：** 2026-10-20
+**用户意见：**
+
+- `data-stores.md` 内容太少：要求讲「存的内容 + 接口」，结果每个 Store 只有两段文字。
+- 必须写清 `tileStore` 存的是 `ITileRawData`、常用成员有哪些，并用示例讲。
+- **Store 的示例不要写在一块**：每个 Store 单独写，示例与功能直接对应。
+- 适用于后续所有教程文档（杂类功能示例按功能分开写，D-66）。
+
+### 第 6 轮处置
+
+**修改方式：** 内联执行（执行器直接编辑），仅修改 `docs/advanced/data-stores.md` 与本职记录。
+
+| # | 处置 |
+|---|------|
+| 存的内容 + 接口太少 | 五个 Store 各扩为独立小节：先写存的数据类型，再列常用成员（字段含义用叙述性列表），然后讲自身查询 / 登记接口。`tileStore` 写明存 `ITileRawData`，逐项说明 `num` / `id` / `events` / `type` / `pass` / `eventPass`；`itemStore` 写明 `IItemRawData<IHeroAttr>` 与 `effect` / `equip`；`mapStore` 写明 `IMapRawData` 的 `map` / `layerAlias` / `events` 三层结构；`enemyStore` 写明 `IEnemyRawData<IHeroAttr>` 的 `attribute` / `special`；`eventStore` 写明存 `IReadonlyGameEvent` 实例及其 `trigger` / `rawEvent` / `compiled` / `execute`。 |
+| 每个 Store 单独示例（D-66） | 删除原先「一次读出五个 Store」的合并示例，改为五个独立示例：`inspectTile`（图块换算、定义、类型、默认事件、通行位）、`canUseItem`（道具定义、分类、`canUse`）、`readFloorTile`（地图宽度、行优先下标、图层别名、位置事件）、`previewEnemy`（怪物模板与特殊属性编号）、`runStoredEvent`（事件实例泛型与执行）。每个示例只使用对应 Store，并带解释性注释（D-65）。 |
+| 保留项 | 保留「Store 是什么」「为什么运行期只读」「边界与注意」、D-47 的 `高级 II · 加载与插件生命周期` 占位与 `<!-- TODO(advanced-II) -->`、D-55 相关指向与小结；未写 `__test__` 内容。 |
+| 边界整理（D-61） | `mapStore` 没有列出全部楼层的接口、查询需先判空、`tileStore.getEvent` 返回新 `Map` 等边界仍集中在文末「边界与注意」。 |
+
+**构建：** `pnpm exec prettier --write docs/advanced/data-stores.md` 后 `--check` 通过；`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`，无 dead link。
+
+**状态：已处理**
+
+---
+
+## 最终确认
+
+**时间：** 2026-10-20
+**用户原文：** 「没问题了」
+**依据：** D-46 第 2 阶段 / D-57——用户主导修订循环的收尾出口，必须由用户明确确认。
+
+用户最终确认：通过
+
+**最终状态：** 高级 I 七篇完成六轮用户修订（D-59 库文档风格改写、17 条、5 条、13 条、7 条、Store 内容扩充），最终 prettier `--check` 七篇通过，`pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build` 输出 `build complete`（16.61s）且无 dead link；10-19 读者审阅的 5 项阻断问题已全部消除。
+
+**状态：已处理**
+
+

@@ -18,7 +18,7 @@ interface IReplaySafetyDetailQueue {
 type ReplayMethod<This, Args extends unknown[], Return> = (
     this: This,
     ...args: Args
-) => Return;
+) => Return | any;
 
 type ReplayDecorator = <This, Args extends unknown[], Return>(
     method: ReplayMethod<This, Args, Return>,

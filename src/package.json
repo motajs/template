@@ -1,7 +1,19 @@
 {
     "name": "@user/main",
     "dependencies": {
-        "@user/entry-client": "workspace:*",
-        "@user/entry-data": "workspace:*"
+        "@motajs/animate": "workspace:*",
+        "@motajs/anon-tokyo": "workspace:*",
+        "@motajs/audio": "workspace:*",
+        "@motajs/common": "workspace:*",
+        "@motajs/loader": "workspace:*",
+        "@motajs/render": "workspace:*",
+        "@motajs/render-vue": "workspace:*",
+        "@motajs/system": "workspace:*",
+        "@user/client-base": "workspace:*",
+        "@user/client-modules": "workspace:*",
+        "@user/data-common": "workspace:*",
+        "@user/data-base": "workspace:*",
+        "@user/data-system": "workspace:*",
+        "@user/data-state": "workspace:*"
     }
 }

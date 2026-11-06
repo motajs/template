@@ -1,5 +1,6 @@
 import { basename, join, resolve } from 'node:path';
 import { DefaultTheme } from 'vitepress';
+import { existsSync } from 'node:fs';
 import { readdir, stat, writeFile } from 'node:fs/promises';
 
 const apiDir = resolve('./docs/api');
@@ -11,6 +12,10 @@ const weight: Record<string, number> = {
 };
 
 export async function generateSidebar(): Promise<void> {
+    if (!existsSync(apiDir)) {
+        return;
+    }
+
     const sidebar: DefaultTheme.SidebarItem[] = [
         { text: '目录', link: '/api/' }
     ];

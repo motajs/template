@@ -1,0 +1,6 @@
+{
+    "name": "@user/client-system",
+    "dependencies": {
+        "@user/client-base": "workspace:*"
+    }
+}

@@ -164,6 +164,7 @@ export abstract class RenderItem
         this.transform.bind(this);
         if (enableCache) {
             this.cache = this.requireCanvas();
+            this.cache.size(this.width, this.height);
         } else {
             this.cache = null;
         }

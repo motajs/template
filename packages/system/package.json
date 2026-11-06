@@ -1,6 +1,7 @@
 {
     "name": "@motajs/system",
     "dependencies": {
+        "@motajs/animate": "workspace:*",
         "@motajs/common": "workspace:*"
     }
 }
