@@ -1,12 +1,43 @@
 import { ISaveableContent } from '@user/data-common';
+import {
+    IGameUI,
+    IUIController,
+    UIComponent,
+    UIRawProps
+} from '@motajs/system';
 import { DefineComponent, DefineSetupFnComponent } from 'vue';
+import { IGameUIPropsBase } from '../types';
+import { DefaultProps } from '@motajs/render-vue';
+import { IHookable, IHookBase } from '@motajs/common';
 
-export interface ISettingComponentProps<T = unknown> {
+export interface ISettingComponentProps<T> extends DefaultProps {
     /** 当前设置组件对应的设置项 */
     readonly setting: ISettingItem<T>;
+    /** 当前设置组件所属的 UI 控制器 */
+    readonly controller: IUIController<IGameUIPropsBase>;
 }
 
-export interface ISettingItem<T = unknown> extends ISaveableContent<T> {
+export interface ISettingComponentEntry<
+    T,
+    P extends ISettingComponentProps<T> = ISettingComponentProps<T>
+> {
+    /** 组件对象 */
+    readonly component: DefineSetupFnComponent<P> | DefineComponent<P>;
+    /** 传递给组件的参数 */
+    readonly props: P;
+}
+
+export interface ISettingItemHooks<T> extends IHookBase {
+    /**
+     * 当更新设置的值时触发
+     * @param value 更新后的值
+     * @param oldValue 更新前的值
+     */
+    onUpdateValue(value: T, oldValue: T): void;
+}
+
+export interface ISettingItem<T = unknown>
+    extends IHookable<ISettingItemHooks<T>>, ISaveableContent<T> {
     /** 设置项的唯一标识 */
     readonly id: string;
     /** 设置项的名称，用于显示 */
@@ -33,9 +64,9 @@ export interface ISettingItem<T = unknown> extends ISaveableContent<T> {
     /**
      * 获取用于修改此设置项的组件
      */
-    getSettingComponent():
-        | DefineSetupFnComponent<ISettingComponentProps>
-        | DefineComponent<ISettingComponentProps>;
+    getSettingComponent(
+        base: ISettingComponentProps<T>
+    ): ISettingComponentEntry<T, any>;
 }
 
 export interface ISettingItemGroup {
@@ -103,4 +134,42 @@ export interface ISettingSystem extends ISaveableContent<ISettingSystemSave> {
      * @param value 新的设置值
      */
     setValue<T>(id: string, value: T): void;
+}
+
+export interface ISettingOptionsBase<T> {
+    /** 设置项的唯一标识 */
+    readonly id: string;
+    /** 设置项的名称，用于显示 */
+    readonly name: string;
+    /** 设置项的说明文本 */
+    readonly description: string;
+    /** 设置项的默认值 */
+    readonly defaultValue: T;
+}
+
+export interface ISettingNumberOptions extends ISettingOptionsBase<number> {
+    /** 数值的最小值 */
+    readonly min: number;
+    /** 数值的最大值 */
+    readonly max: number;
+}
+
+export interface ISettingBooleanOptions extends ISettingOptionsBase<boolean> {}
+
+export interface ISettingRangeOptions extends ISettingOptionsBase<number> {
+    /** 设置项允许的最小值 */
+    readonly min: number;
+    /** 设置项允许的最大值 */
+    readonly max: number;
+    /** 每次调整设置项时的步长 */
+    readonly step: number;
+}
+
+export interface ISettingSubPageOptions<
+    T extends UIComponent
+> extends ISettingOptionsBase<void> {
+    /** 点击后打开的目标界面 */
+    readonly page: IGameUI<T>;
+    /** 打开子页面时传递给它的参数 */
+    readonly props: UIRawProps<T, IGameUIPropsBase>;
 }

@@ -252,7 +252,11 @@ export const EnemyOne = defineComponent<IEnemyOneProps>(props => {
             { label: '1 防', value: damageData.value[3], color: 'cyan' }
         ];
         return (
-            <container>
+            <container
+                loc={props.loc}
+                width={props.width}
+                height={props.height}
+            >
                 <g-rectr
                     loc={[1, 1, width.value - 2, height.value - 2]}
                     circle={[10]}

@@ -572,6 +572,12 @@ importers:
 
   packages/render: {}
 
+  packages/render-anim:
+    dependencies:
+      '@motajs/render':
+        specifier: workspace:*
+        version: link:../render
+
   packages/render-vue:
     dependencies:
       '@motajs/common':
