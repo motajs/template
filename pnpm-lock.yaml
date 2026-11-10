@@ -574,6 +574,9 @@ importers:
 
   packages/render-anim:
     dependencies:
+      '@motajs/common':
+        specifier: workspace:*
+        version: link:../common
       '@motajs/render':
         specifier: workspace:*
         version: link:../render
