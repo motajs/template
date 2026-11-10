@@ -444,7 +444,9 @@ export abstract class RenderItem
      * 获取当前元素的绝对位置（不建议使用，因为应当很少会有获取绝对位置的需求）
      */
     getAbsolutePosition(x: number = 0, y: number = 0): [number, number] {
-        const [px, py] = this.transform.transformed(x, y);
+        const [px, py] = this.selfTransform
+            ? [x, y]
+            : this.transform.transformed(x, y);
         if (!this.parent) return [px, py];
         else {
             const [px, py] = this.parent.getAbsolutePosition();
@@ -456,6 +458,11 @@ export abstract class RenderItem
      * 获取到可以包围这个元素的最小矩形，相对于父元素
      */
     getBoundingRect(): DOMRectReadOnly {
+        if (this.selfTransform) {
+            const left = -this.anchorX * this.width;
+            const top = -this.anchorY * this.height;
+            return new DOMRectReadOnly(left, top, this.width, this.height);
+        }
         const tran = this.transform;
         if (!tran) return new DOMRectReadOnly(0, 0, this.width, this.height);
         const [x1, y1] = tran.transformed(
@@ -867,17 +874,18 @@ export abstract class RenderItem
 
     /**
      * 计算一个点击事件在该元素上的位置
-     * @param event 触发的事件
+     * @param ev 触发的事件
      * @param transform 当前的变换矩阵
      */
-    protected calActionPosition(
-        event: IActionEvent,
-        transform: Transform
-    ): vec3 {
+    protected calActionPosition(ev: IActionEvent, transform: Transform): vec3 {
         const ax = this.anchorX * this.width;
         const ay = this.anchorY * this.height;
-        const [tx, ty] = transform.untransformed(event.offsetX, event.offsetY);
-        return [tx + ax, ty + ay, 0];
+        if (this.selfTransform) {
+            return [ax, ay, 0];
+        } else {
+            const [tx, ty] = transform.untransformed(ev.offsetX, ev.offsetY);
+            return [tx + ax, ty + ay, 0];
+        }
     }
 
     /**
