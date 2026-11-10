@@ -411,8 +411,8 @@ export abstract class RenderItem
      */
     hide() {
         if (this.hidden) return;
-        this.hidden = true;
         this.update();
+        this.hidden = true;
     }
 
     /**
