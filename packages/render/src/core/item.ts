@@ -1061,6 +1061,12 @@ export abstract class RenderItem
                 this.update();
                 return;
             }
+            case 'selfTransform': {
+                if (!this.assertType(nextValue, 'boolean', key)) return;
+                this.selfTransform = nextValue;
+                this.update();
+                return;
+            }
             case 'type': {
                 if (!this.assertType(nextValue, 'number', key)) return;
                 this.position = nextValue;

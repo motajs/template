@@ -1,6 +1,7 @@
 import { ReservedProps } from 'vue';
 import EventEmitter from 'eventemitter3';
 import {
+    AnimatedProps,
     BezierProps,
     CirclesProps,
     CommentProps,
@@ -49,6 +50,7 @@ declare module 'vue/jsx-runtime' {
             shader: TagDefine<ShaderProps, ERenderItemEvent>;
             text: TagDefine<TextProps, ERenderItemEvent>;
             image: TagDefine<ImageProps, ERenderItemEvent>;
+            animated: TagDefine<AnimatedProps, ERenderItemEvent>;
             comment: TagDefine<CommentProps, ERenderItemEvent>;
             custom: TagDefine<CustomProps, ERenderItemEvent>;
             'g-rect': TagDefine<RectProps, ERenderItemEvent>;

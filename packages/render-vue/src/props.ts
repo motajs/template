@@ -17,7 +17,8 @@ import {
     QuadParams,
     RectRCircleParams,
     RectREllipseParams,
-    ITexture
+    ITexture,
+    ITextureAnimater
 } from '@motajs/render';
 
 export interface BaseProps {
@@ -115,6 +116,21 @@ export interface TextProps extends BaseProps {
 export interface ImageProps extends BaseProps {
     /** 图片对象 */
     image?: ITexture | null;
+}
+
+export interface AnimatedProps extends BaseProps {
+    /** 要执行动画的纹理 */
+    texture?: ITexture | null;
+    /** 动画执行器 */
+    animater?: ITextureAnimater<any> | null;
+    /** 传递给动画执行器的参数 */
+    param?: any;
+    /** 两帧之间的间隔，必须大于 0，若传入小于等于 0 的数或不传，使用 50ms 的默认值 */
+    interval?: number;
+    /** 播放是否暂停 */
+    paused?: boolean;
+    /** 是否循环播放，默认为单次播放，调整后会从头开始重新播放 */
+    cycled?: boolean;
 }
 
 export interface CommentProps extends BaseProps {

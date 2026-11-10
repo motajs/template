@@ -1,8 +1,8 @@
 import { RenderItem, Transform, MotaOffscreenCanvas2D } from '.';
 import { CanvasStyle } from '../types';
 import { Font } from '../style';
-import { IRenderImage, IRenderText } from './types';
-import { ITexture } from '../assets';
+import { IRenderAnimated, IRenderImage, IRenderText } from './types';
+import { ITexture, ITextureAnimater, ITextureRenderable } from '../assets';
 
 /** 文字的安全填充，会填充在文字的上侧和下侧，防止削顶和削底 */
 const SAFE_PAD = 1;
@@ -189,6 +189,114 @@ export class Image extends RenderItem implements IRenderImage {
                 return true;
         }
         return false;
+    }
+}
+
+export class Animated<T> extends RenderItem implements IRenderAnimated<T> {
+    texture: ITexture | null = null;
+    animater: ITextureAnimater<T> | null = null;
+    interval: number = 50;
+    cycled: boolean = false;
+    paused: boolean = false;
+    param: T | undefined = void 0;
+
+    /** 当前时刻 */
+    private currentTime: number = -1;
+    /** 上一帧的时刻 */
+    private lastFrameTime: number = -1;
+    /** 当前的可渲染对象 */
+    private current: ITextureRenderable | null = null;
+
+    /** 动画生成器 */
+    private gen: Generator<ITextureRenderable, void> | null = null;
+
+    constructor(enableCache: boolean = false) {
+        super(enableCache);
+
+        this.delegateExcitable(time => {
+            this.currentTime = time;
+            if (this.lastFrameTime === -1) {
+                this.lastFrameTime = time;
+            }
+            if (this.paused || !this.gen) return;
+            const dt = time - this.lastFrameTime;
+            const nextFrames = Math.floor(dt / this.interval);
+            if (!this.current || nextFrames >= 1) {
+                const pass = this.current ? nextFrames : 1;
+                for (let i = 0; i < pass; i++) {
+                    const next = this.gen.next();
+                    if (next.done) break;
+                    this.current = next.value;
+                }
+                this.lastFrameTime = time;
+                this.update();
+            }
+        });
+    }
+
+    protected render(canvas: MotaOffscreenCanvas2D): void {
+        const ctx = canvas.ctx;
+        if (!this.current) return;
+        const { source, rect: r } = this.current;
+        const { width, height } = this;
+        ctx.drawImage(source, r.x, r.y, r.w, r.h, 0, 0, width, height);
+    }
+
+    /**
+     * 执行动画执行器，获取动画序列生成器
+     */
+    private generate() {
+        if (!this.animater || !this.texture) {
+            this.gen = null;
+            this.current = null;
+            this.update();
+            return;
+        }
+        if (this.cycled) {
+            this.gen = this.animater.cycled(this.texture, this.param as T);
+            this.lastFrameTime = this.currentTime;
+        } else {
+            this.gen = this.animater.once(this.texture, this.param as T);
+            this.lastFrameTime = this.currentTime;
+        }
+        this.update();
+    }
+
+    setTexture(texture: ITexture | null): void {
+        this.texture = texture;
+        this.generate();
+    }
+
+    setInterval(interval: number): void {
+        if (interval <= 0) {
+            this.interval = 50;
+        } else {
+            this.interval = interval;
+        }
+    }
+
+    setAnimater(animater: ITextureAnimater<T> | null): void {
+        this.animater = animater;
+        this.generate();
+    }
+
+    setParam(param: T | undefined): void {
+        this.param = param;
+        this.generate();
+    }
+
+    pause(): void {
+        this.paused = true;
+    }
+
+    resume(): void {
+        this.paused = false;
+        this.lastFrameTime = this.currentTime;
+    }
+
+    setCycled(cycled: boolean): void {
+        this.cycled = cycled;
+        this.generate();
     }
 }
 

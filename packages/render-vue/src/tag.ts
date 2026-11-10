@@ -1,4 +1,5 @@
 import {
+    Animated,
     BezierCurve,
     Circle,
     Comment,
@@ -9,15 +10,13 @@ import {
     Image,
     IRenderItem,
     IRenderTreeRoot,
-    ITexture,
     Line,
     Path,
     QuadraticCurve,
     Rect,
     RectR,
     Shader,
-    Text,
-    Texture
+    Text
 } from '@motajs/render';
 import { IRenderTagInfo, IRenderTagManager, TagCreateFunction } from './types';
 import { logger } from '@motajs/common';
@@ -25,14 +24,11 @@ import { logger } from '@motajs/common';
 export class RenderTagManager implements IRenderTagManager {
     /** 标签注册映射 */
     private readonly tagRegistry: Map<string, IRenderTagInfo> = new Map();
-    /** 空图片 */
-    private readonly emptyImg: ITexture;
 
     constructor(readonly renderer: IRenderTreeRoot) {
         const emptyImage = document.createElement('canvas');
         emptyImage.width = 1;
         emptyImage.height = 1;
-        this.emptyImg = new Texture(emptyImage);
 
         this.resgiterIntrinsicTags();
     }
@@ -55,6 +51,10 @@ export class RenderTagManager implements IRenderTagManager {
             return this.renderer.createElement(Text, text, cache && !nocache);
         });
         this.registerTag('image', this.createStandardElement(false, Image));
+        this.registerTag(
+            'animated',
+            this.createStandardElement(false, Animated)
+        );
         this.registerTag('shader', this.createNoParamElement(Shader));
         this.registerTag('comment', props => {
             if (!props) return this.renderer.createElement(Comment);

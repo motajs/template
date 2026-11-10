@@ -12,7 +12,7 @@ import { DefineComponent, DefineSetupFnComponent } from 'vue';
 import { JSX } from 'vue/jsx-runtime';
 import EventEmitter from 'eventemitter3';
 import { SizedCanvasImageSource } from '../types';
-import { ITexture } from '../assets';
+import { ITexture, ITextureAnimater } from '../assets';
 
 //#region 功能类型
 
@@ -588,6 +588,62 @@ export interface IRenderImage extends IRenderItem {
      * @param image 图片资源
      */
     setImage(image: ITexture): void;
+}
+
+export interface IRenderAnimated<T> extends IRenderItem {
+    /** 贴图的动画执行器 */
+    readonly animater: ITextureAnimater<T> | null;
+    /** 播放动画的纹理对象 */
+    readonly texture: ITexture | null;
+    /** 两帧之间的间隔，必须大于 0 */
+    readonly interval: number;
+    /** 当前是否为循环播放模式 */
+    readonly cycled: boolean;
+    /** 当前动画是否暂停 */
+    readonly paused: boolean;
+    /** 传递给动画执行器的参数 */
+    readonly param: T | undefined;
+
+    /**
+     * 设置播放动画的纹理对象
+     * @param texture 要播放动画的纹理对象
+     */
+    setTexture(texture: ITexture | null): void;
+
+    /**
+     * 设置两帧之间的间隔，必须大于 0，如果小于等于 0 会默认使用 50ms 作为间隔
+     * @param interval 两帧之间的间隔，必须大于 0
+     */
+    setInterval(interval: number): void;
+
+    /**
+     * 设置当前动画元素的动画执行器
+     * @param animater 动画执行器
+     */
+    setAnimater(animater: ITextureAnimater<T> | null): void;
+
+    /**
+     * 设置传递给动画执行器的参数
+     * @param param 传递给动画执行器的参数
+     */
+    setParam(param: T | undefined): void;
+
+    /**
+     * 暂停动画播放
+     */
+    pause(): void;
+
+    /**
+     * 继续动画播放
+     */
+    resume(): void;
+
+    /**
+     * 设置循环播放模式，单次播放模式下，播放完毕后会定格在最后一帧，否则会回到第一帧重新播放。
+     * 设置后，会立刻重设播放状态，从第一帧开始重新播放。
+     * @param cycled 是否为循环播放模式
+     */
+    setCycled(cycled: boolean): void;
 }
 
 //#endregion
