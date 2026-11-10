@@ -19,7 +19,6 @@ import {
     RectREllipseParams,
     ITexture
 } from '@motajs/render';
-import { Ref } from 'vue';
 
 export interface BaseProps {
     /** 元素的横坐标 */
@@ -48,14 +47,14 @@ export interface BaseProps {
     hidden?: boolean;
     /** 元素的变换矩阵 */
     transform?: Transform;
+    /** 是否启用自我变换模式，自我变换模式下，元素盒子本身不会经过变换，但其内容会经过变换后再绘制 */
+    selfTransform?: boolean;
     /** 元素的定位模式 */
     type?: RenderPosition;
     /** 是否启用缓存，用处较少，主要用于一些默认不启用缓存的元素的特殊优化 */
     cache?: boolean;
     /** 是否不启用缓存，优先级大于 cache，用处较少，主要用于一些特殊优化 */
     nocache?: boolean;
-    /** 是否启用变换矩阵下穿，下穿模式下，当前元素会使用由父元素传递过来的变换矩阵，而非元素自身的 */
-    fall?: boolean;
     /** 这个元素的唯一标识符，不可重复 */
     id?: string;
     /** 这个元素的不透明度 */

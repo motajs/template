@@ -99,6 +99,8 @@ export interface IRenderItem
     readonly position: RenderPosition;
     /** 元素变换矩阵 */
     readonly transform: Transform;
+    /** 是否使用自我变换模式，该模式下元素盒子本身不会经过变换，但其内容会经过变换后再绘制 */
+    readonly selfTransform: boolean;
 
     /** 是否是高清画布 */
     readonly highResolution: boolean;
@@ -231,6 +233,12 @@ export interface IRenderItem
      * @param transform 变换矩阵对象
      */
     setTransform(transform: Transform): void;
+
+    /**
+     * 是否使用自我变换模式，自我变换模式下，元素盒子本身不会经过变换，但其内容会经过变换后再绘制
+     * @param self 是否为自我变换模式
+     */
+    setSelfTransform(self: boolean): void;
 
     /**
      * 隐藏此元素

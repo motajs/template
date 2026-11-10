@@ -58,6 +58,8 @@ export abstract class RenderItem
     height: number = 200;
     /** 该元素的变换矩阵 */
     transform: Transform = new Transform();
+    /** 是否为自我变换模式 */
+    selfTransform: boolean = false;
     /** 渲染锚点，(0,0)表示左上角，(1,1)表示右下角 */
     anchorX: number = 0;
     /** 渲染锚点，(0,0)表示左上角，(1,1)表示右下角 */
@@ -204,11 +206,15 @@ export abstract class RenderItem
 
         const ctx = canvas.ctx;
         ctx.save();
-        transformCanvas(canvas, tran);
         ctx.filter = this.filter;
         ctx.globalAlpha = this.alpha;
         ctx.globalCompositeOperation = this.composite;
         if (this.enableCache && this.cache) {
+            if (this.selfTransform) {
+                transformCanvas(this.cache, tran);
+            } else {
+                transformCanvas(canvas, tran);
+            }
             const { width, height } = this.cache!;
             if (this.cacheDirty) {
                 this.cache.clear();
@@ -218,6 +224,7 @@ export abstract class RenderItem
             ctx.imageSmoothingEnabled = false;
             ctx.drawImage(this.cache.canvas, ax, ay, width, height);
         } else {
+            transformCanvas(canvas, tran);
             ctx.imageSmoothingEnabled = this.antiAliasing;
             ctx.translate(ax, ay);
             this.render(canvas, tran);
@@ -338,6 +345,11 @@ export abstract class RenderItem
         this.transform.bind(this);
         this.x = transform.x;
         this.y = transform.y;
+    }
+
+    setSelfTransform(self: boolean): void {
+        this.selfTransform = self;
+        this.update();
     }
 
     /**
