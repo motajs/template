@@ -1,15 +1,21 @@
+import { markRaw } from 'vue';
 import { IGameUI, UIComponent } from './types';
 
 export class GameUI<C extends UIComponent> implements IGameUI<C> {
     // TODO: 这个静态成员是否可以考虑删除？
+
+    readonly component: C;
 
     /** 当前的所有已声明 UI，用于全局性获取 */
     static list: Map<string, GameUI<UIComponent>> = new Map();
 
     constructor(
         public readonly name: string,
-        public readonly component: C
-    ) {}
+        component: C
+    ) {
+        // 组件是大对象，要 markRaw
+        this.component = markRaw(component);
+    }
 
     /**
      * 根据 ui 名称获取 ui 实例
