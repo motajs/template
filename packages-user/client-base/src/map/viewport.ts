@@ -1,6 +1,6 @@
 import { Transform } from '@motajs/render';
 import {
-    IBlockData,
+    IChunkData,
     IMapRenderArea,
     IMapRenderData,
     IMapRenderer,
@@ -21,8 +21,8 @@ export class MapViewport implements IMapViewportController {
 
     private pushBlock(
         list: IMapRenderArea[],
-        start: IBlockData<IMapVertexBlock>,
-        end: IBlockData<IMapVertexBlock>
+        start: IChunkData<IMapVertexBlock>,
+        end: IChunkData<IMapVertexBlock>
     ) {
         const startIndex = start.data.startIndex;
         const endIndex = end.data.endIndex;
@@ -54,7 +54,12 @@ export class MapViewport implements IMapViewportController {
     getRenderArea(): IMapRenderData {
         const { cellWidth, cellHeight, renderWidth, renderHeight } =
             this.renderer;
-        const { blockWidth, blockHeight, width, height } = this.vertex.block;
+        const {
+            chunkWidth: blockWidth,
+            chunkHeight: blockHeight,
+            width,
+            height
+        } = this.vertex.block;
         // 其实只需要算左上角和右下角就行了
         const [left, top] = this.transform.untransformed(-1, -1);
         const [right, bottom] = this.transform.untransformed(1, 1);
@@ -69,12 +74,12 @@ export class MapViewport implements IMapViewportController {
 
         const renderArea: IMapRenderArea[] = [];
         const updateArea: IMapRenderArea[] = [];
-        const blockList: IBlockData<IMapVertexBlock>[] = [];
+        const blockList: IChunkData<IMapVertexBlock>[] = [];
 
         // 内层横向外层纵向的话，索引在换行之前都是连续的，方便整合
         for (let ny = blockTop; ny <= blockBottom; ny++) {
             for (let nx = blockLeft; nx <= blockRight; nx++) {
-                const block = this.vertex.block.getBlockByLoc(nx, ny)!;
+                const block = this.vertex.block.getChunkByLoc(nx, ny)!;
                 blockList.push(block);
             }
         }
@@ -88,10 +93,10 @@ export class MapViewport implements IMapViewportController {
                 this.pushBlock(renderArea, block, block);
             } else {
                 // 更新区域
-                let updateStart: IBlockData<IMapVertexBlock> = blockList[0];
-                let updateEnd: IBlockData<IMapVertexBlock> = blockList[0];
-                let renderStart: IBlockData<IMapVertexBlock> = blockList[0];
-                let renderEnd: IBlockData<IMapVertexBlock> = blockList[0];
+                let updateStart: IChunkData<IMapVertexBlock> = blockList[0];
+                let updateEnd: IChunkData<IMapVertexBlock> = blockList[0];
+                let renderStart: IChunkData<IMapVertexBlock> = blockList[0];
+                let renderEnd: IChunkData<IMapVertexBlock> = blockList[0];
                 for (let i = 1; i < blockList.length; i++) {
                     const block = blockList[i];
                     const { renderDirty } = block.data;

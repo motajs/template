@@ -1,7 +1,7 @@
 import { IMapLayer } from '@user/data-base';
 import { TileType } from '@user/data-common';
 import {
-    IBlockData,
+    IChunkData,
     IBlockSplitter,
     IContextData,
     IIndexedMapVertexData,
@@ -12,18 +12,14 @@ import {
     IMapVertexBlock,
     IMapVertexData,
     IMapVertexGenerator,
-    IMovingBlock,
+    IOverlayBlock,
     MapTileAlign,
     MapTileBehavior,
     MapTileSizeTestMode
 } from './types';
 import { logger, PrivateBooleanDirtyTracker } from '@motajs/common';
-import {
-    DYNAMIC_RESERVE,
-    MAP_BLOCK_HEIGHT,
-    MAP_BLOCK_WIDTH
-} from '../shared';
-import { BlockSplitter } from './block';
+import { DYNAMIC_RESERVE, MAP_BLOCK_HEIGHT, MAP_BLOCK_WIDTH } from '../shared';
+import { BlockSplitter } from './chunk';
 import { clamp, isNil } from 'lodash-es';
 import { IMaterialFramedData } from '@user/client-base';
 import { IRect } from '@motajs/render';
@@ -40,12 +36,6 @@ export interface IMapDataGetter {
     readonly tileAlignY: MapTileAlign;
     /** 图块大小与格子大小判断方式 */
     readonly tileTestMode: MapTileSizeTestMode;
-
-    /**
-     * 渲染器是否包含指定的移动图块对象
-     * @param moving 移动图块对象
-     */
-    hasMoving(moving: IMovingBlock): boolean;
 
     /**
      * 申请更新渲染
@@ -84,7 +74,7 @@ interface VertexArrayOfBlock {
     /** 分块顶点数组 */
     readonly array: Float32Array;
     /** 分块数据 */
-    readonly block: IBlockData<MapVertexBlock>;
+    readonly block: IChunkData<MapVertexBlock>;
 }
 
 const enum VertexUpdate {
@@ -131,6 +121,22 @@ export class MapVertexGenerator
     private instancedArray: Float32Array = new Float32Array();
     /** 动态内容偏移数组 */
     private dynamicInstancedArray: Float32Array = new Float32Array();
+
+    /** 已提升为覆盖层的静态图块，键为图层对象与地图索引 */
+    private readonly promotedBlocks: Map<
+        IMapLayer,
+        Map<number, IOverlayBlock>
+    > = new Map();
+    /** 覆盖层条目的成员或排序键是否变化，为真时需要重新排序 */
+    private overlayOrderDirty: boolean = false;
+    /** 覆盖层实例数据是否失效，为真时需要重新组装 */
+    private overlayValueDirty: boolean = false;
+    /** 覆盖层条目的排序缓存，每次排序时整体重建 */
+    private overlayOrdered: IOverlayBlock[] = [];
+    /** 覆盖层实例数据的暂存数组 */
+    private overlayInstancedArray: Float32Array = new Float32Array();
+    /** 覆盖层当前的实例数量 */
+    private overlayCount: number = 0;
 
     /** 分块宽度 */
     private blockWidth: number = MAP_BLOCK_WIDTH;
@@ -185,17 +191,17 @@ export class MapVertexGenerator
 
     private splitBlock() {
         this.block.configSplitter({
-            dataWidth: this.mapWidth,
-            dataHeight: this.mapHeight,
-            blockWidth: this.blockWidth,
-            blockHeight: this.blockHeight
+            elWidth: this.mapWidth,
+            elHeight: this.mapHeight,
+            chunkWidth: this.blockWidth,
+            chunkHeight: this.blockHeight
         });
         const blockCount = this.blockWidth * this.blockHeight;
         const lineCount = this.mapWidth * this.blockHeight;
         const lastCount = (this.mapHeight % this.blockHeight) * this.blockWidth;
         const bh = Math.floor(this.mapHeight / this.blockHeight);
         const lastStart = bh * lineCount;
-        this.block.splitBlocks(block => {
+        this.block.splitChunks(block => {
             // 最后一行的算法与其他行不同
             const startIndex =
                 block.height < this.blockHeight
@@ -223,6 +229,11 @@ export class MapVertexGenerator
         this.blockHeight = height;
         this.mallocVertexArray();
         this.splitBlock();
+        this.promotedBlocks.clear();
+        this.overlayOrdered.length = 0;
+        this.overlayCount = 0;
+        this.overlayOrderDirty = true;
+        this.overlayValueDirty = true;
     }
 
     resizeMap(): void {
@@ -236,7 +247,7 @@ export class MapVertexGenerator
         }
     }
 
-    expandMoving(targetSize: number): void {
+    expandOverlay(targetSize: number): void {
         const beforeOffset = this.instancedArray;
         this.dynamicCount = targetSize;
         this.mallocVertexArray();
@@ -245,12 +256,12 @@ export class MapVertexGenerator
             instancedArray: this.instancedArray
         };
         // 重建一下对应分块就行了，不需要重新分块
-        for (const block of this.block.iterateBlocks()) {
+        for (const block of this.block.iterateChunks()) {
             block.data.rebuild(array);
         }
     }
 
-    reduceMoving(targetSize: number): void {
+    reduceOverlay(targetSize: number): void {
         const beforeOffsetLength = this.instancedArray.length;
         const deltaLength = this.dynamicCount - targetSize;
         this.dynamicCount = targetSize;
@@ -274,7 +285,196 @@ export class MapVertexGenerator
         this.needRebuild = false;
         this.mallocVertexArray();
         this.splitBlock();
+        // 重建会重新分配实例数组并把不透明度复位为 1，旧的覆盖层成员全部失效
+        this.promotedBlocks.clear();
+        this.overlayOrdered.length = 0;
+        this.overlayCount = 0;
+        this.overlayOrderDirty = true;
+        this.overlayValueDirty = true;
         this.dirty();
+    }
+
+    /**
+     * 获取指定图层指定坐标的图块对应的分块信息
+     * @param layer 图层对象
+     * @param x 图块横坐标
+     * @param y 图块纵坐标
+     */
+    private getIndexInBlock(
+        layer: IMapLayer,
+        x: number,
+        y: number
+    ): VertexArrayOfBlock | null {
+        const block = this.block.getChunkByElementLoc(x, y);
+        if (!block) return null;
+        const data = block.data.getLayerInstanced(layer);
+        if (!data) return null;
+        const dx = x - block.elX;
+        const dy = y - block.elY;
+        const dIndex = dy * block.width + dx;
+        return { array: data, index: dIndex, block };
+    }
+
+    //#endregion
+
+    //#region 覆盖层
+
+    /**
+     * 获取指定图层指定地图索引的提升块，未登记时返回 `null`
+     * @param layer 图块所在的图层
+     * @param mapIndex 图块在地图中的索引
+     */
+    private getPromotedBlock(
+        layer: IMapLayer,
+        mapIndex: number
+    ): IOverlayBlock | null {
+        const blocks = this.promotedBlocks.get(layer);
+        if (!blocks) return null;
+        return blocks.get(mapIndex) ?? null;
+    }
+
+    /**
+     * 登记指定图层指定地图索引的提升块
+     * @param layer 图块所在的图层
+     * @param mapIndex 图块在地图中的索引
+     * @param block 提升后的覆盖层图块
+     */
+    private setPromotedBlock(
+        layer: IMapLayer,
+        mapIndex: number,
+        block: IOverlayBlock
+    ): void {
+        const blocks = this.promotedBlocks.getOrInsertComputed(
+            layer,
+            () => new Map()
+        );
+        blocks.set(mapIndex, block);
+    }
+
+    /**
+     * 删除指定图层指定地图索引的提升登记，内层清空后一并移除
+     * @param layer 图块所在的图层
+     * @param mapIndex 图块在地图中的索引
+     */
+    private deletePromotedBlock(layer: IMapLayer, mapIndex: number): void {
+        const blocks = this.promotedBlocks.get(layer);
+        if (!blocks) return;
+        blocks.delete(mapIndex);
+        if (blocks.size === 0) this.promotedBlocks.delete(layer);
+    }
+
+    /**
+     * 按引用查找并删除提升登记，找不到时不做任何事
+     * @param block 要删除的覆盖层图块
+     */
+    private deletePromotedBlockByValue(block: IOverlayBlock): void {
+        for (const [layer, blocks] of this.promotedBlocks) {
+            for (const [mapIndex, value] of blocks) {
+                if (value === block) {
+                    blocks.delete(mapIndex);
+                    if (blocks.size === 0) this.promotedBlocks.delete(layer);
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * 按 `(layerIndex, y, x, kind)` 重建覆盖层的绘制顺序。
+     * 动态成员每次都从活动移动图块现取，不保留登记表，因此已销毁的块不会残留，
+     * 图层顺序变化后也不会继续使用旧的 `layerIndex`。
+     */
+    private sortOverlay(): void {
+        const ordered = [...this.renderer.getOverlayBlocks()];
+        // 静态与动态的坐标可能完全相同，最后用种类保证静态先于动态，
+        // x 只是 CPU 侧的稳定次级键，绝不参与 z / 深度的计算
+        ordered.sort(
+            (a, b) =>
+                this.renderer.getLayerIndex(a.layer) -
+                    this.renderer.getLayerIndex(b.layer) ||
+                a.y - b.y ||
+                a.x - b.x ||
+                a.priority - b.priority
+        );
+        this.overlayOrdered = ordered;
+        this.overlayOrderDirty = false;
+        // 顺序或成员变化意味着暂存数组与数量都已过期，必须让下一次取数组重新组装
+        this.overlayValueDirty = true;
+    }
+
+    /**
+     * 按覆盖层的缓存顺序组装实例数据，组装完成后清除脏标记。
+     * 静态条目只从分块图层数组拷贝那 16 个浮点并覆盖前四个浮点（进入覆盖层前的矩形），
+     * 从不修改分块张量本身。
+     */
+    private assembleOverlay(): void {
+        const ordered = this.overlayOrdered;
+        const required = ordered.length * INSTANCED_COUNT;
+        if (this.overlayInstancedArray.length < required) {
+            this.overlayInstancedArray = new Float32Array(
+                Math.max(this.overlayInstancedArray.length * 2, required)
+            );
+        }
+        const target = this.overlayInstancedArray;
+        let count = 0;
+        ordered.forEach(block => {
+            const offset = count * INSTANCED_COUNT;
+            const source = block.index * INSTANCED_COUNT;
+            target.set(
+                this.dynamicInstancedArray.subarray(
+                    source,
+                    source + INSTANCED_COUNT
+                ),
+                offset
+            );
+            count++;
+        });
+        this.overlayCount = count;
+        this.overlayValueDirty = false;
+        this.overlayOrderDirty = false;
+    }
+
+    /**
+     * 把覆盖层槽位写回目标静态实例，按目标格重算位置与纵深，
+     * 最后删除覆盖层图块以释放索引。
+     * @param block 要写回的覆盖层图块
+     * @param layer 目标图块所属的图层
+     * @param x 目标图块横坐标
+     * @param y 目标图块纵坐标
+     */
+    toStatic(
+        block: IOverlayBlock,
+        layer: IMapLayer,
+        x: number,
+        y: number
+    ): void {
+        const index = this.getIndexInBlock(layer, x, y);
+        if (!index) return;
+        const source = block.index * INSTANCED_COUNT;
+        const target = index.index * INSTANCED_COUNT;
+        index.array.set(
+            this.dynamicInstancedArray.subarray(
+                source,
+                source + INSTANCED_COUNT
+            ),
+            target
+        );
+        // 目标格与覆盖块原坐标的差换算成归一化位移，横坐标加、纵坐标减
+        const dx =
+            ((x - block.x) * this.renderer.cellWidth * 2) /
+            this.renderer.renderWidth;
+        const dy =
+            ((y - block.y) * this.renderer.cellHeight * 2) /
+            this.renderer.renderHeight;
+        index.array[target] += dx;
+        index.array[target + 1] -= dy;
+        const layerIndex = this.renderer.getLayerIndex(layer);
+        const layerStart = (layerIndex / this.renderer.layerCount) * 1.8 - 0.9;
+        const perBlockZ = 1 / this.mapHeight / this.renderer.layerCount;
+        const blockZ = y * perBlockZ;
+        index.array[target + 8] = -layerStart - blockZ;
+        index.block.data.markRenderDirty();
+        this.renderer.deleteOverlayBlock(block);
     }
 
     //#endregion
@@ -380,6 +580,7 @@ export class MapVertexGenerator
      * @param offsetIndex 贴图偏移值所在偏移池的索引
      * @param frames 贴图总帧数
      * @param update 顶点坐标更新方式
+     * @param dynamic 是否是动态图块
      */
     private updateTileVertex(
         vertex: IMapVertexData,
@@ -396,22 +597,50 @@ export class MapVertexGenerator
         const { layerCount, assetWidth, assetHeight } = this.renderer;
         const { x, y, w: width, h: height } = rect;
         const startIndex = index.blockIndex * INSTANCED_COUNT;
+        // 有没有更好的分支方案？
         if (update & VertexUpdate.Position) {
-            // 如果需要更新顶点坐标
-            const layerIndex = this.renderer.getLayerIndex(index.layer);
-            // 避免 z 坐标是 1 的时候被裁剪，因此范围选择 [-0.9, 0.9]
-            const layerStart = (layerIndex / layerCount) * 1.8 - 0.9;
-            const perBlockZ = 1 / this.mapHeight / layerCount;
-            const blockZ = index.mapY * perBlockZ;
-            const zIndex = -layerStart - blockZ - (dynamic ? perBlockZ : 0);
-            const { x, y, w, h } = this.getTilePosition(index, width, height);
-            // 图块位置
-            instancedArray[startIndex] = x;
-            instancedArray[startIndex + 1] = y;
-            instancedArray[startIndex + 2] = w;
-            instancedArray[startIndex + 3] = h;
-            // 图块纵深
-            instancedArray[startIndex + 8] = zIndex;
+            // 检查当前图块是否在覆盖层
+            if (dynamic) {
+                // 动态图块一定写
+                const layerIndex = this.renderer.getLayerIndex(index.layer);
+                // 避免 z 坐标是 1 的时候被裁剪，因此范围选择 [-0.9, 0.9]
+                const layerStart = (layerIndex / layerCount) * 1.8 - 0.9;
+                const perBlockZ = 1 / this.mapHeight / layerCount;
+                const blockZ = index.mapY * perBlockZ;
+                const zIndex = -layerStart - blockZ - (dynamic ? perBlockZ : 0);
+                const { x, y, w, h } = this.getTilePosition(
+                    index,
+                    width,
+                    height
+                );
+                // 图块位置
+                instancedArray[startIndex] = x;
+                instancedArray[startIndex + 1] = y;
+                instancedArray[startIndex + 2] = w;
+                instancedArray[startIndex + 3] = h;
+                // 图块纵深
+                instancedArray[startIndex + 8] = zIndex;
+            } else {
+                // 如果不在，那么写数据
+                const layerIndex = this.renderer.getLayerIndex(index.layer);
+                // 避免 z 坐标是 1 的时候被裁剪，因此范围选择 [-0.9, 0.9]
+                const layerStart = (layerIndex / layerCount) * 1.8 - 0.9;
+                const perBlockZ = 1 / this.mapHeight / layerCount;
+                const blockZ = index.mapY * perBlockZ;
+                const zIndex = -layerStart - blockZ - (dynamic ? perBlockZ : 0);
+                const { x, y, w, h } = this.getTilePosition(
+                    index,
+                    width,
+                    height
+                );
+                // 图块位置
+                instancedArray[startIndex] = x;
+                instancedArray[startIndex + 1] = y;
+                instancedArray[startIndex + 2] = w;
+                instancedArray[startIndex + 3] = h;
+                // 图块纵深
+                instancedArray[startIndex + 8] = zIndex;
+            }
         }
         if (update & VertexUpdate.Texture) {
             const texX = x / assetWidth;
@@ -433,6 +662,44 @@ export class MapVertexGenerator
                 index.num
             );
             instancedArray[startIndex + 12] = defaultFrame;
+        }
+        if (!dynamic) {
+            const mapIndex = index.mapY * this.mapWidth + index.mapX;
+            const promoted = this.getPromotedBlock(index.layer, mapIndex);
+            if (promoted) {
+                const dy = this.dynamicInstancedArray;
+                const offset = promoted.index * INSTANCED_COUNT;
+                if (update & VertexUpdate.Position) {
+                    dy[offset] = instancedArray[startIndex];
+                    dy[offset + 1] = instancedArray[startIndex + 1];
+                    dy[offset + 2] = instancedArray[startIndex + 2];
+                    dy[offset + 3] = instancedArray[startIndex + 3];
+                    dy[offset + 8] = instancedArray[startIndex + 8];
+                    instancedArray[startIndex] = 0;
+                    instancedArray[startIndex + 1] = 0;
+                    instancedArray[startIndex + 2] = 0;
+                    instancedArray[startIndex + 3] = 0;
+                }
+                if (update & VertexUpdate.Texture) {
+                    dy[offset + 4] = instancedArray[startIndex + 4];
+                    dy[offset + 5] = instancedArray[startIndex + 5];
+                    dy[offset + 6] = instancedArray[startIndex + 6];
+                    dy[offset + 7] = instancedArray[startIndex + 7];
+                    dy[offset + 13] = instancedArray[startIndex + 13];
+                    dy[offset + 14] = instancedArray[startIndex + 14];
+                    dy[offset + 15] = instancedArray[startIndex + 15];
+                }
+                if (update & VertexUpdate.Frame) {
+                    dy[offset + 12] = instancedArray[startIndex + 12];
+                }
+                const chunk = this.block.getChunkByElementLoc(
+                    index.mapX,
+                    index.mapY
+                );
+                if (chunk) chunk.data.markRenderDirty();
+                this.overlayValueDirty = true;
+                this.dynamicRenderDirty = true;
+            }
         }
     }
 
@@ -496,12 +763,12 @@ export class MapVertexGenerator
     ) {
         const mx = index.mapX + dx;
         const my = index.mapY + dy;
-        const block = this.block.getBlockByDataLoc(mx, my);
+        const block = this.block.getChunkByElementLoc(mx, my);
         if (!block) return;
         const vertex = block.data.getLayerData(layer);
         if (!vertex) return;
-        const bx = mx - block.dataX;
-        const by = my - block.dataY;
+        const bx = mx - block.elX;
+        const by = my - block.elY;
         const mapIndex = my * this.mapWidth + mx;
         const num = mapArray[mapIndex];
         const newIndex: BlockIndex = {
@@ -534,6 +801,7 @@ export class MapVertexGenerator
      * @param vertex 顶点数组对象
      * @param index 图块索引对象
      * @param num 图块数字
+     * @param dynamic 是否是动态图块
      */
     private updateVertexArray(
         mapArray: Uint32Array,
@@ -555,6 +823,15 @@ export class MapVertexGenerator
             instancedArray[instancedStart + 1] = 0;
             instancedArray[instancedStart + 2] = 0;
             instancedArray[instancedStart + 3] = 0;
+            if (!dynamic) {
+                const promoted = this.getPromotedBlock(
+                    index.layer,
+                    index.mapIndex
+                );
+                if (promoted) {
+                    this.renderer.deleteOverlayBlock(promoted);
+                }
+            }
             return;
         }
 
@@ -615,14 +892,14 @@ export class MapVertexGenerator
         x: number,
         y: number
     ) {
-        const block = this.block.getBlockByDataLoc(x, y);
+        const block = this.block.getChunkByElementLoc(x, y);
         if (!block) return;
         const vertex = block.data.getLayerData(layer);
         const data = layer.getMapRef();
         if (!vertex) return;
         const { array } = data;
-        const dx = x - block.dataX;
-        const dy = y - block.dataY;
+        const dx = x - block.elX;
+        const dy = y - block.elY;
         const dIndex = dy * block.width + dx;
         const index: BlockIndex = {
             layer,
@@ -685,16 +962,18 @@ export class MapVertexGenerator
         const ay = y - 1;
         const areaRight = x + w + 1;
         const areaBottom = y + h + 1;
-        const blocks = this.block.iterateBlocksOfDataArea(ax, ay, w + 2, h + 2);
+        const blocks = this.block.iterateChunksOfElementArea(
+            ax,
+            ay,
+            w + 2,
+            h + 2
+        );
 
         for (const block of blocks) {
-            const left = ax - block.dataX;
-            const top = ay - block.dataY;
-            const right = Math.min(areaRight - block.dataX, left + block.width);
-            const bottom = Math.min(
-                areaBottom - block.dataY,
-                top + block.height
-            );
+            const left = ax - block.elX;
+            const top = ay - block.elY;
+            const right = Math.min(areaRight - block.elX, left + block.width);
+            const bottom = Math.min(areaBottom - block.elY, top + block.height);
             block.data.markDirty(layer, left, top, right, bottom);
             block.data.markRenderDirty();
         }
@@ -724,10 +1003,10 @@ export class MapVertexGenerator
 
         // 对于超出50个的更新操作使用懒更新
         blocks.forEach(v => {
-            const block = this.block.getBlockByDataLoc(v.x, v.y);
+            const block = this.block.getChunkByElementLoc(v.x, v.y);
             if (!block) return;
-            const bx = v.x - block.dataX;
-            const by = v.y - block.dataY;
+            const bx = v.x - block.elX;
+            const by = v.y - block.elY;
             block.data.markDirty(layer, bx - 1, by - 1, bx + 2, by + 2);
             block.data.markRenderDirty();
             const left = bx === 0;
@@ -810,7 +1089,7 @@ export class MapVertexGenerator
         });
     }
 
-    updateBlockCache(block: Readonly<IBlockData<IMapVertexBlock>>): void {
+    updateBlockCache(block: Readonly<IChunkData<IMapVertexBlock>>): void {
         if (!block.data.dirty) return;
         const layers = this.renderer.getSortedLayer();
         layers.forEach(layer => {
@@ -824,8 +1103,8 @@ export class MapVertexGenerator
             const { dirtyLeft, dirtyTop, dirtyRight, dirtyBottom } = dirty;
             for (let nx = dirtyLeft; nx < dirtyRight; nx++) {
                 for (let ny = dirtyTop; ny < dirtyBottom; ny++) {
-                    const mapX = nx + block.dataX;
-                    const mapY = ny + block.dataY;
+                    const mapX = nx + block.elX;
+                    const mapY = ny + block.elY;
                     const mapIndex = mapY * this.mapWidth + mapX;
                     const num = array[mapIndex];
                     const index: BlockIndex = {
@@ -848,15 +1127,15 @@ export class MapVertexGenerator
 
     //#region 动态图块
 
-    updateMoving(block: IMovingBlock, updateTexture: boolean): void {
-        if (!this.renderer.hasMoving(block)) return;
+    updateOverlay(block: IOverlayBlock, updateTexture: boolean): void {
+        if (!this.renderer.getOverlayBlocks().has(block)) return;
         const { tileType, frames, offset, texture } = block.texture;
         const vertex: IMapVertexData = {
             instancedArray: this.dynamicInstancedArray
         };
         const index: IndexedBlockMapPos = {
             layer: block.layer,
-            num: block.tile,
+            num: -1,
             mapX: block.x,
             mapY: block.y,
             blockIndex: block.index
@@ -864,7 +1143,7 @@ export class MapVertexGenerator
         const assetIndex = this.renderer.getAssetSourceIndex(texture.source);
         const offsetIndex = this.renderer.getOffsetIndex(offset);
         if (assetIndex === -1 || offsetIndex === -1) {
-            logger.error(40, block.tile.toString());
+            logger.error(40, block.index.toString());
             return;
         }
         const update = updateTexture
@@ -911,21 +1190,29 @@ export class MapVertexGenerator
         }
 
         this.dynamicRenderDirty = true;
+        // 位置与图层都是排序键，动态值也可能变化，因此两种脏都要标记
+        this.overlayOrderDirty = true;
+        this.overlayValueDirty = true;
     }
 
-    updateMovingList(moving: IMovingBlock[], updateTexture: boolean): void {
+    updateOverlayList(moving: IOverlayBlock[], updateTexture: boolean): void {
         moving.forEach(v => {
-            this.updateMoving(v, updateTexture);
+            this.updateOverlay(v, updateTexture);
         });
     }
 
-    deleteMoving(moving: IMovingBlock): void {
-        const instancedStart = moving.index * INSTANCED_COUNT;
+    deleteOverlay(block: IOverlayBlock): void {
+        // 删除改变了成员集合，只置顺序脏会在排序时连同顺序脏一起清掉而跳过组装，
+        // 暂存数组里就会留下已删除动态块的残影，因此两个脏标记都要置
+        this.overlayOrderDirty = true;
+        this.overlayValueDirty = true;
+        const instancedStart = block.index * INSTANCED_COUNT;
         // 这个需要全部清空了，因为可能会复用
         this.dynamicInstancedArray.set(
             MapVertexGenerator.EMPTY_VETREX,
             instancedStart
         );
+        this.deletePromotedBlockByValue(block);
         this.dynamicRenderDirty = true;
     }
 
@@ -934,27 +1221,55 @@ export class MapVertexGenerator
     //#region 图块状态
 
     /**
-     * 获取指定图层指定坐标的图块对应的分块信息
-     * @param layer 图层对象
+     * 为静态图块申请覆盖层索引，把静态实例的数据整体拷入覆盖层槽位，
+     * 清零静态矩形并登记提升关系。
+     * @param layer 图块所属的图层
      * @param x 图块横坐标
      * @param y 图块纵坐标
+     * @param mapIndex 图块在地图中的索引
+     * @param alpha 覆盖层的不透明度
      */
-    private getIndexInBlock(
+    private promoteStaticBlock(
         layer: IMapLayer,
         x: number,
-        y: number
-    ): VertexArrayOfBlock | null {
-        const block = this.block.getBlockByDataLoc(x, y);
-        if (!block) return null;
-        const data = block?.data.getLayerInstanced(layer);
-        if (!data) return null;
-        const dx = x - block.x;
-        const dy = y - block.y;
-        const dIndex = dy * block.width + dx;
-        return { array: data, index: dIndex, block };
+        y: number,
+        mapIndex: number,
+        alpha: number
+    ): void {
+        const index = this.getIndexInBlock(layer, x, y);
+        if (!index) return;
+        const num = layer.getMapRef().array[mapIndex];
+        const tile = this.renderer.manager.getTile(num);
+        if (!tile) return;
+        const block = this.renderer.createOverlayBlock(layer, 0, tile, num);
+        block.setPos(x, y);
+        const source = index.index * INSTANCED_COUNT;
+        const target = block.index * INSTANCED_COUNT;
+        this.dynamicInstancedArray.set(
+            index.array.subarray(source, source + INSTANCED_COUNT),
+            target
+        );
+        this.dynamicInstancedArray[target + 9] = alpha;
+        index.array[source] = 0;
+        index.array[source + 1] = 0;
+        index.array[source + 2] = 0;
+        index.array[source + 3] = 0;
+        index.block.data.markRenderDirty();
+        this.setPromotedBlock(layer, mapIndex, block);
+        this.dynamicRenderDirty = true;
+        this.overlayOrderDirty = true;
+        this.overlayValueDirty = true;
+        this.renderer.requestUpdate();
     }
 
-    setStaticAlpha(
+    /**
+     * 把不透明度写入静态实例并标记该分块需要重传渲染数据
+     * @param layer 图块所属的图层
+     * @param x 图块横坐标
+     * @param y 图块纵坐标
+     * @param alpha 目标不透明度
+     */
+    private writeStaticAlpha(
         layer: IMapLayer,
         x: number,
         y: number,
@@ -966,25 +1281,61 @@ export class MapVertexGenerator
         index.block.data.markRenderDirty();
     }
 
+    setStaticAlpha(
+        layer: IMapLayer,
+        x: number,
+        y: number,
+        alpha: number
+    ): void {
+        const mapIndex = y * this.mapWidth + x;
+        const promoted = this.getPromotedBlock(layer, mapIndex);
+        if (promoted) {
+            promoted.setAlpha(alpha);
+            return;
+        }
+        if (alpha < 1) {
+            this.promoteStaticBlock(layer, x, y, mapIndex, alpha);
+        } else if (alpha >= 1) {
+            this.writeStaticAlpha(layer, x, y, alpha);
+        }
+    }
+
     setStaticFrame(
         layer: IMapLayer,
         x: number,
         y: number,
         frame: number
     ): void {
+        const mapIndex = y * this.mapWidth + x;
+        const promoted = this.getPromotedBlock(layer, mapIndex);
+        if (promoted) {
+            this.setDynamicFrame(promoted.index, frame);
+            return;
+        }
         const index = this.getIndexInBlock(layer, x, y);
         if (!index) return;
         index.array[index.index * INSTANCED_COUNT + 12] = frame;
+        this.overlayValueDirty = true;
         index.block.data.markRenderDirty();
     }
 
     getStaticAlpha(layer: IMapLayer, x: number, y: number): number {
+        const mapIndex = y * this.mapWidth + x;
+        const promoted = this.getPromotedBlock(layer, mapIndex);
+        if (promoted) {
+            return this.getDynamicAlpha(promoted.index);
+        }
         const index = this.getIndexInBlock(layer, x, y);
         if (!index) return 0;
         return index.array[index.index * INSTANCED_COUNT + 9];
     }
 
     getStaticFrame(layer: IMapLayer, x: number, y: number): number {
+        const mapIndex = y * this.mapWidth + x;
+        const promoted = this.getPromotedBlock(layer, mapIndex);
+        if (promoted) {
+            return this.getDynamicFrame(promoted.index);
+        }
         const index = this.getIndexInBlock(layer, x, y);
         if (!index) return -1;
         return index.array[index.index * INSTANCED_COUNT + 12];
@@ -992,11 +1343,13 @@ export class MapVertexGenerator
 
     setDynamicAlpha(index: number, alpha: number): void {
         this.dynamicInstancedArray[index * INSTANCED_COUNT + 9] = alpha;
+        this.overlayValueDirty = true;
         this.dynamicRenderDirty = true;
     }
 
     setDynamicFrame(index: number, frame: number): void {
         this.dynamicInstancedArray[index * INSTANCED_COUNT + 12] = frame;
+        this.overlayValueDirty = true;
         this.dynamicRenderDirty = true;
     }
 
@@ -1016,6 +1369,22 @@ export class MapVertexGenerator
 
     renderDynamic(): void {
         this.dynamicRenderDirty = false;
+    }
+
+    isOverlayDirty(): boolean {
+        return this.overlayOrderDirty || this.overlayValueDirty;
+    }
+
+    getOverlayArray(): Float32Array {
+        if (this.overlayOrderDirty) this.sortOverlay();
+        if (this.overlayValueDirty || this.overlayOrderDirty) {
+            this.assembleOverlay();
+        }
+        return this.overlayInstancedArray;
+    }
+
+    getOverlayCount(): number {
+        return this.overlayCount;
     }
 
     getVertexArray(): IMapVertexArray {

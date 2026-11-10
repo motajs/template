@@ -22,7 +22,7 @@ import {
     IMapRenderResult,
     IMapVertexGenerator,
     IMapViewportController,
-    IMovingBlock,
+    IOverlayBlock,
     MapBackgroundRepeat,
     MapTileAlign,
     MapTileBehavior,
@@ -37,14 +37,13 @@ import {
 } from '@user/data-base';
 import { TileType } from '@user/data-common';
 import { IHookController, logger } from '@motajs/common';
-import { compileProgramWith } from '@motajs/client-base';
+import { compileProgramWith } from '@motajs/render';
 import { isNil, maxBy } from 'lodash-es';
 import { IMapDataGetter, MapVertexGenerator } from './vertex';
 import mapVert from './shader/map.vert?raw';
 import mapFrag from './shader/map.frag?raw';
 import backVert from './shader/back.vert?raw';
 import backFrag from './shader/back.frag?raw';
-import { IMovingRenderer, MovingBlock } from './moving';
 import {
     CELL_HEIGHT,
     CELL_WIDTH,
@@ -53,7 +52,7 @@ import {
 } from '../shared';
 import { MapViewport } from './viewport';
 import { INSTANCED_COUNT } from './constant';
-import { StaticBlockStatus } from './status';
+import { OverlayBlock, StaticBlockStatus } from './status';
 
 const enum BackgroundType {
     Static,
@@ -61,9 +60,7 @@ const enum BackgroundType {
     Tile
 }
 
-export class MapRenderer
-    implements IMapRenderer, IMovingRenderer, IMapDataGetter
-{
+export class MapRenderer implements IMapRenderer, IMapDataGetter {
     //#region 实例属性
 
     /** 自动元件处理器 */
@@ -151,13 +148,13 @@ export class MapRenderer
     private needUpdateOffsetPool: boolean = true;
 
     /** 所有正在移动的图块 */
-    private movingBlock: Set<IMovingBlock> = new Set();
+    private overlayBlocks: Set<IOverlayBlock> = new Set();
     /** 移动图块对象索引池 */
-    private movingIndexPool: number[] = [];
+    private overlayIndexPool: number[] = [];
     /** 移动图块对象数量 */
-    private movingCount: number = DYNAMIC_RESERVE;
+    private overlayCount: number = DYNAMIC_RESERVE;
     /** 移动索引映射 */
-    private movingIndexMap: Map<number, IMovingBlock> = new Map();
+    private overlayIndexMap: Map<number, IOverlayBlock> = new Map();
     /** 移动容忍度，如果正在移动的图块数量长期小于预留数量的一半，那么将减少移动数组长度 */
     private lastExpandTime = 0;
 
@@ -214,8 +211,8 @@ export class MapRenderer
      * @param manager 素材管理器
      */
     constructor(readonly manager: ITextureManager) {
-        this.movingIndexPool.push(
-            ...Array.from({ length: this.movingCount }, (_, i) => i).reverse()
+        this.overlayIndexPool.push(
+            ...Array.from({ length: this.overlayCount }, (_, i) => i).reverse()
         );
         this.canvas = document.createElement('canvas');
         this.gl = this.canvas.getContext('webgl2')!;
@@ -359,7 +356,12 @@ export class MapRenderer
         this.canvas.height = height;
         // 更新 FBO 的纹理尺寸信息
         const gl = this.gl;
-        const { pingTexture2D, pongTexture2D } = this.contextData;
+        const {
+            pingTexture2D,
+            pongTexture2D,
+            pingDepthBuffer,
+            pongDepthBuffer
+        } = this.contextData;
         gl.bindTexture(gl.TEXTURE_2D, pingTexture2D);
         gl.texImage2D(
             gl.TEXTURE_2D,
@@ -385,6 +387,22 @@ export class MapRenderer
             null
         );
         gl.bindTexture(gl.TEXTURE_2D, null);
+        // 深度缓冲要和颜色纹理保持同样的尺寸
+        gl.bindRenderbuffer(gl.RENDERBUFFER, pingDepthBuffer);
+        gl.renderbufferStorage(
+            gl.RENDERBUFFER,
+            gl.DEPTH_COMPONENT24,
+            width,
+            height
+        );
+        gl.bindRenderbuffer(gl.RENDERBUFFER, pongDepthBuffer);
+        gl.renderbufferStorage(
+            gl.RENDERBUFFER,
+            gl.DEPTH_COMPONENT24,
+            width,
+            height
+        );
+        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
         this.updateRequired = true;
     }
 
@@ -722,6 +740,7 @@ export class MapRenderer
         const vertexBuffer = gl.createBuffer();
         const instancedBuffer = gl.createBuffer();
         const backVertexBuffer = gl.createBuffer();
+        const overlayBuffer = gl.createBuffer();
 
         const tileTexture = gl.createTexture();
         const backgroundTexture = gl.createTexture();
@@ -734,28 +753,11 @@ export class MapRenderer
         const pongFramebuffer = gl.createFramebuffer();
         const pingTexture2D = gl.createTexture();
         const pongTexture2D = gl.createTexture();
+        const pingDepthBuffer = gl.createRenderbuffer();
+        const pongDepthBuffer = gl.createRenderbuffer();
 
         // 初始化 Post effect FBO 和 Texture
-        gl.bindTexture(gl.TEXTURE_2D, pongTexture2D);
-        gl.texImage2D(
-            gl.TEXTURE_2D,
-            0,
-            gl.RGBA,
-            this.canvas.width,
-            this.canvas.height,
-            0,
-            gl.RGBA,
-            gl.UNSIGNED_BYTE,
-            null
-        );
-        gl.bindFramebuffer(gl.FRAMEBUFFER, pingFramebuffer);
-        gl.framebufferTexture2D(
-            gl.FRAMEBUFFER,
-            gl.COLOR_ATTACHMENT0,
-            gl.TEXTURE_2D,
-            pongTexture2D,
-            0
-        );
+        // ping 与 pong 各自持有颜色纹理，后处理链交替读写以避免反馈环
         gl.bindTexture(gl.TEXTURE_2D, pingTexture2D);
         gl.texImage2D(
             gl.TEXTURE_2D,
@@ -768,13 +770,73 @@ export class MapRenderer
             gl.UNSIGNED_BYTE,
             null
         );
-        gl.bindFramebuffer(gl.FRAMEBUFFER, pongFramebuffer);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        // 非 2 的幂尺寸下必须夹取到边缘，否则采样会越界变成黑色
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.bindTexture(gl.TEXTURE_2D, pongTexture2D);
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            this.canvas.width,
+            this.canvas.height,
+            0,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            null
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+
+        // 深度附件让场景在离屏渲染时依然保留深度测试
+        gl.bindRenderbuffer(gl.RENDERBUFFER, pingDepthBuffer);
+        gl.renderbufferStorage(
+            gl.RENDERBUFFER,
+            gl.DEPTH_COMPONENT24,
+            this.canvas.width,
+            this.canvas.height
+        );
+        gl.bindRenderbuffer(gl.RENDERBUFFER, pongDepthBuffer);
+        gl.renderbufferStorage(
+            gl.RENDERBUFFER,
+            gl.DEPTH_COMPONENT24,
+            this.canvas.width,
+            this.canvas.height
+        );
+        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, pingFramebuffer);
         gl.framebufferTexture2D(
             gl.FRAMEBUFFER,
             gl.COLOR_ATTACHMENT0,
             gl.TEXTURE_2D,
             pingTexture2D,
             0
+        );
+        gl.framebufferRenderbuffer(
+            gl.FRAMEBUFFER,
+            gl.DEPTH_ATTACHMENT,
+            gl.RENDERBUFFER,
+            pingDepthBuffer
+        );
+        gl.bindFramebuffer(gl.FRAMEBUFFER, pongFramebuffer);
+        gl.framebufferTexture2D(
+            gl.FRAMEBUFFER,
+            gl.COLOR_ATTACHMENT0,
+            gl.TEXTURE_2D,
+            pongTexture2D,
+            0
+        );
+        gl.framebufferRenderbuffer(
+            gl.FRAMEBUFFER,
+            gl.DEPTH_ATTACHMENT,
+            gl.RENDERBUFFER,
+            pongDepthBuffer
         );
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.bindTexture(gl.TEXTURE_2D, null);
@@ -793,7 +855,14 @@ export class MapRenderer
         gl.enable(gl.DEPTH_TEST);
         gl.enable(gl.BLEND);
         gl.depthFunc(gl.LESS);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        // 分离式混合让 alpha 通道按 ONE / ONE_MINUS_SRC_ALPHA 累积，
+        // 避免多次叠加后 alpha 被重复乘衰
+        gl.blendFuncSeparate(
+            gl.SRC_ALPHA,
+            gl.ONE_MINUS_SRC_ALPHA,
+            gl.ONE,
+            gl.ONE_MINUS_SRC_ALPHA
+        );
 
         const data: IContextData = {
             tileProgram: tileProgram.program,
@@ -805,6 +874,7 @@ export class MapRenderer
             vertexBuffer,
             instancedBuffer,
             backgroundVertexBuffer: backVertexBuffer,
+            overlayBuffer,
             offsetPoolLocation: poolLocation,
             nowFrameLocation: frameLocation,
             tileSamplerLocation: tileSampler,
@@ -828,6 +898,8 @@ export class MapRenderer
             pongFramebuffer,
             pingTexture2D,
             pongTexture2D,
+            pingDepthBuffer,
+            pongDepthBuffer,
 
             tileTextureWidth: 4096,
             tileTextureHeight: 4096,
@@ -849,6 +921,7 @@ export class MapRenderer
         gl.deleteBuffer(data.vertexBuffer);
         gl.deleteBuffer(data.instancedBuffer);
         gl.deleteBuffer(data.backgroundVertexBuffer);
+        gl.deleteBuffer(data.overlayBuffer);
         gl.deleteProgram(data.tileProgram);
         gl.deleteProgram(data.backProgram);
         gl.deleteShader(data.tileVertShader);
@@ -857,6 +930,12 @@ export class MapRenderer
         gl.deleteShader(data.backFragShader);
         gl.deleteTexture(data.tileTexture);
         gl.deleteTexture(data.backgroundTexture);
+        gl.deleteTexture(data.pingTexture2D);
+        gl.deleteTexture(data.pongTexture2D);
+        gl.deleteFramebuffer(data.pingFramebuffer);
+        gl.deleteFramebuffer(data.pongFramebuffer);
+        gl.deleteRenderbuffer(data.pingDepthBuffer);
+        gl.deleteRenderbuffer(data.pongDepthBuffer);
         gl.deleteVertexArray(data.tileVAO);
         gl.deleteVertexArray(data.backVAO);
     }
@@ -1378,6 +1457,7 @@ export class MapRenderer
             tileProgram,
             tileTexture,
             instancedBuffer,
+            overlayBuffer,
             offsetPoolLocation,
             nowFrameLocation,
             tileTransformLocation,
@@ -1433,9 +1513,13 @@ export class MapRenderer
             this.viewportHeight
         );
 
+        // 不透明遍必须写深度，覆盖层的遮挡完全依赖这一次写入
+        gl.depthMask(true);
+
+        // 有启用的效果时先把场景画进 ping，效果需要读取整幅画面才能处理
         const postEffects = this.postEffects.filter(v => v.enabled);
 
-        if (postEffects.length > 1) {
+        if (postEffects.length > 0) {
             gl.bindFramebuffer(gl.FRAMEBUFFER, pingFramebuffer);
         } else {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -1479,8 +1563,13 @@ export class MapRenderer
 
         // 由于 WebGL2 没有 glDrawArraysInstancedBaseInstance，只能每次渲染的时候临时修改 VBO 读取方式
         const stride = INSTANCED_COUNT * 4;
+        const dynamicStart = this.vertex.dynamicStart;
         gl.bindBuffer(gl.ARRAY_BUFFER, instancedBuffer);
         area.render.forEach(v => {
+            // 动态图块改由覆盖层绘制，这里把动态尾部裁掉避免重复绘制
+            const end = Math.min(v.endIndex, dynamicStart);
+            const count = end - v.startIndex;
+            if (count <= 0) return;
             const s = v.startIndex * INSTANCED_COUNT;
             const o1 = s + 0;
             const o2 = o1 + 4 * 4;
@@ -1490,30 +1579,63 @@ export class MapRenderer
             gl.vertexAttribPointer(texCoord, 4, gl.FLOAT, false, stride, o2);
             gl.vertexAttribPointer(tileData, 4, gl.FLOAT, false, stride, o3);
             gl.vertexAttribPointer(texData, 4, gl.FLOAT, false, stride, o4);
-            gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, v.count);
+            gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
         });
+
+        // 覆盖层最后画，它依赖不透明遍已经写入的深度做遮挡
+        let overlayCount = this.vertex.getOverlayCount();
+        if (this.vertex.isOverlayDirty()) {
+            // 顶点数组已在上传前 flush，这里只把结果排序并组装成暂存数组
+            const overlayArray = this.vertex.getOverlayArray();
+            overlayCount = this.vertex.getOverlayCount();
+            if (overlayCount > 0) {
+                // 只上传已组装的实例数量，暂存数组尾部可能还留着上一次的残留
+                gl.bindBuffer(gl.ARRAY_BUFFER, overlayBuffer);
+                gl.bufferData(
+                    gl.ARRAY_BUFFER,
+                    overlayArray.subarray(0, overlayCount * INSTANCED_COUNT),
+                    gl.DYNAMIC_DRAW
+                );
+            }
+        }
+
+        // 没有覆盖层条目时跳过整段绘制，避免无意义的缓冲区绑定
+        if (overlayCount > 0) {
+            // 关闭深度写入：覆盖层彼此靠提交顺序混合，写深度会裁掉后提交的同深度面
+            gl.depthMask(false);
+            gl.bindBuffer(gl.ARRAY_BUFFER, overlayBuffer);
+            // WebGL2 没有 baseInstance，每次绘制都要重设四个实例属性指针
+            gl.vertexAttribPointer(tilePos, 4, gl.FLOAT, false, stride, 0);
+            gl.vertexAttribPointer(texCoord, 4, gl.FLOAT, false, stride, 4 * 4);
+            gl.vertexAttribPointer(tileData, 4, gl.FLOAT, false, stride, 8 * 4);
+            gl.vertexAttribPointer(texData, 4, gl.FLOAT, false, stride, 12 * 4);
+            gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, overlayCount);
+            // 恢复深度写入，避免污染下一帧的不透明遍与后处理链
+            gl.depthMask(true);
+        }
+
         gl.bindVertexArray(null);
         gl.bindTexture(gl.TEXTURE_2D_ARRAY, null);
 
         // Post effects
-        let inputTextrue = pongTexture2D;
-        let outputFBO: WebGLFramebuffer | null = pingFramebuffer;
+        // 场景已经渲染进 ping 帧缓冲，因此第一个效果读取 ping 的颜色纹理
+        let inputTextrue = pingTexture2D;
+        let outputFBO: WebGLFramebuffer | null = pongFramebuffer;
 
         postEffects.forEach((v, i, a) => {
+            if (i === a.length - 1) {
+                // 最后一个效果直接写默认帧缓冲上屏，不再多一次拷贝
+                v.render(gl, inputTextrue, null, data);
+                return;
+            }
+            // 读写必须落在不同帧缓冲上，否则会形成读自己正在写的纹理的反馈环
             v.render(gl, inputTextrue, outputFBO, data);
-            if (inputTextrue === pongTexture2D) {
+            if (outputFBO === pingFramebuffer) {
                 inputTextrue = pingTexture2D;
+                outputFBO = pongFramebuffer;
             } else {
                 inputTextrue = pongTexture2D;
-            }
-            if (i === a.length - 2) {
-                outputFBO = null;
-            } else {
-                if (outputFBO === pingFramebuffer) {
-                    outputFBO = pongFramebuffer;
-                } else {
-                    outputFBO = pingFramebuffer;
-                }
+                outputFBO = pingFramebuffer;
             }
         });
 
@@ -1581,11 +1703,11 @@ export class MapRenderer
     /**
      * 扩大移动数组
      */
-    private expandMoving() {
-        const start = this.movingCount;
-        this.movingCount *= 2;
-        this.vertex.expandMoving(this.movingCount);
-        this.movingIndexPool.push(
+    private expandOverlay() {
+        const start = this.overlayCount;
+        this.overlayCount *= 2;
+        this.vertex.expandOverlay(this.overlayCount);
+        this.overlayIndexPool.push(
             // 翻转数组是因为这样的话内容会优先取到低索引的内容，更容易优化
             ...Array.from({ length: start }, (_, i) => i + start).reverse()
         );
@@ -1594,73 +1716,110 @@ export class MapRenderer
     /**
      * 减小移动数组
      */
-    private reduceMoving() {
-        const half = Math.round(this.movingCount / 2);
+    private reduceOverlay() {
+        const half = Math.round(this.overlayCount / 2);
         if (half < DYNAMIC_RESERVE) return;
-        for (const moving of this.movingBlock) {
+        for (const moving of this.overlayBlocks) {
             if (moving.index >= half) return;
         }
-        this.vertex.reduceMoving(half);
+        this.vertex.reduceOverlay(half);
     }
 
     /**
      * 申请移动索引
      * @returns 移动索引
      */
-    private requireMovingIndex(): number {
-        if (this.movingIndexPool.length === 0) {
-            this.expandMoving();
+    private requireOverlayIndex(): number {
+        if (this.overlayIndexPool.length === 0) {
+            this.expandOverlay();
         }
         const half = Math.max(
-            Math.round(this.movingCount / 2),
+            Math.round(this.overlayCount / 2),
             DYNAMIC_RESERVE
         );
-        if (this.movingIndexPool.length < half) {
+        if (this.overlayIndexPool.length < half) {
             this.lastExpandTime = this.timestamp;
         }
-        return this.movingIndexPool.pop()!;
+        return this.overlayIndexPool.pop()!;
     }
 
     /**
      * 退回移动索引
      * @param index 退回的索引
      */
-    private returnMovingIndex(index: number) {
-        this.movingIndexPool.push(index);
+    private returnOverlayIndex(index: number) {
+        this.overlayIndexPool.push(index);
     }
 
-    addMovingBlock(
+    addOverlayBlock(
         layer: IMapLayer,
         block: number | IMaterialFramedData,
         x: number,
         y: number
-    ): IMovingBlock {
-        const index = this.requireMovingIndex();
-        const moving = new MovingBlock(this, index, layer, block);
-        moving.setPos(x, y);
-        this.movingBlock.add(moving);
-        this.movingIndexMap.set(index, moving);
-        this.vertex.updateMoving(moving, true);
-        return moving;
+    ): IOverlayBlock {
+        let texture: IMaterialFramedData;
+        let tile: number;
+        if (typeof block === 'number') {
+            texture = this.manager.getTile(block)!;
+            tile = block;
+        } else {
+            if (!this.manager.assetContainsTexture(block.texture)) {
+                logger.error(34);
+            }
+            if (this.getOffsetIndex(block.offset) === -1) {
+                logger.error(41);
+            }
+            texture = block;
+            tile = -1;
+        }
+        const overlay = this.createOverlayBlock(layer, 1, texture, tile);
+        overlay.setPos(x, y);
+        this.vertex.updateOverlay(overlay, true);
+        this.requestUpdate();
+        return overlay;
     }
 
-    getMovingBlock(): Set<IMovingBlock> {
-        return this.movingBlock;
+    createOverlayBlock(
+        layer: IMapLayer,
+        priority: number,
+        texture: IMaterialFramedData,
+        tile: number
+    ): IOverlayBlock {
+        const index = this.requireOverlayIndex();
+        const block = new OverlayBlock(
+            layer,
+            priority,
+            index,
+            texture,
+            tile,
+            this
+        );
+        this.overlayBlocks.add(block);
+        this.overlayIndexMap.set(index, block);
+        return block;
     }
 
-    getMovingBlockByIndex(index: number): IMovingBlock | null {
-        return this.movingIndexMap.get(index) ?? null;
+    getOverlayBlocks(): Set<IOverlayBlock> {
+        return this.overlayBlocks;
     }
 
-    deleteMoving(block: IMovingBlock): void {
-        this.returnMovingIndex(block.index);
-        this.movingBlock.delete(block);
-        this.movingIndexMap.delete(block.index);
-        this.vertex.deleteMoving(block);
+    getOverlayBlockByIndex(index: number): IOverlayBlock | null {
+        return this.overlayIndexMap.get(index) ?? null;
     }
 
-    hasMoving(moving: IMovingBlock): boolean {
-        return this.movingBlock.has(moving);
+    deleteOverlayBlock(block: IOverlayBlock): void {
+        if (!this.overlayBlocks.has(block)) return;
+        this.returnOverlayIndex(block.index);
+        this.overlayBlocks.delete(block);
+        this.overlayIndexMap.delete(block.index);
+        this.vertex.deleteOverlay(block);
+        this.requestUpdate();
+    }
+
+    deleteOverlayBlockByIndex(index: number): void {
+        const block = this.overlayIndexMap.get(index);
+        if (!block) return;
+        this.deleteOverlayBlock(block);
     }
 
     //#endregion
@@ -1677,7 +1836,7 @@ export class MapRenderer
         // 移动数组
         const expandDT = timestamp - this.lastExpandTime;
         if (expandDT > MOVING_TOLERANCE * 1000) {
-            this.reduceMoving();
+            this.reduceOverlay();
             this.lastExpandTime = timestamp;
         }
 
@@ -1699,16 +1858,6 @@ export class MapRenderer
         }
 
         this.tickers.forEach(v => void v.fn(timestamp));
-
-        // 图块移动
-        if (this.movingBlock.size > 0) {
-            const toUpdate: IMovingBlock[] = [];
-            this.movingBlock.forEach(v => {
-                const move = v.stepMoving(timestamp);
-                if (move) toUpdate.push(v);
-            });
-            this.vertex.updateMovingList(toUpdate, false);
-        }
     }
 
     requestTicker(fn: (timestamp: number) => void): IMapRendererTicker {
@@ -1736,6 +1885,7 @@ export class MapRenderer
             this.needUpdateBackgroundFrame ||
             this.needUpdateTransform ||
             this.vertex.dynamicRenderDirty ||
+            this.vertex.isOverlayDirty() ||
             this.needUpdateOffsetPool
         );
     }

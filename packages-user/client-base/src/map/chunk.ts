@@ -1,23 +1,23 @@
 import { clamp } from 'lodash-es';
 import {
-    IBlockData,
-    IBlockIndex,
-    IBlockInfo,
+    IChunkData,
+    IChunkIndex,
+    IChunkInfo,
     IBlockSplitter,
-    IBlockSplitterConfig
+    IChunkSplitterConfig
 } from './types';
 import { ISearchable8Dir } from '@motajs/common';
 
 export class BlockSplitter<T> implements IBlockSplitter<T> {
-    blockWidth: number = 0;
-    blockHeight: number = 0;
-    dataWidth: number = 0;
-    dataHeight: number = 0;
+    chunkWidth: number = 0;
+    chunkHeight: number = 0;
+    elWidth: number = 0;
+    elHeight: number = 0;
     width: number = 1;
     height: number = 1;
 
     /** 分块映射 */
-    readonly blockMap: Map<number, IBlockData<T>> = new Map();
+    readonly blockMap: Map<number, IChunkData<T>> = new Map();
 
     /** 数据宽度配置 */
     private splitDataWidth: number = 0;
@@ -37,17 +37,17 @@ export class BlockSplitter<T> implements IBlockSplitter<T> {
         return x >= 0 && y >= 0 && x < this.width && y < this.height;
     }
 
-    getBlockByLoc(x: number, y: number): IBlockData<T> | null {
+    getChunkByLoc(x: number, y: number): IChunkData<T> | null {
         if (!this.checkLocRange(x, y)) return null;
         const index = y * this.width + x;
         return this.blockMap.get(index) ?? null;
     }
 
-    getBlockByIndex(index: number): IBlockData<T> | null {
+    getChunkByIndex(index: number): IChunkData<T> | null {
         return this.blockMap.get(index) ?? null;
     }
 
-    setBlockByLoc(data: T, x: number, y: number): IBlockData<T> | null {
+    setChunkByLoc(data: T, x: number, y: number): IChunkData<T> | null {
         if (!this.checkLocRange(x, y)) return null;
         const index = y * this.width + x;
         const block = this.blockMap.get(index);
@@ -56,66 +56,69 @@ export class BlockSplitter<T> implements IBlockSplitter<T> {
         return block;
     }
 
-    setBlockByIndex(data: T, index: number): IBlockData<T> | null {
+    setChunkByIndex(data: T, index: number): IChunkData<T> | null {
         const block = this.blockMap.get(index);
         if (!block) return null;
         block.data = data;
         return block;
     }
 
-    *iterateBlockByLoc(x: number, y: number): Generator<IBlockIndex, void> {
+    *iterateElementsOfChunk(
+        x: number,
+        y: number
+    ): Generator<IChunkIndex, void> {
         if (!this.checkLocRange(x, y)) return;
         const index = y * this.width + x;
-        yield* this.iterateBlockByIndex(index);
+        yield* this.iterateElementsOfChunkIndex(index);
     }
 
-    *iterateBlockByIndex(index: number): Generator<IBlockIndex, void> {
+    *iterateElementsOfChunkIndex(index: number): Generator<IChunkIndex, void> {
         const block = this.blockMap.get(index);
         if (!block) return;
-        const startX = block.x * this.blockWidth;
-        const startY = block.y * this.blockHeight;
+        const startX = block.x * this.chunkWidth;
+        const startY = block.y * this.chunkHeight;
         const endX = startX + block.width;
         const endY = startY + block.height;
         for (let ny = startY; ny < endY; ny++) {
             for (let nx = startX; nx < endX; nx++) {
-                const index: IBlockIndex = {
+                const index: IChunkIndex = {
                     x: nx,
                     y: ny,
-                    dataX: nx * this.blockWidth,
-                    dataY: ny * this.blockHeight,
-                    index: ny * this.dataWidth + nx
+                    elX: nx * this.chunkWidth,
+                    elY: ny * this.chunkHeight,
+                    index: ny * this.elWidth + nx
                 };
                 yield index;
             }
         }
     }
 
-    *iterateBlockByIndices(
+    *iterateElementsOfChunks(
         indices: Iterable<number>
-    ): Generator<IBlockIndex, void> {
+    ): Generator<IChunkIndex, void> {
         for (const index of indices) {
-            yield* this.iterateBlockByIndex(index);
+            yield* this.iterateElementsOfChunkIndex(index);
         }
     }
 
-    iterateBlocks(): Iterable<IBlockData<T>> {
+    iterateChunks(): Iterable<IChunkData<T>> {
         return this.blockMap.values();
     }
 
-    *iterateBlocksOfDataArea(
+    *iterateChunksOfElementArea(
         x: number,
         y: number,
         width: number,
         height: number
-    ): Generator<IBlockData<T>> {
+    ): Generator<IChunkData<T>> {
         const r = this.width - 1;
         const b = this.height - 1;
         const rx = x + width;
         const by = y + height;
-        const left = clamp(Math.floor(x / this.blockWidth), 0, r);
-        const top = clamp(Math.floor(y / this.blockHeight), 0, b);
-        const right = clamp(Math.floor(rx / this.blockWidth), 0, r);
-        const bottom = clamp(Math.floor(by / this.blockHeight), 0, b);
+        const left = clamp(Math.floor(x / this.chunkWidth), 0, r);
+        const top = clamp(Math.floor(y / this.chunkHeight), 0, b);
+        const right = clamp(Math.floor(rx / this.chunkWidth), 0, r);
+        const bottom = clamp(Math.floor(by / this.chunkHeight), 0, b);
         for (let ny = left; ny <= right; ny++) {
             for (let nx = top; nx <= bottom; nx++) {
                 const index = ny * this.width + nx;
@@ -126,12 +129,12 @@ export class BlockSplitter<T> implements IBlockSplitter<T> {
         }
     }
 
-    getIndexByLoc(x: number, y: number): number {
+    getChunkIndexByLoc(x: number, y: number): number {
         if (!this.checkLocRange(x, y)) return -1;
         return y * this.width + x;
     }
 
-    getLocByIndex(index: number): Loc | null {
+    getChunkLocByIndex(index: number): Loc | null {
         if (index >= this.width * this.height) return null;
         return {
             x: index % this.width,
@@ -139,65 +142,65 @@ export class BlockSplitter<T> implements IBlockSplitter<T> {
         };
     }
 
-    getIndicesByLocList(list: Iterable<Loc>): Iterable<number> {
+    getChunkIndicesByLocList(list: Iterable<Loc>): Iterable<number> {
         const res: number[] = [];
         for (const { x, y } of list) {
-            res.push(this.getIndexByLoc(x, y));
+            res.push(this.getChunkIndexByLoc(x, y));
         }
         return res;
     }
 
-    getLocListByIndices(list: Iterable<number>): Iterable<Loc | null> {
+    getChunkLocByIndices(list: Iterable<number>): Iterable<Loc | null> {
         const res: (Loc | null)[] = [];
         for (const index of list) {
-            res.push(this.getLocByIndex(index));
+            res.push(this.getChunkLocByIndex(index));
         }
         return res;
     }
 
-    getBlockByDataLoc(x: number, y: number): IBlockData<T> | null {
-        const bx = Math.floor(x / this.blockWidth);
-        const by = Math.floor(y / this.blockHeight);
+    getChunkByElementLoc(x: number, y: number): IChunkData<T> | null {
+        const bx = Math.floor(x / this.chunkWidth);
+        const by = Math.floor(y / this.chunkHeight);
         if (!this.checkLocRange(bx, by)) return null;
         const index = by * this.width + bx;
         return this.blockMap.get(index) ?? null;
     }
 
-    getBlockByDataIndex(index: number): IBlockData<T> | null {
-        const x = index % this.dataWidth;
-        const y = Math.floor(index / this.dataWidth);
-        return this.getBlockByDataLoc(x, y);
+    getChunkByElementIndex(index: number): IChunkData<T> | null {
+        const x = index % this.elWidth;
+        const y = Math.floor(index / this.elWidth);
+        return this.getChunkByElementLoc(x, y);
     }
 
     getIndicesByDataLocList(list: Iterable<Loc>): Set<number> {
         const res = new Set<number>();
         for (const { x, y } of list) {
-            const bx = Math.floor(x / this.blockWidth);
-            const by = Math.floor(y / this.blockHeight);
+            const bx = Math.floor(x / this.chunkWidth);
+            const by = Math.floor(y / this.chunkHeight);
             if (!this.checkLocRange(bx, by)) continue;
             res.add(bx + by * this.width);
         }
         return res;
     }
 
-    getIndicesByDataIndices(list: Iterable<number>): Set<number> {
+    getChunkIndicesByElementIndices(list: Iterable<number>): Set<number> {
         const res = new Set<number>();
         for (const index of list) {
-            const x = index % this.dataWidth;
-            const y = Math.floor(index / this.dataWidth);
-            const bx = Math.floor(x / this.blockWidth);
-            const by = Math.floor(y / this.blockHeight);
+            const x = index % this.elWidth;
+            const y = Math.floor(index / this.elWidth);
+            const bx = Math.floor(x / this.chunkWidth);
+            const by = Math.floor(y / this.chunkHeight);
             if (!this.checkLocRange(bx, by)) continue;
             res.add(bx + by * this.width);
         }
         return res;
     }
 
-    getBlocksByDataLocList(list: Iterable<Loc>): Set<IBlockData<T>> {
-        const res = new Set<IBlockData<T>>();
+    getChunksByElementLocList(list: Iterable<Loc>): Set<IChunkData<T>> {
+        const res = new Set<IChunkData<T>>();
         for (const { x, y } of list) {
-            const bx = Math.floor(x / this.blockWidth);
-            const by = Math.floor(y / this.blockHeight);
+            const bx = Math.floor(x / this.chunkWidth);
+            const by = Math.floor(y / this.chunkHeight);
             if (!this.checkLocRange(bx, by)) continue;
             const index = bx + by * this.width;
             const data = this.blockMap.get(index);
@@ -206,13 +209,13 @@ export class BlockSplitter<T> implements IBlockSplitter<T> {
         return res;
     }
 
-    getBlocksByDataIndices(list: Iterable<number>): Set<IBlockData<T>> {
-        const res = new Set<IBlockData<T>>();
+    getChunksByElementIndices(list: Iterable<number>): Set<IChunkData<T>> {
+        const res = new Set<IChunkData<T>>();
         for (const index of list) {
-            const x = index % this.dataWidth;
-            const y = Math.floor(index / this.dataWidth);
-            const bx = Math.floor(x / this.blockWidth);
-            const by = Math.floor(y / this.blockHeight);
+            const x = index % this.elWidth;
+            const y = Math.floor(index / this.elWidth);
+            const bx = Math.floor(x / this.chunkWidth);
+            const by = Math.floor(y / this.chunkHeight);
             if (!this.checkLocRange(bx, by)) continue;
             const blockIndex = bx + by * this.width;
             const data = this.blockMap.get(blockIndex);
@@ -221,11 +224,11 @@ export class BlockSplitter<T> implements IBlockSplitter<T> {
         return res;
     }
 
-    configSplitter(config: IBlockSplitterConfig): void {
-        this.splitDataWidth = config.dataWidth;
-        this.splitDataHeight = config.dataHeight;
-        this.splitBlockWidth = config.blockWidth;
-        this.splitBlockHeight = config.blockHeight;
+    configSplitter(config: IChunkSplitterConfig): void {
+        this.splitDataWidth = config.elWidth;
+        this.splitDataHeight = config.elHeight;
+        this.splitBlockWidth = config.chunkWidth;
+        this.splitBlockHeight = config.chunkHeight;
     }
 
     private mapBlock(
@@ -234,15 +237,15 @@ export class BlockSplitter<T> implements IBlockSplitter<T> {
         realWidth: number,
         width: number,
         height: number,
-        fn: (block: IBlockInfo) => T
+        fn: (block: IChunkInfo) => T
     ) {
         const index = y * realWidth + x;
-        const block: IBlockInfo = {
+        const block: IChunkInfo = {
             index,
             x,
             y,
-            dataX: x * this.blockWidth,
-            dataY: y * this.blockHeight,
+            elX: x * this.chunkWidth,
+            elY: y * this.chunkHeight,
             width,
             height
         };
@@ -251,12 +254,12 @@ export class BlockSplitter<T> implements IBlockSplitter<T> {
         this.blockMap.set(index, blockData);
     }
 
-    splitBlocks(mapFn: (block: IBlockInfo) => T): void {
+    splitChunks(mapFn: (block: IChunkInfo) => T): void {
         this.blockMap.clear();
-        this.blockWidth = this.splitBlockWidth;
-        this.blockHeight = this.splitBlockHeight;
-        this.dataWidth = this.splitDataWidth;
-        this.dataHeight = this.splitDataHeight;
+        this.chunkWidth = this.splitBlockWidth;
+        this.chunkHeight = this.splitBlockHeight;
+        this.elWidth = this.splitDataWidth;
+        this.elHeight = this.splitDataHeight;
         const restX = this.splitDataWidth % this.splitBlockWidth;
         const restY = this.splitDataHeight % this.splitBlockHeight;
         const width = Math.floor(this.splitDataWidth / this.splitBlockWidth);
@@ -264,8 +267,8 @@ export class BlockSplitter<T> implements IBlockSplitter<T> {
         const hasXRest = restX > 0;
         const hasYRest = restY > 0;
         const realWidth = hasXRest ? width + 1 : width;
-        const bw = this.blockWidth;
-        const bh = this.blockHeight;
+        const bw = this.chunkWidth;
+        const bh = this.chunkHeight;
         this.width = realWidth;
         this.height = hasYRest ? height + 1 : height;
         for (let ny = 0; ny < height; ny++) {
@@ -289,64 +292,64 @@ export class BlockSplitter<T> implements IBlockSplitter<T> {
     }
 }
 
-class SplittedBlockData<T> implements IBlockData<T>, ISearchable8Dir {
+class SplittedBlockData<T> implements IChunkData<T>, ISearchable8Dir {
     width: number;
     height: number;
     x: number;
     y: number;
-    dataX: number;
-    dataY: number;
+    elX: number;
+    elY: number;
     index: number;
     data: T;
 
     constructor(
         readonly splitter: BlockSplitter<T>,
-        info: IBlockInfo,
+        info: IChunkInfo,
         data: T
     ) {
         this.width = info.width;
         this.height = info.height;
         this.x = info.x;
         this.y = info.y;
-        this.dataX = info.dataX;
-        this.dataY = info.dataY;
+        this.elX = info.elX;
+        this.elY = info.elY;
         this.index = info.index;
         this.data = data;
     }
 
-    left(): IBlockData<T> | null {
-        return this.splitter.getBlockByLoc(this.x - 1, this.y);
+    left(): IChunkData<T> | null {
+        return this.splitter.getChunkByLoc(this.x - 1, this.y);
     }
 
-    right(): IBlockData<T> | null {
-        return this.splitter.getBlockByLoc(this.x + 1, this.y);
+    right(): IChunkData<T> | null {
+        return this.splitter.getChunkByLoc(this.x + 1, this.y);
     }
 
-    up(): IBlockData<T> | null {
-        return this.splitter.getBlockByLoc(this.x, this.y - 1);
+    up(): IChunkData<T> | null {
+        return this.splitter.getChunkByLoc(this.x, this.y - 1);
     }
 
-    down(): IBlockData<T> | null {
-        return this.splitter.getBlockByLoc(this.x, this.y + 1);
+    down(): IChunkData<T> | null {
+        return this.splitter.getChunkByLoc(this.x, this.y + 1);
     }
 
-    leftUp(): IBlockData<T> | null {
-        return this.splitter.getBlockByLoc(this.x - 1, this.y - 1);
+    leftUp(): IChunkData<T> | null {
+        return this.splitter.getChunkByLoc(this.x - 1, this.y - 1);
     }
 
-    leftDown(): IBlockData<T> | null {
-        return this.splitter.getBlockByLoc(this.x - 1, this.y + 1);
+    leftDown(): IChunkData<T> | null {
+        return this.splitter.getChunkByLoc(this.x - 1, this.y + 1);
     }
 
-    rightUp(): IBlockData<T> | null {
-        return this.splitter.getBlockByLoc(this.x + 1, this.y - 1);
+    rightUp(): IChunkData<T> | null {
+        return this.splitter.getChunkByLoc(this.x + 1, this.y - 1);
     }
 
-    rightDown(): IBlockData<T> | null {
-        return this.splitter.getBlockByLoc(this.x + 1, this.y + 1);
+    rightDown(): IChunkData<T> | null {
+        return this.splitter.getChunkByLoc(this.x + 1, this.y + 1);
     }
 
-    next(): IBlockData<T> | null {
-        return this.splitter.getBlockByIndex(this.index + 1);
+    next(): IChunkData<T> | null {
+        return this.splitter.getChunkByIndex(this.index + 1);
     }
 }

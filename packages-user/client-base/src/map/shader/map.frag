@@ -11,7 +11,8 @@ uniform sampler2DArray u_sampler;
 void main() {
     vec4 texColor = texture(u_sampler, v_texCoord.xyz);
     float alpha = texColor.a * v_texCoord.a;
-    // todo: 透明像素应该如何解决？？
-    if (alpha < 0.1) discard;
+    // 低于阈值的透明像素直接 discard 来避免写深度区
+    // 这里主要是为了剔除非透明素材的透明像素，如果素材有半透明像素需要单独声明为半透明素材
+    if (alpha < 0.004) discard;
     outColor = vec4(texColor.rgb, alpha);
 }

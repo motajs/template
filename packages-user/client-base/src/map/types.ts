@@ -1,4 +1,4 @@
-import { IDirtyMark, IDirtyTracker } from '@motajs/common';
+import { IDirtyMark, IDirtyTracker, ITileLocator } from '@motajs/common';
 import {
     ITextureRenderable,
     SizedCanvasImageSource,
@@ -11,7 +11,13 @@ import {
     ITrackedAssetData
 } from '@user/client-base';
 import { IGameMap, IMapLayer } from '@user/data-base';
-import { TimingFn } from 'mutate-animate';
+import {
+    ExcitationCurve,
+    ExcitationCurve2D,
+    IExcitable
+} from '@motajs/animate';
+
+//#region 枚举值
 
 export const enum MapBackgroundRepeat {
     /** 直接重复 */
@@ -44,6 +50,10 @@ export const enum MapTileAlign {
     /** 对于水平对齐，表示与格子右侧对齐；对于竖直对齐，表示与格子下侧对齐 */
     End
 }
+
+//#endregion
+
+//#region 渲染配置
 
 export interface IMapBackgroundConfig {
     /** 是否使用图片大小作为背景图渲染大小，如果是 `false`，则使用 `renderWidth` `renderHeight` 作为渲染大小 */
@@ -122,6 +132,8 @@ export interface IContextData {
     readonly instancedBuffer: WebGLBuffer;
     /** 背景顶点数组 */
     readonly backgroundVertexBuffer: WebGLBuffer;
+    /** 覆盖层实例化数据数组 */
+    readonly overlayBuffer: WebGLBuffer;
     /** 图块纹理对象 */
     readonly tileTexture: WebGLTexture;
     /** 背景纹理对象 */
@@ -139,6 +151,10 @@ export interface IContextData {
     readonly pingTexture2D: WebGLTexture;
     /** 第二个 texture2D */
     readonly pongTexture2D: WebGLTexture;
+    /** 第一个 framebuffer 的深度缓冲 */
+    readonly pingDepthBuffer: WebGLRenderbuffer;
+    /** 第二个 framebuffer 的深度缓冲 */
+    readonly pongDepthBuffer: WebGLRenderbuffer;
 
     /** 当前画布的图块纹理宽度 */
     tileTextureWidth: number;
@@ -159,12 +175,15 @@ export interface IContextData {
     vertexMark: IDirtyMark;
 }
 
+//#endregion
+
 export interface IBlockStatus {
     /** 图块所属图层 */
     readonly layer: IMapLayer;
 
     /**
-     * 设置图块的不透明度
+     * 设置图块的不透明度。静态图块设置小于 1 的不透明度会自动提升为覆盖层图块，
+     * 覆盖层图块设置为 1 不会降级回静态层。
      * @param alpha 图块不透明度
      */
     setAlpha(alpha: number): void;
@@ -191,20 +210,31 @@ export interface IBlockStatus {
     getFrame(): number;
 }
 
-export interface IMovingBlock extends IBlockStatus {
-    /** 移动图块的索引 */
+export interface IOverlayBlock extends IBlockStatus {
+    /** 所属图层 */
+    readonly layer: IMapLayer;
+    /** 同一排序位置时的绘制优先级，数值小的先绘制，显示在优先级更高者的下面 */
+    readonly priority: number;
+    /** 覆盖层实例数组索引，由渲染器分配并保证唯一 */
     readonly index: number;
-    /** 图块数字 */
-    readonly tile: number;
-    /** 图块横坐标 */
+    /** 横坐标，可为小数 */
     readonly x: number;
-    /** 图块纵坐标 */
+    /** 纵坐标，可为小数 */
     readonly y: number;
     /** 图块使用的纹理 */
     readonly texture: IMaterialFramedData;
+    /** 所属的地图渲染器 */
+    readonly renderer: IMapRenderer;
 
     /**
-     * 直接设置图块的位置，动画中设置无效
+     * 设置图块的不透明度。覆盖层图块设置为 1 时仍留在覆盖层，
+     * 不会自动降级回静态层。
+     * @param alpha 目标不透明度
+     */
+    setAlpha(alpha: number): void;
+
+    /**
+     * 直接设置图块的位置，可以填写小数
      * @param x 目标横坐标
      * @param y 目标纵坐标
      */
@@ -217,6 +247,33 @@ export interface IMovingBlock extends IBlockStatus {
     setTexture(texture: IMaterialFramedData): void;
 
     /**
+     * 使用图块默认帧数（如果图块存在的话）
+     */
+    useDefaultFrame(): void;
+
+    /**
+     * 摧毁这个移动图块对象，之后不会再显示到画面上
+     */
+    destroy(): void;
+
+    /**
+     * 把覆盖层实例数据写回目标静态图块，重算静态纵坐标与位置，
+     * 删除当前覆盖层图块并释放索引，图块数据由调用方维护。
+     * @param layer 目标图块所属的图层
+     * @param x 目标图块横坐标
+     * @param y 目标图块纵坐标
+     */
+    toStatic(layer: IMapLayer, x: number, y: number): void;
+}
+
+export interface IRenderBlockMover extends IExcitable<number> {
+    /**
+     * 绑定要移动的覆盖层图块
+     * @param block 要移动的覆盖层图块
+     */
+    bind(block: IOverlayBlock): void;
+
+    /**
      * 沿直线移动到目标点
      * @param x 目标横坐标，可以填小数
      * @param y 目标纵坐标，可以填小数
@@ -226,7 +283,7 @@ export interface IMovingBlock extends IBlockStatus {
         x: number,
         y: number,
         time: number,
-        timing?: TimingFn
+        timing?: ExcitationCurve
     ): Promise<this>;
 
     /**
@@ -234,7 +291,11 @@ export interface IMovingBlock extends IBlockStatus {
      * @param curve 移动曲线，接收完成度作为参数，输出图块应该在的位置
      * @param timing 移动的速率曲线，默认为匀速移动
      */
-    moveAs(curve: TimingFn<2>, time: number, timing?: TimingFn): Promise<this>;
+    moveAs(
+        curve: ExcitationCurve2D,
+        time: number,
+        timing?: ExcitationCurve
+    ): Promise<this>;
 
     /**
      * 按照指定曲线移动，使用相对模式，即 `curve` 输出值与原始坐标相加得到当前位置
@@ -242,42 +303,16 @@ export interface IMovingBlock extends IBlockStatus {
      * @param timing 移动的速率曲线，默认为匀速移动
      */
     moveRelative(
-        curve: TimingFn<2>,
+        curve: ExcitationCurve2D,
         time: number,
-        timing?: TimingFn
+        timing?: ExcitationCurve
     ): Promise<this>;
 
     /**
-     * 进行一步动画移动效果
-     * @param timestamp 当前时间戳
-     * @returns 图块是否发生了移动
+     * 立刻结束当前移动
+     * @param keep 图块保持在当前移动的位置（true）还是瞬移到目标位置（false），默认为后者
      */
-    stepMoving(timestamp: number): boolean;
-
-    /**
-     * 立刻停止移动
-     */
-    endMoving(): void;
-
-    /**
-     * 使用图块默认帧数（如果图块存在的话）
-     */
-    useDefaultFrame(): void;
-
-    /**
-     * 摧毁这个移动图块对象，之后不会再显示到画面上
-     */
-    destroy(): void;
-}
-
-export interface IMapRendererTicker {
-    /** 当前的时间戳 */
-    readonly timestamp: number;
-
-    /**
-     * 移除这个帧函数
-     */
-    remove(): void;
+    endMoving(keep?: boolean): void;
 }
 
 export interface IMapRendererPostEffect {
@@ -524,36 +559,55 @@ export interface IMapRenderer {
     setCellSize(width: number, height: number): void;
 
     /**
-     * 添加一个移动图块
+     * 添加一个覆盖层图块
      * @param layer 图块所属的图层
      * @param block 图块数字或图块的素材对象，要求可渲染对象的图像源必须出现在图集中
      * @param x 图块初始横坐标，可以填小数
      * @param y 图块初始纵坐标，可以填小数
-     * @returns 移动图块对象，可以用于控制图块移动
      */
-    addMovingBlock(
+    addOverlayBlock(
         layer: IMapLayer,
         block: number | IMaterialFramedData,
         x: number,
         y: number
-    ): Readonly<IMovingBlock>;
+    ): IOverlayBlock;
 
     /**
-     * 获取所有的移动图块
+     * 获取所有的覆盖层图块
      */
-    getMovingBlock(): Set<Readonly<IMovingBlock>>;
+    getOverlayBlocks(): Set<IOverlayBlock>;
 
     /**
-     * 根据索引获取移动图块对象
-     * @param index 移动图块索引
+     * 根据索引获取覆盖层图块对象
+     * @param index 覆盖层图块索引
      */
-    getMovingBlockByIndex(index: number): Readonly<IMovingBlock> | null;
+    getOverlayBlockByIndex(index: number): IOverlayBlock | null;
 
     /**
-     * 进行一帧更新
-     * @param timestamp 时间戳
+     * 删除指定的覆盖层图块
+     * @param block 覆盖层图块对象
      */
-    tick(timestamp: number): void;
+    deleteOverlayBlock(block: IOverlayBlock): void;
+
+    /**
+     * 根据索引删除覆盖层图块
+     * @param index 覆盖层图块索引
+     */
+    deleteOverlayBlockByIndex(index: number): void;
+
+    /**
+     * 分配覆盖层索引、创建并登记覆盖层图块，不写实例数据
+     * @param layer 图块所属的图层
+     * @param priority 绘制优先级，数值小的先绘制
+     * @param texture 图块使用的纹理
+     * @param tile 图块数字，-1 表示不是由图块数字创建
+     */
+    createOverlayBlock(
+        layer: IMapLayer,
+        priority: number,
+        texture: IMaterialFramedData,
+        tile: number
+    ): IOverlayBlock;
 
     /**
      * 获取指定图层的指定图块的状态信息，可以设置与获取图块状态。多次调用的返回值不同引用。
@@ -567,12 +621,6 @@ export interface IMapRenderer {
      * 当前地图状态是否发生改变，需要更新
      */
     needUpdate(): boolean;
-
-    /**
-     * 添加一个每帧执行的函数
-     * @param fn 每帧执行的函数
-     */
-    requestTicker(fn: (timestamp: number) => void): IMapRendererTicker;
 }
 
 export interface IMapVertexArray {
@@ -591,236 +639,236 @@ export interface IMapVertexArray {
     readonly dynamicCount: number;
 }
 
-export interface IBlockIndex {
+export interface IChunkIndex {
     /** 横坐标 */
     readonly x: number;
     /** 纵坐标 */
     readonly y: number;
     /** 分块左上角数据的横坐标 */
-    readonly dataX: number;
+    readonly elX: number;
     /** 分块左上角数据的纵坐标 */
-    readonly dataY: number;
+    readonly elY: number;
     /** 索引，等于 横坐标+纵坐标*宽度 */
     readonly index: number;
 }
 
-export interface IBlockInfo extends IBlockIndex {
+export interface IChunkInfo extends IChunkIndex {
     /** 分块宽度 */
     readonly width: number;
     /** 分块高度 */
     readonly height: number;
 }
 
-export interface IBlockData<T> extends IBlockInfo {
+export interface IChunkData<T> extends IChunkInfo {
     /** 这个分块的数据 */
     data: T;
 
     /**
      * 获取这个分块左方的分块
      */
-    left(): IBlockData<T> | null;
+    left(): IChunkData<T> | null;
 
     /**
      * 获取这个分块右方的分块
      */
-    right(): IBlockData<T> | null;
+    right(): IChunkData<T> | null;
 
     /**
      * 获取这个分块上方的分块
      */
-    up(): IBlockData<T> | null;
+    up(): IChunkData<T> | null;
 
     /**
      * 获取这个分块下方的分块
      */
-    down(): IBlockData<T> | null;
+    down(): IChunkData<T> | null;
 
     /**
      * 获取这个分块左上方的分块
      */
-    leftUp(): IBlockData<T> | null;
+    leftUp(): IChunkData<T> | null;
 
     /**
      * 获取这个分块左下方的分块
      */
-    leftDown(): IBlockData<T> | null;
+    leftDown(): IChunkData<T> | null;
 
     /**
      * 获取这个分块右上方的分块
      */
-    rightUp(): IBlockData<T> | null;
+    rightUp(): IChunkData<T> | null;
 
     /**
      * 获取这个分块右下方的分块
      */
-    rightDown(): IBlockData<T> | null;
+    rightDown(): IChunkData<T> | null;
 
     /**
      * 获取下一个索引的分块
      */
-    next(): IBlockData<T> | null;
+    next(): IChunkData<T> | null;
 }
 
-export interface IBlockSplitterConfig {
+export interface IChunkSplitterConfig {
     /** 分块宽度 */
-    readonly blockWidth: number;
+    readonly chunkWidth: number;
     /** 分块高度 */
-    readonly blockHeight: number;
-    /** 数据宽度 */
-    readonly dataWidth: number;
-    /** 数据高度 */
-    readonly dataHeight: number;
+    readonly chunkHeight: number;
+    /** 数据的总宽度 */
+    readonly elWidth: number;
+    /** 数据的总高度 */
+    readonly elHeight: number;
 }
 
-export interface IBlockSplitter<T> extends IBlockSplitterConfig {
+export interface IBlockSplitter<T> extends IChunkSplitterConfig {
     /** 宽度，即横向有多少分块 */
     readonly width: number;
     /** 高度，即纵向有多少分块 */
     readonly height: number;
 
     /**
-     * 根据坐标获取分块内容
+     * 根据坐标获取分块内容（分块 -> 分块）
      * @param x 横坐标
      * @param y 纵坐标
      */
-    getBlockByLoc(x: number, y: number): IBlockData<T> | null;
+    getChunkByLoc(x: number, y: number): IChunkData<T> | null;
 
     /**
-     * 根据分块索引获取分块内容
+     * 根据分块索引获取分块内容（分块 -> 分块）
      * @param index 分块索引
      */
-    getBlockByIndex(index: number): IBlockData<T> | null;
+    getChunkByIndex(index: number): IChunkData<T> | null;
 
     /**
-     * 根据分块坐标设置分块内容
+     * 根据分块坐标设置分块内容（分块 -> 分块）
      * @param data 分块数据
      * @param x 分块横坐标
      * @param y 分块纵坐标
      * @returns 分块内容
      */
-    setBlockByLoc(data: T, x: number, y: number): IBlockData<T> | null;
+    setChunkByLoc(data: T, x: number, y: number): IChunkData<T> | null;
 
     /**
-     * 根据分块索引设置分块内容
+     * 根据分块索引设置分块内容（分块 -> 分块）
      * @param data 分块数据
      * @param index 分块索引
      * @returns 分块内容
      */
-    setBlockByIndex(data: T, index: number): IBlockData<T> | null;
+    setChunkByIndex(data: T, index: number): IChunkData<T> | null;
 
     /**
      * 根据分块坐标，遍历指定分块中的所有坐标（分块 -> 元素）
      * @param x 分块横坐标
      * @param y 分块纵坐标
      */
-    iterateBlockByLoc(x: number, y: number): Generator<IBlockIndex, void>;
+    iterateElementsOfChunk(x: number, y: number): Generator<IChunkIndex, void>;
 
     /**
      * 根据分块索引，遍历指定分块中的所有坐标（分块 -> 元素）
      * @param index 分块索引
      */
-    iterateBlockByIndex(index: number): Generator<IBlockIndex, void>;
+    iterateElementsOfChunkIndex(index: number): Generator<IChunkIndex, void>;
 
     /**
      * 根据分块索引列表，依次遍历每个分块的所有坐标（分块 -> 元素）
      * @param indices 分块索引列表
      */
-    iterateBlockByIndices(
+    iterateElementsOfChunks(
         indices: Iterable<number>
-    ): Generator<IBlockIndex, void>;
+    ): Generator<IChunkIndex, void>;
 
     /**
      * 遍历所有的分块（分块 -> 分块）
      */
-    iterateBlocks(): Iterable<IBlockData<T>>;
+    iterateChunks(): Iterable<IChunkData<T>>;
 
     /**
-     * 传入指定的数据区域，对其所涉及的分块依次遍历（元素 -> 分块）
-     * @param x 数据左上角横坐标
-     * @param y 数据左上角纵坐标
+     * 传入指定的元素区域，对其所涉及的分块依次遍历（元素 -> 分块）
+     * @param x 元素左上角横坐标
+     * @param y 元素左上角纵坐标
      * @param width 数据宽度
      * @param height 数据高度
      */
-    iterateBlocksOfDataArea(
+    iterateChunksOfElementArea(
         x: number,
         y: number,
         width: number,
         height: number
-    ): Generator<IBlockData<T>>;
+    ): Generator<IChunkData<T>>;
 
     /**
      * 根据分块坐标获取分块索引，如果坐标超出范围，返回 -1（分块 -> 分块）
      * @param x 分块横坐标
      * @param y 分块纵坐标
      */
-    getIndexByLoc(x: number, y: number): number;
+    getChunkIndexByLoc(x: number, y: number): number;
 
     /**
      * 根据分块索引获取分块坐标，如果索引超出范围，返回 `null`（分块 -> 分块）
      * @param index 分块索引
      */
-    getLocByIndex(index: number): Loc | null;
+    getChunkLocByIndex(index: number): ITileLocator | null;
 
     /**
      * 根据坐标列表，获取对应的分块索引，并组成一个列表（分块 -> 分块）
      * @param list 坐标列表
      */
-    getIndicesByLocList(list: Iterable<Loc>): Iterable<number>;
+    getChunkIndicesByLocList(list: Iterable<ITileLocator>): Iterable<number>;
 
     /**
      * 根据索引列表，获取对应的分块坐标，并组成一个列表（分块 -> 分块）
      * @param list 索引列表
      */
-    getLocListByIndices(list: Iterable<number>): Iterable<Loc | null>;
+    getChunkLocByIndices(list: Iterable<number>): Iterable<ITileLocator | null>;
 
     /**
-     * 根据数据坐标获取其对应分块的信息（元素 -> 分块）
+     * 根据元素坐标获取其对应分块的信息（元素 -> 分块）
      * @param x 数据横坐标
      * @param y 数据纵坐标
      */
-    getBlockByDataLoc(x: number, y: number): IBlockData<T> | null;
+    getChunkByElementLoc(x: number, y: number): IChunkData<T> | null;
 
     /**
-     * 根据数据索引获取其对应分块的信息（元素 -> 分块）
+     * 根据元素索引获取其对应分块的信息（元素 -> 分块）
      * @param index 数据索引
      */
-    getBlockByDataIndex(index: number): IBlockData<T> | null;
+    getChunkByElementIndex(index: number): IChunkData<T> | null;
 
     /**
-     * 根据数据的坐标列表，获取数据所在的分块索引，并组成一个集合（元素 -> 分块）
+     * 根据元素的坐标列表，获取数据所在的分块索引，并组成一个集合（元素 -> 分块）
      * @param list 数据坐标列表
      */
     getIndicesByDataLocList(list: Iterable<Loc>): Set<number>;
 
     /**
-     * 根据数据的索引列表，获取数据所在的分块索引，并组成一个集合（元素 -> 分块）
+     * 根据元素的索引列表，获取数据所在的分块索引，并组成一个集合（元素 -> 分块）
      * @param list 数据索引列表
      */
-    getIndicesByDataIndices(list: Iterable<number>): Set<number>;
+    getChunkIndicesByElementIndices(list: Iterable<number>): Set<number>;
 
     /**
      * 根据数据的坐标列表，获取数据所在的分块内容，并组成一个集合（元素 -> 分块）
      * @param list 数据坐标列表
      */
-    getBlocksByDataLocList(list: Iterable<Loc>): Set<IBlockData<T>>;
+    getChunksByElementLocList(list: Iterable<Loc>): Set<IChunkData<T>>;
 
     /**
      * 根据数据的索引列表，获取数据所在的分块内容，并组成一个集合（元素 -> 分块）
      * @param list 数据索引列表
      */
-    getBlocksByDataIndices(list: Iterable<number>): Set<IBlockData<T>>;
+    getChunksByElementIndices(list: Iterable<number>): Set<IChunkData<T>>;
 
     /**
      * 配置此分块切分器，此行为不会清空分块数据，只有在执行下一次分块时才会生效
      * @param config 切分器配置
      */
-    configSplitter(config: IBlockSplitterConfig): void;
+    configSplitter(config: IChunkSplitterConfig): void;
 
     /**
      * 执行分块操作，对每个分块执行函数，获取分块数据
      * @param mapFn 对每个分块执行的函数
      */
-    splitBlocks(mapFn: (block: IBlockInfo) => T): void;
+    splitChunks(mapFn: (block: IChunkInfo) => T): void;
 }
 
 export interface IMapVertexData {
@@ -1032,13 +1080,13 @@ export interface IMapVertexGenerator
      * 扩大移动图块数组尺寸
      * @param targetSize 目标大小
      */
-    expandMoving(targetSize: number): void;
+    expandOverlay(targetSize: number): void;
 
     /**
      * 缩小移动图块数组尺寸
      * @param targetSize 目标大小
      */
-    reduceMoving(targetSize: number): void;
+    reduceOverlay(targetSize: number): void;
 
     /**
      * 更新图层数组
@@ -1054,6 +1102,22 @@ export interface IMapVertexGenerator
      * 获取顶点数组，是对内部存储的直接引用，但是内部存储在重新分配内存时引用会丢失
      */
     getVertexArray(): IMapVertexArray;
+
+    /**
+     * 覆盖层是否需要重新排序或重新组装实例数据
+     */
+    isOverlayDirty(): boolean;
+
+    /**
+     * 获取覆盖层的实例数据数组，是对内部存储的直接引用，仅在脏时重新组装
+     */
+    getOverlayArray(): Float32Array;
+
+    /**
+     * 获取覆盖层当前的实例数量，顺序或值脏时需先调用 `getOverlayArray()` 完成组装，
+     * 否则返回的是上一次组装的数量
+     */
+    getOverlayCount(): number;
 
     /**
      * 更新指定区域内的所有图块
@@ -1091,27 +1155,41 @@ export interface IMapVertexGenerator
      * 更新指定分块的数据，专门用于懒更新
      * @param block 要更新的分块
      */
-    updateBlockCache(block: Readonly<IBlockData<IMapVertexBlock>>): void;
+    updateBlockCache(block: Readonly<IChunkData<IMapVertexBlock>>): void;
 
     /**
      * 更新指定的移动图块对象，可以用于新增移动图块
      * @param moving 要更新的移动图块对象
      * @param updateTexture 是否更新贴图信息
      */
-    updateMoving(moving: IMovingBlock, updateTexture: boolean): void;
+    updateOverlay(moving: IOverlayBlock, updateTexture: boolean): void;
 
     /**
      * 更新一系列移动图块，可以用于新增移动图块
      * @param moving 移动图块列表
      * @param updateTexture 是否更新贴图信息
      */
-    updateMovingList(moving: IMovingBlock[], updateTexture: boolean): void;
+    updateOverlayList(moving: IOverlayBlock[], updateTexture: boolean): void;
 
     /**
      * 移除指定的移动图块
      * @param moving 移动图块对象
      */
-    deleteMoving(moving: IMovingBlock): void;
+    deleteOverlay(moving: IOverlayBlock): void;
+
+    /**
+     * 低层写回助手，把覆盖层槽位写入目标静态实例，重算 z 与位置并释放覆盖块
+     * @param block 要写回的覆盖层图块
+     * @param layer 目标图块所属的图层
+     * @param x 目标图块横坐标
+     * @param y 目标图块纵坐标
+     */
+    toStatic(
+        block: IOverlayBlock,
+        layer: IMapLayer,
+        x: number,
+        y: number
+    ): void;
 }
 
 export interface IMapRenderArea {
@@ -1129,7 +1207,7 @@ export interface IMapRenderData {
     /** 需要更新顶点数组的区域 */
     readonly dirty: IMapRenderArea[];
     /** 需要更新的分块列表 */
-    readonly blockList: IBlockData<IMapVertexBlock>[];
+    readonly blockList: IChunkData<IMapVertexBlock>[];
 }
 
 export interface IMapViewportController {
@@ -1147,5 +1225,3 @@ export interface IMapViewportController {
      */
     bindTransform(transform: Transform): void;
 }
-
-export interface IMapCamera {}

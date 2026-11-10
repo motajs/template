@@ -60,6 +60,11 @@ export interface ITileRawData {
      * 当为 `true` 时，玩家会通过走上去触发图块的触发器。类似于旧样板的 `noPass`
      */
     readonly eventPass: boolean;
+    /**
+     * 图块是否包含半透明像素，对于只有完全不透明和完全透明像素的素材，此项为 `false`，否则应为 `true`。
+     * 不要将不满足条件的素材设为 `true`，这会大幅拖慢地图渲染速度。
+     */
+    readonly translucence: boolean;
 }
 
 export interface ITileStore {

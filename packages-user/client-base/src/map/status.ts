@@ -1,5 +1,13 @@
 import { IMapLayer } from '@user/data-base';
-import { IBlockStatus, IMapVertexStatus } from './types';
+import {
+    IBlockStatus,
+    IMapRenderer,
+    IMapVertexStatus,
+    IOverlayBlock
+} from './types';
+import { IMaterialFramedData } from '../material';
+
+//#region 图块状态
 
 export class StaticBlockStatus implements IBlockStatus {
     /**
@@ -16,7 +24,7 @@ export class StaticBlockStatus implements IBlockStatus {
     ) {}
 
     setAlpha(alpha: number): void {
-        this.vertex.setStaticAlpha(this.layer, alpha, this.x, this.y);
+        this.vertex.setStaticAlpha(this.layer, this.x, this.y, alpha);
     }
 
     getAlpha(): number {
@@ -36,35 +44,82 @@ export class StaticBlockStatus implements IBlockStatus {
     }
 }
 
-export class DynamicBlockStatus implements IBlockStatus {
-    /**
-     * @param layer 图层对象
-     * @param vertex 顶点数组生成器对象
-     * @param index 图块索引
-     */
+//#endregion
+
+//#region 覆盖层图块
+
+export class OverlayBlock implements IOverlayBlock {
+    readonly layer: IMapLayer;
+    readonly priority: number;
+    readonly index: number;
+    readonly renderer: IMapRenderer;
+    texture: IMaterialFramedData;
+    readonly tile: number;
+    x: number = 0;
+    y: number = 0;
+
     constructor(
-        readonly layer: IMapLayer,
-        readonly vertex: IMapVertexStatus,
-        readonly index: number
-    ) {}
+        layer: IMapLayer,
+        priority: number,
+        index: number,
+        texture: IMaterialFramedData,
+        tile: number,
+        renderer: IMapRenderer
+    ) {
+        this.layer = layer;
+        this.priority = priority;
+        this.index = index;
+        this.texture = texture;
+        this.tile = tile;
+        this.renderer = renderer;
+    }
+
+    setPos(x: number, y: number): void {
+        this.x = x;
+        this.y = y;
+        // TODO: 通知更新
+        this.renderer.vertex.updateOverlay(this, false);
+    }
+
+    setTexture(texture: IMaterialFramedData): void {
+        if (texture === this.texture) return;
+        this.texture = texture;
+        this.renderer.vertex.updateOverlay(this, true);
+    }
 
     setAlpha(alpha: number): void {
-        this.vertex.setDynamicAlpha(this.index, alpha);
+        this.renderer.vertex.setDynamicAlpha(this.index, alpha);
     }
 
     getAlpha(): number {
-        return this.vertex.getDynamicAlpha(this.index);
+        return this.renderer.vertex.getDynamicAlpha(this.index);
     }
 
     useGlobalFrame(): void {
-        this.vertex.setDynamicFrame(this.index, -1);
+        this.renderer.vertex.setDynamicFrame(this.index, -1);
     }
 
     useSpecifiedFrame(frame: number): void {
-        this.vertex.setDynamicFrame(this.index, frame);
+        this.renderer.vertex.setDynamicFrame(this.index, frame);
     }
 
     getFrame(): number {
-        return this.vertex.getDynamicFrame(this.index);
+        return this.renderer.vertex.getDynamicFrame(this.index);
+    }
+
+    useDefaultFrame(): void {
+        if (!this.renderer.manager.getTile(this.tile)) return;
+        const defaultFrame = this.renderer.manager.getDefaultFrame(this.tile);
+        this.useSpecifiedFrame(defaultFrame);
+    }
+
+    destroy(): void {
+        this.renderer.deleteOverlayBlock(this);
+    }
+
+    toStatic(layer: IMapLayer, x: number, y: number): void {
+        this.renderer.vertex.toStatic(this, layer, x, y);
     }
 }
+
+//#endregion

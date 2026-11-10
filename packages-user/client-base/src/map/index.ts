@@ -1,6 +1,6 @@
 export * from './extension';
 
-export * from './block';
+export * from './chunk';
 export * from './constant';
 export * from './element';
 export * from './moving';

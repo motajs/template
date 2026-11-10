@@ -1,6 +1,6 @@
 import { logger } from '@motajs/common';
 import {
-    IBlockData,
+    IChunkData,
     IBlockSplitter,
     IMapRenderer,
     IMapRenderResult,
@@ -69,7 +69,7 @@ export class OnMapTextRenderer
     getBlockByLoc(x: number, y: number): Readonly<IMapTextArea> | null {
         const index = y * this.renderer.mapWidth + x;
         // 首先尝试使用分块系统获取对应分块并从分块附着数据读取
-        const blockData = this.block.getBlockByDataIndex(index);
+        const blockData = this.block.getChunkByElementIndex(index);
         if (blockData) {
             const map = blockData.data.getAttachedData<
                 Map<number, MapTextArea>
@@ -80,7 +80,7 @@ export class OnMapTextRenderer
     }
 
     getBlockByIndex(index: number): Readonly<IMapTextArea> | null {
-        const blockData = this.block.getBlockByDataIndex(index);
+        const blockData = this.block.getChunkByElementIndex(index);
         if (blockData) {
             const map = blockData.data.getAttachedData<
                 Map<number, MapTextArea>
@@ -157,7 +157,7 @@ export class OnMapTextRenderer
      * @param blockData 分块数据
      */
     private getAttachedMap(
-        blockData: IBlockData<IMapVertexBlock>
+        blockData: IChunkData<IMapVertexBlock>
     ): Map<number, MapTextArea> {
         const map = blockData.data.getAttachedData<Map<number, MapTextArea>>(
             this.attachSymbol
@@ -173,7 +173,7 @@ export class OnMapTextRenderer
     requireBlockArea(x: number, y: number): Readonly<IMapTextArea> | null {
         const index = y * this.renderer.mapWidth + x;
         // try to find corresponding block by data index
-        const blockData = this.block.getBlockByDataIndex(index);
+        const blockData = this.block.getChunkByElementIndex(index);
         if (blockData) {
             const map = this.getAttachedMap(blockData);
             const exist = map.get(index);
@@ -194,7 +194,7 @@ export class OnMapTextRenderer
 
     clear(): void {
         // 清理所有附着在分块上的文本区域
-        for (const b of this.block.iterateBlocks()) {
+        for (const b of this.block.iterateChunks()) {
             const blk = b.data;
             const map = blk.getAttachedData<Map<number, MapTextArea>>(
                 this.attachSymbol
