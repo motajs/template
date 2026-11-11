@@ -320,7 +320,6 @@
         "212": "Duplicate implements for hotkey command '$1', old one will be overwritten. This probably caused by unclearing implementation config, please check.",
         "213": "Setting item '$1' has existed in group '$2'. The item will be moved to new group '$3'.",
         "214": "Range setting item get a number range that cannot be divided into integer by step: range=[$1, $2], step=$3. This may cause issues, please ensure number range can be divided by step evenly.",
-        "215": "Cannot recognize '$1' as a proper render item prop or emit.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }

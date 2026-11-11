@@ -1225,8 +1225,6 @@ export abstract class RenderItem
             // 事件参数
             if (!this.assertType(nextValue, Function, key)) return;
             this.events.set(key, nextValue);
-        } else {
-            logger.warn(215, key);
         }
     }
 
