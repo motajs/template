@@ -4,15 +4,18 @@ import {
     ActionEventMap,
     ActionType,
     ERenderItemActionEvent,
-    EventProgress
+    EventProgress,
+    IActionEvent,
+    IActionEventBase,
+    IWheelEvent
 } from './event';
 import { MotaOffscreenCanvas2D } from './canvas2d';
 import { Font } from '../style';
 import { DefineComponent, DefineSetupFnComponent } from 'vue';
 import { JSX } from 'vue/jsx-runtime';
-import EventEmitter from 'eventemitter3';
 import { SizedCanvasImageSource } from '../types';
 import { ITexture, ITextureAnimater } from '../assets';
+import { IHookable, IHookBase } from '@motajs/common';
 
 //#region 功能类型
 
@@ -59,8 +62,95 @@ export interface ERenderItemEvent extends ERenderItemActionEvent {
     transform: [item: IRenderItem, transform: Transform];
 }
 
+export interface IRenderItemBaseHooks extends IHookBase {
+    /**
+     * 当这个元素被点击时触发，触发阶段为冒泡阶段，点击要求按下与抬起都在同一个元素上完成
+     * @param ev 交互事件对象
+     */
+    onClick?(ev: Readonly<IActionEvent>): void;
+
+    /**
+     * 当这个元素被点击时触发，触发阶段为捕获阶段，点击要求按下与抬起都在同一个元素上完成
+     * @param ev 交互事件对象
+     */
+    onClickCapture?(ev: Readonly<IActionEvent>): void;
+
+    /**
+     * 当鼠标或触屏在这个元素上按下时触发，触发阶段为冒泡阶段
+     * @param ev 交互事件对象
+     */
+    onDown?(ev: Readonly<IActionEvent>): void;
+
+    /**
+     * 当鼠标或触屏在这个元素上按下时触发，触发阶段为捕获阶段
+     * @param ev 交互事件对象
+     */
+    onDownCapture?(ev: Readonly<IActionEvent>): void;
+
+    /**
+     * 当鼠标或触屏在这个元素上移动时触发，触发阶段为冒泡阶段
+     * @param ev 交互事件对象
+     */
+    onMove?(ev: Readonly<IActionEvent>): void;
+
+    /**
+     * 当鼠标或触屏在这个元素上移动时触发，触发阶段为捕获阶段
+     * @param ev 交互事件对象
+     */
+    onMoveCapture?(ev: Readonly<IActionEvent>): void;
+
+    /**
+     * 当鼠标或触屏在这个元素上抬起时触发，触发阶段为冒泡阶段
+     * @param ev 交互事件对象
+     */
+    onUp?(ev: Readonly<IActionEvent>): void;
+
+    /**
+     * 当鼠标或触屏在这个元素上抬起时触发，触发阶段为捕获阶段
+     * @param ev 交互事件对象
+     */
+    onUpCapture?(ev: Readonly<IActionEvent>): void;
+
+    /**
+     * 当鼠标或触屏进入这个元素时触发，不区分捕获和冒泡阶段，在绝大多数情况下能保证触发顺序
+     * @param ev 交互事件对象
+     */
+    onEnter?(ev: Readonly<IActionEventBase>): void;
+
+    /**
+     * 当鼠标或触屏离开这个元素时触发，不区分捕获和冒泡阶段，在绝大多数情况下能保证触发顺序
+     * @param ev 交互事件对象
+     */
+    onLeave?(ev: Readonly<IActionEventBase>): void;
+
+    /**
+     * 当鼠标在当前元素上滚动时触发（某些触屏手势也可以触发），触发阶段为冒泡阶段
+     * @param ev 交互事件对象
+     */
+    onWheel?(ev: Readonly<IWheelEvent>): void;
+
+    /**
+     * 当鼠标在当前元素上滚动时触发（某些触屏手势也可以触发），触发阶段为冒泡阶段
+     * @param ev 交互事件对象
+     */
+    onWheelCapture?(ev: Readonly<IWheelEvent>): void;
+
+    /**
+     * 当元素的尺寸被修改时触发
+     * @param width 元素宽度
+     * @param height 元素高度
+     */
+    onResize?(width: number, height: number): void;
+
+    /**
+     * 当元素的变换矩阵发生变化时触发
+     * @param transform 变换矩阵对象
+     */
+    onTransform?(transform: Transform): void;
+}
+
 export interface IRenderItem
-    extends ITransformUpdatable<Transform>, EventEmitter<ERenderItemEvent> {
+    extends ITransformUpdatable<Transform>, IHookable<IRenderItemBaseHooks> {
     /** 是否为根元素 */
     readonly isRoot: boolean;
     /** 当前元素的父元素 */
@@ -362,16 +452,6 @@ export interface IRenderItem
      * @param ignore 是否忽略事件
      */
     ignoreEvent(ignore: boolean): void;
-
-    /**
-     * 根据事件类型和事件阶段获取事件名称
-     * @param type 事件类型
-     * @param progress 事件阶段
-     */
-    getEventName(
-        type: ActionType,
-        progress: EventProgress
-    ): keyof ERenderItemActionEvent;
 
     //#endregion
 

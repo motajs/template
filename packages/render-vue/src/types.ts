@@ -1,4 +1,8 @@
-import { ERenderItemEvent, IRenderItem, IRenderTreeRoot } from '@motajs/render';
+import {
+    IRenderItem,
+    IRenderItemBaseHooks,
+    IRenderTreeRoot
+} from '@motajs/render';
 import { VNodeProps } from 'vue';
 import { BaseProps } from './props';
 import { TagDefine } from './elements';
@@ -8,7 +12,6 @@ import {
     IExcitation,
     ITransition
 } from '@motajs/animate';
-import EventEmitter from 'eventemitter3';
 
 //#region 标签管理
 
@@ -57,8 +60,8 @@ export interface IRenderTagManager {
 
 export type DefaultProps<
     P extends BaseProps = BaseProps,
-    E extends ERenderItemEvent = ERenderItemEvent
-> = TagDefine<P, E>;
+    H extends IRenderItemBaseHooks = IRenderItemBaseHooks
+> = TagDefine<P, H>;
 
 //#endregion
 
@@ -87,28 +90,6 @@ export interface IRendererUsing {
      * @param excitable 可激励对象
      */
     onExcitedFunc(fn: (payload: number) => void): void;
-
-    /**
-     * 监听渲染元素的指定事件。
-     *
-     * 在组件内如果你需要监听事件，应该先考虑使用 `JSX` 的 `onXxx` 来监听事件，而不是使用此接口。
-     *
-     * 如果 `JSX` 的 `onXxx` 不能满足你的需求，再考虑使用此接口，在组件内**不要**直接使用 `item.on` 来监听事件，
-     * 否则可能导致事件监听没有正确删除，出现内存泄漏问题。
-     *
-     * 在**组件外不要**使用此接口，否则可能没有效果！
-     * @param item 要监听的渲染元素
-     * @param key 事件类型
-     * @param listener 当事件触发时执行的函数
-     */
-    listenEvent<
-        T extends ERenderItemEvent,
-        K extends EventEmitter.EventNames<T>
-    >(
-        item: IRenderItem,
-        key: K,
-        listener: EventEmitter.EventListener<T, K>
-    ): void;
 
     /**
      * 创建一个动画执行器。

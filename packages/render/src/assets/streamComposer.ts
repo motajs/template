@@ -101,9 +101,7 @@ interface MaxRectsRectangle extends IRectangle {
     readonly data: ITexture;
 }
 
-export class TextureMaxRectsStreamComposer
-    implements ITextureStreamComposer<void>
-{
+export class TextureMaxRectsStreamComposer implements ITextureStreamComposer<void> {
     /** Max Rects 打包器 */
     readonly packer: MaxRectsPacker<MaxRectsRectangle>;
 

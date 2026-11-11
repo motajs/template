@@ -333,7 +333,8 @@ export class MotaRenderer
                 this.getMouseType(ev)
             );
             this.hoveredElement.forEach(v => {
-                v.emit('leave', this.createMouseActionBase(ev, id, v));
+                const base = this.createMouseActionBase(ev, id, v);
+                v.forEachHook(hook => hook.onLeave?.(base));
             });
             this.hoveredElement.clear();
             this.beforeHovered.clear();
@@ -677,18 +678,14 @@ export class MotaRenderer
         // 先 leave，再 enter
         before.forEach(v => {
             if (!now.has(v)) {
-                v.emit(
-                    'leave',
-                    this.createMouseActionBase(event, ev.identifier, v)
-                );
+                const e = this.createMouseActionBase(event, ev.identifier, v);
+                v.forEachHook(hook => hook.onLeave?.(e));
             }
         });
         now.forEach(v => {
             if (!before.has(v)) {
-                v.emit(
-                    'enter',
-                    this.createMouseActionBase(event, ev.identifier, v)
-                );
+                const e = this.createMouseActionBase(event, ev.identifier, v);
+                v.forEachHook(hook => hook.onEnter?.(e));
             }
         });
     }
@@ -702,18 +699,14 @@ export class MotaRenderer
         // 先 leave，再 enter
         before.forEach(v => {
             if (!now.has(v)) {
-                v.emit(
-                    'leave',
-                    this.createTouchActionBase(event, ev.identifier, v)
-                );
+                const e = this.createTouchActionBase(event, ev.identifier, v);
+                v.forEachHook(hook => hook.onLeave?.(e));
             }
         });
         now.forEach(v => {
             if (!before.has(v)) {
-                v.emit(
-                    'enter',
-                    this.createTouchActionBase(event, ev.identifier, v)
-                );
+                const e = this.createTouchActionBase(event, ev.identifier, v);
+                v.forEachHook(hook => hook.onEnter?.(e));
             }
         });
     }

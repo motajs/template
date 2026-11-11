@@ -1,23 +1,27 @@
 import { isEqual, isNil } from 'lodash-es';
-import { EventEmitter } from 'eventemitter3';
 import { MotaOffscreenCanvas2D } from './canvas2d';
 import { ITransformUpdatable, Transform } from './transform';
-import { logger } from '@motajs/common';
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    logger
+} from '@motajs/common';
 import { ElementNamespace, ComponentInternalInstance } from 'vue';
 import {
     ActionEventMap,
     ActionType,
-    ERenderItemActionEvent,
-    eventNameMap,
     EventProgress,
     IActionEvent,
+    IActionEventBase,
+    IWheelEvent,
     MouseType
 } from './event';
 import { vec3 } from 'gl-matrix';
 import {
-    ERenderItemEvent,
     ExcitableDelegation,
     IRenderItem,
+    IRenderItemBaseHooks,
     IRenderTreeRoot,
     RenderPosition
 } from './types';
@@ -34,7 +38,7 @@ interface ToDelegateExcitables {
 }
 
 export abstract class RenderItem
-    extends EventEmitter<ERenderItemEvent>
+    extends Hookable<IRenderItemBaseHooks>
     implements IRenderItem, ITransformUpdatable<Transform>
 {
     //#region 元素属性
@@ -123,6 +127,11 @@ export abstract class RenderItem
 
     //#region 交互事件
 
+    /** 当前元素包含的监听事件名称列表 */
+    private readonly eventNames: Set<string> = new Set();
+    /** 当前元素包含的监听事件，这是为了能够使用 `prop` 传入时不需要为每个内容都添加一个 `hook` 对象 */
+    private readonly events: Map<string, (...params: any[]) => any> = new Map();
+
     /** 是否调用了 `ev.stopPropagation` */
     protected propagationStoped: Map<ActionType, boolean> = new Map();
     /** 捕获阶段缓存的事件对象 */
@@ -170,6 +179,36 @@ export abstract class RenderItem
         } else {
             this.cache = null;
         }
+        this.eventNames
+            .add('onClick')
+            .add('onClickCapture')
+            .add('onDown')
+            .add('onDownCapture')
+            .add('onMove')
+            .add('onMoveCapture')
+            .add('onUp')
+            .add('onUpCapture')
+            .add('onEnter')
+            .add('onLeave')
+            .add('onWheel')
+            .add('onWheelCapture')
+            .add('onResize')
+            .add('onTransform');
+
+        this.addHook(this.getDefaultHook());
+    }
+
+    /**
+     * 获取默认钩子对象，子类可以拓展以实现自己默认钩子的 `prop` 支持
+     */
+    protected getDefaultHook(): IRenderItemBaseHooks {
+        return new RenderItemDefaultHooks(this.events);
+    }
+
+    protected createController(
+        hook: Partial<IRenderItemBaseHooks>
+    ): IHookController<IRenderItemBaseHooks> {
+        return new HookController(this, hook);
     }
 
     setID(id: string): void {
@@ -322,7 +361,7 @@ export abstract class RenderItem
             this.cache!.size(width, height);
         }
         this.update();
-        this.emit('resize', width, height);
+        this.forEachHook(hook => hook.onResize?.(width, height));
     }
 
     /**
@@ -489,11 +528,31 @@ export abstract class RenderItem
     }
 
     updateTransform(transform: Transform) {
-        // 更新变换矩阵时，不需要更新自身的缓存，直接调用父元素的更新即可
-        this.parent?.update();
+        // 更新变换矩阵时，只需要更新有 `selfTransform` 的子元素，其他的不需要更新
+        let childUpdated = false;
+        if (this.children.size > 0) {
+            const stack: RenderItem[] = [this];
+            while (stack.length > 0) {
+                const item = stack.pop();
+                if (!item || !item.selfTransform) continue;
+                childUpdated = true;
+                item.cacheDirty = true;
+                item.children.forEach(v => stack.push(v));
+            }
+        }
+        // 根据子元素更新情况以及自身是否 `selfTransform` 来决定是更新自己还是更新父元素
+        if (!childUpdated) {
+            if (this.selfTransform) {
+                this.update();
+            } else {
+                this.parent?.update();
+            }
+        } else {
+            this.parent?.update();
+        }
         this.x = transform.x;
         this.y = transform.y;
-        this.emit('transform', this, transform);
+        this.forEachHook(hook => hook.onTransform?.(transform));
     }
 
     requestBeforeFrame(fn: () => void): void {
@@ -616,7 +675,7 @@ export abstract class RenderItem
         this.checkRoot();
         this.transform.bind(this);
         this.onResize(parent.scale);
-        this.emit('resize', this.width, this.height);
+        this.forEachHook(hook => hook.onResize?.(this.width, this.height));
     }
 
     /**
@@ -690,22 +749,60 @@ export abstract class RenderItem
         this.noEvent = ignore;
     }
 
-    /**
-     * 根据事件类型和事件阶段获取事件名称
-     * @param type 事件类型
-     * @param progress 事件阶段
-     */
-    getEventName(
-        type: ActionType,
-        progress: EventProgress
-    ): keyof ERenderItemActionEvent {
-        if (type === ActionType.Enter || type === ActionType.Leave) {
-            return eventNameMap[type];
-        } else if (progress === EventProgress.Capture) {
-            return `${eventNameMap[type]}Capture` as keyof ERenderItemActionEvent;
-        } else {
-            return eventNameMap[type];
+    private emitEvent<T extends ActionType>(
+        type: T,
+        progress: EventProgress,
+        ev: ActionEventMap[T]
+    ): ActionEventMap[T] {
+        if (type === ActionType.Enter) {
+            this.forEachHook(hook => hook.onEnter?.(ev));
+            return ev;
+        } else if (type === ActionType.Leave) {
+            this.forEachHook(hook => hook.onLeave?.(ev));
+            return ev;
         }
+
+        if (progress === EventProgress.Capture) {
+            switch (type) {
+                case ActionType.Click:
+                    this.forEachHook(hook => hook.onClickCapture?.(ev));
+                    break;
+                case ActionType.Down:
+                    this.forEachHook(hook => hook.onDownCapture?.(ev));
+                    break;
+                case ActionType.Move:
+                    this.forEachHook(hook => hook.onMoveCapture?.(ev));
+                    break;
+                case ActionType.Up:
+                    this.forEachHook(hook => hook.onUpCapture?.(ev));
+                    break;
+                case ActionType.Wheel:
+                    this.forEachHook(hook =>
+                        hook.onWheelCapture?.(ev as IWheelEvent)
+                    );
+                    break;
+            }
+        } else {
+            switch (type) {
+                case ActionType.Click:
+                    this.forEachHook(hook => hook.onClick?.(ev));
+                    break;
+                case ActionType.Down:
+                    this.forEachHook(hook => hook.onDown?.(ev));
+                    break;
+                case ActionType.Move:
+                    this.forEachHook(hook => hook.onMove?.(ev));
+                    break;
+                case ActionType.Up:
+                    this.forEachHook(hook => hook.onUp?.(ev));
+                    break;
+                case ActionType.Wheel:
+                    this.forEachHook(hook => hook.onWheel?.(ev as IWheelEvent));
+                    break;
+            }
+        }
+
+        return ev;
     }
 
     /**
@@ -734,13 +831,17 @@ export abstract class RenderItem
         event: ActionEventMap[T]
     ) {
         const ev = this.processEvent(type, progress, event);
-        if (ev) {
-            const name = this.getEventName(type, progress);
-            this.emit(name, ev);
-            if (!this.propagationStoped.get(type)) {
-                this.propagateEvent(type, progress, ev);
-            }
+        if (!ev) {
+            this.propagationStoped.set(type, false);
+            return ev;
         }
+
+        this.emitEvent(type, progress, ev);
+
+        if (!this.propagationStoped.get(type)) {
+            this.propagateEvent(type, progress, ev);
+        }
+
         this.propagationStoped.set(type, false);
         return ev;
     }
@@ -948,21 +1049,6 @@ export abstract class RenderItem
     }
 
     /**
-     * 解析事件key
-     * @param key 键名
-     * @returns 返回字符串表示解析后的键名，返回空字符串说明没有对应的事件
-     */
-    protected parseEvent(key: string): string {
-        if (key.startsWith('on')) {
-            const code = key.charCodeAt(2);
-            if (code >= 65 && code <= 90) {
-                return key[2].toLowerCase() + key.slice(3);
-            }
-        }
-        return '';
-    }
-
-    /**
      * `override` 以自定义 `vue` 参数处理，返回 false 以避免后续判断提高运行速度。
      * @param _key 属性键名
      * @param _prevValue 该属性先前的数值
@@ -1057,8 +1143,7 @@ export abstract class RenderItem
             }
             case 'transform': {
                 if (!this.assertType(nextValue, Transform, key)) return;
-                this.transform = nextValue;
-                this.update();
+                this.setTransform(nextValue);
                 return;
             }
             case 'selfTransform': {
@@ -1136,12 +1221,12 @@ export abstract class RenderItem
                 return;
             }
         }
-        const ev = this.parseEvent(key);
-        if (ev.length > 0) {
-            if (prevValue) {
-                this.off(ev as keyof ERenderItemActionEvent, prevValue);
-            }
-            this.on(ev as keyof ERenderItemActionEvent, nextValue);
+        if (this.eventNames.has(key)) {
+            // 事件参数
+            if (!this.assertType(nextValue, Function, key)) return;
+            this.events.set(key, nextValue);
+        } else {
+            logger.warn(215, key);
         }
     }
 
@@ -1152,7 +1237,6 @@ export abstract class RenderItem
      */
     destroy(): void {
         this.remove();
-        this.removeAllListeners();
         this.canvases.clear();
         this.cache?.clear();
         this.propagationStoped.clear();
@@ -1161,5 +1245,65 @@ export abstract class RenderItem
         this.touchId.clear();
         this.children.clear();
         this.setRoot(null);
+    }
+}
+
+export class RenderItemDefaultHooks implements IRenderItemBaseHooks {
+    constructor(readonly list: Map<string, (...params: any[]) => any>) {}
+
+    onClick(ev: Readonly<IActionEvent>): void {
+        this.list.get('onClick')?.(ev);
+    }
+
+    onClickCapture(ev: Readonly<IActionEvent>): void {
+        this.list.get('onClickCapture')?.(ev);
+    }
+
+    onDown(ev: Readonly<IActionEvent>): void {
+        this.list.get('onDown')?.(ev);
+    }
+
+    onDownCapture(ev: Readonly<IActionEvent>): void {
+        this.list.get('onDownCapture')?.(ev);
+    }
+
+    onMove(ev: Readonly<IActionEvent>): void {
+        this.list.get('onMove')?.(ev);
+    }
+
+    onMoveCapture(ev: Readonly<IActionEvent>): void {
+        this.list.get('onMoveCapture')?.(ev);
+    }
+
+    onUp(ev: Readonly<IActionEvent>): void {
+        this.list.get('onUp')?.(ev);
+    }
+
+    onUpCapture(ev: Readonly<IActionEvent>): void {
+        this.list.get('onUpCapture')?.(ev);
+    }
+
+    onEnter(ev: Readonly<IActionEventBase>): void {
+        this.list.get('onEnter')?.(ev);
+    }
+
+    onLeave(ev: Readonly<IActionEventBase>): void {
+        this.list.get('onLeave')?.(ev);
+    }
+
+    onWheel(ev: Readonly<IWheelEvent>): void {
+        this.list.get('onWheel')?.(ev);
+    }
+
+    onWheelCapture(ev: Readonly<IWheelEvent>): void {
+        this.list.get('onWheelCapture')?.(ev);
+    }
+
+    onResize(width: number, height: number): void {
+        this.list.get('onResize')?.(width, height);
+    }
+
+    onTransform(transform: Transform): void {
+        this.list.get('onTransform')?.(transform);
     }
 }

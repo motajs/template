@@ -1,6 +1,5 @@
-import { ERenderItemEvent, IRenderItem, IRenderTreeRoot } from '@motajs/render';
+import { IRenderTreeRoot } from '@motajs/render';
 import { onMounted, onUnmounted } from 'vue';
-import EventEmitter from 'eventemitter3';
 import { IRendererUsing } from './types';
 import {
     IExcitable,
@@ -26,20 +25,6 @@ export class RendererUsing implements IRendererUsing {
 
     onExcitedFunc(fn: (payload: number) => void): void {
         this.onExcited(excited(fn));
-    }
-
-    listenEvent<
-        T extends ERenderItemEvent,
-        K extends EventEmitter.EventNames<T>
-    >(
-        item: IRenderItem,
-        key: K,
-        listener: EventEmitter.EventListener<T, K>
-    ): void {
-        item.on(key, listener);
-        onUnmounted(() => {
-            item.off(key, listener);
-        });
     }
 
     useAnimater(excitation: IExcitation<number>): IAnimater {
