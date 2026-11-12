@@ -3,15 +3,10 @@ import {
     IRenderItemBaseHooks,
     IRenderTreeRoot
 } from '@motajs/render';
-import { VNodeProps } from 'vue';
+import { Ref, VNodeProps } from 'vue';
 import { BaseProps } from './props';
 import { TagDefine } from './elements';
-import {
-    IAnimater,
-    IExcitable,
-    IExcitation,
-    ITransition
-} from '@motajs/animate';
+import { ExcitationCurve } from '@motajs/animate';
 
 //#region 标签管理
 
@@ -67,49 +62,28 @@ export type DefaultProps<
 
 //#region 功能接口
 
-export interface IRendererUsing {
-    /** Using 对象使用的渲染器 */
-    readonly renderer: IRenderTreeRoot;
+export interface ITransitionedController<T> {
+    readonly ref: Readonly<Ref<T>>;
+    readonly value: T;
 
     /**
-     * 当渲染器的激励源触发激励时同时执行传入的可激励对象，相当于每帧执行一次。
-     *
-     * 在**组件内**需要每帧执行时**务必**使用此接口，否则可能会导致激励对象没有被正确删除，出现内存泄漏问题。
-     *
-     * 在**组件外不要**使用此接口，否则可能没有效果！
-     * @param excitable 可激励对象
+     * 执行动画，使当前值缓慢变化至目标值
+     * @param value 目标值
+     * @param time 动画时长
      */
-    onExcited(excitable: IExcitable<number>): void;
+    set(value: T, time?: number): void;
 
     /**
-     * 当渲染器的激励源触发激励时同时执行传入的函数，相当于每帧执行一次。
-     *
-     * 在**组件内**需要每帧执行时**务必**使用此接口，否则可能会导致激励对象没有被正确删除，出现内存泄漏问题。
-     *
-     * 在**组件外不要**使用此接口，否则可能没有效果！
-     * @param excitable 可激励对象
+     * 设置动画的速率曲线
+     * @param timing 速率曲线
      */
-    onExcitedFunc(fn: (payload: number) => void): void;
+    mode(timing: ExcitationCurve): void;
 
     /**
-     * 创建一个动画执行器。
-     *
-     * 在**组件内**需要动画器时**务必**使用此接口，否则可能会动画器没有被正确销毁，出现内存泄漏问题。
-     *
-     * 在**组件外不要**使用此接口，否则可能没有效果！
-     * @param excitation 动画执行器使用的激励源
+     * 设置动画的动画时长
+     * @param time 动画时长
      */
-    useAnimater(excitation: IExcitation<number>): IAnimater;
-
-    /**
-     * 创建一个渐变执行器。
-     *
-     * 在**组件内**需要渐变对象时**务必**使用此接口，否则可能会渐变对象没有被正确销毁，出现内存泄漏问题。
-     *
-     * 在**组件外不要**使用此接口，否则可能没有效果！
-     * @param excitation 渐变执行器使用的激励源
-     */
-    useTransition(excitation: IExcitation<number>): ITransition;
+    setTime(time: number): void;
 }
 
 //#endregion
