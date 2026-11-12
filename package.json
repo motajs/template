@@ -36,6 +36,7 @@
         "anon-tokyo": "0.0.0-alpha.0",
         "ant-design-vue": "^3.2.20",
         "axios": "^1.13.6",
+        "cbor-x": "^1.6.9",
         "chart.js": "^4.5.1",
         "codec-parser": "^2.5.0",
         "dexie": "^4.4.2",

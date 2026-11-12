@@ -181,6 +181,9 @@ importers:
       axios:
         specifier: ^1.13.6
         version: 1.13.6(debug@4.4.3(supports-color@8.1.1))
+      cbor-x:
+        specifier: ^1.6.9
+        version: 1.6.9
       chart.js:
         specifier: ^4.5.1
         version: 4.5.1
@@ -1264,6 +1267,31 @@ packages:
 
   '@braintree/sanitize-url@7.1.2':
     resolution: {integrity: sha512-jigsZK+sMF/cuiB7sERuo9V7N9jx+dhmHHnQyDSVdpZwVutaBu7WvNYqMDLSgFgfB30n452TP3vjDAvFC973mA==}
+
+  '@cbor-extract/cbor-extract-darwin-arm64@2.2.3':
+    resolution: {integrity: sha512-qpUy9Yoisi6a7QHOVa+AlnqfN7eVstSRhpLwiLnwi6i3SNLkM5D2Z7MXl4LC5nUGA77mZEt479cPH3u8GD163Q==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@cbor-extract/cbor-extract-darwin-x64@2.2.3':
+    resolution: {integrity: sha512-6bZbK7dyKn8BUNmG3UfzSnM4L/OzJ8xGAtBHYycprl+bgvtZmZoQC7CucWXuF/oHJP5skzqkqFr6BLSSGIkoWw==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@cbor-extract/cbor-extract-linux-arm64@2.2.3':
+    resolution: {integrity: sha512-QAuFuQkOw0cm4MNc+QwxH9aiMxmrczESnVEu33B8m2Du9fBuH/1AvJfmO8YajpeWLoHqt2iUG3d1/gIWAKY8IQ==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@cbor-extract/cbor-extract-linux-arm@2.2.3':
+    resolution: {integrity: sha512-joCovTc7uEYCL9XxdAJJpGIH7Vvc31Fi7vh3HnlY5zgkLSU/64WxYl5iUi/puE21qT3bmxMfOZEZUbnqVKeJTQ==}
+    cpu: [arm]
+    os: [linux]
+
+  '@cbor-extract/cbor-extract-win32-x64@2.2.3':
+    resolution: {integrity: sha512-fGFfq6F3l0GCoKOZeyjjm3q+NHO7jo8ILtQ93U3rYJOgG2BGLS/QmBdoFLNEsoWPjyxAS8svWhTyo73MTDawog==}
+    cpu: [x64]
+    os: [win32]
 
   '@chevrotain/cst-dts-gen@11.1.2':
     resolution: {integrity: sha512-XTsjvDVB5nDZBQB8o0o/0ozNelQtn2KrUVteIHSlPd2VAV2utEb6JzyCJaJ8tGxACR4RiBNWy5uYUHX2eji88Q==}
@@ -3154,6 +3182,13 @@ packages:
   caniuse-lite@1.0.30001777:
     resolution: {integrity: sha512-tmN+fJxroPndC74efCdp12j+0rk0RHwV5Jwa1zWaFVyw2ZxAuPeG8ZgWC3Wz7uSjT3qMRQ5XHZ4COgQmsCMJAQ==}
 
+  cbor-extract@2.2.3:
+    resolution: {integrity: sha512-zTOCEYwiQDChj5DV/sUqccv3jhdZqbhymztwcrW2LncIG2fPPkb1ceK5rmr0bdtxzJCXoWzZ95shA+uaSH8cKw==}
+    hasBin: true
+
+  cbor-x@1.6.9:
+    resolution: {integrity: sha512-TCT9XHLb4iPGQ99fpQjcTRncbus6cXHvSD/RY+bPrDACBCJKiQLmAM6r7/BgQcI5i+8h4gwp4vjfb6S6T8bPGw==}
+
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
 
@@ -3611,6 +3646,10 @@ packages:
   dequal@2.0.3:
     resolution: {integrity: sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==}
     engines: {node: '>=6'}
+
+  detect-libc@2.1.2:
+    resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
+    engines: {node: '>=8'}
 
   detective-amd@6.0.1:
     resolution: {integrity: sha512-TtyZ3OhwUoEEIhTFoc1C9IyJIud3y+xYkSRjmvCt65+ycQuc3VcBrPRTMWoO/AnuCyOB8T5gky+xf7Igxtjd3g==}
@@ -4938,6 +4977,10 @@ packages:
     peerDependenciesMeta:
       encoding:
         optional: true
+
+  node-gyp-build-optional-packages@5.1.1:
+    resolution: {integrity: sha512-+P72GAjVAbTxjjwUmwjVrqrdZROD4nf8KgpBoDxqXXTiYZZt/ud60dE5yvCSr9lRO8e8yv6kgJIC0K0PfZFVQw==}
+    hasBin: true
 
   node-gyp@10.3.1:
     resolution: {integrity: sha512-Pp3nFHBThHzVtNY7U6JfPjvT/DTE8+o/4xKsLQtBoU+j2HLsGlhcfzflAoUreaJbNmYnX+LlLi0qjV8kpyO6xQ==}
@@ -7258,6 +7301,21 @@ snapshots:
 
   '@braintree/sanitize-url@7.1.2': {}
 
+  '@cbor-extract/cbor-extract-darwin-arm64@2.2.3':
+    optional: true
+
+  '@cbor-extract/cbor-extract-darwin-x64@2.2.3':
+    optional: true
+
+  '@cbor-extract/cbor-extract-linux-arm64@2.2.3':
+    optional: true
+
+  '@cbor-extract/cbor-extract-linux-arm@2.2.3':
+    optional: true
+
+  '@cbor-extract/cbor-extract-win32-x64@2.2.3':
+    optional: true
+
   '@chevrotain/cst-dts-gen@11.1.2':
     dependencies:
       '@chevrotain/gast': 11.1.2
@@ -9257,6 +9315,21 @@ snapshots:
 
   caniuse-lite@1.0.30001777: {}
 
+  cbor-extract@2.2.3:
+    dependencies:
+      node-gyp-build-optional-packages: 5.1.1
+    optionalDependencies:
+      '@cbor-extract/cbor-extract-darwin-arm64': 2.2.3
+      '@cbor-extract/cbor-extract-darwin-x64': 2.2.3
+      '@cbor-extract/cbor-extract-linux-arm': 2.2.3
+      '@cbor-extract/cbor-extract-linux-arm64': 2.2.3
+      '@cbor-extract/cbor-extract-win32-x64': 2.2.3
+    optional: true
+
+  cbor-x@1.6.9:
+    optionalDependencies:
+      cbor-extract: 2.2.3
+
   ccount@2.0.1: {}
 
   chai@6.2.2: {}
@@ -9736,6 +9809,9 @@ snapshots:
       - supports-color
 
   dequal@2.0.3: {}
+
+  detect-libc@2.1.2:
+    optional: true
 
   detective-amd@6.0.1:
     dependencies:
@@ -11309,6 +11385,11 @@ snapshots:
       whatwg-url: 5.0.0
     optionalDependencies:
       encoding: 0.1.13
+
+  node-gyp-build-optional-packages@5.1.1:
+    dependencies:
+      detect-libc: 2.1.2
+    optional: true
 
   node-gyp@10.3.1(supports-color@8.1.1):
     dependencies:

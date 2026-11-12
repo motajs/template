@@ -7,6 +7,7 @@ packages:
     - '!packages-user/**/dist'
     - '!packages-user/**/node_modules'
 allowBuilds:
+  cbor-extract: true
   core-js: true
   esbuild: true
   less: true
