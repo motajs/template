@@ -32,14 +32,16 @@ export class CustomRenderItem extends RenderItem {
         nextValue: any
     ): boolean {
         switch (key) {
-            case 'render':
+            case 'render': {
                 if (!this.assertType(nextValue, 'function', key)) return false;
                 this.setRenderFn(nextValue);
                 return true;
-            case 'bindings':
+            }
+            case 'bindings': {
                 if (!this.assertType(nextValue, Array, key)) return false;
                 this.update();
                 return true;
+            }
         }
         return false;
     }

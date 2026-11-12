@@ -94,6 +94,8 @@ export interface ConatinerCustomProps extends ContainerProps {
     render?: CustomContainerRenderFn;
     /** 自定义容器事件传递函数 */
     propagate?: CustomContainerPropagateFn;
+    /** 更新绑定，当数组中的任意一项更新时将会自动更新此元素的渲染 */
+    bindings?: readonly unknown[];
 }
 
 export interface GL2Props extends BaseProps {}

@@ -188,6 +188,11 @@ export class CustomContainer extends Container {
                 this.setPropagateFn(nextValue);
                 return true;
             }
+            case 'bindings': {
+                if (!this.assertType(nextValue, Array, key)) return false;
+                this.update();
+                return true;
+            }
         }
         return super.handleProps(key, prevValue, nextValue);
     }
