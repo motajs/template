@@ -144,9 +144,45 @@ export interface IRenderItemBaseHooks extends IHookBase {
 
     /**
      * 当元素的变换矩阵发生变化时触发
+     * @param item 触发此钩子的渲染元素
      * @param transform 变换矩阵对象
      */
-    onTransform?(transform: Transform): void;
+    onTransform?(item: IRenderItem, transform: Transform): void;
+
+    /**
+     * 当连接到根元素上时执行
+     * @param root 根元素
+     */
+    onConnected?(root: IRenderTreeRoot): void;
+
+    /**
+     * 当从根元素上取消连接时执行
+     * @param prevRoot 先前连接至的根元素
+     */
+    onDisconnected?(prevRoot: IRenderTreeRoot): void;
+
+    /**
+     * 当更新子元素列表时触发
+     * @param children 当前的子元素列表
+     */
+    onUpdateChildren?(children: readonly IRenderItem[]): void;
+
+    /**
+     * 当添加至任意父元素时触发
+     * @param parent 添加至的父元素
+     */
+    onAppendTo?(parent: IRenderItem): void;
+
+    /**
+     * 当从任意父元素上被移除时触发
+     * @param prevParent 原先所属的父元素
+     */
+    onRemove?(prevParent: IRenderItem): void;
+
+    /**
+     * 当此元素被销毁时触发
+     */
+    onDestroyed?(): void;
 }
 
 export interface IRenderItem

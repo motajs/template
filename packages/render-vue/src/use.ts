@@ -1,11 +1,21 @@
-import { IRenderTreeRoot, MotaRenderer, RenderItem } from '@motajs/render';
 import {
+    IRenderItemBaseHooks,
+    IRenderTreeRoot,
+    MotaRenderer,
+    RenderItem
+} from '@motajs/render';
+import {
+    ComponentInternalInstance,
     computed,
     ComputedRef,
     getCurrentInstance,
+    onMounted,
     onUnmounted,
+    onUpdated,
     Ref,
-    ref
+    ref,
+    shallowRef,
+    watch
 } from 'vue';
 import {
     IExcitable,
@@ -23,6 +33,33 @@ import { ITransitionedController } from './types';
 //#region 函数功能接口
 
 /**
+ * 尝试从不同的路径获取当前挂载至的根元素
+ * @param instance 组件实例对象
+ */
+function tryGetRoot(
+    instance: ComponentInternalInstance
+): IRenderTreeRoot | null {
+    const root = instance.root.vnode.el;
+    if (root instanceof RenderItem) {
+        if (root.parent instanceof MotaRenderer) {
+            return root.parent;
+        } else if (root.root) {
+            return root.root;
+        }
+    }
+    const currEl = instance.proxy?.$el;
+    if (currEl instanceof RenderItem) {
+        return currEl.root;
+    }
+    const appEl = instance.appContext.app._container;
+    if (appEl instanceof MotaRenderer) {
+        return appEl;
+    }
+
+    return null;
+}
+
+/**
  * 尝试获取当前组件的根渲染元素，若无法找到可能存在的根元素，则返回 `null`。
  * 仅允许在组件的 `setup` 或其生命周期钩子中调用，否则一定返回 `null`。
  *
@@ -31,23 +68,28 @@ import { ITransitionedController } from './types';
  * const ex = root.excitation; // 例如从根元素获取激励源
  * ```
  */
-export function useRendererRoot(): IRenderTreeRoot | null {
+export function useRendererRoot(): Readonly<Ref<IRenderTreeRoot | null>> {
+    const ret = shallowRef<IRenderTreeRoot | null>(null);
     const instance = getCurrentInstance();
-    if (!instance) return null;
-    // 尝试从几个路径获取根元素
-    const root = instance.root.vnode.el;
-    if (root instanceof RenderItem) {
-        if (root.parent instanceof MotaRenderer) {
-            return root.parent;
-        } else {
-            return null;
+    if (!instance) {
+        ret.value = null;
+        return ret;
+    }
+
+    ret.value = tryGetRoot(instance);
+
+    if (!instance.isUnmounted) {
+        onUpdated(() => {
+            ret.value = tryGetRoot(getCurrentInstance()!);
+        });
+        if (!instance.isMounted) {
+            onMounted(() => {
+                ret.value = tryGetRoot(getCurrentInstance()!);
+            });
         }
     }
-    const currEl = instance.proxy?.$el;
-    if (currEl instanceof RenderItem) return currEl.root;
-    const appEl = instance.appContext.app._container;
-    if (appEl instanceof MotaRenderer) return appEl;
-    return null;
+
+    return ret;
 }
 
 /**
@@ -64,12 +106,25 @@ export function useRendererRoot(): IRenderTreeRoot | null {
  * @param excitable 要执行的被激励对象
  */
 export function onExcited(excitable: IExcitable<number>): void {
+    const instance = getCurrentInstance();
+    if (!instance) return;
     const renderer = useRendererRoot();
-    if (!renderer) return;
-    const num = renderer.delegateExcitable(excitable);
-    onUnmounted(() => {
-        renderer.removeExcitable(num);
-    });
+    let num: number = -1;
+    watch(
+        renderer,
+        (value, old) => {
+            old?.removeExcitable(num);
+            if (value) {
+                num = value.delegateExcitable(excitable);
+            }
+        },
+        { immediate: true }
+    );
+    if (!instance.isUnmounted) {
+        onUnmounted(() => {
+            renderer.value?.removeExcitable(num);
+        });
+    }
 }
 
 /**
@@ -104,15 +159,25 @@ export function useAnimater(
     anim?: IAnimater,
     excitation?: IExcitation<number>
 ): IAnimater | null {
+    const instance = getCurrentInstance();
+    if (!instance) return null;
     const renderer = useRendererRoot();
-    if (!renderer) return null;
-    const ex = excitation ?? renderer.excitation;
     const animater = anim ?? new Animater();
-    animater.bindExcitation(ex);
-    onUnmounted(() => {
-        animater.unbindExcitation();
-        if (!anim) animater.destroy();
-    });
+    watch(
+        renderer,
+        value => {
+            const ex = excitation ?? value?.excitation;
+            if (ex) animater.bindExcitation(ex);
+            else animater.unbindExcitation();
+        },
+        { immediate: true }
+    );
+    if (!instance.isUnmounted) {
+        onUnmounted(() => {
+            animater.unbindExcitation();
+            if (!anim) animater.destroy();
+        });
+    }
     return animater;
 }
 
@@ -133,19 +198,59 @@ export function useTransition(
     tran?: ITransition,
     excitation?: IExcitation<number>
 ): ITransition | null {
+    const instance = getCurrentInstance();
+    if (!instance) return null;
     const renderer = useRendererRoot();
-    if (!renderer) return null;
-    const ex = excitation ?? renderer.excitation;
     const transition = tran ?? new Transition();
-    transition.bindExcitation(ex);
-    onUnmounted(() => {
-        transition.unbindExcitation();
-        if (!tran) transition.destroy();
-    });
+    watch(
+        renderer,
+        value => {
+            const ex = excitation ?? value?.excitation;
+            if (ex) transition.bindExcitation(ex);
+            else transition.unbindExcitation();
+        },
+        { immediate: true }
+    );
+    if (!instance.isUnmounted) {
+        onUnmounted(() => {
+            transition.unbindExcitation();
+            if (!tran) transition.destroy();
+        });
+    }
     return transition;
 }
 
 const transitionMap: Map<IRenderTreeRoot, ITransition> = new Map();
+
+/**
+ * 获取专供 `transitioned` 和 `transitionedColor` 使用的渐变对象
+ */
+function getGlobalTransition(): ComputedRef<ITransition | null> {
+    const renderer = useRendererRoot();
+    const tran = computed(() => {
+        if (renderer.value) {
+            const transition = transitionMap.getOrInsertComputed(
+                renderer.value,
+                () => {
+                    // 在这里添加副作用以在根元素被销毁时一并删除渐变对象
+                    const pin = renderer.value!;
+                    const hook: IRenderItemBaseHooks = {
+                        onDestroyed() {
+                            transitionMap.delete(pin);
+                        }
+                    };
+                    pin.addHook(hook);
+                    return new Transition();
+                }
+            );
+            transition.bindExcitation(renderer.value.excitation);
+            return transition;
+        } else {
+            return null;
+        }
+    });
+    return tran;
+}
 
 /**
  * 创建一个渐变数值，当数值发生变化时会缓慢变化值目标值而非突变，只可以用于组件内，不可用于组件外
@@ -165,16 +270,9 @@ export function transitioned(
     time: number,
     curve: ExcitationCurve
 ): ITransitionedController<number> | null {
-    const renderer = useRendererRoot();
-    if (!renderer) return null;
-    const tran = transitionMap.getOrInsertComputed(
-        renderer,
-        () => new Transition()
-    );
-    if (!tran.excitation) {
-        tran.bindExcitation(renderer.excitation);
-    }
-    return new RenderTransition(value, tran, time, curve);
+    const instance = getCurrentInstance();
+    if (!instance) return null;
+    return new RenderTransition(value, getGlobalTransition(), time, curve);
 }
 
 /**
@@ -198,14 +296,7 @@ export function transitionedColor(
 ): ITransitionedController<string> | null {
     const renderer = useRendererRoot();
     if (!renderer) return null;
-    const tran = transitionMap.getOrInsertComputed(
-        renderer,
-        () => new Transition()
-    );
-    if (!tran.excitation) {
-        tran.bindExcitation(renderer.excitation);
-    }
-    return new RenderColorTransition(color, tran, time, curve);
+    return new RenderColorTransition(color, getGlobalTransition(), time, curve);
 }
 
 //#endregion
@@ -214,6 +305,11 @@ export function transitionedColor(
 
 class RenderTransition implements ITransitionedController<number> {
     readonly ref: Ref<number>;
+
+    /** 在未绑定渐变器的时候，将要移动至的目标值 */
+    private pendingValue: number = 0;
+    /** 在未绑定渐变器的时候，移动目标值将花费的时间 */
+    private pendingTime: number = 0;
 
     set value(v: number) {
         this.set(v);
@@ -224,15 +320,28 @@ class RenderTransition implements ITransitionedController<number> {
 
     constructor(
         value: number,
-        readonly transition: ITransition,
+        readonly transition: ComputedRef<ITransition | null>,
         public time: number,
         public curve: ExcitationCurve
     ) {
         this.ref = ref(value);
+
+        watch(transition, (value, old) => {
+            if (value && !old) {
+                this.set(this.pendingValue, this.pendingTime);
+            }
+        });
     }
 
     set(value: number, time: number = this.time): void {
-        this.transition.curve(this.curve).transition(this.ref).to(value, time);
+        if (this.transition.value) {
+            this.transition.value
+                .curve(this.curve)
+                .transition(this.ref)
+                .to(value, time);
+        } else {
+            this.pendingValue = value;
+        }
     }
 
     mode(timing: ExcitationCurve): void {
@@ -258,6 +367,11 @@ class RenderColorTransition implements ITransitionedController<string> {
 
     readonly ref: ComputedRef<string>;
 
+    /** 在未绑定渐变器的时候，将要移动至的目标值 */
+    private pendingValue: ColorRGBA = [0, 0, 0, 0];
+    /** 在未绑定渐变器的时候，移动目标值将花费的时间 */
+    private pendingTime: number = 0;
+
     set value(v: string) {
         this.set(v);
     }
@@ -267,7 +381,7 @@ class RenderColorTransition implements ITransitionedController<string> {
 
     constructor(
         value: string,
-        readonly transition: ITransition,
+        readonly transition: ComputedRef<ITransition | null>,
         public time: number,
         public curve: ExcitationCurve
     ) {
@@ -277,6 +391,12 @@ class RenderColorTransition implements ITransitionedController<string> {
         this.bValue = ref(b);
         this.aValue = ref(a);
         this.ref = computed(() => this.encodeColor());
+
+        watch(transition, (value, old) => {
+            if (value && !old) {
+                this.transitionColor(this.pendingValue, this.pendingTime);
+            }
+        });
     }
 
     set(value: string, time: number = this.time): void {
@@ -297,16 +417,21 @@ class RenderColorTransition implements ITransitionedController<string> {
      * @param time 渐变时长
      */
     private transitionColor([r, g, b, a]: ColorRGBA, time: number) {
-        this.transition
-            .curve(this.curve)
-            .transition(this.rValue)
-            .to(r, time)
-            .transition(this.gValue)
-            .to(g, time)
-            .transition(this.bValue)
-            .to(b, time)
-            .transition(this.aValue)
-            .to(a, time);
+        if (this.transition.value) {
+            this.transition.value
+                .curve(this.curve)
+                .transition(this.rValue)
+                .to(r, time)
+                .transition(this.gValue)
+                .to(g, time)
+                .transition(this.bValue)
+                .to(b, time)
+                .transition(this.aValue)
+                .to(a, time);
+        } else {
+            this.pendingValue = [r, g, b, a];
+            this.pendingTime = time;
+        }
     }
 
     /**

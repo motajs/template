@@ -170,7 +170,13 @@ export abstract class RenderItem
             .add('onWheel')
             .add('onWheelCapture')
             .add('onResize')
-            .add('onTransform');
+            .add('onTransform')
+            .add('onConnected')
+            .add('onDisconnected')
+            .add('onUpdatedChildren')
+            .add('onAppendTo')
+            .add('onRemove')
+            .add('onDestroyed');
 
         this.addHook(this.getDefaultHook());
 
@@ -514,7 +520,7 @@ export abstract class RenderItem
         }
         this.x = transform.x;
         this.y = transform.y;
-        this.forEachHook(hook => hook.onTransform?.(transform));
+        this.forEachHook(hook => hook.onTransform?.(this, transform));
     }
 
     //#endregion
@@ -530,12 +536,15 @@ export abstract class RenderItem
             item.connect(item);
             this.connected = true;
             this.onConnected(item);
+            this.forEachHook(hook => hook.onConnected?.(item));
         } else {
             this.connected = false;
             if (before) {
                 this.onDisconnected(before);
+                this.forEachHook(hook => hook.onDisconnected?.(before));
             }
         }
+        this.children.forEach(v => v.setRoot(item));
     }
 
     appendTo(parent: IRenderItem, anchor?: IRenderItem) {
@@ -570,11 +579,10 @@ export abstract class RenderItem
         el.onResize(this.scale);
         el.forEachHook(hook => hook.onResize?.(el.width, el.height));
         // 还需要深度遍历每个元素，给每个元素都设置根元素
-        if (this.root) {
-            el.setRoot(this.root);
-            el.forEachChild(item => item.setRoot(this.root));
-        }
+        el.setRoot(this.root);
         el.update();
+        el.forEachHook(hook => hook.onAppendTo?.(this));
+        this.forEachHook(hook => hook.onUpdateChildren?.(this.children));
     }
 
     removeChild(child: IRenderItem): boolean {
@@ -589,6 +597,8 @@ export abstract class RenderItem
         this.update();
         el.transform.unbind(el);
         el.setRoot(null);
+        el.forEachHook(hook => hook.onRemove?.(this));
+        this.forEachHook(hook => hook.onUpdateChildren?.(this.children));
         return true;
     }
 
@@ -1146,6 +1156,7 @@ export abstract class RenderItem
         this.touchId.clear();
         this.children.length = 0;
         this.setRoot(null);
+        this.forEachHook(hook => hook.onDestroyed?.());
     }
 }
 
@@ -1204,7 +1215,31 @@ export class RenderItemDefaultHooks implements IRenderItemBaseHooks {
         this.list.get('onResize')?.(width, height);
     }
 
-    onTransform(transform: Transform): void {
-        this.list.get('onTransform')?.(transform);
+    onTransform(item: IRenderItem, transform: Transform): void {
+        this.list.get('onTransform')?.(item, transform);
+    }
+
+    onConnected(root: IRenderTreeRoot): void {
+        this.list.get('onConnected')?.(root);
+    }
+
+    onDisconnected(prevRoot: IRenderTreeRoot): void {
+        this.list.get('onDisconnected')?.(prevRoot);
+    }
+
+    onUpdateChildren(children: readonly IRenderItem[]): void {
+        this.list.get('onUpdateChildren')?.(children);
+    }
+
+    onAppendTo(parent: IRenderItem): void {
+        this.list.get('onAppendTo')?.(parent);
+    }
+
+    onRemove(prevParent: IRenderItem): void {
+        this.list.get('onRemove')?.(prevParent);
+    }
+
+    onDestroyed(): void {
+        this.list.get('onDestroyed')?.();
     }
 }
