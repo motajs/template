@@ -27,21 +27,18 @@ import {
     SaveSystem,
     IGameUIPropsBase,
     ClientHotkey,
-    IClientHotkey
+    IClientHotkey,
+    Icon,
+    Winskin,
+    MapRenderItem
 } from '@user/client-base';
-import {
-    IMapRenderer,
-    IMapExtensionManager,
-    MapRenderer,
-    MapExtensionManager
-} from '@user/client-base';
+import { IMapRenderer, MapRenderer } from '@user/client-base';
 import {
     ExcitationDivider,
     IExcitation,
     IExcitationDivider,
     RafExcitation
 } from '@motajs/animate';
-import { IRendererUsing, RendererUsing } from '@motajs/render-vue';
 import { IUIController, UIController } from '@motajs/system';
 import { createUIPropsBase } from './ui/func';
 
@@ -55,10 +52,8 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly excitationDivider: IExcitationDivider<number>;
     readonly renderer: IRenderTreeRoot;
     readonly materials: ITextureManager;
-    readonly using: IRendererUsing;
     readonly mainMapRenderer: IMapRenderer;
     readonly expandMapRenderer: IMapRenderer;
-    readonly mainMapExtension: IMapExtensionManager;
     readonly sceneController: IUIController<IGameUIPropsBase>;
     readonly mainUIController: IUIController<IGameUIPropsBase>;
     readonly hotkey: IClientHotkey;
@@ -94,15 +89,29 @@ export class ClientCore extends CoreState implements IClientCore {
             // 使用分频器，用户可以在设置中调整，如果设备性能较差调高分频有助于提高性能表现
             excitaion: this.excitationDivider
         });
-        this.using = new RendererUsing(this.renderer);
         this.mainMapRenderer = new MapRenderer(this.materials);
-        this.mainMapExtension = new MapExtensionManager(this.mainMapRenderer);
         this.expandMapRenderer = new MapRenderer(this.materials);
         this.sceneController = new UIController<IGameUIPropsBase>();
         this.mainUIController = new UIController<IGameUIPropsBase>();
         const pbCreator = createUIPropsBase(this);
         this.sceneController.setPropsBaseCreator(pbCreator);
         this.mainUIController.setPropsBaseCreator(pbCreator);
+
+        this.renderer.registerElement('icon', () => new Icon());
+        this.renderer.registerElement('winskin', () => new Winskin());
+        // TODO: 这个回头要改
+        this.renderer.registerElement(
+            'map-render',
+            () =>
+                new MapRenderItem(
+                    this.maps.getMap('test')!,
+                    this.mainMapRenderer
+                )
+        );
+
+        // const { createApp, render, tagManager } = createRendererFor(
+        //     this.renderer
+        // );
 
         this.loader.addCoreConfig('client', config.clientURL);
 
@@ -236,6 +245,6 @@ export class ClientCore extends CoreState implements IClientCore {
         //     this.mainMapExtension.addHero(this.hero.mover, layer);
         //     this.mainMapExtension.addDoor(layer);
         // }
-        this.mainMapExtension.addText();
+        // this.mainMapExtension.addText();
     }
 }

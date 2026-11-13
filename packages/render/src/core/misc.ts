@@ -1,34 +1,36 @@
 import { RenderItem, Transform, MotaOffscreenCanvas2D } from '.';
 import { CanvasStyle } from '../types';
 import { Font } from '../style';
-import { IRenderAnimated, IRenderImage, IRenderText } from './types';
+import {
+    IRenderAnimated,
+    IRenderImage,
+    IRenderText,
+    IRenderTreeRoot
+} from './types';
 import { ITexture, ITextureAnimater, ITextureRenderable } from '../assets';
 
 /** 文字的安全填充，会填充在文字的上侧和下侧，防止削顶和削底 */
 const SAFE_PAD = 1;
 
+/** 文本测量画布 */
+const MEASURE = new MotaOffscreenCanvas2D();
+MEASURE.setHD(false);
+MEASURE.setScale(1);
+MEASURE.size(1, 1);
+
 export class Text extends RenderItem implements IRenderText {
-    text: string;
+    text: string = '';
 
     fillStyle?: CanvasStyle = '#fff';
     strokeStyle?: CanvasStyle;
     font: Font = new Font();
     strokeWidth: number = 1;
 
-    private length: number = 0;
+    /** 文本的下边缘位置 */
     private descent: number = 0;
 
-    private static measureCanvas = new MotaOffscreenCanvas2D();
-
-    constructor(text: string = '', enableCache: boolean = false) {
-        super(enableCache);
-
-        this.text = text;
-        if (text.length > 0) {
-            this.requestBeforeFrame(() => {
-                this.calBox();
-            });
-        }
+    protected getDefaultCache(): boolean {
+        return false;
     }
 
     protected render(
@@ -56,7 +58,7 @@ export class Text extends RenderItem implements IRenderText {
      * 获取文字的长度
      */
     measure() {
-        const ctx = Text.measureCanvas.ctx;
+        const ctx = MEASURE.ctx;
         ctx.textBaseline = 'bottom';
         ctx.font = this.font.string();
         const res = ctx.measureText(this.text);
@@ -112,7 +114,6 @@ export class Text extends RenderItem implements IRenderText {
     calBox() {
         const { width, actualBoundingBoxAscent, actualBoundingBoxDescent } =
             this.measure();
-        this.length = width;
         this.descent = actualBoundingBoxAscent;
         const height = actualBoundingBoxAscent + actualBoundingBoxDescent;
         const stroke = this.strokeWidth * 2;
@@ -148,11 +149,10 @@ export class Text extends RenderItem implements IRenderText {
 }
 
 export class Image extends RenderItem implements IRenderImage {
-    image: ITexture | null;
+    image: ITexture | null = null;
 
-    constructor(enableCache: boolean = false) {
-        super(enableCache);
-        this.image = null;
+    protected getDefaultCache(): boolean {
+        return false;
     }
 
     protected render(
@@ -209,11 +209,11 @@ export class Animated<T> extends RenderItem implements IRenderAnimated<T> {
 
     /** 动画生成器 */
     private gen: Generator<ITextureRenderable, void> | null = null;
+    /** 委托 Excitation 的 id */
+    private delegation: number = -1;
 
-    constructor(enableCache: boolean = false) {
-        super(enableCache);
-
-        this.delegateExcitable(time => {
+    protected onConnected(root: IRenderTreeRoot): void {
+        this.delegation = root.delegateExcitable(time => {
             this.currentTime = time;
             if (this.lastFrameTime === -1) {
                 this.lastFrameTime = time;
@@ -232,6 +232,14 @@ export class Animated<T> extends RenderItem implements IRenderAnimated<T> {
                 this.update();
             }
         });
+    }
+
+    protected onDisconnected(prevRoot: IRenderTreeRoot): void {
+        prevRoot.removeExcitable(this.delegation);
+    }
+
+    protected getDefaultCache(): boolean {
+        return false;
     }
 
     protected render(canvas: MotaOffscreenCanvas2D): void {
@@ -303,17 +311,18 @@ export class Animated<T> extends RenderItem implements IRenderAnimated<T> {
 export class Comment extends RenderItem {
     readonly isComment: boolean = true;
 
-    constructor(public text: string = '') {
-        super(false);
+    constructor() {
+        super();
         this.hide();
+    }
+
+    protected getDefaultCache(): boolean {
+        return false;
     }
 
     getBoundingRect(): DOMRectReadOnly {
         return new DOMRectReadOnly(0, 0, 0, 0);
     }
 
-    protected render(
-        _canvas: MotaOffscreenCanvas2D,
-        _transform: Transform
-    ): void {}
+    protected render(): void {}
 }

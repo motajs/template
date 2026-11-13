@@ -1,7 +1,7 @@
 import { BaseProps, TagDefine } from '@motajs/render-vue';
-import { ERenderItemEvent, SizedCanvasImageSource } from '@motajs/render';
+import { IRenderItemBaseHooks, SizedCanvasImageSource } from '@motajs/render';
 import { IGameMap } from '@user/data-base';
-import { IMapExtensionManager, IMapRenderer } from '../map';
+import { IMapRenderer } from '../map';
 
 export interface IconProps extends BaseProps {
     /** 图标 id 或数字 */
@@ -24,17 +24,16 @@ export interface WinskinProps extends BaseProps {
 }
 
 export interface MapRenderProps extends BaseProps {
-    layerState: IGameMap;
+    map: IGameMap;
     renderer: IMapRenderer;
-    extension: IMapExtensionManager;
 }
 
 declare module 'vue/jsx-runtime' {
     namespace JSX {
         export interface IntrinsicElements {
-            icon: TagDefine<IconProps, ERenderItemEvent>;
-            winskin: TagDefine<WinskinProps, ERenderItemEvent>;
-            'map-render': TagDefine<MapRenderProps, ERenderItemEvent>;
+            icon: TagDefine<IconProps, IRenderItemBaseHooks>;
+            winskin: TagDefine<WinskinProps, IRenderItemBaseHooks>;
+            'map-render': TagDefine<MapRenderProps, IRenderItemBaseHooks>;
         }
     }
 }

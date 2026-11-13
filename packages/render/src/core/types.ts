@@ -156,7 +156,7 @@ export interface IRenderItem
     /** 当前元素的父元素 */
     readonly parent: IRenderItem | null;
     /** 当前元素的子元素 */
-    readonly children: Set<IRenderItem>;
+    readonly children: readonly IRenderItem[];
     /** 此元素所附属的根元素 */
     readonly root: IRenderTreeRoot | null;
     /** 当前元素是否连接至根元素 */
@@ -258,6 +258,12 @@ export interface IRenderItem
     //#region 渲染设置
 
     /**
+     * 设置当前元素是否启用缓存
+     * @param enabled 是否启用缓存
+     */
+    setCacheEnabled(enabled: boolean): void;
+
+    /**
      * 修改这个对象的大小
      */
     size(width: number, height: number): void;
@@ -356,6 +362,195 @@ export interface IRenderItem
      */
     getBoundingRect(): DOMRectReadOnly;
 
+    //#endregion
+
+    //#region 父子关系
+
+    /**
+     * 向这个元素添加子元素
+     * @param child 添加的元素
+     * @param anchor 元素添加锚点，将元素插入到指定元素的后面
+     */
+    appendChild(child: IRenderItem, anchor?: IRenderItem): void;
+
+    /**
+     * 移除这个元素中的某个子元素
+     * @param child 要移除的元素
+     * @returns 是否移除成功
+     */
+    removeChild(child: IRenderItem): boolean;
+
+    /**
+     * 将这个渲染元素添加到其他父元素上
+     * @param parent 父元素
+     * @param anchor 元素添加锚点，将元素插入到指定元素的后面
+     */
+    appendTo(parent: IRenderItem, anchor?: IRenderItem): void;
+
+    /**
+     * 从渲染树中移除这个节点
+     * @returns 是否移除成功
+     */
+    remove(): boolean;
+
+    /**
+     * 获取排序后的子元素，根据 `zIndex` 排序，小的在前，大的在后
+     */
+    getSortedChildren(): readonly IRenderItem[];
+
+    /**
+     * 按照 DFS 规则深度遍历每一个子元素，可以确保遍历顺序稳定，按照 `children` 的顺序遍历
+     * @param fn 对每个子元素执行的函数
+     */
+    forEachChild(fn: (item: IRenderItem) => void): void;
+
+    //#endregion
+
+    //#region 事件相关
+
+    /**
+     * 设置是否忽略交互事件，交互事件将会直接下穿至在其下方的元素
+     * @param ignore 是否忽略事件
+     */
+    ignoreEvent(ignore: boolean): void;
+
+    //#endregion
+
+    //#region 其他接口
+
+    /**
+     * 设置元素的 id
+     * @param id 元素 id
+     */
+    setID(id: string): void;
+
+    /**
+     * 摧毁这个渲染元素，摧毁后不应继续使用
+     */
+    destroy(): void;
+
+    //#endregion
+}
+
+//#endregion
+
+//#region 根元素
+
+export interface IRenderTagMap {
+    container: IRenderItem;
+    custom: IRenderCustom;
+    text: IRenderText;
+    image: IRenderImage;
+    animated: IRenderAnimated<any>;
+    shader: IWebGL2RenderItem;
+    comment: IRenderItem;
+    template: IRenderItem;
+    'custom-container': ICustomContainer;
+    'g-rect': IGraphicRenderItem;
+    'g-circle': IGraphicCircle;
+    'g-ellipse': IGraphicEllipse;
+    'g-line': IGraphicLine;
+    'g-bezier': IGraphicBezierCurve;
+    'g-quad': IGraphicQuadBezierCurve;
+    'g-path': IGraphicPath;
+    'g-rectr': IGraphicRectR;
+}
+
+export interface IMotaRendererConfig {
+    /** 要挂载到哪个画布上，可以填 css 选择器或画布元素本身 */
+    readonly canvas: string | HTMLCanvasElement;
+    /** 画布的宽度，所有渲染操作会自行适配缩放 */
+    readonly width: number;
+    /** 画布的高度，所有渲染操作会自行适配缩放 */
+    readonly height: number;
+    /** 是否启用不透明度通道，默认启用 */
+    readonly alpha?: boolean;
+    /** 指定渲染器的激励源，默认使用 `RafExcitation` */
+    readonly excitaion?: IExcitation<number>;
+}
+
+export type RenderItemConstructor<T extends IRenderItem> = () => T;
+
+export interface IRenderTreeRoot extends IRenderItem {
+    /** 是否是根元素 */
+    readonly isRoot: true;
+    /** 根元素的激励源 */
+    readonly excitation: IExcitation<number>;
+
+    /**
+     * 创建内置标签对应的渲染元素
+     * @param tag 标签名称
+     */
+    createElement<K extends keyof IRenderTagMap>(tag: K): IRenderTagMap[K];
+    /**
+     * 创建自定义标签对应的渲染元素
+     * @param tag 标签名称
+     */
+    createElement<T extends IRenderItem>(tag: string): T | null;
+    /**
+     * 传入自定义构造器，创建对应的渲染元素
+     * @param cons 构造器
+     */
+    createElement<T extends IRenderItem>(cons: RenderItemConstructor<T>): T;
+
+    /**
+     * 注册标签渲染元素
+     * @param tag 标签名称
+     * @param cons 对应渲染元素的构造器
+     */
+    registerElement(
+        tag: string,
+        cons: RenderItemConstructor<IRenderItem>
+    ): void;
+
+    /**
+     * 当前根元素是否包含指定标签
+     * @param tag 标签名称
+     */
+    hasTag(tag: string): boolean;
+
+    /**
+     * 将一个渲染元素连接到此根元素
+     * @param item 要连接到此根元素的渲染元素
+     */
+    connect(item: IRenderItem): void;
+
+    /**
+     * 将已连接的渲染元素从此根元素中去掉
+     * @param item 要取消连接的渲染元素
+     */
+    disconnect(item: IRenderItem): void;
+
+    /**
+     * 修改已连接的元素的 id
+     * @param item 修改了 id 的元素
+     * @param previous 先前的元素 id
+     * @param current 现在的元素 id
+     */
+    modifyId(item: IRenderItem, previous: string, current: string): void;
+
+    /**
+     * 获取渲染至的目标画布，即显示在画面上的画布
+     */
+    getCanvas(): HTMLCanvasElement;
+
+    /**
+     * 当鼠标覆盖在某个元素上时执行
+     * @param element 鼠标覆盖的元素
+     */
+    hoverElement(element: IRenderItem): void;
+
+    /**
+     * 设置这个渲染器的缩放比
+     * @param scale 缩放比
+     */
+    setScale(scale: number): void;
+
+    /**
+     * 获取当前渲染器的缩放比
+     */
+    getScale(): number;
+
     /**
      * 在下一帧渲染之前执行函数，常用于渲染前数据更新，理论上不应当用于渲染，不保证运行顺序
      * 此方法会将委托在根元素上，如果当前元素没有绑定任何根元素，那么不会有任何行为。
@@ -409,207 +604,6 @@ export interface IRenderItem
      * @param id 函数id
      */
     hasExcitable(id: number): boolean;
-
-    //#endregion
-
-    //#region 父子关系
-
-    /**
-     * 向这个元素添加子元素
-     * @param child 添加的元素
-     */
-    appendChild(...child: IRenderItem[]): void;
-
-    /**
-     * 移除这个元素中的某个子元素
-     * @param child 要移除的元素
-     */
-    removeChild(...child: IRenderItem[]): void;
-
-    /**
-     * 将这个渲染元素添加到其他父元素上
-     * @param parent 父元素
-     */
-    appendTo(parent: IRenderItem): void;
-
-    /**
-     * 从渲染树中移除这个节点
-     * @returns 是否移除成功
-     */
-    remove(): boolean;
-
-    /**
-     * 获取排序后的子元素，根据 `zIndex` 排序，小的在前，大的在后
-     */
-    getSortedChildren(): IRenderItem[];
-
-    //#endregion
-
-    //#region 事件相关
-
-    /**
-     * 设置是否忽略交互事件，交互事件将会直接下穿至在其下方的元素
-     * @param ignore 是否忽略事件
-     */
-    ignoreEvent(ignore: boolean): void;
-
-    //#endregion
-
-    //#region 其他接口
-
-    /**
-     * 设置元素的 id
-     * @param id 元素 id
-     */
-    setID(id: string): void;
-
-    /**
-     * 摧毁这个渲染元素，摧毁后不应继续使用
-     */
-    destroy(): void;
-
-    //#endregion
-}
-
-//#endregion
-
-//#region 根元素
-
-export interface IRenderItemParameterMap {
-    container: [enableCache?: boolean];
-    custom: [enableCache?: boolean];
-    text: [text: string, enableCache?: boolean];
-    image: [image: CanvasImageSource, enableCache?: boolean];
-    shader: [];
-    comment: [text?: string];
-    template: [enableCache?: boolean];
-    'custom-container': [enableCache?: boolean];
-    'g-rect': [enableCache?: boolean];
-    'g-circle': [enableCache?: boolean];
-    'g-ellipse': [enableCache?: boolean];
-    'g-line': [enableCache?: boolean];
-    'g-bezier': [enableCache?: boolean];
-    'g-quad': [enableCache?: boolean];
-    'g-path': [enableCache?: boolean];
-    'g-rectr': [enableCache?: boolean];
-}
-
-export interface IRenderItemInstanceMap {
-    container: IRenderItem;
-    custom: IRenderCustom;
-    text: IRenderText;
-    image: IRenderImage;
-    shader: IWebGL2RenderItem;
-    comment: IRenderItem;
-    template: IRenderItem;
-    'custom-container': ICustomContainer;
-    'g-rect': IGraphicRenderItem;
-    'g-circle': IGraphicCircle;
-    'g-ellipse': IGraphicEllipse;
-    'g-line': IGraphicLine;
-    'g-bezier': IGraphicBezierCurve;
-    'g-quad': IGraphicQuadBezierCurve;
-    'g-path': IGraphicPath;
-    'g-rectr': IGraphicRectR;
-}
-
-export type RenderItemTags = keyof IRenderItemParameterMap &
-    keyof IRenderItemInstanceMap;
-
-export interface IMotaRendererConfig {
-    /** 要挂载到哪个画布上，可以填 css 选择器或画布元素本身 */
-    readonly canvas: string | HTMLCanvasElement;
-    /** 画布的宽度，所有渲染操作会自行适配缩放 */
-    readonly width: number;
-    /** 画布的高度，所有渲染操作会自行适配缩放 */
-    readonly height: number;
-    /** 是否启用不透明度通道，默认启用 */
-    readonly alpha?: boolean;
-    /** 指定渲染器的激励源，默认使用 `RafExcitation` */
-    readonly excitaion?: IExcitation<number>;
-}
-
-export type RenderItemConstructor = new (...params: any[]) => IRenderItem;
-
-export interface IRenderTreeRoot extends IRenderItem {
-    /** 是否是根元素 */
-    readonly isRoot: true;
-    /** 根元素的激励源 */
-    readonly excitation: IExcitation<number>;
-
-    /**
-     * 根据标签名称创建对应的元素
-     * @param tag 标签名称
-     * @param params 传给标签的参数
-     */
-    createElement<K extends RenderItemTags>(
-        tag: K,
-        ...params: IRenderItemParameterMap[K]
-    ): IRenderItemInstanceMap[K];
-    /**
-     * 根据元素类创建对应的元素
-     * @param ele 元素构造器
-     * @param params 传递给构造器的参数
-     */
-    createElement<P extends any[], I extends IRenderItem>(
-        ele: new (...params: P) => I,
-        ...params: P
-    ): I;
-
-    /**
-     * 注册标签渲染元素
-     * @param tag 标签名称
-     * @param cons 对应渲染元素的构造器
-     */
-    registerElement(tag: string, cons: RenderItemConstructor): void;
-
-    /**
-     * 当前根元素是否包含指定标签
-     * @param tag 标签名称
-     */
-    hasTag(tag: string): boolean;
-
-    /**
-     * 将一个渲染元素连接到此根元素
-     * @param item 要连接到此根元素的渲染元素
-     */
-    connect(item: IRenderItem): void;
-
-    /**
-     * 将已连接的渲染元素从此根元素中去掉
-     * @param item 要取消连接的渲染元素
-     */
-    disconnect(item: IRenderItem): void;
-
-    /**
-     * 修改已连接的元素的 id
-     * @param item 修改了 id 的元素
-     * @param previous 先前的元素 id
-     * @param current 现在的元素 id
-     */
-    modifyId(item: IRenderItem, previous: string, current: string): void;
-
-    /**
-     * 获取渲染至的目标画布，即显示在画面上的画布
-     */
-    getCanvas(): HTMLCanvasElement;
-
-    /**
-     * 当鼠标覆盖在某个元素上时执行
-     * @param element 鼠标覆盖的元素
-     */
-    hoverElement(element: IRenderItem): void;
-
-    /**
-     * 设置这个渲染器的缩放比
-     * @param scale 缩放比
-     */
-    setScale(scale: number): void;
-
-    /**
-     * 获取当前渲染器的缩放比
-     */
-    getScale(): number;
 }
 
 //#endregion

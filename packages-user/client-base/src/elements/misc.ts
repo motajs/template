@@ -30,10 +30,14 @@ export class Icon extends RenderItem implements IMotaIcon, IExcitable<number> {
     /** 委托激励对象 id，用于图标的动画展示 */
     private delegation: number = -1;
 
-    constructor(cache: boolean = false) {
-        super(cache);
+    constructor() {
+        super();
         this.setAntiAliasing(false);
         this.setHD(false);
+    }
+
+    protected getDefaultCache(): boolean {
+        return false;
     }
 
     excited(payload: number): void {
@@ -116,8 +120,8 @@ export class Icon extends RenderItem implements IMotaIcon, IExcitable<number> {
 
     setAnimateStatus(animate: boolean): void {
         this.animate = animate;
-        if (!animate) this.removeExcitable(this.delegation);
-        else this.delegation = this.delegateExcitable(this);
+        // if (!animate) this.removeExcitable(this.delegation);
+        // else this.delegation = this.delegateExcitable(this);
         this.update();
     }
 
@@ -174,9 +178,13 @@ export class Winskin extends RenderItem implements IMotaWinskin {
 
     private pendingImage?: ImageIds;
 
-    constructor(enableCache: boolean = false) {
-        super(enableCache);
+    constructor() {
+        super();
         this.setAntiAliasing(false);
+    }
+
+    protected getDefaultCache(): boolean {
+        return true;
     }
 
     protected render(canvas: MotaOffscreenCanvas2D): void {

@@ -1,13 +1,12 @@
 import { isEqual, isNil } from 'lodash-es';
 import { MotaOffscreenCanvas2D } from './canvas2d';
-import { ITransformUpdatable, Transform } from './transform';
+import { Transform } from './transform';
 import {
     Hookable,
     HookController,
     IHookController,
     logger
 } from '@motajs/common';
-import { ElementNamespace, ComponentInternalInstance } from 'vue';
 import {
     ActionEventMap,
     ActionType,
@@ -19,7 +18,6 @@ import {
 } from './event';
 import { vec3 } from 'gl-matrix';
 import {
-    ExcitableDelegation,
     IRenderItem,
     IRenderItemBaseHooks,
     IRenderTreeRoot,
@@ -31,15 +29,9 @@ interface RenderItemCanvasData {
     autoScale: boolean;
 }
 
-interface ToDelegateExcitables {
-    readonly excitable: ExcitableDelegation;
-    readonly time?: number;
-    readonly end?: () => void;
-}
-
 export abstract class RenderItem
     extends Hookable<IRenderItemBaseHooks>
-    implements IRenderItem, ITransformUpdatable<Transform>
+    implements IRenderItem
 {
     //#region 元素属性
 
@@ -103,18 +95,22 @@ export abstract class RenderItem
     /** 当前元素是否连接至了根元素 */
     connected: boolean = false;
     /** 该渲染元素的子元素 */
-    children: Set<RenderItem> = new Set();
+    children: RenderItem[] = [];
+    /** 排序后的子元素列表 */
+    private sortedChildren: RenderItem[] = [];
+    /** 当前是否需要进行排序 */
+    private needSort: boolean = false;
 
     //#endregion
 
     //#region 渲染配置与缓存
 
     /** 渲染缓存信息 */
-    protected readonly cache: MotaOffscreenCanvas2D | null;
+    protected cache: MotaOffscreenCanvas2D | null = null;
     /** 是否需要更新缓存 */
     protected cacheDirty: boolean = false;
     /** 是否启用缓存机制 */
-    readonly enableCache: boolean = true;
+    enableCache: boolean = false;
     /** 这个渲染元素使用到的所有画布 */
     protected readonly canvases: Set<MotaOffscreenCanvas2D> = new Set();
     /** 这个渲染元素每个画布的配置信息 */
@@ -122,6 +118,11 @@ export abstract class RenderItem
         MotaOffscreenCanvas2D,
         RenderItemCanvasData
     > = new WeakMap();
+
+    /** 当前传入的 cache props */
+    private cacheProp: boolean = false;
+    /** 当前传入的 nocache props */
+    private nocacheProp: boolean = false;
 
     //#endregion
 
@@ -152,33 +153,9 @@ export abstract class RenderItem
 
     //#endregion
 
-    //#region 其他
-
-    /** 存储当前渲染对象的所有委托激励对象，用于在被销毁时删除 */
-    private delegationsIdMap: Map<number, ExcitableDelegation> = new Map();
-    /** 委托激励对象到其 id 的映射 */
-    private delegationsMap: Map<ExcitableDelegation, number> = new Map();
-
-    /** 当未绑定根元素时临时存储帧前函数 */
-    private beforeFrames: Set<() => void> = new Set();
-    /** 当未绑定根元素时临时存储帧后函数 */
-    private afterFrames: Set<() => void> = new Set();
-    /** 当未绑定根元素时临时存储委托可激励对象 */
-    private toDelegate: Set<ToDelegateExcitables> = new Set();
-
-    //#endregion
-
-    constructor(enableCache: boolean = true) {
+    constructor() {
         super();
-        this.enableCache = enableCache;
-        this.position = RenderPosition.Absolute;
         this.transform.bind(this);
-        if (enableCache) {
-            this.cache = this.requireCanvas();
-            this.cache.size(this.width, this.height);
-        } else {
-            this.cache = null;
-        }
         this.eventNames
             .add('onClick')
             .add('onClickCapture')
@@ -196,6 +173,10 @@ export abstract class RenderItem
             .add('onTransform');
 
         this.addHook(this.getDefaultHook());
+
+        // 设置默认缓存
+        const cache = this.getDefaultCache();
+        this.setCacheEnabled(cache);
     }
 
     /**
@@ -212,7 +193,6 @@ export abstract class RenderItem
     }
 
     setID(id: string): void {
-        this.checkRoot();
         const prev = this.id;
         this.id = id;
         this.root?.modifyId(this, prev, id);
@@ -294,7 +274,7 @@ export abstract class RenderItem
      * 刷新所有子元素
      */
     refreshAllChildren() {
-        if (this.children.size > 0) {
+        if (this.children.length > 0) {
             const stack: RenderItem[] = [this];
             while (stack.length > 0) {
                 const item = stack.pop();
@@ -320,6 +300,8 @@ export abstract class RenderItem
         } else {
             canvas.setScale(1);
         }
+        canvas.setAntiAliasing(this.antiAliasing);
+        canvas.setHD(this.highResolution);
         this.canvases.add(canvas);
         this.canvasMap.set(canvas, { autoScale });
         return canvas;
@@ -343,6 +325,7 @@ export abstract class RenderItem
                 v.setScale(scale);
             }
         });
+        this.children.forEach(v => v.onResize(scale));
         this.update();
     }
 
@@ -351,8 +334,24 @@ export abstract class RenderItem
     //#region 渲染设置
 
     /**
-     * 修改这个对象的大小
+     * 获取默认是否启用缓存
      */
+    protected abstract getDefaultCache(): boolean;
+
+    setCacheEnabled(enabled: boolean): void {
+        if (enabled === this.enableCache) return;
+        if (enabled) {
+            const canvas = this.requireCanvas();
+            this.enableCache = true;
+            this.cache = canvas;
+        } else {
+            this.enableCache = false;
+            this.cache?.clear();
+            this.cache = null;
+        }
+        this.update();
+    }
+
     size(width: number, height: number): void {
         if (width === this.width && height === this.height) return;
         this.width = width;
@@ -364,20 +363,11 @@ export abstract class RenderItem
         this.forEachHook(hook => hook.onResize?.(width, height));
     }
 
-    /**
-     * 设置这个元素的位置，等效于`transform.setTranslate(x, y)`
-     * @param x 横坐标
-     * @param y 纵坐标
-     */
     pos(x: number, y: number) {
         // 这个函数会调用 update，因此不再手动调用 update
         this.transform.setTranslate(x, y);
     }
 
-    /**
-     * 设置元素变换矩阵
-     * @param transform 变换矩阵对象
-     */
     setTransform(transform: Transform): void {
         this.transform.unbind(this);
         this.transform = transform;
@@ -391,30 +381,18 @@ export abstract class RenderItem
         this.update();
     }
 
-    /**
-     * 设置本元素的滤镜
-     * @param filter 滤镜
-     */
     setFilter(filter: string) {
         this.filter = filter;
         // 设置滤镜时，不需要更新自身的缓存，直接调用父元素的更新即可
         this.parent?.update();
     }
 
-    /**
-     * 设置本元素渲染时的混合方式
-     * @param composite 混合方式
-     */
     setComposite(composite: GlobalCompositeOperation) {
         this.composite = composite;
         // 设置混合模式时，不需要更新自身的缓存，直接调用父元素的更新即可
         this.parent?.update();
     }
 
-    /**
-     * 设置本元素的不透明度
-     * @param alpha 不透明度
-     */
     setAlpha(alpha: number) {
         this.alpha = alpha;
         // 设置不透明度时，不需要更新自身的缓存，直接调用父元素的更新即可
@@ -449,26 +427,16 @@ export abstract class RenderItem
         this.parent?.update();
     }
 
-    /**
-     * 设置光标样式
-     * @param cursor 光标样式
-     */
     setCursor(cursor: string): void {
         this.cursor = cursor;
     }
 
-    /**
-     * 隐藏这个元素
-     */
     hide() {
         if (this.hidden) return;
         this.update();
         this.hidden = true;
     }
 
-    /**
-     * 显示这个元素
-     */
     show() {
         if (!this.hidden) return;
         this.hidden = false;
@@ -479,9 +447,6 @@ export abstract class RenderItem
 
     //#region 功能方法
 
-    /**
-     * 获取当前元素的绝对位置（不建议使用，因为应当很少会有获取绝对位置的需求）
-     */
     getAbsolutePosition(x: number = 0, y: number = 0): [number, number] {
         const [px, py] = this.selfTransform
             ? [x, y]
@@ -493,9 +458,6 @@ export abstract class RenderItem
         }
     }
 
-    /**
-     * 获取到可以包围这个元素的最小矩形，相对于父元素
-     */
     getBoundingRect(): DOMRectReadOnly {
         if (this.selfTransform) {
             const left = -this.anchorX * this.width;
@@ -530,7 +492,7 @@ export abstract class RenderItem
     updateTransform(transform: Transform) {
         // 更新变换矩阵时，只需要更新有 `selfTransform` 的子元素，其他的不需要更新
         let childUpdated = false;
-        if (this.children.size > 0) {
+        if (this.children.length > 0) {
             const stack: RenderItem[] = [this];
             while (stack.length > 0) {
                 const item = stack.pop();
@@ -555,196 +517,125 @@ export abstract class RenderItem
         this.forEachHook(hook => hook.onTransform?.(transform));
     }
 
-    requestBeforeFrame(fn: () => void): void {
-        if (!this.root) {
-            this.beforeFrames.add(fn);
-        } else {
-            this.root?.requestBeforeFrame(fn);
-        }
-    }
-
-    requestAfterFrame(fn: () => void): void {
-        if (!this.root) {
-            this.afterFrames.add(fn);
-        } else {
-            this.root?.requestAfterFrame(fn);
-        }
-    }
-
-    delegateExcitable(
-        excitable: ExcitableDelegation,
-        time?: number,
-        end?: () => void
-    ): number {
-        if (!this.root) {
-            this.toDelegate.add({ excitable, time, end });
-            return -1;
-        } else {
-            const index = this.root.delegateExcitable(excitable, time, end);
-            this.delegationsIdMap.set(index, excitable);
-            this.delegationsMap.set(excitable, index);
-            return index;
-        }
-    }
-
-    removeExcitable(id: number, callEnd: boolean = true): boolean {
-        if (!this.root) return false;
-        else {
-            const excitable = this.delegationsIdMap.get(id);
-            if (excitable !== void 0) this.delegationsMap.delete(excitable);
-            this.delegationsIdMap.delete(id);
-            return this.root.removeExcitable(id, callEnd);
-        }
-    }
-
-    removeExcitableObject(
-        excitable: ExcitableDelegation,
-        callEnd?: boolean
-    ): boolean {
-        if (!this.root) return false;
-        else {
-            const num = this.delegationsMap.get(excitable);
-            if (num !== void 0) this.delegationsIdMap.delete(num);
-            this.delegationsMap.delete(excitable);
-            return this.root.removeExcitableObject(excitable, callEnd);
-        }
-    }
-
-    hasExcitable(id: number): boolean {
-        if (!this.root) return false;
-        else return this.root?.hasExcitable(id);
-    }
-
     //#endregion
 
     //#region 父子关系
 
     setRoot(item: IRenderTreeRoot | null) {
-        this.root?.disconnect(this);
+        if (item === this.root) return;
+        const before = this.root;
+        before?.disconnect(this);
         this.root = item;
         if (item) {
             item.connect(item);
             this.connected = true;
+            this.onConnected(item);
         } else {
             this.connected = false;
-        }
-        if (item) {
-            this.beforeFrames.forEach(v => item.requestBeforeFrame(v));
-            this.afterFrames.forEach(v => item.requestAfterFrame(v));
-            this.toDelegate.forEach(obj => {
-                const { excitable, time, end } = obj;
-                const id = item.delegateExcitable(excitable, time, end);
-                this.delegationsMap.set(excitable, id);
-                this.delegationsIdMap.set(id, excitable);
-            });
-            this.beforeFrames.clear();
-            this.afterFrames.clear();
-            this.toDelegate.clear();
-        }
-    }
-
-    checkRoot() {
-        if (this.root) return;
-        if (this.isRoot) return;
-        let ele: IRenderItem = this;
-        while (!ele.isRoot) {
-            if (ele.root) {
-                ele = ele.root;
-                break;
-            }
-            if (!ele.parent) {
-                return;
-            } else {
-                ele = ele.parent;
+            if (before) {
+                this.onDisconnected(before);
             }
         }
-        this.setRoot(ele as IRenderTreeRoot);
     }
 
-    /**
-     * 将这个渲染元素添加到其他父元素上
-     * @param parent 父元素
-     */
-    appendTo(parent: IRenderItem) {
-        this.remove();
-        const p = parent as RenderItem;
-        parent.children.add(this);
-        this.parent = p;
-        p.requestSort();
-        this.update();
-        this.checkRoot();
-        this.transform.bind(this);
-        this.onResize(parent.scale);
-        this.forEachHook(hook => hook.onResize?.(this.width, this.height));
+    appendTo(parent: IRenderItem, anchor?: IRenderItem) {
+        parent.appendChild(this, anchor);
     }
 
-    /**
-     * 从渲染树中移除这个节点
-     * @returns 是否移除成功
-     */
     remove(): boolean {
-        if (!this.parent) return false;
-        this.delegationsIdMap.forEach(v =>
-            this.root?.removeExcitableObject(v, false)
-        );
-        this.delegationsMap.forEach(v => {
-            this.root?.removeExcitable(v, false);
-        });
-        this.delegationsIdMap.clear();
-        this.delegationsMap.clear();
-        this.toDelegate.clear();
-        this.beforeFrames.clear();
-        this.afterFrames.clear();
-        const parent = this.parent;
-        const success = parent.children.delete(this);
-        this.parent = null;
-        parent.requestSort();
-        parent.update();
-        this.transform.unbind(this);
-        if (!success) return false;
-        this.setRoot(null);
+        if (this.parent) {
+            return this.parent.removeChild(this);
+        } else {
+            return false;
+        }
+    }
+
+    appendChild(child: IRenderItem, anchor?: IRenderItem): void {
+        const el = child as RenderItem;
+        // TODO: 可能的性能优化点：如果元素已经是当前元素的子元素，那么直接转移过去，不再先移除再添加，收益不好说
+        el.remove();
+        if (anchor) {
+            const index = this.children.indexOf(anchor as RenderItem);
+            if (index === -1) {
+                this.children.push(el);
+            } else {
+                this.children.splice(index, 0, el);
+            }
+        } else {
+            this.children.push(el);
+        }
+        this.requestSort();
+        el.parent = this;
+        el.transform.bind(el);
+        el.onResize(this.scale);
+        el.forEachHook(hook => hook.onResize?.(el.width, el.height));
+        // 还需要深度遍历每个元素，给每个元素都设置根元素
+        if (this.root) {
+            el.setRoot(this.root);
+            el.forEachChild(item => item.setRoot(this.root));
+        }
+        el.update();
+    }
+
+    removeChild(child: IRenderItem): boolean {
+        const el = child as RenderItem;
+        if (!el.connected || !el.parent || !el.root) return false;
+        if (el.parent !== this) return false;
+        const index = this.children.indexOf(el);
+        if (index === -1) return false;
+        this.children.splice(index, 1);
+        el.parent = null;
+        this.requestSort();
+        this.update();
+        el.transform.unbind(el);
+        el.setRoot(null);
         return true;
     }
 
-    /**
-     * 添加子元素，默认没有任何行为且会抛出警告，你需要在自己的RenderItem继承类中复写它，才可以使用
-     * @param child 子元素
-     */
-    appendChild(..._child: IRenderItem[]): void {
-        logger.warn(35);
-    }
-
-    /**
-     * 移除子元素，默认没有任何行为且会抛出警告，你需要在自己的RenderItem继承类中复写它，才可以使用
-     * @param child 子元素
-     */
-    removeChild(..._child: IRenderItem[]): void {
-        logger.warn(36);
-    }
-
-    /**
-     * 申请对元素进行排序，默认没有任何行为且会抛出警告，你需要在自己的RenderItem继承类中复写它，才可以使用
-     */
     requestSort(): void {
-        logger.warn(37);
+        this.needSort = true;
+    }
+
+    getSortedChildren(): IRenderItem[] {
+        if (this.needSort) {
+            this.sortedChildren.length = 0;
+            const sorted = this.children.toSorted(
+                (a, b) => a.zIndex - b.zIndex
+            );
+            this.sortedChildren.push(...sorted);
+        }
+        return this.sortedChildren;
+    }
+
+    forEachChild(fn: (item: RenderItem) => void): void {
+        const stack: RenderItem[] = [this];
+        while (stack.length > 0) {
+            const ele = stack.shift()!;
+            stack.push(...ele.children);
+            fn(ele);
+        }
     }
 
     /**
-     * 获取排序后的子元素，根据 `zIndex` 排序，小的在前，大的在后。
-     * 包含子元素的元素应该 `override` 此方法。
+     * 当当前元素连接到根元素时触发，override 以自定义连接效果，是钩子在子元素中的便捷写法
+     * @param root 根元素
      */
-    getSortedChildren(): IRenderItem[] {
-        return [];
+    protected onConnected(root: IRenderTreeRoot) {
+        void root;
+    }
+
+    /**
+     * 当当前元素从根元素上断开连接时触发，override 以自定义连接效果，是钩子在子元素中的便捷写法
+     * @param prevRoot 取消连接之前，当前元素连接至的根元素
+     */
+    protected onDisconnected(prevRoot: IRenderTreeRoot) {
+        void prevRoot;
     }
 
     //#endregion
 
     //#region 交互事件
 
-    /**
-     * 设置是否忽略交互事件，交互事件将会直接下穿至在其下方的元素
-     * @param ignore 是否忽略事件
-     */
     ignoreEvent(ignore: boolean): void {
         this.noEvent = ignore;
     }
@@ -1067,19 +958,31 @@ export abstract class RenderItem
      * @param key 属性键名
      * @param prevValue 该属性先前的数值
      * @param nextValue 该属性当前的数值
-     * @param _namespace 元素命名空间
-     * @param _parentComponent 元素的父组件
      */
-    patchProp(
-        key: string,
-        prevValue: any,
-        nextValue: any,
-        _namespace?: ElementNamespace,
-        _parentComponent?: ComponentInternalInstance | null
-    ): void {
+    patchProp(key: string, prevValue: any, nextValue: any): void {
         if (isNil(prevValue) && isNil(nextValue)) return;
         if (this.handleProps(key, prevValue, nextValue)) return;
         switch (key) {
+            case 'cache': {
+                if (!this.assertType(nextValue, 'boolean', key)) return;
+                this.cacheProp = nextValue;
+                if (this.nocacheProp) {
+                    this.setCacheEnabled(false);
+                } else {
+                    this.setCacheEnabled(nextValue);
+                }
+                return;
+            }
+            case 'nocache': {
+                if (!this.assertType(nextValue, 'boolean', key)) return;
+                this.nocacheProp = nextValue;
+                if (nextValue) {
+                    this.setCacheEnabled(false);
+                } else {
+                    this.setCacheEnabled(this.cacheProp);
+                }
+                return;
+            }
             case 'x': {
                 if (!this.assertType(nextValue, 'number', key)) return;
                 this.pos(nextValue, this.transform.y);
@@ -1241,7 +1144,7 @@ export abstract class RenderItem
         this.cachedEvent.clear();
         this.mouseId.clear();
         this.touchId.clear();
-        this.children.clear();
+        this.children.length = 0;
         this.setRoot(null);
     }
 }

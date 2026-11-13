@@ -36,7 +36,13 @@ export function useRendererRoot(): IRenderTreeRoot | null {
     if (!instance) return null;
     // 尝试从几个路径获取根元素
     const root = instance.root.vnode.el;
-    if (root instanceof MotaRenderer) return root;
+    if (root instanceof RenderItem) {
+        if (root.parent instanceof MotaRenderer) {
+            return root.parent;
+        } else {
+            return null;
+        }
+    }
     const currEl = instance.proxy?.$el;
     if (currEl instanceof RenderItem) return currEl.root;
     const appEl = instance.appContext.app._container;
