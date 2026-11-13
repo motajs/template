@@ -54,11 +54,6 @@ export interface IHookController<H extends IHookBase = IHookBase> {
     readonly hook: Partial<H>;
 
     /**
-     * 加载此控制器对应的钩子对象
-     */
-    load(): void;
-
-    /**
      * 卸载此控制器对应的钩子对象，之后此钩子将不会再被触发
      */
     unload(): void;
@@ -69,13 +64,13 @@ export interface IHookBase {
      * 加载此钩子对象
      * @param controller 钩子控制器对象
      */
-    awake(controller: IHookController<this>): void;
+    awake?(controller: IHookController<this>): void;
 
     /**
      * 摧毁此钩子对象
      * @param controller 钩子控制器对象
      */
-    destroy(controller: IHookController<this>): void;
+    destroy?(controller: IHookController<this>): void;
 }
 
 export interface IHookable<
@@ -87,12 +82,6 @@ export interface IHookable<
      * @param hook 钩子对象
      */
     addHook(hook: Partial<H>): C;
-
-    /**
-     * 加载指定的钩子对象
-     * @param hook 钩子对象
-     */
-    loadHook(hook: Partial<H>): void;
 
     /**
      * 移除钩子对象，会调用钩子对象的 `destroy` 方法

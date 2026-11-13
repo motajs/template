@@ -1,34 +1,36 @@
 import { RenderItem, Transform, MotaOffscreenCanvas2D } from '.';
 import { CanvasStyle } from '../types';
 import { Font } from '../style';
-import { IRenderImage, IRenderText } from './types';
-import { ITexture } from '../assets';
+import {
+    IRenderAnimated,
+    IRenderImage,
+    IRenderText,
+    IRenderTreeRoot
+} from './types';
+import { ITexture, ITextureAnimater, ITextureRenderable } from '../assets';
 
 /** 文字的安全填充，会填充在文字的上侧和下侧，防止削顶和削底 */
 const SAFE_PAD = 1;
 
+/** 文本测量画布 */
+const MEASURE = new MotaOffscreenCanvas2D();
+MEASURE.setHD(false);
+MEASURE.setScale(1);
+MEASURE.size(1, 1);
+
 export class Text extends RenderItem implements IRenderText {
-    text: string;
+    text: string = '';
 
     fillStyle?: CanvasStyle = '#fff';
     strokeStyle?: CanvasStyle;
     font: Font = new Font();
     strokeWidth: number = 1;
 
-    private length: number = 0;
+    /** 文本的下边缘位置 */
     private descent: number = 0;
 
-    private static measureCanvas = new MotaOffscreenCanvas2D();
-
-    constructor(text: string = '', enableCache: boolean = false) {
-        super(enableCache);
-
-        this.text = text;
-        if (text.length > 0) {
-            this.requestBeforeFrame(() => {
-                this.calBox();
-            });
-        }
+    protected getDefaultCache(): boolean {
+        return false;
     }
 
     protected render(
@@ -56,7 +58,7 @@ export class Text extends RenderItem implements IRenderText {
      * 获取文字的长度
      */
     measure() {
-        const ctx = Text.measureCanvas.ctx;
+        const ctx = MEASURE.ctx;
         ctx.textBaseline = 'bottom';
         ctx.font = this.font.string();
         const res = ctx.measureText(this.text);
@@ -112,7 +114,6 @@ export class Text extends RenderItem implements IRenderText {
     calBox() {
         const { width, actualBoundingBoxAscent, actualBoundingBoxDescent } =
             this.measure();
-        this.length = width;
         this.descent = actualBoundingBoxAscent;
         const height = actualBoundingBoxAscent + actualBoundingBoxDescent;
         const stroke = this.strokeWidth * 2;
@@ -148,11 +149,10 @@ export class Text extends RenderItem implements IRenderText {
 }
 
 export class Image extends RenderItem implements IRenderImage {
-    image: ITexture | null;
+    image: ITexture | null = null;
 
-    constructor(enableCache: boolean = false) {
-        super(enableCache);
-        this.image = null;
+    protected getDefaultCache(): boolean {
+        return false;
     }
 
     protected render(
@@ -192,20 +192,137 @@ export class Image extends RenderItem implements IRenderImage {
     }
 }
 
+export class Animated<T> extends RenderItem implements IRenderAnimated<T> {
+    texture: ITexture | null = null;
+    animater: ITextureAnimater<T> | null = null;
+    interval: number = 50;
+    cycled: boolean = false;
+    paused: boolean = false;
+    param: T | undefined = void 0;
+
+    /** 当前时刻 */
+    private currentTime: number = -1;
+    /** 上一帧的时刻 */
+    private lastFrameTime: number = -1;
+    /** 当前的可渲染对象 */
+    private current: ITextureRenderable | null = null;
+
+    /** 动画生成器 */
+    private gen: Generator<ITextureRenderable, void> | null = null;
+    /** 委托 Excitation 的 id */
+    private delegation: number = -1;
+
+    protected onConnected(root: IRenderTreeRoot): void {
+        this.delegation = root.delegateExcitable(time => {
+            this.currentTime = time;
+            if (this.lastFrameTime === -1) {
+                this.lastFrameTime = time;
+            }
+            if (this.paused || !this.gen) return;
+            const dt = time - this.lastFrameTime;
+            const nextFrames = Math.floor(dt / this.interval);
+            if (!this.current || nextFrames >= 1) {
+                const pass = this.current ? nextFrames : 1;
+                for (let i = 0; i < pass; i++) {
+                    const next = this.gen.next();
+                    if (next.done) break;
+                    this.current = next.value;
+                }
+                this.lastFrameTime = time;
+                this.update();
+            }
+        });
+    }
+
+    protected onDisconnected(prevRoot: IRenderTreeRoot): void {
+        prevRoot.removeExcitable(this.delegation);
+    }
+
+    protected getDefaultCache(): boolean {
+        return false;
+    }
+
+    protected render(canvas: MotaOffscreenCanvas2D): void {
+        const ctx = canvas.ctx;
+        if (!this.current) return;
+        const { source, rect: r } = this.current;
+        const { width, height } = this;
+        ctx.drawImage(source, r.x, r.y, r.w, r.h, 0, 0, width, height);
+    }
+
+    /**
+     * 执行动画执行器，获取动画序列生成器
+     */
+    private generate() {
+        if (!this.animater || !this.texture) {
+            this.gen = null;
+            this.current = null;
+            this.update();
+            return;
+        }
+        if (this.cycled) {
+            this.gen = this.animater.cycled(this.texture, this.param as T);
+            this.lastFrameTime = this.currentTime;
+        } else {
+            this.gen = this.animater.once(this.texture, this.param as T);
+            this.lastFrameTime = this.currentTime;
+        }
+        this.update();
+    }
+
+    setTexture(texture: ITexture | null): void {
+        this.texture = texture;
+        this.generate();
+    }
+
+    setInterval(interval: number): void {
+        if (interval <= 0) {
+            this.interval = 50;
+        } else {
+            this.interval = interval;
+        }
+    }
+
+    setAnimater(animater: ITextureAnimater<T> | null): void {
+        this.animater = animater;
+        this.generate();
+    }
+
+    setParam(param: T | undefined): void {
+        this.param = param;
+        this.generate();
+    }
+
+    pause(): void {
+        this.paused = true;
+    }
+
+    resume(): void {
+        this.paused = false;
+        this.lastFrameTime = this.currentTime;
+    }
+
+    setCycled(cycled: boolean): void {
+        this.cycled = cycled;
+        this.generate();
+    }
+}
+
 export class Comment extends RenderItem {
     readonly isComment: boolean = true;
 
-    constructor(public text: string = '') {
-        super(false);
+    constructor() {
+        super();
         this.hide();
+    }
+
+    protected getDefaultCache(): boolean {
+        return false;
     }
 
     getBoundingRect(): DOMRectReadOnly {
         return new DOMRectReadOnly(0, 0, 0, 0);
     }
 
-    protected render(
-        _canvas: MotaOffscreenCanvas2D,
-        _transform: Transform
-    ): void {}
+    protected render(): void {}
 }

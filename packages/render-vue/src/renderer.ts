@@ -6,62 +6,39 @@ import {
     IRenderItem,
     IRenderTreeRoot
 } from '@motajs/render';
-import {
-    ComponentInternalInstance,
-    CreateAppFunction,
-    createRenderer,
-    ElementNamespace,
-    RootRenderFunction,
-    VNodeProps
-} from 'vue';
-import { IRenderTagManager } from './types';
-import { RenderTagManager } from './tag';
-
-export interface RendererData {
-    render: RootRenderFunction<IRenderItem>;
-    createApp: CreateAppFunction<IRenderItem>;
-    tagManager: IRenderTagManager;
-}
+import { createRenderer } from 'vue';
 
 export function createRendererFor(renderer: IRenderTreeRoot) {
-    const tagManager = new RenderTagManager(renderer);
-
-    const { createApp, render } = createRenderer<IRenderItem, IRenderItem>({
+    return createRenderer<IRenderItem, IRenderItem>({
         patchProp: function (
             el: RenderItem,
             key: string,
             prevValue: any,
-            nextValue: any,
-            namespace?: ElementNamespace,
-            parentComponent?: ComponentInternalInstance | null
+            nextValue: any
         ): void {
-            el.patchProp(key, prevValue, nextValue, namespace, parentComponent);
+            el.patchProp(key, prevValue, nextValue);
         },
 
         insert: function (
             el: IRenderItem,
             parent: RenderItem,
-            _anchor?: IRenderItem | null
+            anchor?: IRenderItem | null
         ): void {
-            parent.appendChild(el);
+            if (anchor) {
+                parent.appendChild(el, anchor);
+            } else {
+                parent.appendChild(el);
+            }
         },
 
         remove: function (el: IRenderItem): void {
-            el.destroy();
+            el.remove();
         },
 
-        createElement: function (
-            type: string,
-            _namespace?: ElementNamespace,
-            _isCustomizedBuiltIn?: string,
-            vnodeProps?: (VNodeProps & { [key: string]: any }) | null
-        ): IRenderItem {
-            const tag = tagManager.getTag(type);
-            if (!tag) {
-                logger.error(20, type);
-                throw new Error(`Cannot create element '${type}'`);
-            }
-            return tag.onCreate(vnodeProps);
+        createElement: function (type: string): IRenderItem {
+            const el = renderer.createElement(type) as RenderItem;
+            if (!el) return renderer.createElement('container');
+            return el;
         },
 
         createText: function (text: string): IRenderItem {
@@ -70,11 +47,11 @@ export function createRendererFor(renderer: IRenderTreeRoot) {
             } else {
                 logger.warn(38);
             }
-            return new Text(text);
+            return new Text();
         },
 
-        createComment: function (text: string): IRenderItem {
-            return renderer.createElement('comment', text);
+        createComment: function (): IRenderItem {
+            return renderer.createElement('comment');
         },
 
         setText: function (node: IRenderItem, text: string): void {
@@ -94,21 +71,17 @@ export function createRendererFor(renderer: IRenderTreeRoot) {
         },
 
         parentNode: function (node: IRenderItem): IRenderItem | null {
-            return node.parent ?? null;
+            return node.parent;
         },
 
         nextSibling: function (node: IRenderItem): IRenderItem | null {
-            if (!node) return null;
             if (!node.parent) {
                 return null;
             } else {
-                const parent = node.parent;
-                const list = [...parent.children];
+                const list = node.parent.children;
                 const index = list.indexOf(node);
-                return list[index] ?? null;
+                return list[index + 1] ?? null;
             }
         }
     });
-
-    return { tagManager, createApp, render };
 }

@@ -1,0 +1,39 @@
+{
+    "head": "9bf8f296c47a85f19c762072f9b73214fe329ee3",
+    "hashes": {
+        "packages-user/client-base/src/components/scroll.tsx": "74fb21f5c9d9c7329e99b8345ba6d7ee7b1eae48",
+        "packages-user/client-base/src/components/textbox.tsx": "b17e988d77c3a81fe3ce3250940e31a9774f8dfb",
+        "src/client/ui/settings.tsx": "c5cca14cde8ba813ac4ef5e624e8b359470c472d",
+        "src/client/ui/index.ts": "4e3950598b1beee23753a5556d8e8c82eb21bc57",
+        "src/client/misc/hotkey.ts": "6e884ab4f36cdff958a3490697406a00f67d2e7f"
+    },
+    "dirty": [
+        "AGENTS.md",
+        "docs/advanced/iii/anon-tokyo.md",
+        "docs/advanced/iii/core-state.md",
+        "docs/advanced/iii/event-system.md",
+        "docs/advanced/iii/index.md",
+        "docs/advanced/iii/loading-system.md",
+        "docs/advanced/iii/passability-and-pathfinding.md",
+        "docs/advanced/iii/plugin-internals.md",
+        "docs/advanced/iii/replay-internals.md",
+        "packages-user/client-base/src/index.ts",
+        "packages-user/client-base/src/map/__test__/rendererGate.test.ts",
+        "packages-user/client-base/src/map/renderer.ts",
+        "packages-user/client-base/src/map/shader/map.frag",
+        "packages-user/client-base/src/map/status.ts",
+        "packages-user/client-base/src/map/types.ts",
+        "packages-user/client-base/src/map/vertex.ts",
+        "packages-user/client-base/src/setting/index.ts",
+        "packages-user/client-base/src/setting/types.ts"
+    ],
+    "eslint": [],
+    "typecheck": [
+        "src/client/ui/book.tsx error TS2322: Type 'number' is not assignable to type 'AllNumbers | keyof IdToNumber'.",
+        "src/client/ui/equipbox.tsx error TS2322: Type 'number' is not assignable to type 'AllNumbers | keyof IdToNumber'.",
+        "src/client/ui/equipbox.tsx error TS2322: Type 'number' is not assignable to type 'AllNumbers | keyof IdToNumber'.",
+        "src/client/ui/equipbox.tsx error TS2322: Type 'number' is not assignable to type 'AllNumbers | keyof IdToNumber'.",
+        "src/client/ui/toolbox.tsx error TS2322: Type 'number' is not assignable to type 'AllNumbers | keyof IdToNumber'.",
+        "src/client/ui/toolbox.tsx error TS2322: Type 'number' is not assignable to type 'AllNumbers | keyof IdToNumber'."
+    ]
+}

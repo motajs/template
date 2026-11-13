@@ -15,7 +15,7 @@ import vert from './shader/pack.vert?raw';
 import frag from './shader/pack.frag?raw';
 import { logger } from '@motajs/common';
 import { isNil } from 'lodash-es';
-import { compileProgramWith } from '@motajs/client-base';
+import { compileProgramWith } from '../utils';
 import { SizedCanvasImageSource } from '../types';
 
 interface IndexMarkedComposedData {
@@ -32,9 +32,7 @@ export interface IGridComposerData {
     readonly height: number;
 }
 
-export class TextureGridComposer
-    implements ITextureComposer<IGridComposerData>
-{
+export class TextureGridComposer implements ITextureComposer<IGridComposerData> {
     /**
      * 网格组合器，将等大小的贴图组合成图集，要求每个贴图的尺寸一致。
      * 组合时按照先从左到右，再从上到下的顺序组合。
@@ -120,9 +118,7 @@ interface MaxRectsRectangle extends IRectangle {
     readonly data: ITexture;
 }
 
-export class TextureMaxRectsComposer
-    implements ITextureComposer<IMaxRectsComposerData>
-{
+export class TextureMaxRectsComposer implements ITextureComposer<IMaxRectsComposerData> {
     /**
      * 使用 Max Rects 算法执行贴图整合，输入数据参考 {@link IMaxRectsComposerData}，
      * 输出的纹理的图像源将会是不同的画布，注意与 {@link TextureMaxRectsWebGL2Composer} 区分
@@ -187,9 +183,7 @@ interface RectProcessed {
     readonly attrib: Float32Array;
 }
 
-export class TextureMaxRectsWebGL2Composer
-    implements ITextureComposer<IMaxRectsComposerData>
-{
+export class TextureMaxRectsWebGL2Composer implements ITextureComposer<IMaxRectsComposerData> {
     /** 使用的画布 */
     readonly canvas: HTMLCanvasElement;
     /** 画布上下文 */

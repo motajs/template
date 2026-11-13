@@ -1,0 +1,48 @@
+{
+  "head": "102963401afe8c8321167b2093bc9e15c8446922",
+  "hashes": {
+    "packages-user/client-base/src/index.ts": "3904bbe873a1fc1fe448529708dda15232271019",
+    "packages-user/client-base/src/types.ts": "cdf7224dc39118665b00a9697c31e6f5ae7c4f84",
+    "packages-user/client-base/src/hotkey/hotkey.ts": "9344fabb5d902ad18482ede6277513998c5db2b1",
+    "packages-user/client-base/src/hotkey/types.ts": "d1cdf0c25530950a46bce801df63ed975665b451",
+    "packages-user/client-base/src/components/index.ts": "5970bd87790983617689485114d9d2308fea9f1d",
+    "packages-user/client-base/package.json": "3e9b20220568df6244bbbceadb16e5c3b2a3e874",
+    "packages-user/data-common/src/save/types.ts": "06b37a622a5e26abb91cc6332c49ca65c6691204",
+    "src/client/ui/index.ts": "4e3950598b1beee23753a5556d8e8c82eb21bc57",
+    "src/client/ui/settings.tsx": "c5cca14cde8ba813ac4ef5e624e8b359470c472d",
+    "packages/common/src/logger.json": "8ff7ecf8897899d6fa57dae8bc3a902542a77369"
+  },
+  "dirty": [
+    "packages-user/client-base/src/index.ts",
+    "packages-user/client-base/src/map/__test__/rendererGate.test.ts",
+    "packages-user/client-base/src/map/moving.ts",
+    "packages-user/client-base/src/map/renderer.ts",
+    "packages-user/client-base/src/map/shader/map.frag",
+    "packages-user/client-base/src/map/status.ts",
+    "packages-user/client-base/src/map/types.ts",
+    "packages-user/client-base/src/map/vertex.ts",
+    "packages-user/data-common/src/store/types.ts",
+    "src/client/ui/__test__/hotkeySettingsGate.test.ts",
+    "src/client/ui/__test__/uiContainerGate.test.ts",
+    "src/client/ui/book.tsx",
+    "src/client/ui/bookDetail.tsx",
+    "src/client/ui/choices.tsx",
+    "src/client/ui/equipbox.tsx",
+    "src/client/ui/hotkey.tsx",
+    "src/client/ui/toolbar.tsx"
+  ],
+  "typecheck": [],
+  "typecheckTotal": 202,
+  "keyAdaptation": {
+    "file": "src/client/ui/__test__/keyAdaptationGate.test.ts",
+    "failed": 6,
+    "passed": 9,
+    "total": 15
+  },
+  "uiContainer": {
+    "file": "src/client/ui/__test__/uiContainerGate.test.ts",
+    "failed": 7,
+    "passed": 11,
+    "total": 18
+  }
+}

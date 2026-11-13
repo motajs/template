@@ -1,4 +1,3 @@
-export * from './adapter';
 export * from './canvas2d';
 export * from './container';
 export * from './custom';

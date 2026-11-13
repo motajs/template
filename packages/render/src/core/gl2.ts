@@ -115,7 +115,7 @@ export abstract class GL2 extends RenderItem {
     protected framebufferMap: Map<string, WebGLFramebuffer> = new Map();
 
     constructor() {
-        super(false);
+        super();
 
         this.canvas = document.createElement('canvas');
         const gl = this.canvas.getContext('webgl2')!;

@@ -11,9 +11,13 @@ import {
 } from './types';
 
 interface IEventSource {
+    /** 事件优先级 */
     readonly priority: number;
+    /** 事件的 id */
     readonly id: string;
+    /** 事件类型 */
     readonly type: BlockEventType;
+    /** 事件所属的图块 */
     readonly tile: IReadonlyTileBase | null;
 }
 

@@ -1,54 +1,30 @@
-import { logger } from '@motajs/common';
-import { SaveCompression } from '@user/data-common';
 import {
+    Hookable,
+    HookController,
+    IHookController,
+    logger
+} from '@motajs/common';
+import { SaveCompression, shouldReplay } from '@user/data-common';
+import {
+    HeroModifierCreator,
     IHeroAttribute,
     IHeroAttributeCloneOption,
+    IHeroAttributeHooks,
     IHeroAttributeSave,
     IHeroModifier,
-    IHeroModifierOwner,
     IModifierStateSave
 } from './types';
 import { isNil } from 'lodash-es';
 
-export abstract class BaseHeroModifier<T, V> implements IHeroModifier<T, V, V> {
-    abstract readonly type: string;
-    abstract readonly priority: number;
+export class HeroAttribute<THero>
+    extends Hookable<IHeroAttributeHooks<THero>>
+    implements IHeroAttribute<THero>
+{
+    /** 当前的勇士基础属性 */
+    private attribute!: THero;
+    /** 当前勇士最终属性 */
+    private finalAttribute!: THero;
 
-    owner: IHeroModifierOwner | null = null;
-
-    constructor(private currentValue: V) {}
-
-    get value(): V {
-        return this.currentValue;
-    }
-
-    setValue(value: V): void {
-        this.currentValue = value;
-        this.owner?.markModifierDirty(this);
-    }
-
-    getValue(): V {
-        return this.currentValue;
-    }
-
-    bindAttribute(attribute: IHeroModifierOwner | null): void {
-        this.owner = attribute;
-    }
-
-    saveState(_compression: SaveCompression): V {
-        return this.currentValue;
-    }
-
-    loadState(state: V, _compression: SaveCompression): void {
-        this.setValue(state);
-    }
-
-    abstract modify(value: T, baseValue: T, name: string): T;
-
-    abstract clone(): IHeroModifier<T, V>;
-}
-
-export class HeroAttribute<THero> implements IHeroAttribute<THero> {
     /** 当前勇士属性修饰器 */
     private readonly modifier: Map<keyof THero, IHeroModifier[]> = new Map();
     /** 当前每个修饰器对应的属性名称 */
@@ -56,20 +32,19 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
     /** 当前标记为不存档的修饰器集合 */
     private readonly modifierNosave: Set<IHeroModifier> = new Set();
     /** 修饰器工厂函数注册表 */
-    private readonly registry: Map<
-        string,
-        <K extends keyof THero>() => IHeroModifier<THero[K]>
-    > = new Map();
-    /** 当前勇士最终属性 */
-    private readonly finalAttribute: THero;
+    private readonly registry: Map<string, HeroModifierCreator<THero>> =
+        new Map();
 
-    /**
-     * @param attribute 当前勇士的基础属性
-     */
-    constructor(private attribute: THero) {
-        // 克隆入参，避免调用方传入的共享基础属性对象被本实例改写
+    constructor(attribute: THero) {
+        super();
         this.attribute = structuredClone(attribute);
         this.finalAttribute = structuredClone(attribute);
+    }
+
+    protected createController(
+        hook: Partial<IHeroAttributeHooks<THero>>
+    ): IHookController<IHeroAttributeHooks<THero>> {
+        return new HookController(this, hook);
     }
 
     //#region 属性计算
@@ -109,6 +84,7 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         }
 
         this.finalAttribute[name] = value;
+        this.forEachHook(hook => hook.onUpdateAttribute?.(name, value));
     }
 
     *catchCalculateProgress<K extends keyof THero>(name: K) {
@@ -142,21 +118,25 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
 
     //#region 属性操作
 
+    @shouldReplay('Hero attribute change should be replayed.')
     set<K extends keyof THero>(name: K, value: THero[K]): void {
         this.attribute[name] = value;
         this.markDirty(name);
     }
 
+    @shouldReplay('Hero attribute change should be replayed.')
     add(name: SelectKey<THero, number>, value: number): void {
         (this.attribute[name] as number) += value;
         this.markDirty(name);
     }
 
+    @shouldReplay('Hero attribute change should be replayed.')
     mul(name: SelectKey<THero, number>, value: number): void {
         (this.attribute[name] as number) *= value;
         this.markDirty(name);
     }
 
+    @shouldReplay('Hero attribute change should be replayed.')
     div(name: SelectKey<THero, number>, value: number): void {
         (this.attribute[name] as number) /= value;
         this.markDirty(name);
@@ -187,6 +167,7 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         return arr.indexOf(modifier);
     }
 
+    @shouldReplay('Changing hero attrubute modifier should be replayed.')
     addModifier<K extends keyof THero>(
         name: K,
         modifier: IHeroModifier<THero[K]>,
@@ -210,6 +191,7 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         this.markDirty(name);
     }
 
+    @shouldReplay('Changing hero attrubute modifier should be replayed.')
     deleteModifier<K extends keyof THero>(
         name: K,
         modifier: IHeroModifier<THero[K], unknown>
@@ -227,14 +209,14 @@ export class HeroAttribute<THero> implements IHeroAttribute<THero> {
         this.markDirty(name);
     }
 
+    @shouldReplay('Changing hero attrubute modifier should be replayed.')
     deleteModifierByIndex<K extends keyof THero>(
         name: K,
         index: number
     ): IHeroModifier<THero[K]> | null {
-        const arr = this.modifier.get(name);
+        const arr = this.modifier.get(name) as IHeroModifier<THero[K]>[];
         if (!arr) return null;
-        const modifier = arr[index] as IHeroModifier<THero[K]> | undefined;
-        // 越界与负索引一律不删除任何修饰器，避免旧 splice 语义下误删末尾元素
+        const modifier = arr[index];
         if (!modifier) return null;
         // 删除簿记统一由 deleteModifier 承担，故需先取出修饰器再委托以保留返回值
         this.deleteModifier(name, modifier);

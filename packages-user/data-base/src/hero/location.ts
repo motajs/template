@@ -7,7 +7,8 @@ import {
 import {
     FaceDirection,
     IDataCommon,
-    IFacedTileLocator
+    IFacedTileLocator,
+    shouldReplay
 } from '@user/data-common';
 import { HeroMover } from './mover';
 import {
@@ -50,12 +51,14 @@ export class HeroLocation
         return new HookController(this, hook);
     }
 
-    setFloor(map: IGameMap): void {
-        this.floorId = map.floorId;
+    @shouldReplay('Setting hero floor should be replayed.')
+    setFloor(map: IGameMap | null): void {
+        this.floorId = map?.floorId ?? void 0;
         this.map = map;
         this.forEachHook(hook => hook.onSetFloor?.(map));
     }
 
+    @shouldReplay('Setting hero position should be replayed.')
     setPos(x: number, y: number): void {
         this.x = x;
         this.y = y;

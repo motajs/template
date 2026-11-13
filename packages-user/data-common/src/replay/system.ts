@@ -98,8 +98,8 @@ export class ReplaySystem
         return {
             length: this.array.length,
             commandWidth: this.array.commandWidth,
-            commandArray: this.array.getCommandArray(),
-            paramArray: this.array.getParamArray()
+            commandArray: this.array.getCommandArray().slice(),
+            paramArray: this.array.getParamArray().slice()
         };
     }
 

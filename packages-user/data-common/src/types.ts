@@ -1,9 +1,18 @@
-import { ITileLocator } from '@motajs/common';
 import { IFaceManager, IRoleFaceBinder } from './common';
-import { IGameEventStore, IItemStore, IMapStore, ITileStore } from './store';
+import {
+    IEnemyStore,
+    IGameEventStore,
+    IItemStore,
+    IMapStore,
+    ITileStore
+} from './store';
 import { IReplaySystem } from './replay';
+import { IEnemyView } from '@user/data-system';
+import { IHookable, IHookBase } from '@motajs/common';
 
 export interface IEnemyAttr {
+    /** 怪物名称 */
+    name: string;
     /** 怪物生命值 */
     hp: number;
     /** 怪物攻击力 */
@@ -17,12 +26,14 @@ export interface IEnemyAttr {
     /** 怪物加点量 */
     point: number;
     /** 支援来源怪物坐标索引列表 */
-    guard: Set<ITileLocator>;
+    guard: Set<IEnemyView<IEnemyAttr>>;
 }
 
 export interface IHeroAttr {
     /** 勇士名称 */
     name: string;
+    /** 勇士等级 */
+    level: number;
     /** 勇士生命值 */
     hp: number;
     /** 勇士生命值上限 */
@@ -43,7 +54,16 @@ export interface IHeroAttr {
     exp: number;
 }
 
-export interface IDataCommon {
+export interface IDataCommonHooks extends IHookBase {
+    /**
+     * 进行一次提示的渲染
+     * @param tip 提示内容
+     * @param icon 提示图标
+     */
+    onTip?(tip: string, icon?: number): void;
+}
+
+export interface IDataCommon extends IHookable<IDataCommonHooks> {
     /** 图块定义存储 */
     readonly tileStore: ITileStore;
     /** 道具定义存储 */
@@ -52,12 +72,21 @@ export interface IDataCommon {
     readonly mapStore: IMapStore;
     /** 游戏事件存储 */
     readonly eventStore: IGameEventStore;
+    /** 怪物定义存储 */
+    readonly enemyStore: IEnemyStore<IEnemyAttr>;
     /** 朝向绑定 */
     readonly roleFace: IRoleFaceBinder;
     /** 朝向管理 */
     readonly faceManager: IFaceManager;
     /** 录像系统 */
     readonly replaySystem: IReplaySystem;
+
+    /**
+     * 通知渲染端进行一次提示渲染
+     * @param tip 提示文本
+     * @param icon 提示图标
+     */
+    emitTip(tip: string, icon?: number): void;
 }
 
 export interface IDataCommonExtended {

@@ -16,7 +16,8 @@ import {
     CircleParams,
     EllipseParams,
     RectRCircleParams,
-    RectREllipseParams
+    RectREllipseParams,
+    IGraphicRectR
 } from './types';
 
 const enum GraphicModeProp {
@@ -44,23 +45,30 @@ export abstract class GraphicItemBase
     miterLimit: number = 10;
     fillRule: CanvasFillRule = 'nonzero';
 
+    /** props 是否启用了 fill */
     private propFill: boolean = true;
+    /** props 是否启用了 stroke */
     private propStroke: boolean = false;
+    /** props 是否启用了 strokeAndFill */
     private strokeAndFill: boolean = false;
+    /** props 是否设置过 fill */
     private propFillSet: boolean = false;
 
+    /** 交互是否仅在描边上判定 */
     private actionStroke: boolean = false;
+    /** 当前的缓存 Path2D */
     private cachePath?: Path2D;
+    /** 路径缓存是否为脏 */
     protected pathDirty: boolean = true;
-
-    constructor(enableCache: boolean = false) {
-        super(enableCache);
-    }
 
     /**
      * 获取这个元素的绘制路径
      */
     abstract getPath(): Path2D;
+
+    protected getDefaultCache(): boolean {
+        return false;
+    }
 
     protected render(
         canvas: MotaOffscreenCanvas2D,
@@ -107,13 +115,18 @@ export abstract class GraphicItemBase
         ctx.lineCap = this.lineCap;
         ctx.lineJoin = this.lineJoin;
         ctx.setLineDash(this.lineDash);
-        if (this.actionStroke) {
-            return ctx.isPointInStroke(path, fixX, fixY);
-        }
         switch (this.mode) {
             case GraphicMode.Fill:
                 return ctx.isPointInPath(path, fixX, fixY, this.fillRule);
             case GraphicMode.Stroke:
+                if (this.actionStroke) {
+                    return ctx.isPointInStroke(path, fixX, fixY);
+                } else {
+                    return (
+                        ctx.isPointInPath(path, fixX, fixY, this.fillRule) ||
+                        ctx.isPointInStroke(path, fixX, fixY)
+                    );
+                }
             case GraphicMode.FillAndStroke:
             case GraphicMode.StrokeAndFill:
                 return (
@@ -413,14 +426,14 @@ export class Ellipse extends GraphicItemBase implements IGraphicEllipse {
     }
 
     /**
-     * 设置椭圆的横纵轴长度
-     * @param x 横轴长度
-     * @param y 纵轴长度
+     * 设置椭圆的横纵轴半径
+     * @param x 横轴半径
+     * @param y 纵轴半径
      */
     setRadius(x: number, y: number) {
         this.radiusX = x;
         this.radiusY = y;
-        this.size(x, y);
+        this.size(x * 2, y * 2);
         this.pathDirty = true;
         this.update();
     }
@@ -720,18 +733,6 @@ export class QuadraticCurve
         return path;
     }
 
-    protected render(
-        canvas: MotaOffscreenCanvas2D,
-        _transform: Transform
-    ): void {
-        const ctx = canvas.ctx;
-        this.setCanvasState(canvas);
-        ctx.beginPath();
-        ctx.moveTo(this.sx, this.sy);
-        ctx.quadraticCurveTo(this.cpx, this.cpy, this.ex, this.ey);
-        ctx.stroke();
-    }
-
     /**
      * 设置起始点坐标
      */
@@ -862,7 +863,7 @@ export class Path extends GraphicItemBase implements IGraphicPath {
     }
 }
 
-export class RectR extends GraphicItemBase {
+export class RectR extends GraphicItemBase implements IGraphicRectR {
     /** 圆角属性，四元素数组，每个元素是一个二元素数组，表示这个角的半径，顺序为 左上，右上，右下，左下 */
     readonly corner: [radiusX: number, radiusY: number][] = [
         [0, 0],

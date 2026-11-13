@@ -23,6 +23,8 @@ import {
 } from './types';
 import { isNil } from 'lodash-es';
 
+// TODO: 挪到渲染端
+
 export class HeroFollower implements IHeroFollower {
     readonly num: number;
     readonly state: IDataCommon;

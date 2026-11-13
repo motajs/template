@@ -1,0 +1,17 @@
+// Type: packages-user/data-common/src/store/types IEnemyRawData
+// "@required" means the property is required.
+// For objects, system will compare every properties.
+// --- SYSTEM PREFIX END --- //
+{
+    "num": "@required",
+    "attribute": {
+        "name": "新怪物",
+        "hp": 0,
+        "atk": 0,
+        "def": 0,
+        "money": 0,
+        "exp": 0,
+        "point": 0
+    },
+    "special": {}
+}
