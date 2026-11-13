@@ -246,7 +246,7 @@ export class MotaRenderer
         this.registerElement('shader', () => new Shader());
         this.registerElement('comment', () => new Comment());
         this.registerElement('template', () => new Container());
-        this.registerElement('custom-container', () => new CustomContainer());
+        this.registerElement('container-custom', () => new CustomContainer());
         this.registerElement('g-rect', () => new Rect());
         this.registerElement('g-circle', () => new Circle());
         this.registerElement('g-ellipse', () => new Ellipse());
