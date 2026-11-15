@@ -295,8 +295,8 @@ export function transitionedColor(
     time: number,
     curve: ExcitationCurve
 ): ITransitionedController<string> | null {
-    const renderer = useRendererRoot();
-    if (!renderer) return null;
+    const instance = getCurrentInstance();
+    if (!instance) return null;
     return new RenderColorTransition(color, getGlobalTransition(), time, curve);
 }
 
@@ -323,8 +323,8 @@ export function cycledTransition(
     curve: ExcitationCurve,
     maxStart: boolean = false
 ): ICycledTransitionController | null {
-    const renderer = useRendererRoot();
-    if (!renderer) return null;
+    const instance = getCurrentInstance();
+    if (!instance) return null;
     return new CycledTransition(
         min,
         max,
@@ -578,6 +578,14 @@ class CycledTransition
                 this.startCycle();
                 this.check();
             }
+        });
+
+        onMounted(() => {
+            this.startCycle();
+            this.check();
+        });
+        onUnmounted(() => {
+            this.stop = true;
         });
     }
 
