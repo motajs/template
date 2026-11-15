@@ -15,7 +15,6 @@ import {
     Container,
     ElementLocator,
     CustomRenderItem,
-    Transform,
     MotaOffscreenCanvas2D,
     IActionEvent,
     IWheelEvent,
@@ -68,7 +67,7 @@ export interface ScrollProps extends DefaultProps {
     padEnd?: number;
 }
 
-type ScrollSlots = SlotsType<{
+export type ScrollSlots = SlotsType<{
     default: () => VNode | VNode[];
 }>;
 
@@ -354,8 +353,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
 
         const renderContent = (
             canvas: MotaOffscreenCanvas2D,
-            children: IRenderItem[],
-            transform: Transform
+            children: IRenderItem[]
         ) => {
             const ctx = canvas.ctx;
             ctx.save();
@@ -366,7 +364,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
             }
             children.forEach(v => {
                 if (v.hidden) return;
-                v.renderContent(canvas, transform);
+                v.renderContent(canvas);
             });
             ctx.restore();
         };
