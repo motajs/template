@@ -3,8 +3,7 @@ import { Font, MotaOffscreenCanvas2D } from '@motajs/render';
 import EventEmitter from 'eventemitter3';
 import { isNil } from 'lodash-es';
 import { RenderableData, AutotileRenderable, texture } from '../elements';
-// @ts-expect-error render/renderer 按 D-54 留在实现层，本文件已移入系统层，按 D-59 暂以标注记录，不反向引用、不解耦
-import { using } from '../renderer';
+import { IExcitable } from '@motajs/animate';
 
 /** 文字的安全填充，会填充在文字的上侧和下侧，防止削顶和削底 */
 const SAFE_PAD = 1;
@@ -244,7 +243,10 @@ interface TextContentTyperEvent {
 
 type TyperFunction = (data: TyperRenderable[], typing: boolean) => void;
 
-export class TextContentTyper extends EventEmitter<TextContentTyperEvent> {
+export class TextContentTyper
+    extends EventEmitter<TextContentTyperEvent>
+    implements IExcitable<number>
+{
     /** 文字配置信息 */
     readonly config: Required<TyperConfig>;
     /** 文字解析器 */
@@ -309,8 +311,6 @@ export class TextContentTyper extends EventEmitter<TextContentTyperEvent> {
             },
             this.config
         );
-
-        using.onExcitedFunc(() => this.tick());
     }
 
     /**
@@ -491,7 +491,7 @@ export class TextContentTyper extends EventEmitter<TextContentTyperEvent> {
     /**
      * 每帧执行的函数
      */
-    private tick() {
+    excited() {
         if (!this.typing) return;
         const now = Date.now();
         const needType = Math.round(

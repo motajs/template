@@ -3,16 +3,17 @@ import {
     CustomRenderItem,
     MotaOffscreenCanvas2D
 } from '@motajs/render';
-import { DefaultProps, PathProps } from '@motajs/render-vue';
+import {
+    cycledTransition,
+    DefaultProps,
+    onExcitedFunc,
+    PathProps
+} from '@motajs/render-vue';
 import { computed, defineComponent, ref, watch } from 'vue';
 import { TextContent, TextContentProps } from './textbox';
 import { Scroll, ScrollExpose, ScrollProps } from './scroll';
-// @ts-expect-error render/use.ts 按 D-54 留在实现层，本文件已移入系统层，按 D-68 暂以标注记录，不反向引用、不解耦
-import { transitioned } from '../use';
 import { SetupComponentOptions } from '@motajs/system';
 import { clamp } from 'lodash-es';
-// @ts-expect-error render/renderer 按 D-54 留在实现层，本文件已移入系统层，按 D-59 暂以标注记录，不反向引用、不解耦
-import { using } from '../renderer';
 import { cosh, CurveMode } from '@motajs/animate';
 
 interface ProgressProps extends DefaultProps {
@@ -29,7 +30,7 @@ interface ProgressProps extends DefaultProps {
 }
 
 const progressProps = {
-    props: ['loc', 'progress', 'success', 'background']
+    props: ['loc', 'progress', 'success', 'background', 'lineWidth']
 } satisfies SetupComponentOptions<ProgressProps>;
 
 /**
@@ -115,14 +116,15 @@ export const Arrow = defineComponent<ArrowProps>(props => {
         path.lineTo(x2 - x, y2 - y);
         const angle = Math.atan2(y2 - y1, x2 - x1);
         path.moveTo(
-            x2 - head * Math.cos(angle - Math.PI / 6),
-            y2 - head * Math.sin(angle - Math.PI / 6)
+            x2 - head * Math.cos(angle - Math.PI / 6) - x,
+            y2 - head * Math.sin(angle - Math.PI / 6) - y
         );
         path.lineTo(x2 - x, y2 - y);
         path.lineTo(
-            x2 - head * Math.cos(angle + Math.PI / 6),
-            y2 - head * Math.sin(angle + Math.PI / 6)
+            x2 - head * Math.cos(angle + Math.PI / 6) - x,
+            y2 - head * Math.sin(angle + Math.PI / 6) - y
         );
+
         return path;
     });
 
@@ -218,22 +220,24 @@ export const ScrollText = defineComponent<
     const eleHeight = computed(() => props.loc[3] ?? props.width);
     const pad = computed(() => props.pad ?? 16);
 
-    let lastFixedTime = Date.now();
+    let lastFixedTime = -1;
     let lastFixedPos = 0;
     let paused = false;
     let nowScroll = 0;
 
-    using.onExcitedFunc(() => {
+    onExcitedFunc(time => {
         if (paused || !scroll.value) return;
-        const now = Date.now();
-        const dt = now - lastFixedTime;
+        if (lastFixedTime === -1) {
+            lastFixedTime = time;
+            return;
+        }
+        const dt = time - lastFixedTime;
         nowScroll = (dt / 1000) * speed.value + lastFixedPos;
         scroll.value.scrollTo(nowScroll, 0);
         if (nowScroll >= scroll.value.getScrollLength()) {
             emit('scrollEnd');
             paused = true;
         }
-        lastFixedTime = now;
     });
 
     const pause = () => {
@@ -243,18 +247,18 @@ export const ScrollText = defineComponent<
     const resume = () => {
         paused = false;
         lastFixedPos = nowScroll;
-        lastFixedTime = Date.now();
+        lastFixedTime = -1;
     };
 
     const setSpeed = (value: number) => {
         lastFixedPos = nowScroll;
-        lastFixedTime = Date.now();
+        lastFixedTime = -1;
         speed.value = value;
     };
 
     const rescroll = () => {
         nowScroll = 0;
-        lastFixedTime = Date.now();
+        lastFixedTime = -1;
         lastFixedPos = 0;
     };
 
@@ -302,8 +306,9 @@ const selectionProps = {
 export const Selection = defineComponent<SelectionProps>(props => {
     const minAlpha = computed(() => props.alphaRange?.[0] ?? 0.25);
     const maxAlpha = computed(() => props.alphaRange?.[1] ?? 0.55);
-    const alpha = transitioned(
+    const alpha = cycledTransition(
         minAlpha.value,
+        maxAlpha.value,
         2000,
         cosh(2, CurveMode.EaseInOut)
     )!;
@@ -335,15 +340,6 @@ export const Selection = defineComponent<SelectionProps>(props => {
         ctx.drawImage(image, 128, 66, 2, 28, 0, 2, 2, height - 4);
         ctx.drawImage(image, 158, 66, 2, 28, width - 2, 2, 2, height - 4);
     };
-
-    using.onExcitedFunc(() => {
-        if (alpha.value === maxAlpha.value) {
-            alpha.set(minAlpha.value);
-        }
-        if (alpha.value === minAlpha.value) {
-            alpha.set(maxAlpha.value);
-        }
-    });
 
     return () =>
         isWinskin.value ? (

@@ -31,7 +31,7 @@ import {
 } from './textboxTyper';
 import { SetupComponentOptions } from '@motajs/system';
 import { texture } from '../elements';
-import { DefaultProps } from '@motajs/render-vue';
+import { DefaultProps, onExcited } from '@motajs/render-vue';
 
 // todo: TextContent 应该改成渲染元素？
 
@@ -130,6 +130,8 @@ export const TextContent = defineComponent<
     const typer = new TextContentTyper(props);
     let renderable: TyperRenderable[] = [];
     let needUpdate = false;
+
+    onExcited(typer);
 
     const retype = () => {
         if (needUpdate || props.hidden) return;
@@ -407,15 +409,15 @@ export const Textbox = defineComponent<
     });
 
     const onSetText = () => {
-        nextTick(() => {
-            titleElement.value?.requestBeforeFrame(() => {
-                if (titleElement.value) {
-                    const { width, height } = titleElement.value;
-                    tw.value = width + data.titlePadding! * 2;
-                    th.value = height + data.titlePadding! * 2;
-                }
-            });
-        });
+        // nextTick(() => {
+        //     titleElement.value?.requestBeforeFrame(() => {
+        //         if (titleElement.value) {
+        //             const { width, height } = titleElement.value;
+        //             tw.value = width + data.titlePadding! * 2;
+        //             th.value = height + data.titlePadding! * 2;
+        //         }
+        //     });
+        // });
     };
 
     //#region store

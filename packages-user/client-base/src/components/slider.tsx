@@ -1,7 +1,8 @@
+import { IHookController } from '@motajs/common';
 import { CanvasStyle, Font, IActionEvent, IRenderItem } from '@motajs/render';
 import { DefaultProps } from '@motajs/render-vue';
 import { SetupComponentOptions } from '@motajs/system';
-import { isNil } from 'lodash-es';
+import { clamp, isNil } from 'lodash-es';
 import {
     computed,
     defineComponent,
@@ -85,10 +86,10 @@ export const Slider = defineComponent<
 
     /** 当前值 */
     const value = ref(props.value ?? min.value);
-    const container = ref<IRenderItem>();
+    const rect = ref<IRenderItem>();
 
     const width = computed(() => props.loc?.[2] ?? props.width ?? 200);
-    const height = computed(() => props.loc?.[3] ?? props.width ?? 200);
+    const height = computed(() => props.loc?.[3] ?? props.height ?? 200);
 
     const cy = computed(() => height.value / 2);
     const sx = computed(() => props.padding ?? 4);
@@ -104,10 +105,18 @@ export const Slider = defineComponent<
         () => props.value,
         newValue => {
             if (!isNil(newValue)) {
-                value.value = newValue;
+                value.value = clamp(newValue, min.value, max.value);
             }
         }
     );
+
+    watch(min, newValue => {
+        value.value = clamp(value.value, newValue, max.value);
+    });
+
+    watch(max, newValue => {
+        value.value = clamp(value.value, min.value, newValue);
+    });
 
     /** 端点横坐标 */
     const fx = computed(() => {
@@ -119,16 +128,22 @@ export const Slider = defineComponent<
     /** 数值显示值 */
     const valueStr = computed(() => {
         const v = Number(value.value.toFixed(8));
-        if (v < 1000 && v > 0.01) return value.value.toString();
-        else return v.toExponential(2);
+        const abs = Math.abs(v);
+        if ((abs < 1000 && abs > 0.01) || abs < 1e-8) {
+            return value.value.toString();
+        } else {
+            return v.toExponential(2);
+        }
     });
 
     let dragging = false;
     let startX = -1;
+    let startValue = 0;
 
     const down = (ev: IActionEvent) => {
         dragging = true;
         startX = ev.absoluteX;
+        startValue = value.value;
     };
 
     const up = () => {
@@ -139,7 +154,7 @@ export const Slider = defineComponent<
     const move = (ev: IActionEvent) => {
         if (!dragging || startX < 0) return;
         const dx = ev.absoluteX - startX;
-        const ratio = (value.value - min.value) / (max.value - min.value);
+        const ratio = (startValue - min.value) / (max.value - min.value);
         const now = ratio * (ex.value - sx.value);
         if (dx < -now) {
             value.value = min.value;
@@ -152,27 +167,41 @@ export const Slider = defineComponent<
             const step = props.step ?? 1;
             const steps = Math.round((targetValue - min.value) / step);
             const aligned = steps * step + min.value;
-            value.value = aligned;
+            value.value = clamp(aligned, min.value, max.value);
             emit('update:value', aligned);
         }
     };
 
+    let controller: IHookController | null = null;
     onMounted(() => {
-        if (!container.value) return;
-        const root = container.value.root;
+        if (!rect.value) return;
+        const root = rect.value.root;
         if (!root) return;
-        root.on('moveCapture', move);
+        controller = root.addHook({
+            onMoveCapture(ev) {
+                move(ev);
+            },
+            onUpCapture() {
+                up();
+            }
+        });
     });
 
     onUnmounted(() => {
-        if (!container.value) return;
-        const root = container.value.root;
+        if (!rect.value) return;
+        const root = rect.value.root;
         if (!root) return;
-        root.off('moveCapture', move);
+        controller?.unload();
     });
 
     return () => (
-        <container ref={container}>
+        <container
+            ref={rect}
+            loc={props.loc}
+            width={props.width}
+            height={props.height}
+            nocache
+        >
             <g-line
                 line={[sx.value, cy.value, ex.value, cy.value]}
                 lineCap="round"
@@ -197,7 +226,6 @@ export const Slider = defineComponent<
                 cursor="pointer"
                 zIndex={2}
                 onDown={down}
-                onUp={up}
             />
             <text
                 text={valueStr.value}

@@ -1,13 +1,11 @@
 import { ElementLocator, Font } from '@motajs/render';
 import { logger } from '@motajs/common';
 import { computed, defineComponent, onUnmounted, ref } from 'vue';
-// @ts-expect-error render/use.ts 按 D-54 留在实现层，本文件已移入系统层，按 D-68 暂以标注记录，不反向引用、不解耦
-import { transitioned } from '../use';
 import { cosh } from '@motajs/animate';
 import { debounce } from 'lodash-es';
 import { texture } from '../elements';
 import { SetupComponentOptions } from '@motajs/system';
-import { DefaultProps } from '@motajs/render-vue';
+import { DefaultProps, transitioned } from '@motajs/render-vue';
 
 export interface TipProps extends DefaultProps {
     /** 显示的位置 */

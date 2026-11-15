@@ -1,5 +1,5 @@
 import { DefaultProps } from '@motajs/render-vue';
-import { computed, defineComponent, ref, SlotsType, VNode } from 'vue';
+import { computed, defineComponent, ref, SlotsType, VNode, watch } from 'vue';
 import { Selection } from './misc';
 import { ElementLocator, Font } from '@motajs/render';
 import { SetupComponentOptions } from '@motajs/system';
@@ -8,11 +8,11 @@ import { Scroll } from './scroll';
 export interface ListProps extends DefaultProps {
     /** 列表内容，第一项表示 id，第二项表示显示的内容 */
     list: [string, string][];
-    /** 当前选中的项 */
-    selected: string;
     /** 定位 */
     loc: ElementLocator;
-    /** 每行的高度，默认 18 */
+    /** 当前选中的项 */
+    selected?: string;
+    /** 每行的高度，默认 24 */
     lineHeight?: number;
     /** 字体 */
     font?: Font;
@@ -53,14 +53,21 @@ const listProps = {
 
 export const List = defineComponent<ListProps, ListEmits, keyof ListEmits>(
     (props, { emit }) => {
-        const selected = ref(props.list[0][0]);
-        const lineHeight = computed(() => props.lineHeight ?? 18);
+        const selected = ref(props.selected ?? props.list[0][0]);
+        const lineHeight = computed(() => props.lineHeight ?? 24);
 
         const select = (value: string) => {
             selected.value = value;
             emit('update', value);
             emit('update:selected', value);
         };
+
+        watch(
+            () => props.selected,
+            value => {
+                selected.value = value ?? props.list[0][0];
+            }
+        );
 
         return () => (
             <Scroll loc={props.loc}>
@@ -87,7 +94,11 @@ export const List = defineComponent<ListProps, ListEmits, keyof ListEmits>(
                         0.5
                     ];
                     return (
-                        <container loc={loc} onClick={() => select(key)}>
+                        <container
+                            loc={loc}
+                            nocache
+                            onClick={() => select(key)}
+                        >
                             {selected.value === key && (
                                 <Selection
                                     loc={selectionLoc}
@@ -164,7 +175,7 @@ export const ListPage = defineComponent<
     keyof ListPageEmits,
     ListPageSlots
 >((props, { emit, slots }) => {
-    const selected = ref(props.selected);
+    const selected = ref(props.selected ?? props.list[0][0]);
 
     const basis = computed(() => props.basis ?? 0.3);
     const width = computed(() => props.loc[2] ?? 200);
@@ -187,9 +198,17 @@ export const ListPage = defineComponent<
     });
 
     const update = (key: string) => {
+        selected.value = key;
         emit('update', key);
         emit('update:selected', key);
     };
+
+    watch(
+        () => props.selected,
+        value => {
+            selected.value = value ?? props.list[0][0];
+        }
+    );
 
     const close = () => emit('close');
 

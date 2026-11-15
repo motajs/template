@@ -6,6 +6,7 @@ import {
     onUnmounted,
     onUpdated,
     ref,
+    shallowRef,
     SlotsType,
     VNode,
     watch
@@ -24,14 +25,17 @@ import {
     ActionType,
     CustomContainerPropagateOrigin,
     IRenderItem,
-    ICustomContainer
+    ICustomContainer,
+    IRenderItemBaseHooks
 } from '@motajs/render';
-import { cosh, linear, Transition } from '@motajs/animate';
+import { cosh, CurveMode, linear } from '@motajs/animate';
 import { clamp } from 'lodash-es';
-// @ts-expect-error render/use.ts 按 D-54 留在实现层，本文件已移入系统层，按 D-68 暂以标注记录，不反向引用、不解耦
-import { transitioned } from '../use';
 import { SetupComponentOptions } from '@motajs/system';
-import { DefaultProps } from '@motajs/render-vue';
+import {
+    DefaultProps,
+    transitioned,
+    useRendererRoot
+} from '@motajs/render-vue';
 
 export const enum ScrollDirection {
     Horizontal,
@@ -108,13 +112,16 @@ const SCROLL_COLOR = '255,255,255';
  */
 export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
     (props, { slots, expose }) => {
+        /** 根元素 */
+        const root = useRendererRoot()!;
+
         /** 滚动条的定位 */
         const sp = ref<ElementLocator>([0, 0, 1, 1]);
 
         const listenedChild: Set<IRenderItem> = new Set();
         const areaMap: Map<IRenderItem, [number, number]> = new Map();
-        const content = ref<Container>();
-        const scroll = ref<CustomRenderItem>();
+        const content = shallowRef<Container>();
+        const scroll = shallowRef<CustomRenderItem>();
 
         const scrollAlpha = transitioned(0.5, 100, linear())!;
 
@@ -132,10 +139,6 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
             scroll.value?.update();
         });
 
-        /** 滚动内容的当前位置 */
-        let contentPos = 0;
-        /** 滚动条的当前位置 */
-        let scrollPos = 0;
         /** 滚动内容的目标位置 */
         let contentTarget = 0;
         /** 滚动条的目标位置 */
@@ -145,24 +148,12 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
         /** 滚动条的长度 */
         let scrollLength = SCROLL_MIN_LENGTH;
 
-        const transition = new Transition();
-        transition.value.scroll = 0;
-        transition.value.showScroll = 0;
-        transition.mode(cosh('sin', 'out')).absolute();
+        /** 滚动条的当前位置 */
+        const scrollPos = transitioned(0, 300, cosh(2, CurveMode.EaseOut))!;
+        /** 滚动内容的当前位置 */
+        const contentPos = transitioned(0, 300, cosh(2, CurveMode.EaseOut))!;
 
         //#region 滚动操作
-
-        transition.ticker.add(() => {
-            if (scrollPos !== scrollTarget) {
-                scrollPos = transition.value.scroll;
-                content.value?.update();
-            }
-            if (contentPos !== contentTarget) {
-                contentPos = transition.value.showScroll;
-                checkAllItem();
-                content.value?.update();
-            }
-        });
 
         /**
          * 滚动到目标值
@@ -181,9 +172,13 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
                     (height.value - scrollLength) * (contentTarget / max);
             }
             if (isNaN(scrollTarget)) scrollTarget = 0;
-            transition.time(time).transition('scroll', scrollTarget);
-            transition.time(time).transition('showScroll', target);
+            scrollPos.set(scrollTarget, time);
+            contentPos.set(target, time);
         };
+
+        watch(contentPos.ref, () => {
+            checkAllItem();
+        });
 
         /**
          * 计算一个元素会在画面上显示的区域
@@ -200,13 +195,14 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
          * 检查一个元素是否需要显示，不需要则隐藏
          */
         const checkItem = (item: IRenderItem) => {
+            if (item.isComment) return;
             const area = areaMap.get(item);
             if (!area) {
                 item.show();
                 return;
             }
             const [min, max] = area;
-            if (contentPos > min - 10 && contentPos < max + 10) {
+            if (contentPos.value > min - 10 && contentPos.value < max + 10) {
                 item.show();
             } else {
                 item.hide();
@@ -221,9 +217,10 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
         };
 
         /**
-         * 当一个元素的矩阵发生变换时执行，检查其显示区域
+         * 更新容器中的渲染元素状态
+         * @param item 渲染元素
          */
-        const onTransform = (item: IRenderItem) => {
+        const updateElementStatus = (item: IRenderItem) => {
             const rect = item.getBoundingRect();
             const pad = props.padEnd ?? 0;
             if (item.parent === content.value) {
@@ -239,13 +236,25 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
                     }
                 }
             } else {
-                item.off('transform', onTransform);
+                item.removeHook(transformHook);
                 listenedChild.delete(item);
             }
             getArea(item, rect);
             checkItem(item);
             scroll.value?.update();
             content.value?.update();
+        };
+
+        /**
+         * 当一个元素的矩阵发生变换时执行，检查其显示区域
+         */
+        const transformHook: IRenderItemBaseHooks = {
+            onTransform(item: IRenderItem) {
+                updateElementStatus(item);
+            },
+            onResize(item: IRenderItem) {
+                updateElementStatus(item);
+            }
         };
 
         /**
@@ -276,6 +285,10 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
         };
 
         let updating = false;
+
+        /**
+         * 更新滚动条内容
+         */
         const updateScroll = () => {
             if (!content.value || updating) return;
             updating = true;
@@ -283,7 +296,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
                 updating = false;
             });
             let max = 0;
-            listenedChild.forEach(v => v.off('transform', onTransform));
+            listenedChild.forEach(v => v.removeHook(transformHook));
             listenedChild.clear();
             areaMap.clear();
             content.value.children.forEach(v => {
@@ -300,7 +313,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
                 }
                 getArea(v, rect);
                 if (!listenedChild.has(v)) {
-                    v.on('transform', onTransform);
+                    v.addHook(transformHook);
                     listenedChild.add(v);
                 }
                 checkItem(v);
@@ -314,7 +327,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
         onUpdated(updateScroll);
         onMounted(updateScroll);
         onUnmounted(() => {
-            listenedChild.forEach(v => v.off('transform', onTransform));
+            listenedChild.forEach(v => v.removeHook(transformHook));
         });
 
         //#endregion
@@ -328,7 +341,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
             ctx.lineWidth = 3;
             ctx.strokeStyle = scrollColor.value;
             ctx.beginPath();
-            const scroll = transition.value.scroll;
+            const scroll = scrollPos.value;
             if (direction.value === ScrollDirection.Horizontal) {
                 ctx.moveTo(scroll + 5, 5);
                 ctx.lineTo(scroll + scrollLength - 5, 5);
@@ -347,9 +360,9 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
             const ctx = canvas.ctx;
             ctx.save();
             if (direction.value === ScrollDirection.Horizontal) {
-                ctx.translate(-contentPos, 0);
+                ctx.translate(-contentPos.value, 0);
             } else {
-                ctx.translate(0, -contentPos);
+                ctx.translate(0, -contentPos.value);
             }
             children.forEach(v => {
                 if (v.hidden) return;
@@ -373,9 +386,9 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
         ) => {
             if (progress === EventProgress.Capture) {
                 if (direction.value === ScrollDirection.Horizontal) {
-                    event.offsetX += contentPos;
+                    event.offsetX += contentPos.value;
                 } else {
-                    event.offsetY += contentPos;
+                    event.offsetY += contentPos.value;
                 }
             }
             origin(type, progress, event);
@@ -471,9 +484,9 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
             const pos = getPos(ev, true);
             // 计算点击在了滚动条的哪个位置
             const offsetPos = getPos(ev);
-            const sEnd = scrollPos + scrollLength;
-            if (offsetPos >= scrollPos && offsetPos <= sEnd) {
-                scrollDownPos = pos - scrollPos;
+            const sEnd = scrollPos.value + scrollLength;
+            if (offsetPos >= scrollPos.value && offsetPos <= sEnd) {
+                scrollDownPos = pos - scrollPos.value;
                 scrollMutate = false;
                 scrollPin = getScrollPin(ev);
             } else {
@@ -509,7 +522,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
             scrollAlpha.set(0.7);
             if (!scrollMutate) return;
             const pos = getPos(ev);
-            if (pos < scrollPos) {
+            if (pos < scrollPos.value) {
                 scrollTo(contentTarget - 50, 300);
             } else {
                 scrollTo(contentTarget + 50, 300);
@@ -526,15 +539,24 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
 
         //#endregion
 
+        const hook: IRenderItemBaseHooks = {
+            onMove(ev) {
+                move(ev);
+                moveScroll(ev);
+            }
+        };
+
+        watch(root, (value, old) => {
+            old?.removeHook(hook);
+            value?.addHook(hook);
+        });
+
         onMounted(() => {
-            scroll.value?.root?.on('move', move);
-            scroll.value?.root?.on('move', moveScroll);
+            checkAllItem();
         });
 
         onUnmounted(() => {
-            scroll.value?.root?.off('move', move);
-            scroll.value?.root?.off('move', moveScroll);
-            transition.ticker.destroy();
+            root.value?.removeHook(hook);
         });
 
         //#region expose 函数
@@ -552,14 +574,16 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
 
         return () => {
             return (
-                <container loc={props.loc} onWheel={wheel}>
+                <container loc={props.loc} onWheel={wheel} nocache>
                     <container-custom
-                        loc={[0, 0, props.loc[2], props.loc[3]]}
+                        loc={[0, 0, width.value, height.value]}
                         ref={content}
                         onDown={down}
                         render={renderContent}
                         propagate={customPropagate}
                         zIndex={0}
+                        bindings={[scrollPos.ref.value, contentPos.ref.value]}
+                        onUpdateChildren={updateScroll}
                     >
                         {slots.default?.()}
                     </container-custom>

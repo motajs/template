@@ -1,4 +1,4 @@
-import { DefaultProps } from '@motajs/render-vue';
+import { DefaultProps, transitionedColor } from '@motajs/render-vue';
 import { computed, defineComponent, onUnmounted, ref, watch } from 'vue';
 import { TextContent, TextContentProps } from './textbox';
 import {
@@ -11,8 +11,6 @@ import {
     IRenderItem,
     IRenderTreeRoot
 } from '@motajs/render';
-// @ts-expect-error render/use.ts 按 D-54 留在实现层，本文件已移入系统层，按 D-68 暂以标注记录，不反向引用、不解耦
-import { transitionedColor } from '../use';
 import { linear } from '@motajs/animate';
 import { SetupComponentOptions } from '@motajs/system';
 
@@ -71,7 +69,7 @@ const inputProps = {
  * <Input
  *   placeholder="提示词"
  *   // 双向数据绑定，当输入内容改变时，inputValue 会同时改变
- *   v-model={inputValue.value}
+ *   v-model:value={inputValue.value}
  *   // 设置为多行模式
  *   multiline
  *   // 边框颜色
@@ -205,7 +203,9 @@ export const Input = defineComponent<InputProps, InputEmits, keyof InputEmits>(
             ele.style.height = `${inputHeight}px`;
             ele.style.font = font.string();
             ele.style.color = String(props.fillStyle ?? 'white');
+            ele.style.backgroundColor = '#111';
             ele.style.zIndex = '100';
+            ele.value = value.value;
             document.body.appendChild(ele);
             ele.focus();
         };
