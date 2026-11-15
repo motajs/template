@@ -1,7 +1,8 @@
-import { IHeroAttr, IItemEffect } from '@user/data-common';
-import { ICoreState } from '@user/data-state';
+import { IItemRawData, ItemCategory } from '@user/data-common';
 
-type ItemEffect = IItemEffect<IHeroAttr, ICoreState>;
+type HeroAttr = import('@user/data-common').IHeroAttr;
+type CoreState = import('@user/data-state').ICoreState;
+type ItemEffect = import('@user/data-common').IItemEffect<HeroAttr, CoreState>;
 
 // --- SYSTEM ITEM PREFIX --- //
 
