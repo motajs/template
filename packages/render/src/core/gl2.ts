@@ -134,6 +134,10 @@ export abstract class GL2 extends RenderItem {
         this.init();
     }
 
+    protected getDefaultCache(): boolean {
+        return false;
+    }
+
     private init() {
         const gl = this.gl;
         if (!gl) return;

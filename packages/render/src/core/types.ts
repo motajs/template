@@ -267,9 +267,8 @@ export interface IRenderItem
     /**
      * 将此元素渲染至目标画布上
      * @param canvas 渲染至的画布
-     * @param transform 父元素的变换矩阵
      */
-    renderContent(canvas: MotaOffscreenCanvas2D, transform: Transform): void;
+    renderContent(canvas: MotaOffscreenCanvas2D): void;
 
     //#endregion
 

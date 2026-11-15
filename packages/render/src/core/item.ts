@@ -380,11 +380,12 @@ export abstract class RenderItem
         this.transform.bind(this);
         this.x = transform.x;
         this.y = transform.y;
+        this.updateTransform(transform);
     }
 
     setSelfTransform(self: boolean): void {
         this.selfTransform = self;
-        this.update();
+        this.updateTransform(this.transform);
     }
 
     setFilter(filter: string) {
@@ -497,26 +498,25 @@ export abstract class RenderItem
 
     updateTransform(transform: Transform) {
         // 更新变换矩阵时，只需要更新有 `selfTransform` 的子元素，其他的不需要更新
+        // 由于 selfTransform 只影响子一级的元素，因此不需要深度遍历每一个元素，只需要遍历一层就足够了
         let childUpdated = false;
         if (this.children.length > 0) {
-            const stack: RenderItem[] = [this];
-            while (stack.length > 0) {
-                const item = stack.pop();
-                if (!item || !item.selfTransform) continue;
-                childUpdated = true;
-                item.cacheDirty = true;
-                item.children.forEach(v => stack.push(v));
-            }
+            this.children.forEach(v => {
+                if (v.selfTransform) {
+                    v.cacheDirty = true;
+                    childUpdated = true;
+                }
+            });
         }
         // 根据子元素更新情况以及自身是否 `selfTransform` 来决定是更新自己还是更新父元素
-        if (!childUpdated) {
+        if (childUpdated) {
+            this.update();
+        } else {
             if (this.selfTransform) {
                 this.update();
             } else {
                 this.parent?.update();
             }
-        } else {
-            this.parent?.update();
         }
         this.x = transform.x;
         this.y = transform.y;
