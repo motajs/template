@@ -863,9 +863,10 @@ export abstract class RenderItem
      */
     protected processBubble<T extends ActionType>(
         type: T,
-        _event: ActionEventMap[T],
+        event: ActionEventMap[T],
         inElement: boolean
     ): boolean {
+        void event;
         switch (type) {
             case ActionType.Enter:
             case ActionType.Leave:
@@ -956,10 +957,13 @@ export abstract class RenderItem
      * @param _nextValue 该属性当前的数值
      */
     protected handleProps(
-        _key: string,
-        _prevValue: any,
-        _nextValue: any
+        key: string,
+        prevValue: any,
+        nextValue: any
     ): boolean {
+        void key;
+        void prevValue;
+        void nextValue;
         return false;
     }
 
