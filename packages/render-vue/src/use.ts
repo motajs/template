@@ -28,7 +28,7 @@ import {
     ExcitationCurve,
     IAnimatable
 } from '@motajs/animate';
-import { ITransitionedController } from './types';
+import { ICycledTransitionController, ITransitionedController } from './types';
 
 //#region 函数功能接口
 
@@ -276,7 +276,8 @@ export function transitioned(
 }
 
 /**
- * 创建一个渐变颜色，当颜色发生变化时会缓慢变化值目标值而非突变，自动判断颜色字符串类型，只可用于组件内，不可用于组件外
+ * 创建一个渐变颜色，当颜色发生变化时会缓慢变化值目标值而非突变，自动判断颜色字符串类型，只可用于组件内，不可用于组件外。
+ * 目前支持 `rgba` `rgb` 颜色字符串和十六进制颜色字符串
  * ```tsx
  * // 创建渐变，初始值为 '#fff'（白色），渐变时长 300ms，线性变化
  * const color = transitionedColor('#fff', 300, linear());
@@ -297,6 +298,41 @@ export function transitionedColor(
     const renderer = useRendererRoot();
     if (!renderer) return null;
     return new RenderColorTransition(color, getGlobalTransition(), time, curve);
+}
+
+/**
+ * 创建一个渐变循环，渐变值会在最大值和最小值之间反复变换，常用于播放循环动画，只可用于组件内，不可用于组件外
+ *
+ * ```tsx
+ * // 创建渐变循环，alpha 会在 [0.2, 0.8] 的区间内来回变化
+ * const alpha = cycledTransition(0.2, 0.8, 1000, linear());
+ *
+ * // 直接在元素上使用
+ * <text text='文本' alpha={alpha.ref.value} />
+ * ```
+ * @param min 渐变循环的最小值
+ * @param max 渐变循环的最大值
+ * @param time 渐变循环的单程耗时
+ * @param curve 渐变循环使用的速率曲线
+ * @param maxStart 是否从 `max` 开始渐变循环，默认会从 `min` 开始渐变循环
+ */
+export function cycledTransition(
+    min: number,
+    max: number,
+    time: number,
+    curve: ExcitationCurve,
+    maxStart: boolean = false
+): ICycledTransitionController | null {
+    const renderer = useRendererRoot();
+    if (!renderer) return null;
+    return new CycledTransition(
+        min,
+        max,
+        getGlobalTransition(),
+        time,
+        curve,
+        maxStart
+    );
 }
 
 //#endregion
@@ -325,6 +361,7 @@ class RenderTransition implements ITransitionedController<number> {
         public curve: ExcitationCurve
     ) {
         this.ref = ref(value);
+        this.pendingValue = value;
 
         watch(transition, (value, old) => {
             if (value && !old) {
@@ -391,6 +428,7 @@ class RenderColorTransition implements ITransitionedController<string> {
         this.bValue = ref(b);
         this.aValue = ref(a);
         this.ref = computed(() => this.encodeColor());
+        this.pendingValue = [r, g, b, a];
 
         watch(transition, (value, old) => {
             if (value && !old) {
@@ -516,6 +554,62 @@ class RenderColorTransition implements ITransitionedController<string> {
         const b = this.bValue.value;
         const a = this.aValue.value;
         return `rgba(${r},${g},${b},${a})`;
+    }
+}
+
+class CycledTransition
+    extends RenderTransition
+    implements ICycledTransitionController
+{
+    private stop: boolean = false;
+
+    constructor(
+        private min: number,
+        private max: number,
+        transition: ComputedRef<ITransition | null>,
+        time: number,
+        curve: ExcitationCurve,
+        maxStart: boolean
+    ) {
+        super(maxStart ? max : min, transition, time, curve);
+
+        watch(transition, value => {
+            if (value) {
+                this.startCycle();
+                this.check();
+            }
+        });
+    }
+
+    /**
+     * 检查当前状态
+     */
+    private check() {
+        if (this.ref.value <= this.min) {
+            this.set(this.max);
+        } else if (this.ref.value >= this.max) {
+            this.set(this.min);
+        } else {
+            this.set(this.min);
+        }
+    }
+
+    setRange(min: number, max: number): void {
+        this.min = min;
+        this.max = max;
+        this.check();
+    }
+
+    /**
+     * 开始动画循环
+     */
+    private async startCycle() {
+        while (true) {
+            if (this.stop || !this.transition.value) break;
+            const tran = this.transition.value;
+            await tran.wait(this.ref);
+            this.check();
+        }
     }
 }
 
