@@ -314,6 +314,10 @@ export class Comment extends RenderItem {
     constructor() {
         super();
         this.hide();
+        this.size(1, 1);
+        this.pos(-1, -1);
+        this.setZIndex(-Infinity);
+        this.ignoreEvent(true);
     }
 
     protected getDefaultCache(): boolean {
@@ -325,4 +329,17 @@ export class Comment extends RenderItem {
     }
 
     protected render(): void {}
+
+    show(): void {
+        this.hide();
+    }
+
+    patchProp(): void {
+        this.hide();
+        this.setCacheEnabled(false);
+        this.size(1, 1);
+        this.pos(-1, -1);
+        this.ignoreEvent(true);
+        this.setZIndex(-Infinity);
+    }
 }

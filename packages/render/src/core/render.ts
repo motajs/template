@@ -303,11 +303,15 @@ export class MotaRenderer
                 ActionType.Down,
                 this.createMouseAction(ev, ActionType.Down, mouse)
             );
+            ev.stopPropagation();
+            ev.preventDefault();
         });
         canvas.addEventListener('mouseup', ev => {
             const event = this.createMouseAction(ev, ActionType.Up);
             this.captureEvent(ActionType.Up, event);
             this.captureEvent(ActionType.Click, event);
+            ev.stopPropagation();
+            ev.preventDefault();
         });
         canvas.addEventListener('mousemove', ev => {
             const event = this.createMouseAction(
@@ -330,6 +334,8 @@ export class MotaRenderer
                 this.beforeHovered,
                 this.hoveredElement
             );
+            ev.stopPropagation();
+            ev.preventDefault();
         });
         canvas.addEventListener('mouseleave', ev => {
             const id = this.getMouseIdentifier(
@@ -342,12 +348,16 @@ export class MotaRenderer
             });
             this.hoveredElement.clear();
             this.beforeHovered.clear();
+            ev.stopPropagation();
+            ev.preventDefault();
         });
         canvas.addEventListener('wheel', ev => {
             this.captureEvent(
                 ActionType.Wheel,
                 this.createWheelAction(ev, ActionType.Wheel)
             );
+            ev.stopPropagation();
+            ev.preventDefault();
         });
         // 文档监听
         const abort = new AbortController();
@@ -377,6 +387,8 @@ export class MotaRenderer
                 this.createTouchAction(ev, ActionType.Down).forEach(v => {
                     this.captureEvent(ActionType.Down, v);
                 });
+                ev.stopPropagation();
+                ev.preventDefault();
             },
             { signal }
         );
@@ -390,6 +402,8 @@ export class MotaRenderer
                 [...ev.touches].forEach(v => {
                     this.touchInfo.delete(v.identifier);
                 });
+                ev.stopPropagation();
+                ev.preventDefault();
             },
             { signal }
         );
@@ -402,6 +416,8 @@ export class MotaRenderer
                 [...ev.touches].forEach(v => {
                     this.touchInfo.delete(v.identifier);
                 });
+                ev.stopPropagation();
+                ev.preventDefault();
             },
             { signal }
         );
@@ -425,6 +441,8 @@ export class MotaRenderer
                         this.hoveredElement
                     );
                 });
+                ev.stopPropagation();
+                ev.preventDefault();
             },
             { signal }
         );

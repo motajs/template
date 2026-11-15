@@ -140,7 +140,7 @@ export interface IRenderItemBaseHooks extends IHookBase {
      * @param width 元素宽度
      * @param height 元素高度
      */
-    onResize?(width: number, height: number): void;
+    onResize?(item: IRenderItem, width: number, height: number): void;
 
     /**
      * 当元素的变换矩阵发生变化时触发

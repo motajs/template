@@ -366,7 +366,7 @@ export abstract class RenderItem
             this.cache!.size(width, height);
         }
         this.update();
-        this.forEachHook(hook => hook.onResize?.(width, height));
+        this.forEachHook(hook => hook.onResize?.(this, width, height));
     }
 
     pos(x: number, y: number) {
@@ -577,7 +577,7 @@ export abstract class RenderItem
         el.parent = this;
         el.transform.bind(el);
         el.onResize(this.scale);
-        el.forEachHook(hook => hook.onResize?.(el.width, el.height));
+        el.forEachHook(hook => hook.onResize?.(this, el.width, el.height));
         // 还需要深度遍历每个元素，给每个元素都设置根元素
         el.setRoot(this.root);
         el.update();
@@ -1211,8 +1211,8 @@ export class RenderItemDefaultHooks implements IRenderItemBaseHooks {
         this.list.get('onWheelCapture')?.(ev);
     }
 
-    onResize(width: number, height: number): void {
-        this.list.get('onResize')?.(width, height);
+    onResize(item: IRenderItem, width: number, height: number): void {
+        this.list.get('onResize')?.(item, width, height);
     }
 
     onTransform(item: IRenderItem, transform: Transform): void {
