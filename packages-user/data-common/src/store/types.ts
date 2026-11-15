@@ -192,9 +192,9 @@ export interface IItemRawData<THero> {
     readonly hideInToolbox: boolean;
 
     /** 道具效果对象（非 Equipment 类型） */
-    readonly effect: IItemEffect<THero>;
+    readonly effect?: IItemEffect<THero>;
     /** 装备道具属性（Equipment 类型） */
-    readonly equip: IItemEquipData<THero>;
+    readonly equip?: IItemEquipData<THero>;
 }
 
 export interface IItemStore<THero> {
