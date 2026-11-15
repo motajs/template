@@ -1,6 +1,16 @@
 <template>
-    <div :style="{ background: props.background, overflow: 'hidden' }">
-        <canvas ref="canvasRef"></canvas>
+    <div
+        :style="{
+            background: props.background,
+            overflow: 'hidden',
+            display: 'flex',
+            justifyContent: 'center'
+        }"
+    >
+        <canvas
+            ref="canvasRef"
+            :style="{ display: 'block', flex: 'none' }"
+        ></canvas>
     </div>
 </template>
 
@@ -82,3 +92,14 @@ onUnmounted(() => {
     dispose = null;
 });
 </script>
+
+<style>
+.motajs-input-element {
+    left: 0;
+    top: 0;
+    position: fixed;
+    border: none;
+    z-index: 1000;
+    background-color: transparent;
+}
+</style>

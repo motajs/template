@@ -590,6 +590,7 @@ Plans:
 - [x] 10-31-PLAN.md — 两篇补写内容的独立读者审阅（沿用高级 I 人格）→ 问题清单 → 迭代修正（≤3 轮）→ 复审清零
 - [x] 10-32-PLAN.md — 两篇补写内容的用户主导修订循环 → 用户确认 → 最终格式 / 构建 / SUMMARY 收尾
 - [x] 10-42-PLAN.md — VitePress 内嵌自定义渲染器 demo 最小 POC（config alias / dedupe / isCustomElement / vue-jsx + 包装组件 + 渲染基础与 UISystem 两个 demo + 不进导航的 POC 页）
+- [x] 10-54-PLAN.md — 用户审阅与收尾（19 篇非示例文档已审阅；示例 1-6 标记待审阅；文档审阅计划完成，带待审阅项）
 
 **说明：** 每篇中级教程遵循 `10-CONTEXT.md` D-21..D-44 的逐篇要点与阅读顺序（4/8/9/3）。**旧内容删除已并入本批（D-04，Wave 0 / 10-01）**：删除 `docs/guide/*`、`docs/dev/*`、`docs/logger/*`、`docs/api/*` 与首页 `docs/index.md`，并清理 `docs/.vitepress/config.ts` 的旧 `nav`/`sidebar` 键。文档改动为 `docs/intermediate/*.md`（新增）、`docs/.vitepress/config.ts` 与 `docs/.vitepress/api.ts`（缺失目录守卫，保留按包生成机制）。构建命令 `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`；`init.ts` 在 `docs/api/` 缺失时安全跳过。本机 PowerShell 禁止 `pnpm.ps1`，命令经 `cmd /c "..."` 执行。
 

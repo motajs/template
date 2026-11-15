@@ -4,10 +4,10 @@ milestone: v1.0
 current_phase: 10
 current_phase_name: 文档重构
 status: executing
-stopped_at: Phase 10 进行中：中级 24 篇 + 高级 I 9 篇 + 高级 II 10 篇已收尾；10-06/10-11/10-12 待补
-last_updated: "2026-10-29T00:00:00.000Z"
-last_activity: 2026-10-29
-last_activity_desc: 10-42 文档内嵌渲染 demo POC 完成并经用户人工验证
+stopped_at: Phase 10 进行中：10-54 文档审阅计划已收尾（非示例文档完成，示例 1-6 待审阅）；10-06/10-11/10-12 待补
+last_updated: "2026-11-15T00:00:00.000Z"
+last_activity: 2026-11-15
+last_activity_desc: 10-54 用户审阅计划收尾；非示例文档完成，示例 1-6 标记待审阅
 state_head: dbbcf533dce2f22078a82d26817f36b85865da62
 progress:
   total_phases: 10
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-09-17)
 ## Current Position
 
 Phase: 10 (文档重构) — IN PROGRESS
-Plan: 第一批（中级 24 篇）、第二批（高级 I 7 篇）、第三批（高级 II 10 篇）、第四批（高级 I 补写 Mover/FaceHandler 2 篇）已收尾；10-42 文档内嵌渲染 demo POC 已完成并经用户验证；10-06 / 10-11 / 10-12 待补
+Plan: 第一批（中级 24 篇）、第二批（高级 I 7 篇）、第三批（高级 II 10 篇）、第四批（高级 I 补写 Mover/FaceHandler 2 篇）已收尾；10-42 文档内嵌渲染 demo POC 已完成并经用户验证；10-54 文档审阅计划已收尾（非示例文档完成，示例 1-6 待审阅）；10-06 / 10-11 / 10-12 待补
 Status: In Progress
-Last activity: 2026-10-29 — 10-42 文档内嵌渲染 demo POC 完成并经用户确认（人工验证通过）
+Last activity: 2026-11-15 — 10-54 用户审阅计划收尾；非示例文档完成，示例 1-6 标记待审阅
 
-Progress: Phase 10 · 29/32 plans（中级 + 高级 I 9 篇 + 高级 II 已收尾；总览 / 初级 / 高级 III / API / Agent 参考仍待推进）（另：10-42 文档内嵌渲染 demo POC 已完成并经用户验证，Phase 10 的计数收口仍归 10-41）
+Progress: Phase 10 · 29/32 plans（中级 + 高级 I 9 篇 + 高级 II 已收尾；总览 / 初级 / 高级 III / API / Agent 参考仍待推进）（另：10-42 文档内嵌渲染 demo POC 已完成并经用户验证，10-54 文档审阅计划已收尾但示例 1-6 待审阅，Phase 10 的计数收口仍归 10-41）
 
 ## Performance Metrics
 
@@ -268,6 +268,7 @@ Recent decisions affecting current work:
 - Phase 10 added (2026-10-14): 文档重构（重构过老、结构不佳、新人难懂的项目文档，面向新人/不懂代码的作者/有基础作者等多背景读者提供分层指南，并专门为 AI Agent 编写参考文档）；Depends on Phase 9
 - Phase 10 第一批（中级教程 24 篇 + 旧内容清空 + 站点注册 + D-09 修订 + 读者/用户修订循环）已完成并收尾（2026-10-20）；第二批（高级 I 7 篇 + 站点注册 + 独立读者审阅 + 用户 6 轮修订）已完成并经用户确认收尾（2026-10-20）；第三批（高级 II 10 篇 + 站点注册 + 独立读者审阅 + 用户 3 轮修订）已完成并经用户确认收尾（2026-10-23）；第四批（高级 I 补写 Mover + FaceHandler 2 篇 + 注册 + 读者/用户修订）已完成并经用户确认收尾（2026-10-24）。遗留 `10-06` / `10-11` / `10-12` 缺独立 SUMMARY，其范围已被后续修订覆盖
 - Phase 10 增量 10-42（2026-10-29）：VitePress 内嵌自定义渲染器 demo 最小 POC（DOM 包装组件动态 import 引擎 + 渲染基础 / UISystem 两个 demo + 不进导航 POC 页 + docs 局部 tsconfig + ESLint docs override）；用户人工验证通过（原话 `pass`），页面 `docs/poc/render-demo.md` 与命名暂时保留；未做 fence 插件 / 正式渲染端文档批次 / client-base 组件 / nav·sidebar 注册；无源码改动、无 commit
+- Phase 10 增量 10-54（2026-11-15）：用户审阅计划收尾；19 篇非示例文档已审阅，6 篇示例保留现状并标记待审阅；文档审阅计划标记为完成（带待审阅项）；未改源码/demo，未 commit；详见 `10-54-SUMMARY.md`
 
 ### Pending Todos
 
