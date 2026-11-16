@@ -130,7 +130,7 @@ export const Slider = defineComponent<
         const v = Number(value.value.toFixed(8));
         const abs = Math.abs(v);
         if ((abs < 1000 && abs > 0.01) || abs < 1e-8) {
-            return value.value.toString();
+            return v.toString();
         } else {
             return v.toExponential(2);
         }
