@@ -4,6 +4,12 @@
 
 本篇只讲组件最基本的形态、props 的传法，以及组件与 GameUI 的关系。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [UI 入门](../basics/ui-basics.md)
+
 ## 用 props 接收数据
 
 组件通过 props 接收父组件给的数据。写法固定为三步：
@@ -102,8 +108,8 @@ export const MyPanelUI = new GameUI('my-panel', MyPanel);
 </ClientOnly>
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const componentBasicLoader = () =>
-    import('../../../.vitepress/components/demos/ui/component-basic-demo.tsx');
+    import('../../.vitepress/components/demos/ui/component-basic-demo.tsx');
 </script>

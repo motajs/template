@@ -4,62 +4,62 @@
 
 ## 命名总表
 
-| 项 | 最终值 |
-|----|--------|
-| 子分组名 | 自定义 UI 与渲染 |
-| 目录 | `docs/advanced/ii/ui/` |
-| 分组 1 | 起步（Part 0） |
-| 分组 2 | 元素与布局（Part 1） |
-| 分组 3 | 交互与数据（Part 2） |
-| 分组 4 | 组件化（Part 3） |
-| 分组 5 | 内置组件与 UI 系统（Part 4） |
-| 分组 6 | 完整示例（Part 5） |
-| demo 目录 | `docs/.vitepress/components/demos/ui/` |
-| 侧边栏层级 | 高级 II → 子分组「自定义 UI 与渲染」→ 6 个 Part 分组 → 篇目（两层嵌套） |
-| 落点 | 先全部写进高级 II 的新子分组；合并 / 拆分评估留到 10-50 |
-| 导览更新时机 | 本计划只做措辞修正 + 子分组入口；完整目录表留到 10-50 收尾 |
+| 项           | 最终值                                                                  |
+| ------------ | ----------------------------------------------------------------------- |
+| 子分组名     | 自定义 UI 与渲染                                                        |
+| 目录         | `docs/advanced/ii/ui/`                                                  |
+| 分组 1       | 起步（Part 0）                                                          |
+| 分组 2       | 元素与布局（Part 1）                                                    |
+| 分组 3       | 交互与数据（Part 2）                                                    |
+| 分组 4       | 组件化（Part 3）                                                        |
+| 分组 5       | 内置组件与 UI 系统（Part 4）                                            |
+| 分组 6       | 完整示例（Part 5）                                                      |
+| demo 目录    | `docs/.vitepress/components/demos/ui/`                                  |
+| 侧边栏层级   | 高级 II → 子分组「自定义 UI 与渲染」→ 6 个 Part 分组 → 篇目（两层嵌套） |
+| 落点         | 先全部写进高级 II 的新子分组；合并 / 拆分评估留到 10-50                 |
+| 导览更新时机 | 本计划只做措辞修正 + 子分组入口；完整目录表留到 10-50 收尾              |
 
 ### 27 篇文件名与侧边栏显示名
 
-| 序 | 文件名 | 侧边栏显示名 | live | demo 文件 |
-|----|--------|--------------|------|-----------|
-| 1 | `ui-template.md` | UI 通用模板（TSX） | 是 | `template-demo.tsx` |
-| 2 | `ui-template-ts.md` | 同一 UI 的 TS 元素层写法 | 是（复用 template-demo） | `template-demo.tsx` |
-| 3 | `container-and-coordinates.md` | 容器与坐标 | 是 | `container-demo.tsx` |
-| 4 | `basic-shapes.md` | 基础图形 | 是 | `shapes-demo.tsx` |
-| 5 | `curves-and-paths.md` | 曲线与路径 | 是 | `curves-demo.tsx` |
-| 6 | `text.md` | 文字 | 是 | `text-demo.tsx` |
-| 7 | `image-and-texture.md` | 图片与最小纹理 | 是（10-44） | 待 10-44 建 |
-| 8 | `layer-transform-performance.md` | 层级、变换与性能 | 是（10-44） | 待 10-44 建 |
-| 9 | `reactivity.md` | 响应式 | 是（10-44） | 待 10-44 建 |
-| 10 | `events.md` | 事件与交互 | 是（10-44） | 待 10-44 建 |
-| 11 | `hotkey-in-ui.md` | 按键与快捷键 | 否（10-44 按需） | — |
-| 12 | `conditional-and-list-rendering.md` | 条件渲染与循环渲染 | 是（10-44） | 待 10-44 建 |
-| 13 | `props.md` | props | 是（10-45） | 待 10-45 建 |
-| 14 | `component-tsx.md` | 组件（TSX） | 是（10-45） | 待 10-45 建 |
-| 15 | `component-ts.md` | 组件（TS 直调） | 是（10-45） | 待 10-45 建 |
-| 16 | `slots-and-attrs.md` | slots 与 attrs | 是（10-45） | 待 10-45 建 |
-| 17 | `builtin-text-and-input.md` | 内置组件：文本与输入 | 按需（10-46） | 待 10-46 建 |
-| 18 | `builtin-list-and-containers.md` | 内置组件：列表与容器 | 按需（10-46） | 待 10-46 建 |
-| 19 | `ui-controller-and-stack.md` | UIController 与 UI 栈 | 是（10-46） | 待 10-46 建 |
-| 20 | `replace-builtin-ui.md` | 修改 / 替换内置 UI | 是（10-46） | 待 10-46 建 |
-| 21 | `ui-performance.md` | UI 系统性能与注意事项 | 是（10-46） | 待 10-46 建 |
-| 22 | `inventory-example-1-skeleton.md` | 示例（一）目标与骨架 | 是（10-47） | 待 10-47 建 |
-| 23 | `inventory-example-2-grid.md` | 示例（二）道具网格 | 是（10-47） | 待 10-47 建 |
-| 24 | `inventory-example-3-detail.md` | 示例（三）详情区 | 是（10-47） | 待 10-47 建 |
-| 25 | `inventory-example-4-scroll.md` | 示例（四）滚动与列表 | 是（10-47） | 待 10-47 建 |
-| 26 | `inventory-example-5-state.md` | 示例（五）交互与状态 | 是（10-47） | 待 10-47 建 |
-| 27 | `inventory-example-6-animation-and-register.md` | 示例（六）动画、拆分与注册 | 是（10-47） | 待 10-47 建 |
+| 序  | 文件名                                          | 侧边栏显示名               | live                     | demo 文件            |
+| --- | ----------------------------------------------- | -------------------------- | ------------------------ | -------------------- |
+| 1   | `ui-template.md`                                | UI 通用模板（TSX）         | 是                       | `template-demo.tsx`  |
+| 2   | `ui-template-ts.md`                             | 同一 UI 的 TS 元素层写法   | 是（复用 template-demo） | `template-demo.tsx`  |
+| 3   | `container-and-coordinates.md`                  | 容器与坐标                 | 是                       | `container-demo.tsx` |
+| 4   | `basic-shapes.md`                               | 基础图形                   | 是                       | `shapes-demo.tsx`    |
+| 5   | `curves-and-paths.md`                           | 曲线与路径                 | 是                       | `curves-demo.tsx`    |
+| 6   | `text.md`                                       | 文字                       | 是                       | `text-demo.tsx`      |
+| 7   | `image-and-texture.md`                          | 图片与最小纹理             | 是（10-44）              | 待 10-44 建          |
+| 8   | `layer-transform-performance.md`                | 层级、变换与性能           | 是（10-44）              | 待 10-44 建          |
+| 9   | `reactivity.md`                                 | 响应式                     | 是（10-44）              | 待 10-44 建          |
+| 10  | `events.md`                                     | 事件与交互                 | 是（10-44）              | 待 10-44 建          |
+| 11  | `hotkey-in-ui.md`                               | 按键与快捷键               | 否（10-44 按需）         | —                    |
+| 12  | `conditional-and-list-rendering.md`             | 条件渲染与循环渲染         | 是（10-44）              | 待 10-44 建          |
+| 13  | `props.md`                                      | props                      | 是（10-45）              | 待 10-45 建          |
+| 14  | `component-tsx.md`                              | 组件（TSX）                | 是（10-45）              | 待 10-45 建          |
+| 15  | `component-ts.md`                               | 组件（TS 直调）            | 是（10-45）              | 待 10-45 建          |
+| 16  | `slots-and-attrs.md`                            | slots 与 attrs             | 是（10-45）              | 待 10-45 建          |
+| 17  | `builtin-text-and-input.md`                     | 内置组件：文本与输入       | 按需（10-46）            | 待 10-46 建          |
+| 18  | `builtin-list-and-containers.md`                | 内置组件：列表与容器       | 按需（10-46）            | 待 10-46 建          |
+| 19  | `ui-controller-and-stack.md`                    | UIController 与 UI 栈      | 是（10-46）              | 待 10-46 建          |
+| 20  | `replace-builtin-ui.md`                         | 修改 / 替换内置 UI         | 是（10-46）              | 待 10-46 建          |
+| 21  | `ui-performance.md`                             | UI 系统性能与注意事项      | 是（10-46）              | 待 10-46 建          |
+| 22  | `inventory-example-1-skeleton.md`               | 示例（一）目标与骨架       | 是（10-47）              | 待 10-47 建          |
+| 23  | `inventory-example-2-grid.md`                   | 示例（二）道具网格         | 是（10-47）              | 待 10-47 建          |
+| 24  | `inventory-example-3-detail.md`                 | 示例（三）详情区           | 是（10-47）              | 待 10-47 建          |
+| 25  | `inventory-example-4-scroll.md`                 | 示例（四）滚动与列表       | 是（10-47）              | 待 10-47 建          |
+| 26  | `inventory-example-5-state.md`                  | 示例（五）交互与状态       | 是（10-47）              | 待 10-47 建          |
+| 27  | `inventory-example-6-animation-and-register.md` | 示例（六）动画、拆分与注册 | 是（10-47）              | 待 10-47 建          |
 
 ### 本计划（10-43）五个 demo
 
-| 文件 | 组件名 |
-|------|--------|
-| `template-demo.tsx` | `TemplateDemo` |
+| 文件                 | 组件名          |
+| -------------------- | --------------- |
+| `template-demo.tsx`  | `TemplateDemo`  |
 | `container-demo.tsx` | `ContainerDemo` |
-| `shapes-demo.tsx` | `ShapesDemo` |
-| `curves-demo.tsx` | `CurvesDemo` |
-| `text-demo.tsx` | `TextDemo` |
+| `shapes-demo.tsx`    | `ShapesDemo`    |
+| `curves-demo.tsx`    | `CurvesDemo`    |
+| `text-demo.tsx`      | `TextDemo`      |
 
 用户确认（10-43）：可以执行
 用户原文：可以执行（批准执行 10-43..10-47；10-48 读者/用户审阅前停下）
@@ -69,43 +69,43 @@
 
 哈希为 `git hash-object -- <path>` 实测值；Manifest 列取自 `10-CUSTOM-UI-RESEARCH.md` 的 `## Reference Manifest`（基线 `b94b4c3`）。
 
-| 路径 | Manifest 哈希（HEAD） | 写作前实测 | 是否一致 |
-|------|-----------------------|------------|----------|
-| `packages/render/src/core/item.ts` | `1acd9193d1b0e3121af1dd74ccef25f3dcc7124f` | `1acd9193d1b0e3121af1dd74ccef25f3dcc7124f` | 是 |
-| `packages/render/src/core/types.ts` | `31d9120f43d34757aa5936731bc16ebb0ff39cd3` | `31d9120f43d34757aa5936731bc16ebb0ff39cd3` | 是 |
-| `packages/render/src/core/graphics.ts` | `eebc2f659f2fda05e60cb48e6473ef05f134a5da` | `eebc2f659f2fda05e60cb48e6473ef05f134a5da` | 是 |
-| `packages/render/src/core/misc.ts` | `3c19fd4d464df04a562a2951120df72ec6adbd2a` | `3c19fd4d464df04a562a2951120df72ec6adbd2a` | 是 |
-| `packages/render/src/core/transform.ts` | `c3f38c52843027ff49373da20c707fcf0091f25f` | `c3f38c52843027ff49373da20c707fcf0091f25f` | 是 |
-| `packages/render/src/core/canvas2d.ts` | `a9c80670c03866b95689413eaf7ed40781176c1d` | `a9c80670c03866b95689413eaf7ed40781176c1d` | 是 |
-| `packages/render/src/style/font.ts` | `0e4541e22555140dd4afcf34fb88fbd91f2edb37` | `0e4541e22555140dd4afcf34fb88fbd91f2edb37` | 是 |
-| `packages/render/src/assets/texture.ts` | `545e2ca46494a99f2c93e33b4d0c1c84d5b4d8fa` | `545e2ca46494a99f2c93e33b4d0c1c84d5b4d8fa` | 是 |
-| `packages/render-vue/src/props.ts` | `27e0f9f3bb2fa63bf2d9d358af87078eebe56053` | `27e0f9f3bb2fa63bf2d9d358af87078eebe56053` | 是 |
-| `packages/render-vue/src/elements.ts` | `39e0c20c93f3c0b84ad7148688eceac4ed89813b` | `39e0c20c93f3c0b84ad7148688eceac4ed89813b` | 是 |
-| `packages/render-vue/src/tag.ts` | `7b0265a276dcbdc36c01eac709e4a35cbc7a13f0` | `7b0265a276dcbdc36c01eac709e4a35cbc7a13f0` | 是 |
-| `packages/render-vue/src/types.ts` | `a90549e8c3bf07e5069107c414086edde65270b0` | `a90549e8c3bf07e5069107c414086edde65270b0` | 是 |
-| `packages/render-vue/src/use.ts` | `b23674c3b3c143c22cfb6683ff9d2c47fff7ee2b` | `b23674c3b3c143c22cfb6683ff9d2c47fff7ee2b` | 是 |
-| `packages/system/src/ui/controller.ts` | `25c3ea6f2bb3877989c65f25d3fc6dc3288ead7a` | `25c3ea6f2bb3877989c65f25d3fc6dc3288ead7a` | 是 |
-| `packages/system/src/ui/types.ts` | `2a24550a6a3f8dade44524f7be2564f7d7957551` | `2a24550a6a3f8dade44524f7be2564f7d7957551` | 是 |
-| `packages/system/src/ui/instance.ts` | `11a6ce881e5f1de32f232fd07c7bbc09a9e56203` | `11a6ce881e5f1de32f232fd07c7bbc09a9e56203` | 是 |
-| `packages/system/src/ui/container.tsx` | `8eeddcad33bb5e3e70e4c66ad33b41dbece83e3d` | `8eeddcad33bb5e3e70e4c66ad33b41dbece83e3d` | 是 |
-| `packages/system/src/ui/ui.ts` | `04b98c0ce7ce04c24c97906f5dd7261b1f53907a` | `04b98c0ce7ce04c24c97906f5dd7261b1f53907a` | 是 |
-| `packages-user/client-base/src/types.ts` | `cdf7224dc39118665b00a9697c31e6f5ae7c4f84` | `cdf7224dc39118665b00a9697c31e6f5ae7c4f84` | 是 |
-| `packages-user/client-modules/src/client.ts` | `3156c76b4a6fc6262f353259955bd06b6220da60` | `3156c76b4a6fc6262f353259955bd06b6220da60` | 是 |
-| `packages-user/client-modules/src/ui/func.ts` | `bd7386412bc5e1c40e2cc06325a8f26809ad76` | `bd7386412bc5e1c40e2cc06325a8f26809ad76` | 是 |
-| `src/bootstrap.ts` | `e0f678e8103ccdbf0e02b071af18f000d6f64214` | `e0f678e8103ccdbf0e02b071af18f000d6f64214` | 是 |
-| `src/client/ui/main.tsx` | `3dc4f096cd1750707ba5bf56ea5597903235da11` | `3dc4f096cd1750707ba5bf56ea5597903235da11` | 是 |
-| `src/client/ui/inputBox.tsx` | `3eb246200ae3300f9f221a8e0e9142e5a612a696` | `3eb246200ae3300f9f221a8e0e9142e5a612a696` | 是 |
-| `src/client/ui/title.tsx` | `9658447b77dc4c0a1bbd13a4266402f3a2d2b773` | `9658447b77dc4c0a1bbd13a4266402f3a2d2b773` | 是 |
-| `src/client/ui/load.tsx` | `b41ec3ddc145beae79424234f51198d2d78b7fd8` | `b41ec3ddc145beae79424234f51198d2d78b7fd8` | 是 |
-| `docs/.vitepress/components/renderDemo.vue` | `8ed38a889ceb66ac06f2742f185e176adc010f35` | `8ed38a889ceb66ac06f2742f185e176adc010f35` | 是 |
-| `docs/.vitepress/components/demos/basicRender.vue` | `1577085892cf6d6d4c77a0b45fe35bb5b612381e` | `1577085892cf6d6d4c77a0b45fe35bb5b612381e` | 是 |
-| `docs/.vitepress/components/demos/uiSystem.vue` | `6cf03bcd72e100d28e43622ee0a1a1724cfd7639` | `6cf03bcd72e100d28e43622ee0a1a1724cfd7639` | 是 |
-| `docs/.vitepress/config.ts` | `4d66cfc87aee8cea8e7e2a9f523fbc677d5fce37` | `4d66cfc87aee8cea8e7e2a9f523fbc677d5fce37` | 是（本计划会修改，属例外） |
-| `docs/advanced/ii/index.md` | `df5bdfd3f228d7a5ea5380a9556f75d9c5b81871` | `df5bdfd3f228d7a5ea5380a9556f75d9c5b81871` | 是（本计划会修改措辞） |
-| `docs/advanced/index.md` | `13a29d69669acba40a3cdf9b248d02ce7e1f35d4` | `13a29d69669acba40a3cdf9b248d02ce7e1f35d4` | 是（本计划会修改措辞） |
-| `docs/tsconfig.json` | `07705ee1ccb588ca4c9b355b9981b0a929caeb35` | `07705ee1ccb588ca4c9b355b9981b0a929caeb35` | 是（本计划会修改 include，属例外） |
-| `src/client/ui/choices.tsx`（HEAD） | `1fbd21d16a0e30f0c10d0a94132268ee08f1ad76` | `1fbd21d16a0e30f0c10d0a94132268ee08f1ad76`（`git rev-parse HEAD:`） | 是 |
-| `src/client/ui/choices.tsx`（工作树） | Manifest I 记录为 `d6f13d798e89b15079497194bdb459505b5834ea` | `d6f13d798e89b15079497194bdb459505b5834ea` | 是（与 HEAD 不同，只允许接口参考） |
+| 路径                                               | Manifest 哈希（HEAD）                                        | 写作前实测                                                          | 是否一致                           |
+| -------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------- | ---------------------------------- |
+| `packages/render/src/core/item.ts`                 | `1acd9193d1b0e3121af1dd74ccef25f3dcc7124f`                   | `1acd9193d1b0e3121af1dd74ccef25f3dcc7124f`                          | 是                                 |
+| `packages/render/src/core/types.ts`                | `31d9120f43d34757aa5936731bc16ebb0ff39cd3`                   | `31d9120f43d34757aa5936731bc16ebb0ff39cd3`                          | 是                                 |
+| `packages/render/src/core/graphics.ts`             | `eebc2f659f2fda05e60cb48e6473ef05f134a5da`                   | `eebc2f659f2fda05e60cb48e6473ef05f134a5da`                          | 是                                 |
+| `packages/render/src/core/misc.ts`                 | `3c19fd4d464df04a562a2951120df72ec6adbd2a`                   | `3c19fd4d464df04a562a2951120df72ec6adbd2a`                          | 是                                 |
+| `packages/render/src/core/transform.ts`            | `c3f38c52843027ff49373da20c707fcf0091f25f`                   | `c3f38c52843027ff49373da20c707fcf0091f25f`                          | 是                                 |
+| `packages/render/src/core/canvas2d.ts`             | `a9c80670c03866b95689413eaf7ed40781176c1d`                   | `a9c80670c03866b95689413eaf7ed40781176c1d`                          | 是                                 |
+| `packages/render/src/style/font.ts`                | `0e4541e22555140dd4afcf34fb88fbd91f2edb37`                   | `0e4541e22555140dd4afcf34fb88fbd91f2edb37`                          | 是                                 |
+| `packages/render/src/assets/texture.ts`            | `545e2ca46494a99f2c93e33b4d0c1c84d5b4d8fa`                   | `545e2ca46494a99f2c93e33b4d0c1c84d5b4d8fa`                          | 是                                 |
+| `packages/render-vue/src/props.ts`                 | `27e0f9f3bb2fa63bf2d9d358af87078eebe56053`                   | `27e0f9f3bb2fa63bf2d9d358af87078eebe56053`                          | 是                                 |
+| `packages/render-vue/src/elements.ts`              | `39e0c20c93f3c0b84ad7148688eceac4ed89813b`                   | `39e0c20c93f3c0b84ad7148688eceac4ed89813b`                          | 是                                 |
+| `packages/render-vue/src/tag.ts`                   | `7b0265a276dcbdc36c01eac709e4a35cbc7a13f0`                   | `7b0265a276dcbdc36c01eac709e4a35cbc7a13f0`                          | 是                                 |
+| `packages/render-vue/src/types.ts`                 | `a90549e8c3bf07e5069107c414086edde65270b0`                   | `a90549e8c3bf07e5069107c414086edde65270b0`                          | 是                                 |
+| `packages/render-vue/src/use.ts`                   | `b23674c3b3c143c22cfb6683ff9d2c47fff7ee2b`                   | `b23674c3b3c143c22cfb6683ff9d2c47fff7ee2b`                          | 是                                 |
+| `packages/system/src/ui/controller.ts`             | `25c3ea6f2bb3877989c65f25d3fc6dc3288ead7a`                   | `25c3ea6f2bb3877989c65f25d3fc6dc3288ead7a`                          | 是                                 |
+| `packages/system/src/ui/types.ts`                  | `2a24550a6a3f8dade44524f7be2564f7d7957551`                   | `2a24550a6a3f8dade44524f7be2564f7d7957551`                          | 是                                 |
+| `packages/system/src/ui/instance.ts`               | `11a6ce881e5f1de32f232fd07c7bbc09a9e56203`                   | `11a6ce881e5f1de32f232fd07c7bbc09a9e56203`                          | 是                                 |
+| `packages/system/src/ui/container.tsx`             | `8eeddcad33bb5e3e70e4c66ad33b41dbece83e3d`                   | `8eeddcad33bb5e3e70e4c66ad33b41dbece83e3d`                          | 是                                 |
+| `packages/system/src/ui/ui.ts`                     | `04b98c0ce7ce04c24c97906f5dd7261b1f53907a`                   | `04b98c0ce7ce04c24c97906f5dd7261b1f53907a`                          | 是                                 |
+| `packages-user/client-base/src/types.ts`           | `cdf7224dc39118665b00a9697c31e6f5ae7c4f84`                   | `cdf7224dc39118665b00a9697c31e6f5ae7c4f84`                          | 是                                 |
+| `packages-user/client-modules/src/client.ts`       | `3156c76b4a6fc6262f353259955bd06b6220da60`                   | `3156c76b4a6fc6262f353259955bd06b6220da60`                          | 是                                 |
+| `packages-user/client-modules/src/ui/func.ts`      | `bd7386412bc5e1c40e2cc06325a8f26809ad76`                     | `bd7386412bc5e1c40e2cc06325a8f26809ad76`                            | 是                                 |
+| `src/bootstrap.ts`                                 | `e0f678e8103ccdbf0e02b071af18f000d6f64214`                   | `e0f678e8103ccdbf0e02b071af18f000d6f64214`                          | 是                                 |
+| `src/client/ui/main.tsx`                           | `3dc4f096cd1750707ba5bf56ea5597903235da11`                   | `3dc4f096cd1750707ba5bf56ea5597903235da11`                          | 是                                 |
+| `src/client/ui/inputBox.tsx`                       | `3eb246200ae3300f9f221a8e0e9142e5a612a696`                   | `3eb246200ae3300f9f221a8e0e9142e5a612a696`                          | 是                                 |
+| `src/client/ui/title.tsx`                          | `9658447b77dc4c0a1bbd13a4266402f3a2d2b773`                   | `9658447b77dc4c0a1bbd13a4266402f3a2d2b773`                          | 是                                 |
+| `src/client/ui/load.tsx`                           | `b41ec3ddc145beae79424234f51198d2d78b7fd8`                   | `b41ec3ddc145beae79424234f51198d2d78b7fd8`                          | 是                                 |
+| `docs/.vitepress/components/renderDemo.vue`        | `8ed38a889ceb66ac06f2742f185e176adc010f35`                   | `8ed38a889ceb66ac06f2742f185e176adc010f35`                          | 是                                 |
+| `docs/.vitepress/components/demos/basicRender.vue` | `1577085892cf6d6d4c77a0b45fe35bb5b612381e`                   | `1577085892cf6d6d4c77a0b45fe35bb5b612381e`                          | 是                                 |
+| `docs/.vitepress/components/demos/uiSystem.vue`    | `6cf03bcd72e100d28e43622ee0a1a1724cfd7639`                   | `6cf03bcd72e100d28e43622ee0a1a1724cfd7639`                          | 是                                 |
+| `docs/.vitepress/config.ts`                        | `4d66cfc87aee8cea8e7e2a9f523fbc677d5fce37`                   | `4d66cfc87aee8cea8e7e2a9f523fbc677d5fce37`                          | 是（本计划会修改，属例外）         |
+| `docs/advanced/ii/index.md`                        | `df5bdfd3f228d7a5ea5380a9556f75d9c5b81871`                   | `df5bdfd3f228d7a5ea5380a9556f75d9c5b81871`                          | 是（本计划会修改措辞）             |
+| `docs/advanced/index.md`                           | `13a29d69669acba40a3cdf9b248d02ce7e1f35d4`                   | `13a29d69669acba40a3cdf9b248d02ce7e1f35d4`                          | 是（本计划会修改措辞）             |
+| `docs/tsconfig.json`                               | `07705ee1ccb588ca4c9b355b9981b0a929caeb35`                   | `07705ee1ccb588ca4c9b355b9981b0a929caeb35`                          | 是（本计划会修改 include，属例外） |
+| `src/client/ui/choices.tsx`（HEAD）                | `1fbd21d16a0e30f0c10d0a94132268ee08f1ad76`                   | `1fbd21d16a0e30f0c10d0a94132268ee08f1ad76`（`git rev-parse HEAD:`） | 是                                 |
+| `src/client/ui/choices.tsx`（工作树）              | Manifest I 记录为 `d6f13d798e89b15079497194bdb459505b5834ea` | `d6f13d798e89b15079497194bdb459505b5834ea`                          | 是（与 HEAD 不同，只允许接口参考） |
 
 规则：任一文件实测哈希与 Manifest 不一致、或 `git status --porcelain -- <path>` 非空（`docs/.vitepress/config.ts`、`docs/tsconfig.json`、两份导览本计划自己要改，除外），立即停下向用户报告，不得按旧内容继续写作。
 
@@ -113,20 +113,20 @@
 
 `git hash-object -- <path>` 实测结果：
 
-| 路径 | 实测 | 与 Manifest | `git status` |
-|------|------|-------------|--------------|
-| `packages/render/src/core/misc.ts` | `3c19fd4d464df04a562a2951120df72ec6adbd2a` | 一致 | 干净 |
-| `packages/render/src/core/item.ts` | `1acd9193d1b0e3121af1dd74ccef25f3dcc7124f` | 一致 | 干净 |
-| `packages/render/src/core/canvas2d.ts` | `a9c80670c03866b95689413eaf7ed40781176c1d` | 一致 | 干净 |
-| `packages/render/src/core/transform.ts` | `c3f38c52843027ff49373da20c707fcf0091f25f` | 一致 | 干净 |
-| `packages/render/src/assets/texture.ts` | `545e2ca46494a99f2c93e33b4d0c1c84d5b4d8fa` | 一致 | 干净 |
-| `packages/render/src/core/event.ts` | `6a0999e6f4b7f3bf3084195a97411d87c884d98f` | 一致 | 干净 |
-| `packages/render/src/core/container.ts` | `e01b5122fc2d3685648c28db6932919c554c98d6` | 一致 | 干净 |
-| `packages/system/src/hotkey/types.ts` | `600432021f3f253730d3421fd1a5fb80fafd92e1` | 一致 | 干净 |
-| `packages/system/src/hotkey/command.ts` | `8d99e6a364943f34c962e7b6461a97f6d23e75ca` | 一致 | 干净 |
-| `packages/system/src/hotkey/system.ts` | `da87e18a7e6c8ae951f73bfaf7daf22a7a53e0c5` | 一致 | 干净 |
-| `packages-user/client-base/src/hotkey/hotkey.ts` | `9344fabb5d902ad18482ede6277513998c5db2b1` | 一致 | 干净 |
-| `packages-user/client-base/src/use/hotkey.ts` | `75e7f716a7655301d969285e22388414db1eb3c3` | 一致 | 干净 |
+| 路径                                             | 实测                                       | 与 Manifest | `git status` |
+| ------------------------------------------------ | ------------------------------------------ | ----------- | ------------ |
+| `packages/render/src/core/misc.ts`               | `3c19fd4d464df04a562a2951120df72ec6adbd2a` | 一致        | 干净         |
+| `packages/render/src/core/item.ts`               | `1acd9193d1b0e3121af1dd74ccef25f3dcc7124f` | 一致        | 干净         |
+| `packages/render/src/core/canvas2d.ts`           | `a9c80670c03866b95689413eaf7ed40781176c1d` | 一致        | 干净         |
+| `packages/render/src/core/transform.ts`          | `c3f38c52843027ff49373da20c707fcf0091f25f` | 一致        | 干净         |
+| `packages/render/src/assets/texture.ts`          | `545e2ca46494a99f2c93e33b4d0c1c84d5b4d8fa` | 一致        | 干净         |
+| `packages/render/src/core/event.ts`              | `6a0999e6f4b7f3bf3084195a97411d87c884d98f` | 一致        | 干净         |
+| `packages/render/src/core/container.ts`          | `e01b5122fc2d3685648c28db6932919c554c98d6` | 一致        | 干净         |
+| `packages/system/src/hotkey/types.ts`            | `600432021f3f253730d3421fd1a5fb80fafd92e1` | 一致        | 干净         |
+| `packages/system/src/hotkey/command.ts`          | `8d99e6a364943f34c962e7b6461a97f6d23e75ca` | 一致        | 干净         |
+| `packages/system/src/hotkey/system.ts`           | `da87e18a7e6c8ae951f73bfaf7daf22a7a53e0c5` | 一致        | 干净         |
+| `packages-user/client-base/src/hotkey/hotkey.ts` | `9344fabb5d902ad18482ede6277513998c5db2b1` | 一致        | 干净         |
+| `packages-user/client-base/src/use/hotkey.ts`    | `75e7f716a7655301d969285e22388414db1eb3c3` | 一致        | 干净         |
 
 结论：本计划涉及的全部参考文件与 Manifest 基线一致，工作树对本批参考路径无改动，可按现有内容写作。
 
@@ -154,14 +154,14 @@
 
 #### 10-43 六类门禁（Task 5）
 
-| 门禁 | 命令 | 结论 |
-|------|------|------|
-| prettier `--write` | `cmd /c "pnpm exec prettier --write docs/advanced/ii/ui docs/.vitepress/components/demos/ui docs/.vitepress/config.ts docs/advanced/ii/index.md docs/advanced/index.md"` | exit 0 |
-| prettier `--check` | 同上路径 `--check` | `All matched files use Prettier code style!` |
-| ESLint | `cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"` | exit 0，0 error / 0 warning；渲染属性保持 camelCase |
-| docs 类型 | `cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"` | `docs/` 路径类型报错 0；既有引擎报错 11 条（既有、非本轮引入、不得修） |
-| 静态断言 | 6 篇正文 + 5 个 demo + 侧边栏 + `custom` 数组 + 兄弟分组 | `STATIC-OK` |
-| 全量构建 | `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` | green，`build complete in 15.25s.`，无 dead link |
+| 门禁               | 命令                                                                                                                                                                     | 结论                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| prettier `--write` | `cmd /c "pnpm exec prettier --write docs/advanced/ii/ui docs/.vitepress/components/demos/ui docs/.vitepress/config.ts docs/advanced/ii/index.md docs/advanced/index.md"` | exit 0                                                                 |
+| prettier `--check` | 同上路径 `--check`                                                                                                                                                       | `All matched files use Prettier code style!`                           |
+| ESLint             | `cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"`                                                                                                          | exit 0，0 error / 0 warning；渲染属性保持 camelCase                    |
+| docs 类型          | `cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"`                                                                                                              | `docs/` 路径类型报错 0；既有引擎报错 11 条（既有、非本轮引入、不得修） |
+| 静态断言           | 6 篇正文 + 5 个 demo + 侧边栏 + `custom` 数组 + 兄弟分组                                                                                                                 | `STATIC-OK`                                                            |
+| 全量构建           | `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`                                                                                                      | green，`build complete in 15.25s.`，无 dead link                       |
 
 docs/ 路径类型报错 0；既有引擎报错 11 条（既有、非本轮引入、不得修）。
 
@@ -169,25 +169,25 @@ docs/ 路径类型报错 0；既有引擎报错 11 条（既有、非本轮引�
 
 #### 本批清单（6 篇 + 5 个 demo）
 
-| 页面 | live | demo |
-|------|------|------|
-| `docs/advanced/ii/ui/ui-template.md` | 是 | `docs/.vitepress/components/demos/ui/template-demo.tsx` |
-| `docs/advanced/ii/ui/ui-template-ts.md` | 是（复用） | `docs/.vitepress/components/demos/ui/template-demo.tsx` |
-| `docs/advanced/ii/ui/container-and-coordinates.md` | 是 | `docs/.vitepress/components/demos/ui/container-demo.tsx` |
-| `docs/advanced/ii/ui/basic-shapes.md` | 是 | `docs/.vitepress/components/demos/ui/shapes-demo.tsx` |
-| `docs/advanced/ii/ui/curves-and-paths.md` | 是 | `docs/.vitepress/components/demos/ui/curves-demo.tsx` |
-| `docs/advanced/ii/ui/text.md` | 是 | `docs/.vitepress/components/demos/ui/text-demo.tsx` |
+| 页面                                               | live       | demo                                                     |
+| -------------------------------------------------- | ---------- | -------------------------------------------------------- |
+| `docs/advanced/ii/ui/ui-template.md`               | 是         | `docs/.vitepress/components/demos/ui/template-demo.tsx`  |
+| `docs/advanced/ii/ui/ui-template-ts.md`            | 是（复用） | `docs/.vitepress/components/demos/ui/template-demo.tsx`  |
+| `docs/advanced/ii/ui/container-and-coordinates.md` | 是         | `docs/.vitepress/components/demos/ui/container-demo.tsx` |
+| `docs/advanced/ii/ui/basic-shapes.md`              | 是         | `docs/.vitepress/components/demos/ui/shapes-demo.tsx`    |
+| `docs/advanced/ii/ui/curves-and-paths.md`          | 是         | `docs/.vitepress/components/demos/ui/curves-demo.tsx`    |
+| `docs/advanced/ii/ui/text.md`                      | 是         | `docs/.vitepress/components/demos/ui/text-demo.tsx`      |
 
 ### 10-44 门禁
 
-| 门禁 | 命令 | 结论 |
-|------|------|------|
-| prettier `--write` | `cmd /c "pnpm exec prettier --write docs/advanced/ii/ui docs/.vitepress/components/demos/ui docs/.vitepress/config.ts"` | exit 0 |
-| prettier `--check` | 同上路径 `--check` | `All matched files use Prettier code style!` |
-| ESLint | `cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"` | exit 0，0 error / 0 warning |
-| docs 类型 | `cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"` | `docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 缺 `main` 3 条、`packages/render/src/core/types.ts` 缺 `CanvasStyle` 8 条，既有、非本轮引入、不得修） |
-| 静态断言 | 6 篇正文 + 5 个 demo + 侧边栏 + 回填链接 + 兄弟分组 | `STATIC-OK` |
-| 全量构建 | `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` | green，`build complete in 15.35s.`，无 dead link |
+| 门禁               | 命令                                                                                                                    | 结论                                                                                                                                                                              |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| prettier `--write` | `cmd /c "pnpm exec prettier --write docs/advanced/ii/ui docs/.vitepress/components/demos/ui docs/.vitepress/config.ts"` | exit 0                                                                                                                                                                            |
+| prettier `--check` | 同上路径 `--check`                                                                                                      | `All matched files use Prettier code style!`                                                                                                                                      |
+| ESLint             | `cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"`                                                         | exit 0，0 error / 0 warning                                                                                                                                                       |
+| docs 类型          | `cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"`                                                             | `docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 缺 `main` 3 条、`packages/render/src/core/types.ts` 缺 `CanvasStyle` 8 条，既有、非本轮引入、不得修） |
+| 静态断言           | 6 篇正文 + 5 个 demo + 侧边栏 + 回填链接 + 兄弟分组                                                                     | `STATIC-OK`                                                                                                                                                                       |
+| 全量构建           | `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`                                                     | green，`build complete in 15.35s.`，无 dead link                                                                                                                                  |
 
 docs/ 路径类型报错 0；既有引擎报错 11 条（与本轮无关，保持不动）。
 
@@ -197,14 +197,14 @@ docs/ 路径类型报错 0；既有引擎报错 11 条（与本轮无关，保�
 
 #### 本批清单（6 篇 + 5 个 demo）
 
-| 页面 | live | demo |
-|------|------|------|
-| `docs/advanced/ii/ui/image-and-texture.md` | 是 | `docs/.vitepress/components/demos/ui/texture-demo.tsx` |
-| `docs/advanced/ii/ui/layer-transform-performance.md` | 是 | `docs/.vitepress/components/demos/ui/layer-demo.tsx` |
-| `docs/advanced/ii/ui/reactivity.md` | 是 | `docs/.vitepress/components/demos/ui/reactivity-demo.tsx` |
-| `docs/advanced/ii/ui/events.md` | 是 | `docs/.vitepress/components/demos/ui/events-demo.tsx` |
-| `docs/advanced/ii/ui/hotkey-in-ui.md` | 否（文档站无游戏按键系统） | — |
-| `docs/advanced/ii/ui/conditional-and-list-rendering.md` | 是 | `docs/.vitepress/components/demos/ui/conditional-demo.tsx` |
+| 页面                                                    | live                       | demo                                                       |
+| ------------------------------------------------------- | -------------------------- | ---------------------------------------------------------- |
+| `docs/advanced/ii/ui/image-and-texture.md`              | 是                         | `docs/.vitepress/components/demos/ui/texture-demo.tsx`     |
+| `docs/advanced/ii/ui/layer-transform-performance.md`    | 是                         | `docs/.vitepress/components/demos/ui/layer-demo.tsx`       |
+| `docs/advanced/ii/ui/reactivity.md`                     | 是                         | `docs/.vitepress/components/demos/ui/reactivity-demo.tsx`  |
+| `docs/advanced/ii/ui/events.md`                         | 是                         | `docs/.vitepress/components/demos/ui/events-demo.tsx`      |
+| `docs/advanced/ii/ui/hotkey-in-ui.md`                   | 否（文档站无游戏按键系统） | —                                                          |
+| `docs/advanced/ii/ui/conditional-and-list-rendering.md` | 是                         | `docs/.vitepress/components/demos/ui/conditional-demo.tsx` |
 
 ## 人工验证记录
 
@@ -240,32 +240,32 @@ live 人工验证（10-44）：待最终人工审阅。本轮未写「用户人�
 
 `git hash-object -- <path>` 实测结果：
 
-| 路径 | 实测 | 与 Manifest | `git status` |
-|------|------|-------------|--------------|
-| `packages/render-vue/src/types.ts` | `a90549e8c3bf07e5069107c414086edde65270b0` | 一致 | 干净 |
-| `packages/render-vue/src/props.ts` | `27e0f9f3bb2fa63bf2d9d358af87078eebe56053` | 一致 | 干净 |
-| `packages/render/src/core/item.ts` | `1acd9193d1b0e3121af1dd74ccef25f3dcc7124f` | 一致 | 干净 |
-| `packages/render/src/core/container.ts` | `e01b5122fc2d3685648c28db6932919c554c98d6` | 一致 | 干净 |
-| `packages/render/src/core/custom.ts` | `440163608dec8818f0e2320d0b415a62e2061242` | 未列入基线 | 干净 |
-| `packages/render/src/core/canvas2d.ts` | `a9c80670c03866b95689413eaf7ed40781176c1d` | 一致 | 干净 |
-| `packages-user/client-base/src/types.ts` | `cdf7224dc39118665b00a9697c31e6f5ae7c4f84` | 一致 | 干净 |
-| `packages-user/client-base/src/components/input.tsx` | `bfe65b06b9600f80a4d74f6ef222e55d13d09134` | 未列入基线 | 干净 |
-| `packages-user/client-base/src/components/textbox.tsx` | `5b58de65007189314553be0aca48209bd9e25981` | 未列入基线 | 干净 |
-| `docs/.vitepress/config.ts` | 本计划要改 | 属例外 | 已修改（前批） |
-| `docs/advanced/ii/ui/reactivity.md` | 10-44 新建 | 未列入基线 | 未跟踪 |
+| 路径                                                   | 实测                                       | 与 Manifest | `git status`   |
+| ------------------------------------------------------ | ------------------------------------------ | ----------- | -------------- |
+| `packages/render-vue/src/types.ts`                     | `a90549e8c3bf07e5069107c414086edde65270b0` | 一致        | 干净           |
+| `packages/render-vue/src/props.ts`                     | `27e0f9f3bb2fa63bf2d9d358af87078eebe56053` | 一致        | 干净           |
+| `packages/render/src/core/item.ts`                     | `1acd9193d1b0e3121af1dd74ccef25f3dcc7124f` | 一致        | 干净           |
+| `packages/render/src/core/container.ts`                | `e01b5122fc2d3685648c28db6932919c554c98d6` | 一致        | 干净           |
+| `packages/render/src/core/custom.ts`                   | `440163608dec8818f0e2320d0b415a62e2061242` | 未列入基线  | 干净           |
+| `packages/render/src/core/canvas2d.ts`                 | `a9c80670c03866b95689413eaf7ed40781176c1d` | 一致        | 干净           |
+| `packages-user/client-base/src/types.ts`               | `cdf7224dc39118665b00a9697c31e6f5ae7c4f84` | 一致        | 干净           |
+| `packages-user/client-base/src/components/input.tsx`   | `bfe65b06b9600f80a4d74f6ef222e55d13d09134` | 未列入基线  | 干净           |
+| `packages-user/client-base/src/components/textbox.tsx` | `5b58de65007189314553be0aca48209bd9e25981` | 未列入基线  | 干净           |
+| `docs/.vitepress/config.ts`                            | 本计划要改                                 | 属例外      | 已修改（前批） |
+| `docs/advanced/ii/ui/reactivity.md`                    | 10-44 新建                                 | 未列入基线  | 未跟踪         |
 
 结论：本计划涉及的参考文件与基线一致，工作树对本批参考路径无越界改动，可按现有内容写作。
 
 ### 10-45 门禁
 
-| 门禁 | 命令 | 结论 |
-|------|------|------|
-| prettier `--write` | `cmd /c "pnpm exec prettier --write docs/advanced/ii/ui docs/.vitepress/components/demos/ui docs/.vitepress/config.ts"` | exit 0 |
-| prettier `--check` | 同上路径 `--check` | `All matched files use Prettier code style!` |
-| ESLint | `cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"` | exit 0，0 error / 0 warning |
-| docs 类型 | `cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"` | `docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 缺 `main` 3 条、`packages/render/src/core/types.ts` 缺 `CanvasStyle` 8 条，既有、非本轮引入、不得修） |
-| 静态断言 | 4 篇正文 + 4 个 demo + 侧边栏 16 条 + 回填链接 + 兄弟分组 | `STATIC-OK` |
-| 全量构建 | `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` | green，`build complete in 15.76s.`，无 dead link |
+| 门禁               | 命令                                                                                                                    | 结论                                                                                                                                                                              |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| prettier `--write` | `cmd /c "pnpm exec prettier --write docs/advanced/ii/ui docs/.vitepress/components/demos/ui docs/.vitepress/config.ts"` | exit 0                                                                                                                                                                            |
+| prettier `--check` | 同上路径 `--check`                                                                                                      | `All matched files use Prettier code style!`                                                                                                                                      |
+| ESLint             | `cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"`                                                         | exit 0，0 error / 0 warning                                                                                                                                                       |
+| docs 类型          | `cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"`                                                             | `docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 缺 `main` 3 条、`packages/render/src/core/types.ts` 缺 `CanvasStyle` 8 条，既有、非本轮引入、不得修） |
+| 静态断言           | 4 篇正文 + 4 个 demo + 侧边栏 16 条 + 回填链接 + 兄弟分组                                                               | `STATIC-OK`                                                                                                                                                                       |
+| 全量构建           | `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`                                                     | green，`build complete in 15.76s.`，无 dead link                                                                                                                                  |
 
 `docs/` 路径类型报错 0；既有引擎报错 11 条（与本轮无关，保持不动）。
 
@@ -275,12 +275,12 @@ live 人工验证（10-44）：待最终人工审阅。本轮未写「用户人�
 
 #### 本批清单（4 篇 + 4 个 demo）
 
-| 页面 | live | demo |
-|------|------|------|
-| `docs/advanced/ii/ui/props.md` | 是 | `docs/.vitepress/components/demos/ui/props-demo.tsx` |
-| `docs/advanced/ii/ui/component-tsx.md` | 是 | `docs/.vitepress/components/demos/ui/component-demo.tsx` |
-| `docs/advanced/ii/ui/component-ts.md` | 是 | `docs/.vitepress/components/demos/ui/ts-component-demo.tsx` |
-| `docs/advanced/ii/ui/slots-and-attrs.md` | 是 | `docs/.vitepress/components/demos/ui/slots-demo.tsx` |
+| 页面                                     | live | demo                                                        |
+| ---------------------------------------- | ---- | ----------------------------------------------------------- |
+| `docs/advanced/ii/ui/props.md`           | 是   | `docs/.vitepress/components/demos/ui/props-demo.tsx`        |
+| `docs/advanced/ii/ui/component-tsx.md`   | 是   | `docs/.vitepress/components/demos/ui/component-demo.tsx`    |
+| `docs/advanced/ii/ui/component-ts.md`    | 是   | `docs/.vitepress/components/demos/ui/ts-component-demo.tsx` |
+| `docs/advanced/ii/ui/slots-and-attrs.md` | 是   | `docs/.vitepress/components/demos/ui/slots-demo.tsx`        |
 
 live 人工验证（10-45）：待最终人工审阅。本轮未写「用户人工验证：通过」，也未把 live 关卡标记为完成。
 
@@ -302,37 +302,37 @@ live 人工验证（10-45）：待最终人工审阅。本轮未写「用户人�
 
 `git hash-object -- <path>` 实测结果：
 
-| 路径 | 实测 | 与 Manifest | `git status` |
-|------|------|-------------|--------------|
-| `packages-user/client-base/src/components/textbox.tsx` | `5b58de65007189314553be0aca48209bd9e25981` | 一致 | 干净 |
-| `packages-user/client-base/src/components/list.tsx` | `a6723454788b8fff22389bc5d19883c90a4eb5b5` | 一致 | 干净 |
-| `packages-user/client-base/src/components/page.tsx` | `b18520460dd335385be901e535f222eedcb9941e` | 一致 | 干净 |
-| `packages-user/client-base/src/components/scroll.tsx` | `809af86b816bdad643292afce85e106886dd5a99` | 一致 | 干净 |
-| `packages-user/client-base/src/components/input.tsx` | `bfe65b06b9600f80a4d74f6ef222e55d13d09134` | 一致 | 干净 |
-| `packages-user/client-base/src/components/misc.tsx` | `365e826610678276599e71f4f69ff42e30daef7f` | 一致 | 干净 |
-| `packages/system/src/ui/controller.ts` | `25c3ea6f2bb3877989c65f25d3fc6dc3288ead7a` | 一致 | 干净 |
-| `packages/system/src/ui/ui.ts` | `04b98c0ce7ce04c24c97906f5dd7261b1f53907a` | 一致 | 干净 |
-| `packages/system/src/ui/instance.ts` | `11a6ce881e5f1de32f232fd07c7bbc09a9e56203` | 一致 | 干净 |
-| `packages/system/src/ui/container.tsx` | `8eeddcad33bb5e3e70e4c66ad33b41dbece83e3d` | 一致 | 干净 |
-| `packages/system/src/ui/types.ts` | `2a24550a6a3f8dade44524f7be2564f7d7957551` | 一致 | 干净 |
-| `packages-user/client-modules/src/ui/func.ts` | `bd7386412bc5e1c40e2cc06325a8f26809ad76` | 一致 | 干净 |
-| `packages-user/client-modules/src/client.ts` | `3156c76b4a6fc6262f353259955bd06b6220da60` | 一致 | 干净 |
-| `src/client/ui/inputBox.tsx` | `3eb246200ae3300f9f221a8e0e9142e5a612a696` | 一致 | 干净 |
-| `src/client/ui/choices.tsx`（HEAD） | `1fbd21d16a0e30f0c10d0a94132268ee08f1ad76` | 一致 | — |
-| `src/client/ui/choices.tsx`（工作树，仅接口参考） | `d6f13d798e89b15079497194bdb459505b5834ea` | 与 Manifest I 一致 | `M`（既有改动，未碰） |
+| 路径                                                   | 实测                                       | 与 Manifest        | `git status`          |
+| ------------------------------------------------------ | ------------------------------------------ | ------------------ | --------------------- |
+| `packages-user/client-base/src/components/textbox.tsx` | `5b58de65007189314553be0aca48209bd9e25981` | 一致               | 干净                  |
+| `packages-user/client-base/src/components/list.tsx`    | `a6723454788b8fff22389bc5d19883c90a4eb5b5` | 一致               | 干净                  |
+| `packages-user/client-base/src/components/page.tsx`    | `b18520460dd335385be901e535f222eedcb9941e` | 一致               | 干净                  |
+| `packages-user/client-base/src/components/scroll.tsx`  | `809af86b816bdad643292afce85e106886dd5a99` | 一致               | 干净                  |
+| `packages-user/client-base/src/components/input.tsx`   | `bfe65b06b9600f80a4d74f6ef222e55d13d09134` | 一致               | 干净                  |
+| `packages-user/client-base/src/components/misc.tsx`    | `365e826610678276599e71f4f69ff42e30daef7f` | 一致               | 干净                  |
+| `packages/system/src/ui/controller.ts`                 | `25c3ea6f2bb3877989c65f25d3fc6dc3288ead7a` | 一致               | 干净                  |
+| `packages/system/src/ui/ui.ts`                         | `04b98c0ce7ce04c24c97906f5dd7261b1f53907a` | 一致               | 干净                  |
+| `packages/system/src/ui/instance.ts`                   | `11a6ce881e5f1de32f232fd07c7bbc09a9e56203` | 一致               | 干净                  |
+| `packages/system/src/ui/container.tsx`                 | `8eeddcad33bb5e3e70e4c66ad33b41dbece83e3d` | 一致               | 干净                  |
+| `packages/system/src/ui/types.ts`                      | `2a24550a6a3f8dade44524f7be2564f7d7957551` | 一致               | 干净                  |
+| `packages-user/client-modules/src/ui/func.ts`          | `bd7386412bc5e1c40e2cc06325a8f26809ad76`   | 一致               | 干净                  |
+| `packages-user/client-modules/src/client.ts`           | `3156c76b4a6fc6262f353259955bd06b6220da60` | 一致               | 干净                  |
+| `src/client/ui/inputBox.tsx`                           | `3eb246200ae3300f9f221a8e0e9142e5a612a696` | 一致               | 干净                  |
+| `src/client/ui/choices.tsx`（HEAD）                    | `1fbd21d16a0e30f0c10d0a94132268ee08f1ad76` | 一致               | —                     |
+| `src/client/ui/choices.tsx`（工作树，仅接口参考）      | `d6f13d798e89b15079497194bdb459505b5834ea` | 与 Manifest I 一致 | `M`（既有改动，未碰） |
 
 结论：本计划涉及的全部参考文件与 Manifest / NOTES 基线一致；`choices.tsx` 工作树哈希仍为 `d6f13d7…`，未再变化，只读 props / emits / 函数签名。可按现有内容写作。
 
 ### 10-46 门禁
 
-| 门禁 | 命令 | 结论 |
-|------|------|------|
-| prettier `--write` | `cmd /c "pnpm exec prettier --write docs/advanced/ii/ui docs/.vitepress/components/demos/ui docs/.vitepress/config.ts"` | exit 0 |
-| prettier `--check` | 同上路径 `--check` | `All matched files use Prettier code style!` |
-| ESLint | `cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"` | exit 0，0 error / 0 warning |
-| docs 类型 | `cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"` | `docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 缺 `main` 3 条、`packages/render/src/core/types.ts` 缺 `CanvasStyle` 8 条，既有、非本轮引入、不得修） |
-| 静态断言 | 5 篇正文 + 5 个 demo + 侧边栏 21 条 + 回填链接 + 兄弟分组 | `STATIC-OK` |
-| 全量构建 | `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` | green，`build complete in 21.10s.`，无 dead link |
+| 门禁               | 命令                                                                                                                    | 结论                                                                                                                                                                              |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| prettier `--write` | `cmd /c "pnpm exec prettier --write docs/advanced/ii/ui docs/.vitepress/components/demos/ui docs/.vitepress/config.ts"` | exit 0                                                                                                                                                                            |
+| prettier `--check` | 同上路径 `--check`                                                                                                      | `All matched files use Prettier code style!`                                                                                                                                      |
+| ESLint             | `cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"`                                                         | exit 0，0 error / 0 warning                                                                                                                                                       |
+| docs 类型          | `cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"`                                                             | `docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 缺 `main` 3 条、`packages/render/src/core/types.ts` 缺 `CanvasStyle` 8 条，既有、非本轮引入、不得修） |
+| 静态断言           | 5 篇正文 + 5 个 demo + 侧边栏 21 条 + 回填链接 + 兄弟分组                                                               | `STATIC-OK`                                                                                                                                                                       |
+| 全量构建           | `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`                                                     | green，`build complete in 21.10s.`，无 dead link                                                                                                                                  |
 
 `docs/` 路径类型报错 0；既有引擎报错 11 条（与本轮无关，保持不动）。
 
@@ -342,13 +342,13 @@ live 人工验证（10-45）：待最终人工审阅。本轮未写「用户人�
 
 #### 本批清单（5 篇 + 5 个 demo）
 
-| 页面 | live | demo |
-|------|------|------|
-| `docs/advanced/ii/ui/builtin-text-and-input.md` | 是（等价元素演示） | `docs/.vitepress/components/demos/ui/builtin-text-demo.tsx` |
+| 页面                                                 | live               | demo                                                        |
+| ---------------------------------------------------- | ------------------ | ----------------------------------------------------------- |
+| `docs/advanced/ii/ui/builtin-text-and-input.md`      | 是（等价元素演示） | `docs/.vitepress/components/demos/ui/builtin-text-demo.tsx` |
 | `docs/advanced/ii/ui/builtin-list-and-containers.md` | 是（等价元素演示） | `docs/.vitepress/components/demos/ui/builtin-list-demo.tsx` |
-| `docs/advanced/ii/ui/ui-controller-and-stack.md` | 是 | `docs/.vitepress/components/demos/ui/controller-demo.tsx` |
-| `docs/advanced/ii/ui/replace-builtin-ui.md` | 是 | `docs/.vitepress/components/demos/ui/strategy-demo.tsx` |
-| `docs/advanced/ii/ui/ui-performance.md` | 是 | `docs/.vitepress/components/demos/ui/perf-demo.tsx` |
+| `docs/advanced/ii/ui/ui-controller-and-stack.md`     | 是                 | `docs/.vitepress/components/demos/ui/controller-demo.tsx`   |
+| `docs/advanced/ii/ui/replace-builtin-ui.md`          | 是                 | `docs/.vitepress/components/demos/ui/strategy-demo.tsx`     |
+| `docs/advanced/ii/ui/ui-performance.md`              | 是                 | `docs/.vitepress/components/demos/ui/perf-demo.tsx`         |
 
 #### 已知限制（10-46）
 
@@ -377,31 +377,31 @@ live 人工验证（10-46）：待最终人工审阅。本轮未写「用户人�
 
 `git hash-object -- <path>` 实测结果：
 
-| 路径 | 实测 | 与 Manifest | `git status` |
-|------|------|-------------|--------------|
-| `packages/render/src/core/item.ts` | `1acd9193d1b0e3121af1dd74ccef25f3dcc7124f` | 一致 | 干净 |
-| `packages/render/src/core/container.ts` | `e01b5122fc2d3685648c28db6932919c554c98d6` | 一致 | 干净 |
-| `packages/render-vue/src/props.ts` | `27e0f9f3bb2fa63bf2d9d358af87078eebe56053` | 一致 | 干净 |
-| `packages/system/src/ui/controller.ts` | `25c3ea6f2bb3877989c65f25d3fc6dc3288ead7a` | 一致 | 干净 |
-| `packages/system/src/ui/ui.ts` | `04b98c0ce7ce04c24c97906f5dd7261b1f53907a` | 一致 | 干净 |
-| `packages-user/client-base/src/components/list.tsx` | `a6723454788b8fff22389bc5d19883c90a4eb5b5` | 一致 | 干净 |
-| `packages-user/client-base/src/components/scroll.tsx` | `809af86b816bdad643292afce85e106886dd5a99` | 一致 | 干净 |
-| `packages-user/client-base/src/components/textbox.tsx` | `5b58de65007189314553be0aca48209bd9e25981` | 一致 | 干净 |
-| `packages-user/client-base/src/use/hotkey.ts` | `75e7f716a7655301d969285e22388414db1eb3c3` | 一致 | 干净 |
-| `packages-user/client-modules/src/render/use.ts` | `81d764410093a9baa5ad073dc6002ff2942d2d5f` | 未列入基线 | 干净 |
+| 路径                                                   | 实测                                       | 与 Manifest | `git status` |
+| ------------------------------------------------------ | ------------------------------------------ | ----------- | ------------ |
+| `packages/render/src/core/item.ts`                     | `1acd9193d1b0e3121af1dd74ccef25f3dcc7124f` | 一致        | 干净         |
+| `packages/render/src/core/container.ts`                | `e01b5122fc2d3685648c28db6932919c554c98d6` | 一致        | 干净         |
+| `packages/render-vue/src/props.ts`                     | `27e0f9f3bb2fa63bf2d9d358af87078eebe56053` | 一致        | 干净         |
+| `packages/system/src/ui/controller.ts`                 | `25c3ea6f2bb3877989c65f25d3fc6dc3288ead7a` | 一致        | 干净         |
+| `packages/system/src/ui/ui.ts`                         | `04b98c0ce7ce04c24c97906f5dd7261b1f53907a` | 一致        | 干净         |
+| `packages-user/client-base/src/components/list.tsx`    | `a6723454788b8fff22389bc5d19883c90a4eb5b5` | 一致        | 干净         |
+| `packages-user/client-base/src/components/scroll.tsx`  | `809af86b816bdad643292afce85e106886dd5a99` | 一致        | 干净         |
+| `packages-user/client-base/src/components/textbox.tsx` | `5b58de65007189314553be0aca48209bd9e25981` | 一致        | 干净         |
+| `packages-user/client-base/src/use/hotkey.ts`          | `75e7f716a7655301d969285e22388414db1eb3c3` | 一致        | 干净         |
+| `packages-user/client-modules/src/render/use.ts`       | `81d764410093a9baa5ad073dc6002ff2942d2d5f` | 未列入基线  | 干净         |
 
 结论：本计划涉及的全部参考文件与 Manifest / NOTES 基线一致，工作树对本批参考路径无改动，可按现有内容写作。
 
 ### 10-47 门禁
 
-| 门禁 | 命令 | 结论 |
-|------|------|------|
-| prettier `--write` | `cmd /c "pnpm exec prettier --write docs/advanced/ii/ui docs/.vitepress/components/demos/ui docs/.vitepress/config.ts"` | exit 0 |
-| prettier `--check` | 同上路径 `--check` | `All matched files use Prettier code style!` |
-| ESLint | `cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"` | exit 0，0 error / 0 warning |
-| docs 类型 | `cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"` | `docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 缺 `main` 3 条、`packages/render/src/core/types.ts` 缺 `CanvasStyle` 8 条，既有、非本轮引入、不得修） |
-| 静态断言 | 6 篇正文 + 6 个 demo + 侧边栏 27 条 + 兄弟分组 + 第 22/27 篇组件名 | `STATIC-OK` |
-| 全量构建 | `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"` | green，`build complete in 24.63s.`，无 dead link |
+| 门禁               | 命令                                                                                                                    | 结论                                                                                                                                                                              |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| prettier `--write` | `cmd /c "pnpm exec prettier --write docs/advanced/ii/ui docs/.vitepress/components/demos/ui docs/.vitepress/config.ts"` | exit 0                                                                                                                                                                            |
+| prettier `--check` | 同上路径 `--check`                                                                                                      | `All matched files use Prettier code style!`                                                                                                                                      |
+| ESLint             | `cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"`                                                         | exit 0，0 error / 0 warning                                                                                                                                                       |
+| docs 类型          | `cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"`                                                             | `docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 缺 `main` 3 条、`packages/render/src/core/types.ts` 缺 `CanvasStyle` 8 条，既有、非本轮引入、不得修） |
+| 静态断言           | 6 篇正文 + 6 个 demo + 侧边栏 27 条 + 兄弟分组 + 第 22/27 篇组件名                                                      | `STATIC-OK`                                                                                                                                                                       |
+| 全量构建           | `cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`                                                     | green，`build complete in 24.63s.`，无 dead link                                                                                                                                  |
 
 `docs/` 路径类型报错 0；既有引擎报错 11 条（与本轮无关，保持不动）。
 
@@ -409,14 +409,14 @@ live 人工验证（10-46）：待最终人工审阅。本轮未写「用户人�
 
 #### 本批清单（6 篇 + 6 个 demo）
 
-| 页面 | live | demo |
-|------|------|------|
-| `docs/advanced/ii/ui/inventory-example-1-skeleton.md` | 是 | `docs/.vitepress/components/demos/ui/inventory-1-skeleton.tsx` |
-| `docs/advanced/ii/ui/inventory-example-2-grid.md` | 是 | `docs/.vitepress/components/demos/ui/inventory-2-grid.tsx` |
-| `docs/advanced/ii/ui/inventory-example-3-detail.md` | 是 | `docs/.vitepress/components/demos/ui/inventory-3-detail.tsx` |
-| `docs/advanced/ii/ui/inventory-example-4-scroll.md` | 是 | `docs/.vitepress/components/demos/ui/inventory-4-scroll.tsx` |
-| `docs/advanced/ii/ui/inventory-example-5-state.md` | 是 | `docs/.vitepress/components/demos/ui/inventory-5-state.tsx` |
-| `docs/advanced/ii/ui/inventory-example-6-animation-and-register.md` | 是（完整面板） | `docs/.vitepress/components/demos/ui/inventory-6-full.tsx` |
+| 页面                                                                | live           | demo                                                           |
+| ------------------------------------------------------------------- | -------------- | -------------------------------------------------------------- |
+| `docs/advanced/ii/ui/inventory-example-1-skeleton.md`               | 是             | `docs/.vitepress/components/demos/ui/inventory-1-skeleton.tsx` |
+| `docs/advanced/ii/ui/inventory-example-2-grid.md`                   | 是             | `docs/.vitepress/components/demos/ui/inventory-2-grid.tsx`     |
+| `docs/advanced/ii/ui/inventory-example-3-detail.md`                 | 是             | `docs/.vitepress/components/demos/ui/inventory-3-detail.tsx`   |
+| `docs/advanced/ii/ui/inventory-example-4-scroll.md`                 | 是             | `docs/.vitepress/components/demos/ui/inventory-4-scroll.tsx`   |
+| `docs/advanced/ii/ui/inventory-example-5-state.md`                  | 是             | `docs/.vitepress/components/demos/ui/inventory-5-state.tsx`    |
+| `docs/advanced/ii/ui/inventory-example-6-animation-and-register.md` | 是（完整面板） | `docs/.vitepress/components/demos/ui/inventory-6-full.tsx`     |
 
 ### 全批交叉核对
 
@@ -447,6 +447,7 @@ live 人工验证（10-47）：待最终人工审阅。本轮未写「用户人�
 - `10-50-PLAN.md`：**用户修订 + 最终门禁 + 落位评估 + 收尾**（原 10-49）。产出 `10-50-USER-REVIEW.md` / `10-50-SUMMARY.md`，并在最终门禁中使用 25 篇 / 24 个 demo / 25 个 HTML。
 
 修复后的计数为 **25 篇正文 + 24 个 demo**；上面的 27 篇 / 25 个 demo 记录是修复前的历史状态。历史文本中的 10-48 / 10-49 指当时的审阅 / 修订计划；自本节起，10-48 为 pre-review 修复、10-49 为独立读者审阅、10-50 为用户修订与收尾，以本节为准。
+
 ## 10-48 pre-review 修复
 
 用户确认（10-48）：可以执行
@@ -478,15 +479,16 @@ demo 计数：24
 构建产物：25
 10-48 门禁：prettier 通过；ESLint 0/0；docs 类型 0 报错；构建 green；0 dead link；25 HTML；静态断言通过。
 停止点：10-48 修复结束，未进入 10-49 独立审阅；未改 ROADMAP / STATE；未写 SUMMARY；未 commit。
+
 ## 10-48 执行偏差（2026-10-31）
 
 - 计划内 verify 脚本 bug：T1 oreach( in @(...)) 少一个右括号，运行前补 )，断言语义不变。
-- 计划内 verify 脚本 bug：T3/T4/T5 的 
-ode -e $js 在 PowerShell 5.1 下引号丢失，改为 $js | node -；T5 因脚本含中文改用临时 UTF-8 文件执行。
+- 计划内 verify 脚本 bug：T3/T4/T5 的
+  ode -e $js 在 PowerShell 5.1 下引号丢失，改为 $js | node -；T5 因脚本含中文改用临时 UTF-8 文件执行。
 - 计划内 verify 脚本 bug：T5 聚合函数 const agg=fs=>... 参数遮蔽 s 模块，参数改名为 list。
 - 计划内 verify 脚本 bug：T5 构建调用在 ErrorActionPreference=Stop 下被原生 stderr 中止，仅在构建调用前后临时设为 Continue。
 - 执行中误删 events.md 一个代码围栏，已恢复；恢复后 Part 2-5 去注释聚合哈希与基线完全一致，证明非注释代码未变。
-- 元素层实际 API 没有 loc() 方法（loc 只是 TSX 属性，对应 pos() + size()）；六处内联 	s 片段统一用 pos() / size()，与 packages/render 一致。
+- 元素层实际 API 没有 loc() 方法（loc 只是 TSX 属性，对应 pos() + size()）；六处内联 s 片段统一用 pos() / size()，与 packages/render 一致。
 
 ## 10-49 独立读者审阅
 
@@ -542,15 +544,15 @@ STATE 全文哈希：e4731f2b66115eb43d9b185634c2d86802ef6c2638201558c98d917e133
 
 ### D-93 覆盖表
 
-| 篇目 | 渲染树模型 | 事件模型 | 元素/组件用法 | 示例后解释 | 现状行数 |
-| --- | --- | --- | --- | --- | --- |
-| docs/advanced/ii/ui/ui-template.md | 已讲 | 已讲 | 已讲 | 已讲 | 123 |
-| docs/advanced/ii/ui/container-and-coordinates.md | 已讲 | 已讲 | 已讲 | 已讲 | 114 |
-| docs/advanced/ii/ui/basic-shapes.md | 已讲 | 已讲 | 已讲 | 已讲 | 159 |
-| docs/advanced/ii/ui/curves-and-paths.md | 已讲 | 已讲 | 已讲 | 已讲 | 143 |
-| docs/advanced/ii/ui/text.md | 已讲 | 已讲 | 已讲 | 已讲 | 118 |
-| docs/advanced/ii/ui/image-and-texture.md | 已讲 | 已讲 | 已讲 | 已讲 | 96 |
-| docs/advanced/ii/ui/layer-transform-performance.md | 已讲 | 已讲 | 已讲 | 已讲 | 160 |
+| 篇目                                               | 渲染树模型 | 事件模型 | 元素/组件用法 | 示例后解释 | 现状行数 |
+| -------------------------------------------------- | ---------- | -------- | ------------- | ---------- | -------- |
+| docs/advanced/ii/ui/ui-template.md                 | 已讲       | 已讲     | 已讲          | 已讲       | 123      |
+| docs/advanced/ii/ui/container-and-coordinates.md   | 已讲       | 已讲     | 已讲          | 已讲       | 114      |
+| docs/advanced/ii/ui/basic-shapes.md                | 已讲       | 已讲     | 已讲          | 已讲       | 159      |
+| docs/advanced/ii/ui/curves-and-paths.md            | 已讲       | 已讲     | 已讲          | 已讲       | 143      |
+| docs/advanced/ii/ui/text.md                        | 已讲       | 已讲     | 已讲          | 已讲       | 118      |
+| docs/advanced/ii/ui/image-and-texture.md           | 已讲       | 已讲     | 已讲          | 已讲       | 96       |
+| docs/advanced/ii/ui/layer-transform-performance.md | 已讲       | 已讲     | 已讲          | 已讲       | 160      |
 
 体量参考（非门禁）：7 篇当前总行数 913，平均 130.4 行。~300 行仅为参考，不设下限/上限；不因低于 300 行失败，也不为凑行数注水（D-88）。
 停止点：10-49 只做 Part 0–1 深度扩写；不改 10-50..10-54、不改 docs 其它页与 demo、不写 SUMMARY / ROADMAP / STATE、不 commit。
@@ -582,14 +584,14 @@ STATE 全文哈希：e4731f2b66115eb43d9b185634c2d86802ef6c2638201558c98d917e133
 - ESLint：`cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"`，exit 0，0 error / 0 warning。
 - docs 类型：`cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"`，`docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 缺 `main` 3 条、`packages/render/src/core/types.ts` 缺 `CanvasStyle` 8 条，既有、非本轮引入、不得修）。
 - 构建：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`，exit 0，`build complete in 17.09s.`，0 dead link；`public/_docs/advanced/ii/ui` 下 `.html` 恰好 25 个；页面 25 篇、demo 24 个不变。
-D-93 抽查：docs/advanced/ii/ui/ui-template.md — 通过
-D-93 抽查：docs/advanced/ii/ui/container-and-coordinates.md — 通过
-D-93 抽查：docs/advanced/ii/ui/basic-shapes.md — 通过
-D-93 抽查：docs/advanced/ii/ui/curves-and-paths.md — 通过
-D-93 抽查：docs/advanced/ii/ui/text.md — 通过
-D-93 抽查：docs/advanced/ii/ui/image-and-texture.md — 通过
-D-93 抽查：docs/advanced/ii/ui/layer-transform-performance.md — 通过
-停止点：10-49 扩写结束；未进入 10-53 读者循环；未写 SUMMARY / ROADMAP / STATE；未改 10-50..10-54；未 commit。
+  D-93 抽查：docs/advanced/ii/ui/ui-template.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/container-and-coordinates.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/basic-shapes.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/curves-and-paths.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/text.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/image-and-texture.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/layer-transform-performance.md — 通过
+  停止点：10-49 扩写结束；未进入 10-53 读者循环；未写 SUMMARY / ROADMAP / STATE；未改 10-50..10-54；未 commit。
 
 ## 10-50 深度扩写（Part 2–3）
 
@@ -608,15 +610,15 @@ STATE 全文哈希：e4731f2b66115eb43d9b185634c2d86802ef6c2638201558c98d917e133
 
 ### D-93 覆盖表
 
-| 篇目 | 渲染树模型 | 事件模型 | 元素/组件用法 | 示例后解释 | 现状行数 |
-| --- | --- | --- | --- | --- | --- |
-| docs/advanced/ii/ui/reactivity.md | 已讲 | 已讲 | 已讲 | 已讲 | 165 |
-| docs/advanced/ii/ui/events.md | 已讲 | 已讲 | 已讲 | 已讲 | 179 |
-| docs/advanced/ii/ui/hotkey-in-ui.md | 已讲 | 已讲 | 已讲 | 已讲 | 123 |
-| docs/advanced/ii/ui/conditional-and-list-rendering.md | 已讲 | 已讲 | 已讲 | 已讲 | 130 |
-| docs/advanced/ii/ui/props.md | 已讲 | 已讲 | 已讲 | 已讲 | 237 |
-| docs/advanced/ii/ui/component-tsx.md | 已讲 | 已讲 | 已讲 | 已讲 | 256 |
-| docs/advanced/ii/ui/slots-and-attrs.md | 已讲 | 已讲 | 已讲 | 已讲 | 195 |
+| 篇目                                                  | 渲染树模型 | 事件模型 | 元素/组件用法 | 示例后解释 | 现状行数 |
+| ----------------------------------------------------- | ---------- | -------- | ------------- | ---------- | -------- |
+| docs/advanced/ii/ui/reactivity.md                     | 已讲       | 已讲     | 已讲          | 已讲       | 165      |
+| docs/advanced/ii/ui/events.md                         | 已讲       | 已讲     | 已讲          | 已讲       | 179      |
+| docs/advanced/ii/ui/hotkey-in-ui.md                   | 已讲       | 已讲     | 已讲          | 已讲       | 123      |
+| docs/advanced/ii/ui/conditional-and-list-rendering.md | 已讲       | 已讲     | 已讲          | 已讲       | 130      |
+| docs/advanced/ii/ui/props.md                          | 已讲       | 已讲     | 已讲          | 已讲       | 237      |
+| docs/advanced/ii/ui/component-tsx.md                  | 已讲       | 已讲     | 已讲          | 已讲       | 256      |
+| docs/advanced/ii/ui/slots-and-attrs.md                | 已讲       | 已讲     | 已讲          | 已讲       | 195      |
 
 体量参考（非门禁）：7 篇当前总行数 1285，平均 183.6 行。~300 行仅为参考，不设下限/上限；不因低于 300 行失败，也不为凑行数注水（D-88）。
 停止点：10-50 只做 Part 2–3 深度扩写；不改 10-51..10-54、不改 docs 其它页与 demo、不写 SUMMARY / ROADMAP / STATE、不 commit。
@@ -648,20 +650,21 @@ STATE 全文哈希：e4731f2b66115eb43d9b185634c2d86802ef6c2638201558c98d917e133
 - ESLint：`cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"`，exit 0，0 error / 0 warning。
 - docs 类型：`cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"`，exit 2；`docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 缺 `main` 3 条、`packages/render/src/core/types.ts` 缺 `CanvasStyle` 8 条，既有、非本轮引入、不得修）。
 - 构建：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`，exit 0，`build complete in 22.80s.`，0 dead link；`public/_docs/advanced/ii/ui` 下 `.html` 恰好 25 个；页面 25 篇、demo 24 个不变。
-D-93 抽查：docs/advanced/ii/ui/reactivity.md — 通过
-D-93 抽查：docs/advanced/ii/ui/events.md — 通过
-D-93 抽查：docs/advanced/ii/ui/hotkey-in-ui.md — 通过
-D-93 抽查：docs/advanced/ii/ui/conditional-and-list-rendering.md — 通过
-D-93 抽查：docs/advanced/ii/ui/props.md — 通过
-D-93 抽查：docs/advanced/ii/ui/component-tsx.md — 通过
-D-93 抽查：docs/advanced/ii/ui/slots-and-attrs.md — 通过
-事件顺序复核：events.md 不含肯定式「子元素先捕获」；已按源码核对为「父容器先捕获、命中元素随后捕获并先冒泡、父容器最后冒泡」；`stopPropagation` 只停止传播、不阻止同一元素同一事件名的其它监听器；`noevent` 为整个子树不参与命中；enter/leave 由根的 hover 集合做差集统一触发、先 leave 后 enter，不走普通冒泡。
+  D-93 抽查：docs/advanced/ii/ui/reactivity.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/events.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/hotkey-in-ui.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/conditional-and-list-rendering.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/props.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/component-tsx.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/slots-and-attrs.md — 通过
+  事件顺序复核：events.md 不含肯定式「子元素先捕获」；已按源码核对为「父容器先捕获、命中元素随后捕获并先冒泡、父容器最后冒泡」；`stopPropagation` 只停止传播、不阻止同一元素同一事件名的其它监听器；`noevent` 为整个子树不参与命中；enter/leave 由根的 hover 集合做差集统一触发、先 leave 后 enter，不走普通冒泡。
+
 ### 10-50 执行偏差
 
 - 修改方式：本执行环境未提供再派生子代理的工具，7 篇正文与 NOTES 由执行器直接落盘；未调用 `opencode` 命令；不 commit。
 - Task 2–5 的 verify 脚本在 PowerShell 5.1 与 `$ErrorActionPreference='Stop'` 下会把 `pnpm docs:build` 的正常 stderr 当成终止错误；执行时用同名 `cmd` 包装函数把原生命令的 stderr 降为 Continue，脚本其余断言原样执行，未修改计划、断言或构建命令。
 - Task 2 首次 verify 未命中 `hover` 关键词，正文补写「hover 集合」后通过；未删改断言。
-停止点：10-50 扩写结束；未进入 10-53 读者循环；未写 SUMMARY / ROADMAP / STATE；未改 10-51..10-54；未 commit。
+  停止点：10-50 扩写结束；未进入 10-53 读者循环；未写 SUMMARY / ROADMAP / STATE；未改 10-51..10-54；未 commit。
 
 ## 10-51 深度扩写（Part 4）
 
@@ -680,13 +683,13 @@ STATE 全文哈希：e4731f2b66115eb43d9b185634c2d86802ef6c2638201558c98d917e133
 
 ### D-93 覆盖表
 
-| 篇目 | 渲染树模型 | 事件模型 | 元素/组件用法 | 示例后解释 | 现状行数 |
-| --- | --- | --- | --- | --- | --- |
-| docs/advanced/ii/ui/builtin-text-and-input.md | 已讲 | 已讲 | 已讲 | 已讲 | 284 |
-| docs/advanced/ii/ui/builtin-list-and-containers.md | 已讲 | 已讲 | 已讲 | 已讲 | 309 |
-| docs/advanced/ii/ui/ui-controller-and-stack.md | 已讲 | 已讲 | 已讲 | 已讲 | 180 |
-| docs/advanced/ii/ui/replace-builtin-ui.md | 已讲 | 已讲 | 已讲 | 已讲 | 110 |
-| docs/advanced/ii/ui/ui-performance.md | 已讲 | 已讲 | 已讲 | 已讲 | 130 |
+| 篇目                                               | 渲染树模型 | 事件模型 | 元素/组件用法 | 示例后解释 | 现状行数 |
+| -------------------------------------------------- | ---------- | -------- | ------------- | ---------- | -------- |
+| docs/advanced/ii/ui/builtin-text-and-input.md      | 已讲       | 已讲     | 已讲          | 已讲       | 284      |
+| docs/advanced/ii/ui/builtin-list-and-containers.md | 已讲       | 已讲     | 已讲          | 已讲       | 309      |
+| docs/advanced/ii/ui/ui-controller-and-stack.md     | 已讲       | 已讲     | 已讲          | 已讲       | 180      |
+| docs/advanced/ii/ui/replace-builtin-ui.md          | 已讲       | 已讲     | 已讲          | 已讲       | 110      |
+| docs/advanced/ii/ui/ui-performance.md              | 已讲       | 已讲     | 已讲          | 已讲       | 130      |
 
 体量参考（非门禁）：5 篇当前总行数 1013，平均 202.6 行。~300 行仅为参考，不设下限/上限；不因低于 300 行失败，也不为凑行数注水（D-88）。
 停止点：10-51 只做 Part 4 深度扩写；不改 10-52..10-54、不改 docs 其它页与 demo、不写 SUMMARY / ROADMAP / STATE、不 commit。
@@ -714,11 +717,11 @@ STATE 全文哈希：e4731f2b66115eb43d9b185634c2d86802ef6c2638201558c98d917e133
 - ESLint：`cmd /c "pnpm exec eslint docs/.vitepress/components/demos/ui"`，exit 0，0 error / 0 warning。
 - docs 类型：`cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"`，exit 2；`docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 3 条、`packages/render/src/core/types.ts` 8 条，既有、非本轮引入、不得修）。
 - 构建：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`，exit 0，`build complete in 23.04s.`，0 dead link；`public/_docs/advanced/ii/ui` 下 `.html` 恰好 25 个；页面 25 篇、demo 24 个不变。
-D-93 抽查：docs/advanced/ii/ui/builtin-text-and-input.md — 通过
-D-93 抽查：docs/advanced/ii/ui/builtin-list-and-containers.md — 通过
-D-93 抽查：docs/advanced/ii/ui/ui-controller-and-stack.md — 通过
-D-93 抽查：docs/advanced/ii/ui/replace-builtin-ui.md — 通过
-D-93 抽查：docs/advanced/ii/ui/ui-performance.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/builtin-text-and-input.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/builtin-list-and-containers.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/ui-controller-and-stack.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/replace-builtin-ui.md — 通过
+  D-93 抽查：docs/advanced/ii/ui/ui-performance.md — 通过
 
 ### 10-51 执行偏差
 
@@ -726,7 +729,7 @@ D-93 抽查：docs/advanced/ii/ui/ui-performance.md — 通过
 - Task 2–5 的 verify 脚本在 PowerShell 5.1 与 `$ErrorActionPreference='Stop'` 下会把 `pnpm docs:build` 的正常 stderr 当成终止错误；执行时用同名包装把原生命令的 stderr 降为 Continue，脚本其余断言原样执行，未修改计划、断言或构建命令。
 - Task 2 首次 verify 未命中列表篇的 `渲染树` 关键词，正文补写一句「同一棵渲染树」后通过；Task 3 首次 verify 因 NOTES 追加缺少换行而未命中 `自查：`，补上换行后通过；未删改断言。
 - 与源码核对时的两处口径：`TextContent` 的排版宽度只看 `width`（`loc` 第三项被覆盖）；一次性弹窗以 `alwaysShow` 打开，所以 `lastOnly` 不会把它隐藏。均按方法注释与行为写入正文，未报告为缺陷。
-停止点：10-51 扩写结束；未进入 10-53 读者循环；未写 SUMMARY / ROADMAP / STATE；未改 10-52..10-54；未 commit。
+  停止点：10-51 扩写结束；未进入 10-53 读者循环；未写 SUMMARY / ROADMAP / STATE；未改 10-52..10-54；未 commit。
 
 ## 10-52 深度扩写（Part 5）
 
@@ -746,14 +749,14 @@ demo 快照哈希：02b1d6a88d414c9ce197b7bd8f7773020d8ae1c5c18099518595a66ca1ad
 
 ### D-93 覆盖表
 
-| 篇目 | 渲染树模型 | 事件模型 | 元素/组件用法 | 示例后解释 | 现状行数 |
-| --- | --- | --- | --- | --- | --- |
-| docs/advanced/ii/ui/inventory-example-1-skeleton.md | 已讲 | 已讲 | 已讲 | 已讲 | 144 |
-| docs/advanced/ii/ui/inventory-example-2-grid.md | 已讲 | 已讲 | 已讲 | 已讲 | 234 |
-| docs/advanced/ii/ui/inventory-example-3-detail.md | 已讲 | 已讲 | 已讲 | 已讲 | 113 |
-| docs/advanced/ii/ui/inventory-example-4-scroll.md | 已讲 | 已讲 | 已讲 | 已讲 | 143 |
-| docs/advanced/ii/ui/inventory-example-5-state.md | 已讲 | 已讲 | 已讲 | 已讲 | 233 |
-| docs/advanced/ii/ui/inventory-example-6-animation-and-register.md | 已讲 | 已讲 | 已讲 | 已讲 | 138 |
+| 篇目                                                              | 渲染树模型 | 事件模型 | 元素/组件用法 | 示例后解释 | 现状行数 |
+| ----------------------------------------------------------------- | ---------- | -------- | ------------- | ---------- | -------- |
+| docs/advanced/ii/ui/inventory-example-1-skeleton.md               | 已讲       | 已讲     | 已讲          | 已讲       | 144      |
+| docs/advanced/ii/ui/inventory-example-2-grid.md                   | 已讲       | 已讲     | 已讲          | 已讲       | 234      |
+| docs/advanced/ii/ui/inventory-example-3-detail.md                 | 已讲       | 已讲     | 已讲          | 已讲       | 113      |
+| docs/advanced/ii/ui/inventory-example-4-scroll.md                 | 已讲       | 已讲     | 已讲          | 已讲       | 143      |
+| docs/advanced/ii/ui/inventory-example-5-state.md                  | 已讲       | 已讲     | 已讲          | 已讲       | 233      |
+| docs/advanced/ii/ui/inventory-example-6-animation-and-register.md | 已讲       | 已讲     | 已讲          | 已讲       | 138      |
 
 系列一致性契约
 契约 1：`items` 在 `InventoryPanel` 里是 `ref<Item[]>`；子组件收到的是父级解包后的数组或明确 props，不在子组件里直接引用父级闭包变量；派生列表用 `computed`。
@@ -811,8 +814,8 @@ D-93 抽查：docs/advanced/ii/ui/inventory-example-6-animation-and-register.md 
 - docs 类型：`cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json"`，exit 2；`docs/` 路径类型报错 0；既有引擎报错 11 条（`packages/common/src/logger.ts` 缺 `main` 3 条、`packages/render/src/core/types.ts` 缺 `CanvasStyle` 8 条，既有、非本轮引入、不得修）。
 - 构建：`cmd /c "pnpm exec tsx docs/.vitepress/init.ts && pnpm docs:build"`，exit 0，`build complete in 26.86s.`，0 dead link；`public/_docs/advanced/ii/ui` 下 `.html` 恰好 25 个；页面 25 篇、demo 24 个不变。
 - D-93 逐篇结论：6 篇均讲清渲染树落点（节点挂在哪层、坐标与裁剪）、事件路径（命中与上报链）、组件/元素用法（props、内置组件、注册）、示例后解释（为什么现在加这一步），抽查全部通过。
-停止点：10-52 只做 Part 5 深度扩写；不改 10-53 / 10-54、不改 docs 其它页与 demo、不写 SUMMARY / ROADMAP / STATE、不 commit。
-停止点：10-52 扩写结束；25 篇扩写全部完成；未进入 10-53 读者循环；未写 SUMMARY / ROADMAP / STATE；未改 10-53 / 10-54；未 commit。
+  停止点：10-52 只做 Part 5 深度扩写；不改 10-53 / 10-54、不改 docs 其它页与 demo、不写 SUMMARY / ROADMAP / STATE、不 commit。
+  停止点：10-52 扩写结束；25 篇扩写全部完成；未进入 10-53 读者循环；未写 SUMMARY / ROADMAP / STATE；未改 10-53 / 10-54；未 commit。
 
 ### 10-52 执行偏差
 
@@ -962,8 +965,63 @@ Round 3（D-94）修订：阻断 7 条，已修 6 条（落在 6 处正文），
 
 用户确认（10-54）：已完成（非示例）
 用户原文（2026-11-15）：「这部分文档算是差不多全看完了。示例部分先保留，标记为待审阅，先不审阅它。你把文档审阅计划标记为已完成，把当前计划收尾。」
-审阅范围：25 篇 docs/advanced/ii/ui/*.md；其中 19 篇非示例文档已审阅完成，6 篇示例文档保留现状并标记为待审阅。
+审阅范围：25 篇 docs/advanced/ii/ui/\*.md；其中 19 篇非示例文档已审阅完成，6 篇示例文档保留现状并标记为待审阅。
 示例待审阅清单：inventory-example-1-skeleton.md、inventory-example-2-grid.md、inventory-example-3-detail.md、inventory-example-4-scroll.md、inventory-example-5-state.md、inventory-example-6-animation-and-register.md。
 审阅结论：文档审阅计划已完成（带待审阅项）；示例不纳入本轮完成范围。
 计划状态：已完成（带待审阅项）；不代表 25 篇全部审阅完成。
 停止点：10-54 文档审阅收尾；示例 1-6 待审阅；未改源码/demo；未 commit。
+
+## 10-55 渲染指南迁移
+
+用户确认（10-55）：可以执行
+用户原文（摘要，2026-11-16）：用户确认修正后的计划 10-55-PLAN.md（名称 / 范围更正：指南为「渲染指南」，不是「渲染端指南」；只收画屏幕 / 写 UI 的材料，无关系统留在中级 / 高级教程），并批准执行 Task 1–4；Task 5 用户审阅与 Task 6 记账不在本次执行范围。
+裁决摘要：路径 docs/render-guide/；导航名「渲染指南」；三分区 asics/、dvanced/、internals/（渲染基础 / 渲染进阶 / 渲染底层）；页面基线 27（basics 10 / advanced 15 / internals 2）；19 篇继承 10-54 已审阅、ui-basics / irst-static-ui 待审阅、示例 1–6 待审阅；demo 不移动；普通教程渲染相关内容收敛另开计划；POC 页保留不动；不 commit。
+BASE-HEAD：2a4b3220ed9ecc01b2f92eabd375185eb686a01a
+页面基线：27；实测 27（docs/advanced/ii/ui/\*.md 计数）。10-54 记录值 25 篇（19 已审阅 + 6 待审阅）/ 24 demo 只作历史记录。
+新增页审阅状态与依据：ui-basics = 待审阅；irst-static-ui = 待审阅。依据：两篇在 10-54 的 25 篇清单中无对应 slug（5db2cef 后新增），用户未确认其已审阅，按默认记待审阅。
+POC 处置：保留不动（docs/poc/render-demo.md 本计划不改）。
+demo 基线：文件 67；被正文引用 65；带 live（renderDemo.vue） 24。demo 目录：docs/.vitepress/components/demos/ui/。
+docs 快照哈希：363b822c90b84761eff38b4ca518837eae609d0a1c6d8f1b7d5f62f38cb6c853（27 篇，按相对路径排序，逐文件 SHA-256 后以 LF 拼 path:hash 再取 SHA-256）
+配置快照哈希：212dc5960e3a9ff5d04b0f08e9616cf0dfae268856e92a8654022930ef6bcbbe（docs/.vitepress/config.ts）
+迁移范围：docs/advanced/ii/ui/ → docs/render-guide/{basics,advanced,internals}/
+示例口径：1..6 保持待审阅，不审阅正文
+停止点：10-55 迁移前清单已建立
+
+### 10-55 门禁
+
+执行时间：2026-11-16（本地时间 13:51 起）。
+结构门禁：docs/render-guide/ 共 28 个 .md（27 篇 + index.md），目录仅 asics / dvanced / internals；docs/advanced/ii/ui/ 已删除；docs 与 docs/.vitepress/_.ts 中 /advanced/ii/ui/、./ui/ 链接为 0；docs/advanced/ii/index.md 与 docs/advanced/index.md 含
+ender-guide 链接且不含「自定义 UI 与渲染」「高级 II 的《UI 性能》」，数据端与 III 链接保留。结果：通过。
+导航门禁：nav 含「渲染指南」与 /render-guide/；/render-guide/ 侧边栏 27 条与磁盘 27 篇双向一致（无死链、无孤儿页）；旧 UI 分组已移除；/intermediate/ 链接 26 条（25 侧边栏 + 1 顶部）不变。结果：通过。
+导入与 live 门禁：docs/render-guide/\*\*/_.md 中 .vitepress/components 导入全部为 ../../.vitepress/...，../../../.vitepress/components 为 0；demo 目录 git status --porcelain 为空；demo 文件 67、被正文引用 65、带
+enderDemo.vue 24，与基线一致。结果：通过。
+文档结构门禁：27 篇各有且仅有一个 ## 前置知识；示例 6 篇在清单中仍为 待审阅；ui-basics / irst-static-ui 与清单 新增页面审阅状态（均 待审阅）一致；10-54-SUMMARY.md、10-54-USER-REVIEW.md、docs/poc/render-demo.md 未被修改；剥离 ## 前置知识 段、链接行与导入行后 27 篇与 HEAD 逐字一致；全部代码块与 HEAD 逐字一致；新指南正文无 待审阅 / 未审阅 / 已修复 / 审阅记录。结果：通过。
+格式门禁：cmd /c "pnpm exec prettier --check docs/render-guide docs/.vitepress/config.ts docs/advanced/ii/index.md docs/advanced/index.md" 首次对 docs/render-guide/index.md 报格式差异，--write 后复跑 exit 0，差异仅为表格/空行排布。结果：通过。
+类型门禁：cmd /c "pnpm exec vue-tsc --noEmit -p docs/tsconfig.json" exit 2；docs/ 路径报错 1 条：docs/.vitepress/components/demos/ui/container-custom-demo.tsx(17,41): error TS2554；其余 218 条全部位于 packages/ / packages-user/（工作树中存在与本计划无关的未提交改动，如 packages-user/client-base/src/map/element.ts 的
+enderContent 签名改为 1 个参数，10-54 基线 11 条不再适用）。该 docs 报错来自未被本计划修改的 demo 文件与未提交的包改动，不是 10-55 引入；按要求不修改 demo 与 packages/，已记入 10-55-DEFERRED-ITEMS.md。docs 路径断言未达 0。结果：未通过（预存在、非本计划引入，待用户裁决）。
+构建门禁：cmd /c "pnpm exec tsx docs/.vitepress/init.ts" exit 0；cmd /c "pnpm docs:build" exit 0，输出 uild complete in 19.28s，无 dead link；public/\_docs/render-guide/\*_/_.html 共 28 个（basics 10 / advanced 15 / internals 2 + index），等于页面基线 + 1。结果：通过。
+计数：页面 27；导入 89（demo 65 + RenderDemo 24）；demo 67/65/24；内部链接 46（跨区改写 25，同区保留 21）；侧边栏 27。示例待审阅结论：1–6 全部仍为待审阅，正文未审阅、未改写。旧链接清零结论：/advanced/ii/ui/ 与 ./ui/ 在 docs 与配置中均为 0。
+docs 迁移后快照哈希：6c1130ec8596af25316405b4597f5a815008adee436b5715e6a85c0ceaee8185（27 篇，按相对路径排序，逐文件 SHA-256 后以 LF 拼 path:hash 再取 SHA-256）
+迁移后配置快照哈希：cdb9d2562b517ddbed4f8614496e941aad0ca8b51f77c269e5bce171125adc2b
+迁移后指南导览哈希：65e9466ba8447eef4dbab7fe0d9936cc8dc7c812bda8477406e458895f202209
+停止点：10-55 Task 4 门禁已跑；未进入 Task 5 用户审阅；未写 SUMMARY、未改 ROADMAP / STATE、未 commit。
+
+### 10-55 用户结构修正（2026-11-16）
+
+用户要求：渲染指南改为两分区，不保留底层文档；`ui-system` 与 `ui-performance` 两篇移入 `advanced/`；`ui-system` 不再以 `custom-components` 为前置。已执行：用 `git mv` 将两篇移到 `docs/render-guide/advanced/` 并删除空的 `internals/`；侧边栏移除「渲染底层」组，两篇并入「渲染进阶」；导览、迁移清单与相关链接同步改为 advanced。分区计数：basics 10 / advanced 17 / internals 0（有效分区 2）。`ui-system.md` 的「前置知识」仅保留「事件与交互」。
+
+### 10-55 收尾（2026-11-16）
+
+用户确认（10-55）：可以执行（Task 5 结构 / 链接审阅通过，用户可以收尾）
+用户原文：「可以收尾」（2026-11-16，确认 Task 5 审阅后指示执行 Task 6 收尾记账）
+结构审阅：已完成
+最终页面计数：27（`docs/render-guide/` 共 28 个 `.md`，含 `index.md`）；两区计数：basics 10 / advanced 17；internals 0（不建目录，UI 系统与 UI 性能归 advanced）。
+新增页审阅状态与依据：`ui-basics` = 待审阅；`first-static-ui` = 待审阅。依据：10-54 的 25 篇清单无对应 slug，用户未确认其已审阅，按默认保持待审阅。
+审阅谱系：19 篇继承 10-54 已审阅（含改名继承）+ 2 篇新增待审阅 + 6 篇示例待审阅 = 27。
+POC 处置：保留不动（`docs/poc/render-demo.md` 未改）。
+demo：文件 67；被正文引用 65；带 live（`renderDemo.vue`） 24；目录 `docs/.vitepress/components/demos/ui/` 未移动、未修改。
+迁移后 docs 快照哈希：754b6b15d9aae205ec74ad955c9e683a4b25ab5eb2921f041fb20cecf31f2894（27 篇，按相对路径排序，逐文件 SHA-256 后以 LF 拼 `path:hash` 再取 SHA-256；两分区修正后实测）。
+迁移后配置快照哈希：a498e4e371a12b9617943db7813a5b7dfd82e3e857d6294e9d0b002b6e88e1c3。
+门禁摘要：结构 / 导航 / 导入与 live / 文档结构 / 格式 / 构建通过；类型门禁 `docs/` 路径 1 条为未在本计划修改的 demo 与工作树无关包改动所致，已记 `10-55-DEFERRED-ITEMS.md`，未修、未绕过。
+示例待审阅结论：示例 1–6 全部仍为 待审阅，正文未审阅、未改写。
+停止点：10-55 渲染指南迁移完成

@@ -2,6 +2,10 @@
 
 这篇讲三件事：怎样打开一个 UI、TSX 里的标签和组件怎么写、渲染树是什么样。看完你能在模板里写出文字和矩形。
 
+## 前置知识
+
+无——只要掌握基础 TS/JS，并按本指南的阅读路径阅读即可。
+
 ## UI 的打开
 
 每个 UI 是一个 `GameUI` 对象。在已有 UI 里，可以用 `props.controller` 打开另一个 UI，返回值是这次打开的实例：
@@ -14,7 +18,7 @@ const instance = props.controller.open(MyPanelUI, {});
 props.controller.close(instance);
 ```
 
-每次 `open` 都会得到独立实例，同一个 `GameUI` 也可以被打开多次。参数、栈顺序与 `alwaysShow` 的细节见 [UI 系统](./ui-system.md)。
+每次 `open` 都会得到独立实例，同一个 `GameUI` 也可以被打开多次。参数、栈顺序与 `alwaysShow` 的细节见 [UI 系统](../advanced/ui-system.md)。
 
 ## TSX 里的标签和组件
 
@@ -75,7 +79,7 @@ props.controller.close(instance);
 
 组件本身不额外产生节点，它的根元素挂在使用位置。组件内部写什么，由组件自己决定。
 
-条件与循环这里先不展开，用到时再看[条件渲染与循环渲染](./conditional-and-list-rendering.md)。
+条件与循环这里先不展开，用到时再看[条件渲染与循环渲染](../advanced/conditional-and-list-rendering.md)。
 
 ## 渲染树的基本模型
 
@@ -163,10 +167,10 @@ export const MyPanelUI = new GameUI('my-panel', MyPanel);
 </ClientOnly>
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const basicsLoader = () =>
-    import('../../../.vitepress/components/demos/ui/basics-demo.tsx');
+    import('../../.vitepress/components/demos/ui/basics-demo.tsx');
 </script>
 
 ## 后续
@@ -174,6 +178,6 @@ const basicsLoader = () =>
 - 摆位置：[容器与坐标](./container-and-coordinates.md)
 - 画更多图形：[基础图形](./basic-shapes.md)
 - 写字：[文字](./text.md)
-- 处理交互：[事件与交互](./events.md)
-- 拆组件：[自定义组件](./custom-components.md)
-- 接 UI 系统：[UI 系统](./ui-system.md)
+- 处理交互：[事件与交互](../advanced/events.md)
+- 拆组件：[自定义组件](../advanced/custom-components.md)
+- 接 UI 系统：[UI 系统](../advanced/ui-system.md)

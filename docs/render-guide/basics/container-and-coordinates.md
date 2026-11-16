@@ -2,6 +2,12 @@
 
 上一篇[《第一个静态界面》](./first-static-ui.md)已经用容器、文字和几个简单图形拼出了一块静态界面：`container` 圈出范围，文字和图形按 `loc` 摆进去。这一篇只讲怎么把元素放到想要的位置：坐标从哪里算起、`loc` 与锚点怎么配合、容器嵌套后子元素的坐标怎么变。事件、变换、缓存和层级都留到后面的篇章。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [第一个静态界面](./first-static-ui.md)
+
 ## 坐标来源
 
 根容器的左上角是原点，向右是正 `x`，向下是正 `y`。子元素的坐标相对父容器的左上角，不是相对整块画布；容器嵌套时，每一层都把坐标系重新平移一次。
@@ -88,12 +94,12 @@
 子容器的 `(0, 0)` 是它在父容器内的位置，不是画布原点；父容器移动时，子容器和里面的元素一起移动。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const anchorLoader = () =>
-    import('../../../.vitepress/components/demos/ui/anchor-demo.tsx');
+    import('../../.vitepress/components/demos/ui/anchor-demo.tsx');
 const containerLoader = () =>
-    import('../../../.vitepress/components/demos/ui/container-demo.tsx');
+    import('../../.vitepress/components/demos/ui/container-demo.tsx');
 </script>
 
 ## 边界与注意

@@ -4,6 +4,13 @@
 
 一般更符合直觉的是冒泡。点一个按钮，应该先轮到按钮自己处理，而不是父容器先把事件接住；所以 `onClick`、`onDown` 这些默认事件都走冒泡。只有确实需要外层先处理时，才用 `onClickCapture`、`onDownCapture` 这类捕获写法。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [容器与坐标](../basics/container-and-coordinates.md)
+- [响应式](./reactivity.md)
+
 ## 内置事件及用法
 
 TSX 里用 `onXxx` 绑定事件。常用事件如下：
@@ -321,7 +328,7 @@ live 只显示本次点击触发的事件；打开 stop 后，按钮的冒泡会
 - `hidden` 的元素不绘制，也不参与命中，事件会直接落到它后面的元素。
 - `noevent` 的元素照常绘制，但跳过命中。它不是只跳过自身，而是**整个子树都不参与命中**：容器加了 `noevent`，里面的子元素也收不到事件，事件会下穿到兄弟或下层元素；`cursor` 也同时失效。
 - `cursor` 写在元素上，指针悬停时生效，取值与浏览器的鼠标样式一致，例如 `pointer`、`text`、`default`。多个元素同时命中时，最内层写了 `cursor` 的元素生效；元素被 `noevent` 跳过或 `hidden` 隐藏时，`cursor` 不再生效。
-- `actionStroke` 只把描边算作命中，内部空白区域会下穿。它适合「只有边框看起来可点」的界面；命中宽度跟着 `lineWidth` 走，没有额外的最小热区。基础图形的命中细节见[基础图形](./basic-shapes.md)。
+- `actionStroke` 只把描边算作命中，内部空白区域会下穿。它适合「只有边框看起来可点」的界面；命中宽度跟着 `lineWidth` 走，没有额外的最小热区。基础图形的命中细节见[基础图形](../basics/basic-shapes.md)。
 
 容器即使没有可见背景，也会按自身矩形参与命中；不想挡住下面的元素就用 `noevent`，而不是把背景设成透明。
 
@@ -368,16 +375,16 @@ sequenceDiagram
 外层与内层分别显示进入 / 离开状态。从外层移到内层时，外层不会触发 `leave`；滚轮累计与 `cursor` 也跟随命中结果变化。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const eventsBasicLoader = () =>
-    import('../../../.vitepress/components/demos/ui/events-basic-demo.tsx');
+    import('../../.vitepress/components/demos/ui/events-basic-demo.tsx');
 const eventsCoordinatesLoader = () =>
-    import('../../../.vitepress/components/demos/ui/events-coordinates-demo.tsx');
+    import('../../.vitepress/components/demos/ui/events-coordinates-demo.tsx');
 const eventsPropagateLoader = () =>
-    import('../../../.vitepress/components/demos/ui/events-propagate-demo.tsx');
+    import('../../.vitepress/components/demos/ui/events-propagate-demo.tsx');
 const eventsHoverLoader = () =>
-    import('../../../.vitepress/components/demos/ui/events-hover-demo.tsx');
+    import('../../.vitepress/components/demos/ui/events-hover-demo.tsx');
 </script>
 
 ## 边界与注意

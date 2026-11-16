@@ -2,6 +2,13 @@
 
 道具少的时候，网格一次就能排下。道具变多后，左侧区域放不下，需要滚动。本篇把示例（二）的普通网格换成 `Scroll`，并说明这次替换在渲染树、事件与数据流上各自改了什么。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [示例（三）详情区](./inventory-example-3-detail.md)
+- [内置组件：布局](./builtin-layout.md)
+
 ## 为什么要换滚动
 
 普通容器只是按坐标把子元素画出来：区域外的格子照样绘制，超出的部分被窗口裁掉，但节点仍然在树上。道具只有十件时感觉不到问题；四十件时，左侧区域外的格子会越画越多，滚轮也没有任何反应。
@@ -191,10 +198,10 @@ const toBottom = () => {
 </ClientOnly>
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const scrollLoader = () =>
-    import('../../../.vitepress/components/demos/ui/inventory-4-scroll.tsx');
+    import('../../.vitepress/components/demos/ui/inventory-4-scroll.tsx');
 </script>
 
 ## 边界与注意

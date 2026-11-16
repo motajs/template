@@ -4,6 +4,12 @@
 
 在逐个看图形之前，先弄清所有图形共用的填充、描边与颜色规则，后面每种图形的用法都建立在这套规则上。每种图形都有一个用数组传参的简写，日常写 UI 用简写最省事；逐个属性写的普通写法只在需要拆分或复用单个值时再用，下面每节只提一句。每种图形配一个 live，最后再把八种放在一起。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [容器与坐标](./container-and-coordinates.md)
+
 ## 通用规则：填充、描边与颜色
 
 图形有两种绘制模式：填充和描边。`fill`、`stroke`、`strokeAndFill` 是模式开关，值都是布尔值，不是颜色；颜色分别写在 `fillStyle` 与 `strokeStyle` 里。写 `fill="#f00"` 不会把图形变成红色，要写 `fill fillStyle="#f00"`；默认填充的图形本来就不用写 `fill`。
@@ -482,30 +488,30 @@ badge.closePath();
 这段代码里每种图形只出现一次，位置按 4×2 排开；换成自己的布局时，改各自的 `loc`、圆心或端点即可。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const modesLoader = () =>
-    import('../../../.vitepress/components/demos/ui/shapes-modes.tsx');
+    import('../../.vitepress/components/demos/ui/shapes-modes.tsx');
 const strokeLoader = () =>
-    import('../../../.vitepress/components/demos/ui/shapes-stroke.tsx');
+    import('../../.vitepress/components/demos/ui/shapes-stroke.tsx');
 const rectLoader = () =>
-    import('../../../.vitepress/components/demos/ui/shapes-rect.tsx');
+    import('../../.vitepress/components/demos/ui/shapes-rect.tsx');
 const circleLoader = () =>
-    import('../../../.vitepress/components/demos/ui/shapes-circle.tsx');
+    import('../../.vitepress/components/demos/ui/shapes-circle.tsx');
 const ellipseLoader = () =>
-    import('../../../.vitepress/components/demos/ui/shapes-ellipse.tsx');
+    import('../../.vitepress/components/demos/ui/shapes-ellipse.tsx');
 const lineLoader = () =>
-    import('../../../.vitepress/components/demos/ui/shapes-line.tsx');
+    import('../../.vitepress/components/demos/ui/shapes-line.tsx');
 const bezierLoader = () =>
-    import('../../../.vitepress/components/demos/ui/shapes-bezier.tsx');
+    import('../../.vitepress/components/demos/ui/shapes-bezier.tsx');
 const quadLoader = () =>
-    import('../../../.vitepress/components/demos/ui/shapes-quad.tsx');
+    import('../../.vitepress/components/demos/ui/shapes-quad.tsx');
 const pathLoader = () =>
-    import('../../../.vitepress/components/demos/ui/shapes-path.tsx');
+    import('../../.vitepress/components/demos/ui/shapes-path.tsx');
 const rectrLoader = () =>
-    import('../../../.vitepress/components/demos/ui/shapes-rectr.tsx');
+    import('../../.vitepress/components/demos/ui/shapes-rectr.tsx');
 const allLoader = () =>
-    import('../../../.vitepress/components/demos/ui/shapes-all.tsx');
+    import('../../.vitepress/components/demos/ui/shapes-all.tsx');
 </script>
 
 ## 默认值与注意

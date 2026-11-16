@@ -4,6 +4,13 @@ TSX 里没有模板指令。要不要显示一块内容、要不要重复一组�
 
 绝大多数情况用 `hidden` 更划算：它只跳过绘制与命中，元素、状态和事件监听都还在。虽然会多占一点内存，但一般影响很小；TSX 也更平整，不需要为条件分支多套一层缩进。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [响应式](./reactivity.md)
+- [事件与交互](./events.md)
+
 ## 条件渲染与 hidden
 
 大多数情况推荐 `hidden`，不推荐三元：它只多占一点内存，一般影响很小，TSX 也更平整。
@@ -333,14 +340,14 @@ export const MyPanelUI = new GameUI('my-panel', MyPanel);
 | 会增删、重排、带状态的列表 | `.map()` + `key`      | 保留元素身份，状态跟着正确的项走     |
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const conditionalHiddenLoader = () =>
-    import('../../../.vitepress/components/demos/ui/conditional-hidden-demo.tsx');
+    import('../../.vitepress/components/demos/ui/conditional-hidden-demo.tsx');
 const conditionalTernaryLoader = () =>
-    import('../../../.vitepress/components/demos/ui/conditional-ternary-demo.tsx');
+    import('../../.vitepress/components/demos/ui/conditional-ternary-demo.tsx');
 const conditionalKeyLoader = () =>
-    import('../../../.vitepress/components/demos/ui/conditional-key-demo.tsx');
+    import('../../.vitepress/components/demos/ui/conditional-key-demo.tsx');
 </script>
 
 ## 边界与注意

@@ -2,6 +2,14 @@
 
 前面五步已经把网格、详情、滚动与交互拼起来了。最后一步补三件事：让选中态与提示动起来、把代码落回五个文件、把面板注册成 `GameUI` 并从打开处接入。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [示例（五）交互与状态](./inventory-example-5-state.md)
+- [自定义组件](./custom-components.md)
+- [UI 系统](./ui-system.md)
+
 ## 最后一步要收什么
 
 收尾不是「再加一个功能」，而是把前面五步已经写下的东西固定下来：
@@ -219,7 +227,7 @@ const instance = props.state.mainUIController.open(InventoryUI, {});
 props.state.mainUIController.close(instance);
 ```
 
-打开时传的是 `GameUI` 对象本身，名字不参与查找；构造与命名的规则见[第 1 篇「UI 通用模板」](./ui-template.md#gameui-是一个对象不是名字)。
+打开时传的是 `GameUI` 对象本身，名字不参与查找；构造与命名的规则见[第 1 篇「UI 通用模板」](../basics/ui-template.md#gameui-是一个对象不是名字)。
 
 关闭当前面板、马上打开另一个面板时，用 `props.controller.keep()` 包住切换，用完调用 `safelyUnload()`，避免背景闪一下；用法见[「UI 系统」的「keep」](./ui-system.md#keep)。
 
@@ -240,7 +248,7 @@ props.state.mainUIController.close(instance);
 
 关闭后动画必须停：如果 `cancelAnimationFrame` 漏了，再次打开会看到两个循环同时在改 `pulse`，边框呼吸会变得忽快忽慢。这也是清单里「再次打开」要单独验证的原因。
 
-清单里的「再次打开」按 `close` 写：`close` 会卸载实例，再 `open` 得到新实例，所以未选中、滚动在顶部。如果你改用 `hide` 隐藏面板，实例与滚动位置都会保留，这一行的预期要相应改成「回到隐藏前的位置」；两种语义的区别见[第 7 篇「显示开关」](./layer-transform-performance.md)与[「UI 系统」的「隐藏与显示」](./ui-system.md#隐藏与显示)。
+清单里的「再次打开」按 `close` 写：`close` 会卸载实例，再 `open` 得到新实例，所以未选中、滚动在顶部。如果你改用 `hide` 隐藏面板，实例与滚动位置都会保留，这一行的预期要相应改成「回到隐藏前的位置」；两种语义的区别见[第 7 篇「显示开关」](../basics/layer-transform-performance.md)与[「UI 系统」的「隐藏与显示」](./ui-system.md#隐藏与显示)。
 
 ## 运行效果
 
@@ -254,10 +262,10 @@ props.state.mainUIController.close(instance);
 </ClientOnly>
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const fullLoader = () =>
-    import('../../../.vitepress/components/demos/ui/inventory-6-full.tsx');
+    import('../../.vitepress/components/demos/ui/inventory-6-full.tsx');
 </script>
 
 ## 边界与注意

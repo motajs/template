@@ -2,6 +2,12 @@
 
 `@user/client-base` 里已经有一批常用的基础组件。它们和普通组件一样，在 TSX 里按名字使用，属性名写成 camelCase。下面每个组件都先说它解决什么问题，再给最小写法，常用参数跟着讲，最后接一个 live。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [什么是组件](./what-is-component.md)
+
 ## Input
 
 要接收用户文字输入，用 `Input`。
@@ -377,20 +383,20 @@ const increase = () => (volume.value = Math.min(100, volume.value + 5));
 拖动滑动条或点两侧按钮，右侧数值会跟着变。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const inputLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-input-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-input-demo.tsx');
 const iconsLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-icons-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-icons-demo.tsx');
 const arrowLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-arrow-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-arrow-demo.tsx');
 const selectionLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-selection-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-selection-demo.tsx');
 const progressLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-progress-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-progress-demo.tsx');
 const backgroundLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-background-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-background-demo.tsx');
 const sliderLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-slider-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-slider-demo.tsx');
 </script>

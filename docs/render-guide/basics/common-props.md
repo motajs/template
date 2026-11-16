@@ -2,6 +2,13 @@
 
 这些属性大多数元素都能写。它们有的只在特定条件下有意义：`hd` 只对开启缓存的元素有效；`anti` / `noanti` 影响绘制内容在缩放时的插值；`cursor`、`hidden` 要鼠标经过或隐藏时才能看出差别。下面会说明每个参数在什么条件下有意义；场景只是由属性语义推出的适用条件，不是限定用途。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [容器与坐标](./container-and-coordinates.md)
+- [基础图形](./basic-shapes.md)
+
 ## hd
 
 `hd` 默认 `true`。它控制元素的缓存画布是否按设备像素比（DPR）使用高清分辨率：为 `true` 时缓存画布按 DPR 放大，为 `false` 时按 1x 绘制。它只对开启缓存的元素有效；没有缓存的元素写 `hd` 看不到可见变化。
@@ -135,16 +142,16 @@
 </ClientOnly>
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const propsAntiLoader = () =>
-    import('../../../.vitepress/components/demos/ui/props-anti.tsx');
+    import('../../.vitepress/components/demos/ui/props-anti.tsx');
 const propsAlphaLoader = () =>
-    import('../../../.vitepress/components/demos/ui/props-alpha.tsx');
+    import('../../.vitepress/components/demos/ui/props-alpha.tsx');
 const propsCursorLoader = () =>
-    import('../../../.vitepress/components/demos/ui/props-cursor.tsx');
+    import('../../.vitepress/components/demos/ui/props-cursor.tsx');
 const propsFilterLoader = () =>
-    import('../../../.vitepress/components/demos/ui/props-filter.tsx');
+    import('../../.vitepress/components/demos/ui/props-filter.tsx');
 const propsZIndexLoader = () =>
-    import('../../../.vitepress/components/demos/ui/props-zindex.tsx');
+    import('../../.vitepress/components/demos/ui/props-zindex.tsx');
 </script>

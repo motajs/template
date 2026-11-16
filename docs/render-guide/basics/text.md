@@ -2,6 +2,13 @@
 
 文字元素只画一行。它的宽高由字体测量结果决定，不能自动换行，也没有行高与对齐属性；字号、字重、斜体这些信息由 `Font` 描述，`<text>` 负责把内容画出来。这一篇先讲 `Font`，再讲文字元素怎么用、尺寸与锚点怎么定。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [容器与坐标](./container-and-coordinates.md)
+- [基础图形](./basic-shapes.md)
+
 ## 字体：Font
 
 `Font` 是描述字体的值对象，不负责绘制。它只有五项配置：
@@ -138,19 +145,19 @@
 
 ## 换行、打字机与输入
 
-文字元素只画一行，`text` 里的换行符不会生效，长文本也不会按宽度折行。多行说明、按宽度折行与打字机效果不要用多个 `<text>` 硬拼；用[内置组件：文本](./builtin-text.md)里的 `TextContent`。
+文字元素只画一行，`text` 里的换行符不会生效，长文本也不会按宽度折行。多行说明、按宽度折行与打字机效果不要用多个 `<text>` 硬拼；用[内置组件：文本](../advanced/builtin-text.md)里的 `TextContent`。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const basicTextLoader = () =>
-    import('../../../.vitepress/components/demos/ui/text-basic.tsx');
+    import('../../.vitepress/components/demos/ui/text-basic.tsx');
 const fontTextLoader = () =>
-    import('../../../.vitepress/components/demos/ui/text-font.tsx');
+    import('../../.vitepress/components/demos/ui/text-font.tsx');
 const styleTextLoader = () =>
-    import('../../../.vitepress/components/demos/ui/text-style.tsx');
+    import('../../.vitepress/components/demos/ui/text-style.tsx');
 const anchorTextLoader = () =>
-    import('../../../.vitepress/components/demos/ui/text-anchor.tsx');
+    import('../../.vitepress/components/demos/ui/text-anchor.tsx');
 </script>
 
 ## 边界与注意

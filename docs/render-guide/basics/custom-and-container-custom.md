@@ -2,6 +2,13 @@
 
 `<custom>` 与 `<container-custom>` 用来处理现成元素无法直接表达的绘制与子元素控制：前者在元素内部直接用 Canvas 2D 画内容，后者接管子元素的绘制与事件传递。普通布局仍然优先用 `<container>` 与现成元素；只有确实需要直接操作画布或控制子元素时才用这两个标签。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [容器与坐标](./container-and-coordinates.md)
+- [基础图形](./basic-shapes.md)
+
 ## custom
 
 `<custom>` 是叶子元素，没有子元素。它的尺寸与位置由 `loc` 决定，`loc` 之外不参与布局。
@@ -10,7 +17,7 @@
 
 系统在调用 `render` 前后已经保存并恢复了画布状态，函数里不需要在开头和结尾习惯性地写 `save` / `restore`。只有在函数内部临时改变状态、之后还要恢复并继续绘制时，才需要自己保存和恢复。
 
-`bindings` 接收依赖值数组。把 `render` 读取的响应式值放进数组，例如 `bindings={[angle.value]}`，不需要传 `ref` 对象。读取 `.value` 发生在父组件 render 中，和 `loc={[x.value, ...]}` 一样会被 Vue 追踪；值变化后父组件重渲染，`bindings` prop 更新，`<custom>` 重绘。`render` 函数本身不需要认识 Vue、`Ref` 或 `watch`，它只读取普通值。`Ref` 等响应式基础见[《响应式》](./reactivity.md)。
+`bindings` 接收依赖值数组。把 `render` 读取的响应式值放进数组，例如 `bindings={[angle.value]}`，不需要传 `ref` 对象。读取 `.value` 发生在父组件 render 中，和 `loc={[x.value, ...]}` 一样会被 Vue 追踪；值变化后父组件重渲染，`bindings` prop 更新，`<custom>` 重绘。`render` 函数本身不需要认识 Vue、`Ref` 或 `watch`，它只读取普通值。`Ref` 等响应式基础见[《响应式》](../advanced/reactivity.md)。
 
 ::: warning
 不要在 `render` 里修改用于 `bindings` 的响应式值（例如渲染时递增 `angle.value`），这会让渲染与状态更新互相触发。一般不会遇到这种情况，确实需要时会在高级 III 中进一步讲解。
@@ -131,10 +138,10 @@ const render = (canvas, children, transform) => {
 - 普通布局与能用现成元素表达的内容，继续用 `<container>` 与现成元素。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const customDemoLoader = () =>
-    import('../../../.vitepress/components/demos/ui/custom-demo.tsx');
+    import('../../.vitepress/components/demos/ui/custom-demo.tsx');
 const containerCustomDemoLoader = () =>
-    import('../../../.vitepress/components/demos/ui/container-custom-demo.tsx');
+    import('../../.vitepress/components/demos/ui/container-custom-demo.tsx');
 </script>

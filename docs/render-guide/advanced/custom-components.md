@@ -4,6 +4,13 @@
 
 这一篇只讲怎么用：怎么接收参数、怎么发事件、怎么留出内容位置，以及怎么把属性透传给内部元素。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [什么是组件](./what-is-component.md)
+- [内置组件：基础](./builtin-basic.md)
+
 ## props
 
 组件的外部参数叫 props。父组件把值写在组件标签的属性上，子组件通过 `props.x` 读取。声明分三步：
@@ -302,8 +309,8 @@ export const MyPanelUI = new GameUI('my-panel', MyPanel);
 </ClientOnly>
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const customComponentsLoader = () =>
-    import('../../../.vitepress/components/demos/ui/custom-components-demo.tsx');
+    import('../../.vitepress/components/demos/ui/custom-components-demo.tsx');
 </script>

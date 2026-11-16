@@ -2,6 +2,13 @@
 
 文字元素只画一行。要让长文字按宽度折行、逐字显示或自动向上滚动时，用内置的文本组件。这一篇讲 `TextContent` 和 `ScrollText`，每个都先说它解决什么问题，再给最小写法，最后接一个 live。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [什么是组件](./what-is-component.md)
+- [内置组件：基础](./builtin-basic.md)
+
 ## TextContent
 
 要让长文字按宽度自动折行，用 `TextContent`。
@@ -207,10 +214,10 @@ const notice = '这是一条会自己向上滚动的公告。'.repeat(8);
 公告在固定视口里持续向上滚动。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const textContentLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-textcontent-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-textcontent-demo.tsx');
 const scrollTextLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-scrolltext-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-scrolltext-demo.tsx');
 </script>

@@ -2,6 +2,13 @@
 
 多数简单 UI 不需要特别的性能优化。渲染系统会按需更新，缓存也默认开在合适的元素上；按常规方式写，性能通常已经足够。下面是一组日常习惯，用来减少不必要的绘制与内存占用，按需采用即可。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [层级、变换与性能](../basics/layer-transform-performance.md)
+- [UI 系统](./ui-system.md)
+
 ## 元素平铺与分组
 
 同一层里堆很多兄弟元素，会让一次更新牵动整层。更新会沿父链标脏，父容器需要重新遍历并绘制受影响的部分；兄弟越多，重复的工作越明显。按更新频率分组：把一起变化、且不常变的元素放进同一个 `container`，把频繁变化的元素单独放。不要为了分组嵌得太深，层级越深，布局、绘制与命中遍历的递归也越深。
@@ -95,7 +102,7 @@ const render = () => {
 <g-path path={badge} cache fillStyle="#7ee787" />
 ```
 
-缓存的默认值与开关语义见[层级、变换与性能](./layer-transform-performance.md#缓存与脏更新)。
+缓存的默认值与开关语义见[层级、变换与性能](../basics/layer-transform-performance.md#缓存与脏更新)。
 
 ## 像素风：抗锯齿与高清
 
@@ -109,7 +116,7 @@ const render = () => {
 </container>
 ```
 
-`hd` 与 `anti` / `noanti` 的完整说明见[通用参数](./common-props.md)。
+`hd` 与 `anti` / `noanti` 的完整说明见[通用参数](../basics/common-props.md)。
 
 ## 显隐：hidden 与条件渲染
 

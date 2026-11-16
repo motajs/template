@@ -4,6 +4,12 @@ UI 系统由控制器、实例和栈组成。每次 `open` 都会在控制器上
 
 写 UI 时主要接触控制器与 `GameUI`；实例由系统创建，作者通常只持有 `open` 返回的实例，用来关闭或隐藏它。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [事件与交互](./events.md)
+
 ## 打开与关闭
 
 需要让一个界面出现在控制器管理的画面上时，用 `open(ui, vBind, alwaysShow?)`。`ui` 是声明的 `GameUI`，`vBind` 是传给组件的参数，`alwaysShow` 省略时为普通界面。每次调用都会新建一个实例、压入栈，并返回这个实例；后打开的实例默认叠在先打开的上面。
@@ -130,11 +136,11 @@ props.controller.showCustom(strategy);
 - `hide` 不会移除按键作用域，也不会让已打开的输入框失焦；需要彻底停止交互时用 `close`。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const controllerLoader = () =>
-    import('../../../.vitepress/components/demos/ui/controller-demo.tsx');
+    import('../../.vitepress/components/demos/ui/controller-demo.tsx');
 
 const strategyLoader = () =>
-    import('../../../.vitepress/components/demos/ui/strategy-demo.tsx');
+    import('../../.vitepress/components/demos/ui/strategy-demo.tsx');
 </script>

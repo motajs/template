@@ -2,6 +2,13 @@
 
 前面五批讲的是零件：模板、元素、响应式、事件、组件、内置组件与 UI 栈。这一批把它们装成同一个能用的面板——一个背包 / 装备界面。六篇按「每一步只加一小段」推进，本篇先定目标、拆分与骨架。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [第一个静态界面](../basics/first-static-ui.md)
+- [容器与坐标](../basics/container-and-coordinates.md)
+
 ## 这一步要解决什么
 
 最终面板是一块 720×480 的区域：
@@ -18,7 +25,7 @@
 
 ## 骨架在渲染树里的位置
 
-先把最终面板的节点定下来，后面每一步都往这棵树里加东西。根 `container` 下依次是画布底色、面板主体、标题、关闭按钮、左侧占位与右侧占位，它们都是兄弟节点；树形规则本身见[第 2 篇「容器与坐标」](./container-and-coordinates.md#渲染树根容器与子元素)。
+先把最终面板的节点定下来，后面每一步都往这棵树里加东西。根 `container` 下依次是画布底色、面板主体、标题、关闭按钮、左侧占位与右侧占位，它们都是兄弟节点；树形规则本身见[第 2 篇「容器与坐标」](../basics/container-and-coordinates.md#渲染树根容器与子元素)。
 
 三个区域是根容器的子容器，彼此是兄弟关系。它们的坐标都相对根容器的左上角：
 
@@ -36,7 +43,7 @@
 
 第一次在示例站（480×320）验证时，不用重排内部坐标：给面板根加 `scale={[2 / 3, 2 / 3]}`（比例取 `min(480 / 720, 320 / 480)`），`loc` 仍写 `[0, 0, 720, 480]`，整棵树会按同一比例缩小并完整落在 480×320 里。确认画面之后，如果要正式适配不同窗口，再按 `renderer.width` / `height` 改根 `loc` 并重排内部区域；不要同时改内部坐标和加缩放，否则会缩两次。
 
-同一父级下的遮挡按 `zIndex` 与加入顺序决定：关闭按钮画在面板主体之后，因此会盖在主体上，点击落在按钮矩形里就由它接收。完整层级规则见[第 7 篇「层级、变换与性能」](./layer-transform-performance.md#渲染树层级与绘制顺序)。
+同一父级下的遮挡按 `zIndex` 与加入顺序决定：关闭按钮画在面板主体之后，因此会盖在主体上，点击落在按钮矩形里就由它接收。完整层级规则见[第 7 篇「层级、变换与性能」](../basics/layer-transform-performance.md#渲染树层级与绘制顺序)。
 
 ## 组件与文件怎么分
 
@@ -184,10 +191,10 @@ props.state.mainUIController.open(InventoryUI, {});
 </ClientOnly>
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const skeletonLoader = () =>
-    import('../../../.vitepress/components/demos/ui/inventory-1-skeleton.tsx');
+    import('../../.vitepress/components/demos/ui/inventory-1-skeleton.tsx');
 </script>
 
 ## 边界与注意

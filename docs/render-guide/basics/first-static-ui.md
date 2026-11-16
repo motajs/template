@@ -2,6 +2,12 @@
 
 这一篇从头拼一个静态界面：深色底、标题、一个图标、一个矩形、一个圆、一条分隔线，最后用两块重叠的矩形看层级。整屏 UI 用引擎给出的 `FULL_LOC`。每一步只加一种东西，最后得到一份可以直接运行的静态界面。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [UI 入门](./ui-basics.md)
+
 ## 容器
 
 界面从容器开始。容器决定这块 UI 占多大，也决定子元素的坐标从哪里算：
@@ -153,10 +159,10 @@ export const MyPanelUI = new GameUI('my-panel', MyPanel);
 </ClientOnly>
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const staticUiLoader = () =>
-    import('../../../.vitepress/components/demos/ui/static-ui-demo.tsx');
+    import('../../.vitepress/components/demos/ui/static-ui-demo.tsx');
 </script>
 
 ## 后续
@@ -166,4 +172,4 @@ const staticUiLoader = () =>
 - 文字样式：[文字](./text.md)
 - 纹理与素材：[图片与纹理](./image-and-texture.md)
 - 层级、变换与缓存：[层级、变换与性能](./layer-transform-performance.md)
-- 让界面响应点击：[事件与交互](./events.md)
+- 让界面响应点击：[事件与交互](../advanced/events.md)

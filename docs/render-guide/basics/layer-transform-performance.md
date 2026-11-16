@@ -4,6 +4,13 @@
 
 <div id="渲染树层级与绘制顺序"></div>
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [容器与坐标](./container-and-coordinates.md)
+- [通用参数](./common-props.md)
+
 ## 渲染树、层级与绘制顺序
 
 元素组成一棵渲染树：子元素相对父元素定位，绘制顺序、变换与缓存都沿父子关系生效。同一父级下的兄弟按 `zIndex` 从小到大绘制，命中顺序相反；`zIndex` 只在兄弟之间比较，父级的 `zIndex` 带着整棵子树参与父级兄弟的排序。`zIndex` 与 `hidden` 的完整语义见[通用参数页](./common-props.md#zindex)。
@@ -122,12 +129,12 @@ UI 栈也遵循同一套规则。控制器把每个打开的面板当作 UI 容�
 - `composite` 影响绘制结果的混合方式，不改变布局与命中区域。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const layerTransformLoader = () =>
-    import('../../../.vitepress/components/demos/ui/layer-transform.tsx');
+    import('../../.vitepress/components/demos/ui/layer-transform.tsx');
 const layerTransformTreeLoader = () =>
-    import('../../../.vitepress/components/demos/ui/layer-transform-tree.tsx');
+    import('../../.vitepress/components/demos/ui/layer-transform-tree.tsx');
 const layerCompositeLoader = () =>
-    import('../../../.vitepress/components/demos/ui/layer-composite.tsx');
+    import('../../.vitepress/components/demos/ui/layer-composite.tsx');
 </script>

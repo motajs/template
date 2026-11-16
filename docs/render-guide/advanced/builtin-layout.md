@@ -2,6 +2,13 @@
 
 这一篇讲四个负责区域与列表的组件：`Scroll`、`Page`、`List`、`ListPage`。它们都先说要解决什么，再给最小写法，常用参数跟着讲，最后接一个 live。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [什么是组件](./what-is-component.md)
+- [内置组件：基础](./builtin-basic.md)
+
 ## Scroll
 
 内容超过视口时，用 `Scroll` 给一块区域加滚动。
@@ -280,14 +287,14 @@ const selected = ref(items[0][0]);
 左侧是三项列表，选中项高亮，右侧显示对应说明。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const scrollLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-scroll-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-scroll-demo.tsx');
 const pageLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-page-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-page-demo.tsx');
 const listLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-list-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-list-demo.tsx');
 const listPageLoader = () =>
-    import('../../../.vitepress/components/demos/ui/builtin-listpage-demo.tsx');
+    import('../../.vitepress/components/demos/ui/builtin-listpage-demo.tsx');
 </script>

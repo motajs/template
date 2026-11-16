@@ -43,7 +43,8 @@ export default defineConfig({
         outline: [2, 3],
         nav: [
             { text: '中级教程', link: '/intermediate/data-vs-render' },
-            { text: '高级教程', link: '/advanced/' }
+            { text: '高级教程', link: '/advanced/' },
+            { text: '渲染指南', link: '/render-guide/' }
         ],
         sidebar: {
             '/intermediate/': [
@@ -253,162 +254,6 @@ export default defineConfig({
                         {
                             text: '怪物上下文与战斗深入',
                             link: '/advanced/ii/enemy-context-and-combat'
-                        },
-                        {
-                            text: '自定义 UI 与渲染',
-                            collapsed: true,
-                            items: [
-                                {
-                                    text: '起步',
-                                    collapsed: false,
-                                    items: [
-                                        {
-                                            text: 'UI 通用模板（TSX）',
-                                            link: '/advanced/ii/ui/ui-template'
-                                        },
-                                        {
-                                            text: 'UI 入门',
-                                            link: '/advanced/ii/ui/ui-basics'
-                                        },
-                                        {
-                                            text: '第一个静态界面',
-                                            link: '/advanced/ii/ui/first-static-ui'
-                                        }
-                                    ]
-                                },
-                                {
-                                    text: '元素与布局',
-                                    collapsed: false,
-                                    items: [
-                                        {
-                                            text: '容器与坐标',
-                                            link: '/advanced/ii/ui/container-and-coordinates'
-                                        },
-                                        {
-                                            text: '基础图形',
-                                            link: '/advanced/ii/ui/basic-shapes'
-                                        },
-                                        {
-                                            text: '文字',
-                                            link: '/advanced/ii/ui/text'
-                                        },
-                                        {
-                                            text: '图片与纹理',
-                                            link: '/advanced/ii/ui/image-and-texture'
-                                        },
-                                        {
-                                            text: '自绘元素与自定义容器',
-                                            link: '/advanced/ii/ui/custom-and-container-custom'
-                                        },
-                                        {
-                                            text: '通用参数',
-                                            link: '/advanced/ii/ui/common-props'
-                                        },
-                                        {
-                                            text: '层级、变换与性能',
-                                            link: '/advanced/ii/ui/layer-transform-performance'
-                                        }
-                                    ]
-                                },
-                                {
-                                    text: '交互与数据',
-                                    collapsed: false,
-                                    items: [
-                                        {
-                                            text: '响应式',
-                                            link: '/advanced/ii/ui/reactivity'
-                                        },
-                                        {
-                                            text: '事件与交互',
-                                            link: '/advanced/ii/ui/events'
-                                        },
-                                        {
-                                            text: '条件渲染与循环渲染',
-                                            link: '/advanced/ii/ui/conditional-and-list-rendering'
-                                        },
-                                        {
-                                            text: '按键与快捷键',
-                                            link: '/advanced/ii/ui/hotkey-in-ui'
-                                        }
-                                    ]
-                                },
-                                {
-                                    text: '组件化',
-                                    collapsed: false,
-                                    items: [
-                                        {
-                                            text: '什么是组件',
-                                            link: '/advanced/ii/ui/what-is-component'
-                                        },
-                                        {
-                                            text: '内置组件：基础',
-                                            link: '/advanced/ii/ui/builtin-basic'
-                                        },
-                                        {
-                                            text: '内置组件：布局',
-                                            link: '/advanced/ii/ui/builtin-layout'
-                                        },
-                                        {
-                                            text: '内置组件：文本',
-                                            link: '/advanced/ii/ui/builtin-text'
-                                        },
-                                        {
-                                            text: '自定义组件',
-                                            link: '/advanced/ii/ui/custom-components'
-                                        }
-                                    ]
-                                },
-                                {
-                                    text: 'UI 系统',
-                                    collapsed: false,
-                                    items: [
-                                        {
-                                            text: 'UI 系统',
-                                            link: '/advanced/ii/ui/ui-system'
-                                        }
-                                    ]
-                                },
-                                {
-                                    text: '性能',
-                                    collapsed: false,
-                                    items: [
-                                        {
-                                            text: 'UI 性能',
-                                            link: '/advanced/ii/ui/ui-performance'
-                                        }
-                                    ]
-                                },
-                                {
-                                    text: '完整示例',
-                                    collapsed: false,
-                                    items: [
-                                        {
-                                            text: '示例（一）目标与骨架',
-                                            link: '/advanced/ii/ui/inventory-example-1-skeleton'
-                                        },
-                                        {
-                                            text: '示例（二）道具网格',
-                                            link: '/advanced/ii/ui/inventory-example-2-grid'
-                                        },
-                                        {
-                                            text: '示例（三）详情区',
-                                            link: '/advanced/ii/ui/inventory-example-3-detail'
-                                        },
-                                        {
-                                            text: '示例（四）滚动与列表',
-                                            link: '/advanced/ii/ui/inventory-example-4-scroll'
-                                        },
-                                        {
-                                            text: '示例（五）交互与状态',
-                                            link: '/advanced/ii/ui/inventory-example-5-state'
-                                        },
-                                        {
-                                            text: '示例（六）动画、拆分与注册',
-                                            link: '/advanced/ii/ui/inventory-example-6-animation-and-register'
-                                        }
-                                    ]
-                                }
-                            ]
                         }
                     ]
                 },
@@ -440,6 +285,128 @@ export default defineConfig({
                         {
                             text: '插件内部机制',
                             link: '/advanced/iii/plugin-internals'
+                        }
+                    ]
+                }
+            ],
+            '/render-guide/': [
+                {
+                    text: '渲染基础',
+                    collapsed: false,
+                    items: [
+                        {
+                            text: 'UI 通用模板（TSX）',
+                            link: '/render-guide/basics/ui-template'
+                        },
+                        {
+                            text: 'UI 入门',
+                            link: '/render-guide/basics/ui-basics'
+                        },
+                        {
+                            text: '第一个静态界面',
+                            link: '/render-guide/basics/first-static-ui'
+                        },
+                        {
+                            text: '容器与坐标',
+                            link: '/render-guide/basics/container-and-coordinates'
+                        },
+                        {
+                            text: '基础图形',
+                            link: '/render-guide/basics/basic-shapes'
+                        },
+                        {
+                            text: '文字',
+                            link: '/render-guide/basics/text'
+                        },
+                        {
+                            text: '图片与纹理',
+                            link: '/render-guide/basics/image-and-texture'
+                        },
+                        {
+                            text: '自绘元素与自定义容器',
+                            link: '/render-guide/basics/custom-and-container-custom'
+                        },
+                        {
+                            text: '通用参数',
+                            link: '/render-guide/basics/common-props'
+                        },
+                        {
+                            text: '层级、变换与性能',
+                            link: '/render-guide/basics/layer-transform-performance'
+                        }
+                    ]
+                },
+                {
+                    text: '渲染进阶',
+                    collapsed: false,
+                    items: [
+                        {
+                            text: '响应式',
+                            link: '/render-guide/advanced/reactivity'
+                        },
+                        {
+                            text: '事件与交互',
+                            link: '/render-guide/advanced/events'
+                        },
+                        {
+                            text: '条件渲染与循环渲染',
+                            link: '/render-guide/advanced/conditional-and-list-rendering'
+                        },
+                        {
+                            text: '按键与快捷键',
+                            link: '/render-guide/advanced/hotkey-in-ui'
+                        },
+                        {
+                            text: '什么是组件',
+                            link: '/render-guide/advanced/what-is-component'
+                        },
+                        {
+                            text: '内置组件：基础',
+                            link: '/render-guide/advanced/builtin-basic'
+                        },
+                        {
+                            text: '内置组件：布局',
+                            link: '/render-guide/advanced/builtin-layout'
+                        },
+                        {
+                            text: '内置组件：文本',
+                            link: '/render-guide/advanced/builtin-text'
+                        },
+                        {
+                            text: '自定义组件',
+                            link: '/render-guide/advanced/custom-components'
+                        },
+                        {
+                            text: 'UI 系统',
+                            link: '/render-guide/advanced/ui-system'
+                        },
+                        {
+                            text: 'UI 性能',
+                            link: '/render-guide/advanced/ui-performance'
+                        },
+                        {
+                            text: '示例（一）目标与骨架',
+                            link: '/render-guide/advanced/inventory-example-1-skeleton'
+                        },
+                        {
+                            text: '示例（二）道具网格',
+                            link: '/render-guide/advanced/inventory-example-2-grid'
+                        },
+                        {
+                            text: '示例（三）详情区',
+                            link: '/render-guide/advanced/inventory-example-3-detail'
+                        },
+                        {
+                            text: '示例（四）滚动与列表',
+                            link: '/render-guide/advanced/inventory-example-4-scroll'
+                        },
+                        {
+                            text: '示例（五）交互与状态',
+                            link: '/render-guide/advanced/inventory-example-5-state'
+                        },
+                        {
+                            text: '示例（六）动画、拆分与注册',
+                            link: '/render-guide/advanced/inventory-example-6-animation-and-register'
                         }
                     ]
                 }

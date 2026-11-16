@@ -2,6 +2,14 @@
 
 网格、详情与滚动都齐了，但面板还只能看不能动。本篇加 `ActionBar`：装备、使用、关闭，并把状态与副作用收口到 `InventoryPanel`。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [示例（四）滚动与列表](./inventory-example-4-scroll.md)
+- [响应式](./reactivity.md)
+- [事件与交互](./events.md)
+
 ## 这一步把交互接起来
 
 三类操作各自改变一件事：
@@ -346,10 +354,10 @@ key.implement('@common/exit', () => {
 </ClientOnly>
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const stateLoader = () =>
-    import('../../../.vitepress/components/demos/ui/inventory-5-state.tsx');
+    import('../../.vitepress/components/demos/ui/inventory-5-state.tsx');
 </script>
 
 ## 边界与注意

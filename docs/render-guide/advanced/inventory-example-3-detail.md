@@ -2,6 +2,14 @@
 
 上一篇左侧已经能选道具，右侧还是占位。本篇把 `ItemDetail` 填上：名称、数量、描述，以及没有选中时的提示。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [示例（二）道具网格](./inventory-example-2-grid.md)
+- [文字](../basics/text.md)
+- [通用参数](../basics/common-props.md)
+
 ## 详情区接的是哪个状态
 
 详情不自己保存状态，它只接收一个「选中项」。选中项在 `InventoryPanel` 里用 `computed` 从 `items` 与 `selectedId` 算出来：
@@ -179,10 +187,10 @@ export { ItemDetail };
 </ClientOnly>
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const detailLoader = () =>
-    import('../../../.vitepress/components/demos/ui/inventory-3-detail.tsx');
+    import('../../.vitepress/components/demos/ui/inventory-3-detail.tsx');
 </script>
 
 ## 边界与注意

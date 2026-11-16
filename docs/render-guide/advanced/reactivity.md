@@ -4,6 +4,13 @@
 
 Vue 的响应式解决的就是这件事：数据被读取时记下依赖，数据变化时自动重新执行用到它的渲染函数，渲染器再把变化 patch 到画布上的元素。本篇从零讲清 UI 作者需要的那部分，不假设你写过 Vue。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [UI 入门](../basics/ui-basics.md)
+- [第一个静态界面](../basics/first-static-ui.md)
+
 ## 数据到渲染
 
 响应式值变化后，读取过它的组件会重新执行渲染函数，对应元素的属性或子组件随之更新；没有读取它的组件不会因为这次变化而更新。
@@ -276,16 +283,16 @@ watch(count, (next, prev) => {
 组件收到的 `props` 本身是响应式的。把字段解构出来会得到普通值，父组件更新后子组件不会跟着变；直接读 `props.title`，或在 render 函数里现取局部变量。props 的基本写法见[自定义组件](./custom-components.md#props)。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const counterLoader = () =>
-    import('../../../.vitepress/components/demos/ui/reactivity-counter-demo.tsx');
+    import('../../.vitepress/components/demos/ui/reactivity-counter-demo.tsx');
 const reactiveLoader = () =>
-    import('../../../.vitepress/components/demos/ui/reactivity-reactive-demo.tsx');
+    import('../../.vitepress/components/demos/ui/reactivity-reactive-demo.tsx');
 const computedLoader = () =>
-    import('../../../.vitepress/components/demos/ui/reactivity-computed-demo.tsx');
+    import('../../.vitepress/components/demos/ui/reactivity-computed-demo.tsx');
 const watchLoader = () =>
-    import('../../../.vitepress/components/demos/ui/reactivity-watch-demo.tsx');
+    import('../../.vitepress/components/demos/ui/reactivity-watch-demo.tsx');
 </script>
 
 ## 边界与注意

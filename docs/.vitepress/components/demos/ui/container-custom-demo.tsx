@@ -14,7 +14,7 @@ export default defineComponent(() => {
         children.forEach((child, index) => {
             if (child.hidden) return;
             child.setFilter(`blur(${index * 2}px)`);
-            child.renderContent(canvas, transform);
+            child.renderContent(canvas);
         });
     };
 

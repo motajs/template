@@ -2,6 +2,13 @@
 
 上一篇的左侧只有一块占位。本篇把道具数据、`ItemCell` 与 `ItemGrid` 填进去，让网格能显示、能选中。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [示例（一）目标与骨架](./inventory-example-1-skeleton.md)
+- [基础图形](../basics/basic-shapes.md)
+
 ## 从占位到网格
 
 本步只替换左侧占位区，右侧详情与底部操作条仍然是占位：
@@ -284,10 +291,10 @@ const selectedItem = computed(
 </ClientOnly>
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const gridLoader = () =>
-    import('../../../.vitepress/components/demos/ui/inventory-2-grid.tsx');
+    import('../../.vitepress/components/demos/ui/inventory-2-grid.tsx');
 </script>
 
 ## 边界与注意

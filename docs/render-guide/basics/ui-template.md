@@ -25,6 +25,10 @@ const MyPanel = defineComponent<MyPanelProps>(props => {
 export const MyPanelUI = new GameUI('my-panel', MyPanel);
 ```
 
+## 前置知识
+
+无——只要掌握基础 TS/JS，并按本指南的阅读路径阅读即可。
+
 ## 模板用法
 
 1. 复制到 `src/client/ui/` 下新建的 `.tsx` 文件（例如 `my-panel.tsx`）。
@@ -38,7 +42,7 @@ export const MyPanelUI = new GameUI('my-panel', MyPanel);
 - 摆放元素：[容器与坐标](./container-and-coordinates.md)
 - 画图形：[基础图形](./basic-shapes.md)
 - 写字与图片：[文字](./text.md)、[图片与纹理](./image-and-texture.md)
-- 让 UI 动起来：[响应式](./reactivity.md)、[事件与交互](./events.md)
-- 拆组件：[自定义组件](./custom-components.md)
-- 接 UI 系统：[UI 系统](./ui-system.md)
-- 完整示例：[示例（一）目标与骨架](./inventory-example-1-skeleton.md)
+- 让 UI 动起来：[响应式](../advanced/reactivity.md)、[事件与交互](../advanced/events.md)
+- 拆组件：[自定义组件](../advanced/custom-components.md)
+- 接 UI 系统：[UI 系统](../advanced/ui-system.md)
+- 完整示例：[示例（一）目标与骨架](../advanced/inventory-example-1-skeleton.md)

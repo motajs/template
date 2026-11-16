@@ -2,6 +2,12 @@
 
 `<image>` 用来显示一张纹理。它只负责把纹理按元素矩形铺开，本身不产生像素，也不负责加载。界面里用到的纹理都已经由客户端登记在贴图管理器里，写 UI 时从那里取，不在页面里现场生成。
 
+## 前置知识
+
+阅读本篇前，建议先读完：
+
+- [容器与坐标](./container-and-coordinates.md)
+
 ## 贴图管理器中的纹理
 
 `props.state.materials` 是 `ITextureManager`，客户端启动时把素材登记进去。取图片有两种方法：
@@ -55,10 +61,10 @@ const texture = props.state.materials.getImageByAlias('bg.jpg');
 - `<image>` 会把纹理拉伸到 `loc` 的宽高，比例不一致会变形；按原图比例给尺寸。
 
 <script setup>
-import RenderDemo from '../../../.vitepress/components/renderDemo.vue';
+import RenderDemo from '../../.vitepress/components/renderDemo.vue';
 
 const imageBasicLoader = () =>
-    import('../../../.vitepress/components/demos/ui/image-basic.tsx');
+    import('../../.vitepress/components/demos/ui/image-basic.tsx');
 const imageSizesLoader = () =>
-    import('../../../.vitepress/components/demos/ui/image-sizes.tsx');
+    import('../../.vitepress/components/demos/ui/image-sizes.tsx');
 </script>
