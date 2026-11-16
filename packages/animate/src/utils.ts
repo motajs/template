@@ -127,7 +127,7 @@ export function moveCurve(
  * @param curve 曲线
  * @param move 纵轴平移量
  */
-export function oppsiteCurve(
+export function oppositeCurve(
     curve: ExcitationCurve,
     move: number = 0
 ): ExcitationCurve {
