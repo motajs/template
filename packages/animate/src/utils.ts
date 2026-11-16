@@ -409,18 +409,18 @@ export function tanh(
 }
 
 /**
- * 双曲正割速率曲线，EaseIn: `f(x) = 1 - sech(x * k) / sech(k), x∈[0,1], f(x)∈[0,1]`
- * @param k 比例参数，默认为 2
+ * 双曲正割速率曲线，EaseIn: `f(x) = (1 - sech(x * k)) / (1 - sech(k)), x∈[0,1], f(x)∈[0,1]`
+ * @param k 比例参数，默认为 1
  * @param mode 曲线模式，默认为缓入
  */
 export function sech(
-    k: number = 2,
+    k: number = 1,
     mode: CurveMode = CurveMode.EaseIn
 ): ExcitationCurve {
     // f(x) = 1 - sech(x * k) / sech(k), x∈[0,1], f(x)∈[0,1]
     // sech(x) = 1 / cosh(x)
-    const s = 1 / Math.cosh(k);
-    const sechfunc: ExcitationCurve = p => 1 - 1 / Math.cosh(p * k) / s;
+    const s = 1 - 1 / Math.cosh(k);
+    const sechfunc: ExcitationCurve = p => (1 - 1 / Math.cosh(p * k)) / s;
     return applyCurveMode(sechfunc, mode);
 }
 
