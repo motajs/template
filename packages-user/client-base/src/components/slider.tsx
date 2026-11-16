@@ -166,9 +166,10 @@ export const Slider = defineComponent<
             const targetValue = ratio * (max.value - min.value) + min.value;
             const step = props.step ?? 1;
             const steps = Math.round((targetValue - min.value) / step);
-            const aligned = steps * step + min.value;
-            value.value = clamp(aligned, min.value, max.value);
-            emit('update:value', aligned);
+            const aligned = Number((steps * step + min.value).toFixed(8));
+            const clamped = clamp(aligned, min.value, max.value);
+            value.value = clamped;
+            emit('update:value', clamped);
         }
     };
 
