@@ -337,7 +337,7 @@ export interface IAnimater extends IExcitable<number> {
 
     /**
      * 等待指定动画计划执行完毕，参考 {@link query} 的描述。
-     * 如果对象没有正在执行动画或在指定计划中不存在，那么返回的 `Promise` 会立刻兑现。
+     * 如果对象的动画已经执行完毕或在指定计划中不存在，那么返回的 `Promise` 会立刻兑现。
      * @param content 动画对象
      * @param index 动画计划索引
      * @param plan 计划组索引，不填时表示当前正在执行动画的计划组。

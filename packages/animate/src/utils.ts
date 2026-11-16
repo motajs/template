@@ -171,12 +171,12 @@ export function sequenceCurve(
     scale: number[],
     move: number[]
 ): ExcitationCurve {
-    const keep = cumsum(duration);
+    const keep = [0, ...cumsum(duration)];
     return p => {
-        const index = keep.findIndex(sum => p >= sum);
-        if (index === -1) return 0;
-        const progress = (p - keep[index]) / duration[index];
-        return seq[index](progress) * scale[index] + move[index];
+        const index = keep.findIndex(sum => p <= sum);
+        if (index <= 0) return 0;
+        const progress = (p - keep[index - 1]) / duration[index - 1];
+        return seq[index - 1](progress) * scale[index - 1] + move[index - 1];
     };
 }
 

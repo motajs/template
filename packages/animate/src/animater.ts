@@ -290,8 +290,8 @@ export class Animater implements IAnimater {
         plan: number = this.executingGroup
     ): Promise<void> {
         const raw = this.query(content, index, plan);
-        if (!raw) return Promise.resolve();
-        else return raw.promise;
+        if (raw) return raw.promise;
+        else return Promise.resolve();
     }
 
     planEnd(preTime: number = 0, postTime: number = 0): number {
