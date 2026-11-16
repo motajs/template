@@ -20,16 +20,6 @@ export class Container extends RenderItem {
         });
     }
 
-    appendTo(parent: RenderItem): void {
-        super.appendTo(parent);
-        if (this.root) {
-            const root = this.root;
-            this.forEachChild(ele => {
-                ele.setRoot(root);
-            });
-        }
-    }
-
     protected propagateEvent<T extends ActionType>(
         type: T,
         progress: EventProgress,
@@ -54,13 +44,6 @@ export class Container extends RenderItem {
         } else {
             this.parent?.bubbleEvent(type, event);
         }
-    }
-
-    destroy(): void {
-        super.destroy();
-        this.children.forEach(v => {
-            v.destroy();
-        });
     }
 }
 

@@ -549,6 +549,12 @@ export abstract class RenderItem
 
     appendTo(parent: IRenderItem, anchor?: IRenderItem) {
         parent.appendChild(this, anchor);
+        if (this.root) {
+            const root = this.root;
+            this.forEachChild(ele => {
+                ele.setRoot(root);
+            });
+        }
     }
 
     remove(): boolean {
@@ -884,7 +890,7 @@ export abstract class RenderItem
         const ax = this.anchorX * this.width;
         const ay = this.anchorY * this.height;
         if (this.selfTransform) {
-            return [ax, ay, 0];
+            return [ax + ev.offsetX, ay + ev.offsetY, 0];
         } else {
             const [tx, ty] = transform.untransformed(ev.offsetX, ev.offsetY);
             return [tx + ax, ty + ay, 0];
@@ -902,7 +908,7 @@ export abstract class RenderItem
 
     //#endregion
 
-    //#region vue支持 props处理
+    //#region props处理
 
     /**
      * 判断一个prop是否是期望类型
@@ -1151,6 +1157,9 @@ export abstract class RenderItem
      * 摧毁这个渲染元素，摧毁后不应继续使用
      */
     destroy(): void {
+        this.children.forEach(v => {
+            v.destroy();
+        });
         this.remove();
         this.canvases.clear();
         this.cache?.clear();
