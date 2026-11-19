@@ -1,5 +1,13 @@
-import { IDirtyMark, IDirtyTracker, ITileLocator } from '@motajs/common';
 import {
+    IDirtyMark,
+    IDirtyTracker,
+    IHookable,
+    IHookBase,
+    ITileLocator
+} from '@motajs/common';
+import {
+    Font,
+    IRenderItem,
     ITextureRenderable,
     SizedCanvasImageSource,
     Transform
@@ -14,7 +22,8 @@ import { IGameMap, IMapLayer } from '@user/data-base';
 import {
     ExcitationCurve,
     ExcitationCurve2D,
-    IExcitable
+    IExcitable,
+    IExcitation
 } from '@motajs/animate';
 
 //#region 枚举值
@@ -359,7 +368,7 @@ export interface IMapRenderResult {
     readonly area: IMapRenderData;
 }
 
-export interface IMapRenderer {
+export interface IMapRenderer extends IExcitable<number> {
     /** 地图渲染器使用的资源管理器 */
     readonly manager: ITextureManager;
     /** 画布渲染上下文 */
@@ -394,6 +403,12 @@ export interface IMapRenderer {
     readonly assetWidth: number;
     /** 图集高度 */
     readonly assetHeight: number;
+
+    /**
+     * 设置地图渲染器使用的激励源对象
+     * @param excitation 激励源对象
+     */
+    useExcitation(excitation: IExcitation<number> | null): void;
 
     /**
      * 使用指定图集对象
@@ -465,15 +480,9 @@ export interface IMapRenderer {
 
     /**
      * 设置渲染器使用的地图状态
-     * @param layerState 地图状态
+     * @param map 地图状态
      */
-    setLayerState(layerState: IGameMap): void;
-
-    /**
-     * 根据标识符获取图层
-     * @param identifier 图层标识符
-     */
-    getLayer(identifier: string): IMapLayer | null;
+    setGameMap(map: IGameMap | null): void;
 
     /**
      * 判断当前渲染器是否包含指定图层对象
@@ -964,6 +973,13 @@ export interface IMapVertexBlock extends IMapVertexData {
     getAttachedData<T>(symbol: symbol): T | undefined;
 
     /**
+     * 获取这个分块上的附着数据，当不存在指定附着数据时，插入指定附着数据
+     * @param symbol 附着数据的标识符
+     * @param func 当附着数据不存在时，调用此函数，返回值将作为附着数据
+     */
+    getOrInsertAttachedData<T>(symbol: symbol, func: (sym: symbol) => T): T;
+
+    /**
      * 删除这个分块上指定的附着数据
      * @param symbol 附着数据的标识符
      */
@@ -1203,9 +1219,9 @@ export interface IMapRenderArea {
 
 export interface IMapRenderData {
     /** 需要渲染的区域 */
-    readonly render: IMapRenderArea[];
+    readonly render: Readonly<IMapRenderArea>[];
     /** 需要更新顶点数组的区域 */
-    readonly dirty: IMapRenderArea[];
+    readonly dirty: Readonly<IMapRenderArea>[];
     /** 需要更新的分块列表 */
     readonly blockList: IChunkData<IMapVertexBlock>[];
 }
@@ -1225,3 +1241,145 @@ export interface IMapViewportController {
      */
     bindTransform(transform: Transform): void;
 }
+
+//#region 渲染元素
+
+export interface IMapRenderItem extends IRenderItem {
+    /** 当前使用的地图渲染器 */
+    readonly renderer: IMapRenderer | null;
+    /** 当前正在渲染的地图 */
+    readonly map: IGameMap | null;
+
+    /**
+     * 设置当前使用的地图渲染器
+     * @param renderer 地图渲染器
+     */
+    setRenderer(renderer: IMapRenderer | null): void;
+
+    /**
+     * 设置当前要渲染的地图
+     * @param map 要渲染的地图
+     */
+    setRenderMap(map: IGameMap | null): void;
+}
+
+//#endregion
+
+//#region 拓展内容
+
+export interface IMapTextRenderable {
+    /** 文本内容 */
+    readonly text: string;
+    /** 文本字体 */
+    readonly font: Font;
+    /** 是否填充 */
+    readonly fill?: boolean;
+    /** 是否描边 */
+    readonly stroke?: boolean;
+    /** 文本填充样式 */
+    readonly fillStyle?: CanvasStyle;
+    /** 文本描边样式 */
+    readonly strokeStyle?: CanvasStyle;
+    /** 文本横坐标，注意 {@link IMapTextArea.addTextRenderable} 的相对关系 */
+    readonly px?: number;
+    /** 文本纵坐标，注意 {@link IMapTextArea.addTextRenderable} 的相对关系 */
+    readonly py?: number;
+    /** 文本横向对齐方式 */
+    readonly textAlign?: CanvasTextAlign;
+    /** 文本纵向对齐方式 */
+    readonly textBaseline?: CanvasTextBaseline;
+}
+
+export interface IMapTextArea {
+    /** 图块在地图上的索引 */
+    readonly index: number;
+    /** 图块横坐标 */
+    readonly mapX: number;
+    /** 图块纵坐标 */
+    readonly mapY: number;
+
+    /**
+     * 添加文字可渲染对象。可渲染对象的坐标相对于图块，而非地图。
+     * @param renderable 可渲染对象
+     * @returns 添加的可渲染对象的唯一索引标识符
+     */
+    addTextRenderable(renderable: IMapTextRenderable): number;
+
+    /**
+     * 移除指定的文字可渲染对象
+     * @param renderable 可渲染对象
+     */
+    removeTextRenderable(renderable: IMapTextRenderable): void;
+
+    /**
+     * 根据可渲染对象的索引标识符移除文字的可渲染对象
+     * @param index 可渲染对象对应的索引标识符
+     */
+    removeTextRenderableByIndex(index: number): void;
+
+    /**
+     * 获取当前的所有文字可渲染对象
+     */
+    getRenderables(): Iterable<IMapTextRenderable>;
+
+    /**
+     * 清除本图块的所有文字可渲染对象
+     */
+    clear(): void;
+}
+
+export interface IMapTextManagerHooks extends IHookBase {
+    /**
+     * 当内容变化需要更新时触发
+     */
+    onUpdate?(): void;
+}
+
+export interface IMapTextManager extends IHookable<IMapTextManagerHooks> {
+    /**
+     * 申请指定图块坐标的文字管理对象，如果该点已被申请，则会使用已申请的对象
+     * @param x 图块横坐标
+     * @param y 图块纵坐标
+     */
+    requireBlockArea(x: number, y: number): IMapTextArea | null;
+
+    /**
+     * 删除指定图块坐标的文字管理对象
+     * @param x 图块横坐标
+     * @param y 图块纵坐标
+     */
+    deleteBlockArea(x: number, y: number): void;
+
+    /**
+     * 根据图块坐标获取已申请的文字管理对象，如果未申请则返回 `null`
+     * @param x 图块横坐标
+     * @param y 图块纵坐标
+     */
+    getBlockByLoc(x: number, y: number): IMapTextArea | null;
+
+    /**
+     * 根据索引获取已申请的文字管理对象，如果未申请则返回 `null`
+     * @param index 管理对象索引
+     */
+    getBlockByIndex(index: number): IMapTextArea | null;
+
+    /**
+     * 获取某一个分块的所有文字管理对象
+     * @param block 分块对象
+     */
+    iterateBlockData(
+        block: IChunkData<IMapVertexBlock>
+    ): Iterable<IMapTextArea>;
+
+    /**
+     * 清空所有文字内容
+     */
+    clear(): void;
+
+    /**
+     * 摧毁这个文字管理对象，释放相关资源
+     */
+    destroy(): void;
+}
+
+//#endregion

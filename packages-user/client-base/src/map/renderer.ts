@@ -18,7 +18,6 @@ import {
     IMapRenderConfig,
     IMapRenderer,
     IMapRendererPostEffect,
-    IMapRendererTicker,
     IMapRenderResult,
     IMapVertexGenerator,
     IMapViewportController,
@@ -53,6 +52,7 @@ import {
 import { MapViewport } from './viewport';
 import { INSTANCED_COUNT } from './constant';
 import { OverlayBlock, StaticBlockStatus } from './status';
+import { IExcitableController, IExcitation } from '@motajs/animate';
 
 const enum BackgroundType {
     Static,
@@ -158,8 +158,6 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
     /** 移动容忍度，如果正在移动的图块数量长期小于预留数量的一半，那么将减少移动数组长度 */
     private lastExpandTime = 0;
 
-    /** 时间戳 */
-    private timestamp: number = 0;
     /** 上一帧动画的时刻 */
     private lastFrameTime: number = 0;
     /** 当前帧数 */
@@ -168,8 +166,6 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
     private needUpdateFrameCounter: boolean = true;
     /** 帧动画速率 */
     private frameSpeed: number = 300;
-    /** 帧动画列表 */
-    private tickers: Set<MapRendererTicker> = new Set();
 
     /** 画布元素 */
     readonly canvas: HTMLCanvasElement;
@@ -202,6 +198,11 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
     /** `gl.viewport` 高度 */
     private viewportHeight: number = 0;
 
+    /** 激励控制器 */
+    private exciteController: IExcitableController<number> | null = null;
+    /** 激励源 */
+    private excitation: IExcitation<number> | null = null;
+
     //#endregion
 
     //#region 初始化
@@ -228,7 +229,6 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
         this.contextData = data;
         this.vertex = new MapVertexGenerator(this, data);
         this.autotile = manager.autotile;
-        this.tick = this.tick.bind(this);
         this.viewport = new MapViewport(this);
         this.tileAnimater = new TextureColumnAnimater();
         this.initVertexPointer(this.gl, data);
@@ -463,22 +463,22 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
         this.vertex.updateLayerArray();
     }
 
-    setLayerState(map: IGameMap): void {
+    setGameMap(map: IGameMap | null): void {
         if (map === this.map) return;
         this.mapHook?.unload();
         this.map = map;
         this.syncLayerHooks();
-        this.mapHook = map.addHook(new RendererLayerStateHook(this));
+        if (map) {
+            this.mapHook = map.addHook(new RendererLayerStateHook(this));
+            this.layerCount = map.layerList.size;
+        } else {
+            this.mapHook = null;
+            this.layerCount = 0;
+        }
         this.sortLayer();
         this.resizeLayer();
-        this.layerCount = map.layerList.size;
         this.vertex.updateLayerArray();
         this.vertex.resizeMap();
-    }
-
-    getLayer(identifier: string): IMapLayer | null {
-        if (!this.map) return null;
-        return this.map.getLayerByAlias(identifier) ?? null;
     }
 
     hasLayer(layer: IMapLayer): boolean {
@@ -523,7 +523,7 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
         this.staticBack = renderable;
         this.dynamicBack = null;
         this.tileBack = 0;
-        this.backLastFrame = this.timestamp;
+        this.backLastFrame = this.getTimestamp();
         this.backgroundFrameCount = 1;
         this.backgroundDirty = true;
         this.checkBackground(this.gl, this.contextData);
@@ -535,7 +535,7 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
         this.dynamicBack = array;
         this.staticBack = null;
         this.tileBack = 0;
-        this.backLastFrame = this.timestamp;
+        this.backLastFrame = this.getTimestamp();
         this.backgroundFrameCount = array.length;
         this.backgroundDirty = true;
         this.checkBackground(this.gl, this.contextData);
@@ -546,7 +546,7 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
         this.tileBack = tile;
         this.staticBack = null;
         this.dynamicBack = null;
-        this.backLastFrame = this.timestamp;
+        this.backLastFrame = this.getTimestamp();
         this.backgroundDirty = true;
         this.checkBackground(this.gl, this.contextData);
     }
@@ -1738,7 +1738,7 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
             DYNAMIC_RESERVE
         );
         if (this.overlayIndexPool.length < half) {
-            this.lastExpandTime = this.timestamp;
+            this.lastExpandTime = this.getTimestamp();
         }
         return this.overlayIndexPool.pop()!;
     }
@@ -1826,48 +1826,47 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
 
     //#region 其他方法
 
-    getTimestamp(): number {
-        return this.timestamp;
+    useExcitation(excitation: IExcitation<number> | null): void {
+        if (this.exciteController) {
+            this.exciteController.revoke();
+        }
+        if (this.excitation) {
+            this.excitation.remove(this);
+        }
+        this.excitation = excitation;
+        if (excitation) {
+            this.exciteController = excitation.add(this);
+        }
     }
 
-    tick(timestamp: number) {
-        this.timestamp = timestamp;
+    getTimestamp(): number {
+        return this.excitation?.payload() ?? 0;
+    }
 
+    excited(payload: number) {
         // 移动数组
-        const expandDT = timestamp - this.lastExpandTime;
+        const expandDT = payload - this.lastExpandTime;
         if (expandDT > MOVING_TOLERANCE * 1000) {
             this.reduceOverlay();
-            this.lastExpandTime = timestamp;
+            this.lastExpandTime = payload;
         }
 
         // 背景
-        const backgroundDT = timestamp - this.backLastFrame;
+        const backgroundDT = payload - this.backLastFrame;
         if (backgroundDT > this.backFrameSpeed) {
             this.backgroundFrame++;
             this.backgroundFrame %= this.backgroundFrameCount;
-            this.backLastFrame = timestamp;
+            this.backLastFrame = payload;
             this.needUpdateBackgroundFrame = true;
         }
 
         // 地图帧动画
-        const frameDT = timestamp - this.lastFrameTime;
+        const frameDT = payload - this.lastFrameTime;
         if (frameDT > this.frameSpeed) {
-            this.lastFrameTime = timestamp;
+            this.lastFrameTime = payload;
             this.frameCounter++;
             this.needUpdateFrameCounter = true;
         }
-
-        this.tickers.forEach(v => void v.fn(timestamp));
-    }
-
-    requestTicker(fn: (timestamp: number) => void): IMapRendererTicker {
-        const ticker = new MapRendererTicker(this, fn, this.timestamp);
-        this.tickers.add(ticker);
-        return ticker;
-    }
-
-    removeTicker(ticker: MapRendererTicker): void {
-        this.tickers.delete(ticker);
     }
 
     updateTransform(): void {
@@ -1921,22 +1920,5 @@ class RendererLayerHook implements Partial<IMapLayerHooks> {
 
     onUpdateBlock(block: number, x: number, y: number): void {
         this.renderer.updateLayerBlock(this.layer, block, x, y);
-    }
-}
-
-class MapRendererTicker implements IMapRendererTicker {
-    constructor(
-        readonly renderer: MapRenderer,
-        readonly fn: (timestamp: number) => void,
-        public timestamp: number
-    ) {}
-
-    tick(timestamp: number) {
-        this.timestamp = timestamp;
-        this.fn(timestamp);
-    }
-
-    remove(): void {
-        this.renderer.removeTicker(this);
     }
 }

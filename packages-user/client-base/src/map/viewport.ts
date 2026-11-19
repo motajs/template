@@ -1,4 +1,4 @@
-import { Transform } from '@motajs/render';
+import { ITransformUpdatable, Transform } from '@motajs/render';
 import {
     IChunkData,
     IMapRenderArea,
@@ -10,13 +10,23 @@ import {
 } from './types';
 import { clamp } from 'lodash-es';
 
-export class MapViewport implements IMapViewportController {
+export class MapViewport
+    implements IMapViewportController, ITransformUpdatable<Transform>
+{
     transform: Transform = new Transform();
     /** 顶点生成器 */
     readonly vertex: IMapVertexGenerator;
 
+    /** 当前的渲染区域缓存 */
+    private cache: IMapRenderData | null = null;
+
     constructor(readonly renderer: IMapRenderer) {
         this.vertex = renderer.vertex;
+        this.transform.bind(this);
+    }
+
+    updateTransform(): void {
+        this.cache = null;
     }
 
     private pushBlock(
@@ -52,6 +62,7 @@ export class MapViewport implements IMapViewportController {
     }
 
     getRenderArea(): IMapRenderData {
+        if (this.cache) return this.cache;
         const { cellWidth, cellHeight, renderWidth, renderHeight } =
             this.renderer;
         const {
@@ -130,14 +141,20 @@ export class MapViewport implements IMapViewportController {
             this.checkDynamic(updateArea, dynamicStart, dynamicCount);
         }
 
-        return {
+        const res: IMapRenderData = {
             render: renderArea,
             dirty: updateArea,
             blockList: blockList
         };
+
+        this.cache = res;
+        return res;
     }
 
     bindTransform(transform: Transform): void {
+        this.transform.unbind(this);
         this.transform = transform;
+        this.transform.bind(this);
+        this.cache = null;
     }
 }

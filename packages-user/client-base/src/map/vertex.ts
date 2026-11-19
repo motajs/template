@@ -1549,6 +1549,10 @@ class MapVertexBlock implements IMapVertexBlock {
         return this.attachedData.get(symbol) as T;
     }
 
+    getOrInsertAttachedData<T>(symbol: symbol, func: (sym: symbol) => T): T {
+        return this.attachedData.getOrInsertComputed(symbol, func) as T;
+    }
+
     deleteAttachedData(symbol: symbol): void {
         this.attachedData.delete(symbol);
     }

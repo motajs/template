@@ -99,19 +99,7 @@ export class ClientCore extends CoreState implements IClientCore {
 
         this.renderer.registerElement('icon', () => new Icon());
         this.renderer.registerElement('winskin', () => new Winskin());
-        // TODO: 这个回头要改
-        this.renderer.registerElement(
-            'map-render',
-            () =>
-                new MapRenderItem(
-                    this.maps.getMap('test')!,
-                    this.mainMapRenderer
-                )
-        );
-
-        // const { createApp, render, tagManager } = createRendererFor(
-        //     this.renderer
-        // );
+        this.renderer.registerElement('map-render', () => new MapRenderItem());
 
         this.loader.addCoreConfig('client', config.clientURL);
 
