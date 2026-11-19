@@ -9,7 +9,6 @@ import {
     IExcitationDivider,
     IIntervalExcitation
 } from './types';
-import { excited } from './utils';
 
 /**
  * IExcitation 抽象基类，管理受激励对象的注册、激励与移除。
@@ -93,10 +92,10 @@ export class RafExcitation extends ExcitationBase<number> {
     private tick(ts: number) {
         this.now = ts;
         this.excite(ts);
-        if (!this.destroyed) {
-            this.rafId = requestAnimationFrame(this.tick);
-        } else {
+        if (this.destroyed) {
             this.rafId = -1;
+        } else {
+            this.rafId = requestAnimationFrame(this.tick);
         }
     }
 
@@ -170,9 +169,6 @@ export class ExcitationVariator
     /** 当前速度 */
     speed: number = 1;
 
-    /** 在源中添加的被激励对象的控制器 */
-    private sourceController: IExcitableController<number> | null = null;
-
     /** 上一次变速时源的参考时间戳 */
     private sourceTs: number = 0;
     /** 上一次变速时自身的参考时间戳 */
@@ -230,14 +226,15 @@ export class ExcitationVariator
         this.excitables.forEach(ex => ex.excited(newSelfTs));
     }
 
-    bindExcitation(excitation: IExcitation<number>): void {
-        // 如果已绑定不同的源，先解绑
-        if (this.source !== null && this.source !== excitation) {
-            this.unbindExcitation();
-        }
+    excited(payload: number): void {
+        this.excite(payload);
+    }
 
-        if (this.source === excitation) {
-            return;
+    bindExcitation(excitation: IExcitation<number>): void {
+        if (this.source === excitation) return;
+
+        if (this.source) {
+            this.unbindExcitation();
         }
 
         const now = excitation.payload();
@@ -247,24 +244,13 @@ export class ExcitationVariator
         this.selfTs = this.sourceTs;
         this.speed = 1;
 
-        // 创建内部激励对象，将源的激励转发给自身
-        const internalExcitable: IExcitable<number> = excited(payload => {
-            this.excite(payload);
-        });
-
-        this.sourceController = excitation.add(internalExcitable);
+        excitation.add(this);
     }
 
     unbindExcitation(): void {
-        if (this.source === null) {
-            return;
-        }
+        if (!this.source) return;
 
-        // 取消在源上的绑定
-        if (this.sourceController !== null) {
-            this.sourceController.revoke();
-            this.sourceController = null;
-        }
+        this.source.remove(this);
 
         // 取消曲线执行
         this.endAllCurves();
@@ -278,7 +264,7 @@ export class ExcitationVariator
     }
 
     setSpeed(speed: number): void {
-        if (this.source === null) {
+        if (!this.source) {
             logger.error(49, 'set speed');
             return;
         }
@@ -294,7 +280,7 @@ export class ExcitationVariator
         time: number,
         mode: VariatorCurveMode = VariatorCurveMode.SourceRelated
     ): Promise<void> {
-        if (this.source === null) {
+        if (!this.source) {
             logger.error(49, 'curve speed');
             return Promise.resolve();
         }
@@ -302,7 +288,7 @@ export class ExcitationVariator
         const { promise, resolve } = Promise.withResolvers<void>();
         this.curveQueue.push({ curve, time, mode, resolve });
         // 如果没有正在执行的曲线，立即开始
-        if (this.currentCurve === null) {
+        if (!this.currentCurve) {
             this.startNextCurve();
         }
 
@@ -357,8 +343,6 @@ export class ExcitationDivider<T>
     divider: number = 1;
     source: IExcitation<T> | null = null;
 
-    /** 当前的激励对象控制器 */
-    private controller: IExcitableController<T> | null = null;
     /** 当前的激励负载 */
     private nowPayload: T | null = null;
     /** 分频计数器 */
@@ -372,16 +356,12 @@ export class ExcitationDivider<T>
         return this.nowPayload ?? this.source.payload();
     }
 
-    /**
-     * 激励当前所有的激励源
-     * @param payload 激励负载
-     */
-    excite(payload: T) {
+    excited(payload: T): void {
         this.counter++;
         if (this.counter >= this.divider) {
             this.counter = 0;
             this.nowPayload = payload;
-            super.excite(payload);
+            this.excite(payload);
         }
     }
 
@@ -391,14 +371,11 @@ export class ExcitationDivider<T>
         this.divider = 1;
         this.counter = this.divider - 1;
         this.nowPayload = excitation.payload();
-        const controller = excitation.add(
-            excited(payload => this.excite(payload))
-        );
-        this.controller = controller;
+        excitation.add(this);
     }
 
     unbindExcitation(): void {
-        this.controller?.revoke();
+        this.source?.remove(this);
         this.counter = 0;
         this.divider = 1;
     }

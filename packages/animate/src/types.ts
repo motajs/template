@@ -93,7 +93,8 @@ export const enum VariatorCurveMode {
     SelfRelated
 }
 
-export interface IExcitationVariator extends IExcitation<number> {
+export interface IExcitationVariator
+    extends IExcitation<number>, IExcitable<number> {
     /** 变速器当前的速度值 */
     readonly speed: number;
     /** 当前绑定的激励源 */
@@ -134,7 +135,7 @@ export interface IExcitationVariator extends IExcitation<number> {
     endAllCurves(): void;
 }
 
-export interface IExcitationDivider<T> extends IExcitation<T> {
+export interface IExcitationDivider<T> extends IExcitation<T>, IExcitable<T> {
     /** 分频器当前的分频比例 */
     readonly divider: number;
     /** 当前绑定的激励源 */
