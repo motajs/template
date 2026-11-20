@@ -1106,12 +1106,6 @@ export abstract class RenderItem<
                 if (!isNil(nextValue[2]) && !isNil(nextValue[3])) {
                     this.size(nextValue[2] as number, nextValue[3] as number);
                 }
-                if (!isNil(nextValue[4]) && !isNil(nextValue[5])) {
-                    this.setAnchor(
-                        nextValue[4] as number,
-                        nextValue[5] as number
-                    );
-                }
                 return;
             }
             case 'anc': {

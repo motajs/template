@@ -41,9 +41,7 @@ export type ElementLocator = [
     x?: number,
     y?: number,
     width?: number,
-    height?: number,
-    anchorX?: number,
-    anchorY?: number
+    height?: number
 ];
 
 export type ElementAnchor = [x: number, y: number];

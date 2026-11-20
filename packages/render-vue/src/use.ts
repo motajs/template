@@ -1,4 +1,5 @@
 import {
+    ElementLocator,
     IRenderItemBaseHooks,
     IRenderTreeRoot,
     MotaRenderer,
@@ -28,7 +29,11 @@ import {
     ExcitationCurve,
     IAnimatable
 } from '@motajs/animate';
-import { ICycledTransitionController, ITransitionedController } from './types';
+import {
+    DefaultProps,
+    ICycledTransitionController,
+    ITransitionedController
+} from './types';
 
 //#region 函数功能接口
 
@@ -335,9 +340,119 @@ export function cycledTransition(
     );
 }
 
+/**
+ * 根据传入组件的参数获取组件的横纵坐标
+ * @param props 传递给组件的原始 `props`，要求必须声明了 `x` `y` `loc` 三个参数
+ */
+export function xy(
+    props: DefaultProps
+): [x: ComputedRef<number>, y: ComputedRef<number>] {
+    return [
+        computed(() => props.loc?.[0] ?? props.x ?? 0),
+        computed(() => props.loc?.[1] ?? props.y ?? 0)
+    ];
+}
+
+/**
+ * 根据传入组件的参数获取组件的宽度和高度
+ * @param props 传递给组件的原始 `props`，要求必须声明了 `width` `height` `loc` 三个参数
+ */
+export function wh(
+    props: DefaultProps
+): [w: ComputedRef<number>, h: ComputedRef<number>] {
+    return [
+        computed(() => props.loc?.[2] ?? props.width ?? 200),
+        computed(() => props.loc?.[3] ?? props.height ?? 200)
+    ];
+}
+
+/**
+ * 根据传入组件的参数获取组件的横纵坐标、宽度和高度
+ * @param props 传递给组件的原始 `props`，要求必须声明了 `x` `y` `width` `height` `loc` 五个参数
+ */
+export function xywh(
+    props: DefaultProps
+): [
+    x: ComputedRef<number>,
+    y: ComputedRef<number>,
+    w: ComputedRef<number>,
+    h: ComputedRef<number>
+] {
+    return [
+        computed(() => props.loc?.[0] ?? props.x ?? 0),
+        computed(() => props.loc?.[1] ?? props.y ?? 0),
+        computed(() => props.loc?.[2] ?? props.width ?? 200),
+        computed(() => props.loc?.[3] ?? props.height ?? 200)
+    ];
+}
+
+/**
+ * 根据传入组件的参数获取组件的可透传坐标、宽度、高度，相当于:
+ *
+ * ```ts
+ * const [loc, _x, _y, w, h] = lxywh(props);
+ * ```
+ * @param props 传递给组件的原始 `props`，要求必须声明了 `x` `y` `width` `height` `loc` 五个参数
+ */
+export function lwh(
+    props: DefaultProps
+): [
+    loc: ComputedRef<ElementLocator>,
+    w: ComputedRef<number>,
+    h: ComputedRef<number>
+] {
+    const x = computed(() => props.loc?.[0] ?? props.x ?? 0);
+    const y = computed(() => props.loc?.[1] ?? props.y ?? 0);
+    const w = computed(() => props.loc?.[2] ?? props.width ?? 200);
+    const h = computed(() => props.loc?.[3] ?? props.height ?? 200);
+    const loc = computed<ElementLocator>(() => [
+        x.value,
+        y.value,
+        w.value,
+        h.value
+    ]);
+    return [loc, w, h];
+}
+
+/**
+ * 根据传入组件的参数获取组件的可透传坐标、横纵坐标、宽度、高度
+ * @param props 传递给组件的原始 `props`，要求必须声明了 `x` `y` `width` `height` `loc` 五个参数
+ */
+export function lxywh(
+    props: DefaultProps
+): [
+    loc: ComputedRef<ElementLocator>,
+    x: ComputedRef<number>,
+    y: ComputedRef<number>,
+    w: ComputedRef<number>,
+    h: ComputedRef<number>
+] {
+    const x = computed(() => props.loc?.[0] ?? props.x ?? 0);
+    const y = computed(() => props.loc?.[1] ?? props.y ?? 0);
+    const w = computed(() => props.loc?.[2] ?? props.width ?? 200);
+    const h = computed(() => props.loc?.[3] ?? props.height ?? 200);
+    const loc = computed<ElementLocator>(() => [
+        x.value,
+        y.value,
+        w.value,
+        h.value
+    ]);
+    return [loc, x, y, w, h];
+}
+
+/**
+ * 挤压传入的定位数组指定像素值，相当于将容器上下左右各减少 `pad` 像素
+ * @param loc 原始定位数组
+ * @param pad 要挤压的区域
+ */
+export function squeeze(loc: ElementLocator, pad: number): ElementLocator {
+    const [x = 0, y = 0, w = 200, h = 200] = loc;
+    return [x + pad, y + pad, w - 2 * pad, h - 2 * pad];
+}
+
 //#endregion
 
-//#region 渐变
+//#region 渐变类
 
 class RenderTransition implements ITransitionedController<number> {
     readonly ref: Ref<number>;
