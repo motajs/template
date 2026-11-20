@@ -1,11 +1,15 @@
-import { RenderItem } from './item';
+import { RenderItem, RenderItemDefaultHooks } from './item';
 import { MotaOffscreenCanvas2D } from './canvas2d';
-import { CustomRenderFunction } from './types';
+import { CustomRenderFunction, IRenderItemBaseHooks } from './types';
 
 const EMPTY = () => {};
 
 export class CustomRenderItem extends RenderItem {
     renderFn: CustomRenderFunction = EMPTY;
+
+    protected getDefaultHook(): IRenderItemBaseHooks {
+        return new RenderItemDefaultHooks(this.events);
+    }
 
     protected getDefaultCache(): boolean {
         return true;

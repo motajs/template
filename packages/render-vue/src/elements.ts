@@ -17,7 +17,12 @@ import {
     ShaderProps,
     TextProps
 } from './props';
-import { IRenderItemBaseHooks } from '@motajs/render';
+import {
+    IRenderAnimatedHooks,
+    IRenderImageHooks,
+    IRenderItemBaseHooks,
+    IRenderTextHooks
+} from '@motajs/render';
 
 export type TagDefine<T extends object, H extends IRenderItemBaseHooks> = T & {
     [K in keyof H]?: H[K];
@@ -32,9 +37,9 @@ declare module 'vue/jsx-runtime' {
                 IRenderItemBaseHooks
             >;
             shader: TagDefine<ShaderProps, IRenderItemBaseHooks>;
-            text: TagDefine<TextProps, IRenderItemBaseHooks>;
-            image: TagDefine<ImageProps, IRenderItemBaseHooks>;
-            animated: TagDefine<AnimatedProps, IRenderItemBaseHooks>;
+            text: TagDefine<TextProps, IRenderTextHooks>;
+            image: TagDefine<ImageProps, IRenderImageHooks>;
+            animated: TagDefine<AnimatedProps, IRenderAnimatedHooks>;
             comment: TagDefine<CommentProps, IRenderItemBaseHooks>;
             custom: TagDefine<CustomProps, IRenderItemBaseHooks>;
             'g-rect': TagDefine<RectProps, IRenderItemBaseHooks>;

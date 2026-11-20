@@ -1,4 +1,4 @@
-import { Transform, RenderItem, MotaOffscreenCanvas2D } from '.';
+import { RenderItem, RenderItemDefaultHooks } from './item';
 import { CanvasStyle } from '../types';
 import { logger } from '@motajs/common';
 import { clamp, isEqual, isNil } from 'lodash-es';
@@ -17,8 +17,11 @@ import {
     EllipseParams,
     RectRCircleParams,
     RectREllipseParams,
-    IGraphicRectR
+    IGraphicRectR,
+    IRenderItemBaseHooks
 } from './types';
+import { MotaOffscreenCanvas2D } from './canvas2d';
+import { Transform } from './transform';
 
 const enum GraphicModeProp {
     Fill,
@@ -68,6 +71,10 @@ export abstract class GraphicItemBase
 
     protected getDefaultCache(): boolean {
         return false;
+    }
+
+    protected getDefaultHook(): IRenderItemBaseHooks {
+        return new RenderItemDefaultHooks(this.events);
     }
 
     protected render(

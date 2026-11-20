@@ -1,18 +1,23 @@
 import { MotaOffscreenCanvas2D } from './canvas2d';
 import { ActionType, EventProgress, ActionEventMap } from './event';
-import { RenderItem } from './item';
+import { RenderItem, RenderItemDefaultHooks } from './item';
 import { Transform } from './transform';
-import { CustomContainerPropagateFn, CustomContainerRenderFn } from './types';
+import {
+    CustomContainerPropagateFn,
+    CustomContainerRenderFn,
+    IRenderItemBaseHooks
+} from './types';
 
 export class Container extends RenderItem {
     protected getDefaultCache(): boolean {
         return true;
     }
 
-    protected render(
-        canvas: MotaOffscreenCanvas2D,
-        _transform: Transform
-    ): void {
+    protected getDefaultHook(): IRenderItemBaseHooks {
+        return new RenderItemDefaultHooks(this.events);
+    }
+
+    protected render(canvas: MotaOffscreenCanvas2D): void {
         const sorted = this.getSortedChildren() as RenderItem[];
         sorted.forEach(v => {
             if (v.hidden) return;
@@ -47,19 +52,56 @@ export class Container extends RenderItem {
     }
 }
 
-export class CustomContainer extends Container {
+export class CustomContainer extends RenderItem {
     private renderFn?: CustomContainerRenderFn;
     private propagateFn?: CustomContainerPropagateFn;
+
+    protected getDefaultCache(): boolean {
+        return true;
+    }
+
+    protected getDefaultHook(): IRenderItemBaseHooks {
+        return new RenderItemDefaultHooks(this.events);
+    }
 
     protected render(
         canvas: MotaOffscreenCanvas2D,
         transform: Transform
     ): void {
+        const sorted = this.getSortedChildren() as RenderItem[];
         if (!this.renderFn) {
-            super.render(canvas, transform);
+            sorted.forEach(v => {
+                if (v.hidden) return;
+                v.renderContent(canvas);
+            });
         } else {
-            const sorted = this.getSortedChildren() as RenderItem[];
             this.renderFn(canvas, sorted, transform);
+        }
+    }
+
+    private originPropagateEvent<T extends ActionType>(
+        type: T,
+        progress: EventProgress,
+        event: ActionEventMap[T]
+    ): void {
+        const sorted = this.getSortedChildren() as RenderItem[];
+        const len = sorted.length;
+        if (progress === EventProgress.Capture) {
+            let success = false;
+            for (let i = len - 1; i >= 0; i--) {
+                const child = sorted[i];
+                if (child.hidden) continue;
+                if (child.captureEvent(type, event)) {
+                    success = true;
+                    break;
+                }
+            }
+            // 如果没有子元素能够触发，那么自身触发冒泡
+            if (!success) {
+                this.bubbleEvent(type, event);
+            }
+        } else {
+            this.parent?.bubbleEvent(type, event);
         }
     }
 
@@ -70,10 +112,10 @@ export class CustomContainer extends Container {
     ): void {
         if (this.propagateFn) {
             this.propagateFn(type, progress, event, this, () => {
-                super.propagateEvent(type, progress, event);
+                this.originPropagateEvent(type, progress, event);
             });
         } else {
-            super.propagateEvent(type, progress, event);
+            this.originPropagateEvent(type, progress, event);
         }
     }
 

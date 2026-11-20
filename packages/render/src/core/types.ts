@@ -162,7 +162,7 @@ export interface IRenderItemBaseHooks extends IHookBase {
     onDisconnected?(prevRoot: IRenderTreeRoot): void;
 
     /**
-     * 当更新子元素列表时触发
+     * 当更新子元素列表时触发，其子元素的子元素更新时不会触发
      * @param children 当前的子元素列表
      */
     onUpdateChildren?(children: readonly IRenderItem[]): void;
@@ -183,10 +183,17 @@ export interface IRenderItemBaseHooks extends IHookBase {
      * 当此元素被销毁时触发
      */
     onDestroyed?(): void;
+
+    /**
+     * 当触发 `update` 更新后触发，会优先触发父元素的 `onUpdated`，再触发子元素的 `onUpdated`
+     */
+    onUpdated?(): void;
 }
 
-export interface IRenderItem
-    extends ITransformUpdatable<Transform>, IHookable<IRenderItemBaseHooks> {
+export interface IRenderItem<
+    H extends IRenderItemBaseHooks = IRenderItemBaseHooks
+>
+    extends ITransformUpdatable<Transform>, IHookable<H> {
     /** 是否为根元素 */
     readonly isRoot: boolean;
     /** 当前元素的父元素 */
@@ -645,7 +652,15 @@ export interface IRenderTreeRoot extends IRenderItem {
 
 //#region 核心元素
 
-export interface IRenderText extends IRenderItem {
+export interface IRenderTextHooks extends IRenderItemBaseHooks {
+    /**
+     * 当设置文字内容时触发
+     * @param text 设置的文字内容
+     */
+    onSetText?(text: string): void;
+}
+
+export interface IRenderText extends IRenderItem<IRenderTextHooks> {
     /** 文字内容 */
     readonly text: string;
     /** 填充样式 */
@@ -688,7 +703,15 @@ export interface IRenderText extends IRenderItem {
     setStrokeWidth(width: number): void;
 }
 
-export interface IRenderImage extends IRenderItem {
+export interface IRenderImageHooks extends IRenderItemBaseHooks {
+    /**
+     * 当设置图片资源时触发
+     * @param text 设置的图片资源
+     */
+    onSetImage?(image: ITexture | null): void;
+}
+
+export interface IRenderImage extends IRenderItem<IRenderImageHooks> {
     /** 当前元素的图片内容 */
     readonly image: ITexture | null;
 
@@ -696,10 +719,35 @@ export interface IRenderImage extends IRenderItem {
      * 设置图片资源
      * @param image 图片资源
      */
-    setImage(image: ITexture): void;
+    setImage(image: ITexture | null): void;
 }
 
-export interface IRenderAnimated<T> extends IRenderItem {
+export interface IRenderAnimatedHooks extends IRenderItemBaseHooks {
+    /**
+     * 当设置动画的纹理对象时触发
+     * @param text 设置为的纹理对象
+     */
+    onSetTexture?(texture: ITexture | null): void;
+
+    /**
+     * 当设置贴图动画执行器时触发
+     * @param animater 设置为的贴图动画执行器
+     */
+    onSetAnimater?(animater: ITextureAnimater<unknown> | null): void;
+
+    /**
+     * 在非循环模式下，当动画执行完毕后触发
+     */
+    onAnimationEnd?(): void;
+
+    /**
+     * 当帧数向前推进时触发，如果播放速度过快或因为某些原因卡顿时，可能产生跳帧
+     * @param frame 当前帧数
+     */
+    onFrame?(frame: number): void;
+}
+
+export interface IRenderAnimated<T> extends IRenderItem<IRenderAnimatedHooks> {
     /** 贴图的动画执行器 */
     readonly animater: ITextureAnimater<T> | null;
     /** 播放动画的纹理对象 */
@@ -712,6 +760,8 @@ export interface IRenderAnimated<T> extends IRenderItem {
     readonly paused: boolean;
     /** 传递给动画执行器的参数 */
     readonly param: T | undefined;
+    /** 当前的播放帧数，当纹理、动画器及其参数修改后会从零重新计数 */
+    readonly frame: number;
 
     /**
      * 设置播放动画的纹理对象

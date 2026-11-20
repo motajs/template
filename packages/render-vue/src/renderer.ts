@@ -1,7 +1,7 @@
 import { logger } from '@motajs/common';
 import {
     RenderItem,
-    Text,
+    RenderText,
     Comment,
     IRenderItem,
     IRenderTreeRoot
@@ -47,7 +47,7 @@ export function createRendererFor(renderer: IRenderTreeRoot) {
             } else {
                 logger.warn(38);
             }
-            return new Text();
+            return new RenderText();
         },
 
         createComment: function (): IRenderItem {
@@ -55,7 +55,7 @@ export function createRendererFor(renderer: IRenderTreeRoot) {
         },
 
         setText: function (node: IRenderItem, text: string): void {
-            if (node instanceof Text) {
+            if (node instanceof RenderText) {
                 node.setText(text);
             } else {
                 logger.warn(39);
@@ -63,7 +63,7 @@ export function createRendererFor(renderer: IRenderTreeRoot) {
         },
 
         setElementText: function (node: IRenderItem, text: string): void {
-            if (node instanceof Text) {
+            if (node instanceof RenderText) {
                 node.setText(text);
             } else {
                 logger.warn(39);

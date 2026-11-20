@@ -29,9 +29,11 @@ interface RenderItemCanvasData {
     autoScale: boolean;
 }
 
-export abstract class RenderItem
-    extends Hookable<IRenderItemBaseHooks>
-    implements IRenderItem
+export abstract class RenderItem<
+    H extends IRenderItemBaseHooks = IRenderItemBaseHooks
+>
+    extends Hookable<H>
+    implements IRenderItem<H>
 {
     //#region 元素属性
 
@@ -129,9 +131,10 @@ export abstract class RenderItem
     //#region 交互事件
 
     /** 当前元素包含的监听事件名称列表 */
-    private readonly eventNames: Set<string> = new Set();
+    protected readonly eventNames: Set<string> = new Set();
     /** 当前元素包含的监听事件，这是为了能够使用 `prop` 传入时不需要为每个内容都添加一个 `hook` 对象 */
-    private readonly events: Map<string, (...params: any[]) => any> = new Map();
+    protected readonly events: Map<string, (...params: any[]) => any> =
+        new Map();
 
     /** 是否调用了 `ev.stopPropagation` */
     protected propagationStoped: Map<ActionType, boolean> = new Map();
@@ -176,7 +179,8 @@ export abstract class RenderItem
             .add('onUpdatedChildren')
             .add('onAppendTo')
             .add('onRemove')
-            .add('onDestroyed');
+            .add('onDestroyed')
+            .add('onUpdated');
 
         this.addHook(this.getDefaultHook());
 
@@ -188,13 +192,9 @@ export abstract class RenderItem
     /**
      * 获取默认钩子对象，子类可以拓展以实现自己默认钩子的 `prop` 支持
      */
-    protected getDefaultHook(): IRenderItemBaseHooks {
-        return new RenderItemDefaultHooks(this.events);
-    }
+    protected abstract getDefaultHook(): H;
 
-    protected createController(
-        hook: Partial<IRenderItemBaseHooks>
-    ): IHookController<IRenderItemBaseHooks> {
+    protected createController(hook: Partial<H>): IHookController<H> {
         return new HookController(this, hook);
     }
 
@@ -274,6 +274,7 @@ export abstract class RenderItem
             if (this.cacheDirty) return;
             this.cacheDirty = true;
         }
+        this.forEachHook(hook => hook.onUpdated?.());
     }
 
     /**

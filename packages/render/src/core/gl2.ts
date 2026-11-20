@@ -1,6 +1,6 @@
 import { logger } from '@motajs/common';
 import { MotaOffscreenCanvas2D } from './canvas2d';
-import { RenderItem } from './item';
+import { RenderItem, RenderItemDefaultHooks } from './item';
 import { Transform } from './transform';
 import { isWebGL2Supported } from './utils';
 import { SizedCanvasImageSource } from '../types';
@@ -14,6 +14,7 @@ import {
     DrawParamsMap,
     IGL2Program,
     IGL2ProgramPrefix,
+    IRenderItemBaseHooks,
     IShaderAttrib,
     IShaderAttribArray,
     IShaderIndices,
@@ -136,6 +137,10 @@ export abstract class GL2 extends RenderItem {
 
     protected getDefaultCache(): boolean {
         return false;
+    }
+
+    protected getDefaultHook(): IRenderItemBaseHooks {
+        return new RenderItemDefaultHooks(this.events);
     }
 
     private init() {

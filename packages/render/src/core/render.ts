@@ -19,7 +19,7 @@ import {
 } from './types';
 import { IExcitable, IExcitation, RafExcitation } from '@motajs/animate';
 import { CustomRenderItem } from './custom';
-import { Animated, Comment, Image, Text } from './misc';
+import { Animated } from './animated';
 import { Shader } from './shader';
 import {
     BezierCurve,
@@ -31,6 +31,9 @@ import {
     Rect,
     RectR
 } from './graphics';
+import { RenderText } from './text';
+import { RenderImage } from './image';
+import { Comment } from './comment';
 
 interface TouchInfo {
     /** 这次触摸在渲染系统的标识符 */
@@ -240,8 +243,8 @@ export class MotaRenderer
     private registerIntrinsicTags() {
         this.registerElement('container', () => new Container());
         this.registerElement('custom', () => new CustomRenderItem());
-        this.registerElement('text', () => new Text());
-        this.registerElement('image', () => new Image());
+        this.registerElement('text', () => new RenderText());
+        this.registerElement('image', () => new RenderImage());
         this.registerElement('animated', () => new Animated<any>());
         this.registerElement('shader', () => new Shader());
         this.registerElement('comment', () => new Comment());
