@@ -19,27 +19,10 @@
 </head>
 
 <body>
-    <!-- injection -->
     <div id="game-draw">
         <canvas id="render-main"></canvas>
     </div>
-    <div id='inputDiv'>
-        <div id='inputDialog'>
-            <p id="inputMessage">请输入文字...</p>
-            <input id='inputBox' type="text" autocomplete="off" />
-            <button id='inputYes'>确定</button>
-            <button id='inputNo'>取消</button>
-        </div>
-    </div>
-    <div id="root"></div>
-    <!-- injection -->
-    <script src='libs/thirdparty/lz-string.min.js'></script>
-    <script src='libs/thirdparty/priority-queue.min.js'></script>
-    <script src='libs/thirdparty/localforage.min.js'></script>
-    <script src='libs/thirdparty/zip.min.js'></script>
-    <script src="libs/thirdparty/lodash.min.js"></script>
-    <script id='mainScript' src='main.js'></script>
-    <script src="/src/main.ts" type="module"></script>
+    <script src="/src/bootstrap.ts" type="module"></script>
 
 </body>
 

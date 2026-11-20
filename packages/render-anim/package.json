@@ -1,0 +1,7 @@
+{
+    "name": "@motajs/render-anim",
+    "dependencies": {
+        "@motajs/common": "workspace:*",
+        "@motajs/render": "workspace:*"
+    }
+}

@@ -1,5 +1,43 @@
-import { BaseHeroModifier } from './attribute';
-import { IHeroModifier } from './types';
+import { SaveCompression } from '@user/data-common';
+import { IHeroModifier, IHeroModifierOwner } from './types';
+
+export abstract class BaseHeroModifier<T, V> implements IHeroModifier<T, V, V> {
+    abstract readonly type: string;
+    abstract readonly priority: number;
+
+    owner: IHeroModifierOwner | null = null;
+
+    constructor(private currentValue: V) {}
+
+    get value(): V {
+        return this.currentValue;
+    }
+
+    setValue(value: V): void {
+        this.currentValue = value;
+        this.owner?.markModifierDirty(this);
+    }
+
+    getValue(): V {
+        return this.currentValue;
+    }
+
+    bindAttribute(attribute: IHeroModifierOwner | null): void {
+        this.owner = attribute;
+    }
+
+    saveState(_compression: SaveCompression): V {
+        return this.currentValue;
+    }
+
+    loadState(state: V, _compression: SaveCompression): void {
+        this.setValue(state);
+    }
+
+    abstract modify(value: T, baseValue: T, name: string): T;
+
+    abstract clone(): IHeroModifier<T, V>;
+}
 
 export class ValueModifier extends BaseHeroModifier<number, number> {
     readonly type = '@system/value';

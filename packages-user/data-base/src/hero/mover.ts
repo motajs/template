@@ -6,7 +6,8 @@ import {
     ObjectMover,
     ObjectMoveType,
     IDataCommon,
-    ReplayCode
+    ReplayCode,
+    shouldReplay
 } from '@user/data-common';
 import {
     HeroMoveCode,
@@ -152,6 +153,7 @@ export class HeroMover<T extends IHeroLocation>
 
     protected async onMoveEnd(): Promise<void> {}
 
+    @shouldReplay('Hero moving step should be replayed.')
     protected async onStepStart(
         step: Readonly<ObjectMoveStep>,
         tile: IHeroLocation
@@ -238,6 +240,7 @@ export class HeroMover<T extends IHeroLocation>
         return HeroMoveCode.Step;
     }
 
+    @shouldReplay('Hero moving step should be replayed.')
     protected async onStepEnd(
         code: number,
         step: Readonly<ObjectMoveStep>,
@@ -279,6 +282,7 @@ export class HeroMover<T extends IHeroLocation>
         return { x: tile.x, y: tile.y };
     }
 
+    @shouldReplay('Hero moving step should be replayed.')
     protected async onStepSettled(
         before: ITileLocator,
         curr: ITileLocator,

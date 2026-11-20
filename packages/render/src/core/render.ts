@@ -11,17 +11,15 @@ import {
 } from './event';
 import {
     IMotaRendererConfig,
-    RenderItemTags,
     IRenderItem,
-    IRenderItemInstanceMap,
-    IRenderItemParameterMap,
+    IRenderTagMap,
     IRenderTreeRoot,
     RenderItemConstructor,
     ExcitableDelegation
 } from './types';
 import { IExcitable, IExcitation, RafExcitation } from '@motajs/animate';
 import { CustomRenderItem } from './custom';
-import { Comment, Image, Text } from './misc';
+import { Animated } from './animated';
 import { Shader } from './shader';
 import {
     BezierCurve,
@@ -33,6 +31,9 @@ import {
     Rect,
     RectR
 } from './graphics';
+import { RenderText } from './text';
+import { RenderImage } from './image';
+import { Comment } from './comment';
 
 interface TouchInfo {
     /** 这次触摸在渲染系统的标识符 */
@@ -117,11 +118,13 @@ export class MotaRenderer
     private readonly toDeleteExcitables: Set<number> = new Set();
 
     /** 标签注册信息 */
-    private readonly tagRegistry: Map<string, RenderItemConstructor> =
-        new Map();
+    private readonly tagRegistry: Map<
+        string,
+        RenderItemConstructor<IRenderItem>
+    > = new Map();
 
     constructor(config: IMotaRendererConfig) {
-        super(false);
+        super();
 
         const canvas = this.getMountCanvas(config.canvas);
         if (!canvas) {
@@ -143,6 +146,12 @@ export class MotaRenderer
         this.excited = this.excited.bind(this);
         this.excitation.add(this);
         this.registerIntrinsicTags();
+
+        this.root = this;
+    }
+
+    protected getDefaultCache(): boolean {
+        return true;
     }
 
     //#region 渲染相关
@@ -193,32 +202,29 @@ export class MotaRenderer
 
     //#region 标签元素
 
-    createElement<K extends RenderItemTags>(
-        tag: K,
-        ...params: IRenderItemParameterMap[K]
-    ): IRenderItemInstanceMap[K];
-    createElement<P extends any[], I extends IRenderItem>(
-        ele: new (...params: P) => I,
-        ...params: P
-    ): I;
+    createElement<K extends keyof IRenderTagMap>(tag: K): IRenderTagMap[K];
+    createElement<T extends IRenderItem>(tag: string): T | null;
+    createElement<T extends IRenderItem>(cons: RenderItemConstructor<T>): T;
     createElement(
-        ele: RenderItemTags | RenderItemConstructor,
-        ...params: any[]
-    ): IRenderItem {
+        ele: keyof IRenderTagMap | string | RenderItemConstructor<IRenderItem>
+    ): IRenderItem | null {
         if (typeof ele === 'string') {
-            const Cons = this.tagRegistry.get(ele);
-            if (!Cons) {
+            const cons = this.tagRegistry.get(ele);
+            if (!cons) {
                 logger.error(15, ele);
-                return new Container(false);
+                return null;
             } else {
-                return new Cons(...params);
+                return cons();
             }
         } else {
-            return new ele(...params);
+            return ele();
         }
     }
 
-    registerElement(tag: string, cons: RenderItemConstructor): void {
+    registerElement(
+        tag: string,
+        cons: RenderItemConstructor<IRenderItem>
+    ): void {
         if (this.tagRegistry.has(tag)) {
             logger.error(14);
             return;
@@ -235,22 +241,23 @@ export class MotaRenderer
      * 注册内置渲染标签
      */
     private registerIntrinsicTags() {
-        this.registerElement('container', Container);
-        this.registerElement('custom', CustomRenderItem);
-        this.registerElement('text', Text);
-        this.registerElement('image', Image);
-        this.registerElement('shader', Shader);
-        this.registerElement('comment', Comment);
-        this.registerElement('template', Container);
-        this.registerElement('custom-container', CustomContainer);
-        this.registerElement('g-rect', Rect);
-        this.registerElement('g-circle', Circle);
-        this.registerElement('g-ellipse', Ellipse);
-        this.registerElement('g-line', Line);
-        this.registerElement('g-bezier', BezierCurve);
-        this.registerElement('g-quad', QuadraticCurve);
-        this.registerElement('g-path', Path);
-        this.registerElement('g-rectr', RectR);
+        this.registerElement('container', () => new Container());
+        this.registerElement('custom', () => new CustomRenderItem());
+        this.registerElement('text', () => new RenderText());
+        this.registerElement('image', () => new RenderImage());
+        this.registerElement('animated', () => new Animated<any>());
+        this.registerElement('shader', () => new Shader());
+        this.registerElement('comment', () => new Comment());
+        this.registerElement('template', () => new Container());
+        this.registerElement('container-custom', () => new CustomContainer());
+        this.registerElement('g-rect', () => new Rect());
+        this.registerElement('g-circle', () => new Circle());
+        this.registerElement('g-ellipse', () => new Ellipse());
+        this.registerElement('g-line', () => new Line());
+        this.registerElement('g-bezier', () => new BezierCurve());
+        this.registerElement('g-quad', () => new QuadraticCurve());
+        this.registerElement('g-path', () => new Path());
+        this.registerElement('g-rectr', () => new RectR());
     }
 
     //#endregion
@@ -299,11 +306,15 @@ export class MotaRenderer
                 ActionType.Down,
                 this.createMouseAction(ev, ActionType.Down, mouse)
             );
+            ev.stopPropagation();
+            ev.preventDefault();
         });
         canvas.addEventListener('mouseup', ev => {
             const event = this.createMouseAction(ev, ActionType.Up);
             this.captureEvent(ActionType.Up, event);
             this.captureEvent(ActionType.Click, event);
+            ev.stopPropagation();
+            ev.preventDefault();
         });
         canvas.addEventListener('mousemove', ev => {
             const event = this.createMouseAction(
@@ -326,6 +337,8 @@ export class MotaRenderer
                 this.beforeHovered,
                 this.hoveredElement
             );
+            ev.stopPropagation();
+            ev.preventDefault();
         });
         canvas.addEventListener('mouseleave', ev => {
             const id = this.getMouseIdentifier(
@@ -333,16 +346,21 @@ export class MotaRenderer
                 this.getMouseType(ev)
             );
             this.hoveredElement.forEach(v => {
-                v.emit('leave', this.createMouseActionBase(ev, id, v));
+                const base = this.createMouseActionBase(ev, id, v);
+                v.forEachHook(hook => hook.onLeave?.(base));
             });
             this.hoveredElement.clear();
             this.beforeHovered.clear();
+            ev.stopPropagation();
+            ev.preventDefault();
         });
         canvas.addEventListener('wheel', ev => {
             this.captureEvent(
                 ActionType.Wheel,
                 this.createWheelAction(ev, ActionType.Wheel)
             );
+            ev.stopPropagation();
+            ev.preventDefault();
         });
         // 文档监听
         const abort = new AbortController();
@@ -372,6 +390,8 @@ export class MotaRenderer
                 this.createTouchAction(ev, ActionType.Down).forEach(v => {
                     this.captureEvent(ActionType.Down, v);
                 });
+                ev.stopPropagation();
+                ev.preventDefault();
             },
             { signal }
         );
@@ -385,6 +405,8 @@ export class MotaRenderer
                 [...ev.touches].forEach(v => {
                     this.touchInfo.delete(v.identifier);
                 });
+                ev.stopPropagation();
+                ev.preventDefault();
             },
             { signal }
         );
@@ -397,6 +419,8 @@ export class MotaRenderer
                 [...ev.touches].forEach(v => {
                     this.touchInfo.delete(v.identifier);
                 });
+                ev.stopPropagation();
+                ev.preventDefault();
             },
             { signal }
         );
@@ -420,6 +444,8 @@ export class MotaRenderer
                         this.hoveredElement
                     );
                 });
+                ev.stopPropagation();
+                ev.preventDefault();
             },
             { signal }
         );
@@ -677,18 +703,14 @@ export class MotaRenderer
         // 先 leave，再 enter
         before.forEach(v => {
             if (!now.has(v)) {
-                v.emit(
-                    'leave',
-                    this.createMouseActionBase(event, ev.identifier, v)
-                );
+                const e = this.createMouseActionBase(event, ev.identifier, v);
+                v.forEachHook(hook => hook.onLeave?.(e));
             }
         });
         now.forEach(v => {
             if (!before.has(v)) {
-                v.emit(
-                    'enter',
-                    this.createMouseActionBase(event, ev.identifier, v)
-                );
+                const e = this.createMouseActionBase(event, ev.identifier, v);
+                v.forEachHook(hook => hook.onEnter?.(e));
             }
         });
     }
@@ -702,18 +724,14 @@ export class MotaRenderer
         // 先 leave，再 enter
         before.forEach(v => {
             if (!now.has(v)) {
-                v.emit(
-                    'leave',
-                    this.createTouchActionBase(event, ev.identifier, v)
-                );
+                const e = this.createTouchActionBase(event, ev.identifier, v);
+                v.forEachHook(hook => hook.onLeave?.(e));
             }
         });
         now.forEach(v => {
             if (!before.has(v)) {
-                v.emit(
-                    'enter',
-                    this.createTouchActionBase(event, ev.identifier, v)
-                );
+                const e = this.createTouchActionBase(event, ev.identifier, v);
+                v.forEachHook(hook => hook.onEnter?.(e));
             }
         });
     }
@@ -866,7 +884,7 @@ export class MotaRenderer
     ): string {
         if (item.isComment) return '';
         const name = item.constructor.name;
-        if (item.children.size === 0) {
+        if (item.children.length === 0) {
             return `${' '.repeat(deep * space)}<${name} ${
                 item.id ? `id="${item.id}" ` : ''
             }uid="${item.uid}"${item.hidden ? ' hidden' : ''} />\n`;

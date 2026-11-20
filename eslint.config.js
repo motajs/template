@@ -76,5 +76,12 @@ export default tseslint.config(
             eqeqeq: ['error', 'always'],
             'react/jsx-boolean-value': ['error', 'never']
         }
+    },
+    {
+        files: ['docs/.vitepress/components/**/*.vue'],
+        rules: {
+            'vue/attribute-hyphenation': ['warn', 'never'],
+            'vue/one-component-per-file': 'off'
+        }
     }
 );

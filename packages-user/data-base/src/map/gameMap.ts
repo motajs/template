@@ -19,16 +19,17 @@ import {
     ILocationIndexer,
     ITileStore,
     MapLocIndexer,
-    SaveCompression
+    SaveCompression,
+    shouldReplay
 } from '@user/data-common';
 import { MapLayer } from './mapLayer';
 
 export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
     readonly layerList: Set<IResizableMapLayer> = new Set();
-    /** 图层到图层别名映射 */
-    readonly layerAliasMap: WeakMap<IMapLayer, string> = new WeakMap();
+    readonly tileStore: ITileStore;
+
     /** 图层别名到图层的映射 */
-    readonly aliasLayerMap: Map<symbol, IMapLayer> = new Map();
+    readonly aliasLayerMap: Map<string, IMapLayer> = new Map();
 
     /** 背景图块 */
     private backgroundTile: number = 0;
@@ -47,36 +48,32 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
 
     constructor(
         public readonly state: IDataCommon,
-        public readonly tileStore: ITileStore,
         public readonly floorId: string,
         public width: number,
         public height: number
     ) {
         super();
+        this.tileStore = state.tileStore;
         this.indexer.setWidth(width);
     }
 
-    addLayer(): IMapLayer {
-        const array = new Uint32Array(this.width * this.height);
-        const layer = new MapLayer(array, this.width, this.height, this);
+    @shouldReplay('Adding game map layer should be replayed.')
+    addLayer(alias: string): IMapLayer {
+        const layer = new MapLayer(this.width, this.height, this, alias);
         this.layerList.add(layer);
         this.forEachHook(hook => {
             hook.onUpdateLayer?.(this.layerList);
         });
         const controller = layer.addHook(new StateMapLayerHook(this, layer));
         this.layerHookMap.set(layer, controller);
-        controller.load();
+        this.aliasLayerMap.set(alias, layer);
         return layer;
     }
 
+    @shouldReplay('Removing game map layer should be replayed.')
     removeLayer(layer: IMapLayer): void {
         this.layerList.delete(layer as IResizableMapLayer);
-        const alias = this.layerAliasMap.get(layer);
-        if (alias) {
-            const symbol = Symbol.for(alias);
-            this.aliasLayerMap.delete(symbol);
-            this.layerAliasMap.delete(layer);
-        }
+        this.aliasLayerMap.delete(layer.alias);
         this.forEachHook(hook => {
             hook.onUpdateLayer?.(this.layerList);
         });
@@ -90,25 +87,7 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
         return this.layerList.has(layer as IResizableMapLayer);
     }
 
-    setLayerAlias(layer: IMapLayer, alias: string): void {
-        const symbol = Symbol.for(alias);
-        if (this.aliasLayerMap.has(symbol)) {
-            logger.warn(84, alias);
-            return;
-        }
-        this.layerAliasMap.set(layer, alias);
-        this.aliasLayerMap.set(symbol, layer);
-    }
-
-    getLayerByAlias(alias: string): IMapLayer | null {
-        const symbol = Symbol.for(alias);
-        return this.aliasLayerMap.get(symbol) ?? null;
-    }
-
-    getLayerAlias(layer: IMapLayer): string | undefined {
-        return this.layerAliasMap.get(layer);
-    }
-
+    @shouldReplay('Resizing game map layer should be replayed.')
     resizeLayer(
         width: number,
         height: number,
@@ -141,6 +120,7 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
         this.active = active;
     }
 
+    @shouldReplay("Setting game map's event layer should be replayed.")
     setEventLayer(layer: IMapLayer | null): void {
         if (!layer) {
             this.eventLayer = null;
@@ -193,8 +173,9 @@ export class GameMap extends Hookable<IGameMapHooks> implements IGameMap {
         const layers = new Map<number, IMapLayerSave>();
         for (const layer of this.layerList) {
             const save = layer.saveState(compression);
-            if (this.isEmptyLayerSave(save)) continue;
-            layers.set(layer.zIndex, save);
+            if (!this.isEmptyLayerSave(save)) {
+                layers.set(layer.zIndex, save);
+            }
         }
         return {
             background: this.backgroundTile,

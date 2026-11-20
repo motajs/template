@@ -42,7 +42,7 @@ export class SunWeather extends Weather<CustomRenderItem> {
     }
 
     createElement(level: number): CustomRenderItem {
-        const element = new CustomRenderItem(true);
+        const element = new CustomRenderItem();
         element.setRenderFn(canvas => this.drawSun(canvas));
         this.maxAlpha = level / 10;
         this.minAlpha = level / 20;

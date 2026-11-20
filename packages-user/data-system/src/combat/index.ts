@@ -1,3 +1,4 @@
+export * from './combat';
 export * from './context';
 export * from './damage';
 export * from './enemy';

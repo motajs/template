@@ -1,0 +1,10 @@
+{
+  "head": "9fee3c4392b4fc8bf7c8d19447d7b525cd37a845",
+  "hashes": {
+    "src/client/ui/settings.tsx": "c5cca14cde8ba813ac4ef5e624e8b359470c472d",
+    "src/client/ui/index.ts": "4e3950598b1beee23753a5556d8e8c82eb21bc57",
+    "src/client/misc/hotkey.ts": "6e884ab4f36cdff958a3490697406a00f67d2e7f"
+  },
+  "eslint": [],
+  "typecheck": []
+}

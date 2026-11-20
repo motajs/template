@@ -142,13 +142,3 @@ export interface ActionEventMap {
     [ActionType.Up]: IActionEvent;
     [ActionType.Wheel]: IWheelEvent;
 }
-
-export const eventNameMap: Record<ActionType, keyof ERenderItemActionEvent> = {
-    [ActionType.Click]: 'click',
-    [ActionType.Down]: 'down',
-    [ActionType.Move]: 'move',
-    [ActionType.Up]: 'up',
-    [ActionType.Enter]: 'enter',
-    [ActionType.Leave]: 'leave',
-    [ActionType.Wheel]: 'wheel'
-};

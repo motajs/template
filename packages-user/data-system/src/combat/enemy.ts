@@ -1,7 +1,7 @@
 import { IEnemy, IReadonlyEnemy } from '@user/data-base';
-import { IEnemyView, IEnemyContext } from './types';
+import { IEnemyContext, IComputingEnemyView } from './types';
 
-export class EnemyView<TAttr> implements IEnemyView<TAttr> {
+export class EnemyView<TAttr> implements IComputingEnemyView<TAttr> {
     /** 计算后怪物 */
     private readonly computedEnemy: IEnemy<TAttr>;
 
@@ -25,9 +25,6 @@ export class EnemyView<TAttr> implements IEnemyView<TAttr> {
         return this.computedEnemy;
     }
 
-    /**
-     * 获取计算中怪物对象，这个接口不对外暴露，仅在系统内部的 EnemyContext 中使用。
-     */
     getComputingEnemy(): IEnemy<TAttr> {
         return this.computedEnemy;
     }

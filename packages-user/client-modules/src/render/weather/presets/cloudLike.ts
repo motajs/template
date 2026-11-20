@@ -79,7 +79,7 @@ export abstract class CloudLike extends Weather<CustomRenderItem> {
     }
 
     createElement(level: number): CustomRenderItem {
-        const element = new CustomRenderItem(true);
+        const element = new CustomRenderItem();
         element.setRenderFn(canvas => this.drawImage(canvas));
         this.maxSpeed = Math.sqrt(level) * 100;
         this.vx = ((Math.random() - 0.5) * this.maxSpeed) / 2;

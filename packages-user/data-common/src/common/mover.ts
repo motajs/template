@@ -216,7 +216,7 @@ export interface IObjectMoverHooks<T extends IObjectMovable> extends IHookBase {
     onSetPos?(x: number, y: number, tile: T, mover: IObjectMover<T>): void;
 
     /**
-     * 当设置移动对象的朝向时触发，仅 `setFaceDir` 可以触发
+     * 当设置移动对象的朝向方向时触发，仅 `setFaceDir` 可以触发
      * @param dir 面朝朝向
      * @param tile 移动器绑定的图块
      * @param mover 当前移动器
@@ -224,7 +224,7 @@ export interface IObjectMoverHooks<T extends IObjectMovable> extends IHookBase {
     onSetFaceDir?(dir: FaceDirection, tile: T, mover: IObjectMover<T>): void;
 
     /**
-     * 当设置移动对象的朝向时触发，仅 `setMoveDir` 可以触发
+     * 当设置移动对象的移动方向时触发，仅 `setMoveDir` 可以触发
      * @param dir 移动朝向
      * @param tile 移动器绑定的图块
      * @param mover 当前移动器
@@ -301,7 +301,7 @@ export interface IObjectMover<T extends IObjectMovable> extends IHookable<
     stepFace(move: FaceDirection, face: FaceDirection, count?: number): this;
 
     /**
-     * 追加若干个前进步，沿当前移动方向移动
+     * 追加若干个前进步，沿当前朝向方向移动
      * @param count 追加次数，默认 1
      */
     forward(count?: number): this;
@@ -464,20 +464,6 @@ export abstract class ObjectMover<T extends IObjectMovable>
     }
 
     /**
-     * 获取相对移动（如前进）所使用的基准方向
-     *
-     * 优先取本步之前已确定的移动方向，使多步前进保持同轴；否则回退到当前朝向。
-     * 后退不使用此基准，一律以当前朝向为准
-     */
-    private getCurrentDirection(): FaceDirection {
-        if (this.moveDirection !== FaceDirection.Unknown) {
-            return this.moveDirection;
-        } else {
-            return this.faceDirection;
-        }
-    }
-
-    /**
      * 根据步骤内容预先同步移动器内部状态
      *
      * 前进以已确定的移动方向为基准；后退固定以当前朝向为基准，
@@ -498,13 +484,11 @@ export abstract class ObjectMover<T extends IObjectMovable>
                 this.faceDirection = step.value;
                 break;
             case ObjectMoveType.Special: {
+                const dir = this.faceDirection;
                 if (step.direction === ObjectSpecialStep.Backward) {
-                    // 后退基准固定为当前朝向，避免被本步写入的反方向改写后摆动
-                    const dir = this.faceDirection;
                     this.moveDirection = this.faceHandler.opposite(dir);
                     this.faceDirection = dir;
                 } else {
-                    const dir = this.getCurrentDirection();
                     this.moveDirection = dir;
                     this.faceDirection = dir;
                 }

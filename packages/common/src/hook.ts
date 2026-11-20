@@ -1,4 +1,3 @@
-import { logger } from './logger';
 import { IHookable, IHookBase, IHookController, IHookObject } from './types';
 
 export abstract class Hookable<
@@ -27,17 +26,9 @@ export abstract class Hookable<
         this.hookMap.set(hook, obj);
         this.controllerMap.set(controller, obj);
         this.hookList.add(obj);
-        return controller;
-    }
-
-    loadHook(hook: Partial<H>): void {
-        const obj = this.hookMap.get(hook);
-        if (!obj) {
-            logger.warn(85);
-            return;
-        }
         hook.awake?.(obj.controller);
         this.loadedList.add(obj);
+        return controller;
     }
 
     removeHook(hook: Partial<H>): void {
@@ -74,10 +65,6 @@ export class HookController<H extends IHookBase> implements IHookController<H> {
         readonly hookable: IHookable<H, IHookController<H>>,
         readonly hook: Partial<H>
     ) {}
-
-    load(): void {
-        this.hookable.loadHook(this.hook);
-    }
 
     unload(): void {
         this.hookable.removeHookByController(this);

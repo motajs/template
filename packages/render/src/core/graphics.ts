@@ -1,4 +1,4 @@
-import { Transform, RenderItem, MotaOffscreenCanvas2D } from '.';
+import { RenderItem, RenderItemDefaultHooks } from './item';
 import { CanvasStyle } from '../types';
 import { logger } from '@motajs/common';
 import { clamp, isEqual, isNil } from 'lodash-es';
@@ -16,8 +16,14 @@ import {
     CircleParams,
     EllipseParams,
     RectRCircleParams,
-    RectREllipseParams
+    RectREllipseParams,
+    IGraphicRectR,
+    IRenderItemBaseHooks
 } from './types';
+import { MotaOffscreenCanvas2D } from './canvas2d';
+
+// 所有的图形元素都考虑了描边粗细的影响，为防止因为描边导致内容溢出，在有描边存在时，会将图形路径向内收缩以避免溢出，
+// 图形路径会向内收缩描边宽度的一半，不能保证在 `miter` 线接方式下，连接处不会溢出，不能保证线头不会溢出
 
 const enum GraphicModeProp {
     Fill,
@@ -44,34 +50,46 @@ export abstract class GraphicItemBase
     miterLimit: number = 10;
     fillRule: CanvasFillRule = 'nonzero';
 
+    /** props 是否启用了 fill */
     private propFill: boolean = true;
+    /** props 是否启用了 stroke */
     private propStroke: boolean = false;
+    /** props 是否启用了 strokeAndFill */
     private strokeAndFill: boolean = false;
+    /** props 是否设置过 fill */
     private propFillSet: boolean = false;
 
+    /** 交互是否仅在描边上判定 */
     private actionStroke: boolean = false;
+    /** 当前的缓存 Path2D */
     private cachePath?: Path2D;
+    /** 路径缓存是否为脏 */
     protected pathDirty: boolean = true;
-
-    constructor(enableCache: boolean = false) {
-        super(enableCache);
-    }
 
     /**
      * 获取这个元素的绘制路径
      */
-    abstract getPath(): Path2D;
+    abstract getPath(stroke: boolean, lineWidth: number): Path2D;
 
-    protected render(
-        canvas: MotaOffscreenCanvas2D,
-        _transform: Transform
-    ): void {
+    protected getDefaultCache(): boolean {
+        return false;
+    }
+
+    protected getDefaultHook(): IRenderItemBaseHooks {
+        return new RenderItemDefaultHooks(this.events);
+    }
+
+    private refreshCache() {
+        if (!this.pathDirty) return;
+        const stroke = this.mode !== GraphicMode.Fill;
+        this.cachePath = this.getPath(stroke, this.lineWidth);
+        this.pathDirty = false;
+    }
+
+    protected render(canvas: MotaOffscreenCanvas2D): void {
         const ctx = canvas.ctx;
         this.setCanvasState(canvas);
-        if (this.pathDirty) {
-            this.cachePath = this.getPath();
-            this.pathDirty = false;
-        }
+        this.refreshCache();
         const path = this.cachePath;
         if (!path) return;
 
@@ -95,10 +113,7 @@ export abstract class GraphicItemBase
 
     protected isActionInElement(x: number, y: number): boolean {
         const ctx = testCanvas.ctx;
-        if (this.pathDirty) {
-            this.cachePath = this.getPath();
-            this.pathDirty = false;
-        }
+        this.refreshCache();
         const path = this.cachePath;
         if (!path) return false;
         const fixX = x * devicePixelRatio;
@@ -107,13 +122,18 @@ export abstract class GraphicItemBase
         ctx.lineCap = this.lineCap;
         ctx.lineJoin = this.lineJoin;
         ctx.setLineDash(this.lineDash);
-        if (this.actionStroke) {
-            return ctx.isPointInStroke(path, fixX, fixY);
-        }
         switch (this.mode) {
             case GraphicMode.Fill:
                 return ctx.isPointInPath(path, fixX, fixY, this.fillRule);
             case GraphicMode.Stroke:
+                if (this.actionStroke) {
+                    return ctx.isPointInStroke(path, fixX, fixY);
+                } else {
+                    return (
+                        ctx.isPointInPath(path, fixX, fixY, this.fillRule) ||
+                        ctx.isPointInStroke(path, fixX, fixY)
+                    );
+                }
             case GraphicMode.FillAndStroke:
             case GraphicMode.StrokeAndFill:
                 return (
@@ -128,13 +148,25 @@ export abstract class GraphicItemBase
      * @param options 线的信息
      */
     setLineOption(options: Partial<ILineProperty>) {
-        if (!isNil(options.lineWidth)) this.lineWidth = options.lineWidth;
-        if (!isNil(options.lineDash)) this.lineDash = options.lineDash;
-        if (!isNil(options.lineDashOffset))
+        if (!isNil(options.lineWidth)) {
+            this.lineWidth = options.lineWidth;
+            this.pathDirty = true;
+        }
+        if (!isNil(options.lineDash)) {
+            this.lineDash = options.lineDash;
+        }
+        if (!isNil(options.lineDashOffset)) {
             this.lineDashOffset = options.lineDashOffset;
-        if (!isNil(options.lineJoin)) this.lineJoin = options.lineJoin;
-        if (!isNil(options.lineCap)) this.lineCap = options.lineCap;
-        if (!isNil(options.miterLimit)) this.miterLimit = options.miterLimit;
+        }
+        if (!isNil(options.lineJoin)) {
+            this.lineJoin = options.lineJoin;
+        }
+        if (!isNil(options.lineCap)) {
+            this.lineCap = options.lineCap;
+        }
+        if (!isNil(options.miterLimit)) {
+            this.miterLimit = options.miterLimit;
+        }
         this.update();
     }
 
@@ -170,7 +202,13 @@ export abstract class GraphicItemBase
      * @param mode 绘制模式
      */
     setMode(mode: GraphicMode) {
+        const beforeStroke = this.mode !== GraphicMode.Fill;
+        const nowStroke = mode !== GraphicMode.Fill;
         this.mode = mode;
+        if (nowStroke !== beforeStroke) {
+            // 当描边状态改变时，需要把路径标记为脏
+            this.pathDirty = true;
+        }
         this.update();
     }
 
@@ -308,9 +346,10 @@ export class Rect extends GraphicItemBase {
         this.pathDirty = true;
     }
 
-    getPath(): Path2D {
+    getPath(stroke: boolean, lineWidth: number): Path2D {
+        const pad = stroke ? lineWidth / 2 : 0;
         const path = new Path2D();
-        path.rect(0, 0, this.width, this.height);
+        path.rect(pad, pad, this.width - pad * 2, this.height - pad * 2);
         return path;
     }
 }
@@ -322,9 +361,11 @@ export class Circle extends GraphicItemBase implements IGraphicCircle {
     anchorX: number = 0.5;
     anchorY: number = 0.5;
 
-    getPath(): Path2D {
+    getPath(stroke: boolean, lineWidth: number): Path2D {
+        const pad = stroke ? lineWidth / 2 : 0;
         const path = new Path2D();
-        path.arc(this.radius, this.radius, this.radius, this.start, this.end);
+        const radius = this.radius;
+        path.arc(radius, radius, radius - pad, this.start, this.end);
         return path;
     }
 
@@ -398,29 +439,24 @@ export class Ellipse extends GraphicItemBase implements IGraphicEllipse {
     anchorX: number = 0.5;
     anchorY: number = 0.5;
 
-    getPath(): Path2D {
+    getPath(stroke: boolean, lineWidth: number): Path2D {
+        const pad = stroke ? lineWidth / 2 : 0;
         const path = new Path2D();
-        path.ellipse(
-            this.radiusX,
-            this.radiusY,
-            this.radiusX,
-            this.radiusY,
-            0,
-            this.start,
-            this.end
-        );
+        const rx = this.radiusX;
+        const ry = this.radiusY;
+        path.ellipse(rx, ry, rx - pad, ry - pad, 0, this.start, this.end);
         return path;
     }
 
     /**
-     * 设置椭圆的横纵轴长度
-     * @param x 横轴长度
-     * @param y 纵轴长度
+     * 设置椭圆的横纵轴半径
+     * @param x 横轴半径
+     * @param y 纵轴半径
      */
     setRadius(x: number, y: number) {
         this.radiusX = x;
         this.radiusY = y;
-        this.size(x, y);
+        this.size(x * 2, y * 2);
         this.pathDirty = true;
         this.update();
     }
@@ -720,18 +756,6 @@ export class QuadraticCurve
         return path;
     }
 
-    protected render(
-        canvas: MotaOffscreenCanvas2D,
-        _transform: Transform
-    ): void {
-        const ctx = canvas.ctx;
-        this.setCanvasState(canvas);
-        ctx.beginPath();
-        ctx.moveTo(this.sx, this.sy);
-        ctx.quadraticCurveTo(this.cpx, this.cpy, this.ex, this.ey);
-        ctx.stroke();
-    }
-
     /**
      * 设置起始点坐标
      */
@@ -862,7 +886,7 @@ export class Path extends GraphicItemBase implements IGraphicPath {
     }
 }
 
-export class RectR extends GraphicItemBase {
+export class RectR extends GraphicItemBase implements IGraphicRectR {
     /** 圆角属性，四元素数组，每个元素是一个二元素数组，表示这个角的半径，顺序为 左上，右上，右下，左下 */
     readonly corner: [radiusX: number, radiusY: number][] = [
         [0, 0],
@@ -871,28 +895,30 @@ export class RectR extends GraphicItemBase {
         [0, 0]
     ];
 
-    getPath(): Path2D {
+    getPath(stroke: boolean, lineWidth: number): Path2D {
+        const pad = stroke ? lineWidth / 2 : 0;
         const path = new Path2D();
         const { width: w, height: h } = this;
         const [[xtl, ytl], [xtr, ytr], [xbr, ybr], [xbl, ybl]] = this.corner;
+        const pi = Math.PI;
         // 左上圆角终点
-        path.moveTo(xtl, 0);
+        path.moveTo(xtl + pad, pad);
         // 右上圆角起点
-        path.lineTo(w - xtr, 0);
+        path.lineTo(w - xtr - pad, pad);
         // 右上圆角终点
-        path.ellipse(w - xtr, ytr, xtr, ytr, 0, -Math.PI / 2, 0);
+        path.ellipse(w - xtr - pad, ytr + pad, xtr, ytr, 0, -pi / 2, 0);
         // 右下圆角起点
-        path.lineTo(w, h - ybr);
+        path.lineTo(w - pad, h - ybr - pad);
         // 右下圆角终点
-        path.ellipse(w - xbr, h - ybr, xbr, ybr, 0, 0, Math.PI / 2);
+        path.ellipse(w - xbr - pad, h - ybr - pad, xbr, ybr, 0, 0, pi / 2);
         // 左下圆角起点
-        path.lineTo(xbl, h);
+        path.lineTo(xbl + pad, h - pad);
         // 左下圆角终点
-        path.ellipse(xbl, h - ybl, xbl, ybl, 0, Math.PI / 2, Math.PI);
+        path.ellipse(xbl + pad, h - ybl - pad, xbl, ybl, 0, pi / 2, pi);
         // 左上圆角起点
-        path.lineTo(0, ytl);
+        path.lineTo(pad, ytl + pad);
         // 左上圆角终点
-        path.ellipse(xtl, ytl, xtl, ytl, 0, Math.PI, -Math.PI / 2);
+        path.ellipse(xtl + pad, ytl + pad, xtl, ytl, 0, pi, -pi / 2);
         path.closePath();
         return path;
     }

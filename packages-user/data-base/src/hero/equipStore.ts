@@ -1,4 +1,9 @@
-import { IItemRawData, SaveCompression, IDataCommon } from '@user/data-common';
+import {
+    IItemRawData,
+    SaveCompression,
+    IDataCommon,
+    shouldReplay
+} from '@user/data-common';
 import { isNil, maxBy } from 'lodash-es';
 import { ValueModifier, PercentageModifier } from './modifier';
 import {
@@ -8,56 +13,131 @@ import {
     IHeroEquipsStore,
     IEquipmentSorter,
     IEquipmentSortHandler,
-    IHeroEquipsStoreSave
+    IHeroEquipsStoreSave,
+    IEquipmentStateHooks
 } from './types';
-import { logger } from '@motajs/common';
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    logger
+} from '@motajs/common';
 
-export class EquipmentState<THero> implements IEquipmentState<THero> {
+type Modifiers<THero> = Map<SelectKey<THero, number>, IHeroModifier<number>>;
+
+export class EquipmentState<THero>
+    extends Hookable<IEquipmentStateHooks<THero>>
+    implements IEquipmentState<THero>
+{
     readonly item: IItemRawData<THero>;
 
-    /** 装备产生的所有修饰器，每个元素为 [属性名, 修饰器] */
-    readonly modifiers: [SelectKey<THero, number>, IHeroModifier<number>][];
+    /** 数值修饰器列表 */
+    readonly valueModifiers: Modifiers<THero> = new Map();
+    /** 百分比修饰器列表 */
+    readonly perModifiers: Modifiers<THero> = new Map();
 
     /** 装备的数值属性 */
-    private readonly value: Map<SelectKey<THero, number>, number>;
+    private readonly value: Map<SelectKey<THero, number>, number> = new Map();
     /** 装备的百分比属性 */
-    private readonly percentage: Map<SelectKey<THero, number>, number>;
+    private readonly per: Map<SelectKey<THero, number>, number> = new Map();
+
+    /** 是否已经构建过修饰器 */
+    private built: boolean = false;
 
     constructor(
         readonly uid: number,
-        item: IItemRawData<THero>,
-        buildModifier: boolean = true
+        item: IItemRawData<THero>
     ) {
+        super();
         this.item = item;
-        this.modifiers = [];
 
         const equip = item.equip;
-        this.value = new Map(equip.value);
-        this.percentage = new Map(equip.percentage);
-
-        if (buildModifier) {
-            this.rebuildModifiers();
+        for (const [key, value] of Object.entries(equip.value)) {
+            this.value.set(key as SelectKey<THero, number>, value as number);
         }
+        for (const [key, value] of Object.entries(equip.percentage)) {
+            this.per.set(key as SelectKey<THero, number>, value as number);
+        }
+    }
+
+    protected createController(
+        hook: Partial<IEquipmentStateHooks<THero>>
+    ): IHookController<IEquipmentStateHooks<THero>> {
+        return new HookController(this, hook);
     }
 
     /**
-     * 从装备属性重新生成装备修饰器
+     * 触发修饰器变动钩子
      */
-    private rebuildModifiers() {
-        this.modifiers.length = 0;
-
-        for (const [name, baseVal] of this.value) {
-            this.modifiers.push([name, new ValueModifier(baseVal)]);
-        }
-        for (const [name, basePct] of this.percentage) {
-            this.modifiers.push([name, new PercentageModifier(basePct)]);
-        }
+    private notifyModifierChange() {
+        this.forEachHook(hook => hook.onChangeModifier?.(this.getModifiers()));
     }
 
-    getModifiers(): Iterable<
-        [keyof SelectType<THero, number>, IHeroModifier<number>]
+    @shouldReplay('Setting equipment value should be replayed.')
+    setValue(name: keyof SelectType<THero, number>, value: number): void {
+        if (value === 0) {
+            this.value.delete(name);
+            this.valueModifiers.delete(name);
+        } else {
+            this.value.set(name, value);
+            const modifier = this.valueModifiers.getOrInsertComputed(
+                name,
+                () => new ValueModifier(value, 0)
+            );
+            modifier.setValue(value);
+        }
+        this.notifyModifierChange();
+    }
+
+    @shouldReplay('Setting equipment percentage value should be replayed.')
+    setPercentage(name: keyof SelectType<THero, number>, value: number): void {
+        if (value === 0) {
+            this.per.delete(name);
+            this.perModifiers.delete(name);
+        } else {
+            this.per.set(name, value);
+            const modifier = this.perModifiers.getOrInsertComputed(
+                name,
+                () => new PercentageModifier(value, 10)
+            );
+            modifier.setValue(value);
+        }
+        this.notifyModifierChange();
+    }
+
+    getValue(name: keyof SelectType<THero, number>): number {
+        return this.value.get(name) ?? 0;
+    }
+
+    getPercentage(name: keyof SelectType<THero, number>): number {
+        return this.per.get(name) ?? 0;
+    }
+
+    buildModifiers() {
+        if (this.built) return;
+        this.built = true;
+
+        this.valueModifiers.clear();
+        this.perModifiers.clear();
+
+        for (const [name, baseVal] of this.value) {
+            this.valueModifiers.set(name, new ValueModifier(baseVal, 0));
+        }
+        for (const [name, basePct] of this.per) {
+            this.perModifiers.set(name, new PercentageModifier(basePct, 10));
+        }
+
+        this.notifyModifierChange();
+    }
+
+    *getModifiers(): Iterable<
+        [SelectKey<THero, number>, IHeroModifier<number>]
     > {
-        return this.modifiers;
+        if (!this.built) {
+            this.buildModifiers();
+        }
+        yield* this.valueModifiers;
+        yield* this.perModifiers;
     }
 
     /**
@@ -69,7 +149,7 @@ export class EquipmentState<THero> implements IEquipmentState<THero> {
             uid: this.uid,
             num: this.item.num,
             value: new Map(this.value),
-            percentage: new Map(this.percentage)
+            percentage: new Map(this.per)
         };
     }
 
@@ -81,14 +161,14 @@ export class EquipmentState<THero> implements IEquipmentState<THero> {
         const { value, percentage } = this.item.equip;
         const valueDiff = new Map<SelectKey<THero, number>, number>();
         for (const [name, equipValue] of this.value) {
-            const base = value.get(name);
+            const base = value[name];
             if (base !== equipValue) {
                 valueDiff.set(name, equipValue);
             }
         }
         const perDiff = new Map<SelectKey<THero, number>, number>();
-        for (const [name, equipPer] of this.percentage) {
-            const base = percentage.get(name);
+        for (const [name, equipPer] of this.per) {
+            const base = percentage[name];
             if (base !== equipPer) {
                 perDiff.set(name, equipPer);
             }
@@ -115,14 +195,14 @@ export class EquipmentState<THero> implements IEquipmentState<THero> {
      */
     private loadNoCompression(state: IEquipmentStateSave<THero>): void {
         this.value.clear();
-        this.percentage.clear();
+        this.per.clear();
         for (const [name, value] of state.value) {
             this.value.set(name, value);
         }
         for (const [name, value] of state.percentage) {
-            this.percentage.set(name, value);
+            this.per.set(name, value);
         }
-        this.rebuildModifiers();
+        this.buildModifiers();
     }
 
     /**
@@ -131,14 +211,18 @@ export class EquipmentState<THero> implements IEquipmentState<THero> {
      */
     private loadDiff(state: IEquipmentStateSave<THero>): void {
         this.value.clear();
-        this.percentage.clear();
+        this.per.clear();
 
         // 基准为装备原始定义，再叠加存档中的差异条目
-        for (const [name, value] of this.item.equip.value) {
-            this.value.set(name, value);
+        for (const [name, value] of Object.entries<number>(
+            this.item.equip.value
+        )) {
+            this.value.set(name as SelectKey<THero, number>, value);
         }
-        for (const [name, value] of this.item.equip.percentage) {
-            this.percentage.set(name, value);
+        for (const [name, value] of Object.entries<number>(
+            this.item.equip.percentage
+        )) {
+            this.per.set(name as SelectKey<THero, number>, value);
         }
 
         // 差异内容
@@ -146,10 +230,10 @@ export class EquipmentState<THero> implements IEquipmentState<THero> {
             this.value.set(name, value);
         }
         for (const [name, value] of state.percentage) {
-            this.percentage.set(name, value);
+            this.per.set(name, value);
         }
 
-        this.rebuildModifiers();
+        this.buildModifiers();
     }
 
     loadState(
@@ -181,6 +265,7 @@ export class HeroEquipsStore<THero> implements IHeroEquipsStore<THero> {
         this.state = state;
     }
 
+    @shouldReplay('Adding equipment to equip store should be replayed.')
     add(item: number | string): number {
         const num = this.state.tileStore.num(item);
         if (isNil(num)) return -1;
@@ -191,9 +276,11 @@ export class HeroEquipsStore<THero> implements IHeroEquipsStore<THero> {
         const uid = this.nextUid++;
         const state = new EquipmentState<THero>(uid, raw);
         this.instanceMap.set(uid, state);
+        state.buildModifiers();
         return uid;
     }
 
+    @shouldReplay('Deleting equipment from equip store should be replayed.')
     delete(uid: number): void {
         this.instanceMap.delete(uid);
     }
@@ -268,34 +355,16 @@ export class HeroEquipsStore<THero> implements IHeroEquipsStore<THero> {
         state: IHeroEquipsStoreSave<THero>,
         compression: SaveCompression
     ): void {
-        // 按 uid 复用现有实例原地读档，使外部持有的引用跨读档仍然有效；
-        // 仅当 uid 相同但装备图块数字不同时才替换实例
-        const savedUids = new Set<number>();
+        this.instanceMap.clear();
         for (const save of state.equipments) {
             const raw = this.state.itemStore.getData(save.num);
             if (!raw) {
                 logger.error(59, save.num.toString());
                 continue;
             }
-            savedUids.add(save.uid);
-            const existing = this.instanceMap.get(save.uid);
-            if (existing && existing.item.num === save.num) {
-                existing.loadState(save, compression);
-            } else {
-                const instance = new EquipmentState<THero>(
-                    save.uid,
-                    raw,
-                    false
-                );
-                instance.loadState(save, compression);
-                this.instanceMap.set(save.uid, instance);
-            }
-        }
-        // 以存档为准：存档中不存在的装备实例一律删除
-        for (const uid of this.instanceMap.keys()) {
-            if (!savedUids.has(uid)) {
-                this.instanceMap.delete(uid);
-            }
+            const ins = new EquipmentState<THero>(save.uid, raw);
+            ins.loadState(save, compression);
+            this.instanceMap.set(save.uid, ins);
         }
         if (state.equipments.length === 0) {
             this.nextUid = 0;
@@ -303,9 +372,10 @@ export class HeroEquipsStore<THero> implements IHeroEquipsStore<THero> {
             const maxUid = maxBy(state.equipments, 'uid');
             if (!maxUid) {
                 logger.error(58);
-                return;
+                this.nextUid = 0;
+            } else {
+                this.nextUid = maxUid.uid + 1;
             }
-            this.nextUid = maxUid.uid + 1;
         }
     }
 }

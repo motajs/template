@@ -87,9 +87,7 @@ export interface IScanAnimaterData {
 /**
  * 扫描动画控制器，会按照先从左到右，再从上到下的顺序依次输出，可以用于动画精灵图等
  */
-export class TextureScanAnimater
-    implements ITextureAnimater<IScanAnimaterData>
-{
+export class TextureScanAnimater implements ITextureAnimater<IScanAnimaterData> {
     *once(
         texture: ITexture,
         data: IScanAnimaterData
