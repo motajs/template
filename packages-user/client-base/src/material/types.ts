@@ -196,6 +196,12 @@ export interface ITextureAliasGetter {
     getTileByAlias(alias: string): Readonly<IMaterialFramedData> | null;
 
     /**
+     * 根据图块数字或 id 获取图块渲染信息，可以获取额外素材，会自动将未缓存的额外素材缓存
+     * @param tile 图块的数字或 id
+     */
+    tile(tile: number | string): Readonly<IMaterialFramedData> | null;
+
+    /**
      * 根据额外素材名称获取额外素材
      * @param alias 额外素材名称
      */

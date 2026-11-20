@@ -2,8 +2,8 @@ import { logger } from '@motajs/common';
 import { Font, MotaOffscreenCanvas2D } from '@motajs/render';
 import EventEmitter from 'eventemitter3';
 import { isNil } from 'lodash-es';
-import { RenderableData, AutotileRenderable, texture } from '../elements';
 import { IExcitable } from '@motajs/animate';
+import { IMaterialFramedData, ITextureManager } from '../material';
 
 /** 文字的安全填充，会填充在文字的上侧和下侧，防止削顶和削底 */
 const SAFE_PAD = 1;
@@ -36,6 +36,8 @@ const enum TextGuessStatus {
 }
 
 export interface ITextContentConfig {
+    /** 使用的游戏贴图管理器 */
+    materials: ITextureManager | null;
     /** 字体 */
     font: Font;
     /** 是否持续上一次的文本，开启后，如果修改后的文本以修改前的文本为开头，那么会继续播放而不会从头播放 */
@@ -126,8 +128,8 @@ export interface ITextContentIconNode extends ITextContentNodeBase {
     readonly type: TextContentType.Icon;
     /** 图标节点所在位置的字体大小，用于限制图标显示大小 */
     readonly fontSize: number;
-    /** 图标节点的图标数字 */
-    readonly icon: AllNumbers;
+    /** 图标节点的图标数字或 id */
+    readonly icon: number | string;
 }
 
 export interface ITextContentWaitNode extends ITextContentNodeBase {
@@ -167,9 +169,9 @@ export interface ITextContentIconBlock
     extends ITextContentBlockBase, ISizedTextContentBlock {
     readonly type: TextContentType.Icon;
     /** 图标 block 显示的图标 */
-    readonly icon: AllNumbers;
+    readonly icon: number | string;
     /** 图标的渲染信息 */
-    readonly renderable: RenderableData | AutotileRenderable;
+    readonly renderable: IMaterialFramedData;
 }
 
 export interface ITextContentWaitBlock extends ITextContentBlockBase {
@@ -283,6 +285,7 @@ export class TextContentTyper
 
         this.config = {
             font,
+            materials: config.materials ?? null,
             fontFamily: font.family,
             fontSize: font.size,
             fontWeight: font.weight,
@@ -707,7 +710,7 @@ export class TextContentParser {
         this.resolved = '';
     }
 
-    private addIconRenderable(pointer: number, icon: AllNumbers) {
+    private addIconRenderable(pointer: number, icon: number | string) {
         const data: ITextContentIconNode = {
             type: TextContentType.Icon,
             raw: this.getRaw(pointer),
@@ -813,7 +816,7 @@ export class TextContentParser {
         const name = header.slice(0, equalIndex);
         const param = header.slice(equalIndex + 1);
         if (name !== 'w' || !param) {
-            logger.warn(55, '[w=…]');
+            logger.warn(55, '[w=...]');
             return pointer;
         }
         const time = parseInt(param);
@@ -828,25 +831,14 @@ export class TextContentParser {
         const name = header.slice(0, equalIndex);
         const param = header.slice(equalIndex + 1);
         if (name !== 'icon' || !param) {
-            logger.warn(55, '[icon=…]');
+            logger.warn(55, '[icon=...]');
             return pointer;
         }
         if (/^\d+$/.test(param)) {
             const num = Number(param);
-            this.addIconRenderable(end + 1, num as AllNumbers);
+            this.addIconRenderable(end + 1, num);
         } else {
-            if (/^X\d+$/.test(param)) {
-                // 额外素材
-                const num = Number(param.slice(1));
-                this.addIconRenderable(end + 1, num as AllNumbers);
-            } else {
-                const num = texture.idNumberMap[param as AllIds];
-                if (num === void 0) {
-                    logger.warn(59, param);
-                    return end;
-                }
-                this.addIconRenderable(end + 1, num);
-            }
+            this.addIconRenderable(end + 1, param);
         }
         return end;
     }
@@ -1110,15 +1102,17 @@ export class TextContentParser {
                 return block;
             }
             case TextContentType.Icon: {
-                const renderable = texture.getRenderable(node.icon);
-                if (!renderable) break;
-                const [, , width, height] = renderable.render[0];
+                const manager = this.config.materials;
+                if (!manager) break;
+                const data = manager.tile(node.icon);
+                if (!data) break;
+                const { width, height } = data.texture;
                 const scale = node.fontSize / height;
                 const block: ITextContentIconBlock = {
                     type: TextContentType.Icon,
                     raw: node.raw,
                     icon: node.icon,
-                    renderable,
+                    renderable: data,
                     width: width * scale,
                     height: height * scale
                 };

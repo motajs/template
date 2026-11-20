@@ -8,7 +8,6 @@
         "@motajs/render-vue": "workspace:*",
         "@motajs/system": "workspace:*",
         "@user/client-base": "workspace:*",
-        "@user/client-system": "workspace:*",
         "@user/data-common": "workspace:*",
         "@user/data-base": "workspace:*",
         "@user/data-system": "workspace:*",

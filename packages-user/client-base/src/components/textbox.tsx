@@ -28,7 +28,6 @@ import {
     TextAlign
 } from './textboxTyper';
 import { SetupComponentOptions } from '@motajs/system';
-import { texture } from '../elements';
 import { DefaultProps, onExcited } from '@motajs/render-vue';
 import { Icon } from './icon';
 
@@ -198,10 +197,10 @@ export const TextContent = defineComponent<
                 }
                 case TextContentType.Icon: {
                     const { renderable: r, x: dx, y: dy, width, height } = data;
-                    const render = r.render;
-                    const [x, y, w, h] = render[0];
-                    const icon = r.autotile ? r.image[0] : r.image;
-                    ctx.drawImage(icon, x, y, w, h, dx, dy, width, height);
+                    const w = r.offset;
+                    const h = data.height;
+                    const source = r.texture.source;
+                    ctx.drawImage(source, 0, 0, w, h, dx, dy, width, height);
                     break;
                 }
             }
@@ -390,17 +389,18 @@ export const Textbox = defineComponent<
         () => data.height! - data.padding! * 2 - contentY.value
     );
     const iconLoc = computed<ElementLocator>(() => {
-        const y = contentY.value;
-        const pad = data.padding!;
+        // const y = contentY.value;
+        // const pad = data.padding!;
         const icon = data.icon;
         if (isNil(icon) || icon === 'none') {
             return [];
         } else {
-            const num = texture.idNumberMap[icon];
-            const renderable = texture.getRenderable(num);
-            if (!renderable) return [];
-            const [, , w, h] = renderable.render[0];
-            return [pad, pad + y, w, h];
+            // const num = texture.idNumberMap[icon];
+            // const renderable = texture.getRenderable(num);
+            // if (!renderable) return [];
+            // const [, , w, h] = renderable.render[0];
+            // return [pad, pad + y, w, h];
+            return [];
         }
     });
     const hasIcon = computed(() => {

@@ -1,4 +1,4 @@
-import { IClientSystem } from '@user/client-system';
+import { IClientBase } from '@user/client-base';
 import {
     ICoreStateConfig,
     IDataPlugin,
@@ -77,7 +77,7 @@ export interface IClientCoreConfig extends ICoreStateConfig {
     readonly clientPlugins: IClientPluginDefine[];
 }
 
-export interface IClientCore extends IClientSystem {
+export interface IClientCore extends IClientBase {
     /**
      * 根据 id 获取已加装的渲染端插件
      * @param id 插件的标识符

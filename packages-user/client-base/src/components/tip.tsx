@@ -3,7 +3,6 @@ import { logger } from '@motajs/common';
 import { computed, defineComponent, onUnmounted, ref } from 'vue';
 import { cosh } from '@motajs/animate';
 import { debounce } from 'lodash-es';
-import { texture } from '../elements';
 import { SetupComponentOptions } from '@motajs/system';
 import { DefaultProps, transitioned } from '@motajs/render-vue';
 import { Icon } from './icon';
@@ -50,10 +49,10 @@ export const Tip = defineComponent<TipProps>((props, { expose }) => {
     const hidden = computed(() => alpha.ref.value === 0);
     const showIcon = computed(() => iconNum.value !== 0);
     const iconSize = computed<[number, number]>(() => {
-        const renderable = texture.getRenderable(iconNum.value);
-        if (!renderable) return [1, 1];
-        const [, , width, height] = renderable.render[0];
-        return [width, height];
+        // const renderable = texture.getRenderable(iconNum.value);
+        // if (!renderable) return [1, 1];
+        // const [, , width, height] = renderable.render[0];
+        return [0, 0];
     });
     const iconLoc = computed<ElementLocator>(() => {
         const [width, height] = iconSize.value;
@@ -92,14 +91,14 @@ export const Tip = defineComponent<TipProps>((props, { expose }) => {
         alpha.set(0);
     }, 3000);
 
-    const drawTip = (tipText: string, iconId: AllIds | AllNumbers = 0) => {
-        if (typeof iconId === 'string') {
-            const num = texture.idNumberMap[iconId];
-            iconNum.value = num;
-        } else {
-            // 样板竟然会传 null 进来，然后报错
-            iconNum.value = iconId ?? 0;
-        }
+    const drawTip = (tipText: string) => {
+        // if (typeof iconId === 'string') {
+        //     const num = texture.idNumberMap[iconId];
+        //     iconNum.value = num;
+        // } else {
+        //     // 样板竟然会传 null 进来，然后报错
+        //     iconNum.value = iconId ?? 0;
+        // }
         text.value = core.replaceText(tipText);
         alpha.set(0, 0);
         alpha.set(1);

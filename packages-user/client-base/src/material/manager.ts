@@ -329,6 +329,14 @@ export class TextureManager implements ITextureManager {
         }
     }
 
+    tile(tile: number | string): Readonly<IMaterialFramedData> | null {
+        if (typeof tile === 'number') {
+            return this.getTile(tile);
+        } else {
+            return this.getTileByAlias(tile);
+        }
+    }
+
     getTilesetByAlias(alias: string): ITexture | null {
         return this.tilesetStore.fromAlias(alias);
     }
