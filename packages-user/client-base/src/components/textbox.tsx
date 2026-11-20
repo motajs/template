@@ -161,8 +161,8 @@ export const TextContent = defineComponent<
 
     const updateLoc = () => {
         const height = getHeight();
-        const [x = 0, y = 0, , h = 0, ax = 0, ay = 0] = props.loc ?? loc.value;
-        loc.value = [x, y, props.width, props.autoHeight ? height : h, ax, ay];
+        const [x = 0, y = 0, , h = 0] = props.loc ?? loc.value;
+        loc.value = [x, y, props.width, props.autoHeight ? height : h];
         emit('updateHeight', height);
     };
 

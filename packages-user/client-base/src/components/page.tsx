@@ -11,16 +11,13 @@ import {
 import { clamp, isNil } from 'lodash-es';
 import { ElementLocator, Font } from '@motajs/render';
 import { SetupComponentOptions } from '@motajs/system';
-import { DefaultProps } from '@motajs/render-vue';
-
-/** 圆角矩形页码距离容器的边框大小，与 pageSize 相乘 */
-const RECT_PAD = 0.1;
+import { DefaultProps, lwh } from '@motajs/render-vue';
 
 export interface PageProps extends DefaultProps {
     /** 共有多少页 */
     pages: number;
     /** 页码组件的定位 */
-    loc: ElementLocator;
+    loc?: ElementLocator;
     /** 当前页码 */
     page?: number;
     /** 页码的字体 */
@@ -59,7 +56,17 @@ type PageSlots = SlotsType<{
 }>;
 
 const pageProps = {
-    props: ['pages', 'loc', 'page', 'font', 'hideIfSingle'],
+    props: [
+        'pages',
+        'loc',
+        'x',
+        'y',
+        'width',
+        'height',
+        'page',
+        'font',
+        'hideIfSingle'
+    ],
     emits: ['pageChange', 'update:page']
 } satisfies SetupComponentOptions<
     PageProps,
@@ -115,8 +122,7 @@ export const Page = defineComponent<
     const font = computed(() => props.font ?? new Font());
     const isFirst = computed(() => nowPage.value === 0);
     const isLast = computed(() => nowPage.value === props.pages - 1);
-    const width = computed(() => props.loc[2] ?? 200);
-    const height = computed(() => props.loc[3] ?? 200);
+    const [loc, width, height] = lwh(props);
     const round = computed(() => font.value.size / 4);
     const nowPageFont = computed(() => Font.clone(font.value, { weight: 700 }));
     /** 页码的横向间距 */
@@ -135,6 +141,7 @@ export const Page = defineComponent<
     const rightColor = computed(() => (isLast.value ? '#666' : '#ddd'));
 
     let updating = false;
+    /** 更新页码矩形的位置 */
     const updatePagePos = () => {
         if (updating) return;
         updating = true;
@@ -147,13 +154,14 @@ export const Page = defineComponent<
         const center = width.value / 2;
         const size = font.value.size * 1.5;
         const int = size + interval.value;
-        nowPageLoc.value = [center, 0, size, size, 0.5, 0];
-        leftPageLoc.value = [center - int, 0, size, size, 0.5, 0];
-        leftLoc.value = [center - int * 2, 0, size, size, 0.5, 0];
-        rightPageLoc.value = [center + int, 0, size, size, 0.5, 0];
-        rightLoc.value = [center + int * 2, 0, size, size, 0.5, 0];
+        nowPageLoc.value = [center, 0, size, size];
+        leftPageLoc.value = [center - int, 0, size, size];
+        leftLoc.value = [center - int * 2, 0, size, size];
+        rightPageLoc.value = [center + int, 0, size, size];
+        rightLoc.value = [center + int * 2, 0, size, size];
     };
 
+    /** 更新箭头的尺寸 */
     const updateArrowPath = () => {
         const rectSize = font.value.size * 1.5;
         const size = font.value.size;
@@ -170,11 +178,11 @@ export const Page = defineComponent<
         rightArrow.value = right;
     };
 
+    /** 更新页码矩形和文字的位置 */
     const updateRectAndText = () => {
         const size = font.value.size * 1.5;
-        const pad = RECT_PAD * size;
-        rectLoc.value = [pad, pad, size - pad * 2, size - pad * 2];
-        textLoc.value = [size / 2, size / 2, void 0, void 0, 0.5, 0.5];
+        rectLoc.value = [0, 0, size, size];
+        textLoc.value = [size / 2, size / 2];
     };
 
     watch(font, () => {
@@ -236,118 +244,130 @@ export const Page = defineComponent<
 
     expose<PageExpose>({ changePage, movePage, now });
 
-    return () => {
-        return (
-            <container loc={props.loc}>
-                <container loc={contentLoc.value}>
-                    {slots.default?.(nowPage.value)}
+    return () => (
+        <container loc={loc.value}>
+            <container loc={contentLoc.value}>
+                {slots.default?.(nowPage.value)}
+            </container>
+            <container loc={pageLoc.value} hidden={hide.value} nocache>
+                <container
+                    key={1}
+                    loc={leftLoc.value}
+                    anc={[0.5, 0]}
+                    onClick={lastPage}
+                    cursor="pointer"
+                    nocache
+                >
+                    <g-rectr
+                        loc={rectLoc.value}
+                        circle={[round.value]}
+                        strokeStyle={leftColor.value}
+                        lineWidth={1}
+                        stroke
+                    ></g-rectr>
+                    <g-path
+                        path={leftArrow.value}
+                        stroke
+                        lineJoin="round"
+                        lineCap="round"
+                        strokeStyle={leftColor.value}
+                        lineWidth={2}
+                    ></g-path>
                 </container>
-                <container loc={pageLoc.value} hidden={hide.value} nocache>
-                    <container
-                        key={1}
-                        loc={leftLoc.value}
-                        onClick={lastPage}
-                        cursor="pointer"
-                        nocache
-                    >
-                        <g-rectr
-                            loc={rectLoc.value}
-                            circle={[round.value]}
-                            strokeStyle={leftColor.value}
-                            lineWidth={1}
-                            stroke
-                        ></g-rectr>
-                        <g-path
-                            path={leftArrow.value}
-                            stroke
-                            strokeStyle={leftColor.value}
-                            lineWidth={1}
-                        ></g-path>
-                    </container>
-                    {!isFirst.value && (
-                        <container
-                            key={2}
-                            loc={leftPageLoc.value}
-                            onClick={lastPage}
-                            cursor="pointer"
-                            nocache
-                        >
-                            <g-rectr
-                                loc={rectLoc.value}
-                                circle={[round.value]}
-                                strokeStyle="#ddd"
-                                lineWidth={1}
-                                stroke
-                            ></g-rectr>
-                            <text
-                                loc={textLoc.value}
-                                text={nowPage.value.toString()}
-                                font={font.value}
-                            ></text>
-                        </container>
-                    )}
-                    <container loc={nowPageLoc.value} key={3} nocache>
-                        <g-rectr
-                            loc={rectLoc.value}
-                            circle={[round.value]}
-                            strokeStyle="#ddd"
-                            fillStyle="#ddd"
-                            lineWidth={1}
-                            fill
-                            stroke
-                        ></g-rectr>
-                        <text
-                            loc={textLoc.value}
-                            text={(nowPage.value + 1).toString()}
-                            fillStyle="#222"
-                            font={nowPageFont.value}
-                        ></text>
-                    </container>
-                    {!isLast.value && (
-                        <container
-                            key={4}
-                            loc={rightPageLoc.value}
-                            onClick={nextPage}
-                            cursor="pointer"
-                            nocache
-                        >
-                            <g-rectr
-                                loc={rectLoc.value}
-                                circle={[round.value]}
-                                strokeStyle="#ddd"
-                                lineWidth={1}
-                                stroke
-                            ></g-rectr>
-                            <text
-                                loc={textLoc.value}
-                                text={(nowPage.value + 2).toString()}
-                                font={font.value}
-                            ></text>
-                        </container>
-                    )}
-                    <container
-                        key={5}
-                        loc={rightLoc.value}
-                        onClick={nextPage}
-                        cursor="pointer"
-                        nocache
-                    >
-                        <g-rectr
-                            loc={rectLoc.value}
-                            circle={[round.value]}
-                            strokeStyle={rightColor.value}
-                            lineWidth={1}
-                            stroke
-                        ></g-rectr>
-                        <g-path
-                            path={rightArrow.value}
-                            stroke
-                            strokeStyle={rightColor.value}
-                            lineWidth={1}
-                        ></g-path>
-                    </container>
+                <container
+                    key={2}
+                    loc={leftPageLoc.value}
+                    anc={[0.5, 0]}
+                    onClick={lastPage}
+                    cursor="pointer"
+                    hidden={isFirst.value}
+                    nocache
+                >
+                    <g-rectr
+                        loc={rectLoc.value}
+                        circle={[round.value]}
+                        strokeStyle="#ddd"
+                        lineWidth={1}
+                        stroke
+                    ></g-rectr>
+                    <text
+                        loc={textLoc.value}
+                        anc={[0.5, 0.5]}
+                        text={nowPage.value.toString()}
+                        font={font.value}
+                    ></text>
+                </container>
+                <container
+                    loc={nowPageLoc.value}
+                    anc={[0.5, 0]}
+                    key={3}
+                    nocache
+                >
+                    <g-rectr
+                        loc={rectLoc.value}
+                        circle={[round.value]}
+                        strokeStyle="#ddd"
+                        fillStyle="#ddd"
+                        lineWidth={1}
+                        fill
+                        stroke
+                    ></g-rectr>
+                    <text
+                        loc={textLoc.value}
+                        anc={[0.5, 0.5]}
+                        text={(nowPage.value + 1).toString()}
+                        fillStyle="#222"
+                        font={nowPageFont.value}
+                    ></text>
+                </container>
+                <container
+                    key={4}
+                    loc={rightPageLoc.value}
+                    anc={[0.5, 0]}
+                    onClick={nextPage}
+                    cursor="pointer"
+                    hidden={isLast.value}
+                    nocache
+                >
+                    <g-rectr
+                        loc={rectLoc.value}
+                        circle={[round.value]}
+                        strokeStyle="#ddd"
+                        lineWidth={1}
+                        stroke
+                    ></g-rectr>
+                    <text
+                        loc={textLoc.value}
+                        anc={[0.5, 0.5]}
+                        text={(nowPage.value + 2).toString()}
+                        font={font.value}
+                    ></text>
+                </container>
+                <container
+                    key={5}
+                    loc={rightLoc.value}
+                    anc={[0.5, 0]}
+                    onClick={nextPage}
+                    cursor="pointer"
+                    nocache
+                >
+                    <g-rectr
+                        loc={rectLoc.value}
+                        circle={[round.value]}
+                        strokeStyle={rightColor.value}
+                        lineWidth={1}
+                        stroke
+                    ></g-rectr>
+                    <g-path
+                        path={rightArrow.value}
+                        stroke
+                        strokeStyle={rightColor.value}
+                        lineJoin="round"
+                        lineCap="round"
+                        lineWidth={2}
+                    ></g-path>
                 </container>
             </container>
-        );
-    };
+        </container>
+    );
 }, pageProps);

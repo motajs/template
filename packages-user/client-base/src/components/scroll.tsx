@@ -32,6 +32,7 @@ import { clamp } from 'lodash-es';
 import { SetupComponentOptions } from '@motajs/system';
 import {
     DefaultProps,
+    lwh,
     transitioned,
     useRendererRoot
 } from '@motajs/render-vue';
@@ -72,7 +73,7 @@ export type ScrollSlots = SlotsType<{
 }>;
 
 const scrollProps = {
-    props: ['hor', 'noscroll', 'loc', 'padEnd']
+    props: ['hor', 'noscroll', 'loc', 'x', 'y', 'width', 'height', 'padEnd']
 } satisfies SetupComponentOptions<ScrollProps, {}, string, ScrollSlots>;
 
 /** 滚动条图示的最短长度 */
@@ -124,8 +125,7 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
 
         const scrollAlpha = transitioned(0.5, 100, linear())!;
 
-        const width = computed(() => props.loc[2] ?? 200);
-        const height = computed(() => props.loc[3] ?? 200);
+        const [loc, width, height] = lwh(props);
         const direction = computed(() =>
             props.hor ? ScrollDirection.Horizontal : ScrollDirection.Vertical
         );
@@ -570,36 +570,34 @@ export const Scroll = defineComponent<ScrollProps, {}, string, ScrollSlots>(
 
         //#endregion
 
-        return () => {
-            return (
-                <container loc={props.loc} onWheel={wheel} nocache>
-                    <container-custom
-                        loc={[0, 0, width.value, height.value]}
-                        ref={content}
-                        onDown={down}
-                        render={renderContent}
-                        propagate={customPropagate}
-                        zIndex={0}
-                        bindings={[scrollPos.ref.value, contentPos.ref.value]}
-                        onUpdateChildren={updateScroll}
-                    >
-                        {slots.default?.()}
-                    </container-custom>
-                    <custom
-                        nocache
-                        hidden={props.noscroll}
-                        loc={sp.value}
-                        ref={scroll}
-                        render={drawScroll}
-                        onDown={downScroll}
-                        onUp={upScroll}
-                        zIndex={10}
-                        onEnter={enter}
-                        onLeave={leave}
-                    ></custom>
-                </container>
-            );
-        };
+        return () => (
+            <container loc={loc.value} onWheel={wheel} nocache>
+                <container-custom
+                    loc={[0, 0, width.value, height.value]}
+                    ref={content}
+                    onDown={down}
+                    render={renderContent}
+                    propagate={customPropagate}
+                    zIndex={0}
+                    bindings={[scrollPos.ref.value, contentPos.ref.value]}
+                    onUpdateChildren={updateScroll}
+                >
+                    {slots.default?.()}
+                </container-custom>
+                <custom
+                    nocache
+                    hidden={props.noscroll}
+                    loc={sp.value}
+                    ref={scroll}
+                    render={drawScroll}
+                    onDown={downScroll}
+                    onUp={upScroll}
+                    zIndex={10}
+                    onEnter={enter}
+                    onLeave={leave}
+                ></custom>
+            </container>
+        );
     },
     scrollProps
 );

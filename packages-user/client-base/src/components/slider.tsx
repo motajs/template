@@ -1,6 +1,6 @@
 import { IHookController } from '@motajs/common';
 import { CanvasStyle, Font, IActionEvent, IRenderItem } from '@motajs/render';
-import { DefaultProps } from '@motajs/render-vue';
+import { DefaultProps, lwh } from '@motajs/render-vue';
 import { SetupComponentOptions } from '@motajs/system';
 import { clamp, isNil } from 'lodash-es';
 import {
@@ -52,6 +52,8 @@ export type SliderEmits = {
 const sliderProps = {
     props: [
         'loc',
+        'x',
+        'y',
         'width',
         'height',
         'value',
@@ -88,8 +90,7 @@ export const Slider = defineComponent<
     const value = ref(props.value ?? min.value);
     const rect = ref<IRenderItem>();
 
-    const width = computed(() => props.loc?.[2] ?? props.width ?? 200);
-    const height = computed(() => props.loc?.[3] ?? props.height ?? 200);
+    const [loc, width, height] = lwh(props);
 
     const cy = computed(() => height.value / 2);
     const sx = computed(() => props.padding ?? 4);
@@ -196,13 +197,7 @@ export const Slider = defineComponent<
     });
 
     return () => (
-        <container
-            ref={rect}
-            loc={props.loc}
-            width={props.width}
-            height={props.height}
-            nocache
-        >
+        <container ref={rect} loc={loc.value} nocache>
             <g-line
                 line={[sx.value, cy.value, ex.value, cy.value]}
                 lineCap="round"

@@ -1,11 +1,14 @@
 import {
     ElementLocator,
     CustomRenderItem,
-    MotaOffscreenCanvas2D
+    MotaOffscreenCanvas2D,
+    CanvasStyle,
+    RectRCircleParams
 } from '@motajs/render';
 import {
     cycledTransition,
     DefaultProps,
+    lwh,
     onExcitedFunc,
     PathProps
 } from '@motajs/render-vue';
@@ -13,8 +16,9 @@ import { computed, defineComponent, ref, watch } from 'vue';
 import { TextContent, TextContentProps } from './textbox';
 import { Scroll, ScrollExpose, ScrollProps } from './scroll';
 import { SetupComponentOptions } from '@motajs/system';
-import { clamp } from 'lodash-es';
+import { clamp, isNil } from 'lodash-es';
 import { cosh, CurveMode } from '@motajs/animate';
+import { ITextureManager } from '../material';
 
 interface ProgressProps extends DefaultProps {
     /** 进度条的位置 */
@@ -30,7 +34,7 @@ interface ProgressProps extends DefaultProps {
 }
 
 const progressProps = {
-    props: ['loc', 'progress', 'success', 'background', 'lineWidth']
+    props: ['progress', 'success', 'background', 'lineWidth']
 } satisfies SetupComponentOptions<ProgressProps>;
 
 /**
@@ -47,9 +51,7 @@ export const Progress = defineComponent<ProgressProps>(props => {
     const element = ref<CustomRenderItem>();
 
     const render = (canvas: MotaOffscreenCanvas2D) => {
-        const { ctx } = canvas;
-        const width = props.loc[2] ?? 200;
-        const height = props.loc[3] ?? 200;
+        const { ctx, width, height } = canvas;
         ctx.lineCap = 'round';
         const lineWidth = props.lineWidth ?? 2;
         ctx.lineWidth = lineWidth;
@@ -74,7 +76,7 @@ export const Progress = defineComponent<ProgressProps>(props => {
     });
 
     return () => {
-        return <custom ref={element} loc={props.loc} render={render}></custom>;
+        return <custom ref={element} render={render}></custom>;
     };
 }, progressProps);
 
@@ -181,7 +183,7 @@ export interface ScrollTextExpose {
 }
 
 const scrollProps = {
-    props: ['speed', 'loc', 'pad', 'width'],
+    props: ['speed', 'loc', 'x', 'y', 'width', 'height', 'pad'],
     emits: ['scrollEnd']
 } satisfies SetupComponentOptions<
     ScrollTextProps,
@@ -217,7 +219,7 @@ export const ScrollText = defineComponent<
     const scroll = ref<ScrollExpose>();
     const speed = ref(props.speed);
 
-    const eleHeight = computed(() => props.loc[3] ?? props.width);
+    const [loc, width, height] = lwh(props);
     const pad = computed(() => props.pad ?? 16);
 
     let lastFixedTime = -1;
@@ -267,14 +269,14 @@ export const ScrollText = defineComponent<
     return () => (
         <Scroll
             ref={scroll}
-            loc={props.loc}
-            padEnd={eleHeight.value + pad.value}
+            loc={loc.value}
+            padEnd={height.value + pad.value}
             noscroll
         >
             <TextContent
                 {...attrs}
-                width={props.width - 16}
-                loc={[8, eleHeight.value + pad.value]}
+                width={width.value}
+                loc={[0, height.value + pad.value]}
                 autoHeight
             />
         </Scroll>
@@ -282,16 +284,32 @@ export const ScrollText = defineComponent<
 }, scrollProps);
 
 export interface SelectionProps extends DefaultProps {
-    loc: ElementLocator;
+    /** 非 `winskin` 模式下，填充颜色 */
     color?: CanvasStyle;
+    /** 非 `winskin` 模式下，描边颜色 */
     border?: CanvasStyle;
-    winskin?: ImageIds;
+    /** 非 `winskin` 模式下，圆角矩形的圆角参数，默认为 [4] */
+    circle?: RectRCircleParams;
+    /** 使用 `winskin` 背景图，会忽略 `color` `border` `circle` 参数 */
+    winskin?: string;
+    /** 边框宽度，默认为 2 */
+    borderSize?: number;
+    /** winskin 使用的贴图管理器 */
+    manager?: ITextureManager;
     /** 选择图标的不透明度范围 */
     alphaRange?: [number, number];
 }
 
 const selectionProps = {
-    props: ['loc', 'color', 'border', 'winskin', 'alphaRange']
+    props: [
+        'color',
+        'border',
+        'circle',
+        'winskin',
+        'borderSize',
+        'manager',
+        'alphaRange'
+    ]
 } satisfies SetupComponentOptions<SelectionProps>;
 
 /**
@@ -313,52 +331,60 @@ export const Selection = defineComponent<SelectionProps>(props => {
         cosh(2, CurveMode.EaseInOut)
     )!;
 
-    const isWinskin = computed(() => !!props.winskin);
-    const winskinImage = computed(() =>
-        isWinskin.value ? core.material.images.images[props.winskin!] : null
-    );
-    const fixedLoc = computed<ElementLocator>(() => {
-        const [x = 0, y = 0, width = 200, height = 200, ax, ay] = props.loc;
-        return [x + 1, y + 1, width - 2, height - 2, ax, ay];
+    const isWinskin = computed(() => !isNil(props.winskin));
+    const winskin = computed(() => {
+        if (isNil(props.winskin) || !props.manager) {
+            return null;
+        } else {
+            return props.manager.getImageByAlias(props.winskin);
+        }
     });
 
     const renderWinskin = (canvas: MotaOffscreenCanvas2D) => {
-        const ctx = canvas.ctx;
-        const image = winskinImage.value;
-        if (!image) return;
-        const [, , width = 200, height = 200] = props.loc;
+        const { ctx, width: w, height: h } = canvas;
+        if (!winskin.value) return;
+        const { width, height, source: i } = winskin.value;
         // 背景
-        ctx.drawImage(image, 130, 66, 28, 28, 2, 2, width - 4, height - 4);
+        const x1 = (2 / 192) * width;
+        const x2 = (28 / 192) * width;
+        const x3 = (128 / 192) * width;
+        const x4 = (130 / 192) * width;
+        const x5 = (158 / 192) * width;
+        const y1 = (2 / 128) * height;
+        const y2 = (28 / 128) * height;
+        const y3 = (64 / 128) * height;
+        const y4 = (66 / 128) * height;
+        const y5 = (94 / 128) * height;
+        ctx.drawImage(i, x4, y4, x2, y2, 2, 2, w - 4, h - 4);
         // 四个角
-        ctx.drawImage(image, 128, 64, 2, 2, 0, 0, 2, 2);
-        ctx.drawImage(image, 158, 64, 2, 2, width - 2, 0, 2, 2);
-        ctx.drawImage(image, 128, 94, 2, 2, 0, height - 2, 2, 2);
-        ctx.drawImage(image, 158, 94, 2, 2, width - 2, height - 2, 2, 2);
+        ctx.drawImage(i, x3, y3, x1, y1, 0, 0, 2, 2);
+        ctx.drawImage(i, x5, y3, x1, y1, w - 2, 0, 2, 2);
+        ctx.drawImage(i, x3, y5, x1, y1, 0, h - 2, 2, 2);
+        ctx.drawImage(i, x5, y5, x1, y1, w - 2, h - 2, 2, 2);
         // 四条边
-        ctx.drawImage(image, 130, 64, 28, 2, 2, 0, width - 4, 2);
-        ctx.drawImage(image, 130, 94, 28, 2, 2, height - 2, width - 4, 2);
-        ctx.drawImage(image, 128, 66, 2, 28, 0, 2, 2, height - 4);
-        ctx.drawImage(image, 158, 66, 2, 28, width - 2, 2, 2, height - 4);
+        ctx.drawImage(i, x4, y3, x2, y1, 2, 0, w - 4, 2);
+        ctx.drawImage(i, x4, y5, x2, y1, 2, h - 2, w - 4, 2);
+        ctx.drawImage(i, x3, y4, x1, y2, 0, 2, 2, h - 4);
+        ctx.drawImage(i, x5, y4, x1, y2, w - 2, 2, 2, h - 4);
     };
 
     return () =>
         isWinskin.value ? (
             <custom
-                loc={props.loc}
                 render={renderWinskin}
                 alpha={alpha.ref.value}
+                bindings={[winskin.value]}
                 noanti
             />
         ) : (
             <g-rectr
-                loc={fixedLoc.value}
-                circle={[4]}
+                circle={props.circle ?? [4]}
                 alpha={alpha.ref.value}
                 fill
                 stroke
                 fillStyle={props.color}
                 strokeStyle={props.border}
-                lineWidth={1}
+                lineWidth={props.borderSize}
             />
         );
 }, selectionProps);

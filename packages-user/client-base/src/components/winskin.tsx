@@ -17,7 +17,7 @@ export interface IWinskinProps extends DefaultProps {
 }
 
 const winskinProps = {
-    props: ['winskin', 'manager', 'texture']
+    props: ['winskin', 'manager', 'texture', 'borderSize']
 } satisfies SetupComponentOptions<IWinskinProps>;
 
 /** winskin 最小单元宽度 */

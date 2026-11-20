@@ -1,7 +1,7 @@
-import { DefaultProps } from '@motajs/render-vue';
+import { DefaultProps, lwh } from '@motajs/render-vue';
 import { computed, defineComponent, ref, SlotsType, VNode, watch } from 'vue';
 import { Selection } from './misc';
-import { ElementLocator, Font } from '@motajs/render';
+import { ElementLocator, Font, RectRCircleParams } from '@motajs/render';
 import { SetupComponentOptions } from '@motajs/system';
 import { Scroll } from './scroll';
 
@@ -16,12 +16,16 @@ export interface ListProps extends DefaultProps {
     lineHeight?: number;
     /** 字体 */
     font?: Font;
-    /** 使用 winskin 作为光标 */
+    /** 使用 winskin 作为光标，会忽略 `color` `border` `circle` */
     winskin?: ImageIds;
     /** 使用指定样式作为光标背景 */
     color?: CanvasStyle;
     /** 使用指定样式作为光标边框 */
     border?: CanvasStyle;
+    /** 光标的边框宽度，默认为 2 */
+    borderSize?: number;
+    /** 使用非 `winskin` 模式时，圆角矩形的圆角参数 */
+    circle?: RectRCircleParams;
     /** 选择图标的不透明度范围 */
     alphaRange?: [number, number];
 }
@@ -41,11 +45,16 @@ const listProps = {
         'list',
         'selected',
         'loc',
+        'x',
+        'y',
+        'width',
+        'height',
         'lineHeight',
         'font',
         'winskin',
         'color',
         'border',
+        'circle',
         'alphaRange'
     ],
     emits: ['update', 'update:selected']
@@ -53,8 +62,16 @@ const listProps = {
 
 export const List = defineComponent<ListProps, ListEmits, keyof ListEmits>(
     (props, { emit }) => {
+        /** 当前选中项 */
         const selected = ref(props.selected ?? props.list[0][0]);
-        const lineHeight = computed(() => props.lineHeight ?? 24);
+        /** 行高 */
+        const lh = computed(() => props.lineHeight ?? 24);
+        /** 当前选中项的索引 */
+        const index = computed(() =>
+            props.list.findIndex(([key]) => key === selected.value)
+        );
+
+        const [loc, w] = lwh(props);
 
         const select = (value: string) => {
             selected.value = value;
@@ -70,52 +87,34 @@ export const List = defineComponent<ListProps, ListEmits, keyof ListEmits>(
         );
 
         return () => (
-            <Scroll loc={props.loc}>
-                {props.list.map((v, i) => {
-                    const [key, value] = v;
-                    const loc: ElementLocator = [
-                        0,
-                        lineHeight.value * i,
-                        props.loc[2] ?? 200,
-                        lineHeight.value
-                    ];
-                    const selectionLoc: ElementLocator = [
-                        0,
-                        0,
-                        (props.loc[2] ?? 200) - 10,
-                        lineHeight.value
-                    ];
-                    const textLoc: ElementLocator = [
-                        10,
-                        lineHeight.value / 2,
-                        void 0,
-                        void 0,
-                        0,
-                        0.5
-                    ];
+            <Scroll loc={loc.value}>
+                {props.list.map(([key, value], i) => {
                     return (
-                        <container
-                            loc={loc}
+                        <container // 得加个 container 拓展点击区域
+                            loc={[0, lh.value * i, w.value, lh.value]}
                             nocache
                             onClick={() => select(key)}
+                            zIndex={10}
                         >
-                            {selected.value === key && (
-                                <Selection
-                                    loc={selectionLoc}
-                                    color={props.color}
-                                    border={props.border}
-                                    winskin={props.winskin}
-                                    alphaRange={props.alphaRange}
-                                />
-                            )}
                             <text
-                                loc={textLoc}
+                                loc={[10, lh.value / 2]}
+                                anc={[0, 0.5]}
                                 text={value}
                                 font={props.font}
                             />
                         </container>
                     );
                 })}
+                <Selection
+                    loc={[0, lh.value * index.value, w.value - 10, lh.value]}
+                    color={props.color}
+                    border={props.border}
+                    winskin={props.winskin}
+                    alphaRange={props.alphaRange}
+                    circle={props.circle}
+                    borderSize={props.borderSize}
+                    zIndex={0}
+                />
             </Scroll>
         );
     },

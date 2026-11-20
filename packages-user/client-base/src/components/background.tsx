@@ -1,47 +1,58 @@
 import { SetupComponentOptions } from '@motajs/system';
-import { ElementLocator } from '@motajs/render';
 import { DefaultProps } from '@motajs/render-vue';
 import { computed, defineComponent } from 'vue';
+import { Winskin } from './winskin';
+import { ITextureManager } from '../material';
+import { isNil } from 'lodash-es';
+import { RectRCircleParams } from '@motajs/render';
 
 export interface BackgroundProps extends DefaultProps {
-    loc: ElementLocator;
-    winskin?: ImageIds;
+    /** 使用 winskin 作为背景，此时 `color` 和 `border` 无效 */
+    winskin?: string;
+    /** 边框宽度，当使用 `winskin` 作为背景时，默认为 32，否则默认为 2 */
+    borderWidth?: number;
+    /** 填充颜色 */
     color?: CanvasStyle;
+    /** 边框颜色 */
     border?: CanvasStyle;
+    /** 非 `winskin` 模式下，圆角矩形的参数，默认为 [4] */
+    circle?: RectRCircleParams;
+    /** 使用的贴图管理器 */
+    manager?: ITextureManager;
 }
 
 const backgroundProps = {
-    props: ['loc', 'winskin', 'color', 'border']
+    props: ['winskin', 'borderWidth', 'color', 'border', 'manager', 'circle']
 } satisfies SetupComponentOptions<BackgroundProps>;
 
 /**
  * 背景组件，与 Selection 类似，不过绘制的是背景，而不是选择光标，参数参考 {@link BackgroundProps}，用例如下：
  * ```tsx
  * // 使用 winskin2.png 作为背景
- * <Background loc={[8, 8, 160, 160]} winskin="winskin2.png" />
+ * <Background loc={[8, 8, 160, 160]} winskin="winskin2.png" manager={props.state.materials} />
  * // 使用指定填充和边框颜色作为背景
  * <Background loc={[8, 8, 160, 160]} color="#333" border="gold" />
  * ```
  */
 export const Background = defineComponent<BackgroundProps>(props => {
-    const isWinskin = computed(() => !!props.winskin);
-    const fixedLoc = computed<ElementLocator>(() => {
-        const [x = 0, y = 0, width = 200, height = 200] = props.loc;
-        return [x + 2, y + 2, width - 4, height - 4];
-    });
+    const isWinskin = computed(() => !isNil(props.winskin));
 
     return () =>
         isWinskin.value ? (
-            <winskin imageName={props.winskin!} loc={props.loc} noanti />
+            <Winskin
+                winskin={props.winskin}
+                manager={props.manager}
+                borderSize={props.borderWidth}
+                noanti
+            />
         ) : (
             <g-rectr
-                loc={fixedLoc.value}
                 fillStyle={props.color}
                 strokeStyle={props.border}
                 fill
                 stroke
-                lineWidth={2}
-                circle={[4]}
+                lineWidth={props.borderWidth ?? 2}
+                circle={props.circle ?? [4]}
             />
         );
 }, backgroundProps);

@@ -1,4 +1,4 @@
-import { DefaultProps, transitionedColor } from '@motajs/render-vue';
+import { DefaultProps, lwh, transitionedColor } from '@motajs/render-vue';
 import { computed, defineComponent, onUnmounted, ref, watch } from 'vue';
 import { TextContent, TextContentProps } from './textbox';
 import {
@@ -50,6 +50,10 @@ export type InputEmits = {
 const inputProps = {
     props: [
         'loc',
+        'x',
+        'y',
+        'width',
+        'height',
         'placeholder',
         'value',
         'multiline',
@@ -90,8 +94,7 @@ export const Input = defineComponent<InputProps, InputEmits, keyof InputEmits>(
         const value = ref(props.value ?? '');
         const root = ref<Container>();
 
-        const width = computed(() => props.loc?.[2] ?? 200);
-        const height = computed(() => props.loc?.[3] ?? 200);
+        const [loc, width, height] = lwh(props);
         const showText = computed(() => value.value || props.placeholder || '');
         const padding = computed(() => props.pad ?? 4);
         const textLoc = computed<ElementLocator>(() => [
@@ -241,7 +244,7 @@ export const Input = defineComponent<InputProps, InputEmits, keyof InputEmits>(
 
         return () => (
             <container
-                loc={props.loc}
+                loc={loc.value}
                 ref={root}
                 cursor="text"
                 onClick={click}

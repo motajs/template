@@ -1,8 +1,6 @@
-import { ElementLocator } from '@motajs/render';
-import { DefaultProps, GraphicPropsBase } from '@motajs/render-vue';
+import { DefaultProps, GraphicPropsBase, lwh } from '@motajs/render-vue';
 import { SetupComponentOptions } from '@motajs/system';
 import {
-    computed,
     defineComponent,
     DefineSetupFnComponent,
     onMounted,
@@ -11,12 +9,10 @@ import {
     watch
 } from 'vue';
 
-export interface IconsProps extends DefaultProps<GraphicPropsBase> {
-    loc: ElementLocator;
-}
+export interface IconsProps extends DefaultProps<GraphicPropsBase> {}
 
 const iconsProps = {
-    props: ['loc']
+    props: ['loc', 'x', 'y', 'width', 'height']
 } satisfies SetupComponentOptions<IconsProps>;
 
 type IconLoc = [
@@ -120,8 +116,7 @@ export function defineIcon<T extends IconsProps>(
     return defineComponent<T>(props => {
         const path = shallowRef<Path2D>();
 
-        const width = computed(() => props.loc[2] ?? 200);
-        const height = computed(() => props.loc[3] ?? 200);
+        const [loc, width, height] = lwh(props);
         const generatePath = adjustPath(aspect, path, pathDef);
 
         watch(props, () => {
@@ -134,7 +129,7 @@ export function defineIcon<T extends IconsProps>(
 
         return () => (
             <g-path
-                loc={props.loc}
+                loc={loc.value}
                 path={path.value}
                 stroke
                 lineJoin="round"
