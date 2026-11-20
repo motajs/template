@@ -1,4 +1,4 @@
-export * from './background';
+export * from '../../../packages-user/client-base/src/components/background';
 export * from './book';
 export * from './bookDetail';
 export * from './equipbox';

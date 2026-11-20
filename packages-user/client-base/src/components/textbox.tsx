@@ -2,13 +2,11 @@ import {
     ElementLocator,
     Font,
     CustomRenderItem,
-    Text,
     MotaOffscreenCanvas2D
 } from '@motajs/render';
 import {
     computed,
     defineComponent,
-    nextTick,
     onMounted,
     onUnmounted,
     ref,
@@ -32,6 +30,7 @@ import {
 import { SetupComponentOptions } from '@motajs/system';
 import { texture } from '../elements';
 import { DefaultProps, onExcited } from '@motajs/render-vue';
+import { Icon } from './icon';
 
 // todo: TextContent 应该改成渲染元素？
 
@@ -526,7 +525,8 @@ export const Textbox = defineComponent<
                 ></g-rect>
             )}
             {hasIcon.value && (
-                <icon icon={data.icon as AllIds} loc={iconLoc.value} animate />
+                // TODO: manager
+                <Icon icon={data.icon} loc={iconLoc.value} animate />
             )}
             {hasIcon.value && (
                 <g-rect

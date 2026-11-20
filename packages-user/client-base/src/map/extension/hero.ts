@@ -10,14 +10,13 @@ import {
     TileType
 } from '@user/data-common';
 import { IHeroLocation, IHeroLocationHooks, IMapLayer } from '@user/data-base';
-import { IMapRenderer, IMapRendererTicker, IMovingBlock } from '../types';
+import { IMapRenderer } from '../types';
 import { isNil } from 'lodash-es';
 import { IFaceHandler, IHookController, logger } from '@motajs/common';
 import { IMaterialFramedData } from '@user/client-base';
 import { ITexture, ITextureSplitter, TextureRowSplitter } from '@motajs/render';
 import { IMapHeroRenderer } from './types';
 import { ExcitationCurve2D } from '@motajs/animate';
-import { state } from '@user/data-state';
 
 /** 默认的移动时长 */
 const DEFAULT_TIME = 100;

@@ -3,6 +3,7 @@ import { Font, MotaOffscreenCanvas2D, CustomRenderItem } from '@motajs/render';
 import { defineComponent, ref } from 'vue';
 import {
     IGameUIPropsBase,
+    MapText,
     Textbox,
     TextboxProps,
     Tip
@@ -20,8 +21,7 @@ import {
 } from '@/client';
 import { LeftStatusBar, RightStatusBar } from './statusBar';
 import { isNil } from 'lodash-es';
-import { using } from '@user/client-modules';
-import { DefaultProps } from '@motajs/render-vue';
+import { DefaultProps, onExcitedFunc } from '@motajs/render-vue';
 
 interface MainSceneProps extends IGameUIPropsBase, DefaultProps {}
 
@@ -31,7 +31,6 @@ const mainSceneProps = {
 
 const MainScene = defineComponent<MainSceneProps>(props => {
     const mainMapRenderer = props.state.mainMapRenderer;
-    const mainMapExtension = props.state.mainMapExtension;
 
     //#region 基本定义
 
@@ -60,7 +59,7 @@ const MainScene = defineComponent<MainSceneProps>(props => {
     //#region sprite 渲染
 
     let lastLength = 0;
-    using.onExcitedFunc(() => {
+    onExcitedFunc(() => {
         const len = core.status.stepPostfix?.length ?? 0;
         if (len !== lastLength) {
             mapMiscSprite.value?.update();
@@ -123,9 +122,10 @@ const MainScene = defineComponent<MainSceneProps>(props => {
                     renderer={mainMapRenderer}
                     // @ts-expect-error 需要重构
                     layerState={state.maps}
-                    extension={mainMapExtension}
                     loc={[0, 0, MAP_WIDTH, MAP_HEIGHT]}
-                />
+                >
+                    <MapText />
+                </map-render>
                 <Textbox id="main-textbox" {...mainTextboxProps}></Textbox>
                 {/* <FloorChange id="floor-change" zIndex={50}></FloorChange> */}
                 <Tip

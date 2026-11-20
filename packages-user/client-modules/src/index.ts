@@ -1,9 +1,3 @@
-import { createRender } from './render';
-
-export function create() {
-    createRender();
-}
-
 export * from './action';
 export * from './render';
 export * from './ui';

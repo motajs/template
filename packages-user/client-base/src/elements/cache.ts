@@ -486,19 +486,3 @@ function splitAutotiles(map: IdToNumber): AutotileCaches {
 
     return cache as AutotileCaches;
 }
-
-export function createCache() {
-    const { loading } = Mota.require('@user/data-base');
-    loading.once('loaded', () => {
-        [
-            'enemys',
-            'enemy48',
-            'npcs',
-            'npc48',
-            'terrains',
-            'items',
-            'animates'
-        ].forEach(v => (imageMap[v as ImageMapKeys] = i(v as ImageMapKeys)));
-        texture.init();
-    });
-}

@@ -1,6 +1,6 @@
 import { ElementLocator, Font } from '@motajs/render';
 import { computed, defineComponent, reactive, ref } from 'vue';
-import { Background } from './background';
+import { Background } from '../../../packages-user/client-base/src/components/background';
 import {
     TextContent,
     TextContentProps,
@@ -145,11 +145,11 @@ export const ConfirmBox = defineComponent<
         height.value = textHeight + pad.value * 4;
     };
 
-    const setYes = (width: number, height: number) => {
+    const setYes = (_: unknown, width: number, height: number) => {
         yesSize.value = [width, height];
     };
 
-    const setNo = (width: number, height: number) => {
+    const setNo = (_: unknown, width: number, height: number) => {
         noSize.value = [width, height];
     };
 
@@ -466,7 +466,7 @@ export const Choices = defineComponent<
         contentHeight.value = height;
     };
 
-    const updateTitleHeight = (_: number, height: number) => {
+    const updateTitleHeight = (_0: unknown, _1: unknown, height: number) => {
         titleHeight.value = height;
     };
 
@@ -563,7 +563,7 @@ export const Choices = defineComponent<
                                 zIndex={5}
                                 fillStyle={props.selFill}
                                 onClick={() => emit('choose', v[0])}
-                                onResize={(width, height) =>
+                                onResize={(_, width, height) =>
                                     updateChoiceSize(i, width, height)
                                 }
                                 onEnter={() => (selected.value = i)}

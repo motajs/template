@@ -2,9 +2,11 @@ import {
     ActionEventMap,
     ActionType,
     EventProgress,
+    IRenderItemBaseHooks,
     IRenderTreeRoot,
     MotaOffscreenCanvas2D,
     RenderItem,
+    RenderItemDefaultHooks,
     Transform
 } from '@motajs/render';
 import { mat3 } from 'gl-matrix';
@@ -37,6 +39,10 @@ export class MapRenderItem extends RenderItem implements IMapRenderItem {
 
     protected getDefaultCache(): boolean {
         return true;
+    }
+
+    protected getDefaultHook(): IRenderItemBaseHooks {
+        return new RenderItemDefaultHooks(this.events);
     }
 
     /**

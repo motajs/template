@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adjustGrid } from '@user/client-base/layout/layout';
+import { adjustGrid } from '@user/client-base';
 import enemyOneSource from '../enemyOne.tsx?raw';
 import bookSource from '../book.tsx?raw';
 import bookDetailSource from '../bookDetail.tsx?raw';

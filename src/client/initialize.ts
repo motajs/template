@@ -1,6 +1,5 @@
 import { logger } from '@motajs/common';
 import {
-    excitationDivider,
     IClientCore,
     IClientCoreConfig,
     IClientPluginDefine
@@ -23,17 +22,18 @@ export class MainClientPlugin implements IClientPluginDefine {
 
     awake(state: IClientCore): void {
         // 渲染调试配置
+        const divider = state.excitationDivider;
         if (DEBUG_VARIATOR) {
             const variator = new ExcitationVariator();
             variator.bindExcitation(state.rafExcitation);
             variator.setSpeed(VARIATOR_DEBUG_SPEED);
-            excitationDivider.bindExcitation(variator);
+            divider.bindExcitation(variator);
         } else {
-            excitationDivider.bindExcitation(state.rafExcitation);
+            divider.bindExcitation(state.rafExcitation);
         }
 
         if (DEBUG_DIVIDER) {
-            excitationDivider.setDivider(DIVIDER_DEBUG_DIVIDER);
+            divider.setDivider(DIVIDER_DEBUG_DIVIDER);
         }
     }
 

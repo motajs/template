@@ -1,4 +1,4 @@
-import { DefaultProps } from '@motajs/render-vue';
+import { DefaultProps, transitioned } from '@motajs/render-vue';
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { defineComponent } from 'vue';
 import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '@/client';
@@ -7,7 +7,6 @@ import { cosh, CurveMode, linear } from '@motajs/animate';
 import { clamp } from 'lodash-es';
 import { sleep } from '@motajs/common';
 import { GameTitleUI } from './title';
-import { transitioned } from '@user/client-modules';
 import { IGameUIPropsBase } from '@user/client-base';
 
 /** 加载界面的任务进度条半径 */

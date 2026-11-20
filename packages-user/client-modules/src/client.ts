@@ -41,6 +41,7 @@ import {
 } from '@motajs/animate';
 import { IUIController, UIController } from '@motajs/system';
 import { createUIPropsBase } from './ui/func';
+import { markRaw } from 'vue';
 
 export class ClientCore extends CoreState implements IClientCore {
     // Layer 4 渲染基础层
@@ -68,29 +69,29 @@ export class ClientCore extends CoreState implements IClientCore {
     constructor(config: IClientCoreConfig) {
         super(config);
 
-        this.save = new SaveSystem();
-        this.audioContext = new MotaAudioContext();
-        this.soundPlayer = new SoundPlayer(this.audioContext);
-        this.bgmPlayer = new BGMPlayer(this.audioContext);
-        this.materials = new TextureManager(
-            this,
-            config.tilesetReserve,
-            config.tilesetUnit
+        this.save = markRaw(new SaveSystem());
+        this.audioContext = markRaw(new MotaAudioContext());
+        this.soundPlayer = markRaw(new SoundPlayer(this.audioContext));
+        this.bgmPlayer = markRaw(new BGMPlayer(this.audioContext));
+        this.materials = markRaw(
+            new TextureManager(this, config.tilesetReserve, config.tilesetUnit)
         );
-        this.hotkey = new ClientHotkey();
+        this.hotkey = markRaw(new ClientHotkey());
 
-        this.rafExcitation = new RafExcitation();
-        this.excitationDivider = new ExcitationDivider<number>();
+        this.rafExcitation = markRaw(new RafExcitation());
+        this.excitationDivider = markRaw(new ExcitationDivider<number>());
 
-        this.renderer = new MotaRenderer({
-            canvas: '#render-main',
-            width: config.renderWidth,
-            height: config.renderHeight,
-            // 使用分频器，用户可以在设置中调整，如果设备性能较差调高分频有助于提高性能表现
-            excitaion: this.excitationDivider
-        });
-        this.mainMapRenderer = new MapRenderer(this.materials);
-        this.expandMapRenderer = new MapRenderer(this.materials);
+        this.renderer = markRaw(
+            new MotaRenderer({
+                canvas: '#render-main',
+                width: config.renderWidth,
+                height: config.renderHeight,
+                // 使用分频器，用户可以在设置中调整，如果设备性能较差调高分频有助于提高性能表现
+                excitaion: this.excitationDivider
+            })
+        );
+        this.mainMapRenderer = markRaw(new MapRenderer(this.materials));
+        this.expandMapRenderer = markRaw(new MapRenderer(this.materials));
         this.sceneController = new UIController<IGameUIPropsBase>();
         this.mainUIController = new UIController<IGameUIPropsBase>();
         const pbCreator = createUIPropsBase(this);

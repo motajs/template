@@ -305,6 +305,7 @@ export const BookDetail = defineComponent<BookDetailProps>(props => {
                 view={props.view}
                 locator={props.locator}
                 selected={false}
+                materials={props.state.materials}
             />
             <g-line
                 line={SUMMARY_SPECIAL_DIVIDER}

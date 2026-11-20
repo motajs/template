@@ -18,8 +18,8 @@ import { saveSave, saveLoad } from './save';
 import { MAIN_HEIGHT, FULL_LOC, POP_BOX_WIDTH, CENTER_LOC } from '@/client';
 import { openReplay, openSettings } from './settings';
 import { openViewMap } from './viewmap';
-import { DefaultProps } from '@motajs/render-vue';
-import { IClientCoreExtended, transitioned } from '@user/client-modules';
+import { DefaultProps, transitioned } from '@motajs/render-vue';
+import { IClientCoreExtended } from '@user/client-modules';
 
 interface ToolbarProps extends DefaultProps, IClientCoreExtended {
     loc?: ElementLocator;

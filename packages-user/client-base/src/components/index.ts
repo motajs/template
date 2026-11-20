@@ -1,4 +1,6 @@
+export * from './background';
 export * from './floorSelect';
+export * from './icon';
 export * from './icons';
 export * from './input';
 export * from './list';

@@ -1,4 +1,9 @@
-import { DefaultProps } from '@motajs/render-vue';
+import {
+    DefaultProps,
+    ITransitionedController,
+    transitioned,
+    transitionedColor
+} from '@motajs/render-vue';
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { defineComponent, nextTick, onMounted, ref } from 'vue';
 import { HALF_HEIGHT, HALF_WIDTH, MAIN_HEIGHT, MAIN_WIDTH } from '@/client';
@@ -16,11 +21,6 @@ import { MainSceneUI } from './main';
 import { adjustCover } from '@user/client-base';
 import { cosh, CurveMode, linear } from '@motajs/animate';
 import { sleep } from '@motajs/common';
-import {
-    ITransitionedController,
-    transitioned,
-    transitionedColor
-} from '@user/client-modules';
 
 /** 标题图 */
 export const TITLE_BACKGROUND_IMAGE = 'bg.jpg';

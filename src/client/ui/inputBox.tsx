@@ -1,7 +1,7 @@
 import { ElementLocator, Font } from '@motajs/render';
 import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 import { computed, defineComponent, ref } from 'vue';
-import { Background } from './background';
+import { Background } from '../../../packages-user/client-base/src/components/background';
 import {
     Input,
     InputEmits,
@@ -173,11 +173,11 @@ export const InputBox = defineComponent<
         emit('input', value);
     };
 
-    const setYes = (width: number, height: number) => {
+    const setYes = (_: unknown, width: number, height: number) => {
         yesSize.value = [width, height];
     };
 
-    const setNo = (width: number, height: number) => {
+    const setNo = (_: unknown, width: number, height: number) => {
         noSize.value = [width, height];
     };
 

@@ -2,6 +2,7 @@ import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { computed, defineComponent, nextTick, onUnmounted, ref } from 'vue';
 import { ElementLocator, Font } from '@motajs/render';
 import {
+    Icon,
     IGameUIPropsBase,
     Scroll,
     TextContent,
@@ -251,8 +252,9 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                                 cursor="pointer"
                                 onClick={getItemClick(item, 'permanent')}
                             />,
-                            <icon
+                            <Icon
                                 icon={item.num}
+                                manager={props.state.materials}
                                 loc={[10, y + 7, ROW_ICON_SIZE, ROW_ICON_SIZE]}
                                 noevent
                             />,
@@ -303,8 +305,9 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                                 cursor="pointer"
                                 onClick={getItemClick(item, 'consumable')}
                             />,
-                            <icon
+                            <Icon
                                 icon={item.num}
+                                manager={props.state.materials}
                                 loc={[10, y + 7, ROW_ICON_SIZE, ROW_ICON_SIZE]}
                                 noevent
                             />,
@@ -328,8 +331,9 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                     })}
                 </Scroll>
                 {/* 详情图标、名称与类型 */}
-                <icon
+                <Icon
                     icon={current ? current.num : 0}
+                    manager={props.state.materials}
                     loc={[INFO_LEFT + 8, 8, DETAIL_ICON_SIZE, DETAIL_ICON_SIZE]}
                     noevent
                     hidden={!current}

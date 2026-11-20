@@ -6,6 +6,7 @@ import { debounce } from 'lodash-es';
 import { texture } from '../elements';
 import { SetupComponentOptions } from '@motajs/system';
 import { DefaultProps, transitioned } from '@motajs/render-vue';
+import { Icon } from './icon';
 
 export interface TipProps extends DefaultProps {
     /** 显示的位置 */
@@ -105,7 +106,7 @@ export const Tip = defineComponent<TipProps>((props, { expose }) => {
         hide();
     };
 
-    const onSetText = (width: number) => {
+    const onSetText = (_: unknown, width: number) => {
         textWidth.value = width;
     };
 
@@ -128,9 +129,10 @@ export const Tip = defineComponent<TipProps>((props, { expose }) => {
                 fill
                 fillStyle="rgba(0,0,0,0.8)"
             />
-            <icon
-                hidden={!showIcon.value}
+            <Icon
                 icon={iconNum.value}
+                // TODO: manager
+                hidden={!showIcon.value}
                 loc={iconLoc.value}
             />
             <text

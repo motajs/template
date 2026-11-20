@@ -9,7 +9,6 @@ import {
     shallowReactive
 } from 'vue';
 import {
-    getConfirm,
     Page,
     PageExpose,
     Thumbnail,
@@ -20,7 +19,7 @@ import {
 } from '@user/client-base';
 import { HALF_HEIGHT, HALF_WIDTH, MAP_WIDTH, POP_BOX_WIDTH } from '@/client';
 import { adjustGrid, IGridLayoutData } from '@user/client-base';
-import { getSave, SaveData } from '@user/client-modules';
+import { getConfirm } from './choices';
 
 /** 存档缩略图尺寸 */
 export const SAVE_ITEM_SIZE = MAP_BLOCK_WIDTH * 10;

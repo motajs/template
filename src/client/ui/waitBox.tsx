@@ -2,7 +2,10 @@ import { logger } from '@motajs/common';
 import { ElementLocator } from '@motajs/render';
 import { GameUI, IUIController, SetupComponentOptions } from '@motajs/system';
 import { computed, defineComponent, ref, SetupContext } from 'vue';
-import { Background, BackgroundProps } from './background';
+import {
+    Background,
+    BackgroundProps
+} from '../../../packages-user/client-base/src/components/background';
 import {
     TextContent,
     TextContentProps,

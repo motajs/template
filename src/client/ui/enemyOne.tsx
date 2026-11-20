@@ -2,7 +2,13 @@ import { SetupComponentOptions } from '@motajs/system';
 import { computed, defineComponent, ref, watch } from 'vue';
 import { Font } from '@motajs/render';
 import { ITileLocator } from '@motajs/common';
-import { adjustGrid2, TextAlign, TextContent } from '@user/client-base';
+import {
+    adjustGrid2,
+    Icon,
+    ITextureManager,
+    TextAlign,
+    TextContent
+} from '@user/client-base';
 import {
     IDamageSystem,
     IEnemyView,
@@ -27,11 +33,13 @@ export interface IEnemyOneProps extends DefaultProps {
     computed?: boolean;
     /** 当前行是否处于选中态 */
     selected?: boolean;
+    /** 素材管理器 */
+    materials?: ITextureManager;
 }
 
 /** 怪物主信息组件的 props 声明 */
 const enemyOneProps = {
-    props: ['enemy', 'view', 'selected', 'loc', 'width', 'height']
+    props: ['enemy', 'view', 'selected', 'loc', 'width', 'height', 'materials']
 } satisfies SetupComponentOptions<IEnemyOneProps>;
 
 /** 怪物图标尺寸 */
@@ -266,8 +274,9 @@ export const EnemyOne = defineComponent<IEnemyOneProps>(props => {
                     lineWidth={1.5}
                     noevent
                 />
-                <icon
+                <Icon
                     icon={enemy.value?.code ?? 0}
+                    manager={props.materials}
                     loc={[ICON_CENTER, height.value / 2, ICON_SIZE, ICON_SIZE]}
                     anc={[0.5, 0.5]}
                     noevent

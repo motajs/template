@@ -1,7 +1,7 @@
 import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { computed, defineComponent, onMounted, ref } from 'vue';
 import { Font } from '@motajs/render';
-import { Scroll, TextContent } from '@user/client-base';
+import { Scroll, TextContent, Icon } from '@user/client-base';
 import { IHeroState } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
 import { IGameUIPropsBase } from '@user/client-base';
@@ -274,8 +274,9 @@ export const Shop = defineComponent<IShopProps>(props => {
                                             : 'rgba(255, 255, 255, 0.05)'
                                     }
                                 />
-                                <icon
+                                <Icon
                                     icon={item.num}
+                                    manager={props.state.materials}
                                     loc={[10, 6, ROW_ICON_SIZE, ROW_ICON_SIZE]}
                                 />
                                 <text

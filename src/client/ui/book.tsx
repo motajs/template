@@ -115,6 +115,7 @@ export const Book = defineComponent<BookProps>(props => {
                             context={markRaw(ctx.value)}
                             enemy={markRaw(base)}
                             selected={selected.value === i}
+                            materials={props.state.materials}
                             onClick={() => showDetail(base)}
                             onEnter={() => void (selected.value = i)}
                         />

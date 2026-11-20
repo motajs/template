@@ -3,7 +3,7 @@ import { computed, defineComponent, ref } from 'vue';
 import { isNil } from 'lodash-es';
 import { Font } from '@motajs/render';
 import { ElementLocator, IActionEvent } from '@motajs/render';
-import { Scroll, TextContent, useKey } from '@user/client-base';
+import { Icon, Scroll, TextContent, useKey } from '@user/client-base';
 import { EquipStatus, IEquipmentState, IHeroState } from '@user/data-base';
 import { IHeroAttr } from '@user/data-common';
 import { FULL_LOC, MAIN_HEIGHT, MAIN_WIDTH } from '@/client';
@@ -472,8 +472,9 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                                 onLeave={getSlotLeave(i)}
                             />,
                             // 拖动起手仍只在图标上，整格只负责悬停判定
-                            <icon
+                            <Icon
                                 icon={slotEquip ? slotEquip.item.num : 0}
+                                manager={props.state.materials}
                                 loc={slotIconLoc}
                                 cursor="pointer"
                                 onEnter={getSlotEnter(i)}
@@ -530,8 +531,9 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                                 cursor="pointer"
                                 onDown={getOwnedDown(item.uid)}
                             />,
-                            <icon
+                            <Icon
                                 icon={item.item.num}
+                                manager={props.state.materials}
                                 loc={ownedIconLoc}
                                 noevent
                             />,
@@ -559,8 +561,9 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                 />
 
                 {/* 拖拽浮层 */}
-                <icon
+                <Icon
                     icon={dragNum.value > 0 ? dragNum.value : 0}
+                    manager={props.state.materials}
                     loc={dragLoc}
                     noevent
                     zIndex={100}
