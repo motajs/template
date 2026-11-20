@@ -352,9 +352,9 @@ export class TextureManager implements ITextureManager {
         // 计算图块位置，首先计算没有偏移时图块的索引，即假如 Tileset 的左上角是 0，计算 num 的索引应该是什么
         const unoffset = adjustedNum - offset * this.tilesetUnit;
         const { width, height } = tileset;
-        const [cellWidth, cellHeight] = cell;
-        const tileWidth = Math.floor(width / cellWidth);
-        const tileHeight = Math.floor(height / cellHeight);
+        const [cw, ch] = cell;
+        const tileWidth = Math.floor(width / cw);
+        const tileHeight = Math.floor(height / ch);
         // 如果图块位置超出了贴图范围
         if (unoffset > tileWidth * tileHeight) {
             logger.warn(188, num.toString());
@@ -363,8 +363,7 @@ export class TextureManager implements ITextureManager {
         // 裁剪 tileset，生成贴图
         const x = unoffset % tileWidth;
         const y = Math.floor(unoffset / tileWidth);
-        const newTexture = new Texture(tileset.source);
-        newTexture.clip(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+        const newTexture = tileset.clip({ x: x * cw, y: y * ch, w: cw, h: ch });
         return { existed: false, texture: newTexture };
     }
 

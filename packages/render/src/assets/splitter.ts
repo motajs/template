@@ -1,4 +1,3 @@
-import { Texture } from './texture';
 import { ITexture, ITextureSplitter, IRect } from './types';
 
 /**
@@ -7,12 +6,12 @@ import { ITexture, ITextureSplitter, IRect } from './types';
  */
 export class TextureRowSplitter implements ITextureSplitter<number> {
     *split(texture: ITexture, data: number): Generator<ITexture> {
-        const lines = Math.ceil(texture.height / data);
+        const { width, height } = texture;
+        const lines = Math.ceil(height / data);
         const { x, y } = texture.render().rect;
         for (let i = 0; i < lines; i++) {
-            const tex = new Texture(texture.source);
-            tex.clip(x, y + i * data, texture.width, data);
-            yield tex;
+            const oy = y + i * data;
+            yield texture.clip({ x, y: oy, w: width, h: data });
         }
     }
 }
@@ -23,12 +22,12 @@ export class TextureRowSplitter implements ITextureSplitter<number> {
  */
 export class TextureColumnSplitter implements ITextureSplitter<number> {
     *split(texture: ITexture, data: number): Generator<ITexture> {
-        const lines = Math.ceil(texture.width / data);
+        const { width, height } = texture;
+        const lines = Math.ceil(width / data);
         const { x, y } = texture.render().rect;
         for (let i = 0; i < lines; i++) {
-            const tex = new Texture(texture.source);
-            tex.clip(x + i * data, y, data, texture.height);
-            yield tex;
+            const ox = x + i * data;
+            yield texture.clip({ x: ox, y, w: data, h: height });
         }
     }
 }
@@ -45,9 +44,7 @@ export class TextureGridSplitter implements ITextureSplitter<[number, number]> {
         const { x, y } = texture.render().rect;
         for (let ny = 0; ny < lines; ny++) {
             for (let nx = 0; nx < rows; nx++) {
-                const tex = new Texture(texture.source);
-                tex.clip(x + nx * w, y + ny * h, w, h);
-                yield tex;
+                yield texture.clip({ x: x + nx * w, y: y + ny * h, w, h });
             }
         }
     }
@@ -59,10 +56,8 @@ export class TextureGridSplitter implements ITextureSplitter<[number, number]> {
  */
 export class TextureAssetSplitter implements ITextureSplitter<IRect[]> {
     *split(texture: ITexture, data: IRect[]): Generator<ITexture> {
-        for (const { x, y, w, h } of data) {
-            const tex = new Texture(texture.source);
-            tex.clip(x, y, w, h);
-            yield tex;
+        for (const rect of data) {
+            yield texture.clip(rect);
         }
     }
 }
