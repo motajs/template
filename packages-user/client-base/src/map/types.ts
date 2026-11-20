@@ -8,6 +8,7 @@ import {
 import {
     Font,
     IRenderItem,
+    IRenderItemBaseHooks,
     ITextureRenderable,
     SizedCanvasImageSource,
     Transform
@@ -25,6 +26,7 @@ import {
     IExcitable,
     IExcitation
 } from '@motajs/animate';
+import { BaseProps, TagDefine } from '@motajs/render-vue';
 
 //#region 枚举值
 
@@ -1247,20 +1249,25 @@ export interface IMapViewportController {
 export interface IMapRenderItem extends IRenderItem {
     /** 当前使用的地图渲染器 */
     readonly renderer: IMapRenderer | null;
-    /** 当前正在渲染的地图 */
-    readonly map: IGameMap | null;
 
     /**
      * 设置当前使用的地图渲染器
      * @param renderer 地图渲染器
      */
     setRenderer(renderer: IMapRenderer | null): void;
+}
 
-    /**
-     * 设置当前要渲染的地图
-     * @param map 要渲染的地图
-     */
-    setRenderMap(map: IGameMap | null): void;
+export interface MapRenderProps extends BaseProps {
+    /** 当前使用的地图渲染器 */
+    renderer?: IMapRenderer;
+}
+
+declare module 'vue/jsx-runtime' {
+    namespace JSX {
+        export interface IntrinsicElements {
+            'map-render': TagDefine<MapRenderProps, IRenderItemBaseHooks>;
+        }
+    }
 }
 
 //#endregion

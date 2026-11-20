@@ -11,7 +11,6 @@ import {
 } from '@motajs/render';
 import { mat3 } from 'gl-matrix';
 import { IMapRenderer, IMapRenderItem } from './types';
-import { GameMap, IGameMap } from '@user/data-base';
 import { MapRenderer } from './renderer';
 
 export class MapRenderItem extends RenderItem implements IMapRenderItem {
@@ -20,8 +19,6 @@ export class MapRenderItem extends RenderItem implements IMapRenderItem {
 
     /** 当前使用的地图渲染器 */
     renderer: IMapRenderer | null = null;
-    /** 当前正在渲染的地图 */
-    map: IGameMap | null = null;
 
     protected onConnected(root: IRenderTreeRoot): void {
         this.delegation = root.delegateExcitable(time => {
@@ -115,28 +112,12 @@ export class MapRenderItem extends RenderItem implements IMapRenderItem {
 
     setRenderer(renderer: IMapRenderer | null): void {
         this.renderer = renderer;
-        this.renderer?.setGameMap(this.map);
-        this.update();
-    }
-
-    setRenderMap(map: IGameMap | null): void {
-        this.map = map;
-        this.renderer?.setGameMap(map);
         this.update();
     }
 
     handleProps(key: string, prevValue: any, nextValue: any): boolean {
         if (super.handleProps(key, prevValue, nextValue)) return true;
         switch (key) {
-            case 'map': {
-                if (!nextValue) {
-                    this.setRenderMap(null);
-                    return true;
-                }
-                if (!this.assertType(nextValue, GameMap, key)) return false;
-                this.setRenderMap(nextValue);
-                return true;
-            }
             case 'renderer': {
                 if (!nextValue) {
                     this.setRenderer(null);

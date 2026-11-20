@@ -17,8 +17,7 @@ export interface IIconProps extends DefaultProps {
 }
 
 const iconProps = {
-    props: ['icon', 'manager', 'animate', 'frame'],
-    emits: ['change', 'input', 'update:value']
+    props: ['icon', 'manager', 'animate', 'frame']
 } satisfies SetupComponentOptions<IIconProps>;
 
 export const Icon = defineComponent<IIconProps>(props => {
