@@ -1,14 +1,10 @@
-import {
-    ElementLocator,
-    Font,
-    CustomRenderItem,
-    MotaOffscreenCanvas2D
-} from '@motajs/render';
+import { ElementLocator, Font, MotaOffscreenCanvas2D } from '@motajs/render';
 import {
     computed,
     defineComponent,
     onMounted,
     onUnmounted,
+    reactive,
     ref,
     shallowReactive,
     shallowRef,
@@ -28,7 +24,7 @@ import {
     TextAlign
 } from './textboxTyper';
 import { SetupComponentOptions } from '@motajs/system';
-import { DefaultProps, onExcited } from '@motajs/render-vue';
+import { DefaultProps, onExcited, xywh } from '@motajs/render-vue';
 import { Icon } from './icon';
 
 // todo: TextContent 应该改成渲染元素？
@@ -45,8 +41,6 @@ export interface TextContentProps
     stroke?: boolean;
     /** 是否自适应高度，即组件内部计算 height 的值，而非指定，可与滚动条结合 */
     autoHeight?: boolean;
-    /** 文字的最大宽度 */
-    width: number;
 }
 
 export type TextContentEmits = {
@@ -102,7 +96,10 @@ const textContentOptions = {
         'strokeWidth',
         'stroke',
         'loc',
+        'x',
+        'y',
         'width',
+        'height',
         'autoHeight'
     ],
     emits: ['typeEnd', 'typeStart', 'updateHeight']
@@ -117,27 +114,26 @@ export const TextContent = defineComponent<
     TextContentEmits,
     keyof TextContentEmits
 >((props, { emit, expose }) => {
-    const loc = shallowRef<ElementLocator>(
-        (props.loc?.slice() as ElementLocator) ?? []
-    );
-
-    if (props.width < 0) {
-        logger.warn(41, String(props.width));
-    }
+    const [x, y, width, height] = xywh(props);
+    const loc = reactive<ElementLocator>([
+        x.value,
+        y.value,
+        width.value,
+        height.value
+    ]);
 
     const typer = new TextContentTyper(props);
-    let renderable: TyperRenderable[] = [];
+    const renderable = shallowRef<TyperRenderable[]>([]);
     let needUpdate = false;
 
+    // 打字机需要激励源激励
     onExcited(typer);
 
+    /** 从头开始重新打字 */
     const retype = () => {
         if (needUpdate || props.hidden) return;
         needUpdate = true;
-        if (!spriteElement.value) {
-            needUpdate = false;
-        }
-        renderable = [];
+        renderable.value = [];
 
         typer.setConfig(props);
         typer.setText(props.text ?? '');
@@ -146,6 +142,7 @@ export const TextContent = defineComponent<
         updateLoc();
     };
 
+    /** 立刻显示所有文字 */
     const showAll = () => {
         typer.typeAll();
     };
@@ -155,28 +152,31 @@ export const TextContent = defineComponent<
         retype();
     });
 
+    /** 获取当前的文本高度 */
     const getHeight = () => {
         return typer.getHeight();
     };
 
     const updateLoc = () => {
-        const height = getHeight();
-        const [x = 0, y = 0, , h = 0] = props.loc ?? loc.value;
-        loc.value = [x, y, props.width, props.autoHeight ? height : h];
-        emit('updateHeight', height);
+        const calculatedHeight = getHeight();
+        if (props.autoHeight) {
+            loc[3] = calculatedHeight;
+        } else {
+            loc[3] = height.value;
+        }
+        emit('updateHeight', calculatedHeight);
     };
 
-    watch(() => props.loc, updateLoc);
+    watch(width, updateLoc);
 
     expose<TextContentExpose>({ retype, showAll, getHeight });
 
-    const spriteElement = shallowRef<CustomRenderItem>();
     const renderContent = (canvas: MotaOffscreenCanvas2D) => {
         const ctx = canvas.ctx;
         ctx.textBaseline = 'top';
         ctx.lineWidth = props.strokeWidth ?? 2;
         ctx.lineJoin = 'round';
-        for (const data of renderable) {
+        for (const data of renderable.value) {
             if (data.cut) break;
             switch (data.type) {
                 case TextContentType.Text: {
@@ -208,8 +208,7 @@ export const TextContent = defineComponent<
     };
 
     const renderFunc = (data: TyperRenderable[]) => {
-        renderable = data;
-        spriteElement.value?.update();
+        renderable.value = data;
     };
 
     typer.setRender(renderFunc);
@@ -225,9 +224,9 @@ export const TextContent = defineComponent<
     return () => {
         return (
             <custom
-                loc={loc.value}
-                ref={spriteElement}
+                loc={loc}
                 render={renderContent}
+                bindings={[renderable.value]}
             ></custom>
         );
     };
@@ -347,6 +346,7 @@ export const Textbox = defineComponent<
         data.strokeWidth = props.strokeWidth ?? 2;
         data.loc = props.loc;
         data.width = props.width;
+        data.materials = props.materials;
     };
 
     setTextboxData();

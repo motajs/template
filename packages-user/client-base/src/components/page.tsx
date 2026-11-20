@@ -251,7 +251,6 @@ export const Page = defineComponent<
             </container>
             <container loc={pageLoc.value} hidden={hide.value} nocache>
                 <container
-                    key={1}
                     loc={leftLoc.value}
                     anc={[0.5, 0]}
                     onClick={lastPage}
@@ -275,7 +274,6 @@ export const Page = defineComponent<
                     ></g-path>
                 </container>
                 <container
-                    key={2}
                     loc={leftPageLoc.value}
                     anc={[0.5, 0]}
                     onClick={lastPage}
@@ -321,7 +319,6 @@ export const Page = defineComponent<
                     ></text>
                 </container>
                 <container
-                    key={4}
                     loc={rightPageLoc.value}
                     anc={[0.5, 0]}
                     onClick={nextPage}
@@ -344,7 +341,6 @@ export const Page = defineComponent<
                     ></text>
                 </container>
                 <container
-                    key={5}
                     loc={rightLoc.value}
                     anc={[0.5, 0]}
                     onClick={nextPage}
