@@ -377,6 +377,10 @@ export default defineConfig({
                             link: '/render-guide/advanced/custom-components'
                         },
                         {
+                            text: '动画',
+                            link: '/render-guide/advanced/animation'
+                        },
+                        {
                             text: 'UI 系统',
                             link: '/render-guide/advanced/ui-system'
                         },
@@ -407,6 +411,28 @@ export default defineConfig({
                         {
                             text: '示例（六）动画、拆分与注册',
                             link: '/render-guide/advanced/inventory-example-6-animation-and-register'
+                        }
+                    ]
+                },
+                {
+                    text: '渲染底层',
+                    collapsed: false,
+                    items: [
+                        {
+                            text: '动画曲线',
+                            link: '/render-guide/internals/animation-curves'
+                        },
+                        {
+                            text: '动画激励',
+                            link: '/render-guide/internals/animation-excitation'
+                        },
+                        {
+                            text: '动画执行器',
+                            link: '/render-guide/internals/animation-runner'
+                        },
+                        {
+                            text: '渐变执行器',
+                            link: '/render-guide/internals/animation-transition'
                         }
                     ]
                 }
