@@ -1,11 +1,11 @@
 import { ElementLocator, Font } from '@motajs/render';
-import { logger } from '@motajs/common';
-import { computed, defineComponent, onUnmounted, ref } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
 import { cosh } from '@motajs/animate';
 import { debounce } from 'lodash-es';
 import { SetupComponentOptions } from '@motajs/system';
-import { DefaultProps, transitioned } from '@motajs/render-vue';
+import { DefaultProps, transitioned, xywh } from '@motajs/render-vue';
 import { Icon } from './icon';
+import { ITextureManager } from '../material';
 
 export interface TipProps extends DefaultProps {
     /** 显示的位置 */
@@ -16,6 +16,10 @@ export interface TipProps extends DefaultProps {
     corner?: number;
     /** 显示的图标 */
     id?: string;
+    /** 贴图管理器 */
+    materials?: ITextureManager;
+    /** 文字使用的字体 */
+    font?: Font;
 }
 
 export interface TipExpose {
@@ -24,40 +28,57 @@ export interface TipExpose {
      * @param text 提示文字
      * @param icon 显示的图标，不填则不显示
      */
-    drawTip(text: string, icon?: AllIds | AllNumbers): void;
+    drawTip(text: string, icon?: string | number): void;
 }
 
 const tipProps = {
-    props: ['loc', 'pad', 'corner', 'id']
+    props: ['loc', 'x', 'y', 'width', 'height', 'pad', 'corner', 'id']
 } satisfies SetupComponentOptions<TipProps>;
 
-let id = 0;
-function getNextTipId() {
-    return `@default-tip-${id++}`;
-}
-
 export const Tip = defineComponent<TipProps>((props, { expose }) => {
-    const iconNum = ref<AllNumbers>(0);
+    /** 图标 id 或数字 */
+    const icon = ref<number | string>(0);
+    /** 显示的文字 */
     const text = ref<string>('');
+    /** 文字的宽度 */
     const textWidth = ref(0);
 
-    const font = new Font('normal');
-
+    /** 当前的不透明度 */
     const alpha = transitioned(0, 500, cosh())!;
+
+    const [x, y, width, height] = xywh(props);
+    /** 提示内容的宽度 */
+    const contentWidth = ref(width.value);
+    /** 内容定位 */
+    const loc = computed<ElementLocator>(() => [
+        x.value,
+        y.value,
+        contentWidth.value,
+        height.value
+    ]);
+
+    /** 使用的字体 */
+    const font = computed(
+        () => props.font ?? Font.defaults({ size: height.value / 2 })
+    );
+    /** 内边距 */
     const pad = computed(() => props.pad ?? [4, 4]);
-    const locHeight = computed(() => props.loc[3] ?? 200);
+    /** 是否隐藏当前提示元素 */
     const hidden = computed(() => alpha.ref.value === 0);
-    const showIcon = computed(() => iconNum.value !== 0);
+    /** 当前是否显示图标 */
+    const showIcon = computed(() => icon.value !== 0);
+    /** 图标的原始尺寸 */
     const iconSize = computed<[number, number]>(() => {
-        // const renderable = texture.getRenderable(iconNum.value);
-        // if (!renderable) return [1, 1];
-        // const [, , width, height] = renderable.render[0];
-        return [0, 0];
+        const manager = props.materials;
+        if (!manager) return [0, 0];
+        const data = manager.tile(icon.value);
+        if (!data) return [0, 0];
+        return [data.offset, data.texture.height];
     });
     const iconLoc = computed<ElementLocator>(() => {
-        const [width, height] = iconSize.value;
-        const aspect = width / height;
-        const realHeight = locHeight.value - pad.value[1] * 2;
+        const [w, h] = iconSize.value;
+        const aspect = w / h;
+        const realHeight = height.value - pad.value[1] * 2;
         const realWidth = realHeight * aspect;
         return [pad.value[0], pad.value[1], realWidth, realHeight];
     });
@@ -65,112 +86,67 @@ export const Tip = defineComponent<TipProps>((props, { expose }) => {
         if (showIcon.value) {
             const [, , width] = iconLoc.value;
             const x = width! + pad.value[0] + pad.value[1];
-            return [x, locHeight.value / 2, void 0, void 0, 0, 0.5];
+            return [x, height.value / 2];
         } else {
-            return [pad.value[0], locHeight.value / 2, void 0, void 0, 0, 0.5];
-        }
-    });
-    const containerLoc = computed<ElementLocator>(() => {
-        const [x = 0, y = 0, , height = 200] = props.loc;
-        const iconWidth = iconLoc.value[2] ?? 32;
-        if (showIcon.value) {
-            const width =
-                textWidth.value + iconWidth + pad.value[0] * 2 + pad.value[1];
-            return [x, y, width, height];
-        } else {
-            const width = textWidth.value + pad.value[0] * 2;
-            return [x, y, width, height];
+            return [pad.value[0], height.value / 2];
         }
     });
     const rectLoc = computed<ElementLocator>(() => {
-        const [, , width = 200, height = 200] = containerLoc.value;
-        return [1, 1, width - 2, height - 2];
+        return [1, 1, contentWidth.value - 2, height.value - 2];
     });
 
+    /** 隐藏提示框 */
     const hide = debounce(() => {
         alpha.set(0);
     }, 3000);
 
-    const drawTip = (tipText: string) => {
-        // if (typeof iconId === 'string') {
-        //     const num = texture.idNumberMap[iconId];
-        //     iconNum.value = num;
-        // } else {
-        //     // 样板竟然会传 null 进来，然后报错
-        //     iconNum.value = iconId ?? 0;
-        // }
-        text.value = core.replaceText(tipText);
+    /**
+     * 展示提示
+     * @param tipText 提示文字内容
+     * @param ic 提示展示的图标
+     */
+    const drawTip = (tipText: string, ic: string | number = 0) => {
+        text.value = tipText;
+        icon.value = ic;
         alpha.set(0, 0);
         alpha.set(1);
         hide();
     };
 
-    const onSetText = (_: unknown, width: number) => {
+    const onSetText = (width: number) => {
         textWidth.value = width;
     };
 
     const ex: TipExpose = { drawTip };
 
-    TipStore.use(props.id ?? getNextTipId(), ex);
-
     expose<TipExpose>(ex);
 
     return () => (
         <container
-            loc={containerLoc.value}
+            loc={loc.value}
             alpha={alpha.ref.value}
             hidden={hidden.value}
             noevent
+            nocache
         >
             <g-rectr
                 loc={rectLoc.value}
                 circle={[props.corner ?? 4]}
-                fill
                 fillStyle="rgba(0,0,0,0.8)"
             />
             <Icon
-                icon={iconNum.value}
-                // TODO: manager
+                icon={icon.value}
+                manager={props.materials}
                 hidden={!showIcon.value}
                 loc={iconLoc.value}
             />
             <text
                 loc={textLoc.value}
+                anc={[0, 0.5]}
                 text={text.value}
-                onResize={onSetText}
-                font={font}
+                font={font.value}
+                onUpdateSize={onSetText}
             />
         </container>
     );
 }, tipProps);
-
-export class TipStore {
-    static list: Map<string, TipStore> = new Map();
-
-    private constructor(private readonly data: TipExpose) {}
-
-    /**
-     * 显示提示文本
-     * @param text 提示文字
-     * @param icon 显示的图标，不填则不显示
-     */
-    drawTip(text: string, icon: AllIds | AllNumbers = 0) {
-        this.data.drawTip(text, icon);
-    }
-
-    static get(id: string) {
-        return TipStore.list.get(id);
-    }
-
-    static use(id: string, data: TipExpose) {
-        const store = new TipStore(data);
-        if (this.list.has(id)) {
-            logger.warn(60, id);
-        }
-        this.list.set(id, store);
-        onUnmounted(() => {
-            this.list.delete(id);
-        });
-        return store;
-    }
-}
