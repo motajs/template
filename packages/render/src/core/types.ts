@@ -656,6 +656,13 @@ export interface IRenderTextHooks extends IRenderItemBaseHooks {
      * @param text 设置的文字内容
      */
     onSetText?(text: string): void;
+
+    /**
+     * 当更新文字的尺寸时触发
+     * @param width 文字的宽度
+     * @param height 文字的高度
+     */
+    onUpdateSize?(width: number, height: number): void;
 }
 
 export interface IRenderText extends IRenderItem<IRenderTextHooks> {

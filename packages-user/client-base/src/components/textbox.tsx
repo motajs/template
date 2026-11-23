@@ -3,36 +3,28 @@ import {
     computed,
     defineComponent,
     onMounted,
-    onUnmounted,
     reactive,
     ref,
-    shallowReactive,
     shallowRef,
-    SlotsType,
-    VNode,
     watch
 } from 'vue';
-import { logger } from '@motajs/common';
 import { isNil } from 'lodash-es';
-import EventEmitter from 'eventemitter3';
 import {
-    ITextContentConfig,
     TextContentTyper,
     TyperRenderable,
-    TextContentType,
-    WordBreak,
-    TextAlign
+    TextContentType
 } from './textboxTyper';
 import { SetupComponentOptions } from '@motajs/system';
-import { DefaultProps, onExcited, xywh } from '@motajs/render-vue';
+import { DefaultProps, lwh, useRendererRoot, xywh } from '@motajs/render-vue';
 import { Icon } from './icon';
+import { ITextureManager } from '../material';
+import { Background } from './background';
 
 // todo: TextContent 应该改成渲染元素？
 
 //#region TextContent
 
-export interface TextContentProps
-    extends DefaultProps, Partial<ITextContentConfig> {
+export interface TextContentProps extends DefaultProps {
     /** 显示的文字 */
     text?: string;
     /** 是否填充 */
@@ -41,6 +33,10 @@ export interface TextContentProps
     stroke?: boolean;
     /** 是否自适应高度，即组件内部计算 height 的值，而非指定，可与滚动条结合 */
     autoHeight?: boolean;
+    /** 打字机对象，如果需要自定义配置，那么需要传入，如果不需要自定义配置，不传入也可以 */
+    typer?: TextContentTyper;
+    /** 素材管理器，用于显示图标 */
+    materials?: ITextureManager;
 }
 
 export type TextContentEmits = {
@@ -80,27 +76,16 @@ export interface TextContentExpose {
 
 const textContentOptions = {
     props: [
-        'breakChars',
-        'font',
-        'ignoreLineEnd',
-        'ignoreLineStart',
-        'interval',
-        'keepLast',
-        'lineHeight',
         'text',
-        'textAlign',
-        'wordBreak',
         'fill',
-        'fillStyle',
-        'strokeStyle',
-        'strokeWidth',
         'stroke',
         'loc',
         'x',
         'y',
         'width',
         'height',
-        'autoHeight'
+        'autoHeight',
+        'materials'
     ],
     emits: ['typeEnd', 'typeStart', 'updateHeight']
 } satisfies SetupComponentOptions<
@@ -122,12 +107,31 @@ export const TextContent = defineComponent<
         height.value
     ]);
 
-    const typer = new TextContentTyper(props);
+    const root = useRendererRoot();
+    const typer = computed(
+        () =>
+            props.typer ?? new TextContentTyper({ materials: props.materials })
+    );
     const renderable = shallowRef<TyperRenderable[]>([]);
     let needUpdate = false;
 
-    // 打字机需要激励源激励
-    onExcited(typer);
+    watch(
+        root,
+        (value, old) => {
+            old?.excitation.remove(typer.value);
+            value?.excitation.add(typer.value);
+        },
+        { immediate: true }
+    );
+
+    watch(
+        typer,
+        (value, old) => {
+            if (old) root.value?.excitation.remove(old);
+            root.value?.excitation.add(value);
+        },
+        { immediate: true }
+    );
 
     /** 从头开始重新打字 */
     const retype = () => {
@@ -135,28 +139,23 @@ export const TextContent = defineComponent<
         needUpdate = true;
         renderable.value = [];
 
-        typer.setConfig(props);
-        typer.setText(props.text ?? '');
-        typer.type();
+        typer.value.setText(props.text ?? '');
+        typer.value.type();
         needUpdate = false;
         updateLoc();
     };
 
     /** 立刻显示所有文字 */
     const showAll = () => {
-        typer.typeAll();
+        typer.value.typeAll();
     };
-
-    watch(props, () => {
-        typer.setConfig(props);
-        retype();
-    });
 
     /** 获取当前的文本高度 */
     const getHeight = () => {
-        return typer.getHeight();
+        return typer.value.getHeight();
     };
 
+    /** 更新定位 */
     const updateLoc = () => {
         const calculatedHeight = getHeight();
         if (props.autoHeight) {
@@ -174,7 +173,7 @@ export const TextContent = defineComponent<
     const renderContent = (canvas: MotaOffscreenCanvas2D) => {
         const ctx = canvas.ctx;
         ctx.textBaseline = 'top';
-        ctx.lineWidth = props.strokeWidth ?? 2;
+        ctx.lineWidth = typer.value.config.strokeWidth;
         ctx.lineJoin = 'round';
         for (const data of renderable.value) {
             if (data.cut) break;
@@ -211,32 +210,35 @@ export const TextContent = defineComponent<
         renderable.value = data;
     };
 
-    typer.setRender(renderFunc);
-    typer.on('typeStart', () => {
+    typer.value.setRender(renderFunc);
+    typer.value.on('typeStart', () => {
         emit('typeStart');
     });
-    typer.on('typeEnd', () => {
+    typer.value.on('typeEnd', () => {
         emit('typeEnd');
     });
 
     onMounted(retype);
 
-    return () => {
-        return (
-            <custom
-                loc={loc}
-                render={renderContent}
-                bindings={[renderable.value]}
-            ></custom>
-        );
-    };
+    return () => (
+        <custom
+            loc={loc}
+            render={renderContent}
+            bindings={[renderable.value]}
+        ></custom>
+    );
 }, textContentOptions);
+
+//#endregion
 
 //#region Textbox
 
-export interface TextboxProps extends TextContentProps, DefaultProps {
+export interface TextboxProps
+    extends Omit<TextContentProps, 'autoHeight'>, DefaultProps {
     /** 背景颜色 */
     backColor?: CanvasStyle;
+    /** 描边使用的颜色 */
+    strokeColor?: CanvasStyle;
     /** 背景 winskin */
     winskin?: ImageIds;
     /** 边框与文字间的距离，默认为8 */
@@ -252,22 +254,10 @@ export interface TextboxProps extends TextContentProps, DefaultProps {
     /** 标题文字与边框间的距离，默认为4 */
     titlePadding?: number;
     /** 图标 */
-    icon?: AllIdsWithNone;
-    /** 最大宽度 */
-    width: number;
+    icon?: string | number;
 }
 
 export interface TextboxExpose {
-    /**
-     * 显示这个文本框
-     */
-    show(): void;
-
-    /**
-     * 隐藏这个文本框
-     */
-    hide(): void;
-
     /**
      * 重新开始打字
      */
@@ -280,198 +270,113 @@ export interface TextboxExpose {
 }
 
 type TextboxEmits = TextContentEmits;
-type TextboxSlots = SlotsType<{
-    default: (data: TextboxProps) => VNode[];
-    title: (data: TextboxProps) => VNode[];
-}>;
 
 const textboxOptions = {
-    props: (textContentOptions.props as (keyof TextboxProps)[]).concat([
+    props: [
+        'text',
+        'fill',
+        'stroke',
         'backColor',
         'winskin',
         'padding',
+        'title',
+        'titleFont',
         'titleFill',
         'titleStroke',
-        'titleFont',
         'titlePadding',
-        'id',
-        'hidden',
-        'title'
-    ]),
+        'materials',
+        'icon',
+        'loc',
+        'x',
+        'y',
+        'width',
+        'height'
+    ],
     emits: textContentOptions.emits
-} satisfies SetupComponentOptions<TextboxProps, {}, string, TextboxSlots>;
-
-let id = 0;
-function getNextTextboxId() {
-    return `@default-textbox-${id++}`;
-}
+} satisfies SetupComponentOptions<TextboxProps, {}, string>;
 
 export const Textbox = defineComponent<
     TextboxProps,
     TextboxEmits,
-    keyof TextboxEmits,
-    TextboxSlots
->((props, { slots, expose, emit }) => {
-    const data = shallowReactive<TextboxProps>({ width: 200 });
+    keyof TextboxEmits
+>((props, { expose, emit }) => {
+    /** 是否包含标题 */
+    const hasTitle = computed(() => !isNil(props.title));
+    /** 标题内边距 */
+    const titlePadding = computed(() => props.titlePadding ?? 4);
+    /** 正文的内边距 */
+    const padding = computed(() => props.padding ?? 8);
+    /** 标题字体 */
+    const titleFont = computed(
+        () => props.titleFont ?? Font.defaults({ size: 24 })
+    );
 
-    const setTextboxData = () => {
-        // Textbox
-        data.backColor = props.backColor ?? '#222';
-        data.winskin = props.winskin;
-        data.padding = props.padding ?? 8;
-        data.titleFill = props.titleFill ?? 'gold';
-        data.titleStroke = props.titleStroke ?? 'transparent';
-        data.titleFont = props.titleFont ?? new Font('Verdana', 18);
-        data.titlePadding = props.titlePadding ?? 8;
-        data.width = props.width ?? props.loc?.[2] ?? 200;
-        data.height = props.height ?? props.loc?.[3] ?? 200;
-        data.title = props.title ?? '';
-        data.icon = props.icon;
+    const [loc, width, height] = lwh(props);
 
-        // TextContent
-        data.breakChars = props.breakChars ?? '';
-        data.font = props.font ?? new Font();
-        data.ignoreLineEnd = props.ignoreLineEnd ?? '';
-        data.ignoreLineStart = props.ignoreLineStart ?? '';
-        data.interval = props.interval ?? 0;
-        data.keepLast = props.keepLast ?? false;
-        data.lineHeight = props.lineHeight ?? 0;
-        data.text = props.text ?? '';
-        data.textAlign = props.textAlign ?? TextAlign.Left;
-        data.wordBreak = props.wordBreak ?? WordBreak.Space;
-        data.fill = props.fill ?? true;
-        data.stroke = props.stroke ?? false;
-        data.fillStyle = props.fillStyle ?? '#fff';
-        data.strokeStyle = props.strokeStyle ?? '#000';
-        data.strokeWidth = props.strokeWidth ?? 2;
-        data.loc = props.loc;
-        data.width = props.width;
-        data.materials = props.materials;
-    };
-
-    setTextboxData();
-
-    watch(props, () => {
-        const needUpdateTitle = data.title !== props.title;
-        setTextboxData();
-        if (needUpdateTitle) {
-            onSetText();
-        }
-    });
-
-    const titleElement = ref<Text>();
     const content = ref<TextContentExpose>();
-    const hidden = ref(props.hidden);
+
     /** 标题宽度 */
-    const tw = ref(data.titlePadding! * 2);
+    const tw = ref(titlePadding.value * 2);
     /** 标题高度 */
-    const th = ref(data.titlePadding! * 2);
-    const contentX = computed(() => {
-        if (hasIcon.value) {
-            return data.padding! + 40;
-        } else {
-            return data.padding!;
-        }
-    });
-    const contentY = computed(() => {
-        const height = th.value;
-        return data.title ? height : 0;
-    });
-    const backHeight = computed(() => data.height! - contentY.value);
-    const contentWidth = computed(() => {
-        if (hasIcon.value) {
-            return data.width! - data.padding! * 2 - 40;
-        } else {
-            return data.width! - data.padding! * 2;
-        }
-    });
+    const th = ref(titlePadding.value * 2);
+    /** 背景内容的高度 */
+    const backHeight = computed(() => height.value - contentY.value);
+    /** 正文的高度 */
     const contentHeight = computed(
-        () => data.height! - data.padding! * 2 - contentY.value
+        () => height.value - padding.value * 2 - contentY.value
     );
+    /** 图标信息 */
+    const iconData = computed(() => {
+        const icon = props.icon;
+        const material = props.materials;
+        if (isNil(icon) || !material) return null;
+        const data = material.tile(icon);
+        return data;
+    });
+    /** 图标定位 */
     const iconLoc = computed<ElementLocator>(() => {
-        // const y = contentY.value;
-        // const pad = data.padding!;
-        const icon = data.icon;
-        if (isNil(icon) || icon === 'none') {
-            return [];
+        const y = contentY.value;
+        const pad = padding.value;
+        const data = iconData.value;
+        if (!data) return [];
+        const width = data.offset;
+        const height = data.texture.height;
+        return [pad, pad + y, width, height];
+    });
+    /** 正文的横坐标 */
+    const contentX = computed(() => {
+        if (iconData.value) {
+            return padding.value + 40;
         } else {
-            // const num = texture.idNumberMap[icon];
-            // const renderable = texture.getRenderable(num);
-            // if (!renderable) return [];
-            // const [, , w, h] = renderable.render[0];
-            // return [pad, pad + y, w, h];
-            return [];
+            return padding.value;
         }
     });
-    const hasIcon = computed(() => {
-        return !isNil(data.icon) && data.icon !== 'none';
-    });
-
-    const onSetText = () => {
-        // nextTick(() => {
-        //     titleElement.value?.requestBeforeFrame(() => {
-        //         if (titleElement.value) {
-        //             const { width, height } = titleElement.value;
-        //             tw.value = width + data.titlePadding! * 2;
-        //             th.value = height + data.titlePadding! * 2;
-        //         }
-        //     });
-        // });
-    };
-
-    //#region store
-
-    let lastTitle = data.title;
-
-    /** 结束打字机 */
-    const storeEmits: TextboxStoreEmits = {
-        endType() {
-            content.value?.showAll();
-        },
-        hide() {
-            hidden.value = true;
-        },
-        show() {
-            hidden.value = false;
-        },
-        update(value) {
-            if (value.title !== lastTitle) {
-                onSetText();
-                lastTitle = value.title;
-            }
-        },
-        setText(text) {
-            if (data.text === text) {
-                content.value?.retype();
-            } else {
-                data.text = text;
-            }
+    /** 正文的宽度 */
+    const contentWidth = computed(() => {
+        if (iconData.value) {
+            return width.value! - padding.value * 2 - 40;
+        } else {
+            return width.value! - padding.value * 2;
         }
-    };
+    });
+    /** 正文的纵坐标 */
+    const contentY = computed(() => (!isNil(props.title) ? th.value : 0));
 
-    const store = TextboxStore.use(
-        props.id ?? getNextTextboxId(),
-        data,
-        storeEmits
-    );
+    /** 更新标题尺寸 */
+    const onUpdateTitleSize = (width: number, height: number) => {
+        tw.value = width;
+        th.value = height;
+    };
 
     const onTypeStart = () => {
-        store.emitTypeStart();
         emit('typeStart');
     };
 
     const onTypeEnd = () => {
-        store.emitTypeEnd();
         emit('typeEnd');
     };
 
     expose<TextboxExpose>({
-        show() {
-            hidden.value = false;
-        },
-        hide() {
-            hidden.value = true;
-        },
         retype() {
             content.value?.retype();
         },
@@ -481,68 +386,63 @@ export const Textbox = defineComponent<
     });
 
     return () => (
-        <container
-            id={props.id}
-            hidden={hidden.value}
-            alpha={data.alpha}
-            loc={data.loc}
-        >
-            {data.title && (
-                <container zIndex={10} loc={[0, 0, tw.value, th.value]}>
-                    {slots.title ? (
-                        slots.title(data)
-                    ) : props.winskin ? (
-                        <winskin
-                            imageName={props.winskin}
-                            loc={[0, 0, tw.value, th.value]}
-                        ></winskin>
-                    ) : (
-                        <g-rect loc={[0, 0, tw.value, th.value]}></g-rect>
-                    )}
-                    <text
-                        ref={titleElement}
-                        text={data.title}
-                        loc={[data.titlePadding, data.titlePadding]}
-                        fillStyle={data.titleFill}
-                        strokeStyle={data.titleStroke}
-                        font={data.titleFont}
-                        strokeWidth={2}
-                    ></text>
-                </container>
-            )}
-            {slots.default ? (
-                slots.default(data)
-            ) : props.winskin ? (
-                <winskin
-                    imageName={props.winskin}
-                    loc={[0, contentY.value, data.width!, backHeight.value]}
-                ></winskin>
-            ) : (
-                <g-rect
-                    loc={[0, contentY.value, data.width!, backHeight.value]}
-                    fill
-                    fillStyle={data.backColor}
-                ></g-rect>
-            )}
-            {hasIcon.value && (
-                // TODO: manager
-                <Icon icon={data.icon} loc={iconLoc.value} animate />
-            )}
-            {hasIcon.value && (
-                <g-rect
-                    loc={iconLoc.value}
-                    strokeStyle="gold"
-                    fillStyle="#222"
-                    lineWidth={2}
-                    fill
-                    stroke
+        <container loc={loc.value} nocache>
+            <container
+                hidden={!hasTitle.value}
+                zIndex={10}
+                loc={[0, 0, tw.value, th.value]}
+                nocache
+            >
+                <Background
+                    winskin={props.winskin}
+                    color={props.backColor}
+                    border={props.strokeColor}
+                    circle={[0]}
+                    manager={props.materials}
+                    loc={[0, 0, tw.value, th.value]}
                 />
-            )}
+                <text
+                    text={props.title}
+                    loc={[titlePadding.value, titlePadding.value]}
+                    fillStyle={props.titleFill}
+                    strokeStyle={props.titleStroke}
+                    font={titleFont.value}
+                    strokeWidth={2}
+                    onUpdateSize={onUpdateTitleSize}
+                ></text>
+            </container>
+
+            <Background
+                winskin={props.winskin}
+                color={props.backColor}
+                border={props.strokeColor}
+                circle={[0]}
+                manager={props.materials}
+                loc={[0, contentY.value, width.value, backHeight.value]}
+            />
+
+            <Icon
+                hidden={!!iconData.value}
+                icon={props.icon}
+                loc={iconLoc.value}
+                manager={props.materials}
+                animate
+            />
+            <g-rect
+                hidden={!!iconData.value}
+                loc={iconLoc.value}
+                strokeStyle="gold"
+                fillStyle="#222"
+                lineWidth={2}
+                fill
+                stroke
+            />
+
             <TextContent
-                {...data}
+                {...props}
                 ref={content}
                 x={contentX.value}
-                y={contentY.value + data.padding!}
+                y={contentY.value + padding.value}
                 width={contentWidth.value}
                 height={contentHeight.value}
                 onTypeEnd={onTypeEnd}
@@ -552,123 +452,4 @@ export const Textbox = defineComponent<
     );
 }, textboxOptions);
 
-interface TextboxStoreEmits {
-    /** 结束打字机动画的回调函数 */
-    endType: () => void;
-    /** 隐藏文本框的回调函数 */
-    hide: () => void;
-    /** 显示文本框的回调函数 */
-    show: () => void;
-    /** 更新文本框配置的回调函数 */
-    update: (value: TextboxProps) => void;
-    /** 设置显示文本的回调函数 */
-    setText: (text: string) => void;
-}
-
-interface TextboxStoreEvent {
-    /** 文本框配置更新事件，传递更新后的配置值 */
-    update: [value: TextboxProps];
-    /** 文本框显示事件 */
-    show: [];
-    /** 文本框隐藏事件 */
-    hide: [];
-    /** 打字机开始打字事件 */
-    typeStart: [];
-    /** 打字机结束打字事件 */
-    typeEnd: [];
-}
-
-export class TextboxStore extends EventEmitter<TextboxStoreEvent> {
-    static list: Map<string, TextboxStore> = new Map();
-
-    typing: boolean = false;
-
-    private constructor(
-        public readonly data: TextboxProps,
-        private readonly emits: TextboxStoreEmits
-    ) {
-        super();
-    }
-
-    /**
-     * 开始打字，由组件调用，而非组件外调用
-     */
-    emitTypeStart() {
-        this.typing = true;
-        this.emit('typeStart');
-    }
-
-    /**
-     * 结束打字，由组件调用，而非组件外调用
-     */
-    emitTypeEnd() {
-        this.typing = false;
-        this.emit('typeEnd');
-    }
-
-    /**
-     * 结束打字机的打字
-     */
-    endType() {
-        this.emits.endType();
-    }
-
-    /**
-     * 修改渲染数据
-     */
-    modify(data: Partial<TextboxProps>) {
-        for (const [key, value] of Object.entries(data)) {
-            // @ts-expect-error 无法推导
-            if (!isNil(value)) this.data[key] = value;
-        }
-        this.emits.update(this.data);
-        this.emit('update', this.data);
-    }
-
-    /**
-     * 设置显示的文本
-     * @param text 要显示的文本
-     */
-    setText(text: string) {
-        this.emits.setText(text);
-    }
-
-    /**
-     * 显示文本框
-     */
-    show() {
-        this.emits.show();
-    }
-
-    /**
-     * 隐藏文本框
-     */
-    hide() {
-        this.emits.hide();
-    }
-
-    /**
-     * 获取文本框
-     * @param id 文本框id
-     */
-    static get(id: string): TextboxStore | undefined {
-        return this.list.get(id);
-    }
-
-    /**
-     * 在当前作用域下生成文本框控制器
-     * @param id 文本框id
-     * @param props 文本框渲染数据
-     */
-    static use(id: string, props: TextboxProps, emits: TextboxStoreEmits) {
-        const store = new TextboxStore(props, emits);
-        if (this.list.has(id)) {
-            logger.warn(42, id);
-        }
-        this.list.set(id, store);
-        onUnmounted(() => {
-            this.list.delete(id);
-        });
-        return store;
-    }
-}
+//#endregion

@@ -28,7 +28,7 @@ export class RenderText
 
     constructor() {
         super();
-        this.eventNames.add('onSetText');
+        this.eventNames.add('onSetText').add('onUpdateSize');
     }
 
     protected getDefaultCache(): boolean {
@@ -121,7 +121,10 @@ export class RenderText
         this.descent = actualBoundingBoxAscent;
         const height = actualBoundingBoxAscent + actualBoundingBoxDescent;
         const stroke = this.strokeWidth * 2;
-        this.size(width + stroke, height + stroke + SAFE_PAD * 2);
+        const tw = width + stroke;
+        const th = height + stroke + SAFE_PAD * 2;
+        this.size(tw, th);
+        this.forEachHook(hook => hook.onUpdateSize?.(tw, th));
     }
 
     protected handleProps(
