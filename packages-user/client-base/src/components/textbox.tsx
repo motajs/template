@@ -3,7 +3,6 @@ import {
     computed,
     defineComponent,
     onMounted,
-    reactive,
     ref,
     shallowRef,
     watch
@@ -100,11 +99,13 @@ export const TextContent = defineComponent<
     keyof TextContentEmits
 >((props, { emit, expose }) => {
     const [x, y, width, height] = xywh(props);
-    const loc = reactive<ElementLocator>([
+    /** 正文高度 */
+    const contentHeight = ref(height.value);
+    const loc = computed<ElementLocator>(() => [
         x.value,
         y.value,
         width.value,
-        height.value
+        contentHeight.value
     ]);
 
     const root = useRendererRoot();
@@ -159,9 +160,9 @@ export const TextContent = defineComponent<
     const updateLoc = () => {
         const calculatedHeight = getHeight();
         if (props.autoHeight) {
-            loc[3] = calculatedHeight;
+            contentHeight.value = calculatedHeight;
         } else {
-            loc[3] = height.value;
+            contentHeight.value = height.value;
         }
         emit('updateHeight', calculatedHeight);
     };
@@ -222,7 +223,7 @@ export const TextContent = defineComponent<
 
     return () => (
         <custom
-            loc={loc}
+            loc={loc.value}
             render={renderContent}
             bindings={[renderable.value]}
         ></custom>
