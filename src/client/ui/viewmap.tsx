@@ -18,7 +18,7 @@ import {
     shallowRef,
     watch
 } from 'vue';
-import { FloorSelector } from '@user/client-base';
+import { ListSelector } from '@user/client-base';
 import { clamp, mean } from 'lodash-es';
 import { StatisticsDataOneFloor } from './statistics';
 import { Tip, TipExpose, IGameUIPropsBase, useKey } from '@user/client-base';
@@ -367,9 +367,9 @@ export const ViewMap = defineComponent<ViewMapProps>(props => {
                 line={[RIGHT_STATUS_POS, 0, RIGHT_STATUS_POS, MAIN_HEIGHT]}
                 lineWidth={1}
             />
-            <FloorSelector
+            <ListSelector
                 loc={[0, 0, STATUS_BAR_WIDTH, MAIN_HEIGHT]}
-                floors={viewableFloor}
+                list={viewableFloor}
                 v-model:now={now.value}
                 onClose={close}
             />

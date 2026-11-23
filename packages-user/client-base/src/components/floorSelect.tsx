@@ -5,58 +5,76 @@ import { computed, defineComponent, onMounted, ref, watch } from 'vue';
 import { Scroll, ScrollExpose } from './scroll';
 import { MotaOffscreenCanvas2D, Font } from '@motajs/render';
 
-export interface FloorSelectorProps extends DefaultProps {
-    /** 楼层列表，顺序排列，键表示楼层 id，值表示这一楼层的显示名称 */
-    floors?: [string, string][];
-    /** 当前选中的楼层 */
-    now?: number;
+export interface IListSelectorProps extends DefaultProps {
+    /** 内容列表，顺序排列，键表示选中项的 id，值表示这一项的显示名称 */
+    list?: [string, string][];
+    /** 当前选中的项 id */
+    now?: string;
     /** 每行的行高，默认 24 */
     interval?: number;
     /** 文字和竖直线是否靠右对齐 */
     alignRight?: boolean;
     /** 每行的文字使用的字体，默认使用默认字体家族，字体尺寸为行高的一半 */
     font?: Font;
+    /** 是否反转排序，适用于特殊场景比如楼层列表 */
+    reverse?: boolean;
 }
 
-export type FloorSelectorEmits = {
+export type ListSelectorEmits = {
     /**
-     * 当选中的楼层改变时触发
-     * @param floor 楼层索引
-     * @param floorId 楼层 id
+     * 当选中的项改变时触发
+     * @param id 选中项 id
+     * @param index 选中项索引
      */
-    update: (floor: number, floorId: string) => void;
+    update: (id: string, index: number) => void;
 
-    'update:now': (value: number) => void;
+    'update:now': (value: string) => void;
 };
 
-const floorSelectorProps = {
-    props: ['floors', 'now', 'loc', 'x', 'y', 'width', 'height'],
+const listSelectorProps = {
+    props: [
+        'list',
+        'now',
+        'interval',
+        'alignRight',
+        'font',
+        'reverse',
+        'loc',
+        'x',
+        'y',
+        'width',
+        'height'
+    ],
     emits: ['update', 'update:now']
 } satisfies SetupComponentOptions<
-    FloorSelectorProps,
-    FloorSelectorEmits,
-    keyof FloorSelectorEmits
+    IListSelectorProps,
+    ListSelectorEmits,
+    keyof ListSelectorEmits
 >;
 
-export const FloorSelector = defineComponent<
-    FloorSelectorProps,
-    FloorSelectorEmits,
-    keyof FloorSelectorEmits
+export const ListSelector = defineComponent<
+    IListSelectorProps,
+    ListSelectorEmits,
+    keyof ListSelectorEmits
 >((props, { emit }) => {
-    /** 当前鼠标选中楼层，反向 */
+    /** 当前鼠标选中项，反向 */
     const selList = ref(0);
 
     const scrollRef = ref<ScrollExpose>();
 
     const [loc, width, height] = lwh(props);
 
-    /** 所有楼层的信息 */
-    const floors = computed<[string, string][]>(
-        () => props.floors?.toReversed() ?? [['unknown', '未知']]
-    );
+    /** 列表信息 */
+    const list = computed<[string, string][]>(() => {
+        if (props.reverse) {
+            return props.list?.toReversed() ?? [['unknown', '未知']];
+        } else {
+            return props.list?.slice() ?? [['unknown', '未知']];
+        }
+    });
     /** 当前选中项的信息 */
     const current = computed(
-        () => floors.value[floors.value.length - now.value - 1]
+        () => list.value[list.value.length - now.value - 1]
     );
     /** 每行的行高 */
     const lh = computed(() => props.interval ?? 24);
@@ -69,8 +87,16 @@ export const FloorSelector = defineComponent<
         () => props.font ?? Font.defaults({ size: lh.value / 2 })
     );
 
-    /** 当前选中楼层，不反向 */
-    const now = ref(clamp(props.now ?? 0, 0, floors.value.length - 1));
+    /** 获取指定 id 对应的索引 */
+    const getIdIndex = (id: string) => {
+        if (!props.list) return -1;
+        return props.list.findIndex(([key]) => key === id);
+    };
+
+    /** 当前选中项，不反向 */
+    const now = ref(
+        clamp(getIdIndex(props.now ?? ''), 0, list.value.length - 1)
+    );
 
     /** 蒙版渐变对象 */
     let gradient: CanvasGradient | null = null;
@@ -78,9 +104,9 @@ export const FloorSelector = defineComponent<
     watch(
         () => props.now,
         value => {
-            if (!isNil(value)) {
-                changeTo(value);
-            }
+            if (isNil(value)) return;
+            const index = getIdIndex(value);
+            changeTo(clamp(index, 0, list.value.length - 1));
         }
     );
 
@@ -108,17 +134,16 @@ export const FloorSelector = defineComponent<
         ctx.fillRect(0, 0, width.value, height.value);
     };
 
-    /** 切换至指定楼层 */
+    /** 切换至指定选择项 */
     const changeTo = (index: number, time: number = 500) => {
-        // 取反是为了符合 2.x 的操作习惯
-        const res = clamp(index, 0, floors.value.length - 1);
-        const reversed = floors.value.length - res - 1;
+        const res = clamp(index, 0, list.value.length - 1);
+        const reversed = list.value.length - res - 1;
         now.value = res;
         selList.value = reversed;
         const y = reversed * lh.value;
         scrollRef.value?.scrollTo(y, time);
-        emit('update', now.value, current.value[0]);
-        emit('update:now', now.value);
+        emit('update', current.value[0], now.value);
+        emit('update:now', current.value[0]);
     };
 
     const enterList = (index: number) => {
@@ -138,7 +163,7 @@ export const FloorSelector = defineComponent<
                 zIndex={10}
                 padEnd={height.value / 2 - lh.value / 2}
             >
-                {floors.value.map(([, title], i, a) => {
+                {list.value.map(([, title], i, a) => {
                     const reversed = a.length - i - 1;
                     const nowFloor = a.length - now.value - 1;
                     const highlight = nowFloor === i || selList.value === i;
@@ -190,4 +215,4 @@ export const FloorSelector = defineComponent<
             />
         </container>
     );
-}, floorSelectorProps);
+}, listSelectorProps);
