@@ -137,6 +137,7 @@ export class Transition implements ITransition {
         this.controller?.revoke();
         this.unbindExcitation();
         this.animatableStatus = null;
+        this.unbindExcitation();
     }
 
     //#endregion

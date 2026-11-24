@@ -620,7 +620,7 @@ class RenderColorTransition implements ITransitionedController<string> {
                     Number(`0x${color.slice(1, 2).repeat(2)}`),
                     Number(`0x${color.slice(2, 3).repeat(2)}`),
                     Number(`0x${color.slice(3, 4).repeat(2)}`),
-                    Number(`0x${color.slice(4, 5).repeat(2)}`)
+                    Number(`0x${color.slice(4, 5).repeat(2)}`) / 255
                 ];
             case 7:
                 return [
@@ -634,7 +634,7 @@ class RenderColorTransition implements ITransitionedController<string> {
                     Number(`0x${color.slice(1, 3)}`),
                     Number(`0x${color.slice(3, 5)}`),
                     Number(`0x${color.slice(5, 7)}`),
-                    Number(`0x${color.slice(7, 9)}`)
+                    Number(`0x${color.slice(7, 9)}`) / 255
                 ];
         }
         return [0, 0, 0, 0];

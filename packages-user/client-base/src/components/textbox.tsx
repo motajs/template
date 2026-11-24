@@ -131,6 +131,7 @@ export const TextContent = defineComponent<
         (value, old) => {
             old?.excitation.remove(typer.value);
             value?.excitation.add(typer.value);
+            retype();
         },
         { immediate: true }
     );
@@ -141,6 +142,7 @@ export const TextContent = defineComponent<
         needUpdate = true;
         renderable.value = [];
 
+        typer.value.setConfig({ width: width.value });
         typer.value.setText(props.text ?? '');
         typer.value.type();
         needUpdate = false;
@@ -223,6 +225,7 @@ export const TextContent = defineComponent<
             root.value?.excitation.add(value);
             value.addHook(hook);
             value.setRender(renderFunc);
+            retype();
         },
         { immediate: true }
     );
