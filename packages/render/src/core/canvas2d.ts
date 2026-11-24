@@ -91,22 +91,4 @@ export class MotaOffscreenCanvas2D {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.restore();
     }
-
-    /**
-     * 复制一个离屏Canvas2D对象，一般用于缓存等操作
-     * @param canvas 被复制的MotaOffscreenCanvas2D对象
-     */
-    static clone(canvas: MotaOffscreenCanvas2D): MotaOffscreenCanvas2D {
-        const newCanvas = new MotaOffscreenCanvas2D();
-        newCanvas.setHD(canvas.highResolution);
-        newCanvas.size(canvas.width, canvas.height);
-        newCanvas.ctx.drawImage(
-            canvas.canvas,
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-        return newCanvas;
-    }
 }
