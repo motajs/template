@@ -28,9 +28,8 @@ import {
     IGameUIPropsBase,
     ClientHotkey,
     IClientHotkey,
-    Icon,
-    Winskin,
-    MapRenderItem
+    MapRenderItem,
+    IMapRendererInitConfig
 } from '@user/client-base';
 import { IMapRenderer, MapRenderer } from '@user/client-base';
 import {
@@ -90,16 +89,27 @@ export class ClientCore extends CoreState implements IClientCore {
                 excitaion: this.excitationDivider
             })
         );
-        this.mainMapRenderer = markRaw(new MapRenderer(this.materials));
-        this.expandMapRenderer = markRaw(new MapRenderer(this.materials));
+        const mapRendererConfig: IMapRendererInitConfig = {
+            manager: this.materials,
+            initBlockWidth: config.mapBlockWidth,
+            initBlockHeight: config.mapBlockHeight,
+            initCellWidth: config.mapCellWidth,
+            initCellHeight: config.mapCellHeight
+        };
+        this.mainMapRenderer = markRaw(new MapRenderer(mapRendererConfig));
+        this.expandMapRenderer = markRaw(new MapRenderer(mapRendererConfig));
         this.sceneController = new UIController<IGameUIPropsBase>();
         this.mainUIController = new UIController<IGameUIPropsBase>();
         const pbCreator = createUIPropsBase(this);
         this.sceneController.setPropsBaseCreator(pbCreator);
         this.mainUIController.setPropsBaseCreator(pbCreator);
+        this.expandMapRenderer.setCanvasSize(
+            config.expandMapRendererWidth,
+            config.expandMapRendererHeight
+        );
+        // 辅助渲染器为保证跨组件引用的一致性，不允许修改画布尺寸
+        this.expandMapRenderer.freezeCanvasSize();
 
-        this.renderer.registerElement('icon', () => new Icon());
-        this.renderer.registerElement('winskin', () => new Winskin());
         this.renderer.registerElement('map-render', () => new MapRenderItem());
 
         this.loader.addCoreConfig('client', config.clientURL);

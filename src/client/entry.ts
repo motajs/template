@@ -15,6 +15,14 @@ import {
 import { createCoreStateConfig } from '../data/entry';
 import { MainClientPlugin } from './initialize';
 import { clientPlugins } from './plugin';
+import {
+    CELL_HEIGHT,
+    CELL_WIDTH,
+    MAP_BLOCK_HEIGHT,
+    MAP_BLOCK_WIDTH,
+    MAP_HEIGHT,
+    MAP_WIDTH
+} from './uiConstant';
 
 /**
  * 创建渲染端配置对象
@@ -30,6 +38,12 @@ export function createClientCoreConfig(
         rendererCanvas: RENDER_CANVAS,
         renderWidth: RENDER_WIDTH,
         renderHeight: RENDER_HEIGHT,
+        mapCellWidth: CELL_WIDTH,
+        mapCellHeight: CELL_HEIGHT,
+        mapBlockWidth: MAP_BLOCK_WIDTH,
+        mapBlockHeight: MAP_BLOCK_HEIGHT,
+        expandMapRendererWidth: MAP_WIDTH,
+        expandMapRendererHeight: MAP_HEIGHT,
         clientPlugins: [new MainClientPlugin(), ...clientPlugins],
 
         ...createCoreStateConfig(starter)

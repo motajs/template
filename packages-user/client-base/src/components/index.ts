@@ -11,3 +11,4 @@ export * from './textbox';
 export * from './textboxTyper';
 export * from './thumbnail';
 export * from './tip';
+export * from './winskin';

@@ -75,6 +75,18 @@ export interface IClientCoreConfig extends ICoreStateConfig {
     readonly renderHeight: number;
     /** 渲染端插件列表 */
     readonly clientPlugins: IClientPluginDefine[];
+    /** 辅助地图渲染器的固定画布宽度 */
+    readonly expandMapRendererWidth: number;
+    /** 辅助地图渲染器的固定画布高度 */
+    readonly expandMapRendererHeight: number;
+    /** 地图的初始分块宽度，后续还可以通过接口调整 */
+    readonly mapBlockWidth: number;
+    /** 地图的初始分块高度，后续还可以通过接口调整 */
+    readonly mapBlockHeight: number;
+    /** 地图的初始图块像素宽度，后续还可以通过接口调整 */
+    readonly mapCellWidth: number;
+    /** 地图的初始图块像素高度，后续还可以通过接口调整 */
+    readonly mapCellHeight: number;
 }
 
 export interface IClientCore extends IClientBase {

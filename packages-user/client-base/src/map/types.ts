@@ -188,6 +188,8 @@ export interface IContextData {
 
 //#endregion
 
+//#region 图块状态
+
 export interface IBlockStatus {
     /** 图块所属图层 */
     readonly layer: IMapLayer;
@@ -326,6 +328,10 @@ export interface IRenderBlockMover extends IExcitable<number> {
     endMoving(keep?: boolean): void;
 }
 
+//#endregion
+
+//#region 地图渲染器
+
 export interface IMapRendererPostEffect {
     /** 当前后处理对象是否启用 */
     readonly enabled: boolean;
@@ -370,11 +376,22 @@ export interface IMapRenderResult {
     readonly area: IMapRenderData;
 }
 
+export interface IMapRendererInitConfig extends IMapVertexConfig {
+    /** 贴图资源管理器 */
+    readonly manager: ITextureManager;
+    /** 每个图块的初始像素宽度 */
+    readonly initCellWidth: number;
+    /** 每个图块的初始像素高度 */
+    readonly initCellHeight: number;
+}
+
 export interface IMapRenderer extends IExcitable<number> {
     /** 地图渲染器使用的资源管理器 */
     readonly manager: ITextureManager;
     /** 画布渲染上下文 */
     readonly gl: WebGL2RenderingContext;
+    /** 画布元素 */
+    readonly canvas: HTMLCanvasElement;
 
     /** 自动元件处理对象 */
     readonly autotile: IAutotileProcessor;
@@ -405,6 +422,9 @@ export interface IMapRenderer extends IExcitable<number> {
     readonly assetWidth: number;
     /** 图集高度 */
     readonly assetHeight: number;
+
+    /** 当前是否冻结了画布尺寸，冻结后不允许修改画布尺寸与分块尺寸 */
+    readonly canvasSizeFreezed: boolean;
 
     /**
      * 设置地图渲染器使用的激励源对象
@@ -463,6 +483,11 @@ export interface IMapRenderer extends IExcitable<number> {
      * @param height 画布高度
      */
     setCanvasSize(width: number, height: number): void;
+
+    /**
+     * 冻结画布尺寸，之后不再允许修改画布尺寸与分块尺寸
+     */
+    freezeCanvasSize(): void;
 
     /**
      * 设置渲染区域，等于 `gl.viewport`
@@ -634,21 +659,9 @@ export interface IMapRenderer extends IExcitable<number> {
     needUpdate(): boolean;
 }
 
-export interface IMapVertexArray {
-    /**
-     * 地图渲染实例化数组，结构是一个三维张量 `[B, L, T]`，其中 `B` 代表分块，`L` 代表图层，`T` 代表图块，并按照结构顺序平铺存储。
-     *
-     * 语义解释就是，最内层存储图块，再外面一层存储图层，最外层存储分块。这样的话可以一次性将一个分块的所有图层渲染完毕。
-     *
-     * 依次存储 a_tilePos, a_texCoord, a_tileData, a_texData
-     */
-    readonly tileInstanced: Float32Array;
+//#endregion
 
-    /** 动态内容的起始索引，以实例为单位 */
-    readonly dynamicStart: number;
-    /** 动态内容的数量，以实例为单位 */
-    readonly dynamicCount: number;
-}
+//#region 地图分块
 
 export interface IChunkIndex {
     /** 横坐标 */
@@ -882,6 +895,10 @@ export interface IBlockSplitter<T> extends IChunkSplitterConfig {
     splitChunks(mapFn: (block: IChunkInfo) => T): void;
 }
 
+//#endregion
+
+//#region 地图分块数据
+
 export interface IMapVertexData {
     /** 这个分块的实例化数据数组 */
     readonly instancedArray: Float32Array;
@@ -988,6 +1005,10 @@ export interface IMapVertexBlock extends IMapVertexData {
     deleteAttachedData(symbol: symbol): void;
 }
 
+//#endregion
+
+//#region 顶点数组
+
 export interface IMapBlockUpdateObject {
     /** 要更新为的图块数字 */
     readonly block: number;
@@ -995,6 +1016,22 @@ export interface IMapBlockUpdateObject {
     readonly x: number;
     /** 图块纵坐标 */
     readonly y: number;
+}
+
+export interface IMapVertexArray {
+    /**
+     * 地图渲染实例化数组，结构是一个三维张量 `[B, L, T]`，其中 `B` 代表分块，`L` 代表图层，`T` 代表图块，并按照结构顺序平铺存储。
+     *
+     * 语义解释就是，最内层存储图块，再外面一层存储图层，最外层存储分块。这样的话可以一次性将一个分块的所有图层渲染完毕。
+     *
+     * 依次存储 a_tilePos, a_texCoord, a_tileData, a_texData
+     */
+    readonly tileInstanced: Float32Array;
+
+    /** 动态内容的起始索引，以实例为单位 */
+    readonly dynamicStart: number;
+    /** 动态内容的数量，以实例为单位 */
+    readonly dynamicCount: number;
 }
 
 export interface IMapVertexStatus {
@@ -1059,9 +1096,13 @@ export interface IMapVertexStatus {
     getDynamicFrame(index: number): number;
 }
 
-/**
- * 脏标记表示顶点数组的长度是否发生变化
- */
+export interface IMapVertexConfig {
+    /** 初始状态下的分块宽度 */
+    readonly initBlockWidth: number;
+    /** 初始状态下的分块高度 */
+    readonly initBlockHeight: number;
+}
+
 export interface IMapVertexGenerator
     extends IDirtyTracker<boolean>, IMapVertexStatus {
     /** 地图渲染器 */
@@ -1087,7 +1128,7 @@ export interface IMapVertexGenerator
      * @param width 分块宽度
      * @param height 分块高度
      */
-    setBlockSize(width: number, height: number): void;
+    setChunkSize(width: number, height: number): void;
 
     /**
      * 重设地图尺寸
@@ -1210,6 +1251,10 @@ export interface IMapVertexGenerator
     ): void;
 }
 
+//#endregion
+
+//#region 视角控制
+
 export interface IMapRenderArea {
     /** 顶点起始索引，从哪个顶点开始处理 */
     startIndex: number;
@@ -1243,6 +1288,8 @@ export interface IMapViewportController {
      */
     bindTransform(transform: Transform): void;
 }
+
+//#endregion
 
 //#region 渲染元素
 

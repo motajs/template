@@ -17,6 +17,7 @@ import {
     IMapBackgroundConfig,
     IMapRenderConfig,
     IMapRenderer,
+    IMapRendererInitConfig,
     IMapRendererPostEffect,
     IMapRenderResult,
     IMapVertexGenerator,
@@ -43,14 +44,12 @@ import mapVert from './shader/map.vert?raw';
 import mapFrag from './shader/map.frag?raw';
 import backVert from './shader/back.vert?raw';
 import backFrag from './shader/back.frag?raw';
-import {
-    CELL_HEIGHT,
-    CELL_WIDTH,
-    DYNAMIC_RESERVE,
-    MOVING_TOLERANCE
-} from '../shared';
 import { MapViewport } from './viewport';
-import { INSTANCED_COUNT } from './constant';
+import {
+    INSTANCED_COUNT,
+    OVERLAY_RESERVE,
+    OVERLAY_TOLERANCE
+} from './constant';
 import { OverlayBlock, StaticBlockStatus } from './status';
 import { IExcitableController, IExcitation } from '@motajs/animate';
 
@@ -63,22 +62,21 @@ const enum BackgroundType {
 export class MapRenderer implements IMapRenderer, IMapDataGetter {
     //#region 实例属性
 
-    /** 自动元件处理器 */
     readonly autotile: IAutotileProcessor;
-    /** 顶点数组生成器 */
     readonly vertex: IMapVertexGenerator;
-    /** 地图渲染的视角控制 */
     readonly viewport: IMapViewportController;
+    readonly manager: ITextureManager;
 
     mapWidth: number = 0;
     mapHeight: number = 0;
     layerCount: number = 0;
     renderWidth: number = 0;
     renderHeight: number = 0;
-    cellWidth: number = CELL_WIDTH;
-    cellHeight: number = CELL_HEIGHT;
+    cellWidth: number = 0;
+    cellHeight: number = 0;
     assetWidth: number = 4096;
     assetHeight: number = 4096;
+    canvasSizeFreezed: boolean = false;
 
     map: IGameMap | null = null;
     /** 地图状态钩子控制器 */
@@ -152,7 +150,7 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
     /** 移动图块对象索引池 */
     private overlayIndexPool: number[] = [];
     /** 移动图块对象数量 */
-    private overlayCount: number = DYNAMIC_RESERVE;
+    private overlayCount: number = OVERLAY_RESERVE;
     /** 移动索引映射 */
     private overlayIndexMap: Map<number, IOverlayBlock> = new Map();
     /** 移动容忍度，如果正在移动的图块数量长期小于预留数量的一半，那么将减少移动数组长度 */
@@ -211,7 +209,7 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
      * 创建地图渲染器
      * @param manager 素材管理器
      */
-    constructor(readonly manager: ITextureManager) {
+    constructor(config: IMapRendererInitConfig) {
         this.overlayIndexPool.push(
             ...Array.from({ length: this.overlayCount }, (_, i) => i).reverse()
         );
@@ -227,12 +225,15 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
             v => v / data.tileTextureWidth
         );
         this.contextData = data;
-        this.vertex = new MapVertexGenerator(this, data);
-        this.autotile = manager.autotile;
+        this.manager = config.manager;
+        this.vertex = new MapVertexGenerator(this, data, config);
+        this.autotile = this.manager.autotile;
         this.viewport = new MapViewport(this);
         this.tileAnimater = new TextureColumnAnimater();
         this.initVertexPointer(this.gl, data);
         this.setViewport(0, 0, this.canvas.width, this.canvas.height);
+        this.cellWidth = config.initCellWidth;
+        this.cellHeight = config.initCellHeight;
     }
 
     /**
@@ -352,6 +353,13 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
     }
 
     setCanvasSize(width: number, height: number): void {
+        if (this.canvasSizeFreezed) {
+            logger.warn(215);
+            return;
+        }
+        if (width === this.canvas.width && height === this.canvas.height) {
+            return;
+        }
         this.canvas.width = width;
         this.canvas.height = height;
         // 更新 FBO 的纹理尺寸信息
@@ -404,6 +412,10 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
         );
         gl.bindRenderbuffer(gl.RENDERBUFFER, null);
         this.updateRequired = true;
+    }
+
+    freezeCanvasSize(): void {
+        this.canvasSizeFreezed = true;
     }
 
     setViewport(x: number, y: number, width: number, height: number): void {
@@ -1718,7 +1730,7 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
      */
     private reduceOverlay() {
         const half = Math.round(this.overlayCount / 2);
-        if (half < DYNAMIC_RESERVE) return;
+        if (half < OVERLAY_RESERVE) return;
         for (const moving of this.overlayBlocks) {
             if (moving.index >= half) return;
         }
@@ -1735,7 +1747,7 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
         }
         const half = Math.max(
             Math.round(this.overlayCount / 2),
-            DYNAMIC_RESERVE
+            OVERLAY_RESERVE
         );
         if (this.overlayIndexPool.length < half) {
             this.lastExpandTime = this.getTimestamp();
@@ -1846,7 +1858,7 @@ export class MapRenderer implements IMapRenderer, IMapDataGetter {
     excited(payload: number) {
         // 移动数组
         const expandDT = payload - this.lastExpandTime;
-        if (expandDT > MOVING_TOLERANCE * 1000) {
+        if (expandDT > OVERLAY_TOLERANCE * 1000) {
             this.reduceOverlay();
             this.lastExpandTime = payload;
         }

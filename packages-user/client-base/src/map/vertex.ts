@@ -15,15 +15,15 @@ import {
     IOverlayBlock,
     MapTileAlign,
     MapTileBehavior,
-    MapTileSizeTestMode
+    MapTileSizeTestMode,
+    IMapVertexConfig
 } from './types';
 import { logger, PrivateBooleanDirtyTracker } from '@motajs/common';
-import { DYNAMIC_RESERVE, MAP_BLOCK_HEIGHT, MAP_BLOCK_WIDTH } from '../shared';
 import { BlockSplitter } from './chunk';
 import { clamp, isNil } from 'lodash-es';
 import { IMaterialFramedData } from '@user/client-base';
 import { IRect } from '@motajs/render';
-import { INSTANCED_COUNT } from './constant';
+import { INSTANCED_COUNT, OVERLAY_RESERVE } from './constant';
 
 export interface IMapDataGetter {
     /** 图块缩小行为，即图块比格子大时应该如何处理 */
@@ -102,7 +102,7 @@ export class MapVertexGenerator
     dynamicRenderDirty: boolean = true;
 
     dynamicStart: number = 0;
-    dynamicCount: number = DYNAMIC_RESERVE;
+    dynamicCount: number = OVERLAY_RESERVE;
 
     /** 空顶点数组，因为空顶点很常用，所以直接定义一个全局常量 */
     private static readonly EMPTY_VETREX: Float32Array = new Float32Array(
@@ -139,9 +139,9 @@ export class MapVertexGenerator
     private overlayCount: number = 0;
 
     /** 分块宽度 */
-    private blockWidth: number = MAP_BLOCK_WIDTH;
+    private blockWidth: number = 0;
     /** 分块高度 */
-    private blockHeight: number = MAP_BLOCK_HEIGHT;
+    private blockHeight: number = 0;
 
     /** 地图宽度 */
     private mapWidth: number = 0;
@@ -158,11 +158,14 @@ export class MapVertexGenerator
 
     constructor(
         readonly renderer: IMapRenderer & IMapDataGetter,
-        readonly data: IContextData
+        readonly data: IContextData,
+        config: IMapVertexConfig
     ) {
         super();
         this.resizeMap();
         this.block = new BlockSplitter();
+        this.blockWidth = config.initBlockWidth;
+        this.blockHeight = config.initBlockHeight;
     }
 
     //#endregion
@@ -224,7 +227,11 @@ export class MapVertexGenerator
         });
     }
 
-    setBlockSize(width: number, height: number): void {
+    setChunkSize(width: number, height: number): void {
+        if (this.renderer.canvasSizeFreezed) {
+            logger.warn(215);
+            return;
+        }
         this.blockWidth = width;
         this.blockHeight = height;
         this.mallocVertexArray();
