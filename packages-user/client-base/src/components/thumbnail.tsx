@@ -352,6 +352,7 @@ export const Thumbnail = defineComponent<ThumbnailProps>(props => {
         }
     });
 
+    /** ThumbnailCell 的分块信息 */
     const chunks = computed<IThumbnailChunkData>(() => {
         const renderer = props.renderer;
         if (!renderer || !props.area) {
@@ -364,6 +365,8 @@ export const Thumbnail = defineComponent<ThumbnailProps>(props => {
         const [x, y] = props.area;
         const [nx, ny, nw, nh] = area.value;
         const { chunkWidth, chunkHeight } = renderer.vertex.block;
+
+        // 获取目标渲染区域都有哪些分块，然后把这些分块形成 ThumbnailCell 能看懂的参数形式
         const startChunkX = Math.floor(nx / chunkWidth + 1e-8);
         const startChunkY = Math.floor(ny / chunkHeight + 1e-8);
         const endChunkX = Math.ceil((nx + nw) / chunkWidth - 1e-8);
@@ -389,6 +392,7 @@ export const Thumbnail = defineComponent<ThumbnailProps>(props => {
             }
         }
 
+        // 最后计算裁剪矩形的范围，裁剪矩形使用 destination-in 实现
         const sx = Math.max(0, (nx - x) * renderer.cellWidth * size.value);
         const sy = Math.max(0, (ny - y) * renderer.cellHeight * size.value);
         const sw = nw * renderer.cellWidth * size.value;
@@ -414,6 +418,7 @@ export const Thumbnail = defineComponent<ThumbnailProps>(props => {
                         floorId={props.floorId}
                         size={size.value}
                         damage={props.damage}
+                        zIndex={10}
                     />
                 ))}
                 <g-rect
