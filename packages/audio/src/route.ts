@@ -1,17 +1,21 @@
-import EventEmitter from 'eventemitter3';
 import { isNil } from 'lodash-es';
-import { sleep } from '@motajs/common';
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    sleep
+} from '@motajs/common';
 import { AudioEffect } from './effect';
 import {
     IAudioRoute,
     AudioStatus,
+    IAudioRouteHooks,
     IAudioSource,
-    IMotaAudioContext,
-    EAudioRouteEvent
+    IMotaAudioContext
 } from './types';
 
 export class AudioRoute
-    extends EventEmitter<EAudioRouteEvent>
+    extends Hookable<IAudioRouteHooks>
     implements IAudioRoute
 {
     output: AudioNode;
@@ -59,16 +63,24 @@ export class AudioRoute
     ) {
         super();
         this.output = source.output;
-        source.on('end', () => {
-            if (this.status === AudioStatus.Playing) {
-                this.status = AudioStatus.Stoped;
+        source.addHook({
+            onEnd: () => {
+                if (this.status === AudioStatus.Playing) {
+                    this.status = AudioStatus.Stoped;
+                }
+            },
+            onPlay: () => {
+                if (this.status !== AudioStatus.Playing) {
+                    this.status = AudioStatus.Playing;
+                }
             }
         });
-        source.on('play', () => {
-            if (this.status !== AudioStatus.Playing) {
-                this.status = AudioStatus.Playing;
-            }
-        });
+    }
+
+    protected createController(
+        hook: Partial<IAudioRouteHooks>
+    ): IHookController<IAudioRouteHooks> {
+        return new HookController(this, hook);
     }
 
     /**
@@ -98,9 +110,9 @@ export class AudioRoute
         this.source.play(when);
         this.status = AudioStatus.Playing;
         this.pauseTime = 0;
-        this.emit('start', this);
+        this.forEachHook(hook => hook.onStart?.(this));
         this.startAllEffect();
-        this.emit('play');
+        this.forEachHook(hook => hook.onPlay?.());
     }
 
     /**
@@ -111,7 +123,7 @@ export class AudioRoute
         this.status = AudioStatus.Pausing;
         this.stopIdentifier++;
         const identifier = this.stopIdentifier;
-        this.emit('end', this.endTime, this);
+        this.forEachHook(hook => hook.onEnd?.(this.endTime, this));
         await sleep(this.endTime);
         if (
             this.status !== AudioStatus.Pausing ||
@@ -125,12 +137,12 @@ export class AudioRoute
         if (this.shouldStop) {
             this.status = AudioStatus.Stoped;
             this.endAllEffect();
-            this.emit('stop');
+            this.forEachHook(hook => hook.onStop?.());
             this.shouldStop = false;
         } else {
             this.status = AudioStatus.Paused;
             this.endAllEffect();
-            this.emit('pause');
+            this.forEachHook(hook => hook.onPause?.());
         }
     }
 
@@ -143,8 +155,8 @@ export class AudioRoute
             this.status === AudioStatus.Pausing ||
             this.status === AudioStatus.Stoping
         ) {
-            this.emit('start', this);
-            this.emit('resume');
+            this.forEachHook(hook => hook.onStart?.(this));
+            this.forEachHook(hook => hook.onResume?.());
             return;
         }
         if (this.status === AudioStatus.Paused) {
@@ -154,9 +166,9 @@ export class AudioRoute
         }
         this.status = AudioStatus.Playing;
         this.pauseTime = 0;
-        this.emit('start', this);
+        this.forEachHook(hook => hook.onStart?.(this));
         this.startAllEffect();
-        this.emit('resume');
+        this.forEachHook(hook => hook.onResume?.());
     }
 
     /**
@@ -172,7 +184,7 @@ export class AudioRoute
         this.status = AudioStatus.Stoping;
         this.stopIdentifier++;
         const identifier = this.stopIdentifier;
-        this.emit('end', this.endTime, this);
+        this.forEachHook(hook => hook.onEnd?.(this.endTime, this));
         await sleep(this.endTime);
         if (
             this.status !== AudioStatus.Stoping ||
@@ -184,7 +196,7 @@ export class AudioRoute
         this.status = AudioStatus.Stoped;
         this.pauseTime = 0;
         this.endAllEffect();
-        this.emit('stop');
+        this.forEachHook(hook => hook.onStop?.());
     }
 
     /**
@@ -208,7 +220,7 @@ export class AudioRoute
         }
         this.setOutput();
         if (this.source.playing) this.link();
-        this.emit('updateEffect');
+        this.forEachHook(hook => hook.onUpdateEffect?.());
     }
 
     /**
@@ -222,7 +234,7 @@ export class AudioRoute
         effect.disconnect();
         this.setOutput();
         if (this.source.playing) this.link();
-        this.emit('updateEffect');
+        this.forEachHook(hook => hook.onUpdateEffect?.());
     }
 
     destroy() {

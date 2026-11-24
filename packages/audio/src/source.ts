@@ -1,19 +1,23 @@
 import { IStreamController, IStreamReader } from '@motajs/loader';
-import { logger } from '@motajs/common';
+import {
+    Hookable,
+    HookController,
+    IHookController,
+    logger
+} from '@motajs/common';
 import CodecParser, { CodecFrame, MimeType, OggPage } from 'codec-parser';
 import { isNil } from 'lodash-es';
 import {
     AudioType,
-    EAudioSourceEvent,
     IAudioBufferSource,
     IAudioDecodeData,
     IAudioDecoder,
     IAudioElementSource,
     IAudioInput,
+    IAudioSourceHooks,
     IAudioStreamSource,
     IMotaAudioContext
 } from './types';
-import EventEmitter from 'eventemitter3';
 
 const mimeTypeMap: Record<AudioType, MimeType | 'unknown'> = {
     [AudioType.Unknown]: 'unknown',
@@ -30,7 +34,7 @@ function isOggPage(data: any): data is OggPage {
 }
 
 export class AudioStreamSource
-    extends EventEmitter<EAudioSourceEvent>
+    extends Hookable<IAudioSourceHooks>
     implements IAudioStreamSource, IStreamReader
 {
     readonly ac: AudioContext;
@@ -90,6 +94,12 @@ export class AudioStreamSource
         super();
         this.ac = motaAC.ac;
         this.output = motaAC.ac.createBufferSource();
+    }
+
+    protected createController(
+        hook: Partial<IAudioSourceHooks>
+    ): IHookController<IAudioSourceHooks> {
+        return new HookController(this, hook);
     }
 
     /**
@@ -367,7 +377,7 @@ export class AudioStreamSource
             this.decoder?.destroy();
             this.decoder = null;
             this.parser = null;
-            this.emit('load');
+            this.forEachHook(hook => hook.onLoad?.());
         } else {
             logger.warn(44, reason ?? '');
         }
@@ -380,11 +390,11 @@ export class AudioStreamSource
         this.createSourceNode(this.buffer);
         this.output.start(0, when);
         this.playing = true;
-        this.emit('play');
+        this.forEachHook(hook => hook.onPlay?.());
         this.output.addEventListener('ended', () => {
             this.playing = false;
             if (this.loop && !this.output.loop) this.play(0);
-            this.emit('end');
+            this.forEachHook(hook => hook.onEnd?.());
         });
     }
 
@@ -425,7 +435,7 @@ export class AudioStreamSource
 }
 
 export class AudioElementSource
-    extends EventEmitter<EAudioSourceEvent>
+    extends Hookable<IAudioSourceHooks>
     implements IAudioElementSource
 {
     readonly ac: AudioContext;
@@ -453,17 +463,23 @@ export class AudioElementSource
         this.audio = audio;
         audio.addEventListener('play', () => {
             this.playing = true;
-            this.emit('play');
+            this.forEachHook(hook => hook.onPlay?.());
         });
         audio.addEventListener('ended', () => {
             this.playing = false;
-            this.emit('end');
+            this.forEachHook(hook => hook.onEnd?.());
         });
         audio.addEventListener('load', () => {
             if (audio.src.length > 0) {
-                this.emit('load');
+                this.forEachHook(hook => hook.onLoad?.());
             }
         });
+    }
+
+    protected createController(
+        hook: Partial<IAudioSourceHooks>
+    ): IHookController<IAudioSourceHooks> {
+        return new HookController(this, hook);
     }
 
     /**
@@ -502,7 +518,7 @@ export class AudioElementSource
 }
 
 export class AudioBufferSource
-    extends EventEmitter<EAudioSourceEvent>
+    extends Hookable<IAudioSourceHooks>
     implements IAudioBufferSource
 {
     readonly ac: AudioContext;
@@ -533,6 +549,12 @@ export class AudioBufferSource
         this.output = motaAC.ac.createBufferSource();
     }
 
+    protected createController(
+        hook: Partial<IAudioSourceHooks>
+    ): IHookController<IAudioSourceHooks> {
+        return new HookController(this, hook);
+    }
+
     /**
      * 设置音频源数据
      * @param buffer 音频源，可以是未解析的 ArrayBuffer，也可以是已解析的 AudioBuffer
@@ -544,7 +566,7 @@ export class AudioBufferSource
             this.buffer = buffer;
         }
         this.duration = this.buffer.duration;
-        this.emit('load');
+        this.forEachHook(hook => hook.onLoad?.());
     }
 
     free(): void {
@@ -559,11 +581,11 @@ export class AudioBufferSource
         this.lastStartTime = this.ac.currentTime;
         this.createSourceNode(this.buffer);
         this.output.start(0, when);
-        this.emit('play');
+        this.forEachHook(hook => hook.onPlay?.());
         this.output.addEventListener('ended', () => {
             this.playing = false;
             if (this.loop && !this.output.loop) this.play(0);
-            this.emit('end');
+            this.forEachHook(hook => hook.onEnd?.());
         });
     }
 
