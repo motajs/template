@@ -245,7 +245,7 @@ export interface IRenderItem<
     readonly composite: GlobalCompositeOperation;
     /** 元素不透明度 */
     readonly alpha: number;
-    /** 元素的缩放比例，与渲染器的缩放比例及 `devicePixelRatio` 等有关 */
+    /** 元素的缩放比例，与渲染器的缩放比例等有关 */
     readonly scale: number;
 
     /** 光标样式 */
