@@ -7,6 +7,7 @@ export * from './listSelector';
 export * from './misc';
 export * from './page';
 export * from './scroll';
+export * from './slider';
 export * from './textbox';
 export * from './textboxTyper';
 export * from './thumbnail';

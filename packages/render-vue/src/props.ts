@@ -65,9 +65,9 @@ export interface BaseProps {
     /** 鼠标放在这个元素上时的光标样式 */
     cursor?: string;
     /**
-     * 定位属性，可以填 `[横坐标，纵坐标，宽度，高度，x锚点，y锚点]`，
-     * 对于横坐标与纵坐标、宽度与高度、x锚点与y锚点，两两一组要么都填，要么都不填
-     * 是 x, y, width, height, anchorX, anchorY 的简写属性
+     * 定位属性，可以填 `[横坐标，纵坐标，宽度，高度]`，
+     * 对于横坐标与纵坐标、宽度与高度，两两一组要么都填，要么都不填
+     * 是 x, y, width, height 的简写属性
      */
     loc?: ElementLocator;
     /** 锚点属性，可以填 `[x锚点，y锚点]`，是 anchorX, anchorY 的简写属性 */
