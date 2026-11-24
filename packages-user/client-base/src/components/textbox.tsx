@@ -11,7 +11,8 @@ import { isNil } from 'lodash-es';
 import {
     TextContentTyper,
     TyperRenderable,
-    TextContentType
+    TextContentType,
+    ITextContentTyperHooks
 } from './textboxTyper';
 import { SetupComponentOptions } from '@motajs/system';
 import { DefaultProps, lwh, useRendererRoot, xywh } from '@motajs/render-vue';
@@ -116,20 +117,20 @@ export const TextContent = defineComponent<
     const renderable = shallowRef<TyperRenderable[]>([]);
     let needUpdate = false;
 
+    const hook: ITextContentTyperHooks = {
+        onTypeStart() {
+            emit('typeStart');
+        },
+        onTypeEnd() {
+            emit('typeEnd');
+        }
+    };
+
     watch(
         root,
         (value, old) => {
             old?.excitation.remove(typer.value);
             value?.excitation.add(typer.value);
-        },
-        { immediate: true }
-    );
-
-    watch(
-        typer,
-        (value, old) => {
-            if (old) root.value?.excitation.remove(old);
-            root.value?.excitation.add(value);
         },
         { immediate: true }
     );
@@ -211,13 +212,20 @@ export const TextContent = defineComponent<
         renderable.value = data;
     };
 
-    typer.value.setRender(renderFunc);
-    typer.value.on('typeStart', () => {
-        emit('typeStart');
-    });
-    typer.value.on('typeEnd', () => {
-        emit('typeEnd');
-    });
+    watch(
+        typer,
+        (value, old) => {
+            if (old) {
+                root.value?.excitation.remove(old);
+                old.removeHook(hook);
+                old.setRender(() => {});
+            }
+            root.value?.excitation.add(value);
+            value.addHook(hook);
+            value.setRender(renderFunc);
+        },
+        { immediate: true }
+    );
 
     onMounted(retype);
 

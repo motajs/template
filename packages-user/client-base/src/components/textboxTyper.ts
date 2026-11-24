@@ -1,6 +1,11 @@
-import { logger } from '@motajs/common';
+import {
+    Hookable,
+    HookController,
+    IHookBase,
+    IHookController,
+    logger
+} from '@motajs/common';
 import { Font, MotaOffscreenCanvas2D } from '@motajs/render';
-import EventEmitter from 'eventemitter3';
 import { isNil } from 'lodash-es';
 import { IExcitable } from '@motajs/animate';
 import { IMaterialFramedData, ITextureManager } from '../material';
@@ -238,15 +243,22 @@ export type TyperRenderable =
     | ITyperIconRenderable
     | ITyperWaitRenderable;
 
-interface TextContentTyperEvent {
-    typeStart: [];
-    typeEnd: [];
+export interface ITextContentTyperHooks extends IHookBase {
+    /**
+     * 当开始打字时触发
+     */
+    onTypeStart?(): void;
+
+    /**
+     * 当结束打字时触发
+     */
+    onTypeEnd?(): void;
 }
 
 type TyperFunction = (data: TyperRenderable[], typing: boolean) => void;
 
 export class TextContentTyper
-    extends EventEmitter<TextContentTyperEvent>
+    extends Hookable<ITextContentTyperHooks>
     implements IExcitable<number>
 {
     /** 文字配置信息 */
@@ -314,6 +326,12 @@ export class TextContentTyper
             },
             this.config
         );
+    }
+
+    protected createController(
+        hook: Partial<ITextContentTyperHooks>
+    ): IHookController<ITextContentTyperHooks> {
+        return new HookController(this, hook);
     }
 
     /**
@@ -506,7 +524,7 @@ export class TextContentTyper
         this.render?.(this.renderData, !end);
         if (end) {
             this.typing = false;
-            this.emit('typeEnd');
+            this.forEachHook(hook => hook.onTypeEnd?.());
         }
     }
 
@@ -517,7 +535,7 @@ export class TextContentTyper
         if (this.typing) return;
         this.processing = 0;
         if (this.config.interval === 0) {
-            this.emit('typeStart');
+            this.forEachHook(hook => hook.onTypeStart?.());
             this.renderData.forEach(data => {
                 data.cut = false;
                 switch (data.type) {
@@ -530,10 +548,10 @@ export class TextContentTyper
                 }
             });
             this.render?.(this.renderData, false);
-            this.emit('typeEnd');
+            this.forEachHook(hook => hook.onTypeEnd?.());
             return;
         }
-        this.emit('typeStart');
+        this.forEachHook(hook => hook.onTypeStart?.());
         // 减去间隔是为了第一个字可以立刻打出来，不然看起来有延迟
         this.lastTypeTime = Date.now() - this.config.interval - 1;
         this.typing = true;
