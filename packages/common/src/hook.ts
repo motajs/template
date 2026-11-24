@@ -21,6 +21,8 @@ export abstract class Hookable<
     protected abstract createController(hook: Partial<H>): C;
 
     addHook(hook: Partial<H>): C {
+        const exist = this.hookMap.get(hook);
+        if (exist) return exist.controller;
         const controller = this.createController(hook);
         const obj: IHookObject<H, C> = { hook, controller };
         this.hookMap.set(hook, obj);
