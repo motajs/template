@@ -12,6 +12,7 @@ import { ITextureManager } from './material';
 import { IMapRenderer } from './map';
 import { IClientHotkey } from './hotkey';
 import { App } from 'vue';
+import { ITextboxManager } from './components';
 
 export interface IGameUIPropsBase<
     T extends UIComponent = UIComponent
@@ -48,6 +49,8 @@ export interface IClientBase extends ICoreState {
     readonly hotkey: IClientHotkey;
     /** 当前渲染端主对象使用的 vue app */
     readonly vueApp: App<IRenderItem>;
+    /** 主对话框管理器 */
+    readonly mainTextboxManager: ITextboxManager;
 }
 
 export interface IClientBaseExtended {
