@@ -6,6 +6,7 @@ import {
     IPluginDefine,
     IPluginBase
 } from '@user/data-state';
+import { DefineComponent, DefineSetupFnComponent } from 'vue';
 
 //#region 插件系统
 
@@ -87,6 +88,10 @@ export interface IClientCoreConfig extends ICoreStateConfig {
     readonly mapCellWidth: number;
     /** 地图的初始图块像素高度，后续还可以通过接口调整 */
     readonly mapCellHeight: number;
+    /** vue app 的初始根组件 */
+    readonly createInitialComponent: (
+        state: IClientCore
+    ) => DefineComponent | DefineSetupFnComponent<{}>;
 }
 
 export interface IClientCore extends IClientBase {

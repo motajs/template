@@ -4,7 +4,7 @@ import {
     Transform
 } from '@motajs/render';
 import { DefaultProps, xywh } from '@motajs/render-vue';
-import { computed, defineComponent, watch } from 'vue';
+import { computed, defineComponent, inject, watch } from 'vue';
 import { SetupComponentOptions } from '@motajs/system';
 import { IMapRenderer } from '../map';
 import { IMapState } from '@user/data-base';
@@ -17,7 +17,7 @@ export interface IThumbnailCellProps extends DefaultProps {
     floorId?: string;
     /** 楼层存储对象 */
     maps?: IMapState;
-    /** 地图渲染器，注意如果你不知道地图渲染的细节，一定永远传入 `expandMapRenderer`！ */
+    /** 地图渲染器，默认会使用主对象上的辅助地图渲染器，如果不知道传什么就不要传 */
     renderer?: IMapRenderer;
     /** 显示尺寸，1 表示与原始尺寸一致，默认为 1 */
     size?: number;
@@ -72,6 +72,10 @@ export const ThumbnailCell = defineComponent<
     ThumbnailCellEmits,
     keyof ThumbnailCellEmits
 >((props, { emit }) => {
+    const defaultRenderer = inject<IMapRenderer>('@default/expandMapRenderer');
+    /** 使用的地图渲染器 */
+    const mapRenderer = computed(() => props.renderer ?? defaultRenderer);
+
     const [x, y, width, height] = xywh(props);
 
     /** 渲染缩放尺寸 */
@@ -90,7 +94,7 @@ export const ThumbnailCell = defineComponent<
 
     /** 渲染区域大小 */
     const chunkSize = computed<[number, number]>(() => {
-        const renderer = props.renderer;
+        const renderer = mapRenderer.value;
         if (!renderer || !props.origin || !map.value) return [0, 0];
         const [ox, oy] = props.origin;
         const { chunkWidth, chunkHeight } = renderer.vertex.block;
@@ -107,7 +111,7 @@ export const ThumbnailCell = defineComponent<
 
     /** 真实的渲染尺寸 */
     const renderSize = computed<[number, number]>(() => {
-        const renderer = props.renderer;
+        const renderer = mapRenderer.value;
         if (!renderer) return [1, 1];
         const [cw, ch] = chunkSize.value;
         if (cw === 0 || ch === 0) return [1, 1];
@@ -134,7 +138,7 @@ export const ThumbnailCell = defineComponent<
     const render = (canvas: MotaOffscreenCanvas2D) => {
         const [cw, ch] = chunkSize.value;
         const ctx = canvas.ctx;
-        if (!props.renderer || !map.value || cw === 0 || ch === 0) {
+        if (!mapRenderer.value || !map.value || cw === 0 || ch === 0) {
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'white';
@@ -145,7 +149,7 @@ export const ThumbnailCell = defineComponent<
             ctx.fillText('未绑定渲染器或楼层对象', hw, hh);
             return;
         }
-        const renderer = props.renderer;
+        const renderer = mapRenderer.value;
         // 重置激励时间戳，保证显示内容的一致性，不会因为动画导致显示内容变化
         renderer.excited(0);
         renderer.setGameMap(map.value);
@@ -307,6 +311,9 @@ const thumbnailProps = {
 } satisfies SetupComponentOptions<ThumbnailProps>;
 
 export const Thumbnail = defineComponent<ThumbnailProps>(props => {
+    const defaultRenderer = inject<IMapRenderer>('@default/expandMapRenderer');
+    /** 使用的地图渲染器 */
+    const mapRenderer = computed(() => props.renderer ?? defaultRenderer);
     /** 空白区域填充样式 */
     const padStyle = computed(() => props.padStyle ?? 'black');
     /** 渲染尺寸比例 */
@@ -335,7 +342,7 @@ export const Thumbnail = defineComponent<ThumbnailProps>(props => {
 
     /** 渲染尺寸 */
     const renderSize = computed(() => {
-        const renderer = props.renderer;
+        const renderer = mapRenderer.value;
         if (!renderer || !props.area) return [1, 1];
         const [, , w, h] = props.area;
         const { cellWidth, cellHeight } = renderer;
@@ -354,7 +361,7 @@ export const Thumbnail = defineComponent<ThumbnailProps>(props => {
 
     /** ThumbnailCell 的分块信息 */
     const chunks = computed<IThumbnailChunkData>(() => {
-        const renderer = props.renderer;
+        const renderer = mapRenderer.value;
         if (!renderer || !props.area) {
             return {
                 chunks: [],
@@ -413,7 +420,7 @@ export const Thumbnail = defineComponent<ThumbnailProps>(props => {
                     <ThumbnailCell
                         loc={chunk.loc}
                         origin={chunk.origin}
-                        renderer={props.renderer}
+                        renderer={mapRenderer.value}
                         maps={props.maps}
                         floorId={props.floorId}
                         size={size.value}

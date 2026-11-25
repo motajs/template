@@ -474,7 +474,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                             // 拖动起手仍只在图标上，整格只负责悬停判定
                             <Icon
                                 icon={slotEquip ? slotEquip.item.num : 0}
-                                manager={props.state.materials}
+                                materials={props.state.materials}
                                 loc={slotIconLoc}
                                 cursor="pointer"
                                 onEnter={getSlotEnter(i)}
@@ -533,7 +533,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                             />,
                             <Icon
                                 icon={item.item.num}
-                                manager={props.state.materials}
+                                materials={props.state.materials}
                                 loc={ownedIconLoc}
                                 noevent
                             />,
@@ -563,7 +563,7 @@ export const EquipBox = defineComponent<EquipBoxProps>(props => {
                 {/* 拖拽浮层 */}
                 <Icon
                     icon={dragNum.value > 0 ? dragNum.value : 0}
-                    manager={props.state.materials}
+                    materials={props.state.materials}
                     loc={dragLoc}
                     noevent
                     zIndex={100}

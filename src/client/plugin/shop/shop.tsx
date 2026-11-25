@@ -276,7 +276,7 @@ export const Shop = defineComponent<IShopProps>(props => {
                                 />
                                 <Icon
                                     icon={item.num}
-                                    manager={props.state.materials}
+                                    materials={props.state.materials}
                                     loc={[10, 6, ROW_ICON_SIZE, ROW_ICON_SIZE]}
                                 />
                                 <text

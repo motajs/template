@@ -2,14 +2,14 @@ import { DefaultProps } from '@motajs/render-vue';
 import { ITextureManager } from '../material';
 import { SetupComponentOptions } from '@motajs/system';
 import { ITexture, MotaOffscreenCanvas2D } from '@motajs/render';
-import { computed, defineComponent } from 'vue';
+import { computed, defineComponent, inject } from 'vue';
 import { isNil } from 'lodash-es';
 
 export interface IWinskinProps extends DefaultProps {
     /** winskin 图片的名称，带后缀 */
     winskin?: string;
-    /** 使用的贴图素材管理器 */
-    manager?: ITextureManager;
+    /** 使用的贴图素材管理器，默认会使用主对象上的贴图管理器 */
+    materials?: ITextureManager;
     /** 手动传入贴图对象，如果传入，会忽略 `winskin` 和 `manager` */
     texture?: ITexture;
     /** 边框的宽度，默认为 32 */
@@ -17,7 +17,7 @@ export interface IWinskinProps extends DefaultProps {
 }
 
 const winskinProps = {
-    props: ['winskin', 'manager', 'texture', 'borderSize']
+    props: ['winskin', 'materials', 'texture', 'borderSize']
 } satisfies SetupComponentOptions<IWinskinProps>;
 
 /** winskin 最小单元宽度 */
@@ -26,13 +26,17 @@ const CW = 16 / 192;
 const CH = 16 / 128;
 
 export const Winskin = defineComponent<IWinskinProps>(props => {
+    const defaultMaterials = inject<ITextureManager>('@default/materials');
+
+    /** 使用的贴图管理器 */
+    const materials = computed(() => props.materials ?? defaultMaterials);
     /** 边框宽度 */
     const border = computed(() => props.borderSize ?? 32);
     /** 贴图对象 */
     const texture = computed<ITexture | null>(() => {
         if (props.texture) return props.texture;
-        if (isNil(props.winskin) || !props.manager) return null;
-        return props.manager.getImageByAlias(props.winskin);
+        if (isNil(props.winskin) || !materials.value) return null;
+        return materials.value.getImageByAlias(props.winskin);
     });
 
     const render = (canvas: MotaOffscreenCanvas2D) => {

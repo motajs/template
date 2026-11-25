@@ -2,6 +2,7 @@ import { ElementLocator, Font, MotaOffscreenCanvas2D } from '@motajs/render';
 import {
     computed,
     defineComponent,
+    inject,
     onMounted,
     ref,
     shallowRef,
@@ -35,7 +36,7 @@ export interface TextContentProps extends DefaultProps {
     autoHeight?: boolean;
     /** 打字机对象，如果需要自定义配置，那么需要传入，如果不需要自定义配置，不传入也可以 */
     typer?: TextContentTyper;
-    /** 素材管理器，用于显示图标 */
+    /** 素材管理器，用于显示图标，默认使用主对象上的贴图管理器 */
     materials?: ITextureManager;
 }
 
@@ -99,6 +100,10 @@ export const TextContent = defineComponent<
     TextContentEmits,
     keyof TextContentEmits
 >((props, { emit, expose }) => {
+    const defaultMaterials = inject<ITextureManager>('@default/materials');
+    /** 使用的贴图管理器 */
+    const materials = computed(() => props.materials ?? defaultMaterials);
+
     const [x, y, width, height] = xywh(props);
     /** 正文高度 */
     const contentHeight = ref(height.value);
@@ -112,7 +117,7 @@ export const TextContent = defineComponent<
     const root = useRendererRoot();
     const typer = computed(
         () =>
-            props.typer ?? new TextContentTyper({ materials: props.materials })
+            props.typer ?? new TextContentTyper({ materials: materials.value })
     );
     const renderable = shallowRef<TyperRenderable[]>([]);
     let needUpdate = false;
@@ -142,7 +147,14 @@ export const TextContent = defineComponent<
         needUpdate = true;
         renderable.value = [];
 
-        typer.value.setConfig({ width: width.value });
+        if (materials.value) {
+            typer.value.setConfig({
+                width: width.value,
+                materials: materials.value
+            });
+        } else {
+            typer.value.setConfig({ width: width.value });
+        }
         typer.value.setText(props.text ?? '');
         typer.value.type();
         needUpdate = false;
@@ -410,7 +422,7 @@ export const Textbox = defineComponent<
                     color={props.backColor}
                     border={props.strokeColor}
                     circle={[0]}
-                    manager={props.materials}
+                    materials={props.materials}
                     loc={[0, 0, tw.value, th.value]}
                 />
                 <text
@@ -429,7 +441,7 @@ export const Textbox = defineComponent<
                 color={props.backColor}
                 border={props.strokeColor}
                 circle={[0]}
-                manager={props.materials}
+                materials={props.materials}
                 loc={[0, contentY.value, width.value, backHeight.value]}
             />
 
@@ -437,7 +449,7 @@ export const Textbox = defineComponent<
                 hidden={!!iconData.value}
                 icon={props.icon}
                 loc={iconLoc.value}
-                manager={props.materials}
+                materials={props.materials}
                 animate
             />
             <g-rect

@@ -254,7 +254,7 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                             />,
                             <Icon
                                 icon={item.num}
-                                manager={props.state.materials}
+                                materials={props.state.materials}
                                 loc={[10, y + 7, ROW_ICON_SIZE, ROW_ICON_SIZE]}
                                 noevent
                             />,
@@ -307,7 +307,7 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                             />,
                             <Icon
                                 icon={item.num}
-                                manager={props.state.materials}
+                                materials={props.state.materials}
                                 loc={[10, y + 7, ROW_ICON_SIZE, ROW_ICON_SIZE]}
                                 noevent
                             />,
@@ -333,7 +333,7 @@ export const ToolBox = defineComponent<ToolBoxProps>(props => {
                 {/* 详情图标、名称与类型 */}
                 <Icon
                     icon={current ? current.num : 0}
-                    manager={props.state.materials}
+                    materials={props.state.materials}
                     loc={[INFO_LEFT + 8, 8, DETAIL_ICON_SIZE, DETAIL_ICON_SIZE]}
                     noevent
                     hidden={!current}

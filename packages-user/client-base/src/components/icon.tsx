@@ -1,6 +1,6 @@
 import { DefaultProps } from '@motajs/render-vue';
 import { SetupComponentOptions } from '@motajs/system';
-import { computed, defineComponent, markRaw } from 'vue';
+import { computed, defineComponent, inject, markRaw } from 'vue';
 import { IMaterialFramedData, ITextureManager } from '../material';
 import { isNil } from 'lodash-es';
 import { ITexture, TextureRowAnimater } from '@motajs/render';
@@ -8,8 +8,8 @@ import { ITexture, TextureRowAnimater } from '@motajs/render';
 export interface IIconProps extends DefaultProps {
     /** 当前显示的图标 */
     icon?: number | string;
-    /** 贴图管理器 */
-    manager?: ITextureManager;
+    /** 贴图管理器，默认会使用主对象上的贴图管理器 */
+    materials?: ITextureManager;
     /** 是否播放图块动画 */
     animate?: boolean;
     /** 展示图块指定帧数的动画，传入时会忽略 `animate` 的动画 */
@@ -17,20 +17,23 @@ export interface IIconProps extends DefaultProps {
 }
 
 const iconProps = {
-    props: ['icon', 'manager', 'animate', 'frame']
+    props: ['icon', 'materials', 'animate', 'frame']
 } satisfies SetupComponentOptions<IIconProps>;
 
 export const Icon = defineComponent<IIconProps>(props => {
     const animater = markRaw(new TextureRowAnimater());
+    const defaultMaterials = inject<ITextureManager>('@default/materials');
 
+    /** 贴图管理器 */
+    const materials = computed(() => props.materials ?? defaultMaterials);
     /** 图块的渲染数据 */
     const data = computed<IMaterialFramedData | null>(() => {
-        if (!props.manager) return null;
+        if (!materials.value) return null;
         const icon = props.icon ?? 0;
         if (typeof icon === 'number') {
-            return props.manager.getTile(icon);
+            return materials.value.getTile(icon);
         } else {
-            return props.manager.getTileByAlias(icon);
+            return materials.value.getTileByAlias(icon);
         }
     });
     /** 图块的完整贴图 */

@@ -19,7 +19,7 @@ import {
     SoundPlayer,
     BGMPlayer
 } from '@motajs/audio';
-import { IRenderTreeRoot, MotaRenderer } from '@motajs/render';
+import { IRenderItem, IRenderTreeRoot, MotaRenderer } from '@motajs/render';
 import {
     ITextureManager,
     TextureManager,
@@ -40,7 +40,8 @@ import {
 } from '@motajs/animate';
 import { IUIController, UIController } from '@motajs/system';
 import { createUIPropsBase } from './ui/func';
-import { markRaw } from 'vue';
+import { App, markRaw } from 'vue';
+import { createRendererFor } from '@motajs/render-vue';
 
 export class ClientCore extends CoreState implements IClientCore {
     // Layer 4 渲染基础层
@@ -57,6 +58,7 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly sceneController: IUIController<IGameUIPropsBase>;
     readonly mainUIController: IUIController<IGameUIPropsBase>;
     readonly hotkey: IClientHotkey;
+    readonly vueApp: App<IRenderItem>;
 
     // Layer 5 渲染顶层 - 目前没东西
 
@@ -111,6 +113,13 @@ export class ClientCore extends CoreState implements IClientCore {
         this.expandMapRenderer.freezeCanvasSize();
 
         this.renderer.registerElement('map-render', () => new MapRenderItem());
+
+        // 初始化 vue app
+        const { createApp } = createRendererFor(this.renderer);
+        this.vueApp = createApp(config.createInitialComponent(this));
+        this.vueApp.mount(this.renderer);
+
+        this.vueApp.provide('@defulat/materials', this.materials);
 
         this.loader.addCoreConfig('client', config.clientURL);
 

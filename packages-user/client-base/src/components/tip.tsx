@@ -1,5 +1,5 @@
 import { ElementLocator, Font } from '@motajs/render';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineComponent, inject, ref } from 'vue';
 import { cosh } from '@motajs/animate';
 import { debounce } from 'lodash-es';
 import { SetupComponentOptions } from '@motajs/system';
@@ -8,8 +8,6 @@ import { Icon } from './icon';
 import { ITextureManager } from '../material';
 
 export interface TipProps extends DefaultProps {
-    /** 显示的位置 */
-    loc: ElementLocator;
     /** 边距 */
     pad?: [number, number];
     /** 圆角 */
@@ -32,10 +30,25 @@ export interface TipExpose {
 }
 
 const tipProps = {
-    props: ['loc', 'x', 'y', 'width', 'height', 'pad', 'corner', 'id']
+    props: [
+        'loc',
+        'x',
+        'y',
+        'width',
+        'height',
+        'pad',
+        'corner',
+        'id',
+        'materials',
+        'font'
+    ]
 } satisfies SetupComponentOptions<TipProps>;
 
 export const Tip = defineComponent<TipProps>((props, { expose }) => {
+    const defaultMaterials = inject<ITextureManager>('@default/materials');
+
+    /** 贴图管理器 */
+    const materials = computed(() => props.materials ?? defaultMaterials);
     /** 图标 id 或数字 */
     const icon = ref<number | string>(0);
     /** 显示的文字 */
@@ -69,7 +82,7 @@ export const Tip = defineComponent<TipProps>((props, { expose }) => {
     const showIcon = computed(() => icon.value !== 0);
     /** 图标的原始尺寸 */
     const iconSize = computed<[number, number]>(() => {
-        const manager = props.materials;
+        const manager = materials.value;
         if (!manager) return [0, 0];
         const data = manager.tile(icon.value);
         if (!data) return [0, 0];
@@ -136,7 +149,7 @@ export const Tip = defineComponent<TipProps>((props, { expose }) => {
             />
             <Icon
                 icon={icon.value}
-                manager={props.materials}
+                materials={materials.value}
                 hidden={!showIcon.value}
                 loc={iconLoc.value}
             />

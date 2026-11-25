@@ -276,7 +276,7 @@ export const EnemyOne = defineComponent<IEnemyOneProps>(props => {
                 />
                 <Icon
                     icon={enemy.value?.code ?? 0}
-                    manager={props.materials}
+                    materials={props.materials}
                     loc={[ICON_CENTER, height.value / 2, ICON_SIZE, ICON_SIZE]}
                     anc={[0.5, 0.5]}
                     noevent

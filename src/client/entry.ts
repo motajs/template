@@ -23,6 +23,7 @@ import {
     MAP_HEIGHT,
     MAP_WIDTH
 } from './uiConstant';
+import { createRendererScene } from './ui/scene';
 
 /**
  * 创建渲染端配置对象
@@ -44,6 +45,7 @@ export function createClientCoreConfig(
         mapBlockHeight: MAP_BLOCK_HEIGHT,
         expandMapRendererWidth: MAP_WIDTH,
         expandMapRendererHeight: MAP_HEIGHT,
+        createInitialComponent: createRendererScene,
         clientPlugins: [new MainClientPlugin(), ...clientPlugins],
 
         ...createCoreStateConfig(starter)

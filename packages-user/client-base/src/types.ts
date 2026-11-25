@@ -1,5 +1,5 @@
 import { IExcitation, IExcitationDivider } from '@motajs/animate';
-import { IRenderTreeRoot } from '@motajs/render';
+import { IRenderItem, IRenderTreeRoot } from '@motajs/render';
 import {
     IUIController,
     IUIDefaultPropsBase,
@@ -11,6 +11,7 @@ import { ISaveSystem } from './save';
 import { ITextureManager } from './material';
 import { IMapRenderer } from './map';
 import { IClientHotkey } from './hotkey';
+import { App } from 'vue';
 
 export interface IGameUIPropsBase<
     T extends UIComponent = UIComponent
@@ -45,6 +46,8 @@ export interface IClientBase extends ICoreState {
     readonly mainUIController: IUIController<IGameUIPropsBase>;
     /** 渲染端主按键系统 */
     readonly hotkey: IClientHotkey;
+    /** 当前渲染端主对象使用的 vue app */
+    readonly vueApp: App<IRenderItem>;
 }
 
 export interface IClientBaseExtended {

@@ -17,12 +17,12 @@ export interface BackgroundProps extends DefaultProps {
     border?: CanvasStyle;
     /** 非 `winskin` 模式下，圆角矩形的参数，默认为 [4] */
     circle?: RectRCircleParams;
-    /** 使用的贴图管理器 */
-    manager?: ITextureManager;
+    /** 使用的贴图管理器，默认会使用主对象上的贴图管理器 */
+    materials?: ITextureManager;
 }
 
 const backgroundProps = {
-    props: ['winskin', 'borderWidth', 'color', 'border', 'manager', 'circle']
+    props: ['winskin', 'borderWidth', 'color', 'border', 'materials', 'circle']
 } satisfies SetupComponentOptions<BackgroundProps>;
 
 /**
@@ -41,7 +41,7 @@ export const Background = defineComponent<BackgroundProps>(props => {
         isWinskin.value ? (
             <Winskin
                 winskin={props.winskin}
-                manager={props.manager}
+                materials={props.materials}
                 borderSize={props.borderWidth}
                 noanti
             />

@@ -1,6 +1,5 @@
 import {
     ElementLocator,
-    CustomRenderItem,
     MotaOffscreenCanvas2D,
     CanvasStyle,
     RectRCircleParams
@@ -12,7 +11,7 @@ import {
     onExcitedFunc,
     PathProps
 } from '@motajs/render-vue';
-import { computed, defineComponent, ref, watch } from 'vue';
+import { computed, defineComponent, inject, ref, watch } from 'vue';
 import { TextContent, TextContentProps } from './textbox';
 import { Scroll, ScrollExpose, ScrollProps } from './scroll';
 import { SetupComponentOptions } from '@motajs/system';
@@ -21,10 +20,8 @@ import { cosh, CurveMode } from '@motajs/animate';
 import { ITextureManager } from '../material';
 
 interface ProgressProps extends DefaultProps {
-    /** 进度条的位置 */
-    loc: ElementLocator;
     /** 进度条的进度，1表示完成，0表示未完成 */
-    progress: number;
+    progress?: number;
     /** 已完成部分的样式，默认为绿色（green） */
     success?: CanvasStyle;
     /** 未完成部分的样式，默认为灰色（gray） */
@@ -48,36 +45,47 @@ const progressProps = {
  * ```
  */
 export const Progress = defineComponent<ProgressProps>(props => {
-    const element = ref<CustomRenderItem>();
+    /** 当前的进度条值 */
+    const progress = computed(() => props.progress ?? 0);
+    /** 进度条线宽 */
+    const lineWidth = computed(() => props.lineWidth ?? 2);
+    /** 未完成部分的颜色 */
+    const background = computed(() => props.background ?? 'gray');
+    /** 已完成部分的颜色 */
+    const success = computed(() => props.success ?? 'green');
 
     const render = (canvas: MotaOffscreenCanvas2D) => {
         const { ctx, width, height } = canvas;
+        const lw = lineWidth.value;
         ctx.lineCap = 'round';
-        const lineWidth = props.lineWidth ?? 2;
-        ctx.lineWidth = lineWidth;
-        ctx.strokeStyle = props.background ?? 'gray';
+        ctx.lineWidth = lw;
+        ctx.strokeStyle = background.value;
         ctx.beginPath();
-        ctx.moveTo(lineWidth, height / 2);
-        ctx.lineTo(width - lineWidth, height / 2);
+        ctx.moveTo(lw, height / 2);
+        ctx.lineTo(width - lw, height / 2);
         ctx.stroke();
-        const progress = clamp(props.progress, 0, 1);
-        if (!isNaN(progress)) {
-            ctx.strokeStyle = props.success ?? 'green';
-            const p = lineWidth + (width - lineWidth * 2) * progress;
+        const p = clamp(progress.value, 0, 1);
+        if (!isNaN(p)) {
+            ctx.strokeStyle = success.value;
+            const px = lw + (width - lw * 2) * p;
             ctx.beginPath();
-            ctx.moveTo(lineWidth, height / 2);
-            ctx.lineTo(p, height / 2);
+            ctx.moveTo(lw, height / 2);
+            ctx.lineTo(px, height / 2);
             ctx.stroke();
         }
     };
 
-    watch(props, () => {
-        element.value?.update();
-    });
-
-    return () => {
-        return <custom ref={element} render={render}></custom>;
-    };
+    return () => (
+        <custom
+            render={render}
+            bindings={[
+                progress.value,
+                lineWidth.value,
+                background.value,
+                success.value
+            ]}
+        ></custom>
+    );
 }, progressProps);
 
 export interface ArrowProps extends PathProps {
@@ -264,6 +272,8 @@ export const ScrollText = defineComponent<
         lastFixedPos = 0;
     };
 
+    watch(() => props.speed, setSpeed);
+
     expose<ScrollTextExpose>({ pause, resume, setSpeed, rescroll });
 
     return () => (
@@ -294,8 +304,8 @@ export interface SelectionProps extends DefaultProps {
     winskin?: string;
     /** 边框宽度，默认为 2 */
     borderSize?: number;
-    /** winskin 使用的贴图管理器 */
-    manager?: ITextureManager;
+    /** winskin 使用的贴图管理器，默认会使用主对象上的贴图管理器 */
+    materials?: ITextureManager;
     /** 选择图标的不透明度范围 */
     alphaRange?: [number, number];
 }
@@ -307,7 +317,7 @@ const selectionProps = {
         'circle',
         'winskin',
         'borderSize',
-        'manager',
+        'materials',
         'alphaRange'
     ]
 } satisfies SetupComponentOptions<SelectionProps>;
@@ -322,7 +332,9 @@ const selectionProps = {
  * ```
  */
 export const Selection = defineComponent<SelectionProps>(props => {
+    /** 最小不透明度值 */
     const minAlpha = computed(() => props.alphaRange?.[0] ?? 0.25);
+    /** 最大不透明度值 */
     const maxAlpha = computed(() => props.alphaRange?.[1] ?? 0.55);
     const alpha = cycledTransition(
         minAlpha.value,
@@ -330,13 +342,18 @@ export const Selection = defineComponent<SelectionProps>(props => {
         2000,
         cosh(2, CurveMode.EaseInOut)
     )!;
+    const defaultMaterials = inject<ITextureManager>('@default/materials');
 
+    /** 使用的贴图管理器 */
+    const materials = computed(() => props.materials ?? defaultMaterials);
+    /** 当前是否使用 winskin */
     const isWinskin = computed(() => !isNil(props.winskin));
+    /** 当前的 winskin 贴图 */
     const winskin = computed(() => {
-        if (isNil(props.winskin) || !props.manager) {
+        if (isNil(props.winskin) || !materials.value) {
             return null;
         } else {
-            return props.manager.getImageByAlias(props.winskin);
+            return materials.value.getImageByAlias(props.winskin);
         }
     });
 
