@@ -321,6 +321,7 @@
         "213": "Setting item '$1' has existed in group '$2'. The item will be moved to new group '$3'.",
         "214": "Range setting item get a number range that cannot be divided into integer by step: range=[$1, $2], step=$3. This may cause issues, please ensure number range can be divided by step evenly.",
         "215": "Cannot change canvas size or block size of size-freezed map renderer.",
+        "216": "Expected all sequence curve arrays with a same length and larger than zero, but got: seq: $1, duration: $2, scale: $3, move: $4.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }

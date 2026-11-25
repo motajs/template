@@ -1,4 +1,4 @@
-import { cumsum } from '@motajs/common';
+import { cumsum, logger } from '@motajs/common';
 import {
     ExcitationCurve,
     ExcitationCurve2D,
@@ -171,7 +171,21 @@ export function sequenceCurve(
     scale: number[],
     move: number[]
 ): ExcitationCurve {
-    const keep = [0, ...cumsum(duration)];
+    const lenEqual =
+        seq.length === duration.length &&
+        seq.length === scale.length &&
+        seq.length === move.length;
+    if (seq.length === 0 || !lenEqual) {
+        logger.warn(
+            216,
+            seq.length.toString(),
+            duration.length.toString(),
+            scale.length.toString(),
+            move.length.toString()
+        );
+        return () => 0;
+    }
+    const keep = [seq[0](0), ...cumsum(duration)];
     return p => {
         const index = keep.findIndex(sum => p <= sum);
         if (index <= 0) return 0;
