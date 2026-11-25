@@ -15,7 +15,7 @@ import {
     TextContentType,
     ITextContentTyperHooks
 } from './textboxTyper';
-import { SetupComponentOptions } from '@motajs/system';
+import { GameUI, SetupComponentOptions } from '@motajs/system';
 import { DefaultProps, lwh, useRendererRoot, xywh } from '@motajs/render-vue';
 import { Icon } from './icon';
 import { ITextureManager } from '../material';
@@ -475,5 +475,7 @@ export const Textbox = defineComponent<
         </container>
     );
 }, textboxOptions);
+
+export const TextboxUI = new GameUI('textbox', Textbox);
 
 //#endregion
