@@ -185,12 +185,19 @@ export function sequenceCurve(
         );
         return () => 0;
     }
-    const keep = [seq[0](0), ...cumsum(duration)];
+    const keep = [0, ...cumsum(duration)];
     return p => {
         const index = keep.findIndex(sum => p <= sum);
-        if (index <= 0) return 0;
-        const progress = (p - keep[index - 1]) / duration[index - 1];
-        return seq[index - 1](progress) * scale[index - 1] + move[index - 1];
+        if (index < 0) {
+            return 0;
+        } else if (index === 0) {
+            return seq[0](0);
+        } else {
+            const progress = (p - keep[index - 1]) / duration[index - 1];
+            return (
+                seq[index - 1](progress) * scale[index - 1] + move[index - 1]
+            );
+        }
     };
 }
 
