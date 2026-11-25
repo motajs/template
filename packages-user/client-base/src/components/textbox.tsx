@@ -131,16 +131,6 @@ export const TextContent = defineComponent<
         }
     };
 
-    watch(
-        root,
-        (value, old) => {
-            old?.excitation.remove(typer.value);
-            value?.excitation.add(typer.value);
-            retype();
-        },
-        { immediate: true }
-    );
-
     /** 从头开始重新打字 */
     const retype = () => {
         if (needUpdate || props.hidden) return;
@@ -183,6 +173,16 @@ export const TextContent = defineComponent<
     };
 
     watch(width, updateLoc);
+
+    watch(
+        root,
+        (value, old) => {
+            old?.excitation.remove(typer.value);
+            value?.excitation.add(typer.value);
+            retype();
+        },
+        { immediate: true }
+    );
 
     expose<TextContentExpose>({ retype, showAll, getHeight });
 
