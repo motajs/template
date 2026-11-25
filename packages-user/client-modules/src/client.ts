@@ -29,7 +29,9 @@ import {
     ClientHotkey,
     IClientHotkey,
     MapRenderItem,
-    IMapRendererInitConfig
+    IMapRendererInitConfig,
+    TextboxManager,
+    ITextboxManager
 } from '@user/client-base';
 import { IMapRenderer, MapRenderer } from '@user/client-base';
 import {
@@ -59,6 +61,7 @@ export class ClientCore extends CoreState implements IClientCore {
     readonly mainUIController: IUIController<IGameUIPropsBase>;
     readonly hotkey: IClientHotkey;
     readonly vueApp: App<IRenderItem>;
+    readonly mainTextboxManager: ITextboxManager;
 
     // Layer 5 渲染顶层 - 目前没东西
 
@@ -120,6 +123,12 @@ export class ClientCore extends CoreState implements IClientCore {
         this.vueApp.mount(this.renderer);
 
         this.vueApp.provide('@defulat/materials', this.materials);
+        this.vueApp.provide(
+            '@default/expandMapRenderer',
+            this.expandMapRenderer
+        );
+
+        this.mainTextboxManager = new TextboxManager(this.materials);
 
         this.loader.addCoreConfig('client', config.clientURL);
 

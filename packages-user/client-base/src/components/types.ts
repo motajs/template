@@ -1,5 +1,8 @@
-import { IUIController, IUIInstance } from '@motajs/system';
-import { IGameUIPropsBase } from '../types';
+import {
+    IUIController,
+    IUIDefaultPropsBase,
+    IUIInstance
+} from '@motajs/system';
 import { TextboxProps } from './textbox';
 import { TextContentTyper } from './textboxTyper';
 import { ITextureManager } from '../material';
@@ -13,7 +16,7 @@ export interface ITextboxInfo {
 
 export interface ITextboxManager {
     /** 使用的 UI 控制器 */
-    readonly ui: IUIController<IGameUIPropsBase>;
+    readonly ui: IUIController<IUIDefaultPropsBase>;
     /** 使用的贴图素材管理器 */
     readonly materials: ITextureManager;
 

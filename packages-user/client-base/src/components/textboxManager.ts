@@ -1,5 +1,8 @@
-import { IUIController } from '@motajs/system';
-import { IGameUIPropsBase } from '../types';
+import {
+    IUIController,
+    IUIDefaultPropsBase,
+    UIController
+} from '@motajs/system';
 import { ITextboxInfo, ITextboxManager } from './types';
 import { TextboxProps, TextboxUI } from './textbox';
 import { TextContentTyper } from './textboxTyper';
@@ -9,11 +12,15 @@ export class TextboxManager implements ITextboxManager {
     /** 文本框映射 */
     private readonly textboxMap: Map<number, ITextboxInfo> = new Map();
 
-    constructor(
-        readonly ui: IUIController<IGameUIPropsBase>,
-        readonly materials: ITextureManager
-    ) {
-        ui.showAll(false);
+    readonly ui: IUIController<IUIDefaultPropsBase>;
+
+    constructor(readonly materials: ITextureManager) {
+        this.ui = new UIController();
+        this.ui.setPropsBaseCreator((instance, controller) => ({
+            instance,
+            controller
+        }));
+        this.ui.showAll(false);
     }
 
     createTextbox(code: number, props?: TextboxProps): ITextboxInfo {
