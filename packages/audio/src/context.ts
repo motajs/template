@@ -14,15 +14,21 @@ import { logger } from '@motajs/common';
 import { VanillaDecoder } from './decoder';
 import {
     AudioDecoderCreateFunc,
+    AudioCodec,
+    AudioContainer,
+    AudioInputSource,
     AudioType,
     IAudioBufferSource,
     IAudioChannelVolumeEffect,
     IAudioDecodeData,
+    IAudioDecodeError,
     IAudioDecoder,
+    IAudioDecodeSession,
     IAudioDelayEffect,
     IAudioEchoEffect,
     IAudioEffect,
     IAudioElementSource,
+    IAudioFormatInfo,
     IAudioRoute,
     IAudioSource,
     IAudioStereoEffect,
@@ -31,6 +37,8 @@ import {
     IMotaAudioContext,
     ISoundPlayer
 } from './types';
+import { probeAudioSource } from './probe';
+import { createOpusDecodeSession } from './opusSession';
 import { SoundPlayer } from './sound';
 import { AudioRoute } from './route';
 
@@ -402,7 +410,94 @@ export class MotaAudioContext implements IMotaAudioContext {
             .toUpperCase();
     }
 
-    async decodeAudio(data: Uint8Array): Promise<IAudioDecodeData | null> {
+    /**
+     * 复制字节后尝试浏览器原生解码，失败返回 null
+     * 先复制是为了避免 decodeAudioData 分离原始数据
+     * @param data 待解码的原始音频数据
+     */
+    private async decodeNative(data: Uint8Array): Promise<AudioBuffer | null> {
+        const copy = data.slice();
+        try {
+            return await this.ac.decodeAudioData(copy.buffer);
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * 把 AudioBuffer 转换为统一解码结果
+     * @param buffer 原生解码得到的音频缓冲
+     */
+    private convertAudioBuffer(buffer: AudioBuffer): IAudioDecodeData {
+        const channelData: Float32Array<ArrayBuffer>[] = [];
+        for (let i = 0; i < buffer.numberOfChannels; i++) {
+            channelData.push(buffer.getChannelData(i));
+        }
+        return {
+            channelData,
+            samplesDecoded: buffer.length,
+            sampleRate: buffer.sampleRate,
+            errors: []
+        };
+    }
+
+    /**
+     * 按顺序拼接同一声道的多个 PCM 片段
+     * @param chunks 同一声道的 PCM 片段
+     */
+    private mergeChannelData(
+        chunks: Float32Array<ArrayBuffer>[]
+    ): Float32Array<ArrayBuffer> {
+        const total = chunks.reduce((prev, curr) => prev + curr.length, 0);
+        const merged = new Float32Array(total);
+        let offset = 0;
+        for (const chunk of chunks) {
+            merged.set(chunk, offset);
+            offset += chunk.length;
+        }
+        return merged;
+    }
+
+    /**
+     * 消费会话的全部 PCM 片段并合并，结束后关闭会话
+     * @param session 已建立但尚未消费的解码会话
+     */
+    private async decodeSession(
+        session: IAudioDecodeSession
+    ): Promise<IAudioDecodeData | null> {
+        const channelChunks: Float32Array<ArrayBuffer>[][] = [];
+        const errors: IAudioDecodeError[] = [];
+        let samplesDecoded = 0;
+        let sampleRate = 0;
+        for await (const chunk of session.chunks) {
+            for (let i = 0; i < chunk.channelData.length; i++) {
+                if (!channelChunks[i]) channelChunks[i] = [];
+                channelChunks[i].push(chunk.channelData[i]);
+            }
+            samplesDecoded += chunk.samplesDecoded;
+            sampleRate = chunk.sampleRate;
+            errors.push(...chunk.errors);
+        }
+        session.close();
+        if (samplesDecoded === 0) return null;
+        const channelData = channelChunks.map(chunks =>
+            this.mergeChannelData(chunks)
+        );
+        return {
+            channelData,
+            samplesDecoded: channelData[0].length,
+            sampleRate,
+            errors
+        };
+    }
+
+    /**
+     * 使用旧的格式探测与解码器路径，作为新路径失败后的兜底
+     * @param data 待解码的原始音频数据
+     */
+    private async decodeAudioLegacy(
+        data: Uint8Array
+    ): Promise<IAudioDecodeData | null> {
         const type = this.getAudioTypeFromData(data);
         if (type === AudioType.Unknown) {
             logger.error(25, this.getErrorHeaderInfo(data));
@@ -419,6 +514,46 @@ export class MotaAudioContext implements IMotaAudioContext {
         return decoded;
     }
 
+    async probeAudio(
+        source: AudioInputSource
+    ): Promise<IAudioFormatInfo | null> {
+        return probeAudioSource(source);
+    }
+
+    async createDecodeSession(
+        source: AudioInputSource
+    ): Promise<IAudioDecodeSession | null> {
+        const info = await this.probeAudio(source);
+        if (!info) return null;
+        if (info.codec !== AudioCodec.Opus) return null;
+        const container = info.container;
+        if (
+            container !== AudioContainer.Ogg &&
+            container !== AudioContainer.WebM
+        ) {
+            return null;
+        }
+        return createOpusDecodeSession(source, info);
+    }
+
+    async decodeAudio(data: Uint8Array): Promise<IAudioDecodeData | null> {
+        const info = await this.probeAudio(data);
+        if (info) {
+            const native = await this.decodeNative(data);
+            if (native) return this.convertAudioBuffer(native);
+            const session = await this.createDecodeSession(data);
+            if (session) {
+                const decoded = await this.decodeSession(session);
+                if (!decoded || decoded.errors.length > 0) {
+                    logger.error(25, this.getErrorHeaderInfo(data));
+                    return null;
+                }
+                return decoded;
+            }
+        }
+        return this.decodeAudioLegacy(data);
+    }
+
     toAudioBuffer(data: IAudioDecodeData): AudioBuffer {
         const buffer = this.ac.createBuffer(
             data.channelData.length,
@@ -432,18 +567,28 @@ export class MotaAudioContext implements IMotaAudioContext {
     }
 
     async decodeToAudioBuffer(data: Uint8Array): Promise<AudioBuffer | null> {
+        const info = await this.probeAudio(data);
+        if (info) {
+            const native = await this.decodeNative(data);
+            if (native) return native;
+            const session = await this.createDecodeSession(data);
+            if (session) {
+                const decoded = await this.decodeSession(session);
+                if (!decoded || decoded.errors.length > 0) {
+                    logger.error(25, this.getErrorHeaderInfo(data));
+                    return null;
+                }
+                return this.toAudioBuffer(decoded);
+            }
+        }
         const type = this.getAudioTypeFromData(data);
         if (type === AudioType.Unknown) {
             logger.error(53, this.getErrorHeaderInfo(data));
             return null;
         }
-        if (!(data.buffer instanceof ArrayBuffer)) return null;
-        if (this.isAudioVanillaSupport(type)) {
-            return this.ac.decodeAudioData(data.buffer);
-        } else {
-            const decoded = await this.decodeAudio(data);
-            if (!decoded) return null;
-            else return this.toAudioBuffer(decoded);
-        }
+        if (this.isAudioVanillaSupport(type)) return this.decodeNative(data);
+        const legacy = await this.decodeAudioLegacy(data);
+        if (!legacy) return null;
+        return this.toAudioBuffer(legacy);
     }
 }

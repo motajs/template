@@ -96,6 +96,7 @@
         "94": "Cannot parse animation: invalid sound $2 in frame $1, reason: '$3'.",
         "95": "Cannot parse animation: invalid metadata, reason: '$1'.",
         "96": "Cannot parse animation: image failed, reason: '$1'.",
+        "97": "Cannot create audio decode session: the audio track or its decoder description is missing.",
         "2001": "Replay($1): Replay parameter count mismatch: expected $2, got $3.",
         "2002": "Replay($1): Replay parameter type mismatch: index $2, expected $3, got $4.",
         "2003": "Replay(move): Expected hero to be stopped before execute moving step.",
@@ -322,6 +323,7 @@
         "214": "Range setting item get a number range that cannot be divided into integer by step: range=[$1, $2], step=$3. This may cause issues, please ensure number range can be divided by step evenly.",
         "215": "Cannot change canvas size or block size of size-freezed map renderer.",
         "216": "Expected all sequence curve arrays with a same length and larger than zero, but got: seq: $1, duration: $2, scale: $3, move: $4.",
+        "217": "Unsupported audio input source type: '$1'.",
         "1001": "Event(setBlock): Unknown tile '$1' when setting block."
     }
 }
