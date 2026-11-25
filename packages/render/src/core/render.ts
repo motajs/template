@@ -823,11 +823,14 @@ export class MotaRenderer
         const info: DelegatedExcitable = {
             id: index,
             obj: fn,
-            excited: typeof fn === 'function' ? fn : fn.excited,
+            excited:
+                typeof fn === 'function'
+                    ? (t: number) => fn(t)
+                    : (t: number) => fn.excited(t),
             startTime: this.excitation.payload(),
             time: time ?? 0,
             forever: time === void 0,
-            end
+            end: () => end?.()
         };
         this.excitables.set(index, info);
         this.excitablesMap.set(fn, info);
