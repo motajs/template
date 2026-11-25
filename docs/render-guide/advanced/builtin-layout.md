@@ -128,7 +128,7 @@ const pages = ['第一页内容', '第二页内容', '第三页内容'];
 
 `lineHeight` 是每行的固定高度，默认 `24`，**不会随字体自动调整**；改了 `font` 的字号后必须同时设置合适的 `lineHeight`，否则行与文字可能重叠。
 
-`font` 控制行文字；`winskin`、`color`、`border`、`alphaRange` 控制选中光标，分别指定光标图片、填充色、边框色与闪烁的不透明度范围。
+`font` 控制行文字；`winskin`、`color`、`border`、`circle`、`borderSize`、`alphaRange` 控制选中光标，分别指定光标图片、填充色、边框色、圆角、边框宽度与闪烁的不透明度范围。
 
 ```tsx
 import { ref } from 'vue';
@@ -165,6 +165,8 @@ const selected = ref(items[0][0]);
 | `winskin`    | 用作选中光标的图片                        | 无             |
 | `color`      | 选中光标的填充色                          | 默认填充       |
 | `border`     | 选中光标的边框色                          | 默认描边       |
+| `circle`     | 选中光标的圆角参数，写法同 `g-rectr`      | `[4]`          |
+| `borderSize` | 选中光标的边框宽度                        | `2`            |
 | `alphaRange` | 选中光标闪烁的不透明度范围                | `[0.25, 0.55]` |
 
 <ClientOnly>
@@ -257,7 +259,7 @@ const selected = ref(items[0][0]);
 </ListPage>
 ```
 
-`ListPage` 复用 `List` 的全部参数，并额外提供列表比例、排列方向与关闭按钮：
+`ListPage` 的列表部分复用 `List` 的参数 `list`、`selected`、`lineHeight`、`font`、`winskin`、`color`、`border` 与 `alphaRange`，并额外提供列表比例、排列方向与关闭按钮：
 
 | 属性         | 作用                                          | 默认或常用值   |
 | ------------ | --------------------------------------------- | -------------- |

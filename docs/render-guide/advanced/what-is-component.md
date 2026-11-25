@@ -62,7 +62,7 @@ export { ItemCard };
 
 ## UI 组件：MyPanel
 
-GameUI 也是先声明成一个组件，再用 `new GameUI('id', MyPanel)` 定义为 UI。它和普通组件的区别在参数来源：GameUI 是特殊组件，能接收 UI 参数 `controller`、`instance`、`state`（来自 `IGameUIPropsBase`），由 UI 系统 / 控制器打开。
+GameUI 也是先声明成一个组件，再用 `new GameUI('id', MyPanel)` 定义为 UI。它和普通组件的区别在参数来源：GameUI 是特殊组件，能接收 UI 参数 `controller`、`instance`（来自 `IUIDefaultPropsBase`）与 `state`（由 `IGameUIPropsBase` 追加），由 UI 系统 / 控制器打开。
 
 普通组件更自由，不受 GameUI 约束：它不需要这些 UI 参数，可以嵌套在任意 UI 树里；它不是 UI 入口，只负责画自己那块内容。
 
@@ -79,7 +79,7 @@ import { ItemCard } from './item-card';
 // UI 组件的 Props 同时继承 IGameUIPropsBase 与 DefaultProps
 interface MyPanelProps extends IGameUIPropsBase, DefaultProps {}
 
-// controller、instance、state 来自 IGameUIPropsBase
+// controller、instance 来自 IUIDefaultPropsBase，state 由 IGameUIPropsBase 追加
 const myPanelProps = {
     props: ['controller', 'instance', 'state']
 } satisfies SetupComponentOptions<MyPanelProps>;

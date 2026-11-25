@@ -94,6 +94,20 @@ const recorder = excited<number>(payload => {
 
 `thisArg` 可选，用来固定 `func` 执行时的 `this`；省略时函数按原来的方式调用。
 
+### 包装数值 excitable
+
+动画执行器与渐变执行器改的是 `IAnimatable`：一个带可写 `value` 的对象。手里只有一个普通数字时，它本身不能直接当动画对象；`excitable` 负责把这个数值包成 `IAnimatable`。
+
+`excitable(value: number): IAnimatable` 返回一个带 `value` 的普通对象。执行器之后写入的是这个对象的 `value`，原来传入的数字不会跟着变；需要读取动画结果时，读返回对象的 `value`。
+
+```ts
+import { excitable } from '@motajs/animate';
+
+// 把普通数字包成动画对象；之后读 box.value 取当前值
+const box = excitable(0);
+box.value = 0.5;
+```
+
 ## 激励源接口
 
 自带激励源之外，有时需要替换节奏或自己实现一个。无论哪种，都要满足同一套契约；内置激励源已经实现好，只有自己写源时才需要逐项实现。
@@ -107,6 +121,31 @@ const recorder = excited<number>(payload => {
 | `destroy()`       | 终止激励源，停止继续推进                              |
 
 `payload()` 回答「现在的时间或值是多少」，`excite()` 回答「把这一刻发给谁」。帧激励源每帧更新当前时间后调用一次 `excite()`；固定间隔激励源按定时器调用；变速器与分频器则在收到输入源的推进后，按自己的规则再推进接收方。
+
+### 激励源基类 ExcitationBase
+
+自己写激励源时，登记对象、广播、移除和销毁的处理都一样；继承 `ExcitationBase` 可以复用这部分，只需提供当前负载。
+
+`ExcitationBase<T>` 是抽象类，实现 `IExcitation<T>`，要求子类实现 `payload(): T`；父类已经提供 `excite(payload)`、`add(object)`、`remove(object)` 与 `destroy()`。登记与广播都由父类维护，子类只管在合适的时机调用 `this.excite(...)`。
+
+```ts
+import { ExcitationBase } from '@motajs/animate';
+
+// 自定义激励源：继承基类，只实现当前负载
+class ManualExcitation extends ExcitationBase<number> {
+    private now = 0;
+
+    payload(): number {
+        return this.now;
+    }
+
+    advance(time: number): void {
+        this.now = time;
+        // 广播给所有已登记对象
+        this.excite(time);
+    }
+}
+```
 
 ## 内置激励源
 
@@ -234,6 +273,17 @@ await variator.curveSpeed(x => 1 - 0.5 * x, 300);
     渲染示例需要浏览器环境。
   </template>
 </ClientOnly>
+
+### 终止函数 endAllCurves
+
+已经排了多条变速曲线、或曲线正在改变速度，但需要立刻停下时，用 `endAllCurves()` 终止当前曲线和队列里的后续曲线，不必等它们依次执行完。
+
+`endAllCurves(): void` 没有参数。终止后，速度取队列中最后一条曲线的终止速度；队列为空时，取当前曲线的终止速度。没有曲线在执行时调用它没有效果；被终止的曲线不会继续推进，不要用 `curveSpeed` 返回的 Promise 等待一条已经被终止的曲线。
+
+```ts
+// 终止正在执行和排队中的全部变速曲线
+variator.endAllCurves();
+```
 
 ### 分频器
 

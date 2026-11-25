@@ -24,7 +24,7 @@
 
 ## anti / noanti
 
-`anti` 默认 `true`，`noanti` 默认 `false`。两者控制同一个抗锯齿开关：`anti` 为 `false` 关闭抗锯齿，`noanti` 为 `true` 也关闭抗锯齿。`noanti` 的优先级更高，`noanti` 为 `true` 等价于关闭 `anti`；不要同时依赖两个开关。
+`anti` 默认 `true`，`noanti` 默认 `false`。两者控制同一个抗锯齿开关：`anti` 为 `false` 关闭抗锯齿，`noanti` 为 `true` 也关闭抗锯齿。两个开关写的是同一个状态，后生效的那个决定最终结果；不要同时写两个并依赖固定优先级。
 
 抗锯齿影响的是图片等绘制内容在缩放时的插值方式。连续色调的图片与渐变在缩放时，平滑插值能减少锯齿和色块，默认的 `anti` 适合这类内容。像素图相反：它的边缘本来就是硬边，抗锯齿会把硬边插值成半透明过渡，放大后像素边缘会发虚。因此像素图放大时应写 `noanti`，并尽量按整数倍放大，减少额外的重采样。这个结论是从「像素图需要硬边」推出来的适用条件，不是对 `noanti` 用途的限定。
 
@@ -140,6 +140,14 @@
     渲染示例需要浏览器环境。
   </template>
 </ClientOnly>
+
+## selfTransform
+
+`selfTransform` 默认 `false`。开启后，元素盒子本身不参与变换，只有元素内容经过变换再绘制。需要在变换时保持盒子的位置与命中范围不变时使用；日常写界面很少用到。
+
+## type
+
+`type` 是元素的定位模式，取值来自 `RenderPosition`。目前只有 `RenderPosition.Absolute`（绝对定位，受坐标与变换矩阵影响），一般不需要写。
 
 <script setup>
 import RenderDemo from '../../.vitepress/components/renderDemo.vue';

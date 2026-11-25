@@ -23,34 +23,28 @@
 
 ## loc 与锚点
 
-`loc` 是一个六元组，顺序固定：`x`、`y`、`width`、`height`、`anchorX`、`anchorY`。
+`loc` 描述元素的位置与大小，最多四个值，顺序固定：`x`、`y`、`width`、`height`。
 
 ```tsx
-// x、y、width、height、anchorX、anchorY
-<g-rect loc={[40, 40, 120, 80, 0, 0]} fillStyle="#2f6fed" />
+// x、y、width、height
+<g-rect loc={[40, 40, 120, 80]} fillStyle="#2f6fed" />
 ```
 
-六个值也可以拆成同名属性分别写：
+这四个值也可以拆成同名属性分别写：
 
 ```tsx
-<g-rect
-    x={40}
-    y={40}
-    width={120}
-    height={80}
-    anchorX={0}
-    anchorY={0}
-    fillStyle="#2f6fed"
-/>
+<g-rect x={40} y={40} width={120} height={80} fillStyle="#2f6fed" />
 ```
 
-`anchorX` 与 `anchorY` 还可以合并成 `anc`：
+锚点单独用 `anc` 写，值是两个比例 `[anchorX, anchorY]`：
 
 ```tsx
 <container loc={[240, 160, 160, 120]} anc={[0.5, 0.5]} />
 ```
 
-`loc` 里每一对（`x` / `y`、`width` / `height`、`anchorX` / `anchorY`）要么都写，要么整对省略。只写 `[x, y]` 是合法的；宽高省略时沿用默认的 200×200。
+`anchorX` / `anchorY` 是 `anc` 的等价独立写法，同一处只选一种，不要混用。
+
+`loc` 里 `x` / `y` 与 `width` / `height` 两两成对：要么两个都写，要么整对省略。只写 `[x, y]` 是合法的；宽高省略时沿用默认的 200×200。
 
 锚点回答的是「元素自己的哪一个点落在 `x` / `y` 上」。矩形与容器的默认锚点是 `0`，也就是左上角；圆与椭圆的默认锚点是 `0.5`，也就是中心。锚点不是把元素整体平移，而是换一个点去对齐坐标：同一个 `x` / `y` 配不同锚点，元素落下的位置会明显不同。
 

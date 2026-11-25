@@ -47,7 +47,7 @@ container [0, 0, 196, 280]        详情组件根
 └─ container [16, 236, 164, 28]    取消选择按钮
 ```
 
-名称、数量、描述都是详情容器的子节点，位置相对详情根容器。描述没有用 `text` 元素硬排：`text` 只画一行，不会自动换行；`TextContent` 给了 `width` 才会按宽度折行，`autoHeight` 让高度跟着内容走。`width` 是必填项，不传时组件拿不到排版宽度。描述从 `y = 120` 开始，到取消选择按钮上方 `236` 为止，大约能放四到五行；更长的说明要么缩短文案，要么在详情内部再套一个 `Scroll`，不要让它盖住按钮。
+名称、数量、描述都是详情容器的子节点，位置相对详情根容器。描述没有用 `text` 元素硬排：`text` 只画一行，不会自动换行；`TextContent` 按 `width` 折行，`autoHeight` 让高度跟着内容走。`width` 可以省略，省略时使用组件默认宽度。描述从 `y = 120` 开始，到取消选择按钮上方 `236` 为止，大约能放四到五行；更长的说明要么缩短文案，要么在详情内部再套一个 `Scroll`，不要让它盖住按钮。
 
 `hidden` 的两块是兄弟节点，同一时刻只有一块参与绘制与命中：未选中时提示可见，选中时详情内容可见。`hidden` 不显示、不交互，但元素与状态仍在，不会因为频繁切换选中而反复创建、销毁子树。
 
@@ -104,7 +104,7 @@ const ItemDetail = defineComponent<
                     text={`数量：${props.item?.count ?? 0}`}
                     fillStyle="#cfe0ff"
                 />
-                {/* 长描述用 TextContent；width 必填，autoHeight 让高度跟着内容走 */}
+                {/* 长描述用 TextContent；width 决定折行宽度，autoHeight 让高度跟着内容走 */}
                 <TextContent
                     loc={[16, 120]}
                     width={164}
@@ -197,6 +197,6 @@ const detailLoader = () =>
 
 - `computed` 里不要写副作用。它只负责算值，需要「变化后做一件事」时用 `watch`。
 - `find` 找不到时返回 `undefined`，用 `?? null` 收口；详情组件的 `item` 要允许为 `null`。
-- `TextContent` 的 `width` 必填。不给宽度时文字不会按预期折行，`autoHeight` 也失去意义。
+- `TextContent` 的 `width` 可选；不传时使用默认宽度。需要指定折行宽度时再显式传入。
 - 两块都渲染时注意 `zIndex` 与遮挡。提示层不要盖住真正的详情，也不要在有选中时仍然拦截点击。
 - 选中态放在父组件，详情只接收结果。子组件不要自己再存一份 `selectedId`，也不要在详情里重复查列表。

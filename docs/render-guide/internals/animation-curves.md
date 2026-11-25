@@ -429,7 +429,7 @@ import { linear, sequenceCurve, sin } from '@motajs/animate';
 const curve = sequenceCurve([linear(), sin()], [0.5, 0.5], [1, 1], [0, 0]);
 ```
 
-来源段各自都是完整的 `0` 到 `1` 形状，结果按 `duration` 分配的时间段依次取用。下面的实时图把两条来源段都画成完整曲线，绿色结果是两段各占一半时长的拼接结果。
+来源段各自都是完整的 `0` 到 `1` 形状，结果按 `duration` 分配的时间段依次取用。进度正好为 `0` 时，拼接结果取第一段曲线在 `0` 处的输出；第一段从 `0` 起步时，起点看起来仍是 `0`。下面的实时图把两条来源段都画成完整曲线，绿色结果是两段各占一半时长的拼接结果。
 
 <ClientOnly>
   <RenderDemo :loader="sequenceCurveLoader" :width="480" :height="320" />
@@ -483,6 +483,7 @@ console.log(backX(0.5), backY(0.5));
 - `normalize` 只用两端值决定方向，假定曲线单调，但不会检查或拒绝非单调曲线；非单调曲线归一化后，中间取值可能超出 `[0, 1]`。
 - `divCurve` 与 `reciprocalCurve` 在分母为 `0` 的位置会产生 `Infinity` 或 `NaN`，组合时要确认除数不会过零。
 - `sequenceCurve` 的各段 `duration` 之和通常应设为 `1`；不要依赖总和不为 `1` 时的具体行为。
+- `sequenceCurve` 在进度 `0` 处取第一段曲线在 `0` 处的输出；第一段从 `0` 起步时，起点仍是 `0`，否则结果从第一段的起点值开始。
 - 曲线函数应当是纯函数；不要在曲线里读写外部状态，它会在每一帧被反复调用。
 
 <script setup>

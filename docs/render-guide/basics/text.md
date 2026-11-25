@@ -43,7 +43,8 @@
 - `Font.defaults()` 返回一个默认 `Font`；也可以传配置对象，例如 `Font.defaults({ size: 20 })`，没传的项仍用默认值。
 - `Font.clone(base, patch)` 复制一份字体，用 `patch` 覆盖部分字段，例如 `Font.clone(font, { weight: FontWeight.Bold })`。
 - `Font.setDefaults(font)` 一次性写入五项默认值；之后的 `new Font()` 都从它开始。
-- `addFallback(...fonts)` 给字体加后备字体；主字体不可用时按添加顺序尝试。后备字体也可以再加后备，但不要形成循环。
+
+`addFallback(...fonts)` 是实例方法，不是静态方法：它在已有字体上追加后备字体，主字体不可用时按添加顺序尝试。后备字体也可以再加后备，但不要形成循环。
 
 `Font` 没有行高、字距、下划线、对齐这些属性；它们不属于字体，文字元素也不提供行高或对齐属性。斜体只有 `italic` 一个开关。
 
@@ -114,7 +115,7 @@
 <text loc={[240, 160]} anc={[0.5, 0.5]} text="居中文字" fillStyle="#ffffff" />
 ```
 
-本篇统一用 `loc` + `anc` 写位置和锚点。`loc` 只写 `[x, y]`，锚点统一用 `anc`。`loc` 的完整形式还能在坐标后写宽高与锚点（`[x, y, width, height, ax, ay]`），但文字尺寸由测量决定，宽高会被覆盖，所以文字页不采用；锚点也不塞进 `loc`。`anchorX` / `anchorY` 是 `anc` 的等价独立属性写法，例如 `anc={[0.5, 0.5]}` 等价于 `anchorX={0.5} anchorY={0.5}`；同一处只选一种写法，不要混用。
+本篇统一用 `loc` + `anc` 写位置和锚点。`loc` 只写 `[x, y]`，锚点统一用 `anc`。`loc` 的完整形式是 `[x, y, width, height]`，但文字尺寸由测量决定，宽高会被覆盖，所以文字页只写 `[x, y]`；锚点单独用 `anc`，不塞进 `loc`。`anchorX` / `anchorY` 是 `anc` 的等价独立属性写法，例如 `anc={[0.5, 0.5]}` 等价于 `anchorX={0.5} anchorY={0.5}`；同一处只选一种写法，不要混用。
 
 右对齐数值时用 `anc={[1, 0]}`，让文字的右边缘落在 x 上，y 仍是顶边：
 

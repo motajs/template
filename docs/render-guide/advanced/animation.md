@@ -120,7 +120,7 @@ import { CurveMode, sin } from '@motajs/animate';
 const alpha = transitioned(0.25, 600, sin(CurveMode.EaseOut))!;
 ```
 
-`transitioned(value, time, curve)` 返回一个数值渐变控制器，类型是 `ITransitionedController<number> | null`：`value` 是初始值，`time` 是默认时长（毫秒），`curve` 是速率曲线。它只在组件 `setup` 中调用；在 `setup` 中返回值一定非空，所以这里用 `!` 收窄类型。返回的控制器带一个响应式引用 `ref`（类型 `Ref<number>`），渲染时读 `alpha.ref.value` 就能拿到当前值。
+`transitioned(value, time, curve)` 返回一个数值渐变控制器，类型是 `ITransitionedController<number> | null`：`value` 是初始值，`time` 是默认时长（毫秒），`curve` 是速率曲线。它只在组件 `setup` 中调用；在 `setup` 中返回值一定非空，所以这里用 `!` 收窄类型。返回的控制器带一个响应式引用 `ref`（类型 `Readonly<Ref<number>>`），渲染时读 `alpha.ref.value` 就能拿到当前值。
 
 ### 执行渐变动画
 
@@ -302,7 +302,7 @@ import { CurveMode, sin } from '@motajs/animate';
 const glow = cycledTransition(0.25, 1, 900, sin(CurveMode.EaseOut))!;
 ```
 
-`cycledTransition(min, max, time, curve, maxStart = false)` 返回一个循环渐变控制器，类型是 `ICycledTransitionController | null`。`min` 与 `max` 是循环的两个端点，`time` 是单程耗时（毫秒），`curve` 是单程使用的速率曲线；`maxStart` 为 `true` 时从 `max` 开始，否则从 `min` 开始。控制器返回后会自动开始循环，组件卸载时停止，不需要手动清理。
+`cycledTransition(min, max, time, curve, maxStart = false)` 返回一个循环渐变控制器，类型是 `ICycledTransitionController | null`。`min` 与 `max` 是循环的两个端点，`time` 是单程耗时（毫秒），`curve` 是单程使用的速率曲线；`maxStart` 为 `true` 时从 `max` 开始，否则从 `min` 开始。控制器创建后不会立刻开始，组件挂载并绑定到根渲染器的激励源后才开始循环，组件卸载时停止，不需要手动清理。
 
 ### 读取循环值
 

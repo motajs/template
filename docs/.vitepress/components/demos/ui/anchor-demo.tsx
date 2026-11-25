@@ -7,7 +7,8 @@ export default defineComponent(() => {
 
             <container loc={[8, 8, 228, 148]}>
                 <g-rect
-                    loc={[110, 70, 100, 60, 0, 0]}
+                    loc={[110, 70, 100, 60]}
+                    anc={[0, 0]}
                     fillStyle="#2f6fed"
                     alpha={0.6}
                 />
@@ -17,7 +18,8 @@ export default defineComponent(() => {
 
             <container loc={[244, 8, 228, 148]}>
                 <g-rect
-                    loc={[110, 70, 100, 60, 0.5, 0.5]}
+                    loc={[110, 70, 100, 60]}
+                    anc={[0.5, 0.5]}
                     fillStyle="#f2b84b"
                     alpha={0.6}
                 />
@@ -27,7 +29,8 @@ export default defineComponent(() => {
 
             <container loc={[8, 164, 228, 148]}>
                 <g-rect
-                    loc={[110, 70, 100, 60, 1, 1]}
+                    loc={[110, 70, 100, 60]}
+                    anc={[1, 1]}
                     fillStyle="#58c4dd"
                     alpha={0.6}
                 />
@@ -37,7 +40,8 @@ export default defineComponent(() => {
 
             <container loc={[244, 164, 228, 148]}>
                 <g-rect
-                    loc={[110, 70, 160, 100, 0.5, 0.5]}
+                    loc={[110, 70, 160, 100]}
+                    anc={[0.5, 0.5]}
                     fillStyle="#c58af9"
                     alpha={0.5}
                 />

@@ -81,17 +81,17 @@ const render = canvas => {
 
 `<container-custom>` 是带子元素的容器，区别只在绘制方式：`render` 接管子元素的绘制。
 
-`render(canvas, children, transform)` 拿到画布、排好序的子元素列表与当前变换。子元素不会自动出现，必须自己遍历 `children`，对每个子元素调用 `renderContent`；不调用就不会绘制。`children` 已经按 `zIndex` 排好序，遍历顺序就是绘制顺序；`hidden` 的子元素应当跳过。
+`render(canvas, children, transform)` 拿到画布、排好序的子元素列表与当前变换。子元素不会自动出现，必须自己遍历 `children`，对每个子元素调用 `renderContent(canvas)`；不调用就不会绘制。`children` 已经按 `zIndex` 排好序，遍历顺序就是绘制顺序；`hidden` 的子元素应当跳过。
 
 因为绘制的是子元素本身，`render` 里可以先逐个修改子元素的属性，再调用 `renderContent`。下面的例子给每个子元素设置依次递增的模糊：
 
 ```tsx
 // render 接管子元素绘制：按顺序给每个子元素设置递增的模糊，再逐个绘制
-const render = (canvas, children, transform) => {
+const render = (canvas, children) => {
     children.forEach((child, index) => {
         if (child.hidden) return;
         child.setFilter(`blur(${index * 2}px)`);
-        child.renderContent(canvas, transform);
+        child.renderContent(canvas);
     });
 };
 
