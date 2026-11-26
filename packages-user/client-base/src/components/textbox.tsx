@@ -124,6 +124,7 @@ export const TextContent = defineComponent<
             props.typer ?? new TextContentTyper({ materials: materials.value })
     );
     const renderable = shallowRef<TyperRenderable[]>([]);
+    const binding = ref(0);
     let needUpdate = false;
 
     const hook: ITextContentTyperHooks = {
@@ -228,6 +229,7 @@ export const TextContent = defineComponent<
 
     const renderFunc = (data: TyperRenderable[]) => {
         renderable.value = data;
+        binding.value++;
     };
 
     watch(
@@ -252,7 +254,7 @@ export const TextContent = defineComponent<
         <custom
             loc={loc.value}
             render={renderContent}
-            bindings={[renderable.value]}
+            bindings={[renderable.value, binding.value]}
         ></custom>
     );
 }, textContentOptions);
