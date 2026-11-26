@@ -1,7 +1,9 @@
-import { EncodedPacket, EncodedPacketSink, Input } from 'mediabunny';
+import { EncodedPacketSink, Input } from 'mediabunny';
 import { logger } from '@motajs/common';
 import {
+    AudioCodec,
     AudioInputSource,
+    IAudioCodecDecoder,
     IAudioDecodeError,
     IAudioDecodedChunk,
     IAudioDecodeSession,
@@ -161,40 +163,28 @@ async function loadOpusDecoder(
     return decoder;
 }
 
-export class OpusDecodeSession implements IAudioDecodeSession {
-    readonly info: IAudioFormatInfo;
-    readonly chunks: AsyncIterable<IAudioDecodedChunk>;
+export class OpusCodecDecoder implements IAudioCodecDecoder {
+    /** 当前配置好的 Opus 解码器，未配置时为空 */
+    private decoder: IOpusDecoderInstance | null = null;
 
-    /** 会话持有的 mediabunny 输入，关闭会话时释放 */
-    private readonly input: Input;
-    /** 按包顺序读取编码数据的包读取器 */
-    private readonly sink: EncodedPacketSink;
-    /** 当前会话使用的 Opus 解码器实例 */
-    private readonly decoder: IOpusDecoderInstance;
-    /** 会话是否已关闭，用于中止异步迭代 */
-    private closed: boolean = false;
-
-    constructor(
-        input: Input,
-        sink: EncodedPacketSink,
+    async configure(
         info: IAudioFormatInfo,
-        decoder: IOpusDecoderInstance
-    ) {
-        this.input = input;
-        this.sink = sink;
-        this.info = info;
-        this.decoder = decoder;
-        this.chunks = this.generateChunks();
+        description?: Uint8Array
+    ): Promise<void> {
+        if (info.codec !== AudioCodec.Opus) return;
+        const header = parseOpusIdentificationHeader(description ?? null);
+        if (!header) return;
+        this.decoder = await loadOpusDecoder(header);
     }
 
-    /**
-     * 解码单个 Opus 包，空包返回 null
-     * @param packet 待解码的编码包
-     */
-    private async decodePacket(
-        packet: EncodedPacket
+    async decode(
+        packet: Uint8Array,
+        timestamp: number,
+        duration: number
     ): Promise<IAudioDecodedChunk | null> {
-        const decoded = await this.decoder.decodeFrame(packet.data);
+        const decoder = this.decoder;
+        if (!decoder) return null;
+        const decoded = await decoder.decodeFrame(packet);
         // 零采样但带解码错误时需要保留错误，交给上层记录失败
         const isEmpty = decoded.samplesDecoded === 0;
         if (isEmpty && decoded.errors.length === 0) return null;
@@ -204,10 +194,48 @@ export class OpusDecodeSession implements IAudioDecodeSession {
             ),
             samplesDecoded: decoded.samplesDecoded,
             sampleRate: decoded.sampleRate,
-            timestamp: packet.timestamp,
-            duration: packet.duration,
+            timestamp,
+            duration,
             errors: decoded.errors
         };
+    }
+
+    flush(): Promise<IAudioDecodedChunk | null> {
+        return Promise.resolve(null);
+    }
+
+    async destroy(): Promise<void> {
+        const decoder = this.decoder;
+        this.decoder = null;
+        if (!decoder) return;
+        await decoder.free();
+    }
+}
+
+export class OpusDecodeSession implements IAudioDecodeSession {
+    readonly info: IAudioFormatInfo;
+    readonly chunks: AsyncIterable<IAudioDecodedChunk>;
+
+    /** 会话持有的 mediabunny 输入，关闭会话时释放 */
+    private readonly input: Input;
+    /** 按包顺序读取编码数据的包读取器 */
+    private readonly sink: EncodedPacketSink;
+    /** 当前会话使用的 Opus 编码解码器 */
+    private readonly decoder: IAudioCodecDecoder;
+    /** 会话是否已关闭，用于中止异步迭代 */
+    private closed: boolean = false;
+
+    constructor(
+        input: Input,
+        sink: EncodedPacketSink,
+        info: IAudioFormatInfo,
+        decoder: IAudioCodecDecoder
+    ) {
+        this.input = input;
+        this.sink = sink;
+        this.info = info;
+        this.decoder = decoder;
+        this.chunks = this.generateChunks();
     }
 
     /**
@@ -216,7 +244,11 @@ export class OpusDecodeSession implements IAudioDecodeSession {
     private async *generateChunks(): AsyncGenerator<IAudioDecodedChunk> {
         for await (const packet of this.sink.packets()) {
             if (this.closed) return;
-            const chunk = await this.decodePacket(packet);
+            const chunk = await this.decoder.decode(
+                packet.data,
+                packet.timestamp,
+                packet.duration
+            );
             if (chunk) yield chunk;
         }
     }
@@ -225,7 +257,7 @@ export class OpusDecodeSession implements IAudioDecodeSession {
         if (this.closed) return;
         this.closed = true;
         this.input.dispose();
-        this.decoder.free();
+        void this.decoder.destroy();
     }
 }
 
@@ -233,10 +265,12 @@ export class OpusDecodeSession implements IAudioDecodeSession {
  * 为 Ogg / WebM Opus 创建整文件解码会话
  * @param source 音频输入数据
  * @param info 探测得到的格式信息
+ * @param decoder 已注册的 Opus 编码解码器
  */
 export async function createOpusDecodeSession(
     source: AudioInputSource,
-    info: IAudioFormatInfo
+    info: IAudioFormatInfo,
+    decoder: IAudioCodecDecoder
 ): Promise<OpusDecodeSession | null> {
     const input = createMediaInput(source);
     if (!input) return null;
@@ -258,13 +292,12 @@ export async function createOpusDecodeSession(
         logger.error(97);
         return null;
     }
-    const header = parseOpusIdentificationHeader(config.description);
-    if (!header) {
+    if (!parseOpusIdentificationHeader(config.description)) {
         input.dispose();
         logger.error(97);
         return null;
     }
-    const decoder = await loadOpusDecoder(header);
+    await decoder.configure(info, config.description);
     const sink = new EncodedPacketSink(track);
     return new OpusDecodeSession(input, sink, info, decoder);
 }

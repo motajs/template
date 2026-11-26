@@ -16,10 +16,13 @@ import {
     AudioDecoderCreateFunc,
     AudioCodec,
     AudioContainer,
+    AudioCodecDecoderCreateFunc,
     AudioInputSource,
     AudioType,
     IAudioBufferSource,
     IAudioChannelVolumeEffect,
+    IAudioCodecDecoder,
+    IAudioDecoderRegistry,
     IAudioDecodeData,
     IAudioDecodeError,
     IAudioDecoder,
@@ -38,7 +41,9 @@ import {
     ISoundPlayer
 } from './types';
 import { probeAudioSource } from './probe';
-import { createOpusDecodeSession } from './opusSession';
+import { createOpusDecodeSession, OpusCodecDecoder } from './opusSession';
+import { createVorbisDecodeSession } from './vorbisSession';
+import { AudioDecoderRegistry } from './decoderRegistry';
 import { SoundPlayer } from './sound';
 import { AudioRoute } from './route';
 
@@ -68,6 +73,8 @@ export class MotaAudioContext implements IMotaAudioContext {
     /** 所有注册的解码器 */
     private readonly decoders: Map<AudioType, AudioDecoderCreateFunc> =
         new Map();
+    /** 编码解码器注册表 */
+    private readonly codecRegistry: IAudioDecoderRegistry;
 
     /** 最小音量 */
     private readonly minDb = -60;
@@ -76,6 +83,12 @@ export class MotaAudioContext implements IMotaAudioContext {
         this.ac = new AudioContext();
         this.gain = this.ac.createGain();
         this.gain.connect(this.ac.destination);
+        this.codecRegistry = new AudioDecoderRegistry(this);
+        // Opus 解码器由 opus-decoder 自行管理资源，不需要音频上下文
+        this.registerCodecDecoder(
+            AudioCodec.Opus,
+            () => new OpusCodecDecoder()
+        );
     }
 
     /**
@@ -377,6 +390,17 @@ export class MotaAudioContext implements IMotaAudioContext {
         }
     }
 
+    registerCodecDecoder(
+        codec: AudioCodec,
+        decoder: AudioCodecDecoderCreateFunc
+    ): void {
+        this.codecRegistry.registerCodecDecoder(codec, decoder);
+    }
+
+    createCodecDecoder(codec: AudioCodec): IAudioCodecDecoder | null {
+        return this.codecRegistry.createCodecDecoder(codec);
+    }
+
     getAudioTypeFromData(data: Uint8Array): AudioType {
         let audioType: AudioType = AudioType.Unknown;
         // 检查头文件获取音频类型，仅检查前256个字节
@@ -525,15 +549,24 @@ export class MotaAudioContext implements IMotaAudioContext {
     ): Promise<IAudioDecodeSession | null> {
         const info = await this.probeAudio(source);
         if (!info) return null;
-        if (info.codec !== AudioCodec.Opus) return null;
-        const container = info.container;
         if (
-            container !== AudioContainer.Ogg &&
-            container !== AudioContainer.WebM
+            info.container === AudioContainer.Ogg &&
+            info.codec === AudioCodec.Vorbis
         ) {
-            return null;
+            return createVorbisDecodeSession(source, info);
+        } else if (info.codec === AudioCodec.Opus) {
+            const container = info.container;
+            if (
+                container !== AudioContainer.Ogg &&
+                container !== AudioContainer.WebM
+            ) {
+                return null;
+            }
+            const decoder = this.createCodecDecoder(AudioCodec.Opus);
+            if (!decoder) return null;
+            return createOpusDecodeSession(source, info, decoder);
         }
-        return createOpusDecodeSession(source, info);
+        return null;
     }
 
     async decodeAudio(data: Uint8Array): Promise<IAudioDecodeData | null> {

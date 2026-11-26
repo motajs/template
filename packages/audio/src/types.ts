@@ -468,7 +468,10 @@ export type AudioDecoderCreateFunc = (
 ) => IAudioDecoder;
 
 export interface IMotaAudioContext
-    extends IMotaAudioContextCreator, IAudioDecodeProvider {
+    extends
+        IMotaAudioContextCreator,
+        IAudioDecodeProvider,
+        IAudioDecoderRegistry {
     /** 音频上下文 */
     readonly ac: AudioContext;
     /** 音频播放路由 */

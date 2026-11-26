@@ -1,9 +1,15 @@
 import {
+    ADTS,
     BlobSource,
     BufferSource,
+    FLAC,
     Input,
+    InputFormat,
+    MP3,
+    MP4,
     OGG,
     UrlSource,
+    WAVE,
     WEBM
 } from 'mediabunny';
 import { logger } from '@motajs/common';
@@ -14,8 +20,8 @@ import {
     IAudioFormatInfo
 } from './types';
 
-// 只声明本 tracer 支持的容器格式，避免为其它格式付解析器体积
-const mediaFormats = [OGG, WEBM];
+// 声明本包支持的全部容器格式，原生支持的格式仍优先走浏览器解码
+const mediaFormats = [MP4, WEBM, OGG, WAVE, FLAC, MP3, ADTS];
 
 /**
  * 把统一的音频输入类型转换为 mediabunny 支持的数据源，不支持的输入返回 null
@@ -33,7 +39,7 @@ function createMediaSource(
 }
 
 /**
- * 用 Ogg / WebM 精选格式表创建一个 mediabunny 输入
+ * 用支持格式表创建一个 mediabunny 输入
  * @param source 音频输入数据
  */
 export function createMediaInput(source: AudioInputSource): Input | null {
@@ -69,6 +75,49 @@ function toAudioCodec(codec: string | null): AudioCodec {
 }
 
 /**
+ * 把 mediabunny 的容器格式映射为本包的音频容器枚举
+ * @param format mediabunny 返回的容器格式
+ */
+function toAudioContainer(format: InputFormat): AudioContainer {
+    switch (format) {
+        case MP4:
+            return AudioContainer.Mp4;
+        case WEBM:
+            return AudioContainer.WebM;
+        case OGG:
+            return AudioContainer.Ogg;
+        case WAVE:
+            return AudioContainer.Wav;
+        case FLAC:
+            return AudioContainer.Flac;
+        case MP3:
+            return AudioContainer.Mp3;
+        case ADTS:
+            return AudioContainer.Adts;
+        default:
+            return AudioContainer.Unknown;
+    }
+}
+
+/**
+ * 读取音频时长，优先使用容器头部信息，必要时才扫描整个文件
+ * @param input mediabunny 输入
+ * @param container 已识别的容器格式
+ */
+async function readDuration(
+    input: Input,
+    container: AudioContainer
+): Promise<number | null> {
+    const duration = await input.getDurationFromMetadata();
+    if (duration !== null) return duration;
+    // Ogg 与 WebM 不记录头部时长，整文件解码本来就要遍历全部数据
+    if (container === AudioContainer.Ogg || container === AudioContainer.WebM) {
+        return input.computeDuration();
+    }
+    return null;
+}
+
+/**
  * 探测音频数据的容器、编码、采样率、声道数与总时长
  * @param source 音频输入数据
  */
@@ -82,12 +131,9 @@ export async function probeAudioSource(
         input.dispose();
         return null;
     }
-    const format = await input.getFormat();
-    let container = AudioContainer.Unknown;
-    if (format === OGG) container = AudioContainer.Ogg;
-    else if (format === WEBM) container = AudioContainer.WebM;
+    const container = toAudioContainer(await input.getFormat());
     if (container === AudioContainer.Unknown) {
-        // 已注册格式表只有 Ogg / WebM，走到这里说明探测结果异常
+        // 已注册格式表覆盖全部支持的容器，走到这里说明探测结果异常
         input.dispose();
         logger.error(97);
         return null;
@@ -101,7 +147,7 @@ export async function probeAudioSource(
     const codec = toAudioCodec(await track.getCodec());
     const sampleRate = await track.getSampleRate();
     const channels = await track.getNumberOfChannels();
-    const duration = await input.computeDuration();
+    const duration = await readDuration(input, container);
     input.dispose();
     return { container, codec, sampleRate, channels, duration };
 }
