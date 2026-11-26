@@ -722,7 +722,7 @@ export class TextContentParser {
         const data: ITextContentWaitNode = {
             type: TextContentType.Wait,
             raw: this.getRaw(pointer),
-            wait: wait * this.config.interval
+            wait: wait
         };
         this.textNodes.push(data);
         this.resolved = '';
