@@ -342,7 +342,10 @@ export const Selection = defineComponent<SelectionProps>(props => {
         2000,
         cosh(2, CurveMode.EaseInOut)
     )!;
-    const defaultMaterials = inject<ITextureManager>('@default/materials');
+    const defaultMaterials = inject<ITextureManager | null>(
+        '@default/materials',
+        null
+    );
 
     /** 使用的贴图管理器 */
     const materials = computed(() => props.materials ?? defaultMaterials);

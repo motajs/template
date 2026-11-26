@@ -22,7 +22,10 @@ const iconProps = {
 
 export const Icon = defineComponent<IIconProps>(props => {
     const animater = markRaw(new TextureRowAnimater());
-    const defaultMaterials = inject<ITextureManager>('@default/materials');
+    const defaultMaterials = inject<ITextureManager | null>(
+        '@default/materials',
+        null
+    );
 
     /** 贴图管理器 */
     const materials = computed(() => props.materials ?? defaultMaterials);

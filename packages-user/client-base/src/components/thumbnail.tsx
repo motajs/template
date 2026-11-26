@@ -72,7 +72,10 @@ export const ThumbnailCell = defineComponent<
     ThumbnailCellEmits,
     keyof ThumbnailCellEmits
 >((props, { emit }) => {
-    const defaultRenderer = inject<IMapRenderer>('@default/expandMapRenderer');
+    const defaultRenderer = inject<IMapRenderer | null>(
+        '@default/expandMapRenderer',
+        null
+    );
     /** 使用的地图渲染器 */
     const mapRenderer = computed(() => props.renderer ?? defaultRenderer);
 
@@ -311,7 +314,10 @@ const thumbnailProps = {
 } satisfies SetupComponentOptions<ThumbnailProps>;
 
 export const Thumbnail = defineComponent<ThumbnailProps>(props => {
-    const defaultRenderer = inject<IMapRenderer>('@default/expandMapRenderer');
+    const defaultRenderer = inject<IMapRenderer | null>(
+        '@default/expandMapRenderer',
+        null
+    );
     /** 使用的地图渲染器 */
     const mapRenderer = computed(() => props.renderer ?? defaultRenderer);
     /** 空白区域填充样式 */
@@ -420,7 +426,7 @@ export const Thumbnail = defineComponent<ThumbnailProps>(props => {
                     <ThumbnailCell
                         loc={chunk.loc}
                         origin={chunk.origin}
-                        renderer={mapRenderer.value}
+                        renderer={mapRenderer.value ?? void 0}
                         maps={props.maps}
                         floorId={props.floorId}
                         size={size.value}

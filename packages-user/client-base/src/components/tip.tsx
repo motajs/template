@@ -45,7 +45,10 @@ const tipProps = {
 } satisfies SetupComponentOptions<TipProps>;
 
 export const Tip = defineComponent<TipProps>((props, { expose }) => {
-    const defaultMaterials = inject<ITextureManager>('@default/materials');
+    const defaultMaterials = inject<ITextureManager | null>(
+        '@default/materials',
+        null
+    );
 
     /** 贴图管理器 */
     const materials = computed(() => props.materials ?? defaultMaterials);
@@ -149,7 +152,7 @@ export const Tip = defineComponent<TipProps>((props, { expose }) => {
             />
             <Icon
                 icon={icon.value}
-                materials={materials.value}
+                materials={materials.value ?? void 0}
                 hidden={!showIcon.value}
                 loc={iconLoc.value}
             />
