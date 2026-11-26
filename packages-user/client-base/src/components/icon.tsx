@@ -50,7 +50,7 @@ export const Icon = defineComponent<IIconProps>(props => {
     });
     /** 当不播放图块动画时，静态使用的贴图 */
     const staticImage = computed<ITexture | null>(() => {
-        if (!animate.value || !data.value) return null;
+        if (animate.value || !data.value) return null;
         const frame = props.frame ?? data.value.defaultFrame;
         const o = data.value.offset * frame;
         const tex = data.value.texture;

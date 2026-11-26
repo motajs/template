@@ -315,6 +315,7 @@ const textboxOptions = {
         'titleStroke',
         'titlePadding',
         'materials',
+        'typer',
         'icon',
         'loc',
         'x',
@@ -330,6 +331,13 @@ export const Textbox = defineComponent<
     TextboxEmits,
     keyof TextboxEmits
 >((props, { expose, emit }) => {
+    const defaultMaterials = inject<ITextureManager | null>(
+        '@default/materials',
+        null
+    );
+    /** 使用的贴图管理器 */
+    const materials = computed(() => props.materials ?? defaultMaterials);
+
     /** 是否包含标题 */
     const hasTitle = computed(() => !isNil(props.title));
     /** 标题内边距 */
@@ -358,7 +366,7 @@ export const Textbox = defineComponent<
     /** 图标信息 */
     const iconData = computed(() => {
         const icon = props.icon;
-        const material = props.materials;
+        const material = materials.value;
         if (isNil(icon) || !material) return null;
         const data = material.tile(icon);
         return data;
@@ -428,7 +436,7 @@ export const Textbox = defineComponent<
                     color={props.backColor}
                     border={props.strokeColor}
                     circle={[0]}
-                    materials={props.materials}
+                    materials={materials.value ?? void 0}
                     loc={[0, 0, tw.value, th.value]}
                 />
                 <text
@@ -447,7 +455,7 @@ export const Textbox = defineComponent<
                 color={props.backColor}
                 border={props.strokeColor}
                 circle={[0]}
-                materials={props.materials}
+                materials={materials.value ?? void 0}
                 loc={[0, contentY.value, width.value, backHeight.value]}
             />
 
@@ -455,7 +463,7 @@ export const Textbox = defineComponent<
                 hidden={!!iconData.value}
                 icon={props.icon}
                 loc={iconLoc.value}
-                materials={props.materials}
+                materials={materials.value ?? void 0}
                 animate
             />
             <g-rect

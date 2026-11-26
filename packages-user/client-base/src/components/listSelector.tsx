@@ -73,8 +73,10 @@ export const ListSelector = defineComponent<
         }
     });
     /** 当前选中项的信息 */
-    const current = computed(
-        () => list.value[list.value.length - now.value - 1]
+    const current = computed(() =>
+        props.reverse
+            ? list.value[list.value.length - now.value - 1]
+            : list.value[now.value]
     );
     /** 每行的行高 */
     const lh = computed(() => props.interval ?? 24);
@@ -137,7 +139,7 @@ export const ListSelector = defineComponent<
     /** 切换至指定选择项 */
     const changeTo = (index: number, time: number = 500) => {
         const res = clamp(index, 0, list.value.length - 1);
-        const reversed = list.value.length - res - 1;
+        const reversed = props.reverse ? list.value.length - res - 1 : res;
         now.value = res;
         selList.value = reversed;
         const y = reversed * lh.value;
@@ -164,9 +166,11 @@ export const ListSelector = defineComponent<
                 padEnd={height.value / 2 - lh.value / 2}
             >
                 {list.value.map(([, title], i, a) => {
-                    const reversed = a.length - i - 1;
-                    const nowFloor = a.length - now.value - 1;
-                    const highlight = nowFloor === i || selList.value === i;
+                    const reversed = props.reverse ? a.length - i - 1 : i;
+                    const nowItem = props.reverse
+                        ? a.length - now.value - 1
+                        : now.value;
+                    const highlight = nowItem === i || selList.value === i;
                     const color = highlight ? '#fff' : '#aaa';
                     const fill = highlight ? '#fff' : '#000';
                     const y = (i - 0.5) * lh.value + height.value / 2;
@@ -175,7 +179,7 @@ export const ListSelector = defineComponent<
                             nocache
                             loc={[0, y, width.value, lh.value]}
                             onEnter={() => enterList(i)}
-                            onLeave={() => enterList(nowFloor)}
+                            onLeave={() => enterList(nowItem)}
                             onClick={() => changeTo(reversed)}
                         >
                             <text
@@ -192,7 +196,7 @@ export const ListSelector = defineComponent<
                                 lineWidth={1}
                                 circle={[lx.value + pad.value, lh.value / 2, 3]}
                                 strokeStyle={color}
-                                fillStyle={nowFloor === i ? fill : '#000'}
+                                fillStyle={nowItem === i ? fill : '#000'}
                             />
                         </container>
                     );

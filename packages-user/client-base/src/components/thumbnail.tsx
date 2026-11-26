@@ -277,7 +277,7 @@ export interface ThumbnailProps extends DefaultProps {
     maps?: IMapState;
     /** 缩略图填充样式，默认为黑色 */
     padStyle?: CanvasStyle;
-    /** 地图渲染器，注意如果你不知道地图渲染的细节，一定永远传入 `expandMapRenderer`！ */
+    /** 地图渲染器，默认会使用主对象上的辅助地图渲染器，如果不知道传什么就不要传 */
     renderer?: IMapRenderer;
     /**
      * 要展示的地图区域的**格子坐标**，可以写小数以显示半个格子，超出地图范围的会被忽略，
@@ -431,7 +431,7 @@ export const Thumbnail = defineComponent<ThumbnailProps>(props => {
                         floorId={props.floorId}
                         size={size.value}
                         damage={props.damage}
-                        zIndex={10}
+                        zIndex={0}
                     />
                 ))}
                 <g-rect
