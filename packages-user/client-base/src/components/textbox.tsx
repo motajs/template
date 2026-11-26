@@ -86,7 +86,8 @@ const textContentOptions = {
         'width',
         'height',
         'autoHeight',
-        'materials'
+        'materials',
+        'typer'
     ],
     emits: ['typeEnd', 'typeStart', 'updateHeight']
 } satisfies SetupComponentOptions<
@@ -100,7 +101,10 @@ export const TextContent = defineComponent<
     TextContentEmits,
     keyof TextContentEmits
 >((props, { emit, expose }) => {
-    const defaultMaterials = inject<ITextureManager>('@default/materials');
+    const defaultMaterials = inject<ITextureManager | null>(
+        '@default/materials',
+        null
+    );
     /** 使用的贴图管理器 */
     const materials = computed(() => props.materials ?? defaultMaterials);
 
