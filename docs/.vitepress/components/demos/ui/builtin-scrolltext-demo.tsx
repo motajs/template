@@ -1,8 +1,16 @@
-import { defineComponent, onUnmounted, ref } from 'vue';
+import { defineComponent, markRaw, onUnmounted, ref } from 'vue';
 import {
     ScrollText,
     ScrollTextExpose
 } from '../../../../../packages-user/client-base/src/components/misc';
+import { TextContentTyper } from '../../../../../packages-user/client-base/src/components/textboxTyper';
+
+const TYPER = markRaw(
+    new TextContentTyper({
+        lineHeight: 8,
+        fillStyle: '#7ee787'
+    })
+);
 
 const NOTICE = [
     '公告：今晚八点维护',
@@ -13,13 +21,12 @@ const NOTICE = [
     .join('\n')
     .repeat(3);
 
-// 滚动文字：内容在固定视口里向上滚动，超出视口的部分不显示
+// 基本滚动：内容在固定视口里向上滚动，滚到底后停顿再从头开始
 export default defineComponent(() => {
     const scroll = ref<ScrollTextExpose>();
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     const restart = () => {
-        // 组件触发 scrollEnd 后会立刻暂停，等一小段可见停顿后再恢复
         timer = setTimeout(() => {
             timer = undefined;
             scroll.value?.rescroll();
@@ -35,15 +42,16 @@ export default defineComponent(() => {
         <container loc={[0, 0, 480, 320]}>
             <g-rect loc={[0, 0, 480, 320]} fillStyle="#141a22" />
 
-            <text loc={[40, 32]} text="公告" fillStyle="#cfe0ff" />
+            <text loc={[40, 28]} text="滚动公告" fillStyle="#cfe0ff" />
 
+            <g-rect loc={[40, 60, 400, 170]} fillStyle="#101820" />
             <ScrollText
                 ref={scroll}
-                loc={[40, 60, 400, 160]}
+                loc={[40, 60, 400, 170]}
                 width={400}
-                speed={80}
+                speed={70}
+                typer={TYPER}
                 text={NOTICE}
-                fillStyle="#7ee787"
                 onScrollEnd={restart}
             />
         </container>
