@@ -34,34 +34,30 @@ export class Texture implements ITexture {
         this.cb = source.height;
     }
 
-    /**
-     * 对纹理进行裁剪操作，不会改变图像源
-     * @param x 裁剪左上角横坐标
-     * @param y 裁剪左上角纵坐标
-     * @param w 裁剪宽度
-     * @param h 裁剪高度
-     */
-    clip(x: number, y: number, w: number, h: number) {
+    clip(rect: Readonly<IRect>) {
+        const { x, y, w, h } = rect;
         const left = clamp(this.cl + x, this.cl, this.cr);
         const top = clamp(this.ct + y, this.ct, this.cb);
         const right = clamp(this.cl + x + w, this.cl, this.cr);
         const bottom = clamp(this.ct + y + h, this.ct, this.cb);
         if (left === right || top === bottom) {
             logger.warn(69);
-            return;
+            return new Texture(this.source);
         }
         const width = right - left;
         const height = bottom - top;
         if (width <= 0 || height <= 0) {
             logger.warn(77);
-            return;
+            return new Texture(this.source);
         }
-        this.cl = left;
-        this.ct = top;
-        this.cr = right;
-        this.cb = bottom;
-        this.width = right - left;
-        this.height = bottom - top;
+        const newTexture = new Texture(this.source);
+        newTexture.cl = left;
+        newTexture.ct = top;
+        newTexture.cr = right;
+        newTexture.cb = bottom;
+        newTexture.width = right - left;
+        newTexture.height = bottom - top;
+        return newTexture;
     }
 
     async toBitmap(): Promise<void> {

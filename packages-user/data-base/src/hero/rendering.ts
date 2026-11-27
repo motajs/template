@@ -6,6 +6,8 @@ import {
     IHeroRenderingSave
 } from './types';
 
+// TODO: 挪到渲染端
+
 export class HeroRendering
     extends Hookable<IHeroRenderingHooks>
     implements IHeroRendering

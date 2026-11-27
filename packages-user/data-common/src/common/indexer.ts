@@ -8,19 +8,19 @@ export interface ILocationHelper {
      * @param x 横坐标
      * @param y 纵坐标
      */
-    locToIndex(x: number, y: number): number;
+    index(x: number, y: number): number;
 
     /**
      * 定位符 -> 索引
      * @param locator 定位符
      */
-    locaterToIndex(locator: ITileLocator): number;
+    locatorToIndex(locator: ITileLocator): number;
 
     /**
      * 索引 -> 定位符
      * @param index 索引
      */
-    indexToLocator(index: number): ITileLocator;
+    locator(index: number): ITileLocator;
 }
 
 export interface ILocationIndexer extends ILocationHelper {
@@ -42,15 +42,15 @@ export class MapLocIndexer implements ILocationIndexer {
         this.width = width;
     }
 
-    locToIndex(x: number, y: number): number {
+    index(x: number, y: number): number {
         return y * this.width + x;
     }
 
-    locaterToIndex(locator: ITileLocator): number {
+    locatorToIndex(locator: ITileLocator): number {
         return locator.y * this.width + locator.x;
     }
 
-    indexToLocator(index: number): ITileLocator {
+    locator(index: number): ITileLocator {
         return {
             x: index % this.width,
             y: Math.floor(index / this.width)

@@ -17,12 +17,12 @@ import {
     IReadonlyEnemyHandler
 } from './types';
 import {
-    Enemy,
     IEnemy,
     IHeroAttribute,
     IReadonlyEnemy,
     IStateBase
 } from '@user/data-base';
+import { shouldReplay } from '@user/data-common';
 
 export class CombatFlow<TEnemy, THero>
     extends Hookable<ICombatFlowHooks<TEnemy, THero>>
@@ -77,12 +77,19 @@ export class CombatFlow<TEnemy, THero>
         }
     }
 
+    /**
+     * 创建战斗流程信息对象
+     * @param enemy 怪物对象
+     * @param locator 怪物所在位置
+     */
     private createHandler(
-        enemy: IEnemy<TEnemy>,
-        locator: ITileLocator | null
+        enemy: IReadonlyEnemy<TEnemy>,
+        locator: ITileLocator | null,
+        force: boolean
     ): ICombatFlowHandler<TEnemy, THero> {
         return {
             onMap: locator !== null,
+            force,
             hero: this.hero!,
             enemy,
             context: this.context!,
@@ -91,6 +98,11 @@ export class CombatFlow<TEnemy, THero>
         };
     }
 
+    /**
+     * 创建只读怪物信息对象
+     * @param enemy 只读怪物对象
+     * @param locator 怪物所在位置
+     */
     private createEnemyHandler(
         enemy: IReadonlyEnemy<TEnemy>,
         locator: ITileLocator | null
@@ -193,8 +205,10 @@ export class CombatFlow<TEnemy, THero>
         return damage;
     }
 
+    @shouldReplay('Battle with enemy should be replayed.')
     battle(
-        enemy: IEnemyView<TEnemy>
+        enemy: IEnemyView<TEnemy>,
+        force: boolean = false
     ): Promise<IEnemyDamageInfo<TEnemy, THero> | null> {
         if (!this.context) {
             logger.warn(139, 'an enemy context object');
@@ -208,14 +222,16 @@ export class CombatFlow<TEnemy, THero>
         const computed = enemy.getComputedEnemy();
         const origin = enemy.getModifiableEnemy();
         const locator = this.tryGetEnemyLocator(enemy, computed, origin);
-        const handler = this.createHandler(origin, locator);
+        const handler = this.createHandler(origin, locator, force);
         const eHandler = this.createEnemyHandler(computed, locator);
 
         return this.combatFlow(handler, eHandler);
     }
 
+    @shouldReplay('Battle with enemy should be replayed.')
     battleComputed(
-        enemy: IReadonlyEnemy<TEnemy>
+        enemy: IReadonlyEnemy<TEnemy>,
+        force: boolean = false
     ): Promise<IEnemyDamageInfo<TEnemy, THero> | null> {
         if (!this.context) {
             logger.warn(139, 'an enemy context object');
@@ -231,11 +247,8 @@ export class CombatFlow<TEnemy, THero>
         if (view) return this.battle(view);
         else {
             // 否则走单独的流程
-            const locator = { x: -1, y: -1 };
-            const attr = enemy.cloneAttributes();
-            const writableEnemy = new Enemy(enemy.id, enemy.code, attr);
-            const handler = this.createHandler(writableEnemy, locator);
-            const eHandler = this.createEnemyHandler(enemy, locator);
+            const handler = this.createHandler(enemy, null, force);
+            const eHandler = this.createEnemyHandler(enemy, null);
             return this.combatFlow(handler, eHandler);
         }
     }

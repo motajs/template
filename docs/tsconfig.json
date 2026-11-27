@@ -1,0 +1,17 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "baseUrl": "..",
+        "ignoreDeprecations": "6.0",
+        "paths": {
+            "@motajs/*": ["./packages/*/src"],
+            "@user/*": ["./packages-user/*/src"]
+        }
+    },
+    "include": [
+        "./.vitepress/**/*.ts",
+        "./.vitepress/**/*.vue",
+        "./.vitepress/**/*.tsx",
+        "../src/types/vite-env.d.ts"
+    ]
+}

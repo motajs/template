@@ -1,4 +1,4 @@
-import { cumsum } from '@motajs/common';
+import { cumsum, logger } from '@motajs/common';
 import {
     ExcitationCurve,
     ExcitationCurve2D,
@@ -127,7 +127,7 @@ export function moveCurve(
  * @param curve 曲线
  * @param move 纵轴平移量
  */
-export function oppsiteCurve(
+export function oppositeCurve(
     curve: ExcitationCurve,
     move: number = 0
 ): ExcitationCurve {
@@ -171,12 +171,33 @@ export function sequenceCurve(
     scale: number[],
     move: number[]
 ): ExcitationCurve {
-    const keep = cumsum(duration);
+    const lenEqual =
+        seq.length === duration.length &&
+        seq.length === scale.length &&
+        seq.length === move.length;
+    if (seq.length === 0 || !lenEqual) {
+        logger.warn(
+            216,
+            seq.length.toString(),
+            duration.length.toString(),
+            scale.length.toString(),
+            move.length.toString()
+        );
+        return () => 0;
+    }
+    const keep = [0, ...cumsum(duration)];
     return p => {
-        const index = keep.findIndex(sum => p >= sum);
-        if (index === -1) return 0;
-        const progress = (p - keep[index]) / duration[index];
-        return seq[index](progress) * scale[index] + move[index];
+        const index = keep.findIndex(sum => p <= sum);
+        if (index < 0) {
+            return 0;
+        } else if (index === 0) {
+            return seq[0](0);
+        } else {
+            const progress = (p - keep[index - 1]) / duration[index - 1];
+            return (
+                seq[index - 1](progress) * scale[index - 1] + move[index - 1]
+            );
+        }
     };
 }
 
@@ -336,7 +357,7 @@ const sinfunc: ExcitationCurve = p => 1 - Math.cos((p * Math.PI) / 2);
 
 /**
  * 正弦速率曲线，EaseIn: `f(x) = 1 - cos(x * pi/2), x∈[0,1], f(x)∈[0,1]`
- * @param mode 曲线模式
+ * @param mode 曲线模式，默认为缓入
  */
 export function sin(mode: CurveMode = CurveMode.EaseIn): ExcitationCurve {
     return applyCurveMode(sinfunc, mode);
@@ -347,7 +368,7 @@ const tanfunc: ExcitationCurve = p => Math.tan((p * Math.PI) / 4);
 
 /**
  * 正切速率曲线，EaseIn: `f(x) = tan(x * pi/4), x∈[0,1], f(x)∈[0,1]`
- * @param mode 曲线模式
+ * @param mode 曲线模式，默认为缓入
  */
 export function tan(mode: CurveMode = CurveMode.EaseIn): ExcitationCurve {
     return applyCurveMode(tanfunc, mode);
@@ -358,7 +379,7 @@ const secfunc: ExcitationCurve = p => 1 / Math.cos((p * Math.PI) / 3) - 1;
 
 /**
  * 正割速率曲线，EaseIn: `f(x) = sec(x * pi/3)-1, x∈[0,1], f(x)∈[0,1]`
- * @param mode 曲线模式
+ * @param mode 曲线模式，默认为缓入
  */
 export function sec(mode: CurveMode = CurveMode.EaseIn): ExcitationCurve {
     return applyCurveMode(secfunc, mode);
@@ -367,7 +388,7 @@ export function sec(mode: CurveMode = CurveMode.EaseIn): ExcitationCurve {
 /**
  * 幂函数速率曲线，EaseIn: `f(x) = x ** n, x∈[0,1], f(x)∈[0,1]`
  * @param exp 指数
- * @param mode 曲线模式
+ * @param mode 曲线模式，默认为缓入
  */
 export function pow(
     exp: number,
@@ -380,8 +401,8 @@ export function pow(
 
 /**
  * 双曲余弦速率曲线，EaseIn: `f(x) = (cosh(x * k) - 1) / (cosh(k) - 1), x∈[0,1], f(x)∈[0,1]`
- * @param k 比例参数
- * @param mode 曲线模式
+ * @param k 比例参数，默认为 2
+ * @param mode 曲线模式，默认为缓入
  */
 export function cosh(
     k: number = 2,
@@ -395,8 +416,8 @@ export function cosh(
 
 /**
  * 双曲正切速率曲线，EaseIn: `f(x) = 1 + tanh((x - 1) * k) / tanh(k), x∈[0,1], f(x)∈[0,1]`
- * @param k 比例参数
- * @param mode 曲线模式
+ * @param k 比例参数，默认为 2
+ * @param mode 曲线模式，默认为缓入
  */
 export function tanh(
     k: number = 2,
@@ -409,18 +430,18 @@ export function tanh(
 }
 
 /**
- * 双曲正割速率曲线，EaseIn: `f(x) = 1 - sech(x * k) / sech(k), x∈[0,1], f(x)∈[0,1]`
- * @param k 比例参数
- * @param mode 曲线模式
+ * 双曲正割速率曲线，EaseIn: `f(x) = (1 - sech(x * k)) / (1 - sech(k)), x∈[0,1], f(x)∈[0,1]`
+ * @param k 比例参数，默认为 1
+ * @param mode 曲线模式，默认为缓入
  */
 export function sech(
-    k: number = 2,
+    k: number = 1,
     mode: CurveMode = CurveMode.EaseIn
 ): ExcitationCurve {
     // f(x) = 1 - sech(x * k) / sech(k), x∈[0,1], f(x)∈[0,1]
     // sech(x) = 1 / cosh(x)
-    const s = 1 / Math.cosh(k);
-    const sechfunc: ExcitationCurve = p => 1 - 1 / Math.cosh(p * k) / s;
+    const s = 1 - 1 / Math.cosh(k);
+    const sechfunc: ExcitationCurve = p => (1 - 1 / Math.cosh(p * k)) / s;
     return applyCurveMode(sechfunc, mode);
 }
 
@@ -429,7 +450,7 @@ export function sech(
  * @param k 常数值
  */
 export function constant(k: number): ExcitationCurve {
-    return _ => k;
+    return () => k;
 }
 
 /**

@@ -69,6 +69,19 @@ export class Transition implements ITransition {
         return this;
     }
 
+    /**
+     * 结束某一渐变操作
+     * @param anim 可动画对象
+     * @param data 渐变数据对象
+     */
+    private endTransition(anim: IAnimatable, data: ITransitionData) {
+        if (data.end === EndRelation.Target) {
+            anim.value = data.targetValue;
+        } else {
+            anim.value = data.startValue + data.diff * data.curve(1);
+        }
+    }
+
     to(
         value: number,
         time: number,
@@ -79,7 +92,7 @@ export class Transition implements ITransition {
         const now = this.excitation.payload();
         const data = this.transitionData.getOrInsertComputed(
             this.animatableStatus,
-            _ => {
+            () => {
                 const { promise, resolve } = Promise.withResolvers<void>();
                 return {
                     animatable,
@@ -102,6 +115,11 @@ export class Transition implements ITransition {
         data.targetValue = value;
         data.diff = value - animatable.value;
         data.end = end;
+        if (time === 0) {
+            this.endTransition(animatable, data);
+            data.resolve();
+            this.transitionData.delete(animatable);
+        }
         return this;
     }
 
@@ -119,6 +137,7 @@ export class Transition implements ITransition {
         this.controller?.revoke();
         this.unbindExcitation();
         this.animatableStatus = null;
+        this.unbindExcitation();
     }
 
     //#endregion
@@ -132,14 +151,9 @@ export class Transition implements ITransition {
             const progress = elapsed / data.time;
             if (progress >= 1) {
                 // 动画结束
-                if (data.end === EndRelation.Target) {
-                    anim.value = data.targetValue;
-                } else {
-                    anim.value = data.startValue + data.diff * data.curve(1);
-                }
+                this.endTransition(anim, data);
                 data.resolve();
                 toDelete.add(anim);
-                this.transitionData.delete(anim);
             } else {
                 // 动画进行中
                 const curveValue = data.curve(progress);

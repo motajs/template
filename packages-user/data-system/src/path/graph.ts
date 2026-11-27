@@ -55,11 +55,13 @@ export class MapGraphBuilder implements IMapGraphBuilder {
      * @param block 位置信息
      */
     private resolveCost(block: ILayerLocation): number {
-        if (this.cost) {
-            return this.cost(block);
-        } else {
+        const cost = this.cost ? this.cost(block) : 1;
+        // Infinity 是合法损失，仅 NaN 或负数视为非法并回退为单位损失
+        if (Number.isNaN(cost) || cost < 0) {
+            logger.warn(174);
             return 1;
         }
+        return cost;
     }
 
     build(start: ITileLocator): IMapGraph | null {
@@ -89,15 +91,17 @@ export class MapGraphBuilder implements IMapGraphBuilder {
         const terminals: Set<number> = new Set();
         const adjacency: Map<number, IPathGraphEdge[]> = new Map();
         const mapped: Set<number> = new Set();
-        const startIndex = indexer.locaterToIndex(start);
+        const startIndex = indexer.locatorToIndex(start);
         adjacency.set(startIndex, []);
+        // 起始节点自身没有入边，须先登记进映射集否则会漏出图
+        mapped.add(startIndex);
 
         // 以起始位置为中心 BFS，仅沿可通行有向边扩展，不可达区域不入图
         const queue: ITileLocator[] = [start];
         let head = 0;
         while (head < queue.length) {
             const { x, y } = queue[head++]!;
-            const index = indexer.locToIndex(x, y);
+            const index = indexer.index(x, y);
             const edges: IPathGraphEdge[] = [];
             for (const [dir, desc] of face.mapMovement()) {
                 // 如果连接原地，那么应该忽略，避免陷入死循环
@@ -106,7 +110,7 @@ export class MapGraphBuilder implements IMapGraphBuilder {
                 const ny = y + desc.y;
                 if (!layer.inMap(nx, ny)) continue;
 
-                const nextIndex = indexer.locToIndex(nx, ny);
+                const nextIndex = indexer.index(nx, ny);
                 const next: ITileLocator = { x: nx, y: ny };
                 const handler: IPassCheckHandler = {
                     currLoc: { x, y },
@@ -132,7 +136,7 @@ export class MapGraphBuilder implements IMapGraphBuilder {
 
         const nodes: Map<number, IPathGraphNode> = new Map();
         for (const index of mapped) {
-            const { x, y } = indexer.indexToLocator(index);
+            const { x, y } = indexer.locator(index);
             const block = layer.getLocationData(x, y)!;
             nodes.set(index, {
                 x,

@@ -10,7 +10,8 @@ import {
     IEnemyDamageInfo,
     IReadonlyEnemyHandler,
     IEnemyView,
-    IEnemyDamageInfoBase
+    IEnemyDamageInfoBase,
+    IReadonlyDamageHandler
 } from './types';
 import {
     IHeroAttribute,
@@ -18,6 +19,8 @@ import {
     IReadonlyEnemy,
     IStateBase
 } from '@user/data-base';
+
+// TODO: 与不在地图上的怪物战斗
 
 interface ICriticalSearchResult {
     /** 此临界点的属性值 */
@@ -55,9 +58,9 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
      */
     private createReadonlyHandler(
         enemy: IReadonlyEnemy<TEnemy>,
-        locator: ITileLocator,
+        locator: ITileLocator | null,
         hero: IReadonlyHeroAttribute<THero>
-    ): IReadonlyEnemyHandler<TEnemy, THero> {
+    ): IReadonlyDamageHandler<TEnemy, THero> {
         return {
             enemy,
             context: this.context,
@@ -131,7 +134,55 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
         };
     }
 
-    *calculateCritical(
+    /**
+     * 计算下一个临界点
+     * @param handler 信息对象，其中的 `hero` 成员与 `hero` 参数同引用
+     * @param hero 可修改勇士属性对象，与 `handler` 中的 `hero` 成员同引用
+     * @param attribute 勇士属性名
+     * @param currentValue 当前勇士属性值
+     * @param upperLimit 二分上界
+     * @param referenceDamage 参考伤害值
+     * @param maxIterations 最大迭代数量
+     */
+    private findNextCritical(
+        handler: IReadonlyDamageHandler<TEnemy, THero>,
+        hero: IHeroAttribute<THero>,
+        attribute: CriticalableHeroStatus<THero>,
+        currentValue: number,
+        upperLimit: number,
+        referenceDamage: number,
+        maxIterations: number
+    ): ICriticalSearchResult | null {
+        let left = currentValue;
+        let right = upperLimit;
+
+        hero.set(attribute, right as THero[typeof attribute]);
+
+        let targetInfo = this.calculator!.calculate(handler);
+        if (targetInfo.damage >= referenceDamage) return null;
+
+        let iter = 0;
+        while (iter++ < maxIterations) {
+            const middle = Math.floor((left + right) / 2);
+            hero.set(attribute, middle as THero[typeof attribute]);
+            const middleInfo = this.calculator!.calculate(handler);
+
+            if (middleInfo.damage < referenceDamage) {
+                right = middle;
+                targetInfo = middleInfo;
+            } else {
+                left = middle;
+            }
+            if (right - left <= 1) break;
+        }
+
+        return {
+            value: right,
+            info: targetInfo
+        };
+    }
+
+    *calculateViewCritical(
         view: IEnemyView<TEnemy>,
         attribute: CriticalableHeroStatus<THero>,
         precision: number = 12
@@ -146,9 +197,31 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
         }
 
         const locator = this.context.getEnemyLocatorByView(view);
-        if (!locator) return;
-
         const enemy = view.getComputedEnemy();
+
+        yield* this.calculateEnemyCritical(
+            enemy,
+            attribute,
+            locator,
+            precision
+        );
+    }
+
+    *calculateEnemyCritical(
+        enemy: IReadonlyEnemy<TEnemy>,
+        attribute: CriticalableHeroStatus<THero>,
+        locator: ITileLocator | null,
+        precision: number = 12
+    ): Generator<IEnemyCritical, void, void> {
+        if (!this.heroStatus) {
+            logger.warn(107);
+            return;
+        }
+        if (!this.calculator) {
+            logger.warn(106);
+            return;
+        }
+
         const hero = this.heroStatus.getModifiableClone();
         const handler = this.createReadonlyHandler(enemy, locator, hero);
 
@@ -191,54 +264,6 @@ export class DamageContext<TEnemy, THero> implements IDamageContext<
             baseValue = next.value;
             baseInfo = next.info;
         }
-    }
-
-    /**
-     * 计算下一个临界点
-     * @param handler 信息对象，其中的 `hero` 成员与 `hero` 参数同引用
-     * @param hero 可修改勇士属性对象，与 `handler` 中的 `hero` 成员同引用
-     * @param attribute 勇士属性名
-     * @param currentValue 当前勇士属性值
-     * @param upperLimit 二分上界
-     * @param referenceDamage 参考伤害值
-     * @param maxIterations 最大迭代数量
-     */
-    private findNextCritical(
-        handler: IReadonlyEnemyHandler<TEnemy, THero>,
-        hero: IHeroAttribute<THero>,
-        attribute: CriticalableHeroStatus<THero>,
-        currentValue: number,
-        upperLimit: number,
-        referenceDamage: number,
-        maxIterations: number
-    ): ICriticalSearchResult | null {
-        let left = currentValue;
-        let right = upperLimit;
-
-        hero.set(attribute, right as THero[typeof attribute]);
-
-        let targetInfo = this.calculator!.calculate(handler);
-        if (targetInfo.damage >= referenceDamage) return null;
-
-        let iter = 0;
-        while (iter++ < maxIterations) {
-            const middle = Math.floor((left + right) / 2);
-            hero.set(attribute, middle as THero[typeof attribute]);
-            const middleInfo = this.calculator!.calculate(handler);
-
-            if (middleInfo.damage < referenceDamage) {
-                right = middle;
-                targetInfo = middleInfo;
-            } else {
-                left = middle;
-            }
-            if (right - left <= 1) break;
-        }
-
-        return {
-            value: right,
-            info: targetInfo
-        };
     }
 }
 

@@ -78,7 +78,7 @@ export interface IFlagSystem extends ISaveableContent<IFlagSystemSave> {
      * @param field 字段名称
      * @param defaultValue 字段默认值函数
      */
-    getOrInsertComputed<K extends PropertyKey, T>(
+    getOrInsertComputed<T, K extends PropertyKey = PropertyKey>(
         field: K,
         defaultValue: (field: K) => T
     ): IFlagCommonField<T>;

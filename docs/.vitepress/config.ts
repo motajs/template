@@ -1,38 +1,29 @@
-import { defineConfig, Plugin } from 'vitepress';
+import { defineConfig } from 'vitepress';
 import { MermaidMarkdown, MermaidPlugin } from 'vitepress-plugin-mermaid';
-import api from './apiSidebar';
+import vuejsx from '@vitejs/plugin-vue-jsx';
 import { join } from 'path';
-import { generateSidebar } from './api';
 
-function listenSidebar(): Plugin {
-    return {
-        name: 'sidebar-listen',
-        configureServer(server) {
-            server.watcher
-                .on('add', filePath => {
-                    console.log(`📄 文件新增: ${filePath}`);
-                    generateSidebar();
-                })
-                .on('unlink', filePath => {
-                    console.log(`❌ 文件删除: ${filePath}`);
-                    generateSidebar();
-                })
-                .on('addDir', dirPath => {
-                    console.log(`📁 目录新增: ${dirPath}`);
-                    generateSidebar();
-                })
-                .on('unlinkDir', dirPath => {
-                    console.log(`📁 目录删除: ${dirPath}`);
-                    generateSidebar();
-                })
-                .on('raw', (event, path, _) => {
-                    if (event === 'rename') {
-                        console.log(`🔄 文件或文件夹重命名: ${path}`);
-                        generateSidebar();
-                    }
-                });
-        }
-    };
+/** 文档站内的自定义渲染标签，与主站 vite.config.ts 保持一致 */
+const custom = [
+    'container',
+    'custom',
+    'text',
+    'image',
+    'shader',
+    'comment',
+    'custom-container',
+    'container-custom',
+    'map-render',
+    'animate',
+    'damage',
+    'graphics',
+    'icon',
+    'winskin'
+];
+
+/** 判断一个标签是否为自定义渲染标签 */
+function isCustomElement(tag: string): boolean {
+    return custom.includes(tag) || tag.startsWith('g-');
 }
 
 // https://vitepress.dev/reference/site-config
@@ -51,106 +42,399 @@ export default defineConfig({
         // https://vitepress.dev/reference/default-theme-config
         outline: [2, 3],
         nav: [
-            { text: '主页', link: '/' },
-            { text: '指南', link: '/guide/quick-start' },
-            { text: 'API', link: '/api/' },
-            { text: '错误代码', link: '/logger/' }
+            { text: '中级教程', link: '/intermediate/data-vs-render' },
+            { text: '高级教程', link: '/advanced/' },
+            { text: '渲染指南', link: '/render-guide/' }
         ],
         sidebar: {
-            '/guide/': [
+            '/intermediate/': [
                 {
-                    text: '深度指南',
+                    text: '中级教程',
+                    collapsed: false,
                     items: [
-                        { text: '快速开始', link: '/guide/quick-start' },
-
-                        { text: '差异说明', link: '/guide/diff' },
-                        { text: '系统说明', link: '/guide/system' },
-                        { text: '代码编写', link: '/guide/coding' },
-                        { text: '音频系统', link: '/guide/audio' },
                         {
-                            text: 'UI 系统',
+                            text: '概念与导航',
                             collapsed: false,
                             items: [
-                                { text: '快速浏览', link: '/guide/ui/' },
-                                { text: '编写 UI', link: '/guide/ui/ui' },
-                                { text: 'UI 元素', link: '/guide/ui/elements' },
                                 {
-                                    text: '组件使用指南',
-                                    link: '/guide/ui/component'
+                                    text: '数据端与渲染端',
+                                    link: '/intermediate/data-vs-render'
                                 },
-                                { text: '优化性能', link: '/guide/ui/perf' },
-                                { text: 'UI 系统', link: '/guide/ui/system' },
-                                { text: '常见问题', link: '/guide/ui/faq' },
-                                { text: '未来规划', link: '/guide/ui/future' }
+                                {
+                                    text: 'src 导览',
+                                    link: '/intermediate/src-tour'
+                                },
+                                {
+                                    text: '代码基础',
+                                    link: '/intermediate/code-basics'
+                                },
+                                { text: '钩子', link: '/intermediate/hooks' }
                             ]
                         },
                         {
-                            text: '常见需求指南',
+                            text: '基础接口',
                             collapsed: false,
                             items: [
                                 {
-                                    text: '快速浏览',
-                                    link: '/guide/implements/index'
+                                    text: '数据端总览',
+                                    link: '/intermediate/data-state-overview'
+                                },
+                                {
+                                    text: '勇士属性',
+                                    link: '/intermediate/hero-attribute'
+                                },
+                                {
+                                    text: '勇士道具',
+                                    link: '/intermediate/hero-items'
+                                },
+                                {
+                                    text: '勇士装备',
+                                    link: '/intermediate/hero-equipment'
+                                },
+                                {
+                                    text: '勇士位置',
+                                    link: '/intermediate/hero-location'
+                                },
+                                {
+                                    text: '地图结构',
+                                    link: '/intermediate/map-structure'
+                                },
+                                {
+                                    text: '地图图块',
+                                    link: '/intermediate/map-tiles'
+                                },
+                                {
+                                    text: '图块存储',
+                                    link: '/intermediate/tile-store'
+                                },
+                                {
+                                    text: 'Flag 变量',
+                                    link: '/intermediate/flags'
+                                }
+                            ]
+                        },
+                        {
+                            text: '战斗',
+                            collapsed: false,
+                            items: [
+                                {
+                                    text: '战斗总览',
+                                    link: '/intermediate/combat-overview'
                                 },
                                 {
                                     text: '怪物特殊属性',
-                                    link: '/guide/implements/special'
+                                    link: '/intermediate/enemy-specials'
                                 },
                                 {
-                                    text: '修改状态栏',
-                                    link: '/guide/implements/status-bar'
+                                    text: '光环',
+                                    link: '/intermediate/enemy-aura'
                                 },
                                 {
-                                    text: '新增 UI',
-                                    link: '/guide/implements/new-ui'
+                                    text: '查询效果',
+                                    link: '/intermediate/enemy-query'
                                 },
                                 {
-                                    text: '主动技能',
-                                    link: '/guide/implements/skill'
+                                    text: '最终属性',
+                                    link: '/intermediate/enemy-final'
                                 },
                                 {
-                                    text: '新增按键',
-                                    link: '/guide/implements/hotkey'
+                                    text: '伤害计算',
+                                    link: '/intermediate/enemy-calculator'
                                 },
                                 {
-                                    text: '动画效果',
-                                    link: '/guide/implements/animate'
+                                    text: '地图伤害',
+                                    link: '/intermediate/enemy-map-damage'
                                 },
                                 {
-                                    text: '选择框与确认框',
-                                    link: '/guide/implements/choice'
+                                    text: '战斗脚本',
+                                    link: '/intermediate/enemy-combat-script'
+                                },
+                                {
+                                    text: '状态钩子',
+                                    link: '/intermediate/enemy-status-hooks'
+                                }
+                            ]
+                        },
+                        {
+                            text: '其他',
+                            collapsed: false,
+                            items: [
+                                {
+                                    text: '自定义事件',
+                                    link: '/intermediate/events'
+                                },
+                                {
+                                    text: '录像指令',
+                                    link: '/intermediate/replay-commands'
+                                },
+                                {
+                                    text: '数据插件',
+                                    link: '/intermediate/data-plugins'
                                 }
                             ]
                         }
                     ]
                 }
             ],
-            '/logger/': [
+            '/advanced/': [
+                { text: '高级教程总导览', link: '/advanced/' },
                 {
-                    text: '错误代码一览',
+                    text: '高级 I · 扩展基础',
+                    collapsed: false,
                     items: [
+                        { text: '高级 I 导览', link: '/advanced/i/' },
                         {
-                            text: '错误代码',
-                            collapsed: false,
-                            items: [
-                                { text: '1-50', link: '/logger/error/error1' }
-                            ]
+                            text: '声明式 vs 命令式接口',
+                            link: '/advanced/i/declarative-vs-imperative'
                         },
                         {
-                            text: '警告代码',
-                            collapsed: false,
-                            items: [
-                                { text: '1-50', link: '/logger/warn/warn1' },
-                                { text: '51-100', link: '/logger/warn/warn2' }
-                            ]
+                            text: '插件系统',
+                            link: '/advanced/i/plugin-system'
+                        },
+                        {
+                            text: '可存档内容',
+                            link: '/advanced/i/saveable-content'
+                        },
+                        {
+                            text: '录像一致性',
+                            link: '/advanced/i/replay-consistency'
+                        },
+                        {
+                            text: 'data-common 的 Store',
+                            link: '/advanced/i/data-stores'
+                        },
+                        {
+                            text: '钩子深入',
+                            link: '/advanced/i/hooks-in-depth'
+                        },
+                        { text: '移动 Mover', link: '/advanced/i/mover' },
+                        {
+                            text: 'FaceHandler 系列',
+                            link: '/advanced/i/face-handler'
+                        }
+                    ]
+                },
+                {
+                    text: '高级 II · 深入定制',
+                    collapsed: false,
+                    items: [
+                        { text: '高级 II 导览', link: '/advanced/ii/' },
+                        {
+                            text: '自定义范围对象',
+                            link: '/advanced/ii/custom-range'
+                        },
+                        {
+                            text: '静态图块与动态图块',
+                            link: '/advanced/ii/static-vs-dynamic-tiles'
+                        },
+                        {
+                            text: '点事件与图块事件',
+                            link: '/advanced/ii/point-and-tile-events'
+                        },
+                        {
+                            text: '勇士的装备系统',
+                            link: '/advanced/ii/equipment-system'
+                        },
+                        {
+                            text: '自定义录像指令',
+                            link: '/advanced/ii/custom-replay-command'
+                        },
+                        {
+                            text: '自动寻路',
+                            link: '/advanced/ii/pathfinding'
+                        },
+                        {
+                            text: '新增勇士属性',
+                            link: '/advanced/ii/adding-hero-attribute'
+                        },
+                        {
+                            text: '新增怪物属性',
+                            link: '/advanced/ii/adding-enemy-attribute'
+                        },
+                        {
+                            text: '怪物上下文与战斗深入',
+                            link: '/advanced/ii/enemy-context-and-combat'
+                        }
+                    ]
+                },
+                {
+                    text: '高级 III · 原理与架构',
+                    collapsed: false,
+                    items: [
+                        { text: '高级 III 导览', link: '/advanced/iii/' },
+                        {
+                            text: '加载系统',
+                            link: '/advanced/iii/loading-system'
+                        },
+                        {
+                            text: '录像系统底层',
+                            link: '/advanced/iii/replay-internals'
+                        },
+                        {
+                            text: '事件系统',
+                            link: '/advanced/iii/event-system'
+                        },
+                        {
+                            text: '通行性谓词与寻路原理',
+                            link: '/advanced/iii/passability-and-pathfinding'
+                        },
+                        {
+                            text: 'CoreState 组装与初始化',
+                            link: '/advanced/iii/core-state'
+                        },
+                        {
+                            text: '插件内部机制',
+                            link: '/advanced/iii/plugin-internals'
                         }
                     ]
                 }
             ],
-            '/api/': [
+            '/render-guide/': [
                 {
-                    text: 'API 列表',
-                    items: api
+                    text: '渲染基础',
+                    collapsed: false,
+                    items: [
+                        {
+                            text: 'UI 通用模板（TSX）',
+                            link: '/render-guide/basics/ui-template'
+                        },
+                        {
+                            text: 'UI 入门',
+                            link: '/render-guide/basics/ui-basics'
+                        },
+                        {
+                            text: '第一个静态界面',
+                            link: '/render-guide/basics/first-static-ui'
+                        },
+                        {
+                            text: '容器与坐标',
+                            link: '/render-guide/basics/container-and-coordinates'
+                        },
+                        {
+                            text: '基础图形',
+                            link: '/render-guide/basics/basic-shapes'
+                        },
+                        {
+                            text: '文字',
+                            link: '/render-guide/basics/text'
+                        },
+                        {
+                            text: '图片与纹理',
+                            link: '/render-guide/basics/image-and-texture'
+                        },
+                        {
+                            text: '自绘元素与自定义容器',
+                            link: '/render-guide/basics/custom-and-container-custom'
+                        },
+                        {
+                            text: '通用参数',
+                            link: '/render-guide/basics/common-props'
+                        },
+                        {
+                            text: '层级、变换与性能',
+                            link: '/render-guide/basics/layer-transform-performance'
+                        }
+                    ]
+                },
+                {
+                    text: '渲染进阶',
+                    collapsed: false,
+                    items: [
+                        {
+                            text: '响应式',
+                            link: '/render-guide/advanced/reactivity'
+                        },
+                        {
+                            text: '事件与交互',
+                            link: '/render-guide/advanced/events'
+                        },
+                        {
+                            text: '条件渲染与循环渲染',
+                            link: '/render-guide/advanced/conditional-and-list-rendering'
+                        },
+                        {
+                            text: '按键与快捷键',
+                            link: '/render-guide/advanced/hotkey-in-ui'
+                        },
+                        {
+                            text: '什么是组件',
+                            link: '/render-guide/advanced/what-is-component'
+                        },
+                        {
+                            text: '内置组件：基础',
+                            link: '/render-guide/advanced/builtin-basic'
+                        },
+                        {
+                            text: '内置组件：布局',
+                            link: '/render-guide/advanced/builtin-layout'
+                        },
+                        {
+                            text: '内置组件：文本',
+                            link: '/render-guide/advanced/builtin-text'
+                        },
+                        {
+                            text: '自定义组件',
+                            link: '/render-guide/advanced/custom-components'
+                        },
+                        {
+                            text: '动画',
+                            link: '/render-guide/advanced/animation'
+                        },
+                        {
+                            text: 'UI 系统',
+                            link: '/render-guide/advanced/ui-system'
+                        },
+                        {
+                            text: 'UI 性能',
+                            link: '/render-guide/advanced/ui-performance'
+                        },
+                        {
+                            text: '示例（一）目标与骨架',
+                            link: '/render-guide/advanced/inventory-example-1-skeleton'
+                        },
+                        {
+                            text: '示例（二）道具网格',
+                            link: '/render-guide/advanced/inventory-example-2-grid'
+                        },
+                        {
+                            text: '示例（三）详情区',
+                            link: '/render-guide/advanced/inventory-example-3-detail'
+                        },
+                        {
+                            text: '示例（四）滚动与列表',
+                            link: '/render-guide/advanced/inventory-example-4-scroll'
+                        },
+                        {
+                            text: '示例（五）交互与状态',
+                            link: '/render-guide/advanced/inventory-example-5-state'
+                        },
+                        {
+                            text: '示例（六）动画、拆分与注册',
+                            link: '/render-guide/advanced/inventory-example-6-animation-and-register'
+                        }
+                    ]
+                },
+                {
+                    text: '渲染底层',
+                    collapsed: false,
+                    items: [
+                        {
+                            text: '动画曲线',
+                            link: '/render-guide/internals/animation-curves'
+                        },
+                        {
+                            text: '动画激励',
+                            link: '/render-guide/internals/animation-excitation'
+                        },
+                        {
+                            text: '动画执行器',
+                            link: '/render-guide/internals/animation-runner'
+                        },
+                        {
+                            text: '渐变执行器',
+                            link: '/render-guide/internals/animation-transition'
+                        }
+                    ]
                 }
             ]
         },
@@ -187,9 +471,29 @@ export default defineConfig({
             label: '中文'
         }
     },
+    vue: {
+        template: {
+            compilerOptions: {
+                isCustomElement
+            }
+        }
+    },
     vite: {
         // @ts-expect-error 类型错误
-        plugins: [MermaidPlugin(), listenSidebar()],
+        plugins: [MermaidPlugin(), vuejsx({ isCustomElement })],
+        resolve: {
+            alias: [
+                {
+                    find: /^@motajs\/(.+)$/,
+                    replacement: `${process.cwd()}/packages/$1/src`
+                },
+                {
+                    find: /^@user\/(.+)$/,
+                    replacement: `${process.cwd()}/packages-user/$1/src`
+                }
+            ],
+            dedupe: ['vue']
+        },
         optimizeDeps: {
             include: ['mermaid']
         },

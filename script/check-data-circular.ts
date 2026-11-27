@@ -30,11 +30,7 @@ export interface CycleClassification {
     inScope: boolean;
 }
 
-export type FixtureName =
-    | 'legacy-only'
-    | 'client-only'
-    | 'legacy-data'
-    | 'legacy-common';
+export type FixtureName = 'legacy-only' | 'client-only' | 'legacy-data';
 
 interface FixtureCycles {
     readonly [name: string]: readonly CircularCycle[];
@@ -57,12 +53,6 @@ const fixtureCycles: FixtureCycles = {
         [
             'packages-user/data-state/src/legacy/move.ts',
             'packages-user/data-base/src/hero/state.ts'
-        ]
-    ],
-    'legacy-common': [
-        [
-            'packages-user/data-state/src/legacy/move.ts',
-            'packages/common/src/utils/types.ts'
         ]
     ]
 };
@@ -147,7 +137,7 @@ function parseFixture(args: readonly string[]): FixtureName | undefined {
     }
     if (args.length !== 2 || args[0] !== '--fixture') {
         throw new Error(
-            'Usage: pnpm exec tsx script/check-data-circular.ts [--fixture <legacy-only|client-only|legacy-data|legacy-common>]'
+            'Usage: pnpm exec tsx script/check-data-circular.ts [--fixture <legacy-only|client-only|legacy-data>]'
         );
     }
     const fixture = args[1];

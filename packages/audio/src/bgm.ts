@@ -1,8 +1,14 @@
-import { guessTypeByExt, isAudioSupport } from './support';
-import { logger } from '@motajs/common';
+import {
+    guessTypeByExt,
+    isAudioStreamSupport,
+    isAudioSupport
+} from './support';
+import { IHookController, logger } from '@motajs/common';
 import { StreamLoader } from '@motajs/loader';
 import {
     IAudioRoute,
+    IAudioRouteHooks,
+    IAudioSourceHooks,
     IAudioVolumeEffect,
     IBGMPlayer,
     IMotaAudioContext
@@ -12,10 +18,8 @@ import { AudioElementSource, AudioStreamSource } from './source';
 interface BGMInfo {
     /** 音频路由 */
     readonly route: IAudioRoute;
-    /** 音频播放时执行的函数 */
-    readonly startFn: () => void;
-    /** 音频结束时执行的函数 */
-    readonly endFn: () => void;
+    /** 音频路由的钩子控制器，用于移除渐变钩子 */
+    readonly controller: IHookController<IAudioRouteHooks>;
 }
 
 interface AudioCacheInfo {
@@ -156,7 +160,9 @@ export class BGMPlayer<T extends string> implements IBGMPlayer<T> {
             return;
         }
         const gain = this.ac.createVolumeEffect();
-        if (isAudioSupport(type)) {
+        // 流式音频源只支持 Ogg 与 WebM 的 Opus / Vorbis，其余格式必须交给 audio 元素
+        const useElement = isAudioSupport(type) || !isAudioStreamSupport(type);
+        if (useElement) {
             const source = this.ac.createElementSource();
             source.setSource(url);
             source.setLoop(true);
@@ -184,34 +190,33 @@ export class BGMPlayer<T extends string> implements IBGMPlayer<T> {
         this.ac.removeRoute(this.getId(id));
         const gain = this.gain.get(id);
         if (gain) {
-            gain.route.off('start', gain.startFn);
-            gain.route.off('end', gain.endFn);
+            gain.route.removeHookByController(gain.controller);
         }
         this.gain.delete(id);
     }
 
     private setTransition(id: T, route: IAudioRoute, gain: IAudioVolumeEffect) {
-        const startFn = () => {
-            gain.output.gain.cancelScheduledValues(this.ac.ac.currentTime);
-            gain.output.gain.setTargetAtTime(
-                1,
-                this.ac.ac.currentTime,
-                this.transitionTime / 1000 / 3
-            );
-        };
-        const endFn = () => {
-            gain.output.gain.cancelScheduledValues(this.ac.ac.currentTime);
-            gain.output.gain.setTargetAtTime(
-                0,
-                this.ac.ac.currentTime,
-                this.transitionTime / 1000 / 3
-            );
-        };
-        route.on('start', startFn);
-        route.on('end', endFn);
+        const controller: IHookController<IAudioRouteHooks> = route.addHook({
+            onStart: () => {
+                gain.output.gain.cancelScheduledValues(this.ac.ac.currentTime);
+                gain.output.gain.setTargetAtTime(
+                    1,
+                    this.ac.ac.currentTime,
+                    this.transitionTime / 1000 / 3
+                );
+            },
+            onEnd: () => {
+                gain.output.gain.cancelScheduledValues(this.ac.ac.currentTime);
+                gain.output.gain.setTargetAtTime(
+                    0,
+                    this.ac.ac.currentTime,
+                    this.transitionTime / 1000 / 3
+                );
+            }
+        });
         route.setEndTime(this.transitionTime);
 
-        this.gain.set(id, { route, startFn, endFn });
+        this.gain.set(id, { route, controller });
     }
 
     /**
@@ -244,29 +249,42 @@ export class BGMPlayer<T extends string> implements IBGMPlayer<T> {
             const source = route.source;
             if (source instanceof AudioElementSource) {
                 // audio 元素音频源
-                source.once('load', () => {
-                    const duration = source.audio.duration;
-                    const estimatedSize = duration * 48000 * 2 * 4;
-                    cacheInfo.size = estimatedSize;
-                    this.checkMaxCache();
-                });
+                const controller: IHookController<IAudioSourceHooks> =
+                    source.addHook({
+                        onLoad: () => {
+                            controller.unload();
+                            const duration = source.audio.duration;
+                            const estimatedSize = duration * 48000 * 2 * 4;
+                            cacheInfo.size = estimatedSize;
+                            this.checkMaxCache();
+                        }
+                    });
             } else if (source instanceof AudioStreamSource) {
                 // 流式加载音频源
-                source.once('load', () => {
-                    if (!source.buffer) return;
-                    const buffer = source.buffer;
-                    const size = buffer.numberOfChannels * buffer.length * 4;
-                    cacheInfo.size = size;
-                    this.checkMaxCache();
-                });
+                const controller: IHookController<IAudioSourceHooks> =
+                    source.addHook({
+                        onLoad: () => {
+                            controller.unload();
+                            if (!source.buffer) return;
+                            const buffer = source.buffer;
+                            const size =
+                                buffer.numberOfChannels * buffer.length * 4;
+                            cacheInfo.size = size;
+                            this.checkMaxCache();
+                        }
+                    });
             } else {
                 // 其他音频源
-                source.once('load', () => {
-                    const duration = source.duration;
-                    const estimatedSize = duration * 48000 * 2 * 4;
-                    cacheInfo.size = estimatedSize;
-                    this.checkMaxCache();
-                });
+                const controller: IHookController<IAudioSourceHooks> =
+                    source.addHook({
+                        onLoad: () => {
+                            controller.unload();
+                            const duration = source.duration;
+                            const estimatedSize = duration * 48000 * 2 * 4;
+                            cacheInfo.size = estimatedSize;
+                            this.checkMaxCache();
+                        }
+                    });
             }
             this.cachePool.push(cacheInfo);
         }

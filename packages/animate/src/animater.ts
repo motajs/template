@@ -10,6 +10,7 @@ import {
     EndRelation
 } from './types';
 import { linear } from './utils';
+import { clamp } from 'lodash-es';
 
 interface IAnimaterTimedInfo extends IAnimatePlanIdentifier {
     /** 等待时长 */
@@ -289,8 +290,8 @@ export class Animater implements IAnimater {
         plan: number = this.executingGroup
     ): Promise<void> {
         const raw = this.query(content, index, plan);
-        if (!raw) return Promise.resolve();
-        else return raw.promise;
+        if (raw) return raw.promise;
+        else return Promise.resolve();
     }
 
     planEnd(preTime: number = 0, postTime: number = 0): number {
@@ -336,6 +337,21 @@ export class Animater implements IAnimater {
     //#endregion
 
     //#region 动画执行
+
+    private endAnimate(anim: IAnimatingContent) {
+        if (!this.excitation) return;
+        const content = anim.identifier.content;
+        if (anim.end === EndRelation.Target) {
+            content.value = anim.targetValue;
+        } else if (anim.end === EndRelation.Curve) {
+            content.value = anim.startValue + anim.curve(1) * anim.diff;
+        } else {
+            const elapsed = this.excitation.payload() - anim.startTime;
+            const progress = clamp(elapsed / anim.time, 0, 1);
+            const curveValue = anim.curve(progress);
+            content.value = anim.startValue + anim.diff * curveValue;
+        }
+    }
 
     excited(payload: number): void {
         if (this.planning) {
@@ -396,11 +412,7 @@ export class Animater implements IAnimater {
             const content = anim.identifier.content;
             if (progress >= 1) {
                 // 动画结束
-                if (anim.end === EndRelation.Target) {
-                    content.value = anim.targetValue;
-                } else {
-                    content.value = anim.startValue + anim.curve(1) * anim.diff;
-                }
+                this.endAnimate(anim);
                 anim.resolve();
                 endedAnimate.add(anim);
                 anim.after.forEach(v => afters.add(v));
@@ -452,18 +464,9 @@ export class Animater implements IAnimater {
             }
             // 终止前一个动画
             curr.resolve();
-            // 这里也需要
-            const anim = curr.identifier.content;
-            if (curr.end === EndRelation.Target) {
-                anim.value = curr.targetValue;
-            } else if (curr.end === EndRelation.Curve) {
-                anim.value = curr.startValue + curr.curve(1) * curr.diff;
-            } else {
-                const elapsed = this.excitation.payload() - curr.startTime;
-                const curveValue = curr.curve(elapsed / curr.time);
-                anim.value = curr.startValue + curr.diff * curveValue;
-            }
+            this.endAnimate(curr);
             this.executing.delete(curr);
+            this.executingMap.delete(identifier.content);
         }
         // 记录动画初始值和开始时间
         const startValue = identifier.content.value;
@@ -479,6 +482,13 @@ export class Animater implements IAnimater {
         // 检查 when
         for (const when of plan.when) {
             this.startWhen({ ...when, arousedTime: startTime });
+        }
+
+        // 零时检测
+        if (anim.time === 0) {
+            this.endAnimate(anim);
+            this.executing.delete(anim);
+            this.executingMap.delete(identifier.content);
         }
     }
 

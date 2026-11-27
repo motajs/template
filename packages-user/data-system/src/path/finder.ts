@@ -138,8 +138,8 @@ export class PathFinder implements IPathFinder {
         target: ITileLocator
     ): IPathfindingStep[] {
         const indexer = this.graph.indexer;
-        const startIndex = indexer.locaterToIndex(start);
-        const targetIndex = indexer.locaterToIndex(target);
+        const startIndex = indexer.locatorToIndex(start);
+        const targetIndex = indexer.locatorToIndex(target);
         if (startIndex === targetIndex) return [];
         if (!graph.nodes.has(startIndex) || !graph.nodes.has(targetIndex)) {
             return [];
@@ -190,7 +190,7 @@ export class PathFinder implements IPathFinder {
             const step = prev.get(curr);
             if (!step) return [];
             steps.push(step);
-            curr = indexer.locaterToIndex(step.from);
+            curr = indexer.locatorToIndex(step.from);
         }
         steps.reverse();
         return steps;

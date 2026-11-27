@@ -112,7 +112,13 @@ export interface ITexture {
     clampRect(rect: Readonly<IRect>): Readonly<IRect>;
 
     /**
-     * 获取贴图经过指定矩形裁剪后的可渲染对象，并不是简单地对图像源裁剪，还会处理其他情况
+     * 将贴图经过指定矩形裁剪，然后形成一个新的贴图对象
+     * @param rect 裁剪矩形
+     */
+    clip(rect: Readonly<IRect>): ITexture;
+
+    /**
+     * 获取贴图经过指定矩形裁剪后的可渲染对象，并不是简单地对图像源裁剪，还会处理边界情况，如裁剪矩形超出了贴图范围
      * @param rect 裁剪矩形
      */
     clipped(rect: Readonly<IRect>): ITextureRenderable;

@@ -3,7 +3,7 @@ import { IFaceData, IRoleFaceBinder } from './types';
 import { isNil } from 'lodash-es';
 import { FaceDirection } from './types';
 
-interface FaceInfo {
+interface IFaceInfo {
     /** 此图块的朝向 */
     readonly face: FaceDirection;
     /** 此图块对应的映射 */
@@ -12,7 +12,7 @@ interface FaceInfo {
 
 export class RoleFaceBinder implements IRoleFaceBinder {
     /** 每个图块对应的朝向信息 */
-    private faceMap: Map<number, FaceInfo> = new Map();
+    private faceMap: Map<number, IFaceInfo> = new Map();
     /** 主要朝向映射 */
     private mainMap: Map<number, FaceDirection> = new Map();
 
@@ -20,7 +20,7 @@ export class RoleFaceBinder implements IRoleFaceBinder {
         this.mainMap.set(identifier, main);
         const map = new Map<FaceDirection, number>();
         map.set(main, identifier);
-        const info: FaceInfo = { face: main, map };
+        const info: IFaceInfo = { face: main, map };
         this.faceMap.set(identifier, info);
     }
 
@@ -36,7 +36,7 @@ export class RoleFaceBinder implements IRoleFaceBinder {
         }
         const { map } = this.faceMap.get(main)!;
         map.set(face, identifier);
-        const info: FaceInfo = { face, map };
+        const info: IFaceInfo = { face, map };
         this.faceMap.set(identifier, info);
         this.mainMap.set(identifier, mainFace);
     }
@@ -50,8 +50,8 @@ export class RoleFaceBinder implements IRoleFaceBinder {
         return data;
     }
 
-    getFaceDirection(identifier: number): FaceDirection | undefined {
-        return this.faceMap.get(identifier)?.face;
+    getFaceDirection(identifier: number): FaceDirection {
+        return this.faceMap.get(identifier)?.face ?? FaceDirection.Unknown;
     }
 
     getMainFace(identifier: number): IFaceData | null {

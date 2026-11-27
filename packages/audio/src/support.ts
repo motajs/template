@@ -24,7 +24,8 @@ const typeMap = new Map<string, AudioType>([
     ['wav', AudioType.Wav],
     ['flac', AudioType.Flac],
     ['opus', AudioType.Opus],
-    ['aac', AudioType.Aac]
+    ['aac', AudioType.Aac],
+    ['webm', AudioType.WebM]
 ]);
 
 /**
@@ -38,9 +39,25 @@ export function guessTypeByExt(file: string): AudioType | '' {
     return typeMap.get(type.toLocaleLowerCase()) ?? '';
 }
 
+/** 可由流式音频源增量解码的格式 */
+const streamTypes: Set<AudioType> = new Set([
+    AudioType.Ogg,
+    AudioType.Opus,
+    AudioType.WebM
+]);
+
+/**
+ * 检查一种音频类型是否可由流式音频源播放
+ * @param type 音频类型
+ */
+export function isAudioStreamSupport(type: AudioType): boolean {
+    return streamTypes.has(type);
+}
+
 isAudioSupport(AudioType.Ogg);
 isAudioSupport(AudioType.Mp3);
 isAudioSupport(AudioType.Wav);
 isAudioSupport(AudioType.Flac);
 isAudioSupport(AudioType.Opus);
 isAudioSupport(AudioType.Aac);
+isAudioSupport(AudioType.WebM);

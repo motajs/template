@@ -1,7 +1,6 @@
 {
     "name": "@user/entry-data",
     "dependencies": {
-        "@motajs/legacy-common": "workspace:*",
         "@user/data-common": "workspace:*",
         "@user/data-base": "workspace:*",
         "@user/data-system": "workspace:*",

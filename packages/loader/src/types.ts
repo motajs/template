@@ -1,5 +1,7 @@
 //#region 流传输
 
+import { IHookable, IHookBase } from '@motajs/common';
+
 export interface IStreamController {
     /** 当前是否正在加载 */
     readonly loading: boolean;
@@ -85,33 +87,6 @@ export const enum LoadDataType {
     JSON
 }
 
-export interface ILoadDataTypeMap {
-    [LoadDataType.ArrayBuffer]: ArrayBuffer;
-    [LoadDataType.Uint8Array]: Uint8Array<ArrayBuffer>;
-    [LoadDataType.Blob]: Blob;
-    [LoadDataType.Text]: string;
-    [LoadDataType.JSON]: any;
-}
-
-export interface ILoadTaskProcessor<T extends LoadDataType, R> {
-    /**
-     * 处理加载内容
-     * @param response 处理前加载结果
-     * @param task 加载任务对象
-     */
-    process(response: ILoadDataTypeMap[T], task: ILoadTask<T, R>): Promise<R>;
-}
-
-export interface ILoadTaskProgress<T extends LoadDataType, R> {
-    /**
-     * 更新加载进度
-     * @param task 加载任务对象
-     * @param loaded 已加载的字节数
-     * @param total 文件总计字节数，如果此值为零说明无法读取到 `Content-Length`
-     */
-    onProgress(task: ILoadTask<T, R>, loaded: number, total: number): void;
-}
-
 export const enum RequestMethod {
     GET = 'GET',
     POST = 'POST',
@@ -124,17 +99,17 @@ export const enum RequestMethod {
     PATCH = 'PATCH'
 }
 
-export interface ILoadTaskInit<T extends LoadDataType, R> {
-    /** 请求响应格式 */
-    readonly dataType: T;
-    /** 加载任务标识符 */
-    readonly identifier: string;
+export interface ILoadDataTypeMap {
+    [LoadDataType.ArrayBuffer]: ArrayBuffer;
+    [LoadDataType.Uint8Array]: Uint8Array<ArrayBuffer>;
+    [LoadDataType.Blob]: Blob;
+    [LoadDataType.Text]: string;
+    [LoadDataType.JSON]: any;
+}
+
+export interface ILoadTaskRequest {
     /** 加载目标 URL */
-    readonly url: string | URL;
-    /** 加载的处理对象，用于处理加载结果等 */
-    readonly processor: ILoadTaskProcessor<T, R>;
-    /** 加载进度对象，用于监控加载进度 */
-    readonly progress: ILoadTaskProgress<T, R>;
+    readonly url: string;
     /** 请求模式 */
     readonly method?: RequestMethod;
     /** 请求体 */
@@ -143,21 +118,141 @@ export interface ILoadTaskInit<T extends LoadDataType, R> {
     readonly headers?: HeadersInit;
 }
 
-export interface ILoadTask<T extends LoadDataType, R> extends ILoadTaskInit<
-    T,
-    R
-> {
+export interface ILoadTaskProcessor<T extends LoadDataType, R> {
+    /**
+     * 处理加载内容
+     * @param response 处理前加载结果
+     * @param task 加载任务对象
+     */
+    process(response: ILoadDataTypeMap[T], task: ILoadTask<T, R>): Promise<R>;
+}
+
+export interface IResponseReaderLike {
+    /**
+     * 进行下一个分块的读取
+     */
+    read(): Promise<ReadableStreamReadResult<Uint8Array<ArrayBuffer>>>;
+}
+
+export interface IResponseBodyLike {
+    /**
+     * 获取流式读取器
+     */
+    getReader(): ReadableStreamDefaultReader;
+}
+
+export interface IResponseHeadersLike {
+    /**
+     * 获取指定响应头的内容
+     * @param name 响应头字段名称
+     */
+    get(name: string): string | null;
+}
+
+export interface IResponseLike {
+    /** 请求地址 */
+    readonly url: string;
+    /** 响应体 */
+    readonly body: IResponseBodyLike | null;
+    /** 响应头 */
+    readonly headers: IResponseHeadersLike;
+
+    /**
+     * 输出为 `ArrayBuffer`
+     */
+    arrayBuffer(): Promise<ArrayBuffer>;
+
+    /**
+     * 输出为 `Blob`
+     */
+    blob(): Promise<Blob>;
+
+    /**
+     * 输出为 `Uint8Array`
+     */
+    bytes(): Promise<Uint8Array<ArrayBuffer>>;
+
+    /**
+     * 输出为 `JSON`
+     */
+    json(): Promise<any>;
+
+    /**
+     * 输出为纯文本
+     */
+    text(): Promise<string>;
+}
+
+export interface ILoadTaskStarter {
+    /**
+     * 进行加载请求，获取 `Response` 对象
+     * @param request 请求配置
+     */
+    start(request: ILoadTaskRequest): Promise<IResponseLike>;
+}
+
+export interface ILoadTaskInit<
+    T extends LoadDataType
+> extends ILoadTaskRequest {
+    /** 请求响应格式 */
+    readonly dataType: T;
+    /** 加载任务标识符 */
+    readonly identifier: string;
+}
+
+export interface ILoadTaskHooks<T extends LoadDataType, R> extends IHookBase {
+    /**
+     * 当加载开始时触发
+     * @param total 加载总字节数
+     */
+    onLoadStart?(total: number): void;
+
+    /**
+     * 当加载进度变动时触发
+     * @param loaded 已加载的字节数
+     * @param total 加载总字节数
+     */
+    onProgress?(loaded: number, total: number): void;
+
+    /**
+     * 当加载完成时触发
+     * @param data 经过处理后的加载内容
+     * @param raw 加载完毕时获取的原始数据
+     * @param total 加载总字节数
+     */
+    onLoadEnd?(data: R, raw: ILoadDataTypeMap[T], total: number): void;
+}
+
+export interface ILoadTask<T extends LoadDataType = LoadDataType, R = any>
+    extends ILoadTaskInit<T>, IHookable<ILoadTaskHooks<T, R>> {
     /** 当前是否加载完毕 */
     readonly contentLoaded: boolean;
     /** 已经加载的字节数 */
     readonly loadedByte: number;
     /** 该加载任务的总体字节数 */
     readonly totalByte: number;
+    /** 当前任务使用的数据处理器 */
+    readonly processor: ILoadTaskProcessor<T, R> | null;
+    /** 当前任务使用的加载启动器 */
+    readonly starter: ILoadTaskStarter | null;
+
+    /**
+     * 设置当前任务使用的数据处理器
+     * @param processor 数据处理器
+     */
+    setProcessor(processor: ILoadTaskProcessor<T, R> | null): void;
+
+    /**
+     * 设置当前任务使用的加载启动器
+     * @param starter 加载启动器
+     */
+    setStarter(starter: ILoadTaskStarter): void;
 
     /**
      * 开始此加载计划，返回一个 `Promise`，当得到服务器的响应后兑现
+     * @returns 异步迭代器，当加载进度变动时进行一次迭代，迭代值为当前加载的字节数
      */
-    start(): Promise<void>;
+    start(): AsyncIterable<number>;
 
     /**
      * 返回一个 `Promise`，当本计划加载完毕后兑现，兑现结果是加载结果
@@ -170,29 +265,43 @@ export interface ILoadTask<T extends LoadDataType, R> extends ILoadTaskInit<
     getLoadedData(): R | null;
 }
 
-//#endregion
-
-//#region 内置组件
-
-export interface ILoadProgressTotal<
-    T extends LoadDataType = LoadDataType,
-    R = any
-> extends ILoadTaskProgress<T, R> {
-    /** 已经添加的加载任务对象 */
-    readonly addedTasks: Set<ILoadTask<T, R>>;
-    /** 当前已经加载完毕的任务对象 */
-    readonly loadedTasks: Set<ILoadTask<T, R>>;
+export interface ILoadManagerHooks extends IHookBase {
+    /**
+     * 当开始加载时触发
+     */
+    onStartLoad?(): void;
 
     /**
-     * 迭代加载进度，当 `yield` 的值被兑现时，说明加载进度更新
+     * 当加载进度发生变化时触发
+     * @param loaded 已加载的字节数
+     * @param total 加载总字节数，此数值可能不准确，因为必须等所有的加载全部连接完成时才能够得知总字节数
      */
-    [Symbol.asyncIterator](): AsyncGenerator<void, void, void>;
+    onProgress?(loaded: number, total: number): void;
+
+    /**
+     * 当所有加载任务完成时触发
+     * @param total 加载的总字节数
+     */
+    onLoadEnd?(total: number): void;
+}
+
+export interface ILoadManager extends IHookable<ILoadManagerHooks> {
+    /** 已经添加的加载任务对象 */
+    readonly addedTasks: Set<ILoadTask>;
+    /** 当前已经加载完毕的任务对象 */
+    readonly loadedTasks: Set<ILoadTask>;
 
     /**
      * 向该进度监听器添加加载任务对象
      * @param task 加载任务对象
      */
-    addTask(task: ILoadTask<T, R>): void;
+    addTask(task: ILoadTask): void;
+
+    /**
+     * 开始执行加载
+     * @returns 加载的异步迭代器，当加载进度更新时迭代，迭代值为当前已加载的总字节数
+     */
+    load(): AsyncIterable<number>;
 
     /**
      * 获取总体已加载的字节数

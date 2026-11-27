@@ -1,11 +1,4 @@
-import { EventEmitter } from 'eventemitter3';
-
-interface OffscreenCanvasEvent {
-    /** 当被动触发resize时（例如窗口大小变化）时触发，使用size函数并不会触发 */
-    resize: [];
-}
-
-export class MotaOffscreenCanvas2D extends EventEmitter<OffscreenCanvasEvent> {
+export class MotaOffscreenCanvas2D {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
 
@@ -17,7 +10,7 @@ export class MotaOffscreenCanvas2D extends EventEmitter<OffscreenCanvasEvent> {
     /** 是否启用抗锯齿 */
     antiAliasing: boolean = true;
 
-    scale: number = 1;
+    scale: number = 0;
 
     /** 更新标识符，如果发生变化则说明画布被动清空 */
     symbol: number = 0;
@@ -30,11 +23,11 @@ export class MotaOffscreenCanvas2D extends EventEmitter<OffscreenCanvasEvent> {
      * @param canvas 指定画布，不指定时会自动创建一个新画布
      */
     constructor(alpha: boolean = true, canvas?: HTMLCanvasElement) {
-        super();
         this.canvas = canvas ?? document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d', { alpha })!;
         this.width = this.canvas.width / devicePixelRatio;
         this.height = this.canvas.height / devicePixelRatio;
+        this.setScale(1);
     }
 
     /**
@@ -42,10 +35,10 @@ export class MotaOffscreenCanvas2D extends EventEmitter<OffscreenCanvasEvent> {
      * @param scale 缩放比
      */
     setScale(scale: number) {
-        // if (scale === this.scale) {
-        //     this.clear();
-        //     return;
-        // }
+        if (scale === this.scale) {
+            this.clear();
+            return;
+        }
         this.scale = scale;
         let ratio = this.highResolution ? devicePixelRatio : 1;
         ratio *= this.scale;
@@ -97,23 +90,5 @@ export class MotaOffscreenCanvas2D extends EventEmitter<OffscreenCanvasEvent> {
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.restore();
-    }
-
-    /**
-     * 复制一个离屏Canvas2D对象，一般用于缓存等操作
-     * @param canvas 被复制的MotaOffscreenCanvas2D对象
-     */
-    static clone(canvas: MotaOffscreenCanvas2D): MotaOffscreenCanvas2D {
-        const newCanvas = new MotaOffscreenCanvas2D();
-        newCanvas.setHD(canvas.highResolution);
-        newCanvas.size(canvas.width, canvas.height);
-        newCanvas.ctx.drawImage(
-            canvas.canvas,
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-        return newCanvas;
     }
 }

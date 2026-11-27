@@ -1,4 +1,4 @@
-import EventEmitter from 'eventemitter3';
+import { IHookBase, IHookable } from '@motajs/common';
 import { IStreamReader } from '@motajs/loader';
 
 export interface IAudioInput {
@@ -18,19 +18,31 @@ export const enum AudioType {
     Flac = 'audio/flac',
     Opus = 'audio/ogg; codecs="opus"',
     Ogg = 'audio/ogg; codecs="vorbis"',
-    Aac = 'audio/aac'
+    Aac = 'audio/aac',
+    WebM = 'audio/webm; codecs="opus"'
 }
 
 //#region 音频源
 
-export interface EAudioSourceEvent {
-    play: [];
-    end: [];
-    load: [];
+export interface IAudioSourceHooks extends IHookBase {
+    /**
+     * 当音频源开始播放时触发
+     */
+    onPlay?(): void;
+
+    /**
+     * 当音频源播放结束时触发
+     */
+    onEnd?(): void;
+
+    /**
+     * 当音频源加载完成时触发
+     */
+    onLoad?(): void;
 }
 
 export interface IAudioSource
-    extends IAudioOutput, EventEmitter<EAudioSourceEvent> {
+    extends IAudioOutput, IHookable<IAudioSourceHooks> {
     /** 所属的 {@link IMotaAudioContext} 上下文 */
     readonly motaAC: IMotaAudioContext;
     /** 音频播放上下文 */
@@ -88,7 +100,7 @@ export interface IAudioStreamSource extends IAudioSource, IStreamReader {
     readonly sampleRate: number;
 
     /**
-     * 设置每个缓存数据的大小，默认为10秒钟一个缓存数据，只能在加载开始前设置
+     * 设置单个调度节点的最大窗口时长，默认为 10 秒，只能在加载开始前设置
      * @param size 每个缓存数据的时长，单位秒
      */
     setChunkSize(size: number): void;
@@ -132,19 +144,47 @@ export const enum AudioStatus {
     Stoped
 }
 
-export interface EAudioRouteEvent {
-    updateEffect: [];
-    play: [];
-    stop: [];
-    pause: [];
-    resume: [];
+export interface IAudioRouteHooks extends IHookBase {
+    /**
+     * 当音频路由于效果器列表发生变化时触发
+     */
+    onUpdateEffect?(): void;
 
-    start: [route: IAudioRoute];
-    end: [time: number, route: IAudioRoute];
+    /**
+     * 当音频路由开始播放时触发
+     */
+    onPlay?(): void;
+
+    /**
+     * 当音频路由停止播放时触发
+     */
+    onStop?(): void;
+
+    /**
+     * 当音频路由暂停播放时触发
+     */
+    onPause?(): void;
+
+    /**
+     * 当音频路由继续播放时触发
+     */
+    onResume?(): void;
+
+    /**
+     * 当音频路由开始播放或继续播放时触发
+     * @param route 当前音频路由
+     */
+    onStart?(route: IAudioRoute): void;
+
+    /**
+     * 当音频路由即将暂停或停止时触发，此时距离真正终止播放还有 `time` 秒
+     * @param time 距离真正终止播放的时长，单位秒
+     * @param route 当前音频路由
+     */
+    onEnd?(time: number, route: IAudioRoute): void;
 }
 
-export interface IAudioRoute
-    extends IAudioOutput, EventEmitter<EAudioRouteEvent> {
+export interface IAudioRoute extends IAudioOutput, IHookable<IAudioRouteHooks> {
     /** 音频路由图 */
     readonly effectRoute: readonly IAudioEffect[];
     /** 结束时长，当音频暂停或停止时，会经过这么长时间之后才真正终止播放，期间可以做音频淡入淡出等效果 */
@@ -428,7 +468,11 @@ export type AudioDecoderCreateFunc = (
     context: IMotaAudioContext
 ) => IAudioDecoder;
 
-export interface IMotaAudioContext extends IMotaAudioContextCreator {
+export interface IMotaAudioContext
+    extends
+        IMotaAudioContextCreator,
+        IAudioDecodeProvider,
+        IAudioDecoderRegistry {
     /** 音频上下文 */
     readonly ac: AudioContext;
     /** 音频播放路由 */
@@ -789,6 +833,153 @@ export interface IAudioDecoder {
      * 当音频解码完成后，会调用此函数，需要返回之前还未解析或未返回的音频数据。调用后，该解码器将不会被再次使用
      */
     flush(): Promise<IAudioDecodeData | null>;
+}
+
+//#endregion
+
+//#region 音频解码
+
+export const enum AudioContainer {
+    Unknown = 'unknown',
+    Ogg = 'ogg',
+    WebM = 'webm',
+    Mp4 = 'mp4',
+    Wav = 'wav',
+    Flac = 'flac',
+    Mp3 = 'mp3',
+    Adts = 'adts'
+}
+
+export const enum AudioCodec {
+    Unknown = 'unknown',
+    Opus = 'opus',
+    Vorbis = 'vorbis',
+    Aac = 'aac',
+    Mp3 = 'mp3',
+    Flac = 'flac',
+    Pcm = 'pcm'
+}
+
+export type AudioInputSource =
+    | ArrayBuffer
+    | Uint8Array
+    | Blob
+    | ReadableStream<Uint8Array>
+    | string;
+
+export interface IAudioFormatInfo {
+    /** 音频容器格式 */
+    readonly container: AudioContainer;
+    /** 音频编码格式 */
+    readonly codec: AudioCodec;
+    /** 音频采样率 */
+    readonly sampleRate: number;
+    /** 音频声道数 */
+    readonly channels: number;
+    /** 音频总时长，单位秒，无法确定时为 `null` */
+    readonly duration: number | null;
+}
+
+export interface IAudioDecodedChunk {
+    /** 每个声道的 PCM 采样数据 */
+    readonly channelData: Float32Array<ArrayBuffer>[];
+    /** 本数据块包含的采样数 */
+    readonly samplesDecoded: number;
+    /** 音频采样率 */
+    readonly sampleRate: number;
+    /** 本数据块在音频中的起始时刻，单位秒 */
+    readonly timestamp: number;
+    /** 本数据块的时长，单位秒 */
+    readonly duration: number;
+    /** 解码错误信息 */
+    readonly errors: IAudioDecodeError[];
+}
+
+export interface IAudioDecodeSession {
+    /** 音频格式信息 */
+    readonly info: IAudioFormatInfo;
+    /** 按顺序产出的解码数据块 */
+    readonly chunks: AsyncIterable<IAudioDecodedChunk>;
+
+    /**
+     * 跳转到指定时刻继续解码
+     * @param time 跳转到的时刻，单位秒
+     */
+    seek?(time: number): Promise<void>;
+
+    /**
+     * 关闭此解码会话，释放其占用的资源
+     */
+    close(): void;
+}
+
+export interface IAudioDecodeProvider {
+    /**
+     * 探测音频数据的格式信息，无法识别时返回 `null`
+     * @param source 音频输入数据
+     */
+    probeAudio(source: AudioInputSource): Promise<IAudioFormatInfo | null>;
+
+    /**
+     * 为音频数据创建解码会话，无法解码时返回 `null`
+     * @param source 音频输入数据
+     */
+    createDecodeSession(
+        source: AudioInputSource
+    ): Promise<IAudioDecodeSession | null>;
+}
+
+export interface IAudioCodecDecoder {
+    /**
+     * 使用音频格式信息配置解码器
+     * @param info 音频格式信息
+     * @param description 解码器所需的额外描述数据，例如 Opus 的头部信息
+     */
+    configure(info: IAudioFormatInfo, description?: Uint8Array): Promise<void>;
+
+    /**
+     * 解码一个音频数据包
+     * @param packet 音频数据包
+     * @param timestamp 数据包在音频中的起始时刻，单位秒
+     * @param duration 数据包的时长，单位秒
+     */
+    decode(
+        packet: Uint8Array,
+        timestamp: number,
+        duration: number
+    ): Promise<IAudioDecodedChunk | null>;
+
+    /**
+     * 结束解码，返回解码器中残余的音频数据
+     */
+    flush(): Promise<IAudioDecodedChunk | null>;
+
+    /**
+     * 摧毁此解码器
+     */
+    destroy(): Promise<void>;
+}
+
+export type AudioCodecDecoderCreateFunc = (
+    context: IMotaAudioContext
+) => IAudioCodecDecoder;
+
+export interface IAudioDecoderRegistry {
+    /**
+     * 注册一个解码器创建函数
+     * @param codec 解码器所解码的音频编码格式
+     * @param decoder 解码器创建函数
+     */
+    registerCodecDecoder(
+        codec: AudioCodec,
+        decoder: AudioCodecDecoderCreateFunc
+    ): void;
+
+    /**
+     * 为指定音频编码格式创建解码器，未注册时返回 `null`
+     * @param codec 音频编码格式
+     */
+    createCodecDecoder(codec: AudioCodec): IAudioCodecDecoder | null;
 }
 
 //#endregion
