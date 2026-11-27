@@ -1,4 +1,8 @@
-import { guessTypeByExt, isAudioSupport } from './support';
+import {
+    guessTypeByExt,
+    isAudioStreamSupport,
+    isAudioSupport
+} from './support';
 import { IHookController, logger } from '@motajs/common';
 import { StreamLoader } from '@motajs/loader';
 import {
@@ -156,7 +160,9 @@ export class BGMPlayer<T extends string> implements IBGMPlayer<T> {
             return;
         }
         const gain = this.ac.createVolumeEffect();
-        if (isAudioSupport(type)) {
+        // 流式音频源只支持 Ogg 与 WebM 的 Opus / Vorbis，其余格式必须交给 audio 元素
+        const useElement = isAudioSupport(type) || !isAudioStreamSupport(type);
+        if (useElement) {
             const source = this.ac.createElementSource();
             source.setSource(url);
             source.setLoop(true);

@@ -18,7 +18,8 @@ export const enum AudioType {
     Flac = 'audio/flac',
     Opus = 'audio/ogg; codecs="opus"',
     Ogg = 'audio/ogg; codecs="vorbis"',
-    Aac = 'audio/aac'
+    Aac = 'audio/aac',
+    WebM = 'audio/webm; codecs="opus"'
 }
 
 //#region 音频源
