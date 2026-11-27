@@ -62,7 +62,7 @@ export const Icon = defineComponent<IIconProps>(props => {
             <animated
                 texture={texture.value}
                 animater={animater}
-                param={data.value?.offset}
+                param={data.value?.frames}
             ></animated>
         ) : (
             <image image={staticImage.value}></image>

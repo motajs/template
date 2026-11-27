@@ -306,6 +306,7 @@ const textboxOptions = {
         'text',
         'fill',
         'stroke',
+        'strokeColor',
         'backColor',
         'winskin',
         'padding',
