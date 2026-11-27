@@ -99,7 +99,7 @@ export interface IAudioStreamSource extends IAudioSource, IStreamReader {
     readonly sampleRate: number;
 
     /**
-     * 设置每个缓存数据的大小，默认为10秒钟一个缓存数据，只能在加载开始前设置
+     * 设置单个调度节点的最大窗口时长，默认为 10 秒，只能在加载开始前设置
      * @param size 每个缓存数据的时长，单位秒
      */
     setChunkSize(size: number): void;

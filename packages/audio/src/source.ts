@@ -5,41 +5,24 @@ import {
     IHookController,
     logger
 } from '@motajs/common';
-import CodecParser, { CodecFrame, MimeType, OggPage } from 'codec-parser';
-import { isNil } from 'lodash-es';
 import {
-    AudioType,
+    AudioCodec,
     IAudioBufferSource,
-    IAudioDecodeData,
-    IAudioDecoder,
+    IAudioDecodedChunk,
     IAudioElementSource,
     IAudioInput,
     IAudioSourceHooks,
     IAudioStreamSource,
     IMotaAudioContext
 } from './types';
-
-const mimeTypeMap: Record<AudioType, MimeType | 'unknown'> = {
-    [AudioType.Unknown]: 'unknown',
-    [AudioType.Aac]: 'audio/aac',
-    [AudioType.Flac]: 'audio/flac',
-    [AudioType.Mp3]: 'audio/mpeg',
-    [AudioType.Ogg]: 'application/ogg',
-    [AudioType.Opus]: 'application/ogg',
-    [AudioType.Wav]: 'application/ogg'
-};
-
-function isOggPage(data: any): data is OggPage {
-    return !isNil(data.isFirstPage);
-}
+import { AudioStreamDecoder } from './streamDecoder';
+import { AudioPcmScheduler } from './pcmScheduler';
 
 export class AudioStreamSource
     extends Hookable<IAudioSourceHooks>
     implements IAudioStreamSource, IStreamReader
 {
     readonly ac: AudioContext;
-    /** 音频源节点 */
-    output: AudioBufferSourceNode;
 
     /** 音频数据 */
     buffer: AudioBuffer | null = null;
@@ -56,44 +39,37 @@ export class AudioStreamSource
     duration: number = 0;
     /** 当前已经播放了多长时间 */
     get currentTime(): number {
-        return this.ac.currentTime - this.lastStartTime + this.lastStartWhen;
+        return this.scheduler.currentTime;
     }
     /** 在流传输阶段，至少缓冲多长时间的音频之后才开始播放，单位秒 */
     bufferPlayDuration: number = 1;
     /** 音频的采样率，未成功解析出之前保持为 0 */
     sampleRate: number = 0;
 
+    /** 音频源节点，未起播时返回调度器的占位节点 */
+    get output(): AudioBufferSourceNode {
+        return this.scheduler.output;
+    }
+
     private controller: IStreamController | null = null;
-    private loop: boolean = false;
 
-    private target?: IAudioInput;
-
-    /** 上一次播放是从何时开始的 */
-    private lastStartWhen: number = 0;
-    /** 开始播放时刻 */
-    private lastStartTime: number = 0;
-    /** 上一次播放的缓存长度 */
-    private lastBufferSamples: number = 0;
-
-    /** 是否已经获取到头文件 */
-    private headerRecieved: boolean = false;
-    /** 音频类型 */
-    private audioType: AudioType | '' = '';
-    /** 音频解码器 */
-    private decoder: IAudioDecoder | null = null;
-    /** 音频解析器 */
-    private parser: CodecParser | null = null;
-    /** 每多长时间组成一个缓存 Float32Array */
-    private bufferChunkSize: number = 10;
-    /** 缓存音频数据，每 bufferChunkSize 秒钟组成一个 Float32Array，用于流式解码 */
-    private audioData: Float32Array[][] = [];
-
+    /** PCM 采样调度器，负责时间线与节点排期 */
+    private readonly scheduler: AudioPcmScheduler;
+    /** 当前流式解码器，未开始加载时为空 */
+    private decoder: AudioStreamDecoder | null = null;
+    /** 后台消费解码数据块的任务 */
+    private consumeTask: Promise<void> | null = null;
+    /** 是否由用户显式暂停或停止，用于抑制自动起播 */
+    private stoppedByUser: boolean = false;
+    /** 是否已因格式不支持或解码失败而终止，播放守卫依赖它 */
     private errored: boolean = false;
 
     constructor(readonly motaAC: IMotaAudioContext) {
         super();
         this.ac = motaAC.ac;
-        this.output = motaAC.ac.createBufferSource();
+        this.scheduler = new AudioPcmScheduler(this.ac, () =>
+            this.handlePlaybackEnd()
+        );
     }
 
     protected createController(
@@ -103,30 +79,27 @@ export class AudioStreamSource
     }
 
     /**
-     * 设置每个缓存数据的大小，默认为10秒钟一个缓存数据
+     * 设置单个调度节点的最大窗口时长，默认为 10 秒
      * @param size 每个缓存数据的时长，单位秒
      */
     setChunkSize(size: number) {
         if (this.controller?.loading || this.loaded) return;
-        this.bufferChunkSize = size;
+        this.scheduler.setWindowDuration(size);
     }
 
     free(): void {
         this.stop();
-        this.audioData = [];
-        this.decoder?.destroy();
-        this.decoder = null;
-        this.parser = null;
-        this.audioType = '';
-        this.headerRecieved = false;
-        this.errored = false;
-        this.duration = 0;
+        this.scheduler.free();
+        this.teardownDecoder();
+        this.consumeTask = null;
+        this.buffer = null;
+        this.loaded = false;
         this.buffered = 0;
         this.bufferedSamples = 0;
-        this.loaded = false;
         this.sampleRate = 0;
-        this.buffer = null;
-        this.output.buffer = null;
+        this.duration = 0;
+        this.errored = false;
+        this.stoppedByUser = false;
     }
 
     piped(controller: IStreamController): void {
@@ -140,297 +113,146 @@ export class AudioStreamSource
     }
 
     async pump(data: Uint8Array | undefined, done: boolean): Promise<void> {
-        if (!data || this.errored) return;
-        if (!this.headerRecieved) {
-            // 检查头文件获取音频类型，仅检查前256个字节
-            const toCheck = data.slice(0, 256);
-            const type = this.motaAC.getAudioTypeFromData(data);
-            this.audioType = type;
-            if (type === AudioType.Unknown) {
-                logger.error(
-                    25,
-                    [...toCheck]
-                        .map(v => v.toString(16).padStart(2, '0'))
-                        .join(' ')
-                        .toUpperCase()
-                );
-                return;
-            }
-            const decoder = this.motaAC.createDecoder(type);
-            if (!decoder) {
-                this.errored = true;
-                logger.error(24, this.audioType);
-                return Promise.reject(
-                    `Cannot decode stream source type of '${this.audioType}', since there is no registered decoder for that type.`
-                );
-            }
-            this.decoder = decoder;
-            // 创建数据解析器
-            const mime = mimeTypeMap[this.audioType];
-            if (mime !== 'unknown') {
-                const parser = new CodecParser(mime);
-                this.parser = parser;
-                await decoder.create();
-                this.headerRecieved = true;
-            }
-        }
-
+        if (this.errored) return;
         const decoder = this.decoder;
-        const parser = this.parser;
-        if (!decoder || !parser) {
-            this.errored = true;
-            return Promise.reject(
-                'No parser or decoder attached in this AudioStreamSource'
-            );
-        }
-
-        await this.decodeData(data, decoder, parser);
-        if (done) await this.decodeFlushData(decoder, parser);
-        this.checkBufferedPlay();
-    }
-
-    /**
-     * 检查采样率，如果还未解析出采样率，那么将设置采样率，如果当前采样率与之前不同，那么发出警告
-     */
-    private checkSampleRate(info: (OggPage | CodecFrame)[]) {
-        for (const one of info) {
-            const frame = isOggPage(one) ? one.codecFrames[0] : one;
-            if (frame) {
-                const rate = frame.header.sampleRate;
-                if (this.sampleRate === 0) {
-                    this.sampleRate = rate;
-                    break;
-                } else {
-                    if (rate !== this.sampleRate) {
-                        logger.warn(48);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * 解析音频数据
-     */
-    private async decodeData(
-        data: Uint8Array,
-        decoder: IAudioDecoder,
-        parser: CodecParser
-    ) {
-        // 解析音频数据
-        const audioData = await decoder.decode(data);
-        if (!audioData) return;
-        // @ts-expect-error 库类型声明错误
-        const audioInfo = [...parser.parseChunk(data)] as (
-            | OggPage
-            | CodecFrame
-        )[];
-
-        // 检查采样率
-        this.checkSampleRate(audioInfo);
-        // 追加音频数据
-        this.appendDecodedData(audioData, audioInfo);
-    }
-
-    /**
-     * 解码剩余数据
-     */
-    private async decodeFlushData(decoder: IAudioDecoder, parser: CodecParser) {
-        const audioData = await decoder.flush();
-        if (!audioData) return;
-        // @ts-expect-error 库类型声明错误
-        const audioInfo = [...parser.flush()] as (OggPage | CodecFrame)[];
-
-        this.checkSampleRate(audioInfo);
-        this.appendDecodedData(audioData, audioInfo);
-    }
-
-    /**
-     * 追加音频数据
-     */
-    private appendDecodedData(
-        data: IAudioDecodeData,
-        info: (CodecFrame | OggPage)[]
-    ) {
-        const channels = data.channelData.length;
-        if (channels === 0) return;
-        if (this.audioData.length !== channels) {
-            this.audioData = [];
-            for (let i = 0; i < channels; i++) {
-                this.audioData.push([]);
-            }
-        }
-        // 计算出应该放在哪
-        const chunk = this.sampleRate * this.bufferChunkSize;
-        const sampled = this.bufferedSamples;
-        const pushIndex = Math.floor(sampled / chunk);
-        const bufferIndex = sampled % chunk;
-        const dataLength = data.channelData[0].length;
-        let buffered = 0;
-        let nowIndex = pushIndex;
-        let toBuffer = bufferIndex;
-        while (buffered < dataLength) {
-            const rest = toBuffer !== 0 ? chunk - bufferIndex : chunk;
-
-            for (let i = 0; i < channels; i++) {
-                const audioData = this.audioData[i];
-                if (!audioData[nowIndex]) {
-                    audioData.push(new Float32Array(chunk));
-                }
-                const toPush = data.channelData[i].slice(
-                    buffered,
-                    buffered + rest
-                );
-
-                audioData[nowIndex].set(toPush, toBuffer);
-            }
-            buffered += rest;
-            nowIndex++;
-            toBuffer = 0;
-        }
-
-        this.buffered +=
-            info.reduce((prev, curr) => prev + curr.duration, 0) / 1000;
-        this.bufferedSamples += info.reduce(
-            (prev, curr) => prev + curr.samples,
-            0
-        );
-    }
-
-    /**
-     * 检查已缓冲内容，并在未开始播放时播放
-     */
-    private checkBufferedPlay() {
-        if (this.playing || this.sampleRate === 0) return;
-        const played = this.lastBufferSamples / this.sampleRate;
-        const dt = this.buffered - played;
-        if (this.loaded) {
-            this.playAudio(played);
-            return;
-        }
-        if (dt < this.bufferPlayDuration) return;
-        this.lastBufferSamples = this.bufferedSamples;
-        // 需要播放
-        this.mergeBuffers();
-        if (!this.buffer) return;
-        if (this.playing) this.output.stop();
-        this.createSourceNode(this.buffer);
-        this.output.loop = false;
-        this.output.start(0, played);
-        this.lastStartTime = this.ac.currentTime;
-        this.playing = true;
-        this.output.addEventListener('ended', () => {
-            this.playing = false;
-            this.checkBufferedPlay();
-        });
-    }
-
-    private mergeBuffers() {
-        const buffer = this.ac.createBuffer(
-            this.audioData.length,
-            this.bufferedSamples,
-            this.sampleRate
-        );
-        const chunk = this.sampleRate * this.bufferChunkSize;
-        const bufferedChunks = Math.floor(this.bufferedSamples / chunk);
-        const restLength = this.bufferedSamples % chunk;
-        for (let i = 0; i < this.audioData.length; i++) {
-            const audio = this.audioData[i];
-            const data = new Float32Array(this.bufferedSamples);
-            for (let j = 0; j < bufferedChunks; j++) {
-                data.set(audio[j], chunk * j);
-            }
-            if (restLength !== 0) {
-                data.set(
-                    audio[bufferedChunks].slice(0, restLength),
-                    chunk * bufferedChunks
-                );
-            }
-
-            buffer.copyToChannel(data, i, 0);
-        }
-        this.buffer = buffer;
+        if (!decoder) return;
+        await decoder.push(data, done);
+        if (decoder.failed) this.errored = true;
+        this.maybeStart();
     }
 
     async start() {
+        this.teardownDecoder();
+        this.scheduler.free();
         this.buffer = null;
-        this.headerRecieved = false;
-        this.audioType = '';
-        this.errored = false;
         this.buffered = 0;
-        this.sampleRate = 0;
         this.bufferedSamples = 0;
+        this.sampleRate = 0;
         this.duration = 0;
         this.loaded = false;
-        if (this.playing) this.output.stop();
         this.playing = false;
-        this.lastStartTime = this.ac.currentTime;
+        this.stoppedByUser = false;
+        this.errored = false;
+        this.decoder = new AudioStreamDecoder(
+            this.motaAC.createCodecDecoder(AudioCodec.Opus)
+        );
+        this.consumeTask = this.consumeChunks();
     }
 
     end(done: boolean, reason?: string): void {
-        if (done && this.buffer) {
-            this.loaded = true;
-            this.controller = null;
-            this.mergeBuffers();
-            this.duration = this.buffered;
-            this.audioData = [];
-            this.decoder?.destroy();
-            this.decoder = null;
-            this.parser = null;
-            this.forEachHook(hook => hook.onLoad?.());
-        } else {
+        if (!done) {
             logger.warn(44, reason ?? '');
+            this.teardownDecoder();
+            return;
         }
-    }
-
-    private playAudio(when?: number) {
-        if (!this.buffer) return;
-        this.lastStartTime = this.ac.currentTime;
-        if (this.playing) this.output.stop();
-        this.createSourceNode(this.buffer);
-        this.output.start(0, when);
-        this.playing = true;
-        this.forEachHook(hook => hook.onPlay?.());
-        this.output.addEventListener('ended', () => {
-            this.playing = false;
-            if (this.loop && !this.output.loop) this.play(0);
-            this.forEachHook(hook => hook.onEnd?.());
-        });
+        this.controller = null;
+        this.finishLoad();
     }
 
     play(when?: number): void {
         if (this.playing || this.errored) return;
-        if (this.loaded && this.buffer) {
+        this.stoppedByUser = false;
+        if (
+            this.sampleRate > 0 &&
+            (this.loaded || (when ?? 0) <= this.buffered)
+        ) {
+            this.scheduler.start(when ?? 0);
             this.playing = true;
-            this.playAudio(when);
+            this.forEachHook(hook => hook.onPlay?.());
         } else {
             this.controller?.start();
         }
     }
 
-    private createSourceNode(buffer: AudioBuffer) {
-        if (!this.target) return;
-        const node = this.ac.createBufferSource();
-        node.buffer = buffer;
-        if (this.playing) this.output.stop();
-        this.playing = false;
-        this.output = node;
-        node.connect(this.target.input);
-        node.loop = this.loop;
-    }
-
     stop(): number {
-        if (this.playing) this.output.stop();
+        const time = this.scheduler.stop();
         this.playing = false;
-        return this.ac.currentTime - this.lastStartTime;
+        this.stoppedByUser = true;
+        return time;
     }
 
     connect(target: IAudioInput): void {
-        this.target = target;
+        this.scheduler.connect(target);
     }
 
     setLoop(loop: boolean): void {
-        this.loop = loop;
+        this.scheduler.setLoop(loop);
+    }
+
+    /**
+     * 后台按顺序消费解码数据块，解码器被替换后停止
+     */
+    private async consumeChunks(): Promise<void> {
+        const decoder = this.decoder!;
+        for await (const chunk of decoder.chunks) {
+            if (this.decoder !== decoder) return;
+            this.appendChunk(chunk);
+        }
+        if (decoder.failed) this.errored = true;
+    }
+
+    /**
+     * 把一个解码数据块追加到调度器并同步公开计数
+     * @param chunk 解码出的数据块
+     */
+    private appendChunk(chunk: IAudioDecodedChunk): void {
+        if (this.errored || chunk.samplesDecoded === 0) return;
+        if (chunk.sampleRate === 0) return;
+        if (this.sampleRate === 0) {
+            this.sampleRate = chunk.sampleRate;
+        } else if (this.sampleRate !== chunk.sampleRate) {
+            logger.warn(48);
+        }
+        this.scheduler.append(chunk);
+        this.bufferedSamples = this.scheduler.bufferedSamples;
+        this.buffered = this.scheduler.duration;
+        this.maybeStart();
+    }
+
+    /**
+     * 在缓冲足够且未被用户暂停时自动起播
+     */
+    private maybeStart(): void {
+        if (this.playing || this.errored || this.stoppedByUser) return;
+        if (this.sampleRate === 0) return;
+        if (!this.loaded && this.buffered < this.bufferPlayDuration) return;
+        this.scheduler.start(0);
+        this.playing = true;
+        this.forEachHook(hook => hook.onPlay?.());
+    }
+
+    /**
+     * 等待解码排空后合并音频数据并触发加载完成钩子
+     */
+    private async finishLoad(): Promise<void> {
+        const task = this.consumeTask;
+        if (task) await task;
+        this.scheduler.markEnded();
+        this.buffer = this.scheduler.merge();
+        this.buffered = this.scheduler.duration;
+        this.duration = this.scheduler.duration;
+        this.loaded = true;
+        this.maybeStart();
+        this.forEachHook(hook => hook.onLoad?.());
+        this.teardownDecoder();
+    }
+
+    /**
+     * 调度器时间线自然结束时的回调
+     */
+    private handlePlaybackEnd(): void {
+        this.playing = false;
+        this.forEachHook(hook => hook.onEnd?.());
+    }
+
+    /**
+     * 关闭当前解码器并清空引用
+     */
+    private teardownDecoder(): void {
+        const decoder = this.decoder;
+        this.decoder = null;
+        if (!decoder) return;
+        decoder.close();
     }
 }
 

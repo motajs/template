@@ -257,7 +257,7 @@ export class OpusDecodeSession implements IAudioDecodeSession {
         if (this.closed) return;
         this.closed = true;
         this.input.dispose();
-        void this.decoder.destroy();
+        this.decoder.destroy();
     }
 }
 

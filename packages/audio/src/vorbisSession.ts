@@ -115,7 +115,7 @@ export class VorbisDecodeSession implements IAudioDecodeSession {
     close(): void {
         if (this.closed) return;
         this.closed = true;
-        void this.decoder.free();
+        this.decoder.free();
     }
 }
 
@@ -137,12 +137,12 @@ export async function createVorbisDecodeSession(
         decoded = await decoder.decodeFile(bytes);
     } catch {
         // 解码库对损坏数据可能直接拒绝，按会话创建失败处理
-        void decoder.free();
+        decoder.free();
         logger.error(97);
         return null;
     }
     if (decoded.samplesDecoded === 0) {
-        void decoder.free();
+        decoder.free();
         logger.error(97);
         return null;
     }
